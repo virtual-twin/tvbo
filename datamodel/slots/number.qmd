@@ -1,0 +1,102 @@
+# Slot: number 
+
+
+_The panel letter to draw, overriding the mosaic key, or the string 'false' to draw none. Needed whenever the paper's panels do not map one-to-one onto mosaic cells: a row of five mode surfaces under a single (a), or a schematic cell that carries no letter of its own. Without it a grouped figure numbers every cell and its letters stop matching the paper's._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/number](https://w3id.org/tvbo/slot/number)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Panel](../classes/Panel.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Panel](../classes/Panel.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:number |
+| native | tvbo:number |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: number
+description: 'The panel letter to draw, overriding the mosaic key, or the string ''false''
+  to draw none. Needed whenever the paper''s panels do not map one-to-one onto mosaic
+  cells: a row of five mode surfaces under a single (a), or a schematic cell that
+  carries no letter of its own. Without it a grouped figure numbers every cell and
+  its letters stop matching the paper''s.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Panel
+domain_of:
+- Panel
+range: string
+
+```
+</details></div>

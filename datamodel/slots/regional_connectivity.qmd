@@ -1,0 +1,100 @@
+# Slot: regional_connectivity 
+
+
+_For hierarchical coupling: region-to-region connectivity with weights and delays_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/regional_connectivity](https://w3id.org/tvbo/slot/regional_connectivity)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Network](../classes/Network.qmd) |
+| Domain Of | [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Coupling](../classes/Coupling.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:regional_connectivity |
+| native | tvbo:regional_connectivity |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: regional_connectivity
+description: 'For hierarchical coupling: region-to-region connectivity with weights
+  and delays'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Coupling
+domain_of:
+- Coupling
+range: Network
+inlined: true
+
+```
+</details></div>

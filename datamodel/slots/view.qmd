@@ -1,0 +1,77 @@
+# Slot: view 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/view](https://w3id.org/tvbo/slot/view)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [Volume](../classes/Volume.qmd) | A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surface](../classes/Surface.qmd), [Volume](../classes/Volume.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:view |
+| native | tvbo:view |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: view
+domain_of:
+- Surface
+- Volume
+range: string
+
+```
+</details></div>

@@ -1,0 +1,410 @@
+# Class: Discretization 
+
+
+_Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific numerics go in parameters._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Discretization](https://w3id.org/tvbo/Discretization)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Discretization
+    click Discretization href "./Discretization.html"
+      Discretization : degree
+        
+          
+    
+        
+        
+        Discretization --> "0..1" Integer : degree
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Discretization : linear_solver
+        
+          
+    
+        
+        
+        Discretization --> "0..1" Solver : linear_solver
+        click Solver href "./Solver.html"
+    
+
+        
+      Discretization : mesh_intervals
+        
+          
+    
+        
+        
+        Discretization --> "0..1" Integer : mesh_intervals
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Discretization : method
+        
+          
+    
+        
+        
+        Discretization --> "0..1" NumericalDiscretizationMethod : method
+        click NumericalDiscretizationMethod href "../../enums/NumericalDiscretizationMethod.html"
+    
+
+        
+      Discretization : n_sections
+        
+          
+    
+        
+        
+        Discretization --> "0..1" Integer : n_sections
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Discretization : ode_solver
+        
+          
+    
+        
+        
+        Discretization --> "0..1" Solver : ode_solver
+        click Solver href "./Solver.html"
+    
+
+        
+      Discretization : options
+        
+          
+    
+        
+        
+        Discretization --> "*" Option : options
+        click Option href "./Option.html"
+    
+
+        
+      Discretization : parameters
+        
+          
+    
+        
+        
+        Discretization --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Discretization](https://w3id.org/tvbo/Discretization) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [method](../slots/method.qmd) | 0..1 <br/> [NumericalDiscretizationMethod](../enums/NumericalDiscretizationMethod.qmd) | Discretization method | direct |
+| [ode_solver](../slots/ode_solver.qmd) | 0..1 <br/> [Solver](../classes/Solver.qmd) | ODE solver for flow-based methods (shooting, poincaré) | direct |
+| [linear_solver](../slots/linear_solver.qmd) | 0..1 <br/> [Solver](../classes/Solver.qmd) | Linear solver for the Newton bordered system | direct |
+| [mesh_intervals](../slots/mesh_intervals.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of mesh intervals (time slices) for collocation or trapezoid methods | direct |
+| [degree](../slots/degree.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Polynomial degree per mesh interval for collocation | direct |
+| [n_sections](../slots/n_sections.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of shooting sections for shooting or Poincaré methods | direct |
+| [options](../slots/options.qmd) | * <br/> [Option](../classes/Option.qmd) | Toolkit-specific string options (jacobian type, etc | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | [discretization](../slots/discretization.qmd) | range | [Discretization](../classes/Discretization.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Discretization |
+| native | tvbo:Discretization |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Discretization
+description: Discretization method for boundary value problems in continuation (periodic
+  orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific
+  numerics go in parameters.
+from_schema: https://w3id.org/tvbo
+slots:
+- parameters
+attributes:
+  method:
+    name: method
+    description: Discretization method.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(collocation)
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: NumericalDiscretizationMethod
+  ode_solver:
+    name: ode_solver
+    description: ODE solver for flow-based methods (shooting, poincaré). Specifies
+      algorithm (e.g. Vern9, Rodas5) and tolerances. Not needed for collocation or
+      trapezoid.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Discretization
+    range: Solver
+    inlined: true
+  linear_solver:
+    name: linear_solver
+    description: Linear solver for the Newton bordered system. E.g. COPBLS (collocation),
+      MatrixBLS (shooting/poincaré).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Discretization
+    range: Solver
+    inlined: true
+  mesh_intervals:
+    name: mesh_intervals
+    description: 'Number of mesh intervals (time slices) for collocation or trapezoid
+      methods. Collocation: N in PeriodicOrbitOCollProblem(N, m). Trapezoid: M in
+      PeriodicOrbitTrapProblem(M=...).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: int(50)
+    domain_of:
+    - Discretization
+    range: integer
+  degree:
+    name: degree
+    description: Polynomial degree per mesh interval for collocation. The m in PeriodicOrbitOCollProblem(N,
+      m).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: int(4)
+    domain_of:
+    - Discretization
+    range: integer
+  n_sections:
+    name: n_sections
+    description: Number of shooting sections for shooting or Poincaré methods.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: int(3)
+    domain_of:
+    - Discretization
+    range: integer
+  options:
+    name: options
+    description: Toolkit-specific string options (jacobian type, etc.).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Discretization
+    - BranchSwitch
+    - Continuation
+    - WorkflowEngineConfig
+    range: Option
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+class_uri: tvbo:Discretization
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Discretization
+description: Discretization method for boundary value problems in continuation (periodic
+  orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific
+  numerics go in parameters.
+from_schema: https://w3id.org/tvbo
+attributes:
+  method:
+    name: method
+    description: Discretization method.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(collocation)
+    owner: Discretization
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: NumericalDiscretizationMethod
+  ode_solver:
+    name: ode_solver
+    description: ODE solver for flow-based methods (shooting, poincaré). Specifies
+      algorithm (e.g. Vern9, Rodas5) and tolerances. Not needed for collocation or
+      trapezoid.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Discretization
+    domain_of:
+    - Discretization
+    range: Solver
+    inlined: true
+  linear_solver:
+    name: linear_solver
+    description: Linear solver for the Newton bordered system. E.g. COPBLS (collocation),
+      MatrixBLS (shooting/poincaré).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Discretization
+    domain_of:
+    - Discretization
+    range: Solver
+    inlined: true
+  mesh_intervals:
+    name: mesh_intervals
+    description: 'Number of mesh intervals (time slices) for collocation or trapezoid
+      methods. Collocation: N in PeriodicOrbitOCollProblem(N, m). Trapezoid: M in
+      PeriodicOrbitTrapProblem(M=...).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: int(50)
+    owner: Discretization
+    domain_of:
+    - Discretization
+    range: integer
+  degree:
+    name: degree
+    description: Polynomial degree per mesh interval for collocation. The m in PeriodicOrbitOCollProblem(N,
+      m).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: int(4)
+    owner: Discretization
+    domain_of:
+    - Discretization
+    range: integer
+  n_sections:
+    name: n_sections
+    description: Number of shooting sections for shooting or Poincaré methods.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: int(3)
+    owner: Discretization
+    domain_of:
+    - Discretization
+    range: integer
+  options:
+    name: options
+    description: Toolkit-specific string options (jacobian type, etc.).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Discretization
+    domain_of:
+    - Discretization
+    - BranchSwitch
+    - Continuation
+    - WorkflowEngineConfig
+    range: Option
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Discretization
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+class_uri: tvbo:Discretization
+
+```
+</details></div>

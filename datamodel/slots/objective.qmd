@@ -1,0 +1,99 @@
+# Slot: objective 
+
+
+_What the algorithm optimizes for_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/objective](https://w3id.org/tvbo/slot/objective)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [TuningObjective](../classes/TuningObjective.qmd) |
+| Domain Of | [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Algorithm](../classes/Algorithm.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:objective |
+| native | tvbo:objective |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: objective
+description: What the algorithm optimizes for
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Algorithm
+domain_of:
+- Algorithm
+range: TuningObjective
+inlined: true
+
+```
+</details></div>

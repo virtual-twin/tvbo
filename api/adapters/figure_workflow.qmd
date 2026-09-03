@@ -1,0 +1,94 @@
+# figure_workflow { #tvbo.adapters.figure_workflow }
+
+`adapters.figure_workflow`
+
+Figure -> distributed-workflow emitter.
+
+Wires TVBO's declarative :class:`~tvbo.datamodel.pydantic.Figure` codegen into the HPC/workflow emission so that figures render as their own scheduler jobs, siblings of the experiment rules ``tvbo workflow snakemake`` already emits.
+
+The idea in one line: *a figure's PROV ``used`` edges are its workflow dependency edges.* Every layer of a figure binds to an experiment result container (via ``bsplot._container_path``); those containers are exactly the render rule's ``input:``, so the rule schedules after the experiments that produce them. The per-figure resource request comes from ``Figure.workflow_overrides`` (a ``WorkflowConfig``) merged over the study-level ``workflow`` — the same override pattern experiments use.
+
+Resolution (used->inputs, workflow_overrides->resources, unit conversion) lives here in Python; the rule *structure* lives in ``tvbo/templates/workflow/snakemake/tvbo-figure-rule.smk.mako`` (the house codegen rule). ``emit_figure_rules`` returns the Snakemake rule text; ``write_figure_kit`` also freezes each figure's self-contained ``plot.py`` and the ``.smk`` snippet to disk.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [emit_figure_rules](#tvbo.adapters.figure_workflow.emit_figure_rules) | Render Snakemake render rules for *figures* — one rule per figure. |
+| [figure_contexts](#tvbo.adapters.figure_workflow.figure_contexts) | Per-figure template contexts (fan-aware inputs). ``exp_plans`` are the emitter's per-experiment dicts; without them (author-time render) inputs fall back to the author's own result containers. Public so the study emitter can read the figure outputs it must add to the default target before it renders the Snakefile. |
+| [write_figure_kit](#tvbo.adapters.figure_workflow.write_figure_kit) | Freeze a figure workflow kit to disk: per-figure ``plot.py`` + the ``.smk`` snippet. |
+
+### emit_figure_rules { #tvbo.adapters.figure_workflow.emit_figure_rules }
+
+```python
+adapters.figure_workflow.emit_figure_rules(
+    figures,
+    base_dir='.',
+    workflow=None,
+    kit_dir='kit',
+    include_all=False,
+    exp_plans=None,
+    bundled_code=False,
+)
+```
+
+Render Snakemake render rules for *figures* — one rule per figure.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type   | Description                                                                                                                                                                                                                                                      | Default    |
+|--------------|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| figures      |        | An iterable of ``Figure`` objects (e.g. ``study.figures``).                                                                                                                                                                                                      | _required_ |
+| base_dir     |        | Root the experiment result containers live under; each figure's ``used`` IRIs resolve against the ``results`` role under ``base_dir``.                                                                                                                           | `'.'`      |
+| workflow     |        | The study-level ``WorkflowConfig`` (or ``None``); each figure's ``workflow_overrides`` merges over it for that figure's resources.                                                                                                                               | `None`     |
+| kit_dir      |        | Directory the companion :func:`write_figure_kit` writes to (kept for API symmetry; rule paths are kit-relative and independent of it).                                                                                                                           | `'kit'`    |
+| include_all  | bool   | When True, prepend an aggregate ``all_figures`` target rule so the snippet is runnable standalone (``snakemake -s figures.smk``).                                                                                                                                | `False`    |
+| exp_plans    |        | The emitter's per-experiment dicts; a figure ``used`` edge to one of them becomes an ``expand()`` over that experiment's fanned cells (the whole grid), so the render waits for the sweep. Without them, inputs fall back to the author's own result containers. | `None`     |
+| bundled_code | bool   | Whether the kit carries a ``code/`` dir the figure's custom-panel modules were bundled into (put on the rule's ``PYTHONPATH``).                                                                                                                                  | `False`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                              |
+|--------|--------|--------------------------------------------------------------------------|
+|        | str    | The Snakemake rule text. Each rule's ``input:`` is the figure's ``used`` |
+|        | str    | dependencies and its ``resources:`` reflect ``workflow_overrides`` over  |
+|        | str    | *workflow*; the rule runs the figure's frozen ``plot.py``.               |
+
+### figure_contexts { #tvbo.adapters.figure_workflow.figure_contexts }
+
+```python
+adapters.figure_workflow.figure_contexts(
+    figures,
+    base_dir='.',
+    workflow=None,
+    exp_plans=None,
+    bundled_code=False,
+)
+```
+
+Per-figure template contexts (fan-aware inputs). ``exp_plans`` are the emitter's per-experiment dicts; without them (author-time render) inputs fall back to the author's own result containers. Public so the study emitter can read the figure outputs it must add to the default target before it renders the Snakefile.
+
+### write_figure_kit { #tvbo.adapters.figure_workflow.write_figure_kit }
+
+```python
+adapters.figure_workflow.write_figure_kit(
+    figures,
+    base_dir='.',
+    out_dir='kit',
+    workflow=None,
+    include_all=True,
+    exp_plans=None,
+    bundled_code=False,
+)
+```
+
+Freeze a figure workflow kit to disk: per-figure ``plot.py`` + the ``.smk`` snippet.
+
+Layout::
+
+    out_dir/
+      figures.smk                # the render rules (from emit_figure_rules)
+      figures/<name>.<fmt>          # the rendered image (what the rule declares)
+      figures/scripts/plot_<name>.py  # self-contained bsplot script per figure
+
+Each ``plot_<name>.py`` is ``bsplot.render_code(figure, base_dir, outfile=…)`` with ``outfile`` set to the rule's declared ``output`` (``figures/<name>.<fmt>``), so running ``python figures/scripts/plot_<name>.py`` from the kit root produces exactly what the rule promises. The kit mirrors the local render layout — image in ``figures/``, script in ``figures/scripts/`` — so a cluster run and a laptop run put the same artefact in the same place. Returns the kit directory.

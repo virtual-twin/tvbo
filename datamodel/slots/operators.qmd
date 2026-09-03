@@ -1,0 +1,94 @@
+# Slot: operators 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/operators](https://w3id.org/tvbo/slot/operators)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [PDE](../classes/PDE.qmd) | Partial differential equation problem definition |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [DifferentialOperator](../classes/DifferentialOperator.qmd) |
+| Domain Of | [PDE](../classes/PDE.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [PDE](../classes/PDE.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:operators |
+| native | tvbo:operators |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: operators
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: PDE
+domain_of:
+- PDE
+range: DifferentialOperator
+multivalued: true
+
+```
+</details></div>

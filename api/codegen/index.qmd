@@ -1,0 +1,7 @@
+# codegen { #tvbo.codegen }
+
+`codegen`
+
+TVB-O Code Generation.
+
+Template rendering, code printing, and backend-specific code generation.

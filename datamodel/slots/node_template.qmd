@@ -1,0 +1,105 @@
+# Slot: node_template 
+
+
+_Default Node attributes applied to every Node in this Network. Explicit entries in `nodes:` override the template field-by-field (shallow replace, same semantics as `dict.update`). Reserved per-Node slots (id, label, position, region) come from the data backbone (Network.iri-loaded parcellation or procedural generator) and are ignored if set on the template. Lets a homogeneous Network declare its per-Node configuration once without enumerating regions._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/node_template](https://w3id.org/tvbo/slot/node_template)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Node](../classes/Node.qmd) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:node_template |
+| native | tvbo:node_template |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: node_template
+description: Default Node attributes applied to every Node in this Network. Explicit
+  entries in `nodes:` override the template field-by-field (shallow replace, same
+  semantics as `dict.update`). Reserved per-Node slots (id, label, position, region)
+  come from the data backbone (Network.iri-loaded parcellation or procedural generator)
+  and are ignored if set on the template. Lets a homogeneous Network declare its per-Node
+  configuration once without enumerating regions.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Network
+domain_of:
+- Network
+range: Node
+required: false
+inlined: true
+
+```
+</details></div>

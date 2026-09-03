@@ -1,0 +1,408 @@
+# Class: AlgorithmStage 
+
+
+_One stage of a multi-stage tuning schedule. The algorithm body runs once per stage, in order, each stage overriding n_iterations and selected hyperparameters — so a schedule can anneal a learning rate or widen an estimation window as tuning proceeds._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:AlgorithmStage](https://w3id.org/tvbo/AlgorithmStage)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class AlgorithmStage
+    click AlgorithmStage href "./AlgorithmStage.html"
+      AlgorithmStage : arguments
+        
+          
+    
+        
+        
+        AlgorithmStage --> "*" Parameter : arguments
+        click Parameter href "./Parameter.html"
+    
+
+        
+      AlgorithmStage : description
+        
+          
+    
+        
+        
+        AlgorithmStage --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      AlgorithmStage : label
+        
+          
+    
+        
+        
+        AlgorithmStage --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      AlgorithmStage : n_iterations
+        
+          
+    
+        
+        
+        AlgorithmStage --> "1" Integer : n_iterations
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      AlgorithmStage : reset_state
+        
+          
+    
+        
+        
+        AlgorithmStage --> "0..1" Boolean : reset_state
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:AlgorithmStage](https://w3id.org/tvbo/AlgorithmStage) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [n_iterations](../slots/n_iterations.qmd) | 1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of outer iterations to run in this stage | direct |
+| [reset_state](../slots/reset_state.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Start this stage from the model's declared initial conditions rather than the... | direct |
+| [arguments](../slots/arguments.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) | Hyperparameter overrides for this stage (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | [stages](../slots/stages.qmd) | range | [AlgorithmStage](../classes/AlgorithmStage.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:AlgorithmStage |
+| native | tvbo:AlgorithmStage |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: AlgorithmStage
+description: One stage of a multi-stage tuning schedule. The algorithm body runs once
+  per stage, in order, each stage overriding n_iterations and selected hyperparameters
+  — so a schedule can anneal a learning rate or widen an estimation window as tuning
+  proceeds.
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+attributes:
+  n_iterations:
+    name: n_iterations
+    description: Number of outer iterations to run in this stage.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - AlgorithmStage
+    - Algorithm
+    range: integer
+    required: true
+  reset_state:
+    name: reset_state
+    description: Start this stage from the model's declared initial conditions rather
+      than the previous stage's endpoint. The update rules' tuned targets always cross
+      the stage boundary; what resets is the dynamical state — state variables, delay
+      and coupling history, observation window buffers and monitors — and the noise
+      stream, which restarts from the run's seed so each stage samples the same realisation.
+      False, the default, makes the schedule one continuous trajectory; true makes
+      each stage an independent simulation warm-started from the parameters learned
+      so far.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - AlgorithmStage
+    range: boolean
+  arguments:
+    name: arguments
+    description: Hyperparameter overrides for this stage (e.g. eta, window_size).
+      Names not listed fall back to the algorithm's own hyperparameter defaults.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Function
+    - FunctionCall
+    - AlgorithmInclude
+    - AlgorithmStage
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+class_uri: tvbo:AlgorithmStage
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: AlgorithmStage
+description: One stage of a multi-stage tuning schedule. The algorithm body runs once
+  per stage, in order, each stage overriding n_iterations and selected hyperparameters
+  — so a schedule can anneal a learning rate or widen an estimation window as tuning
+  proceeds.
+from_schema: https://w3id.org/tvbo
+attributes:
+  n_iterations:
+    name: n_iterations
+    description: Number of outer iterations to run in this stage.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: AlgorithmStage
+    domain_of:
+    - AlgorithmStage
+    - Algorithm
+    range: integer
+    required: true
+  reset_state:
+    name: reset_state
+    description: Start this stage from the model's declared initial conditions rather
+      than the previous stage's endpoint. The update rules' tuned targets always cross
+      the stage boundary; what resets is the dynamical state — state variables, delay
+      and coupling history, observation window buffers and monitors — and the noise
+      stream, which restarts from the run's seed so each stage samples the same realisation.
+      False, the default, makes the schedule one continuous trajectory; true makes
+      each stage an independent simulation warm-started from the parameters learned
+      so far.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: AlgorithmStage
+    domain_of:
+    - AlgorithmStage
+    range: boolean
+  arguments:
+    name: arguments
+    description: Hyperparameter overrides for this stage (e.g. eta, window_size).
+      Names not listed fall back to the algorithm's own hyperparameter defaults.
+    from_schema: https://w3id.org/tvbo
+    owner: AlgorithmStage
+    domain_of:
+    - Function
+    - FunctionCall
+    - AlgorithmInclude
+    - AlgorithmStage
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: AlgorithmStage
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: AlgorithmStage
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:AlgorithmStage
+
+```
+</details></div>

@@ -1,0 +1,148 @@
+# Enum: StudyDirectoryRole 
+
+
+
+
+_What a directory is for, as a key code resolves paths by. Roles are properties of a study dataset in general, so a layout that renames or moves a directory keeps working without touching the code that reads it._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_study:enum/StudyDirectoryRole](https://w3id.org/tvbo/study/enum/StudyDirectoryRole)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| spec | None | Recipe fragments the entry recipe includes |
+| code | None | Callables the recipe references by bare module name |
+| sourcedata | None | Inputs the study did not compute: connectomes, atlases, empirical data |
+| original_study | None | Material published by the work being reproduced, kept apart from the study's ... |
+| raw_bids | None | An input that is itself a BIDS raw dataset, mounted rather than copied |
+| docs | None | Report sources: the prose, its bibliography and its render config |
+| analysis | None | Analysis definitions the report and figures read |
+| manuscript_sections | None | The document's sections, one file each, included by the document in the order... |
+| figures | None | Rendered figures cleared for publication |
+| figure_scripts | None | The self-contained plotting script each declarative figure generates: the edi... |
+| figures_restricted | None | Rendered figures that reproduce copyrighted material and are never tracked or... |
+| derivatives | None | Grouping directory for the nested derivative datasets |
+| results | None | Result containers a run and its analyses write, and figures read |
+| logs | None | Run logs |
+| build | None | Build root for artifacts that are pure products and reproduce from the spec |
+| kits | None | Self-contained runnable kits packaged from the spec |
+| cache | None | Cached intermediate results, keyed on their inputs |
+| notes | None | Working notes kept beside the study and never published: the gap register a r... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [role](../slots/role.qmd) | Semantic key this directory is resolved by |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: StudyDirectoryRole
+description: What a directory is for, as a key code resolves paths by. Roles are properties
+  of a study dataset in general, so a layout that renames or moves a directory keeps
+  working without touching the code that reads it.
+from_schema: https://w3id.org/tvbo/study
+permissible_values:
+  spec:
+    text: spec
+    description: Recipe fragments the entry recipe includes.
+  code:
+    text: code
+    description: Callables the recipe references by bare module name.
+  sourcedata:
+    text: sourcedata
+    description: 'Inputs the study did not compute: connectomes, atlases, empirical
+      data.'
+  original_study:
+    text: original_study
+    description: Material published by the work being reproduced, kept apart from
+      the study's own inputs so it is never mistaken for an output.
+  raw_bids:
+    text: raw_bids
+    description: An input that is itself a BIDS raw dataset, mounted rather than copied.
+  docs:
+    text: docs
+    description: 'Report sources: the prose, its bibliography and its render config.'
+  analysis:
+    text: analysis
+    description: Analysis definitions the report and figures read.
+  manuscript_sections:
+    text: manuscript_sections
+    description: The document's sections, one file each, included by the document
+      in the order it names them.
+  figures:
+    text: figures
+    description: Rendered figures cleared for publication.
+  figure_scripts:
+    text: figure_scripts
+    description: 'The self-contained plotting script each declarative figure generates:
+      the editable escape hatch from the spec, kept beside what it renders rather
+      than beside the authored code, which it is not.'
+  figures_restricted:
+    text: figures_restricted
+    description: Rendered figures that reproduce copyrighted material and are never
+      tracked or published, so an internal comparison stays possible without redistributing
+      it.
+  derivatives:
+    text: derivatives
+    description: Grouping directory for the nested derivative datasets.
+  results:
+    text: results
+    description: Result containers a run and its analyses write, and figures read.
+  logs:
+    text: logs
+    description: Run logs.
+  build:
+    text: build
+    description: Build root for artifacts that are pure products and reproduce from
+      the spec.
+  kits:
+    text: kits
+    description: Self-contained runnable kits packaged from the spec.
+  cache:
+    text: cache
+    description: Cached intermediate results, keyed on their inputs.
+  notes:
+    text: notes
+    description: 'Working notes kept beside the study and never published: the gap
+      register a reproduction accumulates, the open threads. Untracked, so a note
+      can be blunt.'
+
+```
+</details>
+
+</div>

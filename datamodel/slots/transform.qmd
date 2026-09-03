@@ -1,0 +1,79 @@
+# Slot: transform 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/transform](https://w3id.org/tvbo/slot/transform)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DataRef](../classes/DataRef.qmd) | A pointer to one labelled array in a result container, dataset, or curated en... |  no  |
+| [Layer](../classes/Layer.qmd) | One mark bound to one data reference, with its encoding |  no  |
+| [ExplorationAxis](../classes/ExplorationAxis.qmd) | One axis of a parameter exploration grid |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [DataRef](../classes/DataRef.qmd), [Layer](../classes/Layer.qmd), [ExplorationAxis](../classes/ExplorationAxis.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:transform |
+| native | tvbo:transform |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: transform
+domain_of:
+- DataRef
+- Layer
+- ExplorationAxis
+range: string
+
+```
+</details></div>

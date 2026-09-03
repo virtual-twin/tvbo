@@ -1,0 +1,58 @@
+# event { #tvbo.behaviour.event }
+
+`behaviour.event`
+
+User-facing helpers for :class:`Event`.
+
+Attached to the generated classes by name (``EventBehaviour`` -> ``Event``), so ``event.plot()`` works on any Event — including the nested ones a loaded experiment holds, which previously only gained it if some call path remembered to retype them.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [EventBehaviour](#tvbo.behaviour.event.EventBehaviour) | Plotting helpers for a stimulus-type event. |
+
+### EventBehaviour { #tvbo.behaviour.event.EventBehaviour }
+
+```python
+behaviour.event.EventBehaviour()
+```
+
+Plotting helpers for a stimulus-type event.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [plot](#tvbo.behaviour.event.EventBehaviour.plot) | Plot the event signal vs time. |
+
+##### plot { #tvbo.behaviour.event.EventBehaviour.plot }
+
+```python
+behaviour.event.EventBehaviour.plot(
+    t=None,
+    n=1001,
+    ax=None,
+    onset_kw=None,
+    **kwargs,
+)
+```
+
+Plot the event signal vs time.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+t : array-like, optional
+    Time samples. If ``None``, inferred from event parameters.
+n : int
+    Number of samples when ``t`` is auto-generated.
+ax : matplotlib Axes, optional
+    Axes to draw into. A new figure is returned when ``ax`` is ``None``.
+onset_kw : dict, optional
+    Style overrides for the onset vertical line, e.g.
+    ``onset_kw={"color": "blue", "linewidth": 2}``.
+    Defaults: ``{"color": "red", "linestyle": "--", "linewidth": 0.7}``.
+**kwargs
+    Forwarded to ``ax.plot`` for the signal line.

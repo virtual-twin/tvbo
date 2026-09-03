@@ -1,0 +1,93 @@
+# Slot: update_expression 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/update_expression](https://w3id.org/tvbo/slot/update_expression)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [DerivedVariable](../classes/DerivedVariable.qmd) |
+| Domain Of | [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Integrator](../classes/Integrator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:update_expression |
+| native | tvbo:update_expression |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: update_expression
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Integrator
+domain_of:
+- Integrator
+range: DerivedVariable
+inlined: true
+
+```
+</details></div>

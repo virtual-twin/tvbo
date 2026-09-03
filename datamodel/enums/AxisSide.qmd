@@ -1,0 +1,84 @@
+# Enum: AxisSide 
+
+
+
+
+_Which edge of the axes a label or tick row sits on._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/AxisSide](https://w3id.org/tvbo/enum/AxisSide)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| left | None | The left edge |
+| right | None | The right edge |
+| top | None | The top edge |
+| bottom | None | The bottom edge |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [xtick_side](../slots/xtick_side.qmd) | Which edge the x ticks sit on |
+| [ytick_side](../slots/ytick_side.qmd) | Which edge the y ticks sit on |
+| [xlabel_side](../slots/xlabel_side.qmd) | Which edge the x axis LABEL sits on |
+| [ylabel_side](../slots/ylabel_side.qmd) | Which edge the y axis LABEL sits on |
+| [location](../slots/location.qmd) | Which side of the panel it sits on |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: AxisSide
+description: Which edge of the axes a label or tick row sits on.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  left:
+    text: left
+    description: The left edge.
+  right:
+    text: right
+    description: The right edge.
+  top:
+    text: top
+    description: The top edge.
+  bottom:
+    text: bottom
+    description: The bottom edge.
+
+```
+</details>
+
+</div>

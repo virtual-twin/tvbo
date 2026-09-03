@@ -1,0 +1,77 @@
+# Slot: style 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/style](https://w3id.org/tvbo/slot/style)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+| [Layer](../classes/Layer.qmd) | One mark bound to one data reference, with its encoding |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Figure](../classes/Figure.qmd), [Layer](../classes/Layer.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:style |
+| native | tvbo:style |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: style
+domain_of:
+- Figure
+- Layer
+range: string
+
+```
+</details></div>

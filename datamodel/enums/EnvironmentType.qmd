@@ -1,0 +1,74 @@
+# Enum: EnvironmentType 
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_sw:enum/EnvironmentType](https://w3id.org/tvbo/software/enum/EnvironmentType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| conda | None | Conda environment |
+| venv | None | Python virtual environment |
+| docker | None | Docker container |
+| singularity | None | Singularity/Apptainer container |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [environment_type](../slots/environment_type.qmd) | Category: conda, venv, docker, etc |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: EnvironmentType
+from_schema: https://w3id.org/tvbo/software
+permissible_values:
+  conda:
+    text: conda
+    description: Conda environment.
+  venv:
+    text: venv
+    description: Python virtual environment.
+  docker:
+    text: docker
+    description: Docker container.
+  singularity:
+    text: singularity
+    description: Singularity/Apptainer container.
+
+```
+</details>
+
+</div>

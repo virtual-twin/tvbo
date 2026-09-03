@@ -1,0 +1,103 @@
+# Slot: edge_template 
+
+
+_Default Edge attributes applied to every Edge in this Network. Explicit entries in `edges:` override the template field-by-field. Reserved per-Edge slots (source, target, weight, delay, distance) come from the data backbone (loaded matrix or procedural generator) and are ignored if set on the template._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/edge_template](https://w3id.org/tvbo/slot/edge_template)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Edge](../classes/Edge.qmd) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:edge_template |
+| native | tvbo:edge_template |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: edge_template
+description: Default Edge attributes applied to every Edge in this Network. Explicit
+  entries in `edges:` override the template field-by-field. Reserved per-Edge slots
+  (source, target, weight, delay, distance) come from the data backbone (loaded matrix
+  or procedural generator) and are ignored if set on the template.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Network
+domain_of:
+- Network
+range: Edge
+required: false
+inlined: true
+
+```
+</details></div>

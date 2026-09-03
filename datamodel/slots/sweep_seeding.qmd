@@ -1,0 +1,107 @@
+# Slot: sweep_seeding 
+
+
+_How each sweep point's initial state is obtained. 'independent' (default) cold-starts every point from the model's initial values, so points are order-independent and may run in parallel (see parallel_mode). 'from_previous' seeds each point from the final state of the preceding point, so the trajectory follows the solution branch as the swept parameter changes quasi-statically; this forces sequential execution (a scan, not a vmap) and, with sweep_direction, exposes hysteresis / multistability. It is forward-integration branch following, not numerical continuation (cf. the Continuation class)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/sweep_seeding](https://w3id.org/tvbo/slot/sweep_seeding)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SweepSeeding](../enums/SweepSeeding.qmd) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(independent)` |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:sweep_seeding |
+| native | tvbo:sweep_seeding |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sweep_seeding
+description: How each sweep point's initial state is obtained. 'independent' (default)
+  cold-starts every point from the model's initial values, so points are order-independent
+  and may run in parallel (see parallel_mode). 'from_previous' seeds each point from
+  the final state of the preceding point, so the trajectory follows the solution branch
+  as the swept parameter changes quasi-statically; this forces sequential execution
+  (a scan, not a vmap) and, with sweep_direction, exposes hysteresis / multistability.
+  It is forward-integration branch following, not numerical continuation (cf. the
+  Continuation class).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(independent)
+owner: Exploration
+domain_of:
+- Exploration
+range: SweepSeeding
+
+```
+</details></div>

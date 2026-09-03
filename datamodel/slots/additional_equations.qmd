@@ -1,0 +1,94 @@
+# Slot: additional_equations 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/additional_equations](https://w3id.org/tvbo/slot/additional_equations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Equation](../classes/Equation.qmd) |
+| Domain Of | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:additional_equations |
+| native | tvbo:additional_equations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: additional_equations
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationExperiment
+domain_of:
+- SimulationExperiment
+range: Equation
+multivalued: true
+
+```
+</details></div>

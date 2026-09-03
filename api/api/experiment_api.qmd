@@ -1,0 +1,102 @@
+# experiment_api { #tvbo.api.experiment_api }
+
+`api.experiment_api`
+
+Experiment API — serves simulation experiments from the tvbo database.
+
+## Endpoints {.doc-section .doc-section-endpoints}
+
+GET /api/v1/experiments              — list available experiments
+GET /api/v1/experiments/formats      — list supported export formats
+GET /api/v1/experiments/{id}/sidecar — LinkML-valid YAML or JSON
+GET /api/v1/experiments/{id}/render  — render experiment in any supported format
+POST /api/v1/experiments/render      — render or save an experiment from a payload
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [EXPERIMENT_DIR](#tvbo.api.experiment_api.EXPERIMENT_DIR) |  |
+| [router](#tvbo.api.experiment_api.router) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [RenderExperimentRequest](#tvbo.api.experiment_api.RenderExperimentRequest) | Request body for rendering or saving an experiment from an inline payload. |
+
+### RenderExperimentRequest { #tvbo.api.experiment_api.RenderExperimentRequest }
+
+```python
+api.experiment_api.RenderExperimentRequest()
+```
+
+Request body for rendering or saving an experiment from an inline payload.
+
+Describes a [`SimulationExperiment`](/api/classes/experiment.qmd) to render (or persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is supplied inline as a mapping rather than referenced by stored id.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                                                                                                              | Default    |
+|---------------|--------|------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| experiment    |        | Mapping of `SimulationExperiment` constructor keyword arguments used to build the experiment to render.                                  | _required_ |
+| format        |        | Export format key or alias to render into (e.g. `"yaml"`).                                                                               | _required_ |
+| filename      |        | Suggested download filename; falls back to a default derived from the format's extension when omitted.                                   | _required_ |
+| save_path     |        | Destination path to persist the rendered experiment to. When set, the experiment is saved there instead of being returned as a download. | _required_ |
+| metadata_only |        | Whether to render only the experiment metadata rather than the fully expanded definition when saving.                                    | _required_ |
+| render_kwargs |        | Extra keyword arguments forwarded to the render or save call.                                                                            | _required_ |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [get_export_formats](#tvbo.api.experiment_api.get_export_formats) | Return supported export formats for UI dropdowns. |
+| [get_sidecar](#tvbo.api.experiment_api.get_sidecar) | Download full LinkML-valid experiment definition (YAML or JSON). |
+| [list_experiments](#tvbo.api.experiment_api.list_experiments) | List available simulation experiments. |
+| [render_experiment](#tvbo.api.experiment_api.render_experiment) | Render a stored experiment in the requested format. |
+| [render_experiment_payload](#tvbo.api.experiment_api.render_experiment_payload) | Render or save an experiment described by an inline payload. |
+
+### get_export_formats { #tvbo.api.experiment_api.get_export_formats }
+
+```python
+api.experiment_api.get_export_formats()
+```
+
+Return supported export formats for UI dropdowns.
+
+### get_sidecar { #tvbo.api.experiment_api.get_sidecar }
+
+```python
+api.experiment_api.get_sidecar(experiment_id, format=Query('yaml'))
+```
+
+Download full LinkML-valid experiment definition (YAML or JSON).
+
+### list_experiments { #tvbo.api.experiment_api.list_experiments }
+
+```python
+api.experiment_api.list_experiments()
+```
+
+List available simulation experiments.
+
+### render_experiment { #tvbo.api.experiment_api.render_experiment }
+
+```python
+api.experiment_api.render_experiment(
+    experiment_id,
+    format=Query('yaml'),
+    filename=Query(None),
+    metadata_only=Query(True),
+)
+```
+
+Render a stored experiment in the requested format.
+
+### render_experiment_payload { #tvbo.api.experiment_api.render_experiment_payload }
+
+```python
+api.experiment_api.render_experiment_payload(request)
+```
+
+Render or save an experiment described by an inline payload.

@@ -1,0 +1,95 @@
+# Slot: intermediate_expressions 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/intermediate_expressions](https://w3id.org/tvbo/slot/intermediate_expressions)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [DerivedVariable](../classes/DerivedVariable.qmd) |
+| Domain Of | [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Integrator](../classes/Integrator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:intermediate_expressions |
+| native | tvbo:intermediate_expressions |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: intermediate_expressions
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Integrator
+domain_of:
+- Integrator
+range: DerivedVariable
+multivalued: true
+inlined: true
+
+```
+</details></div>

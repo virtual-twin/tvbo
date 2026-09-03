@@ -1,0 +1,98 @@
+# Slot: threshold_applied 
+
+
+_Threshold value applied to the E-field simulation_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/threshold_applied](https://w3id.org/tvbo/dbs/slot/threshold_applied)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [EField](../classes/EField.qmd) | Simulated electric field from DBS modeling |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [EField](../classes/EField.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [EField](../classes/EField.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:threshold_applied |
+| native | tvbo_dbs:threshold_applied |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: threshold_applied
+description: Threshold value applied to the E-field simulation
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: EField
+domain_of:
+- EField
+range: float
+
+```
+</details></div>

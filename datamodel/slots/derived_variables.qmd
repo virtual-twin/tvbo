@@ -1,0 +1,77 @@
+# Slot: derived_variables 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/derived_variables](https://w3id.org/tvbo/slot/derived_variables)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+| [PDE](../classes/PDE.qmd) | Partial differential equation problem definition |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd), [PDE](../classes/PDE.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:derived_variables |
+| native | tvbo:derived_variables |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: derived_variables
+domain_of:
+- Dynamics
+- PDE
+range: string
+
+```
+</details></div>

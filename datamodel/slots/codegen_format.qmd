@@ -1,0 +1,99 @@
+# Slot: codegen_format 
+
+
+_Export-registry key of the format TVBO emits for this tool (`tvbo formats`). Present only on tools TVBO generates code for._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/codegen_format](https://w3id.org/tvbo/software/slot/codegen_format)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:codegen_format |
+| native | tvbo_sw:codegen_format |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: codegen_format
+description: Export-registry key of the format TVBO emits for this tool (`tvbo formats`).
+  Present only on tools TVBO generates code for.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: string
+
+```
+</details></div>

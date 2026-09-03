@@ -1,0 +1,79 @@
+# Slot: expression 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/expression](https://w3id.org/tvbo/slot/expression)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ConditionalBlock](../classes/ConditionalBlock.qmd) | A single condition and its corresponding equation segment |  no  |
+| [DifferentialOperator](../classes/DifferentialOperator.qmd) |  |  no  |
+| [Assignment](../classes/Assignment.qmd) | One step of a sequential recurrence: the expression assigned to a target name |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ConditionalBlock](../classes/ConditionalBlock.qmd), [DifferentialOperator](../classes/DifferentialOperator.qmd), [Assignment](../classes/Assignment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:expression |
+| native | tvbo:expression |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: expression
+domain_of:
+- ConditionalBlock
+- DifferentialOperator
+- Assignment
+range: string
+
+```
+</details></div>

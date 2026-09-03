@@ -1,0 +1,99 @@
+# Slot: target_component 
+
+
+_Component to attach this event to. Can be a node label, edge label, or 'all_edges'/'all_vertices' for broadcast. If not specified, event is experiment-level._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target_component](https://w3id.org/tvbo/slot/target_component)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Event](../classes/Event.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Event](../classes/Event.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target_component |
+| native | tvbo:target_component |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_component
+description: Component to attach this event to. Can be a node label, edge label, or
+  'all_edges'/'all_vertices' for broadcast. If not specified, event is experiment-level.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Event
+domain_of:
+- Event
+range: string
+
+```
+</details></div>

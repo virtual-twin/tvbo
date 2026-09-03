@@ -1,0 +1,94 @@
+# Slot: conditional 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/conditional](https://w3id.org/tvbo/slot/conditional)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DerivedVariable](../classes/DerivedVariable.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [DerivedVariable](../classes/DerivedVariable.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [DerivedVariable](../classes/DerivedVariable.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:conditional |
+| native | tvbo:conditional |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: conditional
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: DerivedVariable
+domain_of:
+- DerivedVariable
+range: boolean
+
+```
+</details></div>

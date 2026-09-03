@@ -1,0 +1,5 @@
+# SANDS 
+
+Schema for modeling a Brain Atlas, extending the researchProduct schema.
+
+URI: https://openminds.ebrains.eu/sands/BrainAtlas

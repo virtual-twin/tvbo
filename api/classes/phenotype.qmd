@@ -1,0 +1,122 @@
+# phenotype { #tvbo.classes.phenotype }
+
+`classes.phenotype`
+
+Runtime :class:`Phenotype` class.
+
+Carries a cohort's per-subject phenotype scores (cognitive, clinical, behavioral, demographic, physiological, derived) for multi-subject studies that correlate simulated quantities with empirical measurements.
+BIDS-aligned (BIDS ``phenotype/`` directory standard).
+
+Sidecar format mirrors the existing TVBO ``Network`` pattern:
+
+::
+
+    <name>.yaml             (descriptor: subjects, measures list, provenance)
+    <name>.h5
+    └── measures/
+        ├── <measure_1>     (1-D float array, length len(subjects))
+        ├── <measure_2>     ...
+        └── ...
+
+See ``tools/build_schirner2023_phenotype.py`` for an example writer.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Phenotype](#tvbo.classes.phenotype.Phenotype) | Runtime wrapper around the auto-generated ``Phenotype`` schema. |
+
+### Phenotype { #tvbo.classes.phenotype.Phenotype }
+
+```python
+classes.phenotype.Phenotype()
+```
+
+Runtime wrapper around the auto-generated ``Phenotype`` schema.
+
+The schema class carries the YAML-side descriptor (subjects, measures names, provenance, optional Cognitive Atlas IRIs via ``measure_specs``); this subclass adds lazy h5 access via :attr:`values` plus ``from_file`` / ``to_file`` round-tripping.
+
+
+
+#### Example: {.doc-section .doc-section-example}
+
+.. code-block:: python
+
+    from tvbo.classes.phenotype import Phenotype
+
+    ph = Phenotype.from_file("Schirner2023_HCPYA_phenotype.yaml")
+    print(ph.subjects[:5])              # ['100206', '100307', ...]
+    pmat_rt = ph.get("PMAT24_A_RTCR")   # ndarray shape (50,)
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [values](#tvbo.classes.phenotype.Phenotype.values) | Dict of ``{measure_name: ndarray}``, loaded lazily. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [from_file](#tvbo.classes.phenotype.Phenotype.from_file) | Load a Phenotype sidecar from a YAML descriptor. |
+| [get](#tvbo.classes.phenotype.Phenotype.get) | Return one measure's array. Raises ``KeyError`` if missing. |
+| [measure_spec](#tvbo.classes.phenotype.Phenotype.measure_spec) | Return the optional MeasureSpec for ``name`` (or None). |
+| [subject_index](#tvbo.classes.phenotype.Phenotype.subject_index) | Return the row index of ``subject_id`` in every measure array. |
+| [to_file](#tvbo.classes.phenotype.Phenotype.to_file) | Write the YAML descriptor + h5 companion to ``path``. |
+
+##### from_file { #tvbo.classes.phenotype.Phenotype.from_file }
+
+```python
+classes.phenotype.Phenotype.from_file(path)
+```
+
+Load a Phenotype sidecar from a YAML descriptor.
+
+Resolves ``data_file`` relative to the YAML's directory so the h5 companion can sit next to it. Numeric arrays are NOT loaded eagerly — call :meth:`get` (or read :attr:`values`) to fault one in.
+
+##### get { #tvbo.classes.phenotype.Phenotype.get }
+
+```python
+classes.phenotype.Phenotype.get(measure)
+```
+
+Return one measure's array. Raises ``KeyError`` if missing.
+
+##### measure_spec { #tvbo.classes.phenotype.Phenotype.measure_spec }
+
+```python
+classes.phenotype.Phenotype.measure_spec(name)
+```
+
+Return the optional MeasureSpec for ``name`` (or None).
+
+##### subject_index { #tvbo.classes.phenotype.Phenotype.subject_index }
+
+```python
+classes.phenotype.Phenotype.subject_index(subject_id)
+```
+
+Return the row index of ``subject_id`` in every measure array.
+
+##### to_file { #tvbo.classes.phenotype.Phenotype.to_file }
+
+```python
+classes.phenotype.Phenotype.to_file(path, values=None, provenance_comment=None)
+```
+
+Write the YAML descriptor + h5 companion to ``path``.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+path
+    Target ``.yaml`` path. The ``.h5`` companion is written next
+    to it (named after ``self.data_file`` or the yaml basename).
+values
+    ``{measure_name: 1-D array}`` mapping. Must cover every name
+    listed in ``self.measures``. Each array's length must equal
+    ``len(self.subjects)``.
+provenance_comment
+    Optional block of ``#``-prefixed lines prepended to the yaml
+    for provenance.

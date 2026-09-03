@@ -1,0 +1,5 @@
+# common 
+
+Shared slots reused across all TVBO sub-schemas. Ensures a single canonical definition for cross-cutting attributes such as `name`.
+
+URI: https://w3id.org/tvbo/common

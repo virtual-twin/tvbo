@@ -1,0 +1,101 @@
+# Slot: degree 
+
+
+_Polynomial degree per mesh interval for collocation. The m in PeriodicOrbitOCollProblem(N, m)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/degree](https://w3id.org/tvbo/slot/degree)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Discretization](../classes/Discretization.qmd) | Discretization method for boundary value problems in continuation (periodic o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Discretization](../classes/Discretization.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `int(4)` |
+| Owner | [Discretization](../classes/Discretization.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:degree |
+| native | tvbo:degree |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: degree
+description: Polynomial degree per mesh interval for collocation. The m in PeriodicOrbitOCollProblem(N,
+  m).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: int(4)
+owner: Discretization
+domain_of:
+- Discretization
+range: integer
+
+```
+</details></div>

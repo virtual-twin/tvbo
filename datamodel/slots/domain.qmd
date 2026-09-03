@@ -1,0 +1,109 @@
+# Slot: domain 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/domain](https://w3id.org/tvbo/slot/domain)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StateVariable](../classes/StateVariable.qmd) |  |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [ClinicalScale](../classes/ClinicalScale.qmd) | A clinical assessment inventory or structured scale composed of multiple scor... |  no  |
+| [ClinicalScore](../classes/ClinicalScore.qmd) | Metadata about a clinical score or scale |  no  |
+| [Distribution](../classes/Distribution.qmd) | A probability distribution for sampling parameters or initial conditions |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [ExplorationAxis](../classes/ExplorationAxis.qmd) | One axis of a parameter exploration grid |  no  |
+| [FreeParameter](../classes/FreeParameter.qmd) | One degree of freedom in an OptimizationStage |  no  |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+| [PDE](../classes/PDE.qmd) | Partial differential equation problem definition |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Range](../classes/Range.qmd) |
+| Domain Of | [ClinicalScale](../classes/ClinicalScale.qmd), [ClinicalScore](../classes/ClinicalScore.qmd), [StateVariable](../classes/StateVariable.qmd), [Distribution](../classes/Distribution.qmd), [Parameter](../classes/Parameter.qmd), [ExplorationAxis](../classes/ExplorationAxis.qmd), [FreeParameter](../classes/FreeParameter.qmd), [PDE](../classes/PDE.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+## Aliases
+
+
+* range
+* boundaries
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:domain |
+| native | tvbo:domain |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: domain
+from_schema: https://w3id.org/tvbo
+aliases:
+- range
+- boundaries
+rank: 1000
+domain_of:
+- ClinicalScale
+- ClinicalScore
+- StateVariable
+- Distribution
+- Parameter
+- ExplorationAxis
+- FreeParameter
+- PDE
+range: Range
+
+```
+</details></div>

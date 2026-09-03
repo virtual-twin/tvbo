@@ -1,0 +1,79 @@
+# Slot: data_source 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/data_source](https://w3id.org/tvbo/slot/data_source)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Parcellation](../classes/Parcellation.qmd) |  |  no  |
+| [Tractogram](../classes/Tractogram.qmd) | Reference to tractography/diffusion MRI data used to derive structural connec... |  no  |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Parcellation](../classes/Parcellation.qmd), [Tractogram](../classes/Tractogram.qmd), [Observation](../classes/Observation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:data_source |
+| native | tvbo:data_source |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: data_source
+domain_of:
+- Parcellation
+- Tractogram
+- Observation
+range: string
+
+```
+</details></div>

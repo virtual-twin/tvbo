@@ -1,0 +1,42 @@
+# install { #tvbo.cli.install }
+
+`cli.install`
+
+``tvbo install`` — provision optional components that pip alone cannot place.
+
+Some extras have a half that is not distributed on PyPI. ``pip install tvbo[…]`` installs the Python wrapper; this verb installs the native component and links it onto the current environment so imports resolve.
+
+Currently one target:
+
+* ``tvbo install auto7p`` — the AUTO-07p bifurcation-continuation engine used
+  through :mod:`pycobi`. AUTO-07p is a Fortran program: this command locates an existing build (or builds one from source with ``--build``), then drops a ``.pth`` link to its ``python/`` front-end into the active environment's site-packages, so ``import auto`` resolves for every process using this venv.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [AUTO_REPO](#tvbo.cli.install.AUTO_REPO) |  |
+| [PTH_NAME](#tvbo.cli.install.PTH_NAME) |  |
+| [app](#tvbo.cli.install.app) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [auto7p](#tvbo.cli.install.auto7p) | Install AUTO-07p and link it onto this environment for pycobi continuation. |
+
+### auto7p { #tvbo.cli.install.auto7p }
+
+```python
+cli.install.auto7p(
+    auto_dir=typer.Option(None, '--auto-dir', metavar='PATH', help='Path to an existing AUTO-07p install. Defaults to $AUTO_DIR, then common locations.'),
+    build=typer.Option(False, '--build', help='Build AUTO-07p from source when no install is found.'),
+    prefix=typer.Option('~/.local/share/auto-07p', '--prefix', metavar='PATH', help='Where to clone + build AUTO-07p when --build is used.'),
+    force=typer.Option(False, '--force', help='Rewrite the .pth link even if it is already correct.'),
+    uninstall=typer.Option(False, '--uninstall', help='Remove the AUTO-07p link from this environment.'),
+)
+```
+
+Install AUTO-07p and link it onto this environment for pycobi continuation.
+
+The pip half (pycobi) comes from the ``auto7p`` extra; this command provides the native AUTO-07p engine, which is not on PyPI. It locates an existing build (``--auto-dir`` / ``$AUTO_DIR`` / common paths), or builds one with ``--build``, then links its ``python/`` front-end into site-packages so ``import auto`` resolves. Safe to re-run — this is the step to repeat after recreating the virtualenv, since the link lives inside it. Pass ``--uninstall`` to remove the link (the AUTO-07p build itself is left untouched).

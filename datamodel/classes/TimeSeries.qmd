@@ -1,0 +1,920 @@
+# Class: TimeSeries 
+
+
+_Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling (BEP034)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:TimeSeries](https://w3id.org/tvbo/TimeSeries)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class TimeSeries
+    click TimeSeries href "./TimeSeries.html"
+      TimeSeries : connectivity_ref
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : connectivity_ref
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : data
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" Matrix : data
+        click Matrix href "./Matrix.html"
+    
+
+        
+      TimeSeries : dataLocation
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : dataLocation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : description
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : generated_at
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" Datetime : generated_at
+        click Datetime href "../http://www.w3.org/2001/XMLSchema#dateTime.html"
+    
+
+        
+      TimeSeries : label
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : labels_dimensions
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : labels_dimensions
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : labels_ordering
+        
+          
+    
+        
+        
+        TimeSeries --> "*" String : labels_ordering
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : modality
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" ImagingModality : modality
+        click ImagingModality href "../../enums/ImagingModality.html"
+    
+
+        
+      TimeSeries : model_equation_ref
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : model_equation_ref
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : model_param_ref
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : model_param_ref
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : run_id
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" Integer : run_id
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      TimeSeries : sampling_period
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" Float : sampling_period
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      TimeSeries : sampling_period_unit
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : sampling_period_unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : sampling_rate
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" Float : sampling_rate
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      TimeSeries : session_id
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : session_id
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : software_environment
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" SoftwareEnvironment : software_environment
+        click SoftwareEnvironment href "./SoftwareEnvironment.html"
+    
+
+        
+      TimeSeries : source_experiment
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" SimulationExperiment : source_experiment
+        click SimulationExperiment href "./SimulationExperiment.html"
+    
+
+        
+      TimeSeries : subject_id
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : subject_id
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : task_name
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : task_name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TimeSeries : time
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" Matrix : time
+        click Matrix href "./Matrix.html"
+    
+
+        
+      TimeSeries : unit
+        
+          
+    
+        
+        
+        TimeSeries --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:TimeSeries](https://w3id.org/tvbo/TimeSeries) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dataLocation](../slots/dataLocation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add the location of the data file containing the parcellation terminology | direct |
+| [data](../slots/data.qmd) | 0..1 <br/> [Matrix](../classes/Matrix.qmd) |  | direct |
+| [time](../slots/time.qmd) | 0..1 <br/> [Matrix](../classes/Matrix.qmd) |  | direct |
+| [sampling_rate](../slots/sampling_rate.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Sampling rate in Hz | direct |
+| [sampling_period](../slots/sampling_period.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Time between samples (inverse of sampling_rate) | direct |
+| [sampling_period_unit](../slots/sampling_period_unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Unit of the sampling period (e | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Physical unit of the time series values | direct |
+| [labels_ordering](../slots/labels_ordering.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Ordering of dimensions: Time, State Variable, Space, Mode | direct |
+| [labels_dimensions](../slots/labels_dimensions.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Mapping of dimension names to their labels (JSON-encoded dict) | direct |
+| [source_experiment](../slots/source_experiment.qmd) | 0..1 <br/> [SimulationExperiment](../classes/SimulationExperiment.qmd) | Reference to the SimulationExperiment that generated this TimeSeries | direct |
+| [generated_at](../slots/generated_at.qmd) | 0..1 <br/> [xsd:dateTime](http://www.w3.org/2001/XMLSchema#dateTime) | Timestamp when this TimeSeries was generated | direct |
+| [software_environment](../slots/software_environment.qmd) | 0..1 <br/> [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | Software environment used to generate this data | direct |
+| [task_name](../slots/task_name.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS task name for the simulation (e | direct |
+| [subject_id](../slots/subject_id.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS subject identifier | direct |
+| [session_id](../slots/session_id.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS session identifier | direct |
+| [run_id](../slots/run_id.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | BIDS run number | direct |
+| [modality](../slots/modality.qmd) | 0..1 <br/> [ImagingModality](../enums/ImagingModality.qmd) | Imaging modality or simulation output type | direct |
+| [model_equation_ref](../slots/model_equation_ref.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS ModelEq reference: path to _eq | direct |
+| [model_param_ref](../slots/model_param_ref.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS ModelParam reference: path to _param | direct |
+| [connectivity_ref](../slots/connectivity_ref.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Reference to connectivity data (_conndata-network_connectivity | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [StateVariable](../classes/StateVariable.qmd) | [history](../slots/history.qmd) | range | [TimeSeries](../classes/TimeSeries.qmd) |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) | [history](../slots/history.qmd) | range | [TimeSeries](../classes/TimeSeries.qmd) |
+
+
+
+
+
+
+
+
+
+
+## Comments
+
+* Supports BIDS BEP034 computational modeling extension.
+* Use to_bids() method in Python class to export as BIDS dataset.
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:TimeSeries |
+| native | tvbo:TimeSeries |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: TimeSeries
+description: Time series data from simulations or measurements. Supports BIDS-compatible
+  export for computational modeling (BEP034).
+comments:
+- Supports BIDS BEP034 computational modeling extension.
+- Use to_bids() method in Python class to export as BIDS dataset.
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+- dataLocation
+attributes:
+  data:
+    name: data
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: Matrix
+  time:
+    name: time
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - WorkflowEngineConfig
+    - TimeSeries
+    range: Matrix
+  sampling_rate:
+    name: sampling_rate
+    description: Sampling rate in Hz.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Event
+    - TimeSeries
+    range: float
+  sampling_period:
+    name: sampling_period
+    description: Time between samples (inverse of sampling_rate).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: float
+  sampling_period_unit:
+    name: sampling_period_unit
+    description: Unit of the sampling period (e.g., 'ms', 's').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: ms
+    domain_of:
+    - TimeSeries
+    range: string
+  unit:
+    name: unit
+    description: Physical unit of the time series values.
+    from_schema: https://w3id.org/tvbo
+    slot_uri: qudt:unit
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  labels_ordering:
+    name: labels_ordering
+    description: 'Ordering of dimensions: Time, State Variable, Space, Mode.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: string
+    multivalued: true
+  labels_dimensions:
+    name: labels_dimensions
+    description: Mapping of dimension names to their labels (JSON-encoded dict).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: string
+  source_experiment:
+    name: source_experiment
+    description: Reference to the SimulationExperiment that generated this TimeSeries.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - InitialState
+    - TimeSeries
+    range: SimulationExperiment
+  generated_at:
+    name: generated_at
+    description: Timestamp when this TimeSeries was generated.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: datetime
+  software_environment:
+    name: software_environment
+    description: Software environment used to generate this data.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: SoftwareEnvironment
+  task_name:
+    name: task_name
+    description: BIDS task name for the simulation (e.g., 'rest', 'simulation').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: string
+  subject_id:
+    name: subject_id
+    description: BIDS subject identifier.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    domain_of:
+    - Subject
+    - TimeSeries
+    range: string
+  session_id:
+    name: session_id
+    description: BIDS session identifier.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    domain_of:
+    - Session
+    - TimeSeries
+    range: string
+  run_id:
+    name: run_id
+    description: BIDS run number.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    domain_of:
+    - TimeSeries
+    range: integer
+  modality:
+    name: modality
+    description: Imaging modality or simulation output type.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: ImagingModality
+  model_equation_ref:
+    name: model_equation_ref
+    description: 'BIDS ModelEq reference: path to _eq.xml LEMS file.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: string
+  model_param_ref:
+    name: model_param_ref
+    description: 'BIDS ModelParam reference: path to _param.xml LEMS file.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: string
+  connectivity_ref:
+    name: connectivity_ref
+    description: Reference to connectivity data (_conndata-network_connectivity.tsv).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TimeSeries
+    range: string
+class_uri: tvbo:TimeSeries
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: TimeSeries
+description: Time series data from simulations or measurements. Supports BIDS-compatible
+  export for computational modeling (BEP034).
+comments:
+- Supports BIDS BEP034 computational modeling extension.
+- Use to_bids() method in Python class to export as BIDS dataset.
+from_schema: https://w3id.org/tvbo
+attributes:
+  data:
+    name: data
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: Matrix
+  time:
+    name: time
+    from_schema: https://w3id.org/tvbo
+    owner: TimeSeries
+    domain_of:
+    - WorkflowEngineConfig
+    - TimeSeries
+    range: Matrix
+  sampling_rate:
+    name: sampling_rate
+    description: Sampling rate in Hz.
+    from_schema: https://w3id.org/tvbo
+    owner: TimeSeries
+    domain_of:
+    - Event
+    - TimeSeries
+    range: float
+  sampling_period:
+    name: sampling_period
+    description: Time between samples (inverse of sampling_rate).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: float
+  sampling_period_unit:
+    name: sampling_period_unit
+    description: Unit of the sampling period (e.g., 'ms', 's').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: ms
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: string
+  unit:
+    name: unit
+    description: Physical unit of the time series values.
+    from_schema: https://w3id.org/tvbo
+    slot_uri: qudt:unit
+    owner: TimeSeries
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  labels_ordering:
+    name: labels_ordering
+    description: 'Ordering of dimensions: Time, State Variable, Space, Mode.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: string
+    multivalued: true
+  labels_dimensions:
+    name: labels_dimensions
+    description: Mapping of dimension names to their labels (JSON-encoded dict).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: string
+  source_experiment:
+    name: source_experiment
+    description: Reference to the SimulationExperiment that generated this TimeSeries.
+    from_schema: https://w3id.org/tvbo
+    owner: TimeSeries
+    domain_of:
+    - InitialState
+    - TimeSeries
+    range: SimulationExperiment
+  generated_at:
+    name: generated_at
+    description: Timestamp when this TimeSeries was generated.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: datetime
+  software_environment:
+    name: software_environment
+    description: Software environment used to generate this data.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: SoftwareEnvironment
+  task_name:
+    name: task_name
+    description: BIDS task name for the simulation (e.g., 'rest', 'simulation').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: string
+  subject_id:
+    name: subject_id
+    description: BIDS subject identifier.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: TimeSeries
+    domain_of:
+    - Subject
+    - TimeSeries
+    range: string
+  session_id:
+    name: session_id
+    description: BIDS session identifier.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: TimeSeries
+    domain_of:
+    - Session
+    - TimeSeries
+    range: string
+  run_id:
+    name: run_id
+    description: BIDS run number.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: integer
+  modality:
+    name: modality
+    description: Imaging modality or simulation output type.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: ImagingModality
+  model_equation_ref:
+    name: model_equation_ref
+    description: 'BIDS ModelEq reference: path to _eq.xml LEMS file.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: string
+  model_param_ref:
+    name: model_param_ref
+    description: 'BIDS ModelParam reference: path to _param.xml LEMS file.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: string
+  connectivity_ref:
+    name: connectivity_ref
+    description: Reference to connectivity data (_conndata-network_connectivity.tsv).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TimeSeries
+    domain_of:
+    - TimeSeries
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: TimeSeries
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: TimeSeries
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  dataLocation:
+    name: dataLocation
+    description: Add the location of the data file containing the parcellation terminology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    owner: TimeSeries
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+class_uri: tvbo:TimeSeries
+
+```
+</details></div>

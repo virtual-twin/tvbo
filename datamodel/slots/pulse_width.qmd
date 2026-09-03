@@ -1,0 +1,92 @@
+# Slot: pulse_width 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/pulse_width](https://w3id.org/tvbo/dbs/slot/pulse_width)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StimulationSetting](../classes/StimulationSetting.qmd) | DBS parameters for a specific session |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Parameter](../classes/Parameter.qmd) |
+| Domain Of | [StimulationSetting](../classes/StimulationSetting.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [StimulationSetting](../classes/StimulationSetting.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:pulse_width |
+| native | tvbo_dbs:pulse_width |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: pulse_width
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: StimulationSetting
+domain_of:
+- StimulationSetting
+range: Parameter
+
+```
+</details></div>

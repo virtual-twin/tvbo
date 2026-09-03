@@ -1,0 +1,108 @@
+# Slot: optimizations 
+
+
+_Parameter optimization configurations_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/optimizations](https://w3id.org/tvbo/slot/optimizations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Optimization](../classes/Optimization.qmd) |
+| Domain Of | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* optimization
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:optimizations |
+| native | tvbo:optimizations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: optimizations
+description: Parameter optimization configurations
+from_schema: https://w3id.org/tvbo
+aliases:
+- optimization
+rank: 1000
+owner: SimulationExperiment
+domain_of:
+- SimulationExperiment
+range: Optimization
+multivalued: true
+inlined: true
+
+```
+</details></div>

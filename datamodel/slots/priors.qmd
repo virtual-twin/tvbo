@@ -1,0 +1,103 @@
+# Slot: priors 
+
+
+_Priors over the inferred parameters, keyed by each parameter's dotted name (e.g. "Generic2dOscillator.eta" or "PulseInput.amplitude"). The KEYS are the inferred parameters — there is no separate free-parameter list._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/priors](https://w3id.org/tvbo/slot/priors)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Inference](../classes/Inference.qmd) | Bayesian inference of model parameters from an observation, via MCMC |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Prior](../classes/Prior.qmd) |
+| Domain Of | [Inference](../classes/Inference.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Inference](../classes/Inference.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:priors |
+| native | tvbo:priors |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: priors
+description: Priors over the inferred parameters, keyed by each parameter's dotted
+  name (e.g. "Generic2dOscillator.eta" or "PulseInput.amplitude"). The KEYS are the
+  inferred parameters — there is no separate free-parameter list.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Inference
+domain_of:
+- Inference
+range: Prior
+multivalued: true
+inlined: true
+
+```
+</details></div>

@@ -1,0 +1,102 @@
+# Slot: measures 
+
+
+_Names of the measures present in the h5 companion (one ``measures/<name>`` dataset per name). Example: ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR, CardSort_Unadj, ProcSpeed_Unadj]``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/measures](https://w3id.org/tvbo/slot/measures)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Phenotype](../classes/Phenotype.qmd) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Phenotype](../classes/Phenotype.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Phenotype](../classes/Phenotype.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:measures |
+| native | tvbo:measures |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: measures
+description: 'Names of the measures present in the h5 companion (one ``measures/<name>``
+  dataset per name). Example: ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR, CardSort_Unadj,
+  ProcSpeed_Unadj]``.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Phenotype
+domain_of:
+- Phenotype
+range: string
+multivalued: true
+
+```
+</details></div>

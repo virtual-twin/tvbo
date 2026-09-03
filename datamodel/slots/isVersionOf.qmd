@@ -1,0 +1,96 @@
+# Slot: isVersionOf 
+
+
+_Linked type for the version of a brain atlas or coordinate space._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:isVersionOf](http://purl.org/dc/terms/isVersionOf)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BrainAtlas](../classes/BrainAtlas.qmd) | A schema for representing a version of a brain atlas |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [BrainAtlas](../classes/BrainAtlas.qmd) |
+| Slot URI | [dcterms:isVersionOf](http://purl.org/dc/terms/isVersionOf) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:isVersionOf |
+| native | atom:isVersionOf |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: isVersionOf
+description: Linked type for the version of a brain atlas or coordinate space.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: dcterms:isVersionOf
+domain_of:
+- BrainAtlas
+union_of:
+- BrainAtlas
+- CommonCoordinateSpace
+- ParcellationTerminology
+- ParcellationEntity
+range: string
+
+```
+</details></div>

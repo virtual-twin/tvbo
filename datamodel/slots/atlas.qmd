@@ -1,0 +1,81 @@
+# Slot: atlas 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/atlas](https://w3id.org/tvbo/slot/atlas)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [Volume](../classes/Volume.qmd) | A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, ... |  no  |
+| [Parcellation](../classes/Parcellation.qmd) |  |  no  |
+| [BidsEntities](../classes/BidsEntities.qmd) | BIDS filename entities (BEP017-aligned) for provenance and data discovery |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surface](../classes/Surface.qmd), [Volume](../classes/Volume.qmd), [Parcellation](../classes/Parcellation.qmd), [BidsEntities](../classes/BidsEntities.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:atlas |
+| native | tvbo:atlas |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: atlas
+domain_of:
+- Surface
+- Volume
+- Parcellation
+- BidsEntities
+range: string
+
+```
+</details></div>

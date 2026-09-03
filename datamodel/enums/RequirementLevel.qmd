@@ -1,0 +1,76 @@
+# Enum: RequirementLevel 
+
+
+
+
+_BIDS requirement level: whether something MUST, SHOULD or MAY be present._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_study:enum/RequirementLevel](https://w3id.org/tvbo/study/enum/RequirementLevel)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| required | None | MUST be present |
+| recommended | None | SHOULD be present |
+| optional | None | MAY be present |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [level](../slots/level.qmd) | Whether a study MUST, SHOULD or MAY have this directory |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: RequirementLevel
+description: 'BIDS requirement level: whether something MUST, SHOULD or MAY be present.'
+from_schema: https://w3id.org/tvbo/study
+permissible_values:
+  required:
+    text: required
+    description: MUST be present.
+  recommended:
+    text: recommended
+    description: SHOULD be present.
+  optional:
+    text: optional
+    description: MAY be present.
+
+```
+</details>
+
+</div>

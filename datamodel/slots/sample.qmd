@@ -1,0 +1,92 @@
+# Slot: sample 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/sample](https://w3id.org/tvbo/slot/sample)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Sample](../classes/Sample.qmd) |
+| Domain Of | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:sample |
+| native | tvbo:sample |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sample
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationStudy
+domain_of:
+- SimulationStudy
+range: Sample
+
+```
+</details></div>

@@ -1,0 +1,106 @@
+# freesurfer { #tvbo.ontology.atlas.freesurfer }
+
+`ontology.atlas.freesurfer`
+
+FreeSurfer atlas utilities for mapping between region indices and labels.
+
+Loads the FreeSurfer color lookup table and provides helpers to translate between numeric FreeSurfer indices and region labels, exposes the FS86 and `aparc` label lists, and converts HCP-MMP1 region names to FreeSurfer label conventions.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [fs_aparc_labels](#tvbo.ontology.atlas.freesurfer.fs_aparc_labels) |  |
+| [fs_aparcaseg86_labels](#tvbo.ontology.atlas.freesurfer.fs_aparcaseg86_labels) |  |
+| [lut](#tvbo.ontology.atlas.freesurfer.lut) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [fs_mapper](#tvbo.ontology.atlas.freesurfer.fs_mapper) | Create a mapping between FreeSurfer indices and labels. |
+| [hcp2fs_labels](#tvbo.ontology.atlas.freesurfer.hcp2fs_labels) | Convert HCP-MMP1 region names to FreeSurfer cortical label conventions. |
+| [idx2label](#tvbo.ontology.atlas.freesurfer.idx2label) | Convert one or many FreeSurfer indices to labels. |
+| [label2idx](#tvbo.ontology.atlas.freesurfer.label2idx) | Convert one or many FreeSurfer labels to indices. |
+
+### fs_mapper { #tvbo.ontology.atlas.freesurfer.fs_mapper }
+
+```python
+ontology.atlas.freesurfer.fs_mapper(output='label')
+```
+
+Create a mapping between FreeSurfer indices and labels.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                            | Default   |
+|--------|--------|--------------------------------------------------------------------------------------------------------|-----------|
+| output | str    | If "label", return a mapping id → label. If "index", return a mapping label → id. Defaults to "label". | `'label'` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                           | Description                                                               |
+|--------|--------------------------------|---------------------------------------------------------------------------|
+| dict   | dict\[int \| str, int \| str\] | Mapping between indices and labels according to the selected output mode. |
+
+### hcp2fs_labels { #tvbo.ontology.atlas.freesurfer.hcp2fs_labels }
+
+```python
+ontology.atlas.freesurfer.hcp2fs_labels(hcp_labels)
+```
+
+Convert HCP-MMP1 region names to FreeSurfer cortical label conventions.
+
+Each label is lower-cased and its hemisphere prefix rewritten, mapping `l_` to `ctx-lh-` and `r_` to `ctx-rh-`.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type        | Description                       | Default    |
+|------------|-------------|-----------------------------------|------------|
+| hcp_labels | list\[str\] | HCP-MMP1 region names to convert. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type        | Description                                          |
+|--------|-------------|------------------------------------------------------|
+|        | list\[str\] | The region names rewritten in FreeSurfer label form. |
+
+### idx2label { #tvbo.ontology.atlas.freesurfer.idx2label }
+
+```python
+ontology.atlas.freesurfer.idx2label(idx)
+```
+
+Convert one or many FreeSurfer indices to labels.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type               | Description                     | Default    |
+|--------|--------------------|---------------------------------|------------|
+| idx    | int \| list\[int\] | One index or a list of indices. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type               | Description                                   |
+|--------|--------------------|-----------------------------------------------|
+|        | str \| list\[str\] | str \| list[str]: The corresponding label(s). |
+
+### label2idx { #tvbo.ontology.atlas.freesurfer.label2idx }
+
+```python
+ontology.atlas.freesurfer.label2idx(label)
+```
+
+Convert one or many FreeSurfer labels to indices.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type               | Description                    | Default    |
+|--------|--------------------|--------------------------------|------------|
+| label  | str \| list\[str\] | One label or a list of labels. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type               | Description                                        |
+|--------|--------------------|----------------------------------------------------|
+|        | int \| list\[int\] | int \| list[int]: The corresponding index/indices. |

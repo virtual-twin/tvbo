@@ -1,0 +1,78 @@
+# Slot: element_domains 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/element_domains](https://w3id.org/tvbo/slot/element_domains)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [ExplorationAxis](../classes/ExplorationAxis.qmd) | One axis of a parameter exploration grid |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Parameter](../classes/Parameter.qmd), [ExplorationAxis](../classes/ExplorationAxis.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:element_domains |
+| native | tvbo:element_domains |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: element_domains
+domain_of:
+- Parameter
+- ExplorationAxis
+range: string
+
+```
+</details></div>

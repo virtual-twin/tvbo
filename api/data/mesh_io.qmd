@@ -1,0 +1,47 @@
+# mesh_io { #tvbo.data.mesh_io }
+
+`data.mesh_io`
+
+Read a surface mesh file into vertices and faces.
+
+``Mesh.mesh_file`` has always declared that a mesh may live in an external GIFTI / VTK / FreeSurfer / MSH file, and ``Mesh.mesh_format`` that the format may be stated rather than guessed — but nothing in core read one, so every study that draws a cortical surface shipped its own reader in ``code/``. That is a format-support gap, not a modelling decision: which reader parses a ``.surf.gii`` is exactly the kind of mechanism a declarative spec should not have to name.
+
+The formats here are the ones ``mesh_format`` already lists. Each returns the SAME pair — ``(vertices (V, 3) float64, faces (F, 3) int64)`` — so a mesh is interchangeable across them and nothing downstream can tell which reader produced it.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [detect_format](#tvbo.data.mesh_io.detect_format) | The reader a mesh file's name implies — what ``mesh_format`` overrides. |
+| [read_mesh](#tvbo.data.mesh_io.read_mesh) | ``(vertices, faces)`` of a surface mesh file (public API). |
+
+### detect_format { #tvbo.data.mesh_io.detect_format }
+
+```python
+data.mesh_io.detect_format(path)
+```
+
+The reader a mesh file's name implies — what ``mesh_format`` overrides.
+
+FreeSurfer geometry carries no extension of its own (``lh.pial``), so it is recognised by its surface-name suffix; everything unrecognised falls through to meshio, which reads the long tail of mesh formats and raises its own error on a genuine miss.
+
+### read_mesh { #tvbo.data.mesh_io.read_mesh }
+
+```python
+data.mesh_io.read_mesh(path, mesh_format=None)
+```
+
+``(vertices, faces)`` of a surface mesh file (public API).
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type        | Description                                                                                                                    | Default    |
+|-------------|-------------|--------------------------------------------------------------------------------------------------------------------------------|------------|
+| path        | str \| Path | The mesh file.                                                                                                                 | _required_ |
+| mesh_format | str \| None | One of ``Mesh.mesh_format``'s values, overriding what the file name implies. Needed only where the name is ambiguous or wrong. | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                             |
+|--------|--------|---------------------------------------------------------|
+|        |        | ``vertices`` (V, 3) float64 and ``faces`` (F, 3) int64. |

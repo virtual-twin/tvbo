@@ -1,0 +1,72 @@
+# run { #tvbo.cli.run }
+
+`cli.run`
+
+``tvbo run`` — execute a Study or Experiment.
+
+Implements the cardinal HPC contract:
+
+* ``--engine slurm`` re-emits via :mod:`tvbo.cli.workflow` and submits through ``sbatch`` rather than running locally.
+* ``--container IMAGE`` re-execs the run inside the named OCI image (Singularity if ``SINGULARITY_BIND`` is set in the environment, else Docker).
+* ``--shard i/N`` runs one shard of the sweep in-process (no scheduler): cell index ``j`` runs iff ``j %% N == i``. This is what the generated sbatch script invokes for every array index.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [nested_root](#tvbo.cli.run.nested_root) | Where the study the tree knows as *label* writes, for a tree writing into *base*. |
+| [run](#tvbo.cli.run.run) | Run a SPEC (experiment or study) in the selected backend. |
+| [study_path_for](#tvbo.cli.run.study_path_for) | The directory *base* gives *role*, per the study-layout record. |
+
+### nested_root { #tvbo.cli.run.nested_root }
+
+```python
+cli.run.nested_root(base, recipe_dir, label)
+```
+
+Where the study the tree knows as *label* writes, for a tree writing into *base*.
+
+``None`` — the study's own directory — whenever the run has not been redirected, which is the CLI's behaviour and keeps a nested study's results in its own layout. A redirected run gives each study a subdirectory named for its label, so a run that must not write into the source tree does not write into a nested study's either. The label rather than the recipe stem, because a sub-study written inline has no recipe of its own and inherits the holding study's: naming the directory after that would land every inline sub-study of one recipe in a single directory, each overwriting the last.
+
+### run { #tvbo.cli.run.run }
+
+```python
+cli.run.run(
+    spec=typer.Argument(..., help='Path, CURIE, or DB name.'),
+    backend=typer.Option(None, '--backend', '-b', help="Execution backend (tvboptim, tvb, jax, brian2, pyrates, networkdynamics, ...). Default: each experiment's declared execution.backend, else tvboptim."),
+    out_dir=typer.Option(None, '--out-dir', '-o', help='Directory to write results into.'),
+    results_root=typer.Option(None, '--results-root', help="Directory searched for a sibling run's saved result when this experiment's initial_state.method=from_experiment (state / parameter warm-start). Defaults to the output dir's parent; set it to point at another run's output — e.g. the group fit's results dir for a per-subject warm-start (Run A → Run B)."),
+    experiment=typer.Option(None, '--experiment', help='When SPEC is a Study, run only this named experiment.'),
+    analysis=typer.Option(None, '--analysis', help='When SPEC is a Study, run only these named `analyses:` (comma-separated) and no experiments — for re-deriving a container after editing its callable, which no cache invalidates on its own. An input analysis is re-run only when it has no container yet; existing ones are read as they are. Figures are not redrawn — follow with `tvbo figure render`. Local engine only, and not combinable with any flag that selects or reshapes simulation work.'),
+    duration=typer.Option(None, '--duration', help='Override integration.duration (ms).'),
+    engine=typer.Option('local', '--engine', '-e', help='local | slurm | snakemake | nextflow. Non-local engines re-emit via `tvbo workflow ENGINE` and submit.'),
+    container=typer.Option(None, '--container', help='OCI image (e.g. ghcr.io/the-virtual-brain/tvbo:0.7.0); re-execs the same `tvbo run` inside it.'),
+    shard=typer.Option(None, '--shard', '--slurm-chunk', help='Run one shard of the sweep in-process: ``i/N`` runs cells where j%N==i (no scheduler needed). ``--slurm-chunk`` is a deprecated alias.'),
+    limit=typer.Option(None, '--limit', min=1, help='Run at most N cells of the sweep (a spread sample) — a quick look without needing to know the grid size. Ignored when --shard is given.'),
+    subject=typer.Option(None, '--subject', help="Active subject ID for a per-subject dataset experiment: resolves and injects that subject's empirical target (e.g. their FC). Set per shard by the workflow fan-out."),
+    rendered=typer.Option(None, '--rendered', help="Run a PRE-RENDERED backend script instead of generating code at run time. The spec is still loaded for orchestration (subject/dataset resolution, seeds, network observations, output layout) — only the backend code source changes: the frozen script is executed as-is. Lets a workflow kit run on a stock tvbo runtime with no codegen step. The script must match the run's backend and the (single) experiment being run."),
+    set_=typer.Option([], '--set', help='Override an experiment metadata field for THIS run only (the recipe file is not modified), e.g. --set integration.duration=8 --set integration.step_size=0.05. Repeatable; dotted keys traverse attributes and keyed collections. Lets one recipe stay the single source of truth while the CLI runs it with test settings.'),
+    pin=typer.Option([], '--pin', help="Pin an exploration axis to a single value for THIS run, e.g. --pin Kuramoto.omega_mean_hz=20 --pin network.conduction_speed=6. The workflow fan-out emits one --pin per fanned axis per cell: it sets the axis's parameter AND drops the axis from the sweep, so the cell is a single run at that point (its base run — and every declared observation — computed there). The model-scope sibling of --subject. Repeatable."),
+    compress=typer.Option(True, '--compress/--no-compress', help='gzip-deflate the result HDF5 (default on; grids compress well). --no-compress writes uncompressed for maximum write speed.'),
+    save_all=typer.Option(False, '--save-all', help='Persist every observation, including intermediates. By default only recorded outputs are saved (leaves + `record: true`); this keeps the scaffolding (e.g. a raw BOLD feeding an FC) for debugging.'),
+    max_iterations=typer.Option(None, '--max-iterations', min=1, help="Smoke cap: run at most N tuning iterations per algorithm AND per stage for THIS run (the recipe is untouched). A fit's post-tuning evaluation — the memory- and time-critical part of a long-horizon fit — is independent of how many tuning iterations preceded it, so `--max-iterations 1` reaches it in minutes to verify it runs/streams within memory."),
+    smoke=typer.Option(False, '--smoke', help='Shorthand for --max-iterations 1: the quickest run that still reaches the post-tuning evaluation (verify a fit executes / streams end to end).'),
+    figures=typer.Option(True, '--figures/--no-figures', help="After a Study's experiments finish, render its declarative `figures:` (emit each render script and run it), so one command produces results AND figures. On by default; --no-figures skips rendering (e.g. a partial/smoke run whose panels would be placeholders). No effect on an experiment spec or a study without figures."),
+    skip=typer.Option([], '--skip', help='When SPEC nests studies, skip these sub-studies by label, at any depth, comma-separated/repeatable — their committed figures/results are reused as-is. Skipping a study skips the studies it holds.'),
+    dry_run=typer.Option(False, '--dry-run', help='When SPEC nests studies, list the studies, analyses and result keys that WOULD run (honouring --skip) and emit nothing.'),
+    manifest_only=typer.Option(False, '--manifest-only', help='When SPEC nests studies, emit the results manifest from existing containers and authored values only — run no study or experiment. The fast refresh for the two-tier build (the heavy `tvbo run` produces the containers; this restamps the manifest the manuscript reads).'),
+)
+```
+
+Run a SPEC (experiment or study) in the selected backend.
+
+Resolves *spec* to a `SimulationExperiment` or `SimulationStudy`, executes via *backend* on *engine*, and optionally writes results to `--out-dir`.
+Non-local engines re-emit the run through `tvbo workflow ENGINE` and submit.
+
+### study_path_for { #tvbo.cli.run.study_path_for }
+
+```python
+cli.run.study_path_for(role, base)
+```
+
+The directory *base* gives *role*, per the study-layout record.

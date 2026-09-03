@@ -1,0 +1,77 @@
+# Slot: source_point 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/source_point](https://w3id.org/tvbo/slot/source_point)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [InitialState](../classes/InitialState.qmd) | How to obtain the starting equilibrium or periodic orbit for continuation |  no  |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | Specification for switching from a detected bifurcation point to a new branch... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [InitialState](../classes/InitialState.qmd), [BranchSwitch](../classes/BranchSwitch.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:source_point |
+| native | tvbo:source_point |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: source_point
+domain_of:
+- InitialState
+- BranchSwitch
+range: string
+
+```
+</details></div>

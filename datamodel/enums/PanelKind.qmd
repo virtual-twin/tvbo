@@ -1,0 +1,144 @@
+# Enum: PanelKind 
+
+
+
+
+_What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); surface paints a layer on a mesh, volume projects one through a labelled volume and network draws one on a node-link graph; grid tiles a composite of sub-panels; colorbar/legend are shared keys in their own slot; image (external file) and custom (registered callable) are peer escape-hatch kinds. A new kind is added when its bsplot leaf exists._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/PanelKind](https://w3id.org/tvbo/enum/PanelKind)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| cartesian | None | Line/scatter/rule/band marks in a 2-D cartesian frame |
+| heatmap | None | A 2-D array field drawn as pcolormesh/imshow |
+| line3d | None | Line/scatter marks in a 3-D frame (x/y/z channels) — a phase-space orbit or t... |
+| surface | None | A layer's per-vertex values painted on a mesh |
+| volume | None | A layer's per-region values painted into a labelled volume and projected as a... |
+| grid | None | A composite of sub-panels inside ONE lettered panel, labelled once per row an... |
+| colorbar | None | A colour scale in its own slot, for panels that share one |
+| legend | None | A key in its own slot, for a convention several panels share |
+| network | None | The connectome as a node-link graph: one marker per region at its anatomical ... |
+| image | None | An external raster/vector file placed in the grid cell |
+| custom | None | A registered callable fn(container, ax, **opts) |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [kind](../slots/kind.qmd) |  |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: PanelKind
+description: What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding);
+  surface paints a layer on a mesh, volume projects one through a labelled volume
+  and network draws one on a node-link graph; grid tiles a composite of sub-panels;
+  colorbar/legend are shared keys in their own slot; image (external file) and custom
+  (registered callable) are peer escape-hatch kinds. A new kind is added when its
+  bsplot leaf exists.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  cartesian:
+    text: cartesian
+    description: Line/scatter/rule/band marks in a 2-D cartesian frame.
+  heatmap:
+    text: heatmap
+    description: A 2-D array field drawn as pcolormesh/imshow.
+  line3d:
+    text: line3d
+    description: Line/scatter marks in a 3-D frame (x/y/z channels) — a phase-space
+      orbit or trajectory. Camera via opts (elev, azim); axis via zlabel/zlim.
+  surface:
+    text: surface
+    description: A layer's per-vertex values painted on a mesh. Geometry comes from
+      the network (`network:`, whose companion carries a mesh group) or a mesh file
+      (`mesh:` — GIFTI/VTK/FreeSurfer, or an npz of vertices/faces); camera via opts
+      (view, hemi), colour via cmap/symmetric/percentile/vmin/vmax, and `mask:` greys
+      a medial wall out of both the map and its colour range. A layer shorter than
+      the mesh is placed BY LABEL from its `vertex` coordinate. With `color:`/`edgecolor:`
+      and no layer it draws the bare geometry. Needs no code_modules — the drawing
+      is built in.
+  volume:
+    text: volume
+    description: A layer's per-region values painted into a labelled volume and projected
+      as a glass brain — the volumetric counterpart of `surface`, and how a paper
+      shows a whole-brain map without committing to a cortical mesh. Geometry and
+      the label lookup come from a curated atlas (`atlas:`, whose companion dseg carries
+      one integer label per region) or a segmentation file (`volume:`); values are
+      placed BY LABEL through the atlas terminology, never by array position, so a
+      region's value cannot land on its neighbour. Camera via opts (view, intensity_projection),
+      colour via cmap/symmetric/percentile/vmin/vmax. Needs no code_modules — the
+      drawing is built in.
+  grid:
+    text: grid
+    description: 'A composite of sub-panels inside ONE lettered panel, labelled once
+      per row and column. What a paper''s lettered panel usually is: a row of mode
+      surfaces under a single (a), or a Data/Reconstruction matrix whose task name
+      is written once at the left. Declaring each cell as its own mosaic entry instead
+      would repeat those labels in every cell and renumber panels the paper letters
+      once. Cells come from `cells:` or, in the common case, from `layers:` — one
+      cell per layer, all drawn by the shared `cell:` template.'
+  colorbar:
+    text: colorbar
+    description: A colour scale in its own slot, for panels that share one. Attaching
+      it to any single panel steals that panel's width and implies the scale is local
+      to it. Limits come from opts or, with a layer bound, from the data. Built in.
+  legend:
+    text: legend
+    description: A key in its own slot, for a convention several panels share. Entries
+      are parallel `labels`/`colors`/`linestyles` lists. Built in.
+  network:
+    text: network
+    description: 'The connectome as a node-link graph: one marker per region at its
+      anatomical centre, edges drawn for the connections that survive `edge_percentile`.
+      A layer supplies one value per region and colours the markers with it, so what
+      the panel shows is a state living ON the network rather than beside it. Geometry
+      comes from the `network:` the panel names, values are placed BY LABEL through
+      the node labels, and `projection` picks the anatomical plane the centres flatten
+      onto. Needs no code_modules — the drawing is built in.'
+  image:
+    text: image
+    description: An external raster/vector file placed in the grid cell.
+  custom:
+    text: custom
+    description: A registered callable fn(container, ax, **opts).
+
+```
+</details>
+
+</div>

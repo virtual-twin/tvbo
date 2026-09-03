@@ -1,0 +1,5 @@
+# tvb-datamodel 
+
+Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
+
+URI: https://w3id.org/tvbo

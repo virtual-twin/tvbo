@@ -1,0 +1,95 @@
+# Slot: coupling_inputs 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/coupling_inputs](https://w3id.org/tvbo/slot/coupling_inputs)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [CouplingInput](../classes/CouplingInput.qmd) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:coupling_inputs |
+| native | tvbo:coupling_inputs |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: coupling_inputs
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Dynamics
+domain_of:
+- Dynamics
+range: CouplingInput
+multivalued: true
+inlined: true
+
+```
+</details></div>

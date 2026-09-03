@@ -1,0 +1,118 @@
+# Slot: experiment 
+
+
+_WHERE (short form): an in-study experiment id whose saved result holds the array, resolved within the enclosing study like ``initial_state.source_experiment``. Written as the bare integer id (``34``), or as one of the string spellings the workflow planner also accepts (``exp-34``, ``"34"``) — ``tvbo.data.dataref`` normalises all three to the integer it globs the container by. Mutually exclusive with ``iri`` (the full cross-study / curated / external form). When both are absent the reference is local — ``output`` names this experiment's own output — otherwise falling back to ``initial_state.source_experiment`` when present._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/experiment](https://w3id.org/tvbo/slot/experiment)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DataRef](../classes/DataRef.qmd) | A pointer to one labelled array in a result container, dataset, or curated en... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [DataRef](../classes/DataRef.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DataRef](../classes/DataRef.qmd) |
+
+
+<details>
+<summary>Expressions & Logic</summary>
+#### Any Of
+
+Value must satisfy at least one of:
+- AnonymousSlotExpression({'range': 'integer'})
+- AnonymousSlotExpression({'range': 'string'})
+
+</details>
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/common
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:experiment |
+| native | tvbo:experiment |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: experiment
+description: 'WHERE (short form): an in-study experiment id whose saved result holds
+  the array, resolved within the enclosing study like ``initial_state.source_experiment``.
+  Written as the bare integer id (``34``), or as one of the string spellings the workflow
+  planner also accepts (``exp-34``, ``"34"``) — ``tvbo.data.dataref`` normalises all
+  three to the integer it globs the container by. Mutually exclusive with ``iri``
+  (the full cross-study / curated / external form). When both are absent the reference
+  is local — ``output`` names this experiment''s own output — otherwise falling back
+  to ``initial_state.source_experiment`` when present.'
+from_schema: https://w3id.org/tvbo/common
+rank: 1000
+owner: DataRef
+domain_of:
+- DataRef
+range: string
+any_of:
+- range: integer
+- range: string
+
+```
+</details></div>

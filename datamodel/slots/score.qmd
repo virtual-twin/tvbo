@@ -1,0 +1,92 @@
+# Slot: score 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/score](https://w3id.org/tvbo/dbs/slot/score)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ClinicalImprovement](../classes/ClinicalImprovement.qmd) | Relative improvement on a defined clinical score |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ClinicalScore](../classes/ClinicalScore.qmd) |
+| Domain Of | [ClinicalImprovement](../classes/ClinicalImprovement.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ClinicalImprovement](../classes/ClinicalImprovement.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:score |
+| native | tvbo_dbs:score |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: score
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: ClinicalImprovement
+domain_of:
+- ClinicalImprovement
+range: ClinicalScore
+
+```
+</details></div>

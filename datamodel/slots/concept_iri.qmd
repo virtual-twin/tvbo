@@ -1,0 +1,99 @@
+# Slot: concept_iri 
+
+
+_Cognitive Atlas IRI of the cognitive construct measured (e.g. ``cogat:trm_521ef89ce5e84`` for fluid intelligence)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/concept_iri](https://w3id.org/tvbo/slot/concept_iri)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [MeasureSpec](../classes/MeasureSpec.qmd) | Metadata for one phenotype measure |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [MeasureSpec](../classes/MeasureSpec.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [MeasureSpec](../classes/MeasureSpec.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:concept_iri |
+| native | tvbo:concept_iri |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: concept_iri
+description: Cognitive Atlas IRI of the cognitive construct measured (e.g. ``cogat:trm_521ef89ce5e84``
+  for fluid intelligence).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: MeasureSpec
+domain_of:
+- MeasureSpec
+range: string
+
+```
+</details></div>

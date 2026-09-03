@@ -1,0 +1,214 @@
+# Class: Digest 
+
+
+_One checksum of an artifact, keyed by the function that produced it. Collected on ``Provenance.digest``, whose collection KEY is the function name — BEP028 takes the names ``MD5``, ``SHA1``, ``SHA-256`` and the rest of that list, and allows an arbitrary label otherwise. Keyed rather than a bare string so an artifact can carry several digests and a reader knows which function to check with._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Digest](https://w3id.org/tvbo/Digest)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Digest
+    click Digest href "./Digest.html"
+      Digest : algorithm
+        
+          
+    
+        
+        
+        Digest --> "1" String : algorithm
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Digest : value
+        
+          
+    
+        
+        
+        Digest --> "1" String : value
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Digest](https://w3id.org/tvbo/Digest) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [algorithm](../slots/algorithm.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Checksum function name, e | direct |
+| [value](../slots/value.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The checksum as computed by ``algorithm`` | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | [digest](../slots/digest.qmd) | range | [Digest](../classes/Digest.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Digest |
+| native | tvbo:Digest |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Digest
+description: One checksum of an artifact, keyed by the function that produced it.
+  Collected on ``Provenance.digest``, whose collection KEY is the function name —
+  BEP028 takes the names ``MD5``, ``SHA1``, ``SHA-256`` and the rest of that list,
+  and allows an arbitrary label otherwise. Keyed rather than a bare string so an artifact
+  can carry several digests and a reader knows which function to check with.
+from_schema: https://w3id.org/tvbo
+attributes:
+  algorithm:
+    name: algorithm
+    annotations:
+      collection_key:
+        tag: collection_key
+        value: true
+    description: Checksum function name, e.g. ``SHA-256``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    key: true
+    domain_of:
+    - Digest
+    - OptimizationStage
+    - AlgorithmInclude
+    - Continuation
+    range: string
+  value:
+    name: value
+    description: The checksum as computed by ``algorithm``.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: string
+    required: true
+class_uri: tvbo:Digest
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Digest
+description: One checksum of an artifact, keyed by the function that produced it.
+  Collected on ``Provenance.digest``, whose collection KEY is the function name —
+  BEP028 takes the names ``MD5``, ``SHA1``, ``SHA-256`` and the rest of that list,
+  and allows an arbitrary label otherwise. Keyed rather than a bare string so an artifact
+  can carry several digests and a reader knows which function to check with.
+from_schema: https://w3id.org/tvbo
+attributes:
+  algorithm:
+    name: algorithm
+    annotations:
+      collection_key:
+        tag: collection_key
+        value: true
+    description: Checksum function name, e.g. ``SHA-256``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    key: true
+    owner: Digest
+    domain_of:
+    - Digest
+    - OptimizationStage
+    - AlgorithmInclude
+    - Continuation
+    range: string
+    required: true
+  value:
+    name: value
+    description: The checksum as computed by ``algorithm``.
+    from_schema: https://w3id.org/tvbo
+    owner: Digest
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: string
+    required: true
+class_uri: tvbo:Digest
+
+```
+</details></div>

@@ -1,0 +1,93 @@
+# Slot: stimulation 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/stimulation](https://w3id.org/tvbo/slot/stimulation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Stimulus](../classes/Stimulus.qmd) |
+| Domain Of | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:stimulation |
+| native | tvbo:stimulation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: stimulation
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationExperiment
+domain_of:
+- SimulationExperiment
+range: Stimulus
+inlined: true
+
+```
+</details></div>

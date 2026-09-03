@@ -1,0 +1,19 @@
+# version { #tvbo.cli.version }
+
+`cli.version`
+
+``tvbo version`` — print the package version.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [version](#tvbo.cli.version.version) | Print the installed TVBO package version. |
+
+### version { #tvbo.cli.version.version }
+
+```python
+cli.version.version()
+```
+
+Print the installed TVBO package version.

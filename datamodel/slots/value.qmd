@@ -1,0 +1,122 @@
+# Slot: value 
+
+
+_Numeric, string, or boolean value, OR an array (nested list) for array-valued constants such as mode-coupling coefficient matrices. ScalarValue accepts any literal primitive type, allowing parameters to carry control flags (e.g., booleans) or symbolic placeholders alongside numeric defaults._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:value](http://schema.org/value)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StateValue](../classes/StateValue.qmd) | A named state variable value for per-node initialization |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  yes  |
+| [Digest](../classes/Digest.qmd) | One checksum of an artifact, keyed by the function that produced it |  no  |
+| [Argument](../classes/Argument.qmd) | A function argument with explicit value specification |  yes  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [Option](../classes/Option.qmd) | A toolkit-specific key-value option (string name + string value) |  no  |
+| [EnvironmentVariable](../classes/EnvironmentVariable.qmd) | One environment variable assignment exported before executing the workflow ta... |  no  |
+| [SchedulerDirective](../classes/SchedulerDirective.qmd) | One engine-native scheduler directive passed through verbatim by the engine's... |  no  |
+| [ResultBinding](../classes/ResultBinding.qmd) | One entry in a study's results manifest: a manuscript key bound to the value ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ScalarValue](../classes/ScalarValue.qmd) |
+| Domain Of | [Digest](../classes/Digest.qmd), [StateValue](../classes/StateValue.qmd), [Parameter](../classes/Parameter.qmd), [Argument](../classes/Argument.qmd), [Option](../classes/Option.qmd), [EnvironmentVariable](../classes/EnvironmentVariable.qmd), [SchedulerDirective](../classes/SchedulerDirective.qmd), [ResultBinding](../classes/ResultBinding.qmd) |
+| Slot URI | [schema:value](http://schema.org/value) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+<details>
+<summary>Expressions & Logic</summary>
+#### Any Of
+
+Value must satisfy at least one of:
+- AnonymousSlotExpression({'range': 'ScalarValue'})
+- AnonymousSlotExpression({'array': ArrayExpression({})})
+
+</details>
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:value |
+| native | tvbo:value |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: value
+description: Numeric, string, or boolean value, OR an array (nested list) for array-valued
+  constants such as mode-coupling coefficient matrices. ScalarValue accepts any literal
+  primitive type, allowing parameters to carry control flags (e.g., booleans) or symbolic
+  placeholders alongside numeric defaults.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: schema:value
+domain_of:
+- Digest
+- StateValue
+- Parameter
+- Argument
+- Option
+- EnvironmentVariable
+- SchedulerDirective
+- ResultBinding
+range: ScalarValue
+any_of:
+- range: ScalarValue
+
+```
+</details></div>

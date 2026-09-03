@@ -1,0 +1,102 @@
+# Slot: opaque 
+
+
+_BIDS: the standard does not specify the contents, so a validator does not read inside. A sanctioned opaque directory therefore needs no ``.bidsignore`` entry however its files are named._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/opaque](https://w3id.org/tvbo/study/slot/opaque)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StudyDirectory](../classes/StudyDirectory.qmd) | One directory in a study layout |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [StudyDirectory](../classes/StudyDirectory.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `false` |
+| Owner | [StudyDirectory](../classes/StudyDirectory.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:opaque |
+| native | tvbo_study:opaque |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: opaque
+description: 'BIDS: the standard does not specify the contents, so a validator does
+  not read inside. A sanctioned opaque directory therefore needs no ``.bidsignore``
+  entry however its files are named.'
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+ifabsent: 'false'
+owner: StudyDirectory
+domain_of:
+- StudyDirectory
+range: boolean
+
+```
+</details></div>

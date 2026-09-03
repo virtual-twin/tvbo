@@ -1,0 +1,28 @@
+# verify { #tvbo.cli.verify }
+
+`cli.verify`
+
+``tvbo verify`` — check a study-of-studies is buildable, and hard-fail if not.
+
+The build gate, in two modes. Offline (where the run containers live) it resolves every ``results:`` binding and checks analysis staleness. In a build/CI checkout the containers are generated artifacts that are never committed, so ``--manifest manuscript_results.yml`` runs it
+CONTAINER-FREE: the declared bindings and, with ``--manuscript``, the prose's ``{{< meta results.* >}}`` keys are checked against the committed manifest instead of being resolved. Either way a citation with no number, a number no one cites, a binding added without regenerating the manifest, or a committed ``<figure>.caption.qmd`` that no longer matches the caption its spec composes is caught. A non-empty problem list exits non-zero, so a Quarto pre-render step fails loudly instead of rendering a stale or wrong figure.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [verify](#tvbo.cli.verify.verify) | Verify a study-of-studies' completeness, staleness and manifest coverage. |
+
+### verify { #tvbo.cli.verify.verify }
+
+```python
+cli.verify.verify(
+    spec=typer.Argument(..., help='Path to a study YAML that nests `studies:`.'),
+    results_root=typer.Option(None, '--results-root', help="Directory holding the run's result containers (default: <collection-dir>/output)."),
+    manuscript=typer.Option(None, '--manuscript', help='A .qmd/.md file or directory whose `{{< meta results.* >}}` keys are cross-checked against the declared `results:` — a cited-but-undeclared or declared-but-uncited key is a failure. Repeat for each, so prose split across a body and a supplement is gated as one manuscript rather than one of the two silently going unchecked.'),
+    manifest=typer.Option(None, '--manifest', help="Path to the committed results manifest (manuscript_results.yml). When given, verify runs CONTAINER-FREE: it checks the declared bindings and the prose's cited keys against this committed manifest instead of resolving DataRefs into run containers — the build gate, since those containers are generated and never committed."),
+    captions=typer.Option(None, '--captions', help='Directory holding the composed `<figure>.caption.qmd` partials (default: <collection-dir>/figures). Each committed caption is recomposed from the spec and a mismatch (a stale caption the manuscript would still render) is a failure.'),
+)
+```
+
+Verify a study-of-studies' completeness, staleness and manifest coverage.

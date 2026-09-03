@@ -1,0 +1,113 @@
+# Slot: panel_key 
+
+
+_Mosaic label this panel binds to (matches a letter in Figure.layout)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/panel_key](https://w3id.org/tvbo/slot/panel_key)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Panel](../classes/Panel.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Key | Yes |
+| Owner | [Panel](../classes/Panel.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+### Annotations
+
+| property | value |
+| --- | --- |
+| collection_key | True |
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:panel_key |
+| native | tvbo:panel_key |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: panel_key
+annotations:
+  collection_key:
+    tag: collection_key
+    value: true
+description: Mosaic label this panel binds to (matches a letter in Figure.layout).
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+key: true
+owner: Panel
+domain_of:
+- Panel
+range: string
+required: true
+
+```
+</details></div>

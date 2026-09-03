@@ -1,0 +1,78 @@
+# Slot: comment 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/comment](https://w3id.org/tvbo/slot/comment)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Parameter](../classes/Parameter.qmd), [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:comment |
+| native | tvbo:comment |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: comment
+domain_of:
+- Parameter
+- WorkflowEngineConfig
+range: string
+
+```
+</details></div>

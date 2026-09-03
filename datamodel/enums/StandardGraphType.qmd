@@ -1,0 +1,110 @@
+# Enum: StandardGraphType 
+
+
+
+
+_Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX)._
+
+__
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/StandardGraphType](https://w3id.org/tvbo/enum/StandardGraphType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| BarabasiAlbert | None | Barabasi-Albert preferential attachment (params: k) |
+| WattsStrogatz | None | Watts-Strogatz small-world (params: k, p) |
+| ErdosRenyi | None | Erdos-Renyi random graph (params: p) |
+| Complete | None | Complete graph (all-to-all) |
+| Cycle | None | Cycle graph (ring) |
+| Star | None | Star graph |
+| RandomRegular | None | Random regular graph (params: k) |
+| Grid | None | Grid/lattice graph (params: dims) |
+| RandomReservoir | None | Sparse random recurrent adjacency with post-hoc spectral- radius rescaling |
+| WeightShuffle | None | Derived generator: permute the non-zero entries of a source matrix |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: StandardGraphType
+description: 'Well-known graph generator families with automatic backend mapping.
+  The type field on GraphGenerator is a free string; this enum lists common types
+  that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).
+
+  '
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  BarabasiAlbert:
+    text: BarabasiAlbert
+    description: 'Barabasi-Albert preferential attachment (params: k)'
+  WattsStrogatz:
+    text: WattsStrogatz
+    description: 'Watts-Strogatz small-world (params: k, p)'
+  ErdosRenyi:
+    text: ErdosRenyi
+    description: 'Erdos-Renyi random graph (params: p)'
+  Complete:
+    text: Complete
+    description: Complete graph (all-to-all)
+  Cycle:
+    text: Cycle
+    description: Cycle graph (ring)
+  Star:
+    text: Star
+    description: Star graph
+  RandomRegular:
+    text: RandomRegular
+    description: 'Random regular graph (params: k)'
+  Grid:
+    text: Grid
+    description: 'Grid/lattice graph (params: dims)'
+  RandomReservoir:
+    text: RandomReservoir
+    description: 'Sparse random recurrent adjacency with post-hoc spectral- radius
+      rescaling. Parameters: sparsity, spectral_radius, weight_distribution, seed
+      (the size comes from Network.number_of_nodes). Canonical Echo State Network
+      substrate (Jaeger 2001) for reservoir computing.'
+  WeightShuffle:
+    text: WeightShuffle
+    description: 'Derived generator: permute the non-zero entries of a source matrix.
+      Parameters: source (IRI to another Network), preserve (binary_mask), seed. Used
+      for null-model controls (e.g. shuffled SC).'
+
+```
+</details>
+
+</div>

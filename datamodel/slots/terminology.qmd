@@ -1,0 +1,98 @@
+# Slot: terminology 
+
+
+_Add the parcellation terminology version used for this brain atlas version._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:slot/terminology](http://uri.interlex.org/tgbugs/uris/readable/slot/terminology)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BrainAtlas](../classes/BrainAtlas.qmd) | A schema for representing a version of a brain atlas |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ParcellationTerminology](../classes/ParcellationTerminology.qmd) |
+| Domain Of | [BrainAtlas](../classes/BrainAtlas.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [BrainAtlas](../classes/BrainAtlas.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:terminology |
+| native | atom:terminology |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: terminology
+description: Add the parcellation terminology version used for this brain atlas version.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+rank: 1000
+owner: BrainAtlas
+domain_of:
+- BrainAtlas
+range: ParcellationTerminology
+
+```
+</details></div>

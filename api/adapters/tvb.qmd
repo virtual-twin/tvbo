@@ -1,0 +1,204 @@
+# tvb { #tvbo.adapters.tvb }
+
+`adapters.tvb`
+
+TVB (The Virtual Brain) adapter for tvbo.
+
+All TVB ↔ tvbo conversion logic lives here:
+
+**Import (TVB → tvbo)**
+
+- :func:`from_tvb_simulator` — full Simulator → SimulationExperiment
+- :func:`from_tvb` — Connectivity → Network
+- :func:`from_tvb_zip` — connectivity ZIP file → Network
+- :func:`from_tvb_surface` — Connectivity + Surface + RegionMapping → Network pair
+
+**Export (tvbo → TVB)**
+
+- :func:`to_tvb` — Network → TVB Connectivity
+- :func:`to_tvb_monitor` — Observation → TVB Monitor
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [from_tvb](#tvbo.adapters.tvb.from_tvb) | Import a live TVB Connectivity object into a tvbo Network. |
+| [from_tvb_simulator](#tvbo.adapters.tvb.from_tvb_simulator) | Convert a TVB Simulator into a tvbo SimulationExperiment datamodel. |
+| [from_tvb_surface](#tvbo.adapters.tvb.from_tvb_surface) | Create a multi-level tvbo Network from TVB surface simulation data. |
+| [from_tvb_zip](#tvbo.adapters.tvb.from_tvb_zip) | Import a TVB connectivity ZIP into a tvbo Network. |
+| [to_tvb](#tvbo.adapters.tvb.to_tvb) | Export a tvbo Network to a TVB Connectivity object. |
+| [to_tvb_monitor](#tvbo.adapters.tvb.to_tvb_monitor) | Convert a tvbo Observation to a TVB Monitor instance. |
+| [tvb_state_variable_boundaries](#tvbo.adapters.tvb.tvb_state_variable_boundaries) | Build the TVB ``state_variable_boundaries`` mapping ``{name: (lo, hi)}``. |
+| [tvb_state_variable_ranges](#tvbo.adapters.tvb.tvb_state_variable_ranges) | Build the TVB ``state_variable_range`` mapping ``{name: (lo, hi)}``. |
+
+### from_tvb { #tvbo.adapters.tvb.from_tvb }
+
+```python
+adapters.tvb.from_tvb(connectivity)
+```
+
+Import a live TVB Connectivity object into a tvbo Network.
+
+Lossless conversion — all TVB fields are preserved as tvbo Node parameters and Network-level metadata.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+connectivity : tvb.datatypes.connectivity.Connectivity
+    A configured TVB Connectivity instance.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Network instance with arrays loaded, ready for ``save()``.
+
+### from_tvb_simulator { #tvbo.adapters.tvb.from_tvb_simulator }
+
+```python
+adapters.tvb.from_tvb_simulator(sim, experiment_id=None)
+```
+
+Convert a TVB Simulator into a tvbo SimulationExperiment datamodel.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+sim : tvb.simulator.simulator.Simulator
+    A configured TVB Simulator instance.
+experiment_id : int, optional
+    Experiment identifier. Defaults to the simulator's GID.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+tvbo_datamodel.SimulationExperiment
+    Schema-valid datamodel instance.
+
+### from_tvb_surface { #tvbo.adapters.tvb.from_tvb_surface }
+
+```python
+adapters.tvb.from_tvb_surface(connectivity, surface, region_mapping)
+```
+
+Create a multi-level tvbo Network from TVB surface simulation data.
+
+Produces two linked networks:
+
+1. **Region-level** (parent): from TVB Connectivity
+2. **Vertex-level** (child): mesh + region_mapping linking vertices to regions via hierarchical ``node_mapping``
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+connectivity : tvb.datatypes.connectivity.Connectivity
+    Configured TVB Connectivity (region-level).
+surface : tvb.datatypes.surfaces.Surface
+    TVB CorticalSurface (or any Surface subclass).
+region_mapping : tvb.datatypes.region_mapping.RegionMapping
+    TVB RegionMapping mapping vertices to regions.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+tuple[Network, Network]
+    ``(region_network, surface_network)``
+
+### from_tvb_zip { #tvbo.adapters.tvb.from_tvb_zip }
+
+```python
+adapters.tvb.from_tvb_zip(zip_path)
+```
+
+Import a TVB connectivity ZIP into a tvbo Network.
+
+TVB ZIPs contain: ``weights.txt``, ``tract_lengths.txt``, ``centres.txt``.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+zip_path : str or Path
+    Path to TVB connectivity ZIP file.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Network instance with loaded arrays ready for ``save()``.
+
+### to_tvb { #tvbo.adapters.tvb.to_tvb }
+
+```python
+adapters.tvb.to_tvb(network)
+```
+
+Export a tvbo Network to a TVB Connectivity object.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+network : Network
+    tvbo Network instance with weights and lengths matrices.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+tvb.datatypes.connectivity.Connectivity
+    Configured TVB Connectivity ready for simulation.
+
+### to_tvb_monitor { #tvbo.adapters.tvb.to_tvb_monitor }
+
+```python
+adapters.tvb.to_tvb_monitor(observation)
+```
+
+Convert a tvbo Observation to a TVB Monitor instance.
+
+Uses ``class_reference`` to reconstruct the exact TVB Monitor subclass with all constructor arguments including HRF kernel type.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+observation : tvbo.datamodel.schema.Observation
+    The tvbo observation to convert.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+tvb.simulator.monitors.Monitor
+    Configured TVB monitor instance.
+
+### tvb_state_variable_boundaries { #tvbo.adapters.tvb.tvb_state_variable_boundaries }
+
+```python
+adapters.tvb.tvb_state_variable_boundaries(model)
+```
+
+Build the TVB ``state_variable_boundaries`` mapping ``{name: (lo, hi)}``.
+
+Only state variables whose domain opts into a hard clamp appear. An unset side becomes the corresponding infinity (a one-sided clamp), matching TVB.
+
+### tvb_state_variable_ranges { #tvbo.adapters.tvb.tvb_state_variable_ranges }
+
+```python
+adapters.tvb.tvb_state_variable_ranges(
+    model,
+    default=(-1000000000.0, 1000000000.0),
+)
+```
+
+Build the TVB ``state_variable_range`` mapping ``{name: (lo, hi)}``.
+
+These are TVB's initial-condition sampling support, drawn with ``rng.uniform`` and so always finite — the IC range (sampling distribution, else descriptive domain) is used here, never a half-open clamp. ``default`` fills a bound only when a state variable has neither a distribution nor a domain.

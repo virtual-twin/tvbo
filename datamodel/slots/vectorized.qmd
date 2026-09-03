@@ -1,0 +1,107 @@
+# Slot: vectorized 
+
+
+_Opt in to the vectorized matmul fast path for a source-only coupling — one whose pre_expression depends only on source states (e.g. the angle-addition decomposition [sin(theta_j), cos(theta_j)]). The W-reduction then becomes a single ``pre @ weights`` matmul instead of materialising the dense per-edge tensor. ONLY valid for INSTANTANEOUS coupling on a SYMMETRIC connectome (W == Wᵀ): the matmul contracts W while the per-edge path contracts Wᵀ, so the two agree only when W is symmetric. Default false keeps the always-correct per-edge reduction (and delays are inherently per-edge, so this flag is ignored when delayed=true)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/vectorized](https://w3id.org/tvbo/slot/vectorized)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [Coupling](../classes/Coupling.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:vectorized |
+| native | tvbo:vectorized |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: vectorized
+description: 'Opt in to the vectorized matmul fast path for a source-only coupling
+  — one whose pre_expression depends only on source states (e.g. the angle-addition
+  decomposition [sin(theta_j), cos(theta_j)]). The W-reduction then becomes a single
+  ``pre @ weights`` matmul instead of materialising the dense per-edge tensor. ONLY
+  valid for INSTANTANEOUS coupling on a SYMMETRIC connectome (W == Wᵀ): the matmul
+  contracts W while the per-edge path contracts Wᵀ, so the two agree only when W is
+  symmetric. Default false keeps the always-correct per-edge reduction (and delays
+  are inherently per-edge, so this flag is ignored when delayed=true).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: Coupling
+domain_of:
+- Coupling
+range: boolean
+
+```
+</details></div>

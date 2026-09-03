@@ -1,0 +1,100 @@
+# Slot: event_type 
+
+
+_Type of event trigger mechanism._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/event_type](https://w3id.org/tvbo/slot/event_type)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [EventType](../enums/EventType.qmd) |
+| Domain Of | [Event](../classes/Event.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `stimulus` |
+| Owner | [Event](../classes/Event.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:event_type |
+| native | tvbo:event_type |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: event_type
+description: Type of event trigger mechanism.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: stimulus
+owner: Event
+domain_of:
+- Event
+range: EventType
+
+```
+</details></div>

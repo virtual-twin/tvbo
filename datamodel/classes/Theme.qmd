@@ -1,0 +1,862 @@
+# Class: Theme 
+
+
+_A project's whole look in one declarable object: its colours (inherited from `Palette`) and the geometry a style sheet used to own — tick shape, axis weight, line weights, legend, grid, font. Declared on a figure, it beats every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec, where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:theme/default`; a project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means to fix and nothing else._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Theme](https://w3id.org/tvbo/class/Theme)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Theme
+    click Theme href "./Theme.html"
+      Palette <|-- Theme
+        click Palette href "./Palette.html"
+      
+      Theme : axis_width
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : axis_width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : background
+        
+          
+    
+        
+        
+        Theme --> "0..1" String : background
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Theme : base
+        
+          
+    
+        
+        
+        Theme --> "0..1" String : base
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Theme : colormaps
+        
+          
+    
+        
+        
+        Theme --> "0..1" Colormaps : colormaps
+        click Colormaps href "./Colormaps.html"
+    
+
+        
+      Theme : font_family
+        
+          
+    
+        
+        
+        Theme --> "*" String : font_family
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Theme : grid_lines
+        
+          
+    
+        
+        
+        Theme --> "0..1" Boolean : grid_lines
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Theme : highlight
+        
+          
+    
+        
+        
+        Theme --> "0..1" String : highlight
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Theme : ink
+        
+          
+    
+        
+        
+        Theme --> "0..1" String : ink
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Theme : iri
+        
+          
+    
+        
+        
+        Theme --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Theme : label_pad
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : label_pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : legend_frame
+        
+          
+    
+        
+        
+        Theme --> "0..1" Boolean : legend_frame
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Theme : legend_handle_length
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : legend_handle_length
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : legend_pad
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : legend_pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : line_width
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : line_width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : marker_size
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : marker_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : minor_tick_length
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : minor_tick_length
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : minor_tick_width
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : minor_tick_width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : minor_ticks
+        
+          
+    
+        
+        
+        Theme --> "0..1" Boolean : minor_ticks
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Theme : muted
+        
+          
+    
+        
+        
+        Theme --> "0..1" String : muted
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Theme : palette
+        
+          
+    
+        
+        
+        Theme --> "*" String : palette
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Theme : tick_direction
+        
+          
+    
+        
+        
+        Theme --> "0..1" TickDirection : tick_direction
+        click TickDirection href "../../enums/TickDirection.html"
+    
+
+        
+      Theme : tick_length
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : tick_length
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : tick_pad
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : tick_pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : tick_width
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : tick_width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Theme : title_pad
+        
+          
+    
+        
+        
+        Theme --> "0..1" Float : title_pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [Palette](../classes/Palette.qmd)
+    * **Theme**
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | The curated theme this one starts from (`tvbo:theme/default`) | direct |
+| [tick_length](../slots/tick_length.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Length of a major tick mark, in points | direct |
+| [tick_width](../slots/tick_width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Line weight of a major tick mark, in points | direct |
+| [tick_direction](../slots/tick_direction.qmd) | 0..1 <br/> [TickDirection](../enums/TickDirection.qmd) | Whether tick marks point out of the axes, into them, or both | direct |
+| [tick_pad](../slots/tick_pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Distance from a tick mark to its label, in points | direct |
+| [minor_ticks](../slots/minor_ticks.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Draw minor tick marks between the major ones | direct |
+| [minor_tick_length](../slots/minor_tick_length.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Length of a minor tick mark, in points | direct |
+| [minor_tick_width](../slots/minor_tick_width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Line weight of a minor tick mark, in points | direct |
+| [axis_width](../slots/axis_width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Line weight of the axes frame, in points | direct |
+| [label_pad](../slots/label_pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Distance from an axis label to its axis, in points | direct |
+| [title_pad](../slots/title_pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Distance from a panel title to the axes, in points | direct |
+| [line_width](../slots/line_width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Default weight of a drawn line, in points, for any layer whose own style does... | direct |
+| [marker_size](../slots/marker_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Default marker size, in points, for any layer whose own style does not fix on... | direct |
+| [legend_frame](../slots/legend_frame.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Draw the box around a legend | direct |
+| [legend_handle_length](../slots/legend_handle_length.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Length of a legend's sample line, in font-size units | direct |
+| [legend_pad](../slots/legend_pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Distance from a legend to the axes it sits against, in font-size units | direct |
+| [grid_lines](../slots/grid_lines.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Draw the axes grid | direct |
+| [font_family](../slots/font_family.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The typefaces to set text in, most-wanted first (`[Helvetica, Arial, DejaVu S... | direct |
+| [ink](../slots/ink.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Text, spines and ticks: the near-black everything is read against | [Palette](../classes/Palette.qmd) |
+| [base](../slots/base.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Standard lines, bars and markers, wherever the colour carries no meaning | [Palette](../classes/Palette.qmd) |
+| [muted](../slots/muted.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Hairlines and de-emphasised strokes: present, and not competing | [Palette](../classes/Palette.qmd) |
+| [highlight](../slots/highlight.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The single emphasis colour, kept out of the cycler so it never lands on a pan... | [Palette](../classes/Palette.qmd) |
+| [background](../slots/background.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The page the figure is printed on | [Palette](../classes/Palette.qmd) |
+| [palette](../slots/palette.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The categorical hues, reached into only where a panel separates conditions | [Palette](../classes/Palette.qmd) |
+| [colormaps](../slots/colormaps.qmd) | 0..1 <br/> [Colormaps](../classes/Colormaps.qmd) | The continuous scales, so both kinds of colour move together and no figure na... | [Palette](../classes/Palette.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | [theme](../slots/theme.qmd) | range | [Theme](../classes/Theme.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Theme |
+| native | tvbo:Theme |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Theme
+description: 'A project''s whole look in one declarable object: its colours (inherited
+  from `Palette`) and the geometry a style sheet used to own — tick shape, axis weight,
+  line weights, legend, grid, font. Declared on a figure, it beats every layer in
+  `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet
+  underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is
+  a backend''s vocabulary written outside the spec, where nothing validates it and
+  no other backend can read it. TVB-O''s own is curated at `tvbo:theme/default`; a
+  project names that in `iri` and states only what it changes, exactly as an `Observation`
+  or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer
+  underneath keeps it, so a theme states the look it means to fix and nothing else.'
+from_schema: https://w3id.org/tvbo/figure
+is_a: Palette
+slots:
+- iri
+slot_usage:
+  iri:
+    name: iri
+    description: The curated theme this one starts from (`tvbo:theme/default`). Its
+      slots are merged under this document's own, so a theme states only its differences.
+attributes:
+  tick_length:
+    name: tick_length
+    description: Length of a major tick mark, in points. The default for a panel's
+      own `tick_length`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Theme
+    range: float
+  tick_width:
+    name: tick_width
+    description: Line weight of a major tick mark, in points.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  tick_direction:
+    name: tick_direction
+    description: Whether tick marks point out of the axes, into them, or both.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: TickDirection
+  tick_pad:
+    name: tick_pad
+    description: Distance from a tick mark to its label, in points.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  minor_ticks:
+    name: minor_ticks
+    description: Draw minor tick marks between the major ones.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: boolean
+  minor_tick_length:
+    name: minor_tick_length
+    description: Length of a minor tick mark, in points. Ignored unless `minor_ticks`
+      is set.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  minor_tick_width:
+    name: minor_tick_width
+    description: Line weight of a minor tick mark, in points. Ignored unless `minor_ticks`
+      is set.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  axis_width:
+    name: axis_width
+    description: Line weight of the axes frame, in points. A figure whose spines are
+      heavier than its data is drawn the wrong way round.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  label_pad:
+    name: label_pad
+    description: Distance from an axis label to its axis, in points. The default for
+      a panel's own `xlabel_pad`/`ylabel_pad`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  title_pad:
+    name: title_pad
+    description: Distance from a panel title to the axes, in points.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  line_width:
+    name: line_width
+    description: Default weight of a drawn line, in points, for any layer whose own
+      style does not fix one.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  marker_size:
+    name: marker_size
+    description: Default marker size, in points, for any layer whose own style does
+      not fix one.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  legend_frame:
+    name: legend_frame
+    description: Draw the box around a legend.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: boolean
+  legend_handle_length:
+    name: legend_handle_length
+    description: Length of a legend's sample line, in font-size units.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  legend_pad:
+    name: legend_pad
+    description: Distance from a legend to the axes it sits against, in font-size
+      units.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: float
+  grid_lines:
+    name: grid_lines
+    description: Draw the axes grid. Off in most journals, and worth stating either
+      way rather than inheriting.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: boolean
+  font_family:
+    name: font_family
+    description: 'The typefaces to set text in, most-wanted first (`[Helvetica, Arial,
+      DejaVu Sans]`). A generic family (`sans-serif`, `serif`, `monospace`) as the
+      first entry selects that family outright; otherwise the list is taken as the
+      concrete faces to try within `sans-serif`, which is how a person means it. Type
+      SIZE is not here: `Figure.font_size` owns it, because it is a property of the
+      figure''s print size rather than of the project''s look.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Theme
+    range: string
+    multivalued: true
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Theme
+description: 'A project''s whole look in one declarable object: its colours (inherited
+  from `Palette`) and the geometry a style sheet used to own — tick shape, axis weight,
+  line weights, legend, grid, font. Declared on a figure, it beats every layer in
+  `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet
+  underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is
+  a backend''s vocabulary written outside the spec, where nothing validates it and
+  no other backend can read it. TVB-O''s own is curated at `tvbo:theme/default`; a
+  project names that in `iri` and states only what it changes, exactly as an `Observation`
+  or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer
+  underneath keeps it, so a theme states the look it means to fix and nothing else.'
+from_schema: https://w3id.org/tvbo/figure
+is_a: Palette
+slot_usage:
+  iri:
+    name: iri
+    description: The curated theme this one starts from (`tvbo:theme/default`). Its
+      slots are merged under this document's own, so a theme states only its differences.
+attributes:
+  tick_length:
+    name: tick_length
+    description: Length of a major tick mark, in points. The default for a panel's
+      own `tick_length`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Theme
+    domain_of:
+    - Panel
+    - Inset
+    - Theme
+    range: float
+  tick_width:
+    name: tick_width
+    description: Line weight of a major tick mark, in points.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  tick_direction:
+    name: tick_direction
+    description: Whether tick marks point out of the axes, into them, or both.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: TickDirection
+  tick_pad:
+    name: tick_pad
+    description: Distance from a tick mark to its label, in points.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  minor_ticks:
+    name: minor_ticks
+    description: Draw minor tick marks between the major ones.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: boolean
+  minor_tick_length:
+    name: minor_tick_length
+    description: Length of a minor tick mark, in points. Ignored unless `minor_ticks`
+      is set.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  minor_tick_width:
+    name: minor_tick_width
+    description: Line weight of a minor tick mark, in points. Ignored unless `minor_ticks`
+      is set.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  axis_width:
+    name: axis_width
+    description: Line weight of the axes frame, in points. A figure whose spines are
+      heavier than its data is drawn the wrong way round.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  label_pad:
+    name: label_pad
+    description: Distance from an axis label to its axis, in points. The default for
+      a panel's own `xlabel_pad`/`ylabel_pad`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  title_pad:
+    name: title_pad
+    description: Distance from a panel title to the axes, in points.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  line_width:
+    name: line_width
+    description: Default weight of a drawn line, in points, for any layer whose own
+      style does not fix one.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  marker_size:
+    name: marker_size
+    description: Default marker size, in points, for any layer whose own style does
+      not fix one.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  legend_frame:
+    name: legend_frame
+    description: Draw the box around a legend.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: boolean
+  legend_handle_length:
+    name: legend_handle_length
+    description: Length of a legend's sample line, in font-size units.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  legend_pad:
+    name: legend_pad
+    description: Distance from a legend to the axes it sits against, in font-size
+      units.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: float
+  grid_lines:
+    name: grid_lines
+    description: Draw the axes grid. Off in most journals, and worth stating either
+      way rather than inheriting.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: boolean
+  font_family:
+    name: font_family
+    description: 'The typefaces to set text in, most-wanted first (`[Helvetica, Arial,
+      DejaVu Sans]`). A generic family (`sans-serif`, `serif`, `monospace`) as the
+      first entry selects that family outright; otherwise the list is taken as the
+      concrete faces to try within `sans-serif`, which is how a person means it. Type
+      SIZE is not here: `Figure.font_size` owns it, because it is a property of the
+      figure''s print size rather than of the project''s look.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Theme
+    range: string
+    multivalued: true
+  iri:
+    name: iri
+    description: The curated theme this one starts from (`tvbo:theme/default`). Its
+      slots are merged under this document's own, so a theme states only its differences.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Theme
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+  ink:
+    name: ink
+    description: 'Text, spines and ticks: the near-black everything is read against.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Palette
+    range: string
+  base:
+    name: base
+    description: Standard lines, bars and markers, wherever the colour carries no
+      meaning. Leads the cycler.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Palette
+    range: string
+  muted:
+    name: muted
+    description: 'Hairlines and de-emphasised strokes: present, and not competing.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Palette
+    range: string
+  highlight:
+    name: highlight
+    description: The single emphasis colour, kept out of the cycler so it never lands
+      on a panel by accident.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Palette
+    range: string
+  background:
+    name: background
+    description: The page the figure is printed on.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Palette
+    range: string
+  palette:
+    name: palette
+    description: The categorical hues, reached into only where a panel separates conditions.
+      Ordered, and named by index from zero (`palette.0` is the first), so inserting
+      a hue recolours every figure that names one after it.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Palette
+    range: string
+    multivalued: true
+  colormaps:
+    name: colormaps
+    description: The continuous scales, so both kinds of colour move together and
+      no figure names a colormap of its own.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Theme
+    domain_of:
+    - Palette
+    range: Colormaps
+    inlined: true
+
+```
+</details></div>

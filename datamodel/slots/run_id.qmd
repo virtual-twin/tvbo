@@ -1,0 +1,100 @@
+# Slot: run_id 
+
+
+_BIDS run number._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:identifier](http://purl.org/dc/terms/identifier)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [TimeSeries](../classes/TimeSeries.qmd) |
+| Slot URI | [dcterms:identifier](http://purl.org/dc/terms/identifier) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [TimeSeries](../classes/TimeSeries.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:identifier |
+| native | tvbo:run_id |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: run_id
+description: BIDS run number.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: dcterms:identifier
+owner: TimeSeries
+domain_of:
+- TimeSeries
+range: integer
+
+```
+</details></div>

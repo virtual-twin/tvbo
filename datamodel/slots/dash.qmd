@@ -1,0 +1,99 @@
+# Slot: dash 
+
+
+_Dash pattern (`solid`, `dashed`, `dotted`, `dashdot`). A reference line is conventionally dashed, so it is not read as data._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/dash](https://w3id.org/tvbo/slot/dash)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Rule](../classes/Rule.qmd) | A straight reference line drawn across a panel: the zero a signal is measured... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Rule](../classes/Rule.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Rule](../classes/Rule.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:dash |
+| native | tvbo:dash |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: dash
+description: Dash pattern (`solid`, `dashed`, `dotted`, `dashdot`). A reference line
+  is conventionally dashed, so it is not read as data.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Rule
+domain_of:
+- Rule
+range: string
+
+```
+</details></div>

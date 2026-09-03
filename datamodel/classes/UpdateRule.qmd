@@ -1,0 +1,480 @@
+# Class: UpdateRule 
+
+
+_Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates. Functions from experiment.functions are available in the equation._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:UpdateRule](https://w3id.org/tvbo/UpdateRule)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class UpdateRule
+    click UpdateRule href "./UpdateRule.html"
+      UpdateRule : bounds
+        
+          
+    
+        
+        
+        UpdateRule --> "0..1" Range : bounds
+        click Range href "./Range.html"
+    
+
+        
+      UpdateRule : description
+        
+          
+    
+        
+        
+        UpdateRule --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      UpdateRule : equation
+        
+          
+    
+        
+        
+        UpdateRule --> "1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      UpdateRule : name
+        
+          
+    
+        
+        
+        UpdateRule --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      UpdateRule : requires
+        
+          
+    
+        
+        
+        UpdateRule --> "*" Observation : requires
+        click Observation href "./Observation.html"
+    
+
+        
+      UpdateRule : target_parameter
+        
+          
+    
+        
+        
+        UpdateRule --> "1" Parameter : target_parameter
+        click Parameter href "./Parameter.html"
+    
+
+        
+      UpdateRule : warmup
+        
+          
+    
+        
+        
+        UpdateRule --> "0..1" Boolean : warmup
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:UpdateRule](https://w3id.org/tvbo/UpdateRule) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [target_parameter](../slots/target_parameter.qmd) | 1 <br/> [Parameter](../classes/Parameter.qmd) | The parameter to update (e | direct |
+| [equation](../slots/equation.qmd) | 1 <br/> [Equation](../classes/Equation.qmd) | Update equation (e | direct |
+| [bounds](../slots/bounds.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) | Constraints on parameter values after update | direct |
+| [warmup](../slots/warmup.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether to apply learning rate warmup to this update rule | direct |
+| [requires](../slots/requires.qmd) | * <br/> [Observation](../classes/Observation.qmd) | Observables required by this update rule | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | [update_rules](../slots/update_rules.qmd) | range | [UpdateRule](../classes/UpdateRule.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:UpdateRule |
+| native | tvbo:UpdateRule |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: UpdateRule
+description: Defines how a parameter is updated based on observables. Represents iterative
+  learning rules like FIC or EIB updates. Functions from experiment.functions are
+  available in the equation.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+attributes:
+  target_parameter:
+    name: target_parameter
+    description: The parameter to update (e.g., J_i, wLRE)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - UpdateRule
+    range: Parameter
+    required: true
+    inlined: true
+  equation:
+    name: equation
+    description: Update equation (e.g., 'J_i + eta * delta'). Can use functions defined
+      in experiment.functions section.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    required: true
+    inlined: true
+  bounds:
+    name: bounds
+    description: Constraints on parameter values after update
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Inset
+    - Region
+    - UpdateRule
+    range: Range
+    inlined: true
+  warmup:
+    name: warmup
+    description: Whether to apply learning rate warmup to this update rule. When true,
+      the learning rate (eta) is scaled by (i+1)/n_iterations.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - RenderSpec
+    - ClassReference
+    - UpdateRule
+    range: boolean
+  requires:
+    name: requires
+    description: Observables required by this update rule
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - UpdateRule
+    - SimulationStudy
+    range: Observation
+    multivalued: true
+class_uri: tvbo:UpdateRule
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: UpdateRule
+description: Defines how a parameter is updated based on observables. Represents iterative
+  learning rules like FIC or EIB updates. Functions from experiment.functions are
+  available in the equation.
+from_schema: https://w3id.org/tvbo
+attributes:
+  target_parameter:
+    name: target_parameter
+    description: The parameter to update (e.g., J_i, wLRE)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: UpdateRule
+    domain_of:
+    - UpdateRule
+    range: Parameter
+    required: true
+    inlined: true
+  equation:
+    name: equation
+    description: Update equation (e.g., 'J_i + eta * delta'). Can use functions defined
+      in experiment.functions section.
+    from_schema: https://w3id.org/tvbo
+    owner: UpdateRule
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    required: true
+    inlined: true
+  bounds:
+    name: bounds
+    description: Constraints on parameter values after update
+    from_schema: https://w3id.org/tvbo
+    owner: UpdateRule
+    domain_of:
+    - Inset
+    - Region
+    - UpdateRule
+    range: Range
+    inlined: true
+  warmup:
+    name: warmup
+    description: Whether to apply learning rate warmup to this update rule. When true,
+      the learning rate (eta) is scaled by (i+1)/n_iterations.
+    from_schema: https://w3id.org/tvbo
+    owner: UpdateRule
+    domain_of:
+    - RenderSpec
+    - ClassReference
+    - UpdateRule
+    range: boolean
+  requires:
+    name: requires
+    description: Observables required by this update rule
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: UpdateRule
+    domain_of:
+    - UpdateRule
+    - SimulationStudy
+    range: Observation
+    multivalued: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: UpdateRule
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: UpdateRule
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:UpdateRule
+
+```
+</details></div>

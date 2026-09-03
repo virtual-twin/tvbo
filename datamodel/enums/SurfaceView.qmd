@@ -1,0 +1,90 @@
+# Enum: SurfaceView 
+
+
+
+
+_Where the camera sits for a cortical surface. Distinct from `VolumeView`: a mesh is viewed from a side of the brain, a volume is sliced along an anatomical axis, and the two vocabularies do not overlap._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/SurfaceView](https://w3id.org/tvbo/enum/SurfaceView)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| lateral | None | From the side, outward face |
+| medial | None | From the side, inward face |
+| dorsal | None | From above |
+| ventral | None | From below |
+| anterior | None | From the front |
+| posterior | None | From behind |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [view](../slots/view.qmd) | Where the camera sits |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SurfaceView
+description: 'Where the camera sits for a cortical surface. Distinct from `VolumeView`:
+  a mesh is viewed from a side of the brain, a volume is sliced along an anatomical
+  axis, and the two vocabularies do not overlap.'
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  lateral:
+    text: lateral
+    description: From the side, outward face.
+  medial:
+    text: medial
+    description: From the side, inward face.
+  dorsal:
+    text: dorsal
+    description: From above.
+  ventral:
+    text: ventral
+    description: From below.
+  anterior:
+    text: anterior
+    description: From the front.
+  posterior:
+    text: posterior
+    description: From behind.
+
+```
+</details>
+
+</div>

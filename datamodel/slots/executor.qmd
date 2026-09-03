@@ -1,0 +1,98 @@
+# Slot: executor 
+
+
+_Executor to run the pipeline through (Nextflow process.executor)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/executor](https://w3id.org/tvbo/slot/executor)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:executor |
+| native | tvbo:executor |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: executor
+description: Executor to run the pipeline through (Nextflow process.executor).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowEngineConfig
+domain_of:
+- WorkflowEngineConfig
+range: string
+
+```
+</details></div>

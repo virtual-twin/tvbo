@@ -1,0 +1,98 @@
+# Slot: absolute_value 
+
+
+_Absolute value of the score at the time of assessment_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/absolute_value](https://w3id.org/tvbo/dbs/slot/absolute_value)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ClinicalImprovement](../classes/ClinicalImprovement.qmd) | Relative improvement on a defined clinical score |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [ClinicalImprovement](../classes/ClinicalImprovement.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ClinicalImprovement](../classes/ClinicalImprovement.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:absolute_value |
+| native | tvbo_dbs:absolute_value |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: absolute_value
+description: Absolute value of the score at the time of assessment
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: ClinicalImprovement
+domain_of:
+- ClinicalImprovement
+range: float
+
+```
+</details></div>

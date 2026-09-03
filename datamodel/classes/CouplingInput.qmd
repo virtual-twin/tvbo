@@ -1,0 +1,463 @@
+# Class: CouplingInput 
+
+
+_Specification of a coupling input channel for multi-coupling dynamics_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:CouplingInput](https://w3id.org/tvbo/CouplingInput)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class CouplingInput
+    click CouplingInput href "./CouplingInput.html"
+      CouplingInput : description
+        
+          
+    
+        
+        
+        CouplingInput --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CouplingInput : dimension
+        
+          
+    
+        
+        
+        CouplingInput --> "0..1" Integer : dimension
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      CouplingInput : keys
+        
+          
+    
+        
+        
+        CouplingInput --> "*" String : keys
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CouplingInput : local
+        
+          
+    
+        
+        
+        CouplingInput --> "0..1" Boolean : local
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      CouplingInput : name
+        
+          
+    
+        
+        
+        CouplingInput --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CouplingInput : source
+        
+          
+    
+        
+        
+        CouplingInput --> "0..1" String : source
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CouplingInput : symbol
+        
+          
+    
+        
+        
+        CouplingInput --> "0..1" String : symbol
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:CouplingInput](https://w3id.org/tvbo/CouplingInput) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [symbol](../slots/symbol.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [source](../slots/source.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name of the coupling function that feeds this input | direct |
+| [dimension](../slots/dimension.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Dimensionality of the coupling input (number of coupled values) | direct |
+| [keys](../slots/keys.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Named keys for multi-dimensional coupling | direct |
+| [local](../slots/local.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Marks this as a LOCAL (surface/local-connectivity) coupling term rather than ... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) | [coupling_inputs](../slots/coupling_inputs.qmd) | range | [CouplingInput](../classes/CouplingInput.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:CouplingInput |
+| native | tvbo:CouplingInput |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: CouplingInput
+description: Specification of a coupling input channel for multi-coupling dynamics
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+- symbol
+attributes:
+  source:
+    name: source
+    description: 'Name of the coupling function that feeds this input. When omitted,
+      resolved automatically: (1) same name as a coupling function → direct match,
+      (2) single coupling input and single coupling function → auto-mapped, (3) multiple
+      of each → positional order.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: string
+  dimension:
+    name: dimension
+    description: Dimensionality of the coupling input (number of coupled values)
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(1)
+    domain_of:
+    - ToolUnit
+    - CouplingInput
+    range: integer
+  keys:
+    name: keys
+    description: 'Named keys for multi-dimensional coupling. When dimension > 1, provides
+      symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used
+      in equations as variable names.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - CouplingInput
+    range: string
+    multivalued: true
+  local:
+    name: local
+    description: Marks this as a LOCAL (surface/local-connectivity) coupling term
+      rather than a global long-range coupling. Local terms are never wired to the
+      connectome; they evaluate to 0 unless a local/surface connectivity is supplied
+      (TVB's ``local_coupling``). Global coupling inputs (the default) are driven
+      by ``Network.coupling``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(false)
+    domain_of:
+    - CouplingInput
+    range: boolean
+class_uri: tvbo:CouplingInput
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: CouplingInput
+description: Specification of a coupling input channel for multi-coupling dynamics
+from_schema: https://w3id.org/tvbo
+attributes:
+  source:
+    name: source
+    description: 'Name of the coupling function that feeds this input. When omitted,
+      resolved automatically: (1) same name as a coupling function → direct match,
+      (2) single coupling input and single coupling function → auto-mapped, (3) multiple
+      of each → positional order.'
+    from_schema: https://w3id.org/tvbo
+    owner: CouplingInput
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: string
+  dimension:
+    name: dimension
+    description: Dimensionality of the coupling input (number of coupled values)
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(1)
+    owner: CouplingInput
+    domain_of:
+    - ToolUnit
+    - CouplingInput
+    range: integer
+  keys:
+    name: keys
+    description: 'Named keys for multi-dimensional coupling. When dimension > 1, provides
+      symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used
+      in equations as variable names.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: CouplingInput
+    domain_of:
+    - CouplingInput
+    range: string
+    multivalued: true
+  local:
+    name: local
+    description: Marks this as a LOCAL (surface/local-connectivity) coupling term
+      rather than a global long-range coupling. Local terms are never wired to the
+      connectome; they evaluate to 0 unless a local/surface connectivity is supplied
+      (TVB's ``local_coupling``). Global coupling inputs (the default) are driven
+      by ``Network.coupling``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(false)
+    owner: CouplingInput
+    domain_of:
+    - CouplingInput
+    range: boolean
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: CouplingInput
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: CouplingInput
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  symbol:
+    name: symbol
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: CouplingInput
+    domain_of:
+    - ToolUnit
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - DerivedParameter
+    - DerivedVariable
+    range: string
+class_uri: tvbo:CouplingInput
+
+```
+</details></div>

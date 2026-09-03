@@ -1,0 +1,87 @@
+# Slot: coordinate_space 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/coordinate_space](https://w3id.org/tvbo/slot/coordinate_space)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DBSDataset](../classes/DBSDataset.qmd) | Collection of data related to a specific DBS study |  no  |
+| [DBSSubject](../classes/DBSSubject.qmd) | Human or animal subject receiving DBS |  no  |
+| [Electrode](../classes/Electrode.qmd) | Implanted DBS electrode and contact geometry |  no  |
+| [EField](../classes/EField.qmd) | Simulated electric field from DBS modeling |  no  |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+| [SpatialDomain](../classes/SpatialDomain.qmd) |  |  no  |
+| [Mesh](../classes/Mesh.qmd) | Triangle (or higher-order) mesh geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [DBSDataset](../classes/DBSDataset.qmd), [DBSSubject](../classes/DBSSubject.qmd), [Electrode](../classes/Electrode.qmd), [EField](../classes/EField.qmd), [Network](../classes/Network.qmd), [SpatialDomain](../classes/SpatialDomain.qmd), [Mesh](../classes/Mesh.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:coordinate_space |
+| native | tvbo:coordinate_space |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: coordinate_space
+domain_of:
+- DBSDataset
+- DBSSubject
+- Electrode
+- EField
+- Network
+- SpatialDomain
+- Mesh
+range: string
+
+```
+</details></div>

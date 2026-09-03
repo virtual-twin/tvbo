@@ -1,0 +1,102 @@
+# Slot: maintainer 
+
+
+_Current maintainer(s) or responsible organization(s)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:maintainer](http://schema.org/maintainer)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+| Slot URI | [schema:maintainer](http://schema.org/maintainer) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:maintainer |
+| native | tvbo_sw:maintainer |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: maintainer
+description: Current maintainer(s) or responsible organization(s).
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+slot_uri: schema:maintainer
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: string
+multivalued: true
+
+```
+</details></div>

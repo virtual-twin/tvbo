@@ -1,0 +1,563 @@
+# Class: MeasureSpec 
+
+
+_Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:MeasureSpec](https://w3id.org/tvbo/MeasureSpec)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class MeasureSpec
+    click MeasureSpec href "./MeasureSpec.html"
+      MeasureSpec : concept_iri
+        
+          
+    
+        
+        
+        MeasureSpec --> "0..1" String : concept_iri
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      MeasureSpec : description
+        
+          
+    
+        
+        
+        MeasureSpec --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      MeasureSpec : measure_type
+        
+          
+    
+        
+        
+        MeasureSpec --> "0..1" String : measure_type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      MeasureSpec : name
+        
+          
+    
+        
+        
+        MeasureSpec --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      MeasureSpec : task_iri
+        
+          
+    
+        
+        
+        MeasureSpec --> "0..1" String : task_iri
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      MeasureSpec : unit
+        
+          
+    
+        
+        
+        MeasureSpec --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:MeasureSpec](https://w3id.org/tvbo/MeasureSpec) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Must match the measure name in ``Phenotype | direct |
+| [task_iri](../slots/task_iri.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Cognitive Atlas (``cogat:``) IRI of the assessment instrument / task that pro... | direct |
+| [concept_iri](../slots/concept_iri.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Cognitive Atlas IRI of the cognitive construct measured (e | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Unit annotation (e | direct |
+| [measure_type](../slots/measure_type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Sub-type within the phenotype (e | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Phenotype](../classes/Phenotype.qmd) | [measure_specs](../slots/measure_specs.qmd) | range | [MeasureSpec](../classes/MeasureSpec.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:MeasureSpec |
+| native | tvbo:MeasureSpec |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: MeasureSpec
+description: Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``.
+from_schema: https://w3id.org/tvbo
+attributes:
+  name:
+    name: name
+    description: Must match the measure name in ``Phenotype.measures``.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  task_iri:
+    name: task_iri
+    description: Cognitive Atlas (``cogat:``) IRI of the assessment instrument / task
+      that produced this measure (e.g. ``cogat:trm_4a3fd79d09cba`` for PMAT24).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - MeasureSpec
+    range: string
+  concept_iri:
+    name: concept_iri
+    description: Cognitive Atlas IRI of the cognitive construct measured (e.g. ``cogat:trm_521ef89ce5e84``
+      for fluid intelligence).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - MeasureSpec
+    range: string
+  unit:
+    name: unit
+    description: Unit annotation (e.g. 'count', 'ms', 'z-score').
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  measure_type:
+    name: measure_type
+    description: Sub-type within the phenotype (e.g. 'raw', 'unadjusted', 'age-corrected',
+      'derived', 'RT', 'accuracy').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - MeasureSpec
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:MeasureSpec
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: MeasureSpec
+description: Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``.
+from_schema: https://w3id.org/tvbo
+attributes:
+  name:
+    name: name
+    description: Must match the measure name in ``Phenotype.measures``.
+    from_schema: https://w3id.org/tvbo
+    owner: MeasureSpec
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  task_iri:
+    name: task_iri
+    description: Cognitive Atlas (``cogat:``) IRI of the assessment instrument / task
+      that produced this measure (e.g. ``cogat:trm_4a3fd79d09cba`` for PMAT24).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: MeasureSpec
+    domain_of:
+    - MeasureSpec
+    range: string
+  concept_iri:
+    name: concept_iri
+    description: Cognitive Atlas IRI of the cognitive construct measured (e.g. ``cogat:trm_521ef89ce5e84``
+      for fluid intelligence).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: MeasureSpec
+    domain_of:
+    - MeasureSpec
+    range: string
+  unit:
+    name: unit
+    description: Unit annotation (e.g. 'count', 'ms', 'z-score').
+    from_schema: https://w3id.org/tvbo
+    owner: MeasureSpec
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  measure_type:
+    name: measure_type
+    description: Sub-type within the phenotype (e.g. 'raw', 'unadjusted', 'age-corrected',
+      'derived', 'RT', 'accuracy').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: MeasureSpec
+    domain_of:
+    - MeasureSpec
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    owner: MeasureSpec
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:MeasureSpec
+
+```
+</details></div>

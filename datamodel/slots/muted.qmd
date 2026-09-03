@@ -1,0 +1,99 @@
+# Slot: muted 
+
+
+_Hairlines and de-emphasised strokes: present, and not competing._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/muted](https://w3id.org/tvbo/slot/muted)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Palette](../classes/Palette.qmd) | A project's colours, named by role |  no  |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Palette](../classes/Palette.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Palette](../classes/Palette.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:muted |
+| native | tvbo:muted |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: muted
+description: 'Hairlines and de-emphasised strokes: present, and not competing.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Palette
+domain_of:
+- Palette
+range: string
+
+```
+</details></div>

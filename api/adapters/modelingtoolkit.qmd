@@ -1,0 +1,97 @@
+# modelingtoolkit { #tvbo.adapters.modelingtoolkit }
+
+`adapters.modelingtoolkit`
+
+Standalone ModelingToolkit.jl backend adapter for SimulationExperiment.
+
+Pure MTK adapter using @component + mtkcompile + ODEProblem + solve.
+No dependency on NetworkDynamics.jl.
+
+Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to MTK Julia code, MTK's ``mtkcompile`` performs structural transformations (e.g. higher-order ODE lowering), and the resulting equations are extracted back into SymPy.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [MTK_PACKAGES](#tvbo.adapters.modelingtoolkit.MTK_PACKAGES) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [ModelingToolkitAdapter](#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter) | Adapter for running SimulationExperiment via pure ModelingToolkit.jl. |
+
+### ModelingToolkitAdapter { #tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter }
+
+```python
+adapters.modelingtoolkit.ModelingToolkitAdapter(source=None)
+```
+
+Adapter for running SimulationExperiment via pure ModelingToolkit.jl.
+
+Uses @component syntax (MTK v11+), mtkcompile, ODEProblem, and solve.
+
+Accepts ``Dynamics``, ``SimulationExperiment``, or no argument::
+
+    adapter = ModelingToolkitAdapter()              # empty, set .experiment later
+    adapter = ModelingToolkitAdapter(dynamics)      # wraps in minimal experiment
+    adapter = ModelingToolkitAdapter(exp)            # full experiment
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [lower](#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.lower) | Lower higher-order ODEs via MTK's ``mtkcompile``. |
+| [run](#tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.run) | Run simulation using pure ModelingToolkit.jl. |
+
+##### lower { #tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.lower }
+
+```python
+adapters.modelingtoolkit.ModelingToolkitAdapter.lower(
+    source=None,
+    returns='auto',
+    **kwargs,
+)
+```
+
+Lower higher-order ODEs via MTK's ``mtkcompile``.
+
+Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile → lowered first-order SymPy equations, optionally wrapped back into a tvbo ``Dynamics`` or ``SimulationExperiment``.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+source : Dynamics | SimulationExperiment, optional
+    The system to lower. Can also be set at init time.
+returns : str
+    What to return:
+
+    - ``"sympy"`` — dict of SymPy equations, unknowns, parameters
+    - ``"dynamics"`` — tvbo ``Dynamics`` with lowered equations
+    - ``"experiment"`` — tvbo ``SimulationExperiment`` with lowered
+      dynamics
+    - ``"auto"`` (default) — same type as the input: ``Dynamics``
+      if given ``Dynamics``, ``SimulationExperiment`` if given an
+      experiment, ``"sympy"`` if empty.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+dict | Dynamics | SimulationExperiment
+
+##### run { #tvbo.adapters.modelingtoolkit.ModelingToolkitAdapter.run }
+
+```python
+adapters.modelingtoolkit.ModelingToolkitAdapter.run(**kwargs)
+```
+
+Run simulation using pure ModelingToolkit.jl.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+ExperimentResult
+    Simulation results with named dimensions and coordinates.

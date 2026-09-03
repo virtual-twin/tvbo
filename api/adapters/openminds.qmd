@@ -1,0 +1,178 @@
+# openminds { #tvbo.adapters.openminds }
+
+`adapters.openminds`
+
+OpenMINDS JSON-LD conversion utilities for TVBO.
+
+This module provides bidirectional conversion between TVBO datamodel objects and openMINDS-compatible JSON-LD format.
+
+This module is the **single source of truth** for all openMINDS type mappings.
+Both runtime conversion and schema generation import from here.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [EXTERNAL_TYPE_MAPPINGS](#tvbo.adapters.openminds.EXTERNAL_TYPE_MAPPINGS) |  |
+| [LINKML_TO_JSON_TYPE](#tvbo.adapters.openminds.LINKML_TO_JSON_TYPE) |  |
+| [OPENMINDS_CATEGORIES](#tvbo.adapters.openminds.OPENMINDS_CATEGORIES) |  |
+| [OPENMINDS_CONTEXT](#tvbo.adapters.openminds.OPENMINDS_CONTEXT) |  |
+| [OPENMINDS_EXTENDS](#tvbo.adapters.openminds.OPENMINDS_EXTENDS) |  |
+| [SKIP_CLASSES](#tvbo.adapters.openminds.SKIP_CLASSES) |  |
+| [SKIP_FIELDS](#tvbo.adapters.openminds.SKIP_FIELDS) |  |
+| [TVBO_TO_OPENMINDS_TYPE](#tvbo.adapters.openminds.TVBO_TO_OPENMINDS_TYPE) |  |
+| [TVBO_TYPE_MAPPINGS](#tvbo.adapters.openminds.TVBO_TYPE_MAPPINGS) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [experiment_from_openminds](#tvbo.adapters.openminds.experiment_from_openminds) | Convert openMINDS JSON-LD to a dict suitable for SimulationExperiment. |
+| [experiment_to_openminds](#tvbo.adapters.openminds.experiment_to_openminds) | Convert a SimulationExperiment to openMINDS JSON-LD format. |
+| [load_openminds](#tvbo.adapters.openminds.load_openminds) | Load an openMINDS JSON-LD file and return conversion-ready dict. |
+| [save_openminds](#tvbo.adapters.openminds.save_openminds) | Save a TVBO object as openMINDS JSON-LD file. |
+| [study_from_openminds](#tvbo.adapters.openminds.study_from_openminds) | Convert openMINDS JSON-LD to a dict suitable for SimulationStudy. |
+| [study_to_openminds](#tvbo.adapters.openminds.study_to_openminds) | Convert a SimulationStudy to openMINDS JSON-LD format. |
+
+### experiment_from_openminds { #tvbo.adapters.openminds.experiment_from_openminds }
+
+```python
+adapters.openminds.experiment_from_openminds(data)
+```
+
+Convert openMINDS JSON-LD to a dict suitable for SimulationExperiment.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+data : dict
+    OpenMINDS JSON-LD dictionary.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    Dictionary that can be passed to SimulationExperiment(**dict).
+
+### experiment_to_openminds { #tvbo.adapters.openminds.experiment_to_openminds }
+
+```python
+adapters.openminds.experiment_to_openminds(
+    experiment,
+    base_id=None,
+    include_context=True,
+)
+```
+
+Convert a SimulationExperiment to openMINDS JSON-LD format.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+experiment : SimulationExperiment
+    The experiment to convert.
+base_id : str, optional
+    Base URI for generating @id values. If not provided, uses a default.
+include_context : bool
+    Whether to include the @context in the output.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    OpenMINDS-compatible JSON-LD dictionary.
+
+### load_openminds { #tvbo.adapters.openminds.load_openminds }
+
+```python
+adapters.openminds.load_openminds(filepath)
+```
+
+Load an openMINDS JSON-LD file and return conversion-ready dict.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+filepath : str
+    Path to JSON-LD file.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    Dictionary suitable for constructing TVBO objects.
+
+### save_openminds { #tvbo.adapters.openminds.save_openminds }
+
+```python
+adapters.openminds.save_openminds(obj, filepath, base_id=None, indent=2)
+```
+
+Save a TVBO object as openMINDS JSON-LD file.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+obj : SimulationExperiment or SimulationStudy
+    The object to save.
+filepath : str
+    Output file path (should end in .jsonld or .json).
+base_id : str, optional
+    Base URI for @id values.
+indent : int
+    JSON indentation level.
+
+### study_from_openminds { #tvbo.adapters.openminds.study_from_openminds }
+
+```python
+adapters.openminds.study_from_openminds(data)
+```
+
+Convert openMINDS JSON-LD to a dict suitable for SimulationStudy.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+data : dict
+    OpenMINDS JSON-LD dictionary.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    Dictionary that can be passed to SimulationStudy(**dict).
+
+### study_to_openminds { #tvbo.adapters.openminds.study_to_openminds }
+
+```python
+adapters.openminds.study_to_openminds(study, base_id=None, include_context=True)
+```
+
+Convert a SimulationStudy to openMINDS JSON-LD format.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+study : SimulationStudy
+    The study to convert.
+base_id : str, optional
+    Base URI for generating @id values.
+include_context : bool
+    Whether to include the @context in the output.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    OpenMINDS-compatible JSON-LD dictionary.

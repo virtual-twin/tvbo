@@ -1,0 +1,94 @@
+# Slot: history 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/history](https://w3id.org/tvbo/slot/history)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StateVariable](../classes/StateVariable.qmd) |  |  no  |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [TimeSeries](../classes/TimeSeries.qmd) |
+| Domain Of | [StateVariable](../classes/StateVariable.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [StateVariable](../classes/StateVariable.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:history |
+| native | tvbo:history |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: history
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: StateVariable
+domain_of:
+- StateVariable
+range: TimeSeries
+inlined: true
+
+```
+</details></div>

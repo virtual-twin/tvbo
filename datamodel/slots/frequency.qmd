@@ -1,0 +1,92 @@
+# Slot: frequency 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/frequency](https://w3id.org/tvbo/dbs/slot/frequency)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StimulationSetting](../classes/StimulationSetting.qmd) | DBS parameters for a specific session |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Parameter](../classes/Parameter.qmd) |
+| Domain Of | [StimulationSetting](../classes/StimulationSetting.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [StimulationSetting](../classes/StimulationSetting.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:frequency |
+| native | tvbo_dbs:frequency |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: frequency
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: StimulationSetting
+domain_of:
+- StimulationSetting
+range: Parameter
+
+```
+</details></div>

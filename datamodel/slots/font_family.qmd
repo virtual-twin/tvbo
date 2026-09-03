@@ -1,0 +1,105 @@
+# Slot: font_family 
+
+
+_The typefaces to set text in, most-wanted first (`[Helvetica, Arial, DejaVu Sans]`). A generic family (`sans-serif`, `serif`, `monospace`) as the first entry selects that family outright; otherwise the list is taken as the concrete faces to try within `sans-serif`, which is how a person means it. Type SIZE is not here: `Figure.font_size` owns it, because it is a property of the figure's print size rather than of the project's look._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/font_family](https://w3id.org/tvbo/slot/font_family)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Theme](../classes/Theme.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Theme](../classes/Theme.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:font_family |
+| native | tvbo:font_family |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: font_family
+description: 'The typefaces to set text in, most-wanted first (`[Helvetica, Arial,
+  DejaVu Sans]`). A generic family (`sans-serif`, `serif`, `monospace`) as the first
+  entry selects that family outright; otherwise the list is taken as the concrete
+  faces to try within `sans-serif`, which is how a person means it. Type SIZE is not
+  here: `Figure.font_size` owns it, because it is a property of the figure''s print
+  size rather than of the project''s look.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Theme
+domain_of:
+- Theme
+range: string
+multivalued: true
+
+```
+</details></div>

@@ -1,0 +1,98 @@
+# Slot: detail 
+
+
+_Non-visual grouping dim (e.g. the hue/iterate dim)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/detail](https://w3id.org/tvbo/slot/detail)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Encoding](../classes/Encoding.qmd) | Map visual channels to container dims/coords/vars, by NAME (keyed, never posi... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Encoding](../classes/Encoding.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Encoding](../classes/Encoding.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:detail |
+| native | tvbo:detail |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: detail
+description: Non-visual grouping dim (e.g. the hue/iterate dim).
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Encoding
+domain_of:
+- Encoding
+range: string
+
+```
+</details></div>

@@ -1,0 +1,277 @@
+# Class: AlgorithmInclude 
+
+
+_Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different hyperparameter values._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:AlgorithmInclude](https://w3id.org/tvbo/AlgorithmInclude)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class AlgorithmInclude
+    click AlgorithmInclude href "./AlgorithmInclude.html"
+      AlgorithmInclude : algorithm
+        
+          
+    
+        
+        
+        AlgorithmInclude --> "1" Algorithm : algorithm
+        click Algorithm href "./Algorithm.html"
+    
+
+        
+      AlgorithmInclude : arguments
+        
+          
+    
+        
+        
+        AlgorithmInclude --> "*" Parameter : arguments
+        click Parameter href "./Parameter.html"
+    
+
+        
+      AlgorithmInclude : inner_iterations
+        
+          
+    
+        
+        
+        AlgorithmInclude --> "0..1" Integer : inner_iterations
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      AlgorithmInclude : mode
+        
+          
+    
+        
+        
+        AlgorithmInclude --> "0..1" AlgorithmCompositionMode : mode
+        click AlgorithmCompositionMode href "../../enums/AlgorithmCompositionMode.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:AlgorithmInclude](https://w3id.org/tvbo/AlgorithmInclude) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [algorithm](../slots/algorithm.qmd) | 1 <br/> [Algorithm](../classes/Algorithm.qmd) | Reference to the algorithm to include | direct |
+| [arguments](../slots/arguments.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) | Override hyperparameter values for the included algorithm | direct |
+| [mode](../slots/mode.qmd) | 0..1 <br/> [AlgorithmCompositionMode](../enums/AlgorithmCompositionMode.qmd) | How the included algorithm composes with the outer one | direct |
+| [inner_iterations](../slots/inner_iterations.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | For mode=nested only: number of inner-loop iterations to run per outer iterat... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | [includes](../slots/includes.qmd) | range | [AlgorithmInclude](../classes/AlgorithmInclude.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:AlgorithmInclude |
+| native | tvbo:AlgorithmInclude |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: AlgorithmInclude
+description: Reference to an included algorithm with optional argument overrides.
+  Allows combining algorithms with different hyperparameter values.
+from_schema: https://w3id.org/tvbo
+attributes:
+  algorithm:
+    name: algorithm
+    description: Reference to the algorithm to include
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Digest
+    - OptimizationStage
+    - AlgorithmInclude
+    - Continuation
+    range: Algorithm
+    required: true
+    inlined: false
+  arguments:
+    name: arguments
+    description: Override hyperparameter values for the included algorithm. Maps parameter
+      names to new values.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Function
+    - FunctionCall
+    - AlgorithmInclude
+    - AlgorithmStage
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  mode:
+    name: mode
+    description: How the included algorithm composes with the outer one. 'combined'
+      (default) merges its update rules into the outer loop (applied once per outer
+      iteration); 'nested' runs it as a converging inner loop on each outer iteration
+      before the outer update rules. Use 'nested' when the inner algorithm maintains
+      an invariant the outer would perturb (e.g. FIC holding the working point while
+      EIB retunes coupling).
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(combined)
+    domain_of:
+    - StimulationSetting
+    - Exploration
+    - AlgorithmInclude
+    - Differentiation
+    range: AlgorithmCompositionMode
+  inner_iterations:
+    name: inner_iterations
+    description: 'For mode=nested only: number of inner-loop iterations to run per
+      outer iteration. Defaults to the included algorithm''s own n_iterations. A small
+      value (e.g. 5-10) is usually enough to correct the drift introduced by one outer
+      step.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - AlgorithmInclude
+    range: integer
+class_uri: tvbo:AlgorithmInclude
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: AlgorithmInclude
+description: Reference to an included algorithm with optional argument overrides.
+  Allows combining algorithms with different hyperparameter values.
+from_schema: https://w3id.org/tvbo
+attributes:
+  algorithm:
+    name: algorithm
+    description: Reference to the algorithm to include
+    from_schema: https://w3id.org/tvbo
+    owner: AlgorithmInclude
+    domain_of:
+    - Digest
+    - OptimizationStage
+    - AlgorithmInclude
+    - Continuation
+    range: Algorithm
+    required: true
+    inlined: false
+  arguments:
+    name: arguments
+    description: Override hyperparameter values for the included algorithm. Maps parameter
+      names to new values.
+    from_schema: https://w3id.org/tvbo
+    owner: AlgorithmInclude
+    domain_of:
+    - Function
+    - FunctionCall
+    - AlgorithmInclude
+    - AlgorithmStage
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  mode:
+    name: mode
+    description: How the included algorithm composes with the outer one. 'combined'
+      (default) merges its update rules into the outer loop (applied once per outer
+      iteration); 'nested' runs it as a converging inner loop on each outer iteration
+      before the outer update rules. Use 'nested' when the inner algorithm maintains
+      an invariant the outer would perturb (e.g. FIC holding the working point while
+      EIB retunes coupling).
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(combined)
+    owner: AlgorithmInclude
+    domain_of:
+    - StimulationSetting
+    - Exploration
+    - AlgorithmInclude
+    - Differentiation
+    range: AlgorithmCompositionMode
+  inner_iterations:
+    name: inner_iterations
+    description: 'For mode=nested only: number of inner-loop iterations to run per
+      outer iteration. Defaults to the included algorithm''s own n_iterations. A small
+      value (e.g. 5-10) is usually enough to correct the drift introduced by one outer
+      step.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: AlgorithmInclude
+    domain_of:
+    - AlgorithmInclude
+    range: integer
+class_uri: tvbo:AlgorithmInclude
+
+```
+</details></div>

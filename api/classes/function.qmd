@@ -1,0 +1,350 @@
+# function { #tvbo.classes.function }
+
+`classes.function`
+
+Function Classes.
+
+Extended Function and LossFunction classes with code generation methods.
+Inherits from the LinkML datamodel and adds rendering/execution capabilities.
+
+
+
+## Usage {.doc-section .doc-section-usage}
+
+
+From YAML file:
+
+    from tvbo import Function, LossFunction
+
+    func = Function.from_file("correlation.yaml")
+    code = func.render_code(format='jax')
+    callable_fn = func.to_callable()
+
+From YAML string:
+
+    func = Function.from_string(yaml_string)
+
+From datamodel object:
+
+    from tvbo.datamodel import schema as tvbo_datamodel
+    dm_func = tvbo_datamodel.Function(name='sigmoid', ...)
+    func = Function.from_datamodel(dm_func)
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Function](#tvbo.classes.function.Function) | Extended Function class with code generation and execution methods. |
+| [LossFunction](#tvbo.classes.function.LossFunction) | Extended LossFunction class with code generation and execution methods. |
+
+### Function { #tvbo.classes.function.Function }
+
+```python
+classes.function.Function(name='Function', **kwargs)
+```
+
+Extended Function class with code generation and execution methods.
+
+Inherits all schema fields from tvbo_datamodel.Function and adds:
+- Factory constructors: from_file, from_string, from_datamodel
+- Code generation: render_code, to_jax, to_numpy
+- Execution: to_callable
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [latex](#tvbo.classes.function.Function.latex) | Return LaTeX representation of the function equation. |
+| [sympy_expression](#tvbo.classes.function.Function.sympy_expression) | Return the parsed SymPy expression for this function's equation. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [from_datamodel](#tvbo.classes.function.Function.from_datamodel) | Create Function from a tvbo_datamodel.Function instance. |
+| [from_file](#tvbo.classes.function.Function.from_file) | Load Function from a YAML file. |
+| [from_string](#tvbo.classes.function.Function.from_string) | Load Function from a YAML string. |
+| [render_code](#tvbo.classes.function.Function.render_code) | Generate Python code for this function. |
+| [to_callable](#tvbo.classes.function.Function.to_callable) | Generate and execute function code, returning the callable. |
+| [to_jax](#tvbo.classes.function.Function.to_jax) | Generate JAX code for this function. |
+| [to_numpy](#tvbo.classes.function.Function.to_numpy) | Generate NumPy code for this function. |
+| [to_python](#tvbo.classes.function.Function.to_python) | Generate pure Python code for this function. |
+
+##### from_datamodel { #tvbo.classes.function.Function.from_datamodel }
+
+```python
+classes.function.Function.from_datamodel(func)
+```
+
+Create Function from a tvbo_datamodel.Function instance.
+
+##### from_file { #tvbo.classes.function.Function.from_file }
+
+```python
+classes.function.Function.from_file(path)
+```
+
+Load Function from a YAML file.
+
+##### from_string { #tvbo.classes.function.Function.from_string }
+
+```python
+classes.function.Function.from_string(yaml_str)
+```
+
+Load Function from a YAML string.
+
+##### render_code { #tvbo.classes.function.Function.render_code }
+
+```python
+classes.function.Function.render_code(
+    format='jax',
+    user_functions=None,
+    render_func=None,
+)
+```
+
+Generate Python code for this function.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+format : str
+    Output format: 'jax', 'numpy', 'python'
+user_functions : dict, optional
+    Custom function name mappings for the printer.
+    Example: {'sigmoid': 'sigmoid'} to preserve function name
+render_func : callable, optional
+    Custom render function for model context.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+str
+    Python code string defining the function
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> func = Function.from_string(yaml_str)
+>>> print(func.render_code())
+def sigmoid(x):
+    return 1/(1 + jnp.exp(-x))
+
+##### to_callable { #tvbo.classes.function.Function.to_callable }
+
+```python
+classes.function.Function.to_callable(
+    format='jax',
+    user_functions=None,
+    namespace=None,
+)
+```
+
+Generate and execute function code, returning the callable.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+format : str
+    Output format: 'jax', 'numpy'
+user_functions : dict, optional
+    Custom function name mappings
+namespace : dict, optional
+    Namespace for exec(). If None, creates one with jnp/np imports.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+callable
+    The generated function as a callable
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> func = Function.from_string(sigmoid_yaml)
+>>> sigmoid = func.to_callable()
+>>> sigmoid(0.0)
+0.5
+
+##### to_jax { #tvbo.classes.function.Function.to_jax }
+
+```python
+classes.function.Function.to_jax(**kwargs)
+```
+
+Generate JAX code for this function.
+
+##### to_numpy { #tvbo.classes.function.Function.to_numpy }
+
+```python
+classes.function.Function.to_numpy(**kwargs)
+```
+
+Generate NumPy code for this function.
+
+##### to_python { #tvbo.classes.function.Function.to_python }
+
+```python
+classes.function.Function.to_python(**kwargs)
+```
+
+Generate pure Python code for this function.
+
+### LossFunction { #tvbo.classes.function.LossFunction }
+
+```python
+classes.function.LossFunction(name='LossFunction', **kwargs)
+```
+
+Extended LossFunction class with code generation and execution methods.
+
+Inherits all schema fields from tvbo_datamodel.LossFunction and adds:
+- Factory constructors: from_file, from_string, from_datamodel
+- Code generation: render_code, to_jax, to_numpy
+- Execution: to_callable
+
+LossFunction extends Function with aggregation specification for per-element losses (e.g., mean over nodes).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [aggregation_dimension](#tvbo.classes.function.LossFunction.aggregation_dimension) | Return the aggregation dimension as a string (e.g., 'node'). |
+| [aggregation_type](#tvbo.classes.function.LossFunction.aggregation_type) | Return the aggregation type as a string (e.g., 'mean', 'sum'). |
+| [latex](#tvbo.classes.function.LossFunction.latex) | Return LaTeX representation of the loss function equation. |
+| [sympy_expression](#tvbo.classes.function.LossFunction.sympy_expression) | Return the parsed SymPy expression for this function's equation. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [from_datamodel](#tvbo.classes.function.LossFunction.from_datamodel) | Create LossFunction from a tvbo_datamodel.LossFunction instance. |
+| [from_file](#tvbo.classes.function.LossFunction.from_file) | Load LossFunction from a YAML file. |
+| [from_string](#tvbo.classes.function.LossFunction.from_string) | Load LossFunction from a YAML string. |
+| [render_code](#tvbo.classes.function.LossFunction.render_code) | Generate Python code for this loss function with aggregation. |
+| [to_callable](#tvbo.classes.function.LossFunction.to_callable) | Generate and execute loss function code, returning the callable. |
+| [to_jax](#tvbo.classes.function.LossFunction.to_jax) | Generate JAX code for this loss function. |
+| [to_numpy](#tvbo.classes.function.LossFunction.to_numpy) | Generate NumPy code for this loss function. |
+
+##### from_datamodel { #tvbo.classes.function.LossFunction.from_datamodel }
+
+```python
+classes.function.LossFunction.from_datamodel(func)
+```
+
+Create LossFunction from a tvbo_datamodel.LossFunction instance.
+
+##### from_file { #tvbo.classes.function.LossFunction.from_file }
+
+```python
+classes.function.LossFunction.from_file(path)
+```
+
+Load LossFunction from a YAML file.
+
+##### from_string { #tvbo.classes.function.LossFunction.from_string }
+
+```python
+classes.function.LossFunction.from_string(yaml_str)
+```
+
+Load LossFunction from a YAML string.
+
+##### render_code { #tvbo.classes.function.LossFunction.render_code }
+
+```python
+classes.function.LossFunction.render_code(
+    format='jax',
+    user_functions=None,
+    inner_func_names=None,
+)
+```
+
+Generate Python code for this loss function with aggregation.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+format : str
+    Output format: 'jax', 'numpy'
+user_functions : dict, optional
+    Custom function name mappings
+inner_func_names : list, optional
+    Names of inner functions that should be recognized.
+    Example: ['correlation'] for "1 - correlation(x, y)"
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+str
+    Python code string defining the loss function
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> loss = LossFunction.from_string(loss_yaml)
+>>> print(loss.render_code(inner_func_names=['correlation']))
+def spectral_loss(sim, target):
+    def _per_element_loss(sim, target):
+        return 1 - correlation(sim, target)
+    per_element_losses = jax.vmap(_per_element_loss)(sim, target)
+    return jnp.mean(per_element_losses)
+
+##### to_callable { #tvbo.classes.function.LossFunction.to_callable }
+
+```python
+classes.function.LossFunction.to_callable(
+    format='jax',
+    user_functions=None,
+    inner_func_names=None,
+    namespace=None,
+)
+```
+
+Generate and execute loss function code, returning the callable.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+format : str
+    Output format: 'jax', 'numpy'
+user_functions : dict, optional
+    Custom function name mappings
+inner_func_names : list, optional
+    Names of inner functions to recognize
+namespace : dict, optional
+    Namespace for exec(). If None, creates one with jnp/np/jax imports.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+callable
+    The generated loss function as a callable
+
+##### to_jax { #tvbo.classes.function.LossFunction.to_jax }
+
+```python
+classes.function.LossFunction.to_jax(**kwargs)
+```
+
+Generate JAX code for this loss function.
+
+##### to_numpy { #tvbo.classes.function.LossFunction.to_numpy }
+
+```python
+classes.function.LossFunction.to_numpy(**kwargs)
+```
+
+Generate NumPy code for this loss function.

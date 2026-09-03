@@ -1,0 +1,98 @@
+# Slot: handle_length 
+
+
+_Length of each entry's sample line._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/handle_length](https://w3id.org/tvbo/slot/handle_length)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Legend](../classes/Legend.qmd) | A panel's key: whether it is drawn, where it sits, and the three things a fig... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Legend](../classes/Legend.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Legend](../classes/Legend.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:handle_length |
+| native | tvbo:handle_length |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: handle_length
+description: Length of each entry's sample line.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Legend
+domain_of:
+- Legend
+range: float
+
+```
+</details></div>

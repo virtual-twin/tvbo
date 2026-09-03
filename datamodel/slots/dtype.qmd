@@ -1,0 +1,83 @@
+# Slot: dtype 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/dtype](https://w3id.org/tvbo/slot/dtype)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Matrix](../classes/Matrix.qmd) | Adjacency matrix of a network |  no  |
+| [CachedArray](../classes/CachedArray.qmd) | One numeric array inside a cached-result `` |  no  |
+| [NamedArray](../classes/NamedArray.qmd) | A named numeric array |  no  |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+| [NDArray](../classes/NDArray.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Matrix](../classes/Matrix.qmd), [CachedArray](../classes/CachedArray.qmd), [NamedArray](../classes/NamedArray.qmd), [Edge](../classes/Edge.qmd), [NDArray](../classes/NDArray.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:dtype |
+| native | tvbo:dtype |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: dtype
+domain_of:
+- Matrix
+- CachedArray
+- NamedArray
+- Edge
+- NDArray
+range: string
+
+```
+</details></div>

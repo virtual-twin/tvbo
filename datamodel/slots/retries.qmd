@@ -1,0 +1,106 @@
+# Slot: retries 
+
+
+_Automatic retries per failed task. Unset means none._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/retries](https://w3id.org/tvbo/slot/retries)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+
+### Value Constraints
+
+| Property | Value |
+| --- | --- |
+| Minimum Value | 0 |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:retries |
+| native | tvbo:retries |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: retries
+description: Automatic retries per failed task. Unset means none.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowConfig
+domain_of:
+- WorkflowConfig
+range: integer
+minimum_value: 0
+
+```
+</details></div>

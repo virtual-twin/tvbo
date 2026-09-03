@@ -1,0 +1,98 @@
+# Slot: software_environment 
+
+
+_Software environment used to generate this data._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/software_environment](https://w3id.org/tvbo/slot/software_environment)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+| Domain Of | [TimeSeries](../classes/TimeSeries.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [TimeSeries](../classes/TimeSeries.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:software_environment |
+| native | tvbo:software_environment |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: software_environment
+description: Software environment used to generate this data.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: TimeSeries
+domain_of:
+- TimeSeries
+range: SoftwareEnvironment
+
+```
+</details></div>

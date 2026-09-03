@@ -1,0 +1,105 @@
+# Slot: graph_generator 
+
+
+_Graph generator specification.  When set, overrides explicit edges/nodes for graph construction.  The type field is a free string; StandardGraphType lists well-known types that get automatic code generation across backends._
+
+__
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/graph_generator](https://w3id.org/tvbo/slot/graph_generator)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [GraphGenerator](../classes/GraphGenerator.qmd) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:graph_generator |
+| native | tvbo:graph_generator |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: graph_generator
+description: 'Graph generator specification.  When set, overrides explicit edges/nodes
+  for graph construction.  The type field is a free string; StandardGraphType lists
+  well-known types that get automatic code generation across backends.
+
+  '
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Network
+domain_of:
+- Network
+range: GraphGenerator
+inlined: true
+
+```
+</details></div>

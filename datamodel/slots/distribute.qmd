@@ -1,0 +1,99 @@
+# Slot: distribute 
+
+
+_How exploration axes map onto the vectorized vs fanned-out tiers._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/distribute](https://w3id.org/tvbo/slot/distribute)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [DistributionConfig](../classes/DistributionConfig.qmd) |
+| Domain Of | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:distribute |
+| native | tvbo:distribute |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: distribute
+description: How exploration axes map onto the vectorized vs fanned-out tiers.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowConfig
+domain_of:
+- WorkflowConfig
+range: DistributionConfig
+inlined: true
+
+```
+</details></div>

@@ -1,0 +1,101 @@
+# Slot: count 
+
+
+_A structural tally computed from the specification, not a run: ``<study>.<collection>`` counts a collection on a nested study named by its citekey or label (e.g. ``Jansen1995.figures``), resolved at any depth, or a bare ``<collection>`` counts one on the study holding the binding (e.g. ``studies``). Mutually exclusive with ``used`` and ``value``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/count](https://w3id.org/tvbo/slot/count)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ResultBinding](../classes/ResultBinding.qmd) | One entry in a study's results manifest: a manuscript key bound to the value ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ResultBinding](../classes/ResultBinding.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ResultBinding](../classes/ResultBinding.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:count |
+| native | tvbo:count |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: count
+description: 'A structural tally computed from the specification, not a run: ``<study>.<collection>``
+  counts a collection on a nested study named by its citekey or label (e.g. ``Jansen1995.figures``),
+  resolved at any depth, or a bare ``<collection>`` counts one on the study holding
+  the binding (e.g. ``studies``). Mutually exclusive with ``used`` and ``value``.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ResultBinding
+domain_of:
+- ResultBinding
+range: string
+
+```
+</details></div>

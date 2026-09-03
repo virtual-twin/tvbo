@@ -1,0 +1,101 @@
+# Slot: include 
+
+
+_Extra file globs to add beyond the recipes, derived containers, figures and manifest included automatically._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/include](https://w3id.org/tvbo/slot/include)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ArchiveConfig](../classes/ArchiveConfig.qmd) | How a study packages its run into a COMBINE/OMEX archive: the output location... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ArchiveConfig](../classes/ArchiveConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ArchiveConfig](../classes/ArchiveConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:include |
+| native | tvbo:include |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: include
+description: Extra file globs to add beyond the recipes, derived containers, figures
+  and manifest included automatically.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ArchiveConfig
+domain_of:
+- ArchiveConfig
+range: string
+multivalued: true
+
+```
+</details></div>

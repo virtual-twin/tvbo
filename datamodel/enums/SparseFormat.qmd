@@ -1,0 +1,65 @@
+# Enum: SparseFormat 
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/SparseFormat](https://w3id.org/tvbo/enum/SparseFormat)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| dense | None | Dense N×N array with gzip compression |
+| csr | None | Compressed Sparse Row (data, indices, indptr) |
+| coo | None | Coordinate list (data, row, col) |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SparseFormat
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  dense:
+    text: dense
+    description: Dense N×N array with gzip compression
+  csr:
+    text: csr
+    description: Compressed Sparse Row (data, indices, indptr)
+  coo:
+    text: coo
+    description: Coordinate list (data, row, col)
+
+```
+</details>
+
+</div>

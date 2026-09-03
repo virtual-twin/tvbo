@@ -1,0 +1,104 @@
+# Slot: dataset_id 
+
+
+_Unique identifier for the dataset._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:identifier](http://purl.org/dc/terms/identifier)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dataset](../classes/Dataset.qmd) | A collection of subjects for a multi-subject study |  no  |
+| [DBSDataset](../classes/DBSDataset.qmd) | Collection of data related to a specific DBS study |  no  |
+| [Phenotype](../classes/Phenotype.qmd) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Dataset](../classes/Dataset.qmd), [Phenotype](../classes/Phenotype.qmd) |
+| Slot URI | [dcterms:identifier](http://purl.org/dc/terms/identifier) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Identifier | Yes |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:identifier |
+| native | tvbo_study:dataset_id |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: dataset_id
+description: Unique identifier for the dataset.
+from_schema: https://w3id.org/tvbo/study
+slot_uri: dcterms:identifier
+identifier: true
+domain_of:
+- Dataset
+- Phenotype
+range: string
+required: true
+
+```
+</details></div>

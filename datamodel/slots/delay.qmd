@@ -1,0 +1,98 @@
+# Slot: delay 
+
+
+_Conduction delay (explicit edges, ms)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/delay](https://w3id.org/tvbo/slot/delay)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Edge](../classes/Edge.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Edge](../classes/Edge.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:delay |
+| native | tvbo:delay |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: delay
+description: Conduction delay (explicit edges, ms)
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Edge
+domain_of:
+- Edge
+range: float
+
+```
+</details></div>

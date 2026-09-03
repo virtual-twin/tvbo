@@ -1,0 +1,98 @@
+# Slot: processing_pipeline 
+
+
+_Processing pipeline used to generate the tractography_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/processing_pipeline](https://w3id.org/tvbo/slot/processing_pipeline)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Tractogram](../classes/Tractogram.qmd) | Reference to tractography/diffusion MRI data used to derive structural connec... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Tractogram](../classes/Tractogram.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Tractogram](../classes/Tractogram.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:processing_pipeline |
+| native | tvbo:processing_pipeline |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: processing_pipeline
+description: Processing pipeline used to generate the tractography
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Tractogram
+domain_of:
+- Tractogram
+range: string
+
+```
+</details></div>

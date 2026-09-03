@@ -1,0 +1,22 @@
+# info { #tvbo.cli.info }
+
+`cli.info`
+
+``tvbo info`` — inspect a SPEC without running it.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [info](#tvbo.cli.info.info) | Print a one-screen summary of a SPEC (kind, name, key parameters) without running it. |
+
+### info { #tvbo.cli.info.info }
+
+```python
+cli.info.info(
+    spec=typer.Argument(..., help='Path, CURIE, or DB name.'),
+    json=typer.Option(False, '--json', help='Emit machine-readable JSON.'),
+)
+```
+
+Print a one-screen summary of a SPEC (kind, name, key parameters) without running it.

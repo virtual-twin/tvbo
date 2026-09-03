@@ -1,0 +1,70 @@
+# bifurcationkit { #tvbo.adapters.bifurcationkit }
+
+`adapters.bifurcationkit`
+
+BifurcationKit.jl backend adapter for SimulationExperiment.
+
+Uses juliacall to execute generated BifurcationKit Julia code and return BifurcationResult objects.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [BifurcationKitAdapter](#tvbo.adapters.bifurcationkit.BifurcationKitAdapter) | Adapter for running bifurcation analysis via BifurcationKit.jl. |
+
+### BifurcationKitAdapter { #tvbo.adapters.bifurcationkit.BifurcationKitAdapter }
+
+```python
+adapters.bifurcationkit.BifurcationKitAdapter(experiment)
+```
+
+Adapter for running bifurcation analysis via BifurcationKit.jl.
+
+A continuation backend: it renders one ``(Dynamics, Continuation)`` pair at a time rather than a whole network context, so it takes its pair resolution from [`ContinuationAdapter`](#tvbo.adapters.base.ContinuationAdapter).
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [render_code](#tvbo.adapters.bifurcationkit.BifurcationKitAdapter.render_code) | Render BifurcationKit Julia code for a single continuation. |
+| [run](#tvbo.adapters.bifurcationkit.BifurcationKitAdapter.run) | Run bifurcation analysis for each continuation in the experiment. |
+
+##### render_code { #tvbo.adapters.bifurcationkit.BifurcationKitAdapter.render_code }
+
+```python
+adapters.bifurcationkit.BifurcationKitAdapter.render_code(
+    model=None,
+    continuation=None,
+    **kwargs,
+)
+```
+
+Render BifurcationKit Julia code for a single continuation.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+model : Dynamics, optional
+    The dynamics model. Defaults to ``experiment.dynamics``.
+continuation : Continuation, optional
+    The continuation spec. Defaults to first in experiment.
+**kwargs
+    Extra context passed to the Mako template.
+
+##### run { #tvbo.adapters.bifurcationkit.BifurcationKitAdapter.run }
+
+```python
+adapters.bifurcationkit.BifurcationKitAdapter.run(**kwargs)
+```
+
+Run bifurcation analysis for each continuation in the experiment.
+
+Iterates over ``experiment.continuations``, resolves the dynamics model for each, renders BifurcationKit Julia code, executes it, and wraps the result in ``BifurcationResult`` objects.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+BifurcationResult or dict[str, BifurcationResult]
+    Single result if one continuation, dict if multiple.

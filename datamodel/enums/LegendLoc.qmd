@@ -1,0 +1,105 @@
+# Enum: LegendLoc 
+
+
+
+
+_Where a panel's key sits. `best` lets the backend find the emptiest corner, which is right while a figure is still moving and wrong once it is printed — a key that relocates between two renders of the same figure is a difference the spec never stated._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/LegendLoc](https://w3id.org/tvbo/enum/LegendLoc)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| best | None | Wherever the backend finds the least data underneath |
+| upper right | None | Top-right inside the axes |
+| upper left | None | Top-left inside the axes |
+| lower left | None | Bottom-left inside the axes |
+| lower right | None | Bottom-right inside the axes |
+| right | None | Centred on the right edge |
+| center left | None | Centred on the left edge |
+| center right | None | Centred on the right edge, inside |
+| lower center | None | Centred on the bottom edge |
+| upper center | None | Centred on the top edge |
+| center | None | The middle of the axes |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: LegendLoc
+description: Where a panel's key sits. `best` lets the backend find the emptiest corner,
+  which is right while a figure is still moving and wrong once it is printed — a key
+  that relocates between two renders of the same figure is a difference the spec never
+  stated.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  best:
+    text: best
+    description: Wherever the backend finds the least data underneath.
+  upper right:
+    text: upper right
+    description: Top-right inside the axes.
+  upper left:
+    text: upper left
+    description: Top-left inside the axes.
+  lower left:
+    text: lower left
+    description: Bottom-left inside the axes.
+  lower right:
+    text: lower right
+    description: Bottom-right inside the axes.
+  right:
+    text: right
+    description: Centred on the right edge.
+  center left:
+    text: center left
+    description: Centred on the left edge.
+  center right:
+    text: center right
+    description: Centred on the right edge, inside.
+  lower center:
+    text: lower center
+    description: Centred on the bottom edge.
+  upper center:
+    text: upper center
+    description: Centred on the top edge.
+  center:
+    text: center
+    description: The middle of the axes.
+
+```
+</details>
+
+</div>

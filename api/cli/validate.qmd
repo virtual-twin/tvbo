@@ -1,0 +1,95 @@
+# validate { #tvbo.cli.validate }
+
+`cli.validate`
+
+``tvbo validate`` — sub-tree of validators (schema today; OMEX/SED-ML/BIDS later).
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [FIGURE_NAME](#tvbo.cli.validate.FIGURE_NAME) | The one naming rule for a rendered display item: ``fig-<id>_desc-<descriptor>``, the identifier the document prints and a camelCase descriptor, so the record, the script that draws it, the image and the caption all carry the same name. |
+| [app](#tvbo.cli.validate.app) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [all_](#tvbo.cli.validate.all_) | Recursively run `validate schema` on every YAML file under *directory* matching *pattern*. |
+| [bids](#tvbo.cli.validate.bids) | Validate a BIDS dataset directory using the `bids_validator` package. |
+| [omex](#tvbo.cli.validate.omex) | Shallow OMEX check — confirms the archive is a zip with `manifest.xml` at the root. |
+| [schema](#tvbo.cli.validate.schema) | Validate *path* against the shipped JSON Schema; auto-detects the target class. |
+| [sedml](#tvbo.cli.validate.sedml) | Shallow SED-ML check — confirms the file has a `<sedML>` root element. |
+| [study](#tvbo.cli.validate.study) | Check a study dataset against the one layout record. |
+
+### all_ { #tvbo.cli.validate.all_ }
+
+```python
+cli.validate.all_(
+    directory=typer.Argument(..., exists=True, file_okay=False, dir_okay=True, readable=True, help='Directory to walk.'),
+    pattern=typer.Option('*.yaml', '--pattern', help="Glob pattern, e.g. '*.yml' or '**/*.yaml'."),
+    fail_fast=typer.Option(False, '--fail-fast', help='Stop at first failure.'),
+)
+```
+
+Recursively run `validate schema` on every YAML file under *directory* matching *pattern*.
+
+### bids { #tvbo.cli.validate.bids }
+
+```python
+cli.validate.bids(
+    path=typer.Argument(..., exists=True, file_okay=False, dir_okay=True, readable=True, help='BIDS dataset root.'),
+)
+```
+
+Validate a BIDS dataset directory using the `bids_validator` package.
+
+### omex { #tvbo.cli.validate.omex }
+
+```python
+cli.validate.omex(
+    path=typer.Argument(..., exists=True, readable=True, help='OMEX archive (.omex / .zip).'),
+)
+```
+
+Shallow OMEX check — confirms the archive is a zip with `manifest.xml` at the root.
+
+Full COMBINE-archive validation is scheduled for the post-P3 milestone.
+
+### schema { #tvbo.cli.validate.schema }
+
+```python
+cli.validate.schema(
+    path=typer.Argument(..., exists=True, readable=True, help='YAML file.'),
+    target_class=typer.Option(None, '--class', help="Target class (auto-detected from the file's `tvbo_class:` envelope when omitted)."),
+)
+```
+
+Validate *path* against the shipped JSON Schema; auto-detects the target class.
+
+Uses the lightweight ``jsonschema`` library against the pre-generated ``tvbo/datamodel/tvbo_datamodel.schema.json`` (produced from the LinkML schema at build time), so validation needs no runtime ``linkml``. The file is parsed with TVBO's loader so ``!include``/merge-key extensions and slot aliases resolve exactly as they do when the model is loaded.
+
+### sedml { #tvbo.cli.validate.sedml }
+
+```python
+cli.validate.sedml(
+    path=typer.Argument(..., exists=True, readable=True, help='SED-ML XML file.'),
+)
+```
+
+Shallow SED-ML check — confirms the file has a `<sedML>` root element.
+
+Full L1V4 validation is scheduled for the post-P3 milestone.
+
+### study { #tvbo.cli.validate.study }
+
+```python
+cli.validate.study(
+    path=typer.Argument(Path(), exists=True, file_okay=False, dir_okay=True, readable=True, help='Study dataset root.'),
+    template=typer.Option([], '--template', '-t', help='Layout variant the study was built with.'),
+)
+```
+
+Check a study dataset against the one layout record.
+
+Three things, none of which any other check catches: the tree matches the record (:mod:`tvbo.utils.study_layout`), each spec fragment's BIDS suffix agrees with the class its envelope declares, and its entity values are legal BIDS. Every rule the record generates must still be present in the ignore files; a study may add its own rules and order them as git requires, but silently dropping one of the record's is reported.

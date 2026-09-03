@@ -1,0 +1,102 @@
+# Slot: branches 
+
+
+_Child branches to continue from detected bifurcation points (PO from Hopf, fold continuation, etc.)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/branches](https://w3id.org/tvbo/slot/branches)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [BranchSwitch](../classes/BranchSwitch.qmd) |
+| Domain Of | [Continuation](../classes/Continuation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Continuation](../classes/Continuation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:branches |
+| native | tvbo:branches |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: branches
+description: Child branches to continue from detected bifurcation points (PO from
+  Hopf, fold continuation, etc.).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Continuation
+domain_of:
+- Continuation
+range: BranchSwitch
+multivalued: true
+inlined: true
+
+```
+</details></div>

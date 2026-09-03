@@ -1,0 +1,95 @@
+# Slot: max_iterations 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/max_iterations](https://w3id.org/tvbo/slot/max_iterations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [OptimizationStage](../classes/OptimizationStage.qmd) | A single stage in a multi-stage optimization workflow |  no  |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [OptimizationStage](../classes/OptimizationStage.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `integer(100)` |
+| Owner | [OptimizationStage](../classes/OptimizationStage.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:max_iterations |
+| native | tvbo:max_iterations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: max_iterations
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: integer(100)
+owner: OptimizationStage
+domain_of:
+- OptimizationStage
+range: integer
+
+```
+</details></div>

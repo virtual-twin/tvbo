@@ -1,0 +1,98 @@
+# Slot: coordinate 
+
+
+_3D coordinate of the contact center in the defined coordinate space_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/coordinate](https://w3id.org/tvbo/dbs/slot/coordinate)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Contact](../classes/Contact.qmd) | Individual contact on a DBS electrode |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Coordinate](../classes/Coordinate.qmd) |
+| Domain Of | [Contact](../classes/Contact.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Contact](../classes/Contact.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:coordinate |
+| native | tvbo_dbs:coordinate |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: coordinate
+description: 3D coordinate of the contact center in the defined coordinate space
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: Contact
+domain_of:
+- Contact
+range: Coordinate
+
+```
+</details></div>

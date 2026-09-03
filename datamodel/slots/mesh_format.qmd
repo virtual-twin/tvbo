@@ -1,0 +1,77 @@
+# Slot: mesh_format 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/mesh_format](https://w3id.org/tvbo/slot/mesh_format)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [Mesh](../classes/Mesh.qmd) | Triangle (or higher-order) mesh geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surface](../classes/Surface.qmd), [Mesh](../classes/Mesh.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:mesh_format |
+| native | tvbo:mesh_format |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: mesh_format
+domain_of:
+- Surface
+- Mesh
+range: string
+
+```
+</details></div>

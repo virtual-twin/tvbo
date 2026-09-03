@@ -1,0 +1,93 @@
+# Slot: random_state 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/random_state](https://w3id.org/tvbo/slot/random_state)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [RandomStream](../classes/RandomStream.qmd) |
+| Domain Of | [Noise](../classes/Noise.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Noise](../classes/Noise.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:random_state |
+| native | tvbo:random_state |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: random_state
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Noise
+domain_of:
+- Noise
+range: RandomStream
+inlined: true
+
+```
+</details></div>

@@ -1,0 +1,336 @@
+# bsplot { #tvbo.adapters.bsplot }
+
+`adapters.bsplot`
+
+bsplot figure codegen adapter.
+
+Resolves a declarative ``Figure`` (see ``schema/figure.yaml``) into a codegen context and renders the ``tvbo/templates/bsplot/`` Mako tree into a self-contained, user-editable ``plot.py``. This is the figure sibling of the simulation adapters (``julia_model``, ``pyrates``, …): resolution lives here in Python, code *structure* lives in the Mako template.
+
+``render_code(figure, base_dir)`` returns the script; ``render(...)`` emits and runs it — mirroring ``experiment.render_code`` / ``.run``.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [COLOR_OPTS](#tvbo.adapters.bsplot.COLOR_OPTS) | Every option whose value is a colour, and so the only ones a palette role is resolved in. |
+| [CUSTOM_PANELS](#tvbo.adapters.bsplot.CUSTOM_PANELS) |  |
+| [HEMISPHERES](#tvbo.adapters.bsplot.HEMISPHERES) | The schema's hemisphere vocabulary in the surface backend's spelling. One vocabulary in the spec, whatever each backend calls it. |
+| [TRANSFORMS](#tvbo.adapters.bsplot.TRANSFORMS) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [build_context](#tvbo.adapters.bsplot.build_context) | Resolve a ``Figure`` into the template context (all IO paths + names resolved). |
+| [colorbar_panel](#tvbo.adapters.bsplot.colorbar_panel) | A colour scale occupying its own mosaic slot — the built-in ``kind: colorbar``. |
+| [compose_caption](#tvbo.adapters.bsplot.compose_caption) | Compose a figure's caption from its spec — the authored lead plus one clause per panel. |
+| [expand_bare_axes](#tvbo.adapters.bsplot.expand_bare_axes) | Grow each of *axes* until it meets a neighbour's ink, and return the ones moved. |
+| [fan_colors](#tvbo.adapters.bsplot.fan_colors) | Colours for a categorical line fan — public API, imported by the emitted plot script. |
+| [heatmap_orientation](#tvbo.adapters.bsplot.heatmap_orientation) | A heatmap's array as ``(y, x)``, the order ``pcolormesh`` reads (public API). |
+| [legend_panel](#tvbo.adapters.bsplot.legend_panel) | A free-standing key occupying its own mosaic slot — the built-in ``kind: legend``. |
+| [load_layer](#tvbo.adapters.bsplot.load_layer) | Open a custom panel's resolved layer into a DataArray (public API). |
+| [network_panel](#tvbo.adapters.bsplot.network_panel) | The connectome as a node-link graph, its nodes coloured by a layer — the built-in ``kind: network``. |
+| [output_format](#tvbo.adapters.bsplot.output_format) | The file extension a figure's render writes, without the dot. |
+| [register_panel](#tvbo.adapters.bsplot.register_panel) | Register a ``custom``-panel callable ``fn(fig, ax, ctx)`` under *name* (decorator). |
+| [register_transform](#tvbo.adapters.bsplot.register_transform) | Register a presentation-only layer transform ``fn(da) -> da`` under *name* (decorator). |
+| [registered](#tvbo.adapters.bsplot.registered) | Look a spec-declared name up in a registry, or raise an actionable error (public API). |
+| [render](#tvbo.adapters.bsplot.render) | Render and run the figure. Writes the script to *script_path* if given. |
+| [render_code](#tvbo.adapters.bsplot.render_code) | Render the ``Figure`` into a self-contained ``plot.py`` string. |
+| [resolve_color](#tvbo.adapters.bsplot.resolve_color) | A declared colour as a drawn one — public API, and the only place the translation happens. |
+| [resolve_colormap](#tvbo.adapters.bsplot.resolve_colormap) | A declared colormap as a resolvable name — public API, and the only place the translation happens. |
+| [resolve_path](#tvbo.adapters.bsplot.resolve_path) | Resolve a spec-relative file reference against *base_dir* (the study dir) — public API. |
+| [retired_options](#tvbo.adapters.bsplot.retired_options) | Every panel option of *kind* that is a declared slot now, mapped to the ``(slot, attribute)`` that replaced it. |
+| [scale_colormap](#tvbo.adapters.bsplot.scale_colormap) | A declared colormap name as the map a field is drawn with, pinned to *center* where one is asked for. |
+| [surface_panel](#tvbo.adapters.bsplot.surface_panel) | Per-vertex values painted on a mesh — the built-in ``kind: surface``. |
+| [theme_rcparams](#tvbo.adapters.bsplot.theme_rcparams) | The Theme's geometry as rcParams, applied after every style layer so a declared look always wins. |
+| [theme_spec](#tvbo.adapters.bsplot.theme_spec) | The look a figure declares, with the curated theme it names merged underneath it. |
+| [volume_panel](#tvbo.adapters.bsplot.volume_panel) | Per-region values painted into a labelled volume and projected — the built-in ``kind: volume``. |
+| [write_caption](#tvbo.adapters.bsplot.write_caption) | Write a figure's composed caption to ``<out_dir>/<name>.caption.qmd`` and return the path. |
+
+### build_context { #tvbo.adapters.bsplot.build_context }
+
+```python
+adapters.bsplot.build_context(figure, base_dir, outfile)
+```
+
+Resolve a ``Figure`` into the template context (all IO paths + names resolved).
+
+### colorbar_panel { #tvbo.adapters.bsplot.colorbar_panel }
+
+```python
+adapters.bsplot.colorbar_panel(fig, ax, ctx)
+```
+
+A colour scale occupying its own mosaic slot — the built-in ``kind: colorbar``.
+
+Panels that share one scale cannot each own the bar: attaching it to any one of them steals that panel's width and implies the scale is local to it. The paper puts it in an empty cell instead, and so does this.
+
+A spec declares all of this as ``colorbar:`` — the `Colorbar` class names and documents every attribute. This is the one panel that states its own scale: a bar attached to another panel keys the field beside it and is refused a ``colormap`` of its own. With a layer bound and no explicit limits the limits are read from the data, so the bar cannot drift from what it describes, and ``center`` resolves exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. A quantity in arbitrary units is labelled at its ends (Minimum..Maximum) rather than with numbers that mean nothing.
+
+Returns the bar's own axes, so a declared frame (ticks, formats, label padding) lands on the scale rather than on the blanked slot behind it.
+
+### compose_caption { #tvbo.adapters.bsplot.compose_caption }
+
+```python
+adapters.bsplot.compose_caption(figure)
+```
+
+Compose a figure's caption from its spec — the authored lead plus one clause per panel.
+
+Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling's authored prose is not dropped with its letter. A sibling that authors no prose and derives no descriptor contributes nothing at all: its drawn title is a label on the figure, not a sentence in the caption. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
+
+### expand_bare_axes { #tvbo.adapters.bsplot.expand_bare_axes }
+
+```python
+adapters.bsplot.expand_bare_axes(fig, axes, pad=0.004)
+```
+
+Grow each of *axes* until it meets a neighbour's ink, and return the ones moved.
+
+A layout engine sizes rows and columns uniformly and reserves each cell's margins for whichever panel in that row or column needs the most of them: ticks, tick labels, an axis label. A panel that draws none of that — a schematic, a chain diagram, a captured graph — is padded to match its neighbours and prints smaller than the slot it owns, which on a print figure is millimetres of a panel that had to fit in the first place.
+
+The rule is about ink rather than about cells: a panel expands in each direction until it reaches the *drawn* extent of the nearest panel that could collide with it, so it can never overlap anything and needs to know nothing about how the grid was divided. Nothing shrinks, and only space no one draws in is taken. Panels are grown one at a time against where the previous one now ends, so two panels sharing a gap cannot both claim it. The layout engine is switched off first, since it would recompute these positions away on the next draw.
+
+Opt-in per panel (``opts: {fill_cell: true}``): a panel whose position carries meaning — aligned with the one above it, or sized to match a sibling — must keep the position the engine gave it.
+
+### fan_colors { #tvbo.adapters.bsplot.fan_colors }
+
+```python
+adapters.bsplot.fan_colors(n)
+```
+
+Colours for a categorical line fan — public API, imported by the emitted plot script.
+
+A fan over a categorical dim asserts unrelated entries, and the palette's own doctrine (see ``palette.ramp``) gives unrelated entries hues rather than samples of an ordered ramp. Beyond the distinct hues a cycle would hand two categories one colour, so a larger fan falls back to even samples of the sequential scale, which stay pairwise distinct.
+
+### heatmap_orientation { #tvbo.adapters.bsplot.heatmap_orientation }
+
+```python
+adapters.bsplot.heatmap_orientation(da, C, x, y, nx, ny)
+```
+
+A heatmap's array as ``(y, x)``, the order ``pcolormesh`` reads (public API).
+
+Decided by DIM NAME whenever the encoding names dims of the array. A SQUARE grid makes the two orientations indistinguishable by shape, so a shape test transposes half of them at random — silently swapping which axis the field varies along, which is a wrong figure rather than an ugly one. Falls back to the shape test only when the encoded channels are not dims of the array (a matrix addressed by index), where names cannot decide it.
+
+Shared with the emitted plot.py, which imports it: the orientation is a keying decision, so it lives beside the other reference resolvers rather than being inlined per script.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                              | Default    |
+|--------|--------|----------------------------------------------------------|------------|
+| da     |        | The layer's DataArray, consulted for its dim ORDER only. | _required_ |
+| C      |        | Its values.                                              | _required_ |
+| x      |        | Name encoded on the x channel.                           | _required_ |
+| y      |        | Name encoded on the y channel.                           | _required_ |
+| nx     |        | Length of the x coordinate, for the fallback.            | _required_ |
+| ny     |        | Length of the y coordinate, for the fallback.            | _required_ |
+
+### legend_panel { #tvbo.adapters.bsplot.legend_panel }
+
+```python
+adapters.bsplot.legend_panel(fig, ax, ctx)
+```
+
+A free-standing key occupying its own mosaic slot — the built-in ``kind: legend``.
+
+A convention shared by several panels belongs to none of them; drawing it inside one both shrinks that panel and implies the convention is local to it. Papers put it in the grid's spare cell, which is what this kind is.
+
+The entries are parallel declared lists rather than one encoded string per entry, so each is a typed value the spec can validate: ``labels`` names them and ``colors`` / ``linestyles`` / ``markers`` style them, each falling back to a sensible default when shorter than ``labels``.
+
+A spec declares all of this as ``legend:`` — the same slot every other panel uses for its own key, because this panel IS one. The `Legend` class names and documents every attribute; here the entry lists are what it is for.
+
+### load_layer { #tvbo.adapters.bsplot.load_layer }
+
+```python
+adapters.bsplot.load_layer(layer)
+```
+
+Open a custom panel's resolved layer into a DataArray (public API).
+
+A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``); it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.
+
+Under an animation the emitted script binds ``frame_dim``/``frame_pos`` onto each layer before handing the context over, so a drawer that knows nothing about animation still draws the frame the rest of the figure is at.
+
+### network_panel { #tvbo.adapters.bsplot.network_panel }
+
+```python
+adapters.bsplot.network_panel(fig, ax, ctx)
+```
+
+The connectome as a node-link graph, its nodes coloured by a layer — the built-in ``kind: network``.
+
+The panel a whole-brain paper draws beside its time courses: the network the model actually ran on, with the state living on it. Registered here rather than shipped per study, so ``kind: network`` needs no ``code_modules``; the graph itself is built by bsplot's own ``create_network``, which is where the edge threshold and the node/edge attributes are defined.
+
+A spec declares all of this as ``network:`` — the `Graph` class names and documents every attribute, ``connectome`` being the only required one. What is only true here: ``symmetric`` defaults to FALSE, because a state variable is not a signed deviation from zero the way a brain map of differences is; ``projection`` defaults to axial, ``edge_percentile`` to 92, and ``labels`` to off, since 87 region names on one panel is a block of text rather than a figure. Edge widths scale with the weight on top of ``edge_width``, so a strong connection reads as strong. With no layer the panel draws the bare graph in ``color``.
+
+### output_format { #tvbo.adapters.bsplot.output_format }
+
+```python
+adapters.bsplot.output_format(figure)
+```
+
+The file extension a figure's render writes, without the dot.
+
+An animated figure's output is its movie, so the animation's container replaces the still's format rather than sitting beside it — a figure written as both a png and a gif is two artefacts claiming to be one figure. Asked by ``figure_outputs`` and by the renderer, so the name they agree on is derived once.
+
+### register_panel { #tvbo.adapters.bsplot.register_panel }
+
+```python
+adapters.bsplot.register_panel(name)
+```
+
+Register a ``custom``-panel callable ``fn(fig, ax, ctx)`` under *name* (decorator).
+
+### register_transform { #tvbo.adapters.bsplot.register_transform }
+
+```python
+adapters.bsplot.register_transform(name)
+```
+
+Register a presentation-only layer transform ``fn(da) -> da`` under *name* (decorator).
+
+### registered { #tvbo.adapters.bsplot.registered }
+
+```python
+adapters.bsplot.registered(registry, name, kind)
+```
+
+Look a spec-declared name up in a registry, or raise an actionable error (public API).
+
+Shared by the adapter and the emitted plot.py, which imports it, so both report a miss the same way. The registries are empty until a figure's code_modules are imported and their register_* decorators run, so a miss almost always means code_modules is missing the module, or importing it failed.
+
+### render { #tvbo.adapters.bsplot.render }
+
+```python
+adapters.bsplot.render(
+    figure,
+    base_dir='.',
+    outfile='figure.png',
+    script_path=None,
+)
+```
+
+Render and run the figure. Writes the script to *script_path* if given.
+
+### render_code { #tvbo.adapters.bsplot.render_code }
+
+```python
+adapters.bsplot.render_code(figure, base_dir='.', outfile='figure.png')
+```
+
+Render the ``Figure`` into a self-contained ``plot.py`` string.
+
+### resolve_color { #tvbo.adapters.bsplot.resolve_color }
+
+```python
+adapters.bsplot.resolve_color(value)
+```
+
+A declared colour as a drawn one — public API, and the only place the translation happens.
+
+A palette role (``highlight``) or hue (``palette.2``) resolves against the palette in force; a hex, a backend colour name, a sequence or ``None`` passes through untouched, so a spec written before the palette existed draws exactly as it did. A ``custom`` panel colouring by role should call this rather than reading the palette itself, so one rule covers the grammar and the escape hatch alike.
+
+### resolve_colormap { #tvbo.adapters.bsplot.resolve_colormap }
+
+```python
+adapters.bsplot.resolve_colormap(value, default='sequential')
+```
+
+A declared colormap as a resolvable name — public API, and the only place the translation happens.
+
+A key the project's theme declares (``diverging``, or its own ``meg``) becomes whatever that key holds; anything else is left for the backend's own registry, so ``cividis`` and ``parula`` are untouched. ``None`` takes *default*, which is how a mark that names no scale lands on the project's rather than on matplotlib's.
+
+### resolve_path { #tvbo.adapters.bsplot.resolve_path }
+
+```python
+adapters.bsplot.resolve_path(p, base_dir)
+```
+
+Resolve a spec-relative file reference against *base_dir* (the study dir) — public API.
+
+A file a figure points at (an ``image`` panel's path, a study .mplstyle) is written relative to the spec that declares it, so the spec stays portable; the emitted plot.py runs from an arbitrary cwd and needs an absolute one. An absolute path is passed through untouched. Returns *p* unchanged when it is empty.
+
+A ``custom`` panel resolving its own study-relative input (``ctx["opts"]`` naming a tvbo Network yaml, say) should call this with ``ctx["base_dir"]`` so it follows the same rule as the rest of the spec rather than re-implementing the join.
+
+### retired_options { #tvbo.adapters.bsplot.retired_options }
+
+```python
+adapters.bsplot.retired_options(kind='')
+```
+
+Every panel option of *kind* that is a declared slot now, mapped to the ``(slot, attribute)`` that replaced it.
+
+An empty ``slot`` means the option became a slot of the panel itself. This is the single statement of the renaming half of the retirement: :func:`_panel_opts` refuses from it and ``scripts/migrate_panel_marks.py`` rewrites from it, so what a spec is converted into is exactly what the renderer will accept. The retirements that are a change of SHAPE rather than of name — a rule, a region, a viewpoint — are ``_RESHAPED_OPTS``, because there is no attribute to point at.
+
+### scale_colormap { #tvbo.adapters.bsplot.scale_colormap }
+
+```python
+adapters.bsplot.scale_colormap(name, lo=None, hi=None, center=None)
+```
+
+A declared colormap name as the map a field is drawn with, pinned to *center* where one is asked for.
+
+An undeclared map takes the theme's, and which of the theme's depends on what the field is: a centred scale is signed, so it takes ``diverging``; anything else takes ``sequential``. That is the rule the ``symmetric`` default already encodes for the limits, applied to the map as well, so a field of signed deviations is not drawn on a one-directional ramp.
+
+``center`` fixes the map's neutral colour at a value — zero for a signed change, where the sign is the reading. The limits stay the data's own and the map is truncated to the half-range the data actually reaches, so a unit of change is the same colour distance either side of the centre and the scale carries no colour the field never takes.
+
+The mesh and the bar that keys it both resolve here. A bar built from the untruncated map would put the neutral colour at the middle of a scale whose field crosses the centre anywhere else, and every value the reader looks up would be wrong.
+
+### surface_panel { #tvbo.adapters.bsplot.surface_panel }
+
+```python
+adapters.bsplot.surface_panel(fig, ax, ctx)
+```
+
+Per-vertex values painted on a mesh — the built-in ``kind: surface``.
+
+A brain map is the most-drawn panel in a network-neuroscience paper and needs no study code: the mesh is geometry the network already carries, the values are a layer like any other, and everything else is presentation. Registered here rather than shipped per study, so ``kind: surface`` works with no ``code_modules``.
+
+A spec declares all of this as ``surface:`` — the `Surface` class names and documents every attribute, and ``_KIND_RENAMES`` says where one reaches this callable under a different word. What is only true here:
+
+``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`). With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one.
+
+### theme_rcparams { #tvbo.adapters.bsplot.theme_rcparams }
+
+```python
+adapters.bsplot.theme_rcparams(theme)
+```
+
+The Theme's geometry as rcParams, applied after every style layer so a declared look always wins.
+
+Only what the theme states: a slot left unset is not a value, so the layer underneath keeps it.
+
+### theme_spec { #tvbo.adapters.bsplot.theme_spec }
+
+```python
+adapters.bsplot.theme_spec(figure, base_dir)
+```
+
+The look a figure declares, with the curated theme it names merged underneath it.
+
+Returns the whole Theme as a plain dict — colours and geometry together — because both halves travel to the same place: the colours become the palette the emitted script puts in force, the geometry becomes the rcParams applied after every style layer. The curated theme is the base under both halves, so a figure that declares nothing, and one that declares a single tick length, get the same look everywhere it did not speak.
+
+### volume_panel { #tvbo.adapters.bsplot.volume_panel }
+
+```python
+adapters.bsplot.volume_panel(fig, ax, ctx)
+```
+
+Per-region values painted into a labelled volume and projected — the built-in ``kind: volume``.
+
+The volumetric counterpart of ``kind: surface``: same layer, same colour options, geometry from an atlas instead of a mesh. Registered here rather than shipped per study, so a glass brain needs no ``code_modules`` and no per-study index table.
+
+Values are placed BY LABEL through the atlas crosswalk, never by array position — a per-region array ordered differently from the atlas would otherwise paint every region with its neighbour's number and still look like a brain.
+
+A spec declares all of this as ``volume:`` — the `Volume` class names and documents every attribute. What is only true here: ``symmetric`` defaults to FALSE, because unlike a surface map of signed deviations a volume panel is as often a positive quantity such as a frequency; ``percentile`` defaults to 100 and ``intensity_projection`` to ``absmax``.
+
+### write_caption { #tvbo.adapters.bsplot.write_caption }
+
+```python
+adapters.bsplot.write_caption(figure, out_dir, *, name=None)
+```
+
+Write a figure's composed caption to ``<out_dir>/<name>.caption.qmd`` and return the path.
+
+A Quarto partial the manuscript pulls in with ``{{< include <name>.caption.qmd >}}``, so the caption is generated from the figure spec and regenerates whenever a panel moves or a layer is rebound — never hand-maintained beside the figure it describes.

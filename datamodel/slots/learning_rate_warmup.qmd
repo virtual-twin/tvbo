@@ -1,0 +1,101 @@
+# Slot: learning_rate_warmup 
+
+
+_Linear warmup of learning rate from 0 to learning_rate over n_iterations. eta_effective = eta * (i+1) / n_iterations_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/learning_rate_warmup](https://w3id.org/tvbo/slot/learning_rate_warmup)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `boolean(false)` |
+| Owner | [Algorithm](../classes/Algorithm.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:learning_rate_warmup |
+| native | tvbo:learning_rate_warmup |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: learning_rate_warmup
+description: Linear warmup of learning rate from 0 to learning_rate over n_iterations.
+  eta_effective = eta * (i+1) / n_iterations
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: boolean(false)
+owner: Algorithm
+domain_of:
+- Algorithm
+range: boolean
+
+```
+</details></div>

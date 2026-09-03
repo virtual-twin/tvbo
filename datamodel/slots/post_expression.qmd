@@ -1,0 +1,99 @@
+# Slot: post_expression 
+
+
+_Post-processing expression applied after coupling_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/post_expression](https://w3id.org/tvbo/slot/post_expression)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Equation](../classes/Equation.qmd) |
+| Domain Of | [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Coupling](../classes/Coupling.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:post_expression |
+| native | tvbo:post_expression |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: post_expression
+description: Post-processing expression applied after coupling
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Coupling
+domain_of:
+- Coupling
+range: Equation
+inlined: true
+
+```
+</details></div>

@@ -1,0 +1,101 @@
+# Slot: panels 
+
+
+_Panels keyed by their mosaic label._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/panels](https://w3id.org/tvbo/slot/panels)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Panel](../classes/Panel.qmd) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:panels |
+| native | tvbo:panels |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: panels
+description: Panels keyed by their mosaic label.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: Panel
+multivalued: true
+inlined: true
+
+```
+</details></div>

@@ -1,0 +1,100 @@
+# Slot: interoperates_with 
+
+
+_Tools this tool can exchange data with or delegate to._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/interoperates_with](https://w3id.org/tvbo/software/slot/interoperates_with)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SimulationTool](../classes/SimulationTool.qmd) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:interoperates_with |
+| native | tvbo_sw:interoperates_with |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: interoperates_with
+description: Tools this tool can exchange data with or delegate to.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: SimulationTool
+multivalued: true
+
+```
+</details></div>

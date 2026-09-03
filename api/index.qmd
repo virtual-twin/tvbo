@@ -1,0 +1,345 @@
+# TVB-O API Documentation {.doc .doc-index}
+
+## tvbo
+
+Importing the package is deliberately cheap. Only a `NullHandler` goes on the `tvbo` logger, so tvbo is silent as a library; the entry points — `tvbo run`, `SimulationExperiment.run` — surface progress through `configure_logging`, and one switch (`TVBO_LOG_LEVEL`, or `set_log_level`) controls all of it. Nothing here imports JAX, PyRates or the ontology.
+
+| | |
+| --- | --- |
+| [log](log.qmd#tvbo.log) | Central logging configuration for TVBO. |
+| [multiscale](multiscale.qmd#tvbo.multiscale) | Flatten a multi-scale reservoir SimulationExperiment to a flat one (Python). |
+| [platform](platform.qmd#tvbo.platform) | Client for the TVBO platform REST API (load/push saved models & experiments). |
+
+## Adapters
+
+This module contains adapters for different simulation backends: - pyrates: PyRates backend adapter - pyrates_bifurcation: PyRates/PyCoBi bifurcation analysis adapter - julia: Julia language integration (juliacall) - networkdynamics: NetworkDynamics.jl backend adapter - modelingtoolkit: ModelingToolkit.jl backend adapter - bifurcationkit: BifurcationKit.jl backend adapter
+
+| | |
+| --- | --- |
+| [adapters](adapters/index.qmd#tvbo.adapters) | Backend adapters for SimulationExperiment. |
+| [base](adapters/base.qmd#tvbo.adapters.base) | Base adapter for processing SimulationExperiment metadata. |
+| [bids](adapters/bids.qmd#tvbo.adapters.bids) | BIDS BEP034 Export Module. |
+| [bifurcationkit](adapters/bifurcationkit.qmd#tvbo.adapters.bifurcationkit) | BifurcationKit.jl backend adapter for SimulationExperiment. |
+| [brian2](adapters/brian2.qmd#tvbo.adapters.brian2) | Native Brian2 backend for small-scale spiking networks. |
+| [bsplot](adapters/bsplot.qmd#tvbo.adapters.bsplot) | bsplot figure codegen adapter. |
+| [colormaps](adapters/colormaps.qmd#tvbo.adapters.colormaps) | Colormaps a figure can name that the plotting stack does not ship. |
+| [diffeq](adapters/diffeq.qmd#tvbo.adapters.diffeq) | DifferentialEquations.jl backend adapter for SimulationExperiment. |
+| [figure_workflow](adapters/figure_workflow.qmd#tvbo.adapters.figure_workflow) | Figure -> distributed-workflow emitter. |
+| [gillespie](adapters/gillespie.qmd#tvbo.adapters.gillespie) | Gillespie SSA backend — a finite-size stochastic realization of a mean-field rate model. |
+| [julia](adapters/julia.qmd#tvbo.adapters.julia) | Python ↔ Julia bridge using juliacall (PythonCall.jl). |
+| [julia_model](adapters/julia_model.qmd#tvbo.adapters.julia_model) | Prepared codegen context for the Julia model templates. |
+| [modelingtoolkit](adapters/modelingtoolkit.qmd#tvbo.adapters.modelingtoolkit) | Standalone ModelingToolkit.jl backend adapter for SimulationExperiment. |
+| [networkdynamics](adapters/networkdynamics.qmd#tvbo.adapters.networkdynamics) | NetworkDynamics.jl backend adapter for SimulationExperiment. |
+| [neuroml](adapters/neuroml.qmd#tvbo.adapters.neuroml) | NeuroML/LEMS adapter for SimulationExperiment. |
+| [numcont](adapters/numcont.qmd#tvbo.adapters.numcont) | Self-contained AUTO-07p (numcont) backend adapter for SimulationExperiment. |
+| [observation_sampling](adapters/observation_sampling.qmd#tvbo.adapters.observation_sampling) | Backend-agnostic resolver for observation-monitor sampling step counts. |
+| [openminds](adapters/openminds.qmd#tvbo.adapters.openminds) | OpenMINDS JSON-LD conversion utilities for TVBO. |
+| [pyrates](adapters/pyrates.qmd#tvbo.adapters.pyrates) | PyRates backend adapter for SimulationExperiment. |
+| [pyrates_bifurcation](adapters/pyrates_bifurcation.qmd#tvbo.adapters.pyrates_bifurcation) | PyRates/PyCoBi bifurcation analysis backend adapter for SimulationExperiment. |
+| [tvb](adapters/tvb.qmd#tvbo.adapters.tvb) | TVB (The Virtual Brain) adapter for tvbo. |
+| [tvboptim](adapters/tvboptim.qmd#tvbo.adapters.tvboptim) | tvboptim adapter for tvbo. |
+
+## Shared small-scale network-lowering core.
+
+TVB-O's small-scale backends (NeuroML/LEMS, Brian2, later NEST/Jaxley) all turn the same declarative primitives — ``Network``, ``Node(size)``, ``Edge(dynamics, coupling, events, connectivity)`` — into populations of cells and an explicit set of cell-to-cell connections. That lowering is backend-neutral and lives here **once**; each backend contributes only a role vocabulary, an expression printer, a template tree, and its synapse/cell rendering.
+
+| | |
+| --- | --- |
+| [smallscale](adapters/smallscale/index.qmd#tvbo.adapters.smallscale) | Shared small-scale network-lowering core. |
+| [lowering](adapters/smallscale/lowering.qmd#tvbo.adapters.smallscale.lowering) | Backend-neutral network lowering for small-scale simulators. |
+
+## Analysis
+
+Houses analysis result container classes (e.g., BifurcationResult) and related APIs that are logically distinct from plotting utilities or simulation drivers.
+
+| | |
+| --- | --- |
+| [analysis](analysis/index.qmd#tvbo.analysis) | Analysis subpackage. |
+| [bifurcation](analysis/bifurcation.qmd#tvbo.analysis.bifurcation) | Bifurcation analysis result objects and helpers. |
+| [linear_response](analysis/linear_response.qmd#tvbo.analysis.linear_response) | Linear response. |
+| [replication](analysis/replication.qmd#tvbo.analysis.replication) | The canonical replication-pairs contract. |
+| [units](analysis/units.qmd#tvbo.analysis.units) | Dimensional analysis of a model's equations. |
+
+## API
+
+This module provides the API for the TVB Ontology.
+
+| | |
+| --- | --- |
+| [api](api/index.qmd#tvbo.api) | TVB-O API. |
+| [direct_ontology_api](api/direct_ontology_api.qmd#tvbo.api.direct_ontology_api) | Direct RDF/SPARQL-based ontology API. |
+| [dynamics_api](api/dynamics_api.qmd#tvbo.api.dynamics_api) | Dynamics model API — serves neural mass models from the tvbo database. |
+| [experiment_api](api/experiment_api.qmd#tvbo.api.experiment_api) | Experiment API — serves simulation experiments from the tvbo database. |
+| [main](api/main.qmd#tvbo.api.main) | FastAPI application exposing the TVBO ontology and simulation experiment endpoints. |
+| [network_api](api/network_api.qmd#tvbo.api.network_api) | Network retrieval API — serves normative connectomes from the tvbo database. |
+| [ontology_api](api/ontology_api.qmd#tvbo.api.ontology_api) | Read the ontology as graph data a front end can render. |
+
+## Hand-written behaviour attached to the generated model classes.
+
+Each module here holds one class's user-facing helpers as a plain mixin. ``hatch_build`` discovers them by name — ``EventBehaviour`` attaches to ``Event`` — and makes each a base of both generated forms, so the helpers are present on every object however it was built: loaded through LinkML, validated through Pydantic, or constructed by hand. Adding behaviour to a class is creating a file here; there is nothing to register.
+
+| | |
+| --- | --- |
+| [behaviour](behaviour/index.qmd#tvbo.behaviour) | Hand-written behaviour attached to the generated model classes. |
+| [continuation](behaviour/continuation.qmd#tvbo.behaviour.continuation) | Factory constructors for :class:`Continuation`. |
+| [coupling](behaviour/coupling.qmd#tvbo.behaviour.coupling) | Ontology population, symbolic reading, code generation and plotting for coupling. |
+| [dynamics](behaviour/dynamics.qmd#tvbo.behaviour.dynamics) | The symbolic layer, on every :class:`Dynamics` however it was built. |
+| [dynamics_runtime](behaviour/dynamics_runtime.qmd#tvbo.behaviour.dynamics_runtime) | What a `Dynamics` does, on every `Dynamics` however it was built. |
+| [event](behaviour/event.qmd#tvbo.behaviour.event) | User-facing helpers for :class:`Event`. |
+| [integrator](behaviour/integrator.qmd#tvbo.behaviour.integrator) | Ontology-backed metadata, code generation and factories for :class:`Integrator`. |
+| [perturbation](behaviour/perturbation.qmd#tvbo.behaviour.perturbation) | Symbolic reading, code generation and plotting for :class:`Stimulus`. |
+
+## Classes
+
+Core simulation classes: dynamics, coupling, noise, continuation, observation, perturbation, equation, functions, experiment, study, network, and atlas.
+
+| | |
+| --- | --- |
+| [classes](classes/index.qmd#tvbo.classes) | tvbo.classes. |
+| [atlas](classes/atlas.qmd#tvbo.classes.atlas) | Runtime helpers for brain atlases and parcellation volumes. |
+| [continuation](classes/continuation.qmd#tvbo.classes.continuation) | Continuation. |
+| [correlated_noise](classes/correlated_noise.qmd#tvbo.classes.correlated_noise) | Correlated-noise lowering: a declared covariance becomes a Wiener-increment mixer. |
+| [coupling](classes/coupling.qmd#tvbo.classes.coupling) | Coupling functions. |
+| [dynamics](classes/dynamics.qmd#tvbo.classes.dynamics) | Dynamics models. |
+| [equation](classes/equation.qmd#tvbo.classes.equation) | Parse, substitute and sort the symbolic equations of a model. |
+| [experiment](classes/experiment.qmd#tvbo.classes.experiment) | The `SimulationExperiment` host object that ties a whole simulation together. |
+| [function](classes/function.qmd#tvbo.classes.function) | Function Classes. |
+| [network](classes/network.qmd#tvbo.classes.network) | Brain-network connectivity classes for TVBO. |
+| [noise](classes/noise.qmd#tvbo.classes.noise) | Runtime `Noise` wrapper, and the public import location for `Integrator`. |
+| [observation](classes/observation.qmd#tvbo.classes.observation) | Observation models that transform simulation output into observables. |
+| [parcellation](classes/parcellation.qmd#tvbo.classes.parcellation) | This module provides functions for loading and accessing parcellation data. |
+| [perturbation](classes/perturbation.qmd#tvbo.classes.perturbation) | Exogenous stimuli for simulation experiments. |
+| [phenotype](classes/phenotype.qmd#tvbo.classes.phenotype) | Runtime :class:`Phenotype` class. |
+| [software](classes/software.qmd#tvbo.classes.software) | The ``SimulationTool`` runtime wrapper, and a tool's own unit vocabulary. |
+| [study](classes/study.qmd#tvbo.classes.study) | User-facing `SimulationStudy` class for grouping related experiments. |
+
+## CLI
+
+The CLI is Typer-based, registry-driven and transport-aware. This module assembles the top-level :class:`typer.Typer` ``app`` from per-verb sub-modules.
+
+| | |
+| --- | --- |
+| [cli](cli/index.qmd#tvbo.cli) | TVB-O command-line interface. |
+| [brain](cli/brain.qmd#tvbo.cli.brain) | ``tvbo brain`` — the ASCII spec-to-cortex portrait, and the bare-``tvbo`` splash. |
+| [cache](cli/cache.qmd#tvbo.cli.cache) | Inspect and reclaim the produced-constant store. |
+| [config](cli/config.qmd#tvbo.cli.config) | ``tvbo config`` — view CLI configuration (full impl in C2). |
+| [export](cli/export.qmd#tvbo.cli.export) | ``tvbo export`` — render a SPEC into a target format (no execution). |
+| [figures](cli/figures.qmd#tvbo.cli.figures) | ``tvbo figure`` — render declarative figures from a Figure or Study YAML. |
+| [formats](cli/formats.qmd#tvbo.cli.formats) | ``tvbo formats`` — list every registered I/O format. |
+| [import_](cli/import_.qmd#tvbo.cli.import_) | ``tvbo import`` — load a foreign file via the registry's importer dispatch. |
+| [info](cli/info.qmd#tvbo.cli.info) | ``tvbo info`` — inspect a SPEC without running it. |
+| [install](cli/install.qmd#tvbo.cli.install) | ``tvbo install`` — provision optional components that pip alone cannot place. |
+| [network](cli/network.qmd#tvbo.cli.network) | ``tvbo network`` — build brain-network connectomes from tractograms. |
+| [run](cli/run.qmd#tvbo.cli.run) | ``tvbo run`` — execute a Study or Experiment. |
+| [save](cli/save.qmd#tvbo.cli.save) | ``tvbo save`` — alias for ``tvbo export --with-data``. |
+| [skills](cli/skills.qmd#tvbo.cli.skills) | ``tvbo skills`` — manage TVBO skill files for AI coding assistants. |
+| [study](cli/study.qmd#tvbo.cli.study) | ``tvbo study`` — scaffold and inspect a study dataset. |
+| [units](cli/units.qmd#tvbo.cli.units) | Inspect the curated unit vocabulary, and promote a unit into it. |
+| [validate](cli/validate.qmd#tvbo.cli.validate) | ``tvbo validate`` — sub-tree of validators (schema today; OMEX/SED-ML/BIDS later). |
+| [verify](cli/verify.qmd#tvbo.cli.verify) | ``tvbo verify`` — check a study-of-studies is buildable, and hard-fail if not. |
+| [version](cli/version.qmd#tvbo.cli.version) | ``tvbo version`` — print the package version. |
+| [workflow](cli/workflow.qmd#tvbo.cli.workflow) | ``tvbo workflow`` — emit Slurm / Snakemake / Nextflow artefacts from a Study. |
+
+## TVB-O Code Generation
+
+Template rendering, code printing, and backend-specific code generation.
+
+| | |
+| --- | --- |
+| [codegen](codegen/index.qmd#tvbo.codegen) | TVB-O Code Generation. |
+| [code](codegen/code.qmd#tvbo.codegen.code) | SymPy expression printers that render symbolic model math to backend source code. |
+| [cuda](codegen/cuda.qmd#tvbo.codegen.cuda) | CUDA Adapter for TVBO. |
+| [functions](codegen/functions.qmd#tvbo.codegen.functions) | Function Code Generation. |
+| [lems](codegen/lems.qmd#tvbo.codegen.lems) | # LEMS-Generator Create LEMS model from TVB-O. |
+| [prune](codegen/prune.qmd#tvbo.codegen.prune) | Drop the imports and bindings a generated module does not use. |
+| [pyrates](codegen/pyrates.qmd#tvbo.codegen.pyrates) | PyRates Integration Module. |
+| [reducers](codegen/reducers.qmd#tvbo.codegen.reducers) | General resolver: lower a declarative streaming-reducer spec to backend source. |
+| [streaming_reducers](codegen/streaming_reducers.qmd#tvbo.codegen.streaming_reducers) | Codegen registry: pipeline reducer callable -> backend streaming reducer. |
+| [style](codegen/style.qmd#tvbo.codegen.style) | House style for generated source, one formatter per output language. |
+| [templater](codegen/templater.qmd#tvbo.codegen.templater) | Shared codegen helpers the Mako templates and the export registry read. |
+| [transforms](codegen/transforms.qmd#tvbo.codegen.transforms) | Transform vocabulary: the network's own edge attributes, and masked reductions. |
+
+## Data
+
+Access and manage TVB-O data.
+
+| | |
+| --- | --- |
+| [data](data/index.qmd#tvbo.data) | Data Module. |
+| [analysis_io](data/analysis_io.qmd#tvbo.data.analysis_io) | Run a study's declarative ``analyses:`` and persist each as its own container. |
+| [connectome_build](data/connectome_build.qmd#tvbo.data.connectome_build) | Build a structural connectome from a tractogram + parcellation via MRtrix3. |
+| [converters](data/converters.qmd#tvbo.data.converters) | Format converters: BEP017 export. |
+| [dataref](data/dataref.qmd#tvbo.data.dataref) | Resolve a :class:`DataRef` to a labelled array — the one cross-container reference path. |
+| [experiment_result_io](data/experiment_result_io.qmd#tvbo.data.experiment_result_io) | Sidecar I/O + cross-experiment cache for :class:`ExperimentResult`. |
+| [matrix_io](data/matrix_io.qmd#tvbo.data.matrix_io) | Low-level matrix read/write for HDF5 groups and Zarr groups. |
+| [mesh_fem](data/mesh_fem.qmd#tvbo.data.mesh_fem) | P1 finite-element operators for a triangular mesh, flat or curved. |
+| [mesh_io](data/mesh_io.qmd#tvbo.data.mesh_io) | Read a surface mesh file into vertices and faces. |
+| [network_io](data/network_io.qmd#tvbo.data.network_io) | High-level Network I/O. Dispatches by companion file extension. |
+| [param_io](data/param_io.qmd#tvbo.data.param_io) | Resolve a :class:`Parameter`'s value from its declared provenance. |
+| [provenance](data/provenance.qmd#tvbo.data.provenance) | What a run actually did, recorded beside the container it produced. |
+| [registry](data/registry.qmd#tvbo.data.registry) | Canonical database registry — resolves short names to YAML file paths. |
+| [study_manifest](data/study_manifest.qmd#tvbo.data.study_manifest) | The results manifest and the ``tvbo verify`` checks. |
+| [types](data/types.qmd#tvbo.data.types) | Runtime data types for TVBO simulations. |
+
+## Data Model
+
+Auto-generated from LinkML schema.
+
+| | |
+| --- | --- |
+| [datamodel](datamodel/index.qmd#tvbo.datamodel) | TVB-O Data Model. |
+| [dialect](datamodel/dialect.qmd#tvbo.datamodel.dialect) | The TVBO YAML dialect — one implementation, both construction paths. |
+| [dialect_tables](datamodel/dialect_tables.qmd#tvbo.datamodel.dialect_tables) | Generated dialect tables — see :mod:`tvbo.datamodel.dialect`. |
+| [pydantic](datamodel/pydantic.qmd#tvbo.datamodel.pydantic) |  |
+| [schema](datamodel/schema.qmd#tvbo.datamodel.schema) |  |
+
+## Export
+
+Non-code exports: reports, metadata standards (OpenMINDS).
+
+| | |
+| --- | --- |
+| [export](export/index.qmd#tvbo.export) | TVB-O Export. |
+| [formats](export/formats.qmd#tvbo.export.formats) | Built-in export-format registrations. |
+| [registry](export/registry.qmd#tvbo.export.registry) | Export-format registry. |
+
+## Graph Generators
+
+A curated ``GraphGenerator`` under ``tvbo/database/graph_generators/`` is defined by its ``procedure:`` block: an ordered DAG of typed steps whose options are schema fields. :mod:`tvbo.graph_generators.procedural` resolves that DAG to SymPy and renders it through the printer tables in ``tvbo/codegen/code.py``, so eager construction at ``Network`` load time and emitted backend source are the same expressions rendered twice. There are no per-generator Python materialisers.
+
+| | |
+| --- | --- |
+| [graph_generators](graph_generators/index.qmd#tvbo.graph_generators) | TVBO graph generators — declarative typed DAGs, one resolver. |
+| [catalog](graph_generators/catalog.qmd#tvbo.graph_generators.catalog) | The curated GraphGenerator catalog: entry lookup, declared defaults, reference matrices. |
+| [procedural](graph_generators/procedural.qmd#tvbo.graph_generators.procedural) | Resolve a ``Procedural`` GraphGenerator's typed DAG into backend-independent expressions. |
+
+## JAX
+
+JAX integration utilities for tvbo.
+
+| | |
+| --- | --- |
+| [jax](jax/index.qmd#tvbo.jax) | JAX integration utilities for tvbo. |
+| [xarray_pytrees](jax/xarray_pytrees.qmd#tvbo.jax.xarray_pytrees) | Register xarray data structures as JAX pytree nodes. |
+
+## TVB-O Ontology
+
+OWL ontology access, query, and configuration.
+
+| | |
+| --- | --- |
+| [ontology](ontology/index.qmd#tvbo.ontology) | TVB-O Ontology. |
+| [config](ontology/config.qmd#tvbo.ontology.config) | TVB-O Model Configuration Module. |
+| [constants](ontology/constants.qmd#tvbo.ontology.constants) | Constants. |
+| [db](ontology/db.qmd#tvbo.ontology.db) | Load bundled example `SimulationStudy` definitions from the ontology data directory. |
+| [graph](ontology/graph.qmd#tvbo.ontology.graph) | # Graph-based representation of the ontology. |
+| [owl](ontology/owl.qmd#tvbo.ontology.owl) | --- title: "Ontology Module for TVB-O" author: Leon Martin. |
+| [query](ontology/query.qmd#tvbo.ontology.query) | SPARQL-based query helpers for the TVBO ontology. |
+
+## Atlas
+
+Groups helpers for working with brain parcellation schemes, such as mapping between region indices and labels and translating between atlas naming conventions (for example FreeSurfer and HCP-MMP1).
+
+| | |
+| --- | --- |
+| [atlas](ontology/atlas/index.qmd#tvbo.ontology.atlas) | Brain atlas utilities for the TVBO ontology. |
+| [freesurfer](ontology/atlas/freesurfer.qmd#tvbo.ontology.atlas.freesurfer) | FreeSurfer atlas utilities for mapping between region indices and labels. |
+
+## Semantic Web
+
+This subpackage bridges the TVB Ontology (TVB-O) with external semantic-web resources. It currently provides the `tvbgo` module, which links TVB models and their parameters to the Gene Ontology (GO) through curated keyword mappings.
+
+| | |
+| --- | --- |
+| [semanticweb](ontology/semanticweb/index.qmd#tvbo.ontology.semanticweb) | Semantic-web integration utilities for the TVB Ontology. |
+| [tvbgo](ontology/semanticweb/tvbgo.qmd#tvbo.ontology.semanticweb.tvbgo) | TVB-GO Module. |
+
+## Parse
+
+This module provides functions for parsing different types of data to extract model components and metadata.
+
+| | |
+| --- | --- |
+| [parse](parse/index.qmd#tvbo.parse) | TVB-O Parse. |
+| [expression](parse/expression.qmd#tvbo.parse.expression) | Parse TVBO equation strings into SymPy expressions. |
+| [lems_loader](parse/lems_loader.qmd#tvbo.parse.lems_loader) | This module deals with loading elements from LEMS-generated files. |
+| [symbols](parse/symbols.qmd#tvbo.parse.symbols) | Parsing namespaces: the names an expression is allowed to mean. |
+| [system](parse/system.qmd#tvbo.parse.system) | The symbolic layer between a model's metadata and everything rendered from it. |
+
+## Plot
+
+This module contains utilities for plotting TVB-O models.
+
+| | |
+| --- | --- |
+| [plot](plot/index.qmd#tvbo.plot) | TVB-O's plotting utilities. |
+| [analysis](plot/analysis.qmd#tvbo.plot.analysis) | Plotting helpers for analysing simulation output. |
+| [animate](plot/animate.qmd#tvbo.plot.animate) | Animation utilities for SimulationResult. |
+| [capture](plot/capture.qmd#tvbo.plot.capture) | Render an HTML page to a static file with a headless browser, from a figure spec. |
+| [dynamics](plot/dynamics.qmd#tvbo.plot.dynamics) | General-purpose plotting for ``Dynamics`` objects. |
+| [dynamics_layout](plot/dynamics_layout.qmd#tvbo.plot.dynamics_layout) | Declarative layout composition for Dynamics plotting. |
+| [experiment_layout](plot/experiment_layout.qmd#tvbo.plot.experiment_layout) | Declarative and auto-configured layout composition for Experiment plotting. |
+| [layout_mosaic](plot/layout_mosaic.qmd#tvbo.plot.layout_mosaic) | Reusable subplot_mosaic helpers for declarative panel layouts. |
+| [network](plot/network.qmd#tvbo.plot.network) | Network graph plotting utilities. |
+| [network_graph](plot/network_graph.qmd#tvbo.plot.network_graph) | Network graph plotting utilities. |
+| [ontology](plot/ontology.qmd#tvbo.plot.ontology) | Plots of the ontology graph and of a model's place in it. |
+| [palette](plot/palette.qmd#tvbo.plot.palette) | Named colour roles for figures, so a project's colours live in one file. |
+| [phase](plot/phase.qmd#tvbo.plot.phase) | Phase-space trajectory and vector-field plots for SimulationResult. |
+| [schematic](plot/schematic.qmd#tvbo.plot.schematic) | Population-schematic diagrams for neural-mass / mean-field / spiking models. |
+| [timeseries](plot/timeseries.qmd#tvbo.plot.timeseries) | Time-series, EEG, and power-spectrum plotting for SimulationResult. |
+| [utils](plot/utils.qmd#tvbo.plot.utils) | Plotting helpers for TVB-O figures. |
+
+## Run
+
+This package collects the execution helpers used once a model and connectome are assembled: graph-based integration of a connectome as a network of coupled local models ([`GraphRunner`](/api/run/graph.qmd#GraphRunner)), the SciPy reference helpers it builds on ([`tvbo.run.compgraph`](/api/run/compgraph.qmd)), and low-level utilities for running TVBO-generated Julia code ([`tvbo.run.julia`](/api/run/julia.qmd)).
+
+| | |
+| --- | --- |
+| [run](run/index.qmd#tvbo.run) | Runners that execute TVBO simulations on different backends. |
+| [compgraph](run/compgraph.qmd#tvbo.run.compgraph) | Reference simulation of network dynamics on a computational graph. |
+| [graph](run/graph.qmd#tvbo.run.graph) | Graph-based simulation of a connectome as a network of coupled local models. |
+| [julia](run/julia.qmd#tvbo.run.julia) | Low-level Julia execution utilities for running generated Julia code. |
+
+## PDE/FEM code-generation templates for TVBO field models.
+
+Renders a self-contained scikit-fem solver from a `SimulationExperiment`'s `field_dynamics`. `utils` resolves the declared equations into the assembly plan the template emits, so the operator that runs is the operator that was written down.
+
+| | |
+| --- | --- |
+| [pde](templates/pde/index.qmd#tvbo.templates.pde) | PDE/FEM code-generation templates for TVBO field models. |
+| [utils](templates/pde/utils.qmd#tvbo.templates.pde.utils) | Resolve ``field_dynamics`` into the assembly plan the FEM template emits. |
+
+## RateML
+
+Renders TVB-compatible model code (Python/Numba) and CUDA GPU kernels from TVBO `SimulationExperiment` specifications, following the conventions of [TVB's RateML](https://github.com/the-virtual-brain/tvb-root/tree/master/tvb_contrib/tvb/contrib/rateML) while sourcing dynamics from TVBO's YAML model specifications instead of LEMS XML.
+
+| | |
+| --- | --- |
+| [rateml](templates/rateml/index.qmd#tvbo.templates.rateml) | RateML-style code generation templates for TVBO models. |
+| [utils](templates/rateml/utils.qmd#tvbo.templates.rateml.utils) | Code printers for generating RateML-style CUDA and Python from TVBO. |
+
+## tvboptim
+
+Mako templates for generating tvboptim network dynamics code from TVBO models.
+
+| | |
+| --- | --- |
+| [tvboptim](templates/tvboptim/index.qmd#tvbo.templates.tvboptim) | # TVB-Optim Templates. |
+| [callbacks](templates/tvboptim/callbacks.qmd#tvbo.templates.tvboptim.callbacks) | Runtime callbacks for generated tvboptim scripts. |
+| [observations](templates/tvboptim/observations.qmd#tvbo.templates.tvboptim.observations) | TVB-compatible observation monitors for generated tvboptim code. |
+| [utils](templates/tvboptim/utils.qmd#tvbo.templates.tvboptim.utils) | TVB-Optim Template Utilities. |
+
+## Utilities
+
+Core utilities: ``Bunch`` container, PyTree formatting, YAML I/O, and metadata traversal helpers.
+
+| | |
+| --- | --- |
+| [utils](utils/index.qmd#tvbo.utils) | Utilities Module for TVB-O. |
+| [auto](utils/auto.qmd#tvbo.utils.auto) | Helpers for locating the auto-07p installation used by the NumCont backend. |
+| [figure_compare](utils/figure_compare.qmd#tvbo.utils.figure_compare) | Measure how a rendered figure differs in LAYOUT from a reference image. |
+| [pydantic_loader](utils/pydantic_loader.qmd#tvbo.utils.pydantic_loader) | Pydantic loader / validator for TVBO YAML — the trustworthy validation path. |
+| [report](utils/report.qmd#tvbo.utils.report) | Report Module. |
+| [study_layout](utils/study_layout.qmd#tvbo.utils.study_layout) | Read the study-layout record and answer questions about it. |
+| [units](utils/units.qmd#tvbo.utils.units) | Unit and Dimension Utilities. |
+| [yaml_loader](utils/yaml_loader.qmd#tvbo.utils.yaml_loader) | YAML loader wrapper used by every ``Network.from_file`` / ``SimulationExperiment.from_file`` / ``SimulationStudy.from_file`` entry point in TVBO. |

@@ -1,0 +1,277 @@
+# Class: DistributionConfig 
+
+
+_Policy for mapping a parameter sweep's exploration axes onto the two parallelism tiers when rendering a distributed workflow. Vectorized axes are packed into a single batched backend call (e.g. vmap/pmap); workflow axes are fanned out into independent scheduler tasks, one per value combination. Backend-independent: the emitter validates that a requested vectorized axis is one the chosen backend can actually batch._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:DistributionConfig](https://w3id.org/tvbo/DistributionConfig)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DistributionConfig
+    click DistributionConfig href "./DistributionConfig.html"
+      DistributionConfig : by
+        
+          
+    
+        
+        
+        DistributionConfig --> "0..1" WorkflowDistributeBy : by
+        click WorkflowDistributeBy href "../../enums/WorkflowDistributeBy.html"
+    
+
+        
+      DistributionConfig : chunk
+        
+          
+    
+        
+        
+        DistributionConfig --> "0..1" Integer : chunk
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      DistributionConfig : vectorize
+        
+          
+    
+        
+        
+        DistributionConfig --> "*" String : vectorize
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DistributionConfig : workflow
+        
+          
+    
+        
+        
+        DistributionConfig --> "*" String : workflow
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:DistributionConfig](https://w3id.org/tvbo/DistributionConfig) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [by](../slots/by.qmd) | 0..1 <br/> [WorkflowDistributeBy](../enums/WorkflowDistributeBy.qmd) | Default tier for axes not named in ``vectorize`` or ``workflow`` | direct |
+| [vectorize](../slots/vectorize.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Axis names or parameters to pack into a single vectorized backend call | direct |
+| [workflow](../slots/workflow.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Axis names or parameters to fan out into independent scheduler tasks (one wor... | direct |
+| [chunk](../slots/chunk.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Sharding granularity — the inter-task (inter-node) tier | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | [distribute](../slots/distribute.qmd) | range | [DistributionConfig](../classes/DistributionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:DistributionConfig |
+| native | tvbo:DistributionConfig |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DistributionConfig
+description: 'Policy for mapping a parameter sweep''s exploration axes onto the two
+  parallelism tiers when rendering a distributed workflow. Vectorized axes are packed
+  into a single batched backend call (e.g. vmap/pmap); workflow axes are fanned out
+  into independent scheduler tasks, one per value combination. Backend-independent:
+  the emitter validates that a requested vectorized axis is one the chosen backend
+  can actually batch.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  by:
+    name: by
+    description: Default tier for axes not named in ``vectorize`` or ``workflow``.
+      Unset means ``auto``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DistributionConfig
+    range: WorkflowDistributeBy
+  vectorize:
+    name: vectorize
+    description: Axis names or parameters to pack into a single vectorized backend
+      call. It is an error to name an axis the backend cannot batch.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DistributionConfig
+    range: string
+    multivalued: true
+  workflow:
+    name: workflow
+    description: Axis names or parameters to fan out into independent scheduler tasks
+      (one workflow cell per value combination).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DistributionConfig
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+    multivalued: true
+  chunk:
+    name: chunk
+    description: 'Sharding granularity — the inter-task (inter-node) tier. For a fully
+      vectorized sweep, the number of independent scheduler shards to split the batched
+      cells across (each task runs ``1/chunk`` of the grid on its own node). For a
+      fanned sweep, the number of workflow cells packed into one task. Unset means
+      one shard. This is orthogonal to the intra-task device tier (Exploration.parallel_mode:
+      vmap/lax_map/pmap): on CPU, where nodes are plentiful, raise chunk to fan the
+      grid across many nodes; on GPU, where nodes are scarce, keep chunk=1 so one
+      node holds the whole grid and batches it on-device with vmap rather than claiming
+      many GPUs.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DistributionConfig
+    - WorkflowConfig
+    range: integer
+    minimum_value: 1
+class_uri: tvbo:DistributionConfig
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DistributionConfig
+description: 'Policy for mapping a parameter sweep''s exploration axes onto the two
+  parallelism tiers when rendering a distributed workflow. Vectorized axes are packed
+  into a single batched backend call (e.g. vmap/pmap); workflow axes are fanned out
+  into independent scheduler tasks, one per value combination. Backend-independent:
+  the emitter validates that a requested vectorized axis is one the chosen backend
+  can actually batch.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  by:
+    name: by
+    description: Default tier for axes not named in ``vectorize`` or ``workflow``.
+      Unset means ``auto``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DistributionConfig
+    domain_of:
+    - DistributionConfig
+    range: WorkflowDistributeBy
+  vectorize:
+    name: vectorize
+    description: Axis names or parameters to pack into a single vectorized backend
+      call. It is an error to name an axis the backend cannot batch.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DistributionConfig
+    domain_of:
+    - DistributionConfig
+    range: string
+    multivalued: true
+  workflow:
+    name: workflow
+    description: Axis names or parameters to fan out into independent scheduler tasks
+      (one workflow cell per value combination).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DistributionConfig
+    domain_of:
+    - DistributionConfig
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+    multivalued: true
+  chunk:
+    name: chunk
+    description: 'Sharding granularity — the inter-task (inter-node) tier. For a fully
+      vectorized sweep, the number of independent scheduler shards to split the batched
+      cells across (each task runs ``1/chunk`` of the grid on its own node). For a
+      fanned sweep, the number of workflow cells packed into one task. Unset means
+      one shard. This is orthogonal to the intra-task device tier (Exploration.parallel_mode:
+      vmap/lax_map/pmap): on CPU, where nodes are plentiful, raise chunk to fan the
+      grid across many nodes; on GPU, where nodes are scarce, keep chunk=1 so one
+      node holds the whole grid and batches it on-device with vmap rather than claiming
+      many GPUs.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DistributionConfig
+    domain_of:
+    - DistributionConfig
+    - WorkflowConfig
+    range: integer
+    minimum_value: 1
+class_uri: tvbo:DistributionConfig
+
+```
+</details></div>

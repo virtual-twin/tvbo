@@ -1,0 +1,93 @@
+# Slot: stimulus 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/stimulus](https://w3id.org/tvbo/slot/stimulus)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Stimulus](../classes/Stimulus.qmd) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:stimulus |
+| native | tvbo:stimulus |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: stimulus
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Dynamics
+domain_of:
+- Dynamics
+range: Stimulus
+inlined: true
+
+```
+</details></div>

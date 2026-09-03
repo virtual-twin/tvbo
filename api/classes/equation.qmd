@@ -1,0 +1,532 @@
+# equation { #tvbo.classes.equation }
+
+`classes.equation`
+
+Parse, substitute and sort the symbolic equations of a model.
+
+Wraps sympy with the conventions TVBO's models rely on: a `local_dict` that stops names like `e` and `I` being read as constants, coupling-term substitution against the ontology, and a topological sort of derived quantities.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [E](#tvbo.classes.equation.E) |  |
+| [ONTOLOGY_SCOPE](#tvbo.classes.equation.ONTOLOGY_SCOPE) | Namespace for equations read out of the OWL ontology. |
+| [coupling_variables](#tvbo.classes.equation.coupling_variables) |  |
+| [lambda_symbol](#tvbo.classes.equation.lambda_symbol) |  |
+| [logger](#tvbo.classes.equation.logger) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [add_spaces_around_operators](#tvbo.classes.equation.add_spaces_around_operators) | Insert surrounding spaces around binary arithmetic operators in a string. |
+| [build_dependency_graph](#tvbo.classes.equation.build_dependency_graph) | Builds a directed graph of dependencies from the eq_dict using SymPy. |
+| [dependency_tree](#tvbo.classes.equation.dependency_tree) | Build a directed dependency graph from a list of equations. |
+| [generate_global_coupling_function](#tvbo.classes.equation.generate_global_coupling_function) | Generate the global coupling function based on given pre and post expressions. |
+| [get_symbolic_coupling](#tvbo.classes.equation.get_symbolic_coupling) | Get the symbolic coupling expressions for the given coupling function. |
+| [rename_uppercase_variables](#tvbo.classes.equation.rename_uppercase_variables) | Rename free symbols that start with an uppercase letter to a `*_uc` form. |
+| [replace_H](#tvbo.classes.equation.replace_H) | Rename the `H` symbol to `h_uc` across a dictionary of equations. |
+| [replace_acronyms](#tvbo.classes.equation.replace_acronyms) | Strip model-acronym suffixes from a key. |
+| [set_specific_symbols_to_zero](#tvbo.classes.equation.set_specific_symbols_to_zero) | Substitute the given symbols with zero in an equation string. |
+| [sort_equations_by_dependencies](#tvbo.classes.equation.sort_equations_by_dependencies) | Return equations ordered so each is defined before it is used. |
+| [sub_equation](#tvbo.classes.equation.sub_equation) | Substitute an equation's symbols with their ontology display symbols. |
+| [substitute_function_in_state_equations](#tvbo.classes.equation.substitute_function_in_state_equations) | Inline auxiliary function definitions into state-variable equations. |
+| [symbolic_conditions](#tvbo.classes.equation.symbolic_conditions) | Return the model's conditional expressions as SymPy expressions. |
+| [symbolic_differential_equations](#tvbo.classes.equation.symbolic_differential_equations) | Return the model's time-derivative equations as SymPy expressions. |
+| [symbolic_model_equations](#tvbo.classes.equation.symbolic_model_equations) | Return all symbolic equations for a model in one mapping. |
+| [symbolic_model_functions](#tvbo.classes.equation.symbolic_model_functions) | Return the model's auxiliary functions as SymPy expressions. |
+| [symbolic_topological_sort](#tvbo.classes.equation.symbolic_topological_sort) | Order equation names so dependencies precede the equations that use them. |
+| [sympify_value](#tvbo.classes.equation.sympify_value) | Parse a metadata equation's value into a SymPy expression. |
+| [topological_sort](#tvbo.classes.equation.topological_sort) | Performs topological sorting on the dependency graph. |
+| [unify_coupling_terms](#tvbo.classes.equation.unify_coupling_terms) | Rewrite TVB-style coupling terms to the legacy `c_pop*` naming. |
+| [update_class_relationships](#tvbo.classes.equation.update_class_relationships) | Append the ontology `is_a` relations linking a variable to its equation. |
+| [update_mathematical_relationships](#tvbo.classes.equation.update_mathematical_relationships) | Refresh the ontology relationships implied by a model's equations. |
+
+### add_spaces_around_operators { #tvbo.classes.equation.add_spaces_around_operators }
+
+```python
+classes.equation.add_spaces_around_operators(expression)
+```
+
+Insert surrounding spaces around binary arithmetic operators in a string.
+
+Wraps each `+`, `-`, `*`, `/` or `%` operator in single spaces so the expression parses cleanly, while leaving the `**` power operator untouched.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                       | Default    |
+|------------|--------|-----------------------------------|------------|
+| expression |        | The equation string to normalise. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                         |
+|--------|--------|---------------------------------------------------------------------|
+|        |        | The expression with spaces added around single-character operators. |
+
+### build_dependency_graph { #tvbo.classes.equation.build_dependency_graph }
+
+```python
+classes.equation.build_dependency_graph(eq_dict)
+```
+
+Builds a directed graph of dependencies from the eq_dict using SymPy.
+
+### dependency_tree { #tvbo.classes.equation.dependency_tree }
+
+```python
+classes.equation.dependency_tree(equations)
+```
+
+Build a directed dependency graph from a list of equations.
+
+For each equation, the right-hand-side free symbols are treated as dependencies of the left-hand side, producing a `networkx.DiGraph` with an edge from each source symbol to its target.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                              | Default    |
+|-----------|--------|----------------------------------------------------------|------------|
+| equations |        | An iterable of SymPy equations exposing `lhs` and `rhs`. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        |        | A `networkx.DiGraph` whose edges point from dependencies to dependents. |
+
+### generate_global_coupling_function { #tvbo.classes.equation.generate_global_coupling_function }
+
+```python
+classes.equation.generate_global_coupling_function(
+    pre_expr,
+    post_expr,
+    j_index_start=0,
+)
+```
+
+Generate the global coupling function based on given pre and post expressions.
+
+:param pre_expr: The 'pre' sympy expression involving x_i and x_j.
+:param post_expr: The 'post' sympy expression involving gx.
+:return: The global coupling function as a sympy expression.
+
+### get_symbolic_coupling { #tvbo.classes.equation.get_symbolic_coupling }
+
+```python
+classes.equation.get_symbolic_coupling(coupling_function)
+```
+
+Get the symbolic coupling expressions for the given coupling function.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name              | Type                    | Description                                                 | Default    |
+|-------------------|-------------------------|-------------------------------------------------------------|------------|
+| coupling_function | str or CouplingFunction | The coupling function to retrieve symbolic expressions for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                                                                                             |
+|--------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| dict   | dict   | A dictionary containing the symbolic expressions for the pre and post functions.   The keys are 'pre' and 'post', and the values are SymPy expressions. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type          | Description                                  |
+|--------|---------------|----------------------------------------------|
+|        | SomeException | Description of the exception raised, if any. |
+
+### rename_uppercase_variables { #tvbo.classes.equation.rename_uppercase_variables }
+
+```python
+classes.equation.rename_uppercase_variables(input_equation)
+```
+
+Rename free symbols that start with an uppercase letter to a `*_uc` form.
+
+Each symbol whose name begins with an uppercase letter is replaced by its lowercased name suffixed with `_uc`; other symbols are left unchanged. A string input is first parsed via `sympify_value`.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description                                   | Default    |
+|----------------|--------|-----------------------------------------------|------------|
+| input_equation |        | A SymPy expression, or a string to be parsed. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                            |
+|--------|--------|--------------------------------------------------------|
+|        |        | The expression with uppercase-leading symbols renamed. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                  |
+|--------|------------|--------------------------------------------------------------|
+|        | ValueError | If a string input cannot be converted to a SymPy expression. |
+
+### replace_H { #tvbo.classes.equation.replace_H }
+
+```python
+classes.equation.replace_H(eq_dict)
+```
+
+Rename the `H` symbol to `h_uc` across a dictionary of equations.
+
+Avoids clashes with SymPy's built-in `H` by substituting the uppercase `H` symbol (and any `"H"` dictionary key) with `h_uc`.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                                     | Default    |
+|---------|--------|-------------------------------------------------|------------|
+| eq_dict |        | Mapping of equation names to SymPy expressions. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        |        | A new mapping with `H` replaced by `h_uc` in both keys and expressions. |
+
+### replace_acronyms { #tvbo.classes.equation.replace_acronyms }
+
+```python
+classes.equation.replace_acronyms(key, cls)
+```
+
+Strip model-acronym suffixes from a key.
+
+Removes the `_<acronym>` suffix contributed by each neural-mass-model ancestor of `cls`, yielding the bare variable name.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                    | Default    |
+|--------|--------|----------------------------------------------------------------|------------|
+| key    |        | The name to strip acronym suffixes from.                       | _required_ |
+| cls    |        | The ontology class whose model ancestors provide the acronyms. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                          |
+|--------|--------|------------------------------------------------------|
+|        |        | The key with matching `_<acronym>` suffixes removed. |
+
+### set_specific_symbols_to_zero { #tvbo.classes.equation.set_specific_symbols_to_zero }
+
+```python
+classes.equation.set_specific_symbols_to_zero(
+    equation_str,
+    symbols_to_zero=coupling_variables,
+)
+```
+
+Substitute the given symbols with zero in an equation string.
+
+Parses `equation_str` and replaces every symbol named in `symbols_to_zero` with `0`, for example to drop coupling contributions for isolated-node dynamics.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name            | Type   | Description                                                                                | Default              |
+|-----------------|--------|--------------------------------------------------------------------------------------------|----------------------|
+| equation_str    |        | The equation to parse and modify.                                                          | _required_           |
+| symbols_to_zero |        | Names of the symbols to set to zero; defaults to the module-level coupling variable names. | `coupling_variables` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                    |
+|--------|--------|----------------------------------------------------------------|
+|        |        | The SymPy expression with the listed symbols replaced by zero. |
+
+### sort_equations_by_dependencies { #tvbo.classes.equation.sort_equations_by_dependencies }
+
+```python
+classes.equation.sort_equations_by_dependencies(equations)
+```
+
+Return equations ordered so each is defined before it is used.
+
+Builds a dependency graph over the equation names, topologically sorts it and returns a new dictionary in dependency-respecting order.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                            | Default    |
+|-----------|--------|--------------------------------------------------------|------------|
+| equations |        | Mapping of variable names to their expression strings. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                 |
+|--------|--------|-------------------------------------------------------------|
+|        |        | A new dictionary with the same items ordered by dependency. |
+
+### sub_equation { #tvbo.classes.equation.sub_equation }
+
+```python
+classes.equation.sub_equation(eq, model)
+```
+
+Substitute an equation's symbols with their ontology display symbols.
+
+For each free symbol, looks up the corresponding model variable in the ontology (keeping coupling terms by their bare name) and replaces it with the variable's declared symbol, also applying the canonical coupling and conditional renamings.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                            | Default    |
+|--------|--------|--------------------------------------------------------|------------|
+| eq     |        | The SymPy expression to rewrite.                       | _required_ |
+| model  |        | The model identifier used to resolve variable symbols. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                        |
+|--------|--------|--------------------------------------------------------------------|
+|        |        | The expression with symbols substituted for their display symbols. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                         |
+|--------|------------|-----------------------------------------------------|
+|        | ValueError | If a symbol cannot be resolved to a model variable. |
+
+### substitute_function_in_state_equations { #tvbo.classes.equation.substitute_function_in_state_equations }
+
+```python
+classes.equation.substitute_function_in_state_equations(sv_eqs, funcs)
+```
+
+Inline auxiliary function definitions into state-variable equations.
+
+For each state-variable equation, replaces any function symbol that appears in it with the function's defining expression.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                             | Default    |
+|--------|--------|-------------------------------------------------------------------------|------------|
+| sv_eqs |        | Mapping of state-variable names to SymPy expressions; mutated in place. | _required_ |
+| funcs  |        | Mapping of function names to their defining SymPy expressions.          | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                          |
+|--------|--------|------------------------------------------------------|
+|        |        | The updated `sv_eqs` mapping with functions inlined. |
+
+### symbolic_conditions { #tvbo.classes.equation.symbolic_conditions }
+
+```python
+classes.equation.symbolic_conditions(NMM, zero_coupling=False, **kwargs)
+```
+
+Return the model's conditional expressions as SymPy expressions.
+
+Sympifies each model conditional, optionally zeroing coupling terms, and strips the acronym and model-suffix decorations from the names.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                               | Default    |
+|---------------|--------|-----------------------------------------------------------|------------|
+| NMM           |        | The neural-mass model identifier or ontology individual.  | _required_ |
+| zero_coupling |        | If true, set coupling symbols to zero in each expression. | `False`    |
+| **kwargs      |        | Forwarded to `sympify_value` (e.g. `acronym`).            | `{}`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                          |
+|--------|--------|------------------------------------------------------|
+|        |        | A mapping of conditional names to SymPy expressions. |
+
+### symbolic_differential_equations { #tvbo.classes.equation.symbolic_differential_equations }
+
+```python
+classes.equation.symbolic_differential_equations(
+    NMM,
+    zero_coupling=False,
+    **kwargs,
+)
+```
+
+Return the model's time-derivative equations as SymPy expressions.
+
+Selects the model derivatives whose name contains `dot`, sympifies each right-hand side, optionally zeroing coupling terms, and strips the model suffix from the keys.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                              | Default    |
+|---------------|--------|----------------------------------------------------------|------------|
+| NMM           |        | The neural-mass model identifier or ontology individual. | _required_ |
+| zero_coupling |        | If true, set coupling symbols to zero in each equation.  | `False`    |
+| **kwargs      |        | Forwarded to `sympify_value` (e.g. `acronym`).           | `{}`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                         |
+|--------|--------|-----------------------------------------------------|
+|        |        | A mapping of derivative names to SymPy expressions. |
+
+### symbolic_model_equations { #tvbo.classes.equation.symbolic_model_equations }
+
+```python
+classes.equation.symbolic_model_equations(NMM, zero_coupling=False, **kwargs)
+```
+
+Return all symbolic equations for a model in one mapping.
+
+Merges the model's auxiliary functions, time-derivative equations and conditionals into a single dictionary.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                              | Default    |
+|---------------|--------|----------------------------------------------------------|------------|
+| NMM           |        | The neural-mass model identifier or ontology individual. | _required_ |
+| zero_coupling |        | If true, set coupling symbols to zero throughout.        | `False`    |
+| **kwargs      |        | Forwarded to `sympify_value` (e.g. `acronym`).           | `{}`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                       |
+|--------|--------|---------------------------------------------------|
+|        |        | A combined mapping of names to SymPy expressions. |
+
+### symbolic_model_functions { #tvbo.classes.equation.symbolic_model_functions }
+
+```python
+classes.equation.symbolic_model_functions(NMM, zero_coupling=False, **kwargs)
+```
+
+Return the model's auxiliary functions as SymPy expressions.
+
+Sympifies each non-derivative model function (skipping `numpy.exp`), optionally zeroing coupling terms, strips the acronym and model-suffix decorations from the names, and orders the result by inter-equation dependency.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                              | Default    |
+|---------------|--------|----------------------------------------------------------|------------|
+| NMM           |        | The neural-mass model identifier or ontology individual. | _required_ |
+| zero_coupling |        | If true, set coupling symbols to zero in each function.  | `False`    |
+| **kwargs      |        | Forwarded to `sympify_value` (e.g. `acronym`).           | `{}`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                          |
+|--------|--------|----------------------------------------------------------------------|
+|        |        | A dependency-ordered mapping of function names to SymPy expressions. |
+
+### symbolic_topological_sort { #tvbo.classes.equation.symbolic_topological_sort }
+
+```python
+classes.equation.symbolic_topological_sort(equations)
+```
+
+Order equation names so dependencies precede the equations that use them.
+
+Builds a dependency graph from each expression's free symbols that also appear as equation keys, then performs a Kahn topological sort.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                     | Default    |
+|-----------|--------|-------------------------------------------------|------------|
+| equations |        | Mapping of variable names to SymPy expressions. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                              |
+|--------|--------|----------------------------------------------------------|
+|        |        | A list of equation names in dependency-respecting order. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                     |
+|--------|------------|-------------------------------------------------|
+|        | ValueError | If the equations contain a circular dependency. |
+
+### sympify_value { #tvbo.classes.equation.sympify_value }
+
+```python
+classes.equation.sympify_value(v, acronym='', evaluate=False)
+```
+
+Parse a metadata equation's value into a SymPy expression.
+
+Collects the equation's referenced functions, parameters and state variables as symbols (stripping `acronym` from their labels), normalises NumPy prefixes and coupling terms, adds operator spacing and parses the result.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                         | Default    |
+|----------|--------|---------------------------------------------------------------------------------------------------------------------|------------|
+| v        |        | A metadata equation individual exposing `has_function`, `has_parameter`, `has_state_variable`, `value` and `label`. | _required_ |
+| acronym  |        | Model acronym to strip from the collected symbol names.                                                             | `''`       |
+| evaluate |        | Accepted for API symmetry; the expression is always parsed unevaluated.                                             | `False`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                  |
+|--------|--------|------------------------------|
+|        |        | The parsed SymPy expression. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                                                                                                                                                                                                            |
+|--------|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | If the equation string cannot be parsed, or states a branch as a `where(...)` call. A conditional belongs in the equation's `conditionals`, the one spelling TVBO builds a `Piecewise` from; a hand-written `where` would reach the printers as an opaque function application and silently lose its branch semantics. |
+
+### topological_sort { #tvbo.classes.equation.topological_sort }
+
+```python
+classes.equation.topological_sort(graph)
+```
+
+Performs topological sorting on the dependency graph.
+
+### unify_coupling_terms { #tvbo.classes.equation.unify_coupling_terms }
+
+```python
+classes.equation.unify_coupling_terms(eq_string)
+```
+
+Rewrite TVB-style coupling terms to the legacy `c_pop*` naming.
+
+Replaces indexed `coupling[i]` references and `local_range_coupling` with the legacy `c_pop0` / `c_pop1` / `local_coupling` names used elsewhere in the equation pipeline.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                       | Default    |
+|-----------|--------|-----------------------------------|------------|
+| eq_string |        | The equation string to normalise. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                      |
+|--------|--------|--------------------------------------------------|
+|        |        | The equation string with coupling terms renamed. |
+
+### update_class_relationships { #tvbo.classes.equation.update_class_relationships }
+
+```python
+classes.equation.update_class_relationships(s_cls, k_cls)
+```
+
+Append the ontology `is_a` relations linking a variable to its equation.
+
+Within the ontology world, adds `is_parameter_in` / `is_state_variable_of` / `has_derivative` / `is_derivative_of` axioms between the source variable class and the equation class where they do not already exist, then de-duplicates each class's `is_a` list.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                   | Default    |
+|--------|--------|-----------------------------------------------------------------------------------------------|------------|
+| s_cls  |        | The ontology class of the source variable (parameter, function, state variable, and similar). | _required_ |
+| k_cls  |        | The ontology class of the equation the variable appears in.                                   | _required_ |
+
+### update_mathematical_relationships { #tvbo.classes.equation.update_mathematical_relationships }
+
+```python
+classes.equation.update_mathematical_relationships(model)
+```
+
+Refresh the ontology relationships implied by a model's equations.
+
+Walks every symbolic equation of the model and, for each free symbol, records the parameter / state-variable / derivative relationship between the symbol's class and the equation's class in the ontology. Equations that are `None` or not valid SymPy expressions are skipped with a message.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                           | Default    |
+|--------|--------|-------------------------------------------------------|------------|
+| model  |        | The model identifier whose relationships are updated. | _required_ |

@@ -1,0 +1,427 @@
+# Class: Rule 
+
+
+_A straight reference line drawn across a panel: the zero a signal is measured from, the threshold a value has to clear, the agreement line of a target-versus-simulated plot. One object, so the line and the colour it is drawn in cannot be stated apart — as two loose panel options they could disagree, and a colour could be given to a rule that was never declared._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Rule](https://w3id.org/tvbo/class/Rule)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Rule
+    click Rule href "./Rule.html"
+      Rule : at
+        
+          
+    
+        
+        
+        Rule --> "1..*" Float : at
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Rule : color
+        
+          
+    
+        
+        
+        Rule --> "0..1" String : color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Rule : dash
+        
+          
+    
+        
+        
+        Rule --> "0..1" String : dash
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Rule : label
+        
+          
+    
+        
+        
+        Rule --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Rule : orientation
+        
+          
+    
+        
+        
+        Rule --> "1" RuleOrientation : orientation
+        click RuleOrientation href "../../enums/RuleOrientation.html"
+    
+
+        
+      Rule : width
+        
+          
+    
+        
+        
+        Rule --> "0..1" Float : width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [orientation](../slots/orientation.qmd) | 1 <br/> [RuleOrientation](../enums/RuleOrientation.qmd) | `horizontal` and `vertical` take a single `at`; `diagonal` takes `[slope, int... | direct |
+| [at](../slots/at.qmd) | 1..* <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Where the rule sits: one value for a horizontal or vertical rule, `[slope, in... | direct |
+| [color](../slots/color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The rule's colour, as a palette role (`muted`), a hue (`palette | direct |
+| [width](../slots/width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Line weight in points | direct |
+| [dash](../slots/dash.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Dash pattern (`solid`, `dashed`, `dotted`, `dashdot`) | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Legend entry for the rule | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [rules](../slots/rules.qmd) | range | [Rule](../classes/Rule.qmd) |
+| [Inset](../classes/Inset.qmd) | [rules](../slots/rules.qmd) | range | [Rule](../classes/Rule.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Rule |
+| native | tvbo:Rule |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Rule
+description: 'A straight reference line drawn across a panel: the zero a signal is
+  measured from, the threshold a value has to clear, the agreement line of a target-versus-simulated
+  plot. One object, so the line and the colour it is drawn in cannot be stated apart
+  — as two loose panel options they could disagree, and a colour could be given to
+  a rule that was never declared.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  orientation:
+    name: orientation
+    description: '`horizontal` and `vertical` take a single `at`; `diagonal` takes
+      `[slope, intercept]`, which is the only way to draw the identity line `[1, 0]`
+      a target-versus-simulated panel is read against.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Colorbar
+    - Rule
+    range: RuleOrientation
+    required: true
+  at:
+    name: at
+    description: 'Where the rule sits: one value for a horizontal or vertical rule,
+      `[slope, intercept]` for a diagonal one.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Rule
+    range: float
+    required: true
+    multivalued: true
+  color:
+    name: color
+    description: The rule's colour, as a palette role (`muted`), a hue (`palette.2`),
+      or any colour the backend reads. A rule is scaffolding, so `muted` is usually
+      what it wants.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  width:
+    name: width
+    description: Line weight in points. Unset takes the theme's `line_width`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Figure
+    - Colorbar
+    - Rule
+    - RenderSpec
+    range: float
+  dash:
+    name: dash
+    description: Dash pattern (`solid`, `dashed`, `dotted`, `dashdot`). A reference
+      line is conventionally dashed, so it is not read as data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Rule
+    range: string
+  label:
+    name: label
+    description: Legend entry for the rule. Unset draws it without one.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Rule
+description: 'A straight reference line drawn across a panel: the zero a signal is
+  measured from, the threshold a value has to clear, the agreement line of a target-versus-simulated
+  plot. One object, so the line and the colour it is drawn in cannot be stated apart
+  — as two loose panel options they could disagree, and a colour could be given to
+  a rule that was never declared.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  orientation:
+    name: orientation
+    description: '`horizontal` and `vertical` take a single `at`; `diagonal` takes
+      `[slope, intercept]`, which is the only way to draw the identity line `[1, 0]`
+      a target-versus-simulated panel is read against.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Rule
+    domain_of:
+    - Colorbar
+    - Rule
+    range: RuleOrientation
+    required: true
+  at:
+    name: at
+    description: 'Where the rule sits: one value for a horizontal or vertical rule,
+      `[slope, intercept]` for a diagonal one.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Rule
+    domain_of:
+    - Rule
+    range: float
+    required: true
+    multivalued: true
+  color:
+    name: color
+    description: The rule's colour, as a palette role (`muted`), a hue (`palette.2`),
+      or any colour the backend reads. A rule is scaffolding, so `muted` is usually
+      what it wants.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Rule
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  width:
+    name: width
+    description: Line weight in points. Unset takes the theme's `line_width`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Rule
+    domain_of:
+    - Figure
+    - Colorbar
+    - Rule
+    - RenderSpec
+    range: float
+  dash:
+    name: dash
+    description: Dash pattern (`solid`, `dashed`, `dotted`, `dashdot`). A reference
+      line is conventionally dashed, so it is not read as data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Rule
+    domain_of:
+    - Rule
+    range: string
+  label:
+    name: label
+    description: Legend entry for the rule. Unset draws it without one.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Rule
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+
+```
+</details></div>

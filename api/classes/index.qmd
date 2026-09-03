@@ -1,0 +1,7 @@
+# classes { #tvbo.classes }
+
+`classes`
+
+tvbo.classes.
+
+Core simulation classes: dynamics, coupling, noise, continuation, observation, perturbation, equation, functions, experiment, study, network, and atlas.

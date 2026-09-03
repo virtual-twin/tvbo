@@ -1,0 +1,74 @@
+# Enum: ProvenanceFormat 
+
+
+
+
+_How the ``prov/`` records are serialized. BEP028 names JSON; YAML is the form every other tvbo record takes and the one this study proposes._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ProvenanceFormat](https://w3id.org/tvbo/enum/ProvenanceFormat)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| yaml | None | One `` |
+| json | None | One `` |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [provenance_format](../slots/provenance_format.qmd) | Serialization of the ``prov/`` records: ``yaml`` (the default, and the form e... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ProvenanceFormat
+description: How the ``prov/`` records are serialized. BEP028 names JSON; YAML is
+  the form every other tvbo record takes and the one this study proposes.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  yaml:
+    text: yaml
+    description: One ``.yaml`` per record (the default).
+  json:
+    text: json
+    description: One ``.json`` per record, as BEP028 currently names them.
+
+```
+</details>
+
+</div>

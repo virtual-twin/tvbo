@@ -1,0 +1,692 @@
+# Class: Noise 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Noise](https://w3id.org/tvbo/Noise)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Noise
+    click Noise href "./Noise.html"
+      Noise : additive
+        
+          
+    
+        
+        
+        Noise --> "0..1" Boolean : additive
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Noise : correlated
+        
+          
+    
+        
+        
+        Noise --> "0..1" Boolean : correlated
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Noise : correlated_over
+        
+          
+    
+        
+        
+        Noise --> "0..1" DimensionType : correlated_over
+        click DimensionType href "../../enums/DimensionType.html"
+    
+
+        
+      Noise : covariance
+        
+          
+    
+        
+        
+        Noise --> "0..1" Parameter : covariance
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Noise : distribution
+        
+          
+    
+        
+        
+        Noise --> "0..1" Distribution : distribution
+        click Distribution href "./Distribution.html"
+    
+
+        
+      Noise : equation
+        
+          
+    
+        
+        
+        Noise --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      Noise : function
+        
+          
+    
+        
+        
+        Noise --> "0..1" Function : function
+        click Function href "./Function.html"
+    
+
+        
+      Noise : gaussian
+        
+          
+    
+        
+        
+        Noise --> "0..1" Boolean : gaussian
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Noise : noise_type
+        
+          
+    
+        
+        
+        Noise --> "0..1" String : noise_type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Noise : parameters
+        
+          
+    
+        
+        
+        Noise --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Noise : pycode
+        
+          
+    
+        
+        
+        Noise --> "0..1" String : pycode
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Noise : random_state
+        
+          
+    
+        
+        
+        Noise --> "0..1" RandomStream : random_state
+        click RandomStream href "./RandomStream.html"
+    
+
+        
+      Noise : seed
+        
+          
+    
+        
+        
+        Noise --> "0..1" Integer : seed
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Noise : settle_seed
+        
+          
+    
+        
+        
+        Noise --> "0..1" Integer : settle_seed
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Noise : targets
+        
+          
+    
+        
+        
+        Noise --> "*" StateVariable : targets
+        click StateVariable href "./StateVariable.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Noise](https://w3id.org/tvbo/Noise) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | direct |
+| [noise_type](../slots/noise_type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Temporal character of the process: `gaussian`/`white` (delta-correlated in ti... | direct |
+| [covariance](../slots/covariance.qmd) | 0..1 <br/> [Parameter](../classes/Parameter.qmd) | Covariance of the unit-intensity noise increment across the axis named by `co... | direct |
+| [correlated_over](../slots/correlated_over.qmd) | 0..1 <br/> [DimensionType](../enums/DimensionType.qmd) | Which axis `covariance` indexes — `node` (equivalently `region`) for spatiall... | direct |
+| [correlated](../slots/correlated.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Deprecated | direct |
+| [gaussian](../slots/gaussian.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Indicates whether the noise is Gaussian | direct |
+| [additive](../slots/additive.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Indicates whether the noise is additive | direct |
+| [seed](../slots/seed.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+| [settle_seed](../slots/settle_seed.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Seed for the noise the settle integrates, when the settle runs as its own sca... | direct |
+| [random_state](../slots/random_state.qmd) | 0..1 <br/> [RandomStream](../classes/RandomStream.qmd) |  | direct |
+| [distribution](../slots/distribution.qmd) | 0..1 <br/> [Distribution](../classes/Distribution.qmd) | Optional probability distribution from which the noise draws its samples | direct |
+| [function](../slots/function.qmd) | 0..1 <br/> [Function](../classes/Function.qmd) | Optional functional form of the noise (callable specification) | direct |
+| [pycode](../slots/pycode.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Inline Python code representation of the noise process | direct |
+| [targets](../slots/targets.qmd) | * <br/> [StateVariable](../classes/StateVariable.qmd) | State variables this noise applies to; if omitted, applies globally | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Stimulus](../classes/Stimulus.qmd) | [noise](../slots/noise.qmd) | range | [Noise](../classes/Noise.qmd) |
+| [StateVariable](../classes/StateVariable.qmd) | [noise](../slots/noise.qmd) | range | [Noise](../classes/Noise.qmd) |
+| [Integrator](../classes/Integrator.qmd) | [noise](../slots/noise.qmd) | range | [Noise](../classes/Noise.qmd) |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) | [noise](../slots/noise.qmd) | range | [Noise](../classes/Noise.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Noise |
+| native | tvbo:Noise |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Noise
+from_schema: https://w3id.org/tvbo
+slots:
+- parameters
+- equation
+attributes:
+  noise_type:
+    name: noise_type
+    description: 'Temporal character of the process: `gaussian`/`white` (delta-correlated
+      in time) or `ou`/`ornstein-uhlenbeck` (exponentially correlated in time). Governs
+      the TIME axis only, and composes freely with `covariance`, which governs a spatial
+      axis.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: gaussian
+    domain_of:
+    - Noise
+    range: string
+  covariance:
+    name: covariance
+    description: 'Covariance of the unit-intensity noise increment across the axis
+      named by `correlated_over` — the second-order structure of the driving process,
+      stated as mathematics rather than as a factorisation. Must be square in that
+      axis, symmetric and positive semi-definite; its diagonal carries per-element
+      variances and need NOT be unity, so unequal variances and cross-element correlation
+      are expressed together. The realised increment is the declared sigma times a
+      draw from this covariance, so `parameters: {sigma: ...}` continues to mean what
+      it means for uncorrelated noise. Absent (the default) means the increment is
+      independent across that axis. Being a `Parameter`, it carries the full provenance
+      triple: a literal `value:`, existing bytes via `source:`+`measure:`, or — the
+      usual case for a derived operator — `producer:`, whose FunctionCall records
+      how the structure was obtained (projecting a spatially white field into a modal
+      basis, spreading independent per-region drives through a connectome). The generative
+      account therefore lives in the provenance, and the matrix itself stays a statement
+      about the process. How a backend samples it (Cholesky, eigendecomposition, whitening)
+      is a backend concern and is never stated here.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Noise
+    range: Parameter
+    required: false
+    inlined: true
+  correlated_over:
+    name: correlated_over
+    description: 'Which axis `covariance` indexes — `node` (equivalently `region`)
+      for spatially correlated drive, or `state` for correlation between the noise
+      on different state variables. Required whenever `covariance` is set: a covariance
+      without a named axis does not identify a process. A multi-mode model carries
+      its modes inside the state axis, so a modal covariance is declared over `state`.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Noise
+    range: DimensionType
+    required: false
+  correlated:
+    name: correlated
+    description: Deprecated. Whether the noise is correlated, without saying across
+      which axis or by how much. Use `covariance` + `correlated_over`.
+    deprecated: Superseded by `covariance` + `correlated_over`. A bare boolean never
+      identified a process — it said neither which axis was correlated nor how strongly
+      — so no backend could act on it. Read and ignored, so recipes carrying it keep
+      loading; delete it, and declare `covariance` if the noise really is correlated.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Noise
+    range: boolean
+  gaussian:
+    name: gaussian
+    description: Indicates whether the noise is Gaussian
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Noise
+    range: boolean
+  additive:
+    name: additive
+    description: Indicates whether the noise is additive
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'True'
+    domain_of:
+    - Noise
+    range: boolean
+  seed:
+    name: seed
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(42)
+    domain_of:
+    - GraphGenerator
+    - Distribution
+    - Noise
+    - Inference
+    range: integer
+  settle_seed:
+    name: settle_seed
+    description: 'Seed for the noise the settle integrates, when the settle runs as
+      its own scan. Absent -- the default -- leaves the settle on whatever stream
+      its solver hands it, which is what an unmodified upstream warm start does; the
+      backend is not silently given a different draw than the reference implementation
+      it is checked against. Present means the settle uses exactly this seed. Both
+      interesting cases are then sayable: equal to `seed` puts the two scans on one
+      stream, and different from it decorrelates them. Equal is not neutral -- where
+      the two scans take the same number of steps a shorter draw is a prefix of a
+      longer one, so the measured noise repeats the settle''s sample for sample, and
+      corr(settle, measured) on demeaned fluctuations is +0.49 against -0.01 decorrelated.
+      Its effect on the reported statistics was null everywhere it was measured (FC
+      bias below 0.03 sigma, no trend), so this slot exists to make the choice visible
+      and reproducible rather than because either answer is known to be wrong.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Noise
+    range: integer
+    required: false
+  random_state:
+    name: random_state
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Noise
+    range: RandomStream
+    inlined: true
+  distribution:
+    name: distribution
+    description: Optional probability distribution from which the noise draws its
+      samples. When set, takes precedence over the `noise_type` / `gaussian` flags
+      — any Distribution family is accepted (Uniform { lo, hi }, Normal { mean, std
+      }, LogNormal { mu, sigma }, Beta, …). Reuses the existing Distribution class
+      also used by Parameter.distribution.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    range: Distribution
+    required: false
+    inlined: true
+  function:
+    name: function
+    description: Optional functional form of the noise (callable specification).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Distribution
+    - FunctionCall
+    - Noise
+    range: Function
+    inlined: true
+  pycode:
+    name: pycode
+    description: Inline Python code representation of the noise process.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Equation
+    - Noise
+    range: string
+  targets:
+    name: targets
+    description: State variables this noise applies to; if omitted, applies globally.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Noise
+    range: StateVariable
+    multivalued: true
+    inlined: true
+class_uri: tvbo:Noise
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Noise
+from_schema: https://w3id.org/tvbo
+attributes:
+  noise_type:
+    name: noise_type
+    description: 'Temporal character of the process: `gaussian`/`white` (delta-correlated
+      in time) or `ou`/`ornstein-uhlenbeck` (exponentially correlated in time). Governs
+      the TIME axis only, and composes freely with `covariance`, which governs a spatial
+      axis.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: gaussian
+    owner: Noise
+    domain_of:
+    - Noise
+    range: string
+  covariance:
+    name: covariance
+    description: 'Covariance of the unit-intensity noise increment across the axis
+      named by `correlated_over` — the second-order structure of the driving process,
+      stated as mathematics rather than as a factorisation. Must be square in that
+      axis, symmetric and positive semi-definite; its diagonal carries per-element
+      variances and need NOT be unity, so unequal variances and cross-element correlation
+      are expressed together. The realised increment is the declared sigma times a
+      draw from this covariance, so `parameters: {sigma: ...}` continues to mean what
+      it means for uncorrelated noise. Absent (the default) means the increment is
+      independent across that axis. Being a `Parameter`, it carries the full provenance
+      triple: a literal `value:`, existing bytes via `source:`+`measure:`, or — the
+      usual case for a derived operator — `producer:`, whose FunctionCall records
+      how the structure was obtained (projecting a spatially white field into a modal
+      basis, spreading independent per-region drives through a connectome). The generative
+      account therefore lives in the provenance, and the matrix itself stays a statement
+      about the process. How a backend samples it (Cholesky, eigendecomposition, whitening)
+      is a backend concern and is never stated here.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Noise
+    domain_of:
+    - Noise
+    range: Parameter
+    required: false
+    inlined: true
+  correlated_over:
+    name: correlated_over
+    description: 'Which axis `covariance` indexes — `node` (equivalently `region`)
+      for spatially correlated drive, or `state` for correlation between the noise
+      on different state variables. Required whenever `covariance` is set: a covariance
+      without a named axis does not identify a process. A multi-mode model carries
+      its modes inside the state axis, so a modal covariance is declared over `state`.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Noise
+    domain_of:
+    - Noise
+    range: DimensionType
+    required: false
+  correlated:
+    name: correlated
+    description: Deprecated. Whether the noise is correlated, without saying across
+      which axis or by how much. Use `covariance` + `correlated_over`.
+    deprecated: Superseded by `covariance` + `correlated_over`. A bare boolean never
+      identified a process — it said neither which axis was correlated nor how strongly
+      — so no backend could act on it. Read and ignored, so recipes carrying it keep
+      loading; delete it, and declare `covariance` if the noise really is correlated.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Noise
+    domain_of:
+    - Noise
+    range: boolean
+  gaussian:
+    name: gaussian
+    description: Indicates whether the noise is Gaussian
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Noise
+    domain_of:
+    - Noise
+    range: boolean
+  additive:
+    name: additive
+    description: Indicates whether the noise is additive
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'True'
+    owner: Noise
+    domain_of:
+    - Noise
+    range: boolean
+  seed:
+    name: seed
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(42)
+    owner: Noise
+    domain_of:
+    - GraphGenerator
+    - Distribution
+    - Noise
+    - Inference
+    range: integer
+  settle_seed:
+    name: settle_seed
+    description: 'Seed for the noise the settle integrates, when the settle runs as
+      its own scan. Absent -- the default -- leaves the settle on whatever stream
+      its solver hands it, which is what an unmodified upstream warm start does; the
+      backend is not silently given a different draw than the reference implementation
+      it is checked against. Present means the settle uses exactly this seed. Both
+      interesting cases are then sayable: equal to `seed` puts the two scans on one
+      stream, and different from it decorrelates them. Equal is not neutral -- where
+      the two scans take the same number of steps a shorter draw is a prefix of a
+      longer one, so the measured noise repeats the settle''s sample for sample, and
+      corr(settle, measured) on demeaned fluctuations is +0.49 against -0.01 decorrelated.
+      Its effect on the reported statistics was null everywhere it was measured (FC
+      bias below 0.03 sigma, no trend), so this slot exists to make the choice visible
+      and reproducible rather than because either answer is known to be wrong.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Noise
+    domain_of:
+    - Noise
+    range: integer
+    required: false
+  random_state:
+    name: random_state
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Noise
+    domain_of:
+    - Noise
+    range: RandomStream
+    inlined: true
+  distribution:
+    name: distribution
+    description: Optional probability distribution from which the noise draws its
+      samples. When set, takes precedence over the `noise_type` / `gaussian` flags
+      — any Distribution family is accepted (Uniform { lo, hi }, Normal { mean, std
+      }, LogNormal { mu, sigma }, Beta, …). Reuses the existing Distribution class
+      also used by Parameter.distribution.
+    from_schema: https://w3id.org/tvbo
+    owner: Noise
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    range: Distribution
+    required: false
+    inlined: true
+  function:
+    name: function
+    description: Optional functional form of the noise (callable specification).
+    from_schema: https://w3id.org/tvbo
+    owner: Noise
+    domain_of:
+    - Distribution
+    - FunctionCall
+    - Noise
+    range: Function
+    inlined: true
+  pycode:
+    name: pycode
+    description: Inline Python code representation of the noise process.
+    from_schema: https://w3id.org/tvbo
+    owner: Noise
+    domain_of:
+    - Equation
+    - Noise
+    range: string
+  targets:
+    name: targets
+    description: State variables this noise applies to; if omitted, applies globally.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Noise
+    domain_of:
+    - Noise
+    range: StateVariable
+    multivalued: true
+    inlined: true
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Noise
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:Equation
+    owner: Noise
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+class_uri: tvbo:Noise
+
+```
+</details></div>

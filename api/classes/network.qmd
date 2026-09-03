@@ -1,0 +1,1905 @@
+# network { #tvbo.classes.network }
+
+`classes.network`
+
+Brain-network connectivity classes for TVBO.
+
+Defines [`Network`](#tvbo.classes.network.Network) and its matrix-style subclass [`Connectome`](#tvbo.classes.network.Connectome), which carry the structural connectivity (weights and tract lengths), parcellation, nodes/edges and declarative transforms of a virtual brain. Includes constructors that load networks from HDF5/YAML database files and from BIDS derivatives, JAX pytree registration so a network can flow through differentiable simulations, and graph-Laplacian coupling primitives.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [NETWORK_DIR](#tvbo.classes.network.NETWORK_DIR) |  |
+| [available_connectomes](#tvbo.classes.network.available_connectomes) |  |
+| [connectome_data](#tvbo.classes.network.connectome_data) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Connectome](#tvbo.classes.network.Connectome) | Deprecated alias for Network. Use Network instead. |
+| [Network](#tvbo.classes.network.Network) | A brain network: parcellation, connectome, per-node dynamics, and coupling. |
+
+### Connectome { #tvbo.classes.network.Connectome }
+
+```python
+classes.network.Connectome(*args, **kwargs)
+```
+
+Deprecated alias for Network. Use Network instead.
+
+### Network { #tvbo.classes.network.Network }
+
+```python
+classes.network.Network(**kwargs)
+```
+
+A brain network: parcellation, connectome, per-node dynamics, and coupling.
+
+The spatial substrate of a `SimulationExperiment`. A `Network` ties an atlas/parcellation to a tractogram (structural connectivity matrix + optional path lengths) and, optionally, per-node `Dynamics` overrides and node-level coupling parameters.
+
+Construct inline, by IRI (resolved against the curated database), or from a NumPy / pandas matrix via [`Network.from_array`](#tvbo.classes.network.Network.from_array).
+
+#### Examples {.doc-section .doc-section-examples}
+
+```python
+net = Network(
+    parcellation={"atlas": {"iri": "tvbo:DesikanKilliany"}},
+    tractogram={"iri": "tvbo:dTOR"},
+)
+```
+
+See the [Network specification](/2-specify/Networks/Network.qmd) for the slot-by-slot reference and the [`Connectome`](#tvbo.classes.network.Connectome) subclass for matrix-style networks without an explicit parcellation.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [arrays](#tvbo.classes.network.Network.arrays) | The materialised arrays, keyed by companion dataset path — ``edges/weight``, ``mesh/vertices``. |
+| [atlas](#tvbo.classes.network.Network.atlas) | Brain atlas associated with this connectome. |
+| [bids_filename](#tvbo.classes.network.Network.bids_filename) | Generate BIDS-compliant filename using pybids build_path (§6.5). |
+| [conduction_speed](#tvbo.classes.network.Network.conduction_speed) | Access conduction_speed from parameters dict. |
+| [distances](#tvbo.classes.network.Network.distances) | Tract-length matrix in millimetres (alias of `lengths`). |
+| [global_coupling_strength](#tvbo.classes.network.Network.global_coupling_strength) | Access global_coupling_strength from parameters dict. |
+| [graph](#tvbo.classes.network.Network.graph) | Build NetworkX MultiDiGraph from network nodes and edges. |
+| [labels](#tvbo.classes.network.Network.labels) | Brain region labels from atlas. |
+| [lengths](#tvbo.classes.network.Network.lengths) | Tract-length matrix in millimetres (alias for `lengths_matrix`). |
+| [lengths_matrix](#tvbo.classes.network.Network.lengths_matrix) | Tract length matrix as numpy/JAX array. |
+| [matrix_names](#tvbo.classes.network.Network.matrix_names) | Every edge matrix this network can serve, without reading one. |
+| [metadata](#tvbo.classes.network.Network.metadata) | Back-compatible pointer that returns the network itself as its metadata. |
+| [node_labels](#tvbo.classes.network.Network.node_labels) | Node labels derived from nodes. |
+| [node_mapping_data](#tvbo.classes.network.Network.node_mapping_data) | The node-to-parent mapping array, or ``None``. |
+| [node_parameter_vectors](#tvbo.classes.network.Network.node_parameter_vectors) | Per-node parameters as ``{name: (n_nodes,) array}``, in declared node order. |
+| [number_of_regions](#tvbo.classes.network.Network.number_of_regions) | Deprecated alias for number_of_nodes. |
+| [observations](#tvbo.classes.network.Network.observations) | Observational-measure matrices carried by the network. |
+| [parent_network_obj](#tvbo.classes.network.Network.parent_network_obj) | The parent Network object, if assigned via object reference. |
+| [raw_weights_matrix](#tvbo.classes.network.Network.raw_weights_matrix) | Deprecated: use ``matrix("weight", apply_transforms=False)``. |
+| [weights](#tvbo.classes.network.Network.weights) | Deprecated: use ``matrix("weight")``. |
+| [weights_matrix](#tvbo.classes.network.Network.weights_matrix) | Deprecated: use ``matrix("weight")``. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [add_edge](#tvbo.classes.network.Network.add_edge) | Add a single edge with named parameter values. |
+| [add_edges](#tvbo.classes.network.Network.add_edges) | Add edges in bulk using COO-style index arrays. |
+| [add_transform](#tvbo.classes.network.Network.add_transform) | Append a matrix transform for a named edge property. |
+| [array](#tvbo.classes.network.Network.array) | The array at ``path``, resident or read from the companion on first use; ``None`` when there is neither. |
+| [as_data_file_reference](#tvbo.classes.network.Network.as_data_file_reference) | A compact datamodel ``Network`` that points at *data_file* and still IS this network. |
+| [calculate_delays](#tvbo.classes.network.Network.calculate_delays) | Calculate signal propagation delays between regions. |
+| [compute_delays](#tvbo.classes.network.Network.compute_delays) | Deprecated: use :meth:`calculate_delays` instead. |
+| [create_graph](#tvbo.classes.network.Network.create_graph) | Create NetworkX graph from network structure. |
+| [edge_parameter_arrays](#tvbo.classes.network.Network.edge_parameter_arrays) | ``{edge: {parameter: matrix}}`` for every edge-parameter matrix, resident or in the companion. |
+| [execute](#tvbo.classes.network.Network.execute) | Convert connectome to simulator-specific format. |
+| [from_bids](#tvbo.classes.network.Network.from_bids) | Create a Network from BEP017-compliant BIDS connectivity data. |
+| [from_datamodel](#tvbo.classes.network.Network.from_datamodel) | Create a Network from a datamodel instance. |
+| [from_db](#tvbo.classes.network.Network.from_db) | Load a Network from the tvbo database by name or BIDS entities. |
+| [from_file](#tvbo.classes.network.Network.from_file) | Load from YAML/JSON sidecar with lazy binary companion. |
+| [from_matrix](#tvbo.classes.network.Network.from_matrix) | Create a Network from named edge-property matrices. |
+| [from_platform](#tvbo.classes.network.Network.from_platform) | Download a normative connectivity network from the tvbo platform. |
+| [from_string](#tvbo.classes.network.Network.from_string) | Create a Network from a YAML string. |
+| [from_tvb](#tvbo.classes.network.Network.from_tvb) | Import a live TVB Connectivity object. |
+| [from_tvb_surface](#tvbo.classes.network.Network.from_tvb_surface) | Create a multi-level Network from TVB surface simulation data. |
+| [from_tvb_zip](#tvbo.classes.network.Network.from_tvb_zip) | Import from TVB connectivity ZIP (weights.txt + tract_lengths.txt). |
+| [get_atlas](#tvbo.classes.network.Network.get_atlas) | Retrieve the Atlas object for this connectome. |
+| [get_centers](#tvbo.classes.network.Network.get_centers) | Get 3D spatial coordinates of brain region centers. |
+| [invalidate_resolution](#tvbo.classes.network.Network.invalidate_resolution) | Drop everything ``_resolve`` materialised, so the next access rebuilds it. |
+| [list_db](#tvbo.classes.network.Network.list_db) | List available networks in the tvbo database, optionally filtered. |
+| [list_platform_networks](#tvbo.classes.network.Network.list_platform_networks) | List available normative networks on the tvbo platform. |
+| [load](#tvbo.classes.network.Network.load) | Unified loader: file path, database name, or BIDS entities. |
+| [load_from_bids](#tvbo.classes.network.Network.load_from_bids) | Load BEP017 data into existing network. |
+| [load_matrix](#tvbo.classes.network.Network.load_matrix) | Load weight/length matrices into existing network (preserves coupling). |
+| [materialize](#tvbo.classes.network.Network.materialize) | A copy of this network with ``paths`` resident, and nothing else newly read. |
+| [matrix](#tvbo.classes.network.Network.matrix) | Get a named edge matrix, optionally in a specific format. |
+| [matrix_info](#tvbo.classes.network.Network.matrix_info) | Shape, dtype and storage format of one array, from the companion's header alone. |
+| [node_index_map](#tvbo.classes.network.Network.node_index_map) | ``{Node.id: row/column index}`` for the connectome matrices. |
+| [node_positions](#tvbo.classes.network.Network.node_positions) | Node coordinates as an ``(n_nodes, 3)`` array, in declared node order. |
+| [normalize](#tvbo.classes.network.Network.normalize) | Add min-max normalization of connection weights. |
+| [normalize_weights](#tvbo.classes.network.Network.normalize_weights) | Add a normalization transform for connection weights. |
+| [plot_brain_surface](#tvbo.classes.network.Network.plot_brain_surface) | Render the network on the cortical brain surface. |
+| [plot_graph](#tvbo.classes.network.Network.plot_graph) | Visualize connectome as network graph. |
+| [plot_lengths](#tvbo.classes.network.Network.plot_lengths) | Plot tract lengths matrix as heatmap. |
+| [plot_matrix](#tvbo.classes.network.Network.plot_matrix) | Plot both weights and lengths matrices side by side. |
+| [plot_overview](#tvbo.classes.network.Network.plot_overview) | Create comprehensive visualization with brain surface and matrices. |
+| [plot_weights](#tvbo.classes.network.Network.plot_weights) | Plot connection weights matrix as heatmap. |
+| [region_alias_map](#tvbo.classes.network.Network.region_alias_map) | Map each node's canonical label AND every known alias -> canonical label. |
+| [save](#tvbo.classes.network.Network.save) | Save as sidecar + binary companion. |
+| [set_array](#tvbo.classes.network.Network.set_array) | Hold ``data`` as the array at ``path`` (a bare name means an edge matrix). |
+| [set_matrix](#tvbo.classes.network.Network.set_matrix) | Set a named edge matrix. |
+| [set_node_mapping](#tvbo.classes.network.Network.set_node_mapping) | Set the node-to-parent mapping array. |
+| [to_bep017](#tvbo.classes.network.Network.to_bep017) | Export to BEP017-compatible per-measure files. |
+| [to_yaml](#tvbo.classes.network.Network.to_yaml) | Serialize Network to YAML format. |
+| [transform_expression](#tvbo.classes.network.Network.transform_expression) | A transform's equation as a sympy expression, with its arguments substituted. |
+| [transforms_for](#tvbo.classes.network.Network.transforms_for) | The declared `transforms:` that retarget *target*, in declaration order. |
+| [tree_flatten](#tvbo.classes.network.Network.tree_flatten) | Flatten into JAX pytree children `(weights, lengths)` plus metadata aux data. |
+| [tree_unflatten](#tvbo.classes.network.Network.tree_unflatten) | Rebuild a `Network` from JAX pytree children and metadata (inverse of `tree_flatten`). |
+
+##### add_edge { #tvbo.classes.network.Network.add_edge }
+
+```python
+classes.network.Network.add_edge(source, target, symmetric=True, **params)
+```
+
+Add a single edge with named parameter values.
+
+Convenience wrapper around :meth:`add_edges` for one edge.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+source, target : int
+    Node indices.
+symmetric : bool
+    If ``True`` (default), also adds the reverse edge.
+**params : float
+    Named parameter values. Each name becomes a matrix name
+    (e.g. ``weight=0.5`` → stored in the ``"weight"`` matrix,
+    ``length=30.0`` → stored in ``"length"``).
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> net.add_edge(0, 1, weight=0.5, length=30.0)
+
+##### add_edges { #tvbo.classes.network.Network.add_edges }
+
+```python
+classes.network.Network.add_edges(sources, targets, symmetric=True, **matrices)
+```
+
+Add edges in bulk using COO-style index arrays.
+
+Each keyword argument is a named matrix (e.g. ``weights=vals``) whose entries are being added at the given ``(source, target)`` positions. Internally the data is kept in COO format for fast incremental building; call :meth:`matrix` with ``format="csr"`` when you need efficient row-slicing.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+sources, targets : array-like of int
+    Source and target node index arrays (same length).
+symmetric : bool
+    If ``True`` (default), each ``(i, j)`` entry is mirrored
+    to ``(j, i)``, producing a symmetric matrix.
+**matrices : array-like of float
+    Named value arrays, one per matrix to update. Length must
+    match ``sources`` and ``targets``.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> # Build local connectivity from index pairs + kernel weights
+>>> net.add_edges(pairs[:, 0], pairs[:, 1],
+...              symmetric=True, weight=kernel_vals)
+
+##### add_transform { #tvbo.classes.network.Network.add_transform }
+
+```python
+classes.network.Network.add_transform(target, equation_rhs=None)
+```
+
+Append a matrix transform for a named edge property.
+
+Transforms are applied in order when the matrix is accessed via ``matrix()`` or ``weights_matrix``.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+target : str
+    Edge property name (e.g. ``"weight"``, ``"length"``, ``"fc"``).
+equation_rhs : str, optional
+    Right-hand side of the transform equation, written over the network's own
+    edge attributes — ``weight``, ``length``, or ``network.edges.<label>``. The
+    attribute named by *target* is the value under transform. Defaults to
+    min-max normalisation of *target*. A reduction may be scoped by a boolean
+    predicate, written either as a subscript or as a second argument.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc.add_transform("weight", "weight / max(weight)")
+sc.add_transform("weight", "weight / mean(weight[weight > 0])")
+sc.add_transform("weight", "weight / mean(weight, weight > 0)")
+```
+
+##### array { #tvbo.classes.network.Network.array }
+
+```python
+classes.network.Network.array(path)
+```
+
+The array at ``path``, resident or read from the companion on first use; ``None`` when there is neither.
+
+A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format.
+
+##### as_data_file_reference { #tvbo.classes.network.Network.as_data_file_reference }
+
+```python
+classes.network.Network.as_data_file_reference(data_file)
+```
+
+A compact datamodel ``Network`` that points at *data_file* and still IS this network.
+
+Freezing a connectome writes its matrices to a companion file and replaces the network in the rendered spec with this reference, so what travels beside ``data_file`` has to be everything the reloaded network needs in order to behave identically: the inline coupling / transforms / parameters, the scalar identity, the measure declarations — ``Network.observations`` and the structural resolution gate on those, so a companion holding ``BoldCorrelation`` data is invisible unless the reference also declares ``observational_measures: [BoldCorrelation]`` — and the ``parcellation``, which names the atlas that a ``by_label`` node crosswalk resolves against. Carrying the parcellation cannot re-expand the node set, because ``data_file`` makes the loader defer connectivity to the companion store.
+
+Note that ``observations`` is deliberately NOT copied: it is a runtime view over the companion's measures, not a schema slot, and ``observational_measures`` is what reconstructs it.
+
+##### calculate_delays { #tvbo.classes.network.Network.calculate_delays }
+
+```python
+classes.network.Network.calculate_delays(
+    conduction_speed=None,
+    output_unit=None,
+)
+```
+
+Calculate signal propagation delays between regions.
+
+Supports two network representations:
+
+1. **Matrix-based** — delays are ``lengths / conduction_speed``, with optional unit conversion via *output_unit*.
+2. **Edge-based** — delays are extracted from explicit edge objects that carry ``source``, ``target``, and a ``"delay"`` parameter.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+conduction_speed : float, optional
+    Override conduction speed. If *None*, uses ``self.conduction_speed``.
+output_unit : str, optional
+    Desired output time unit (e.g. ``"ms"``, ``"s"``). When given,
+    sympy unit conversion is applied. If *None*, the result is in the
+    network's native time unit (defaults to ms).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+np.ndarray or jax.Array
+    Delay matrix (N x N). For edge-based networks, entries without an
+    edge are ``NaN``.
+
+
+
+###### Raises: {.doc-section .doc-section-raises}
+
+ValueError
+    If neither lengths matrix nor edge-based delays are available.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+import matplotlib.pyplot as plt
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+delays = sc.calculate_delays(conduction_speed=3.0)
+plt.imshow(delays, cmap='viridis')
+plt.colorbar(label='Delay (ms)')
+```
+
+##### compute_delays { #tvbo.classes.network.Network.compute_delays }
+
+```python
+classes.network.Network.compute_delays(output_unit=None)
+```
+
+Deprecated: use :meth:`calculate_delays` instead.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+output_unit : str, optional
+    Passed through to ``calculate_delays(output_unit=...)``.
+
+##### create_graph { #tvbo.classes.network.Network.create_graph }
+
+```python
+classes.network.Network.create_graph(weight_threshold=0)
+```
+
+Create NetworkX graph from network structure.
+
+Prioritizes explicit nodes/edges representation over weight matrices.
+This allows proper visualization of heterogeneous networks with labeled nodes and typed edges.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+weight_threshold : float, default=0
+    Minimum weight for including an edge in the graph
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+networkx.MultiDiGraph
+    Directed multigraph with 'weight' and 'delay' edge attributes.
+    Nodes have 'label' and 'dynamics' attributes when available.
+    Edges have 'source_var', 'target_var' attributes when available.
+    Edges point in signal direction (source to target). Stored
+    matrices are receiver-row (``W[i, j]`` couples node ``j`` into
+    node ``i``), so matrix entries are emitted as edges ``j -> i``.
+    Explicit pair edges declared with ``directed: false`` (the schema
+    default) are mirrored into both directions, matching their
+    expansion in ``_edge_matrix``; an explicitly declared reverse
+    edge takes precedence over the mirror.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+# From explicit nodes/edges
+network = Network(nodes=[...], edges=[...])
+G = network.create_graph()
+
+# From weight matrix
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+G = sc.create_graph(weight_threshold=0.1)
+print(f"Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}")
+```
+
+##### edge_parameter_arrays { #tvbo.classes.network.Network.edge_parameter_arrays }
+
+```python
+classes.network.Network.edge_parameter_arrays()
+```
+
+``{edge: {parameter: matrix}}`` for every edge-parameter matrix, resident or in the companion.
+
+These are kept under ``edges/<edge>/edge_parameters/<parameter>``, the path the companion writes them at.
+
+##### execute { #tvbo.classes.network.Network.execute }
+
+```python
+classes.network.Network.execute(
+    format='tvb',
+    target=None,
+    threshold_percentile=85,
+    **kwargs,
+)
+```
+
+Convert connectome to simulator-specific format.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+format : str, default="tvb"
+    Target format: ``"tvb"``, ``"networkx"``, or ``"tvboptim"``.
+target : Network, optional
+    Target network for bipartite projection graphs
+    (used with ``format="networkx"`` when a gain matrix exists).
+threshold_percentile : float, default=85
+    Keep only gain edges above this percentile (networkx only).
+**kwargs
+    Extra arguments forwarded to the adapter. For tvboptim:
+
+    - ``delays=False`` — force a ``DenseGraph`` without delays.
+    - ``return_type="graph"`` — return only the graph object.
+    - ``return_type="network"`` (default) — return a full tvboptim
+      ``Network`` (requires ``dynamics`` and ``coupling`` kwargs).
+    - ``dynamics`` — tvboptim dynamics instance.
+    - ``coupling`` — tvboptim coupling instance(s).
+    - ``noise`` — tvboptim noise instance (optional).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Any
+    Connectivity object in the specified format.
+
+##### from_bids { #tvbo.classes.network.Network.from_bids }
+
+```python
+classes.network.Network.from_bids(
+    bids_dir,
+    atlas=None,
+    structural_measures=None,
+    observational_measures=None,
+    **kwargs,
+)
+```
+
+Create a Network from BEP017-compliant BIDS connectivity data.
+
+Loads structural connectivity (weights, lengths) and optionally observational targets (FC) from a BIDS derivatives directory using the BEP017 relationship matrix format.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+bids_dir : str or Path
+    Path to BEP017-compliant BIDS directory containing _relmat files.
+atlas : str, optional
+    Atlas name to filter files (e.g., "DesikanKilliany").
+    If None, uses the first atlas found.
+structural_measures : list of str, optional
+    Measures to use for structural network.
+    First is used as weights, second (if present) as lengths.
+    If None, auto-discovered from available ``meas-*`` relmat files.
+observational_measures : list of str, optional
+    Measures to load as observational targets for optimization
+    (e.g., ["correlation"] for FC). Stored in network._observations.
+**kwargs : Any
+    Additional keyword arguments passed to Network constructor.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Network with matrices loaded from BEP017 files.
+    Observational data accessible via network.observations dict.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+from tvbo import Network
+
+# Auto-discover measures from directory
+network = Network.from_bids("tvbo/database/networks/bids/dk_average")
+
+# Or specify measures explicitly
+network = Network.from_bids(
+    "tvbo/database/networks/bids/dk_average",
+    structural_measures=["streamlineCount", "tractLength"],
+    observational_measures=["BoldCorrelation"],
+)
+
+# Access structural connectivity
+print(network.matrix("weight").shape)  # (84, 84)
+```
+
+##### from_datamodel { #tvbo.classes.network.Network.from_datamodel }
+
+```python
+classes.network.Network.from_datamodel(datamodel)
+```
+
+Create a Network from a datamodel instance.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+datamodel : tvbo_datamodel.Network
+    Source datamodel Network instance
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    New Network with fields copied from datamodel
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+from tvbo.datamodel import schema as tvbo_datamodel
+dm = tvbo_datamodel.Network(number_of_nodes=10)
+sc = Network.from_datamodel(dm)
+```
+
+##### from_db { #tvbo.classes.network.Network.from_db }
+
+```python
+classes.network.Network.from_db(name=None, **entities)
+```
+
+Load a Network from the tvbo database by name or BIDS entities.
+
+Supports two modes:
+
+1. **By name** (existing): ``Network.from_db("DesikanKilliany")``
+2. **By BIDS key-values**: ``Network.from_db(atlas="DesikanKilliany", rec="dTOR")``
+
+BIDS entity keys match the ``key-value`` pairs in filenames, e.g.
+``atlas``, ``rec``, ``scale``, ``seg``, ``desc``, ``cohort``.
+
+When entities match a single file, returns a Network.
+When multiple match, returns a list of Networks.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+name : str, optional
+    Short name or atlas name (legacy mode). Ignored when entities
+    are given.
+**entities
+    BIDS key-value filters. All specified entities must match.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network or list[Network]
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> sc = Network.from_db("DesikanKilliany")        # by name
+>>> sc = Network.from_db(atlas="DesikanKilliany", rec="dTOR")
+>>> scs = Network.from_db(atlas="Schaefer2018", scale="100")  # list
+
+##### from_file { #tvbo.classes.network.Network.from_file }
+
+```python
+classes.network.Network.from_file(path, **kwargs)
+```
+
+Load from YAML/JSON sidecar with lazy binary companion.
+
+Supports YAML and JSON sidecars (auto-detected by extension).
+Supports HDF5, Zarr, and CSV companions.
+Arrays are NOT loaded into memory — loaded lazily on first access.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+path : str or Path
+    Path to YAML or JSON sidecar file.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Network with lazy array references.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> net = Network.from_db("dk87")
+>>> net.number_of_nodes       # metadata: instant, no I/O
+87
+>>> net.matrix("weight").shape  # arrays: loaded on first access
+(87, 87)
+
+##### from_matrix { #tvbo.classes.network.Network.from_matrix }
+
+```python
+classes.network.Network.from_matrix(
+    weights=None,
+    lengths=None,
+    labels=None,
+    **kwargs,
+)
+```
+
+Create a Network from named edge-property matrices.
+
+This is a convenience constructor for creating networks from matrix representations. For performance, matrices are stored directly and edges are generated lazily only when needed.
+
+Any keyword argument whose value is array-like (ndarray, sparse matrix, or nested sequence) is treated as a named edge-property matrix and stored via ``set_matrix``. All other keyword arguments are forwarded to the ``Network`` constructor.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+weights : np.ndarray, optional
+    Connection weight matrix (N x N). Stored as ``"weight"``.
+lengths : np.ndarray, optional
+    Tract length matrix (N x N). Stored as ``"length"``.
+labels : list of str, optional
+    Node labels. If not provided, uses "node_0", "node_1", etc.
+**kwargs : Any
+    Keyword arguments that are array-like are stored as named
+    edge matrices (e.g. ``sc=mat`` → ``set_matrix("sc", mat)``).
+    Everything else is passed to the Network constructor.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    New Network with nodes derived from labels and matrices stored
+    for efficient access.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+import numpy as np
+from tvbo import Network
+
+# Simple 3-node network
+W = np.array([[0, 0.5, 0.3],
+              [0.2, 0, 0.4],
+              [0.1, 0.6, 0]])
+network = Network.from_matrix(W, labels=["A", "B", "C"])
+network.plot_graph()
+
+# With tract lengths
+L = np.array([[0, 10, 15],
+              [10, 0, 8],
+              [15, 8, 0]])
+network = Network.from_matrix(W, lengths=L)
+
+# Arbitrary named edge properties
+sc = np.array([[0, 1], [1, 0]])
+fc = np.array([[1, 0.8], [0.8, 1]])
+network = Network.from_matrix(sc=sc, fc=fc, labels=["L", "R"])
+network.plot_overview()
+```
+
+##### from_platform { #tvbo.classes.network.Network.from_platform }
+
+```python
+classes.network.Network.from_platform(
+    atlas,
+    tractogram='dTOR',
+    base_url=TVBO_PLATFORM_URL,
+    cache_dir=None,
+)
+```
+
+Download a normative connectivity network from the tvbo platform.
+
+Fetches the sidecar (YAML) and companion (HDF5) from the tvbo API and caches locally for subsequent loads.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+atlas : str
+    Atlas name (e.g., "DesikanKilliany", "Schaefer1000").
+tractogram : str
+    Tractogram name (default: "dTOR").
+base_url : str
+    Platform base URL.
+cache_dir : str or Path or None
+    Local cache directory (default: ``~/.tvbo/networks``).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Network loaded from platform (cached locally).
+
+##### from_string { #tvbo.classes.network.Network.from_string }
+
+```python
+classes.network.Network.from_string(yaml_string, **kwargs)
+```
+
+Create a Network from a YAML string.
+
+This is a convenience constructor for creating networks directly from YAML specifications, commonly used in notebooks and scripts.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+yaml_string : str
+    YAML string defining the network with nodes and edges.
+**kwargs : Any
+    Additional keyword arguments passed to Network constructor.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    New Network parsed from the YAML string.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+from tvbo import Network
+
+network = Network.from_string('''
+label: MyNetwork
+nodes:
+  - id: 0
+    label: NodeA
+    dynamics: Oscillator
+  - id: 1
+    label: NodeB
+    dynamics: Excitable
+edges:
+  - source: 0
+    target: 1
+    weight: 0.5
+''')
+print(network.label)
+```
+
+##### from_tvb { #tvbo.classes.network.Network.from_tvb }
+
+```python
+classes.network.Network.from_tvb(connectivity)
+```
+
+Import a live TVB Connectivity object.
+
+Lossless conversion preserving all TVB fields (weights, lengths, centres, cortical flags, areas, hemispheres, conduction speed).
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+connectivity : tvb.datatypes.connectivity.Connectivity
+    Configured TVB Connectivity instance.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Network with arrays loaded, ready for ``save()``.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> from tvb.datatypes.connectivity import Connectivity
+>>> conn = Connectivity.from_file()
+>>> net = Network.from_tvb(conn)
+>>> net.number_of_nodes
+76
+
+##### from_tvb_surface { #tvbo.classes.network.Network.from_tvb_surface }
+
+```python
+classes.network.Network.from_tvb_surface(connectivity, surface, region_mapping)
+```
+
+Create a multi-level Network from TVB surface simulation data.
+
+Produces two linked networks:
+
+1. **Region-level** (parent): from TVB Connectivity
+2. **Vertex-level** (child): mesh + region_mapping linking vertices to regions via hierarchical ``node_mapping``
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+connectivity : tvb.datatypes.connectivity.Connectivity
+    Configured TVB Connectivity (region-level).
+surface : tvb.datatypes.surfaces.Surface
+    TVB CorticalSurface with vertices and triangles.
+region_mapping : tvb.datatypes.region_mapping.RegionMapping
+    TVB RegionMapping (vertex → region).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+tuple[Network, Network]
+    ``(region_network, surface_network)``
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> from tvb.datatypes.connectivity import Connectivity
+>>> from tvb.datatypes.surfaces import CorticalSurface
+>>> from tvb.datatypes.region_mapping import RegionMapping
+>>> conn = Connectivity.from_file()
+>>> surf = CorticalSurface.from_file()
+>>> rmap = RegionMapping.from_file()
+>>> region_net, surface_net = Network.from_tvb_surface(conn, surf, rmap)
+
+##### from_tvb_zip { #tvbo.classes.network.Network.from_tvb_zip }
+
+```python
+classes.network.Network.from_tvb_zip(zip_path)
+```
+
+Import from TVB connectivity ZIP (weights.txt + tract_lengths.txt).
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+zip_path : str or Path
+    Path to TVB connectivity ZIP file.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Network with arrays loaded, ready for ``save()``.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> net = Network.from_tvb_zip("connectivity_76.zip")
+>>> net.number_of_nodes
+76
+
+##### get_atlas { #tvbo.classes.network.Network.get_atlas }
+
+```python
+classes.network.Network.get_atlas()
+```
+
+Retrieve the Atlas object for this connectome.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Atlas
+    Atlas instance with parcellation metadata and terminology
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+atlas = sc.get_atlas()
+```
+
+##### get_centers { #tvbo.classes.network.Network.get_centers }
+
+```python
+classes.network.Network.get_centers()
+```
+
+Get 3D spatial coordinates of brain region centers.
+
+Resolution order:
+1. ``Node.position`` on ``self.nodes`` (in-memory)
+2. ``nodes/coordinates`` dataset in the HDF5/Zarr companion
+3. Atlas metadata (``terminology.entities[*].center``)
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+dict of int to tuple of float
+    Mapping from region index to (x, y, z) coordinates in mm
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+centers = sc.get_centers()
+for idx, (x, y, z) in centers.items():
+    print(f"Region {idx}: ({x:.1f}, {y:.1f}, {z:.1f})")
+```
+
+##### invalidate_resolution { #tvbo.classes.network.Network.invalidate_resolution }
+
+```python
+classes.network.Network.invalidate_resolution()
+```
+
+Drop everything ``_resolve`` materialised, so the next access rebuilds it.
+
+Resolution is idempotent and latches, which is what stops a network being rebuilt on every access — and what makes a spec edited AFTER load silently inert. A caller that changes the declaration (a ``--set`` on a graph_generator parameter, a swapped parcellation) has to say so, or the run reports the new value and integrates the old matrix.
+
+##### list_db { #tvbo.classes.network.Network.list_db }
+
+```python
+classes.network.Network.list_db(**entities)
+```
+
+List available networks in the tvbo database, optionally filtered.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+**entities
+    BIDS key-value filters (e.g. ``atlas="Schaefer2018"``).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+list[str]
+    Sorted list of matching network stems.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> Network.list_db()                            # all networks
+>>> Network.list_db(atlas="Schaefer2018")        # only Schaefer
+>>> Network.list_db(rec="dTOR", scale="100")     # dTOR at scale 100
+
+##### list_platform_networks { #tvbo.classes.network.Network.list_platform_networks }
+
+```python
+classes.network.Network.list_platform_networks(
+    base_url=TVBO_PLATFORM_URL,
+    **filters,
+)
+```
+
+List available normative networks on the tvbo platform.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+base_url : str
+    Platform base URL.
+**filters
+    Filtering parameters (e.g., atlas="DesikanKilliany").
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+list[dict]
+    List of network summaries.
+
+##### load { #tvbo.classes.network.Network.load }
+
+```python
+classes.network.Network.load(source=None, **entities)
+```
+
+Unified loader: file path, database name, or BIDS entities.
+
+Accepts any of:
+
+- **File path** (YAML, JSON, or HDF5): loads from disk.
+  For HDF5, automatically finds the companion YAML sidecar.
+- **Short name**: resolves via the tvbo database
+  (e.g. ``"Lobar"``, ``"DesikanKilliany"``).
+- **BIDS entities** as keyword arguments
+  (e.g. ``atlas="Schaefer2018", scale="100"``).
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+source : str or Path, optional
+    A file path or database name.  When omitted, BIDS entity
+    kwargs are used to search the database.
+**entities
+    BIDS key-value filters (``atlas``, ``rec``, ``scale``,
+    ``desc``, ``seg``, ``cohort``, …).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network or list[Network]
+    A single Network, or a list when multiple BIDS matches occur.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> Network.load("Lobar")                               # database name
+>>> Network.load("networks/my_network.yaml")            # YAML file
+>>> Network.load("networks/my_network.h5")              # HDF5 companion
+>>> Network.load(atlas="Schaefer2018", scale="100")     # BIDS entities
+
+##### load_from_bids { #tvbo.classes.network.Network.load_from_bids }
+
+```python
+classes.network.Network.load_from_bids(
+    bids_dir,
+    structural_measures=None,
+    observational_measures=None,
+    atlas=None,
+)
+```
+
+Load BEP017 data into existing network.
+
+Allows loading structural connectivity and/or observational targets independently into an already-configured network (preserves coupling).
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+bids_dir : str or Path
+    Path to BEP017-compliant BIDS directory.
+structural_measures : list of str, optional
+    Measures for structural connectivity.
+    If None, auto-discovered from available ``meas-*`` relmat files.
+observational_measures : list of str, optional
+    Measures for observational targets (e.g., ["BoldCorrelation"]).
+    If None, does not load observational data.
+atlas : str, optional
+    Atlas name to filter files. Auto-detected if not provided.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Self (for method chaining).
+
+
+
+###### Example: {.doc-section .doc-section-example}
+
+>>> network = Network()
+>>> network.load_from_bids(
+...     "tvbo/database/networks/bids/dk_average",
+... )
+>>> network.load_from_bids(
+...     "tvbo/database/networks/bids/dk_average",
+...     observational_measures=["BoldCorrelation"],
+... )
+
+##### load_matrix { #tvbo.classes.network.Network.load_matrix }
+
+```python
+classes.network.Network.load_matrix(weights, lengths=None, labels=None)
+```
+
+Load weight/length matrices into existing network (preserves coupling).
+
+Use this instead of from_matrix when you need to update connectivity data while keeping the network's coupling definitions intact.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+weights : np.ndarray
+    Connection weight matrix (N x N).
+lengths : np.ndarray, optional
+    Tract length matrix (N x N).
+labels : list of str, optional
+    Node labels. Updates nodes if provided.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Self (for chaining).
+
+##### materialize { #tvbo.classes.network.Network.materialize }
+
+```python
+classes.network.Network.materialize(*paths)
+```
+
+A copy of this network with ``paths`` resident, and nothing else newly read.
+
+The explicit point at which arrays are read: ``net.materialize("weight", "length")`` reads two datasets of however many the companion holds, and the copy's `arrays` then holds exactly what a solver or a gradient will see. A bare name is an edge matrix; ``mesh/vertices`` names any dataset. The copy shares the arrays already resident here (references, not copies) and the lazy store; its residency is its own.
+
+Raises ``KeyError`` for a path neither resident nor in the companion, so a typo is a typo and not an absent leaf.
+
+##### matrix { #tvbo.classes.network.Network.matrix }
+
+```python
+classes.network.Network.matrix(name, format=None, apply_transforms=True)
+```
+
+Get a named edge matrix, optionally in a specific format.
+
+The single canonical connectivity accessor. Resolution order: the ``_pytree_data`` payload (the live matrices under a JAX transformation) → the resident `arrays` → the companion file, whose matrix is then kept resident → the explicit edges → ``None``. Each SOURCE is exhausted across every alias spelling before the next is consulted — precedence is between sources, and a spelling is not a precedence, so a companion file holding ``weight`` cannot shadow a user-set ``weights``.
+
+Being canonical means subsuming what the deprecated properties returned, so a WEIGHT target on a node set with no edges yields zeros rather than ``None``: an unconnected network is a legitimate one, and every consumer of this builds an ``(n, n)`` array from the result.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+name : str
+    Matrix name (e.g. ``"weight"``, ``"length"``). Alias spellings
+    (``weights``/``sc``, ``lengths``) resolve to the same matrix.
+format : str, optional
+    Return format: ``"dense"``, ``"csr"``, ``"coo"``, ``"lil"``.
+    If ``None``, returns the matrix in whatever format it is
+    currently stored in.
+apply_transforms : bool
+    Apply the declared ``transforms:`` targeting this matrix. Pass
+    ``False`` for the raw matrix — the tvboptim codegen path does, so a
+    frozen kit keeps raw SC in the network file and the declared op
+    visible in the rendered script rather than hidden in this runtime.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+np.ndarray or scipy.sparse matrix or None
+
+##### matrix_info { #tvbo.classes.network.Network.matrix_info }
+
+```python
+classes.network.Network.matrix_info(name)
+```
+
+Shape, dtype and storage format of one array, from the companion's header alone.
+
+``name`` is an edge matrix (``"weight"``) or any dataset path the companion carries (``"mesh/vertices"``). A user-set array answers from the object in hand. Raises ``KeyError`` when nothing by that name exists.
+
+##### node_index_map { #tvbo.classes.network.Network.node_index_map }
+
+```python
+classes.network.Network.node_index_map()
+```
+
+``{Node.id: row/column index}`` for the connectome matrices.
+
+``Node.id`` is a *unique identifier* (``dcterms:identifier``), not a position: a network may declare ``[{id: 0}, {id: 2}]`` and its edges then address nodes by those ids, while the matrices are indexed by declaration order. Matrix-only networks (no ``nodes``) address rows directly, so the map is the identity there.
+
+##### node_positions { #tvbo.classes.network.Network.node_positions }
+
+```python
+classes.network.Network.node_positions()
+```
+
+Node coordinates as an ``(n_nodes, 3)`` array, in declared node order.
+
+A missing ``z`` defaults to 0; a node with no position at all raises, since a partial coordinate matrix (a mesh, a distance calc) is silently wrong rather than merely incomplete. Use ``_get_node_position`` for a tolerant per-node lookup.
+
+##### normalize { #tvbo.classes.network.Network.normalize }
+
+```python
+classes.network.Network.normalize()
+```
+
+Add min-max normalization of connection weights.
+
+Appends a transform to scale weights to [0, 1] range.
+Equivalent to ``add_transform("weight")``, whose default is that normalisation.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc.normalize()
+normalized_weights = sc.matrix("weight")  # Now in [0, 1] range
+```
+
+
+
+###### See Also: {.doc-section .doc-section-see-also}
+
+add_transform : Add a transform on any edge property normalize_weights : Set custom normalization equation
+
+##### normalize_weights { #tvbo.classes.network.Network.normalize_weights }
+
+```python
+classes.network.Network.normalize_weights(equation_rhs=None)
+```
+
+Add a normalization transform for connection weights.
+
+Convenience wrapper for ``add_transform("weight", ...)``.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+equation_rhs : str, optional
+    Right-hand side of the normalization equation, written over the network's
+    edge attributes. Defaults to min-max normalisation of ``weight``.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc.normalize_weights("weight / max(weight)")  # Normalize to [0, 1]
+normalized = sc.matrix("weight")  # Returns normalized weights
+```
+
+
+
+###### See Also: {.doc-section .doc-section-see-also}
+
+add_transform : Add a transform on any edge property
+
+##### plot_brain_surface { #tvbo.classes.network.Network.plot_brain_surface }
+
+```python
+classes.network.Network.plot_brain_surface(
+    ax=None,
+    weight_matrix=None,
+    **kwargs,
+)
+```
+
+Render the network on the cortical brain surface.
+
+Nodes are rendered as coloured spheres at their MNI coordinates (from atlas metadata); edges as tubes.  Requires ``bsplot``.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+ax : matplotlib.axes.Axes, optional
+    If *None*, a new figure is created.
+weight_matrix : ndarray, optional
+    Custom matrix for edge colouring.  If *None*, uses the
+    default weights matrix.
+**kwargs
+    Forwarded to :func:`tvbo.plot.network.plot_graph_brain`.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+fig : Figure ax : Axes mappables : dict
+    ``ScalarMappable`` objects (keys ``"nodes"`` / ``"edges"``).
+
+
+
+###### See Also: {.doc-section .doc-section-see-also}
+
+tvbo.plot.network.plot_graph_brain : Full parameter list
+
+##### plot_graph { #tvbo.classes.network.Network.plot_graph }
+
+```python
+classes.network.Network.plot_graph(
+    ax=None,
+    node_cmap='viridis',
+    edge_cmap='viridis',
+    node_colors='in-strength',
+    node_size=8,
+    threshold_percentile=0,
+    pos_scaling=1,
+    node_labels=True,
+    edge_labels=True,
+    log_in_strength=True,
+    node_size_scaling=0,
+    edge_color='weight',
+    pos='spring',
+    plot_brain=None,
+    edge_kwargs=None,
+    node_kwargs=None,
+    fontsize=12,
+    format='networkx',
+)
+```
+
+Visualize connectome as network graph.
+
+Delegates to :func:`tvbo.plot.network_graph.plot_graph_networkx` or :func:`tvbo.plot.network_graph.plot_graph_bsplot` depending on *format*.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+ax : matplotlib.axes.Axes, optional
+    Axes to plot on. If None, creates new figure
+node_cmap : str or Colormap, default="viridis"
+    Colormap for node colors
+edge_cmap : str or Colormap, default="viridis"
+    Colormap for edge colors
+node_colors : str, default="in-strength"
+    Node coloring scheme: "in-strength" or "node"
+node_size : str or float, default="in-strength"
+    Node size scheme: "in-strength" or numeric value
+threshold_percentile : float, default=0
+    Only show edges above this percentile of weights
+pos_scaling : float, default=1
+    Scaling factor for spring layout positions
+node_labels : bool, default=True
+    Whether to show node index labels
+edge_labels : bool, default=True
+    Whether to show edge weight labels
+log_in_strength : bool, default=True
+    Use log scale for in-strength calculations
+node_size_scaling : float, default=100
+    Scaling factor for node sizes
+edge_color : str, default="weight"
+    Edge attribute to use for coloring
+pos : str or dict, default="spring"
+    Node positions: "spring" for automatic layout or dict of positions
+plot_brain : str, optional
+    Brain view for anatomical layout: "horizontal", "sagittal", or "coronal"
+edge_kwargs : dict, optional
+    Additional arguments passed to nx.draw_networkx_edges
+node_kwargs : dict, optional
+    Additional arguments passed to nx.draw_networkx_nodes
+fontsize : float, default=8
+    Font size for labels
+format : str, default="networkx"
+    Plotting format: "networkx" for standard plotting, "bsplot" for fancy
+    node/edge plotting with text boxes and curved edges.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Figure or ScalarMappable
+    Figure if ax is None, otherwise ScalarMappable for colorbar
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+import matplotlib.pyplot as plt
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+
+# Simple graph
+fig, ax = plt.subplots(figsize=(10, 10))
+mappable = sc.plot_graph(ax, threshold_percentile=75)
+plt.colorbar(mappable, ax=ax)
+
+# Anatomical layout
+fig, ax = plt.subplots()
+sc.plot_graph(ax, plot_brain="horizontal", node_labels=False)
+```
+
+
+
+###### See Also: {.doc-section .doc-section-see-also}
+
+plot_brain_surface : 3-D brain surface rendering with bsplot tvbo.plot.network.plot_graph_networkx : NetworkX backend tvbo.plot.network.plot_graph_bsplot : bsplot backend
+
+##### plot_lengths { #tvbo.classes.network.Network.plot_lengths }
+
+```python
+classes.network.Network.plot_lengths(ax, cmap='magma')
+```
+
+Plot tract lengths matrix as heatmap.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+ax : matplotlib.axes.Axes
+    Axes to plot on
+cmap : str, default="magma"
+    Matplotlib colormap name
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.image.AxesImage
+    Image object for adding colorbar
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+import matplotlib.pyplot as plt
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+fig, ax = plt.subplots()
+im = sc.plot_lengths(ax)
+plt.colorbar(im, ax=ax, label="mm")
+```
+
+##### plot_matrix { #tvbo.classes.network.Network.plot_matrix }
+
+```python
+classes.network.Network.plot_matrix(log_weights=False, cmap='magma')
+```
+
+Plot both weights and lengths matrices side by side.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+log_weights : bool, default=False
+    If True, use log scale for weights colormap
+cmap : str, default="magma"
+    Matplotlib colormap name
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.figure.Figure
+    Figure containing both matrix plots
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc.plot_matrix(log_weights=True)
+```
+
+##### plot_overview { #tvbo.classes.network.Network.plot_overview }
+
+```python
+classes.network.Network.plot_overview(
+    edge_properties=None,
+    weights_kwargs=None,
+    lengths_kwargs=None,
+    graph_kwargs=None,
+    log_weights=False,
+    plot_brain=None,
+    brain_kwargs=None,
+    cmap='magma',
+    edge_percentile=0,
+    show_nodes=True,
+    show_edges=True,
+    max_edge_labels=15,
+)
+```
+
+Create comprehensive visualization with brain surface and matrices.
+
+Produces a multi-panel figure with one row per edge property.
+Each row contains either a brain surface + matrix heatmap (when *plot_brain* is True) or just a matrix heatmap, both coloured by the same property.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+edge_properties : list of str, optional
+    Names of edge matrices to plot (e.g. ``["weight", "length"]``
+    or ``["weight", "length", "fc"]``).  Each name must match a
+    matrix stored in the network (see ``set_matrix`` /
+    ``matrix``).  If *None*, auto-discovers all available edge
+    properties.
+weights_kwargs : dict, optional
+    *Deprecated* — use ``edge_properties`` instead.
+lengths_kwargs : dict, optional
+    *Deprecated* — use ``edge_properties`` instead.
+graph_kwargs : dict, optional
+    Keyword arguments passed to `plot_graph`
+log_weights : bool, default=False
+    Use logarithmic scale for the ``"weight"`` panel
+plot_brain : bool, optional
+    If *True*, render on brain surface (requires ``bsplot``).
+    If *False*, use matrix-only layout.  If *None* (default),
+    auto-detect: use brain surface when ``bsplot`` is installed
+    and atlas coordinates are available.
+brain_kwargs : dict, optional
+    Keyword arguments passed to `plot_brain_surface` when
+    the brain surface panel is used.
+cmap : str, default="magma"
+    Default colormap for matrix heatmaps.
+edge_percentile : float, default=0
+    Only show edges above this percentile of weights in the brain
+    surface and graph panels.  ``0`` (default) plots all connections.
+show_nodes : bool, default=True
+    Show node spheres on the brain surface panel.
+show_edges : bool, default=True
+    Show edge tubes on the brain surface panel.
+max_edge_labels : int, default=15
+    In graph panels (``plot_brain=False``), automatically hide edge
+    labels when the number of visible edges exceeds this value.
+    Set to a negative value to always show edge labels.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.figure.Figure
+    Figure with subplots
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+sc.plot_overview(log_weights=True)
+```
+
+
+
+###### See Also: {.doc-section .doc-section-see-also}
+
+plot_graph : Network graph visualization plot_brain_surface : 3-D brain surface rendering plot_matrix : Side-by-side matrix visualization
+
+##### plot_weights { #tvbo.classes.network.Network.plot_weights }
+
+```python
+classes.network.Network.plot_weights(ax, cmap='magma', log=False)
+```
+
+Plot connection weights matrix as heatmap.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+ax : matplotlib.axes.Axes
+    Axes to plot on
+cmap : str, default="magma"
+    Matplotlib colormap name
+log : bool, default=False
+    If True, use logarithmic color scale
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.image.AxesImage
+    Image object for adding colorbar
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+import matplotlib.pyplot as plt
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+fig, ax = plt.subplots()
+im = sc.plot_weights(ax, log=True)
+plt.colorbar(im, ax=ax)
+```
+
+##### region_alias_map { #tvbo.classes.network.Network.region_alias_map }
+
+```python
+classes.network.Network.region_alias_map()
+```
+
+Map each node's canonical label AND every known alias -> canonical label.
+
+Aliases are alternative label strings that denote the SAME region under a different nomenclature. They come from two sources, unioned: each node's own ``alternateName`` (inline on the network) and, when the network declares a parcellation atlas, that atlas terminology's names per region. The atlas join is by NAME, never by position, and matches a region to a node whose label is either the region's canonical name or any of its ``alternateName`` entries — so a network that spells a region divergently (``Left-Thalamus-Proper`` where the atlas says ``L_Thalamus``) still inherits that region's whole crosswalk, keyed on the label the network itself uses. The identity ``label -> label`` is always included so exact matches still resolve.
+
+Used by ``by_label`` node reconciliation so a dataset-sourced target whose nodes carry a divergent convention (e.g. ``THALAMUS_LEFT`` for ``L_Thalamus``) aligns by name. Raises when one alias would map to two different canonical labels, or when one atlas region's names match several nodes — an ambiguous crosswalk must fail loudly rather than silently mis-assign a region (and, in particular, a hemisphere).
+
+##### save { #tvbo.classes.network.Network.save }
+
+```python
+classes.network.Network.save(path, binary_format='h5', sidecar_format='yaml')
+```
+
+Save as sidecar + binary companion.
+
+Sidecar is written via LinkML yaml_dumper or json_dumper — always schema-valid output, no manual serialization.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+path : str or Path
+    Output path for sidecar.
+binary_format : str
+    "h5" (default), "zarr", or "csv".
+sidecar_format : str
+    "yaml" (default) or "json".
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> net.save("output/")                                     # dir → BIDS filename
+>>> net.save("output/dk87.yaml")                           # YAML + HDF5
+>>> net.save("output/dk87.yaml", sidecar_format="json")     # JSON + HDF5
+>>> net.save("output/dk87.yaml", binary_format="zarr")      # YAML + Zarr
+>>> net.save("output/dk87.yaml", binary_format="csv")       # YAML + CSV
+
+##### set_array { #tvbo.classes.network.Network.set_array }
+
+```python
+classes.network.Network.set_array(path, data)
+```
+
+Hold ``data`` as the array at ``path`` (a bare name means an edge matrix).
+
+The one write into the resident set. A scipy sparse matrix is kept sparse; anything else becomes an ndarray. Declares no template edge — :meth:`set_matrix` does, for an edge matrix that should reach the sidecar.
+
+##### set_matrix { #tvbo.classes.network.Network.set_matrix }
+
+```python
+classes.network.Network.set_matrix(name, data)
+```
+
+Set a named edge matrix.
+
+Accepts dense NumPy arrays, scipy sparse matrices (CSR, COO, etc.), or any array-like that can be converted. The matrix is stored internally and a template edge is created/updated automatically so that ``save()`` writes it to the HDF5 companion.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+name : str
+    Matrix name (e.g. ``"weight"``, ``"length"``,
+    ``"local_connectivity"``). Used as the HDF5 group name
+    under ``edges/``.
+data : array-like or scipy.sparse matrix
+    The edge matrix to store.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> net.set_matrix("weight", W_dense)
+>>> net.set_matrix("local_connectivity", LC_sparse_csr)
+
+##### set_node_mapping { #tvbo.classes.network.Network.set_node_mapping }
+
+```python
+classes.network.Network.set_node_mapping(
+    mapping,
+    parent_network=None,
+    dataset_path='/nodes/parent_index',
+)
+```
+
+Set the node-to-parent mapping array.
+
+This stores the mapping data internally so that :func:`save` writes it into the HDF5 companion automatically — no manual ``h5py`` code required.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+mapping : array-like of int
+    Int32 array of shape ``(N,)`` where entry *i* is the parent
+    node index that node *i* maps to (e.g. a region mapping
+    that assigns each cortical vertex to a parcellation region).
+parent_network : str or Network, optional
+    Path/URI of the parent Network YAML sidecar, **or** the
+    parent Network object itself.  When a Network is passed
+    its reference string is derived automatically (see
+    :func:`_network_ref_string`).
+dataset_path : str
+    HDF5 dataset path written into ``self.node_mapping``
+    (default ``"/nodes/parent_index"``).
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> surface_net.set_node_mapping(region_mapping,
+...                             parent_network="dk_sc.yaml")
+>>> # or pass the Network object directly:
+>>> surface_net.set_node_mapping(region_mapping,
+...                             parent_network=sc)
+>>> surface_net.save(tmpdir / "surface_rh.yaml")
+
+##### to_bep017 { #tvbo.classes.network.Network.to_bep017 }
+
+```python
+classes.network.Network.to_bep017(output_dir)
+```
+
+Export to BEP017-compatible per-measure files.
+
+Each template edge becomes a separate TSV + JSON sidecar.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+output_dir : str or Path
+    Output directory for BEP017 files.
+
+##### to_yaml { #tvbo.classes.network.Network.to_yaml }
+
+```python
+classes.network.Network.to_yaml(filepath=None, format='tvbo')
+```
+
+Serialize Network to YAML format.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+filepath : str, optional
+    Path to save YAML file. If None, returns YAML string.
+format : str
+    Output format: "tvbo" (default) or "pyrates".
+    PyRates format generates a complete experiment YAML (network + dynamics).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+str
+    YAML representation of the Network
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+```python
+sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
+yaml_str = sc.to_yaml()
+sc.to_yaml("connectome.yaml")  # Save to file
+sc.to_yaml("network.yaml", format="pyrates")  # PyRates format
+```
+
+##### transform_expression { #tvbo.classes.network.Network.transform_expression }
+
+```python
+classes.network.Network.transform_expression(func)
+```
+
+A transform's equation as a sympy expression, with its arguments substituted.
+
+Shared by the runtime and by codegen so a spec resolves to the same expression on both paths. Scalar values come from `Function.arguments`, falling back to `Equation.parameters` for legacy specs.
+
+An argument declared without a value substitutes nothing and its symbol survives, so the caller reports it as an undeclared name. Substituting the `None` instead raises `SympifyError: None`, which names neither the transform nor the argument.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description               | Default    |
+|--------|--------|---------------------------|------------|
+| func   |        | The `Function` transform. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                  |
+|--------|--------|------------------------------------------------------------------------------|
+|        |        | A `(expression, mask_bindings)` pair; the expression is `None` when *func*   |
+|        |        | declares no equation (a callable-based transform) or it does not parse. Each |
+|        |        | mask binding is evaluated once, before the expression that reads it.         |
+
+##### transforms_for { #tvbo.classes.network.Network.transforms_for }
+
+```python
+classes.network.Network.transforms_for(target)
+```
+
+The declared `transforms:` that retarget *target*, in declaration order.
+
+The one place the target name is matched, so the singular and plural spellings of an edge property stay equivalent everywhere and a new alias is added once. The aliases mirror the ones `matrix` already resolves when it looks the matrix itself up, so `matrix("weights")` and `matrix("weight")` cannot disagree about whether a transform applies. Both the runtime and the emitters that inline a transform into a generated script select through this.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                         | Default    |
+|--------|--------|---------------------------------------------------------------------|------------|
+| target | str    | Edge property a transform retargets, e.g. `"weight"` or `"length"`. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                              |
+|--------|--------|----------------------------------------------------------|
+|        |        | List of `Function` transforms declared against *target*. |
+
+##### tree_flatten { #tvbo.classes.network.Network.tree_flatten }
+
+```python
+classes.network.Network.tree_flatten()
+```
+
+Flatten into JAX pytree children `(weights, lengths)` plus metadata aux data.
+
+Metadata is stored without the array data to avoid duplicating the leaves.
+
+Four groups of slots are held out of that metadata, by the same private-attr rule ``Network._items()`` applies, so there is one source of truth for what is internal and never serialised:
+
+- ``weight`` / ``length`` — the matrices themselves, already carried in `children`.
+- ``edges`` — hold ``Parameter`` objects whose string form is not deterministic,
+  and whose weight/length content is likewise already in `children`.
+- ``parcellation`` / ``data_file`` / ``bids_dir`` — loading specs; keeping them
+  would make ``tree_unflatten`` re-resolve from disk, and fail.
+- the cache attributes, which are derived state.
+
+##### tree_unflatten { #tvbo.classes.network.Network.tree_unflatten }
+
+```python
+classes.network.Network.tree_unflatten(aux_data, children)
+```
+
+Rebuild a `Network` from JAX pytree children and metadata (inverse of `tree_flatten`).
+
+Arrays are re-attached as `_pytree_data` rather than `Matrix` objects, so it stays valid under JAX tracing.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [get_normative_connectome_data](#tvbo.classes.network.get_normative_connectome_data) | Load normative connectivity matrices from tvbo/database/networks/ HDF5 files. |
+| [graph_laplacian](#tvbo.classes.network.graph_laplacian) | Combinatorial graph Laplacian ``L = W - diag(rowsum(W))`` of a weight matrix. |
+| [normalized_graph_laplacian](#tvbo.classes.network.normalized_graph_laplacian) | Graph Laplacian of the max-normalised weight matrix: ``L(W / max(W))``. |
+
+### get_normative_connectome_data { #tvbo.classes.network.get_normative_connectome_data }
+
+```python
+classes.network.get_normative_connectome_data(
+    atlas,
+    tractogram='dTOR',
+    segmentation=None,
+    scale=None,
+    with_nodes=False,
+)
+```
+
+Load normative connectivity matrices from tvbo/database/networks/ HDF5 files.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+atlas : str
+    Name of the brain parcellation atlas (e.g., "DesikanKilliany", "Destrieux")
+tractogram : str
+    Tractogram/reconstruction pipeline (e.g., "dTOR", "MghUscHcp32", "PPMI85")
+segmentation, scale : str, optional
+    BIDS ``seg-`` and ``scale-`` entity values used to disambiguate
+    sub-resolutions of the same atlas (e.g. Schaefer2018 7Networks/1000).
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+weights : np.ndarray
+    Connection strength matrix (N x N)
+lengths : np.ndarray or None
+    Tract length matrix (N x N), or None if not available
+nodes : list of Node, optional
+    Only when ``with_nodes=True``: the sidecar's labelled + positioned
+    region nodes, so the network is keyed by region (alignment by label,
+    never by position). ``None`` if the sidecar declares no nodes.
+
+
+
+#### Examples: {.doc-section .doc-section-examples}
+
+```python
+weights, lengths = get_normative_connectome_data("DesikanKilliany", "dTOR")
+weights, lengths = get_normative_connectome_data(
+    "Schaefer2018", "dTOR", segmentation="7Networks", scale="1000"
+)
+```
+
+### graph_laplacian { #tvbo.classes.network.graph_laplacian }
+
+```python
+classes.network.graph_laplacian(M)
+```
+
+Combinatorial graph Laplacian ``L = W - diag(rowsum(W))`` of a weight matrix.
+
+A standard network primitive (diffusive coupling operator): every row of ``L`` sums to zero. Referenced declaratively from a `Network.transforms` entry via ``callable: {module: tvbo.classes.network, name: graph_laplacian}`` — e.g. for a delay/diffusion-coupled Hopf network whose coupling matrix is the Laplacian of the (normalised) connectome. Cannot be expressed in the elementwise symbolic transform path because it needs a diagonal built from the row sums.
+
+### normalized_graph_laplacian { #tvbo.classes.network.normalized_graph_laplacian }
+
+```python
+classes.network.normalized_graph_laplacian(M)
+```
+
+Graph Laplacian of the max-normalised weight matrix: ``L(W / max(W))``.
+
+The coupling operator for a diffusion-coupled network whose global coupling strength ``G`` is expressed in the max-normalised connectome scale (so ``G`` stays O(0.01–0.1) regardless of the raw streamline-count magnitude). Referenced via ``callable: {module: tvbo.classes.network, name: normalized_graph_laplacian}``.
+Equivalent to the reference two-liner ``W = W / W.max(); L = W - diag(W.sum(1))``.

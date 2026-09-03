@@ -1,0 +1,98 @@
+# Slot: row_label_rotation 
+
+
+_Rotation of the row headings, in degrees._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/row_label_rotation](https://w3id.org/tvbo/slot/row_label_rotation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Grid](../classes/Grid.qmd) | How a `grid` panel tiles its cells, and what the strips around them are label... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Grid](../classes/Grid.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Grid](../classes/Grid.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:row_label_rotation |
+| native | tvbo:row_label_rotation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: row_label_rotation
+description: Rotation of the row headings, in degrees.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Grid
+domain_of:
+- Grid
+range: float
+
+```
+</details></div>

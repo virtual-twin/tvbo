@@ -1,0 +1,79 @@
+# Slot: bounds 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/bounds](https://w3id.org/tvbo/slot/bounds)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Inset](../classes/Inset.qmd) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, ann... |  no  |
+| [Region](../classes/Region.qmd) | A rectangle drawn over a panel to ring the window a paper calls out — the par... |  no  |
+| [UpdateRule](../classes/UpdateRule.qmd) | Defines how a parameter is updated based on observables |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Inset](../classes/Inset.qmd), [Region](../classes/Region.qmd), [UpdateRule](../classes/UpdateRule.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:bounds |
+| native | tvbo:bounds |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: bounds
+domain_of:
+- Inset
+- Region
+- UpdateRule
+range: string
+
+```
+</details></div>

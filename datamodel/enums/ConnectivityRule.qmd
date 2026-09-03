@@ -1,0 +1,91 @@
+# Enum: ConnectivityRule 
+
+
+
+
+_Rule for expanding a population-level Edge into individual cell-to-cell connections. Names a connectivity pattern between the source and target populations so a network of populations declares its projections once, without enumerating every connection; each backend expands the rule into its native connection set (e.g. the NeuroML exporter emits one <projection> with size_src x size_tgt <connection> elements). Backend-independent: it states the connectivity pattern, not how any simulator stores it._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ConnectivityRule](https://w3id.org/tvbo/enum/ConnectivityRule)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| all_to_all | None | Fully connected projection: every source cell connects to every target cell |
+| one_to_one | None | Index-aligned projection: source cell i connects to target cell i (min of the... |
+| random | None | Sparse random projection (fixed-probability Erdos-Renyi): each of the size_sr... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [connectivity](../slots/connectivity.qmd) | Connectivity rule for a population-level Edge |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ConnectivityRule
+description: 'Rule for expanding a population-level Edge into individual cell-to-cell
+  connections. Names a connectivity pattern between the source and target populations
+  so a network of populations declares its projections once, without enumerating every
+  connection; each backend expands the rule into its native connection set (e.g. the
+  NeuroML exporter emits one <projection> with size_src x size_tgt <connection> elements).
+  Backend-independent: it states the connectivity pattern, not how any simulator stores
+  it.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  all_to_all:
+    text: all_to_all
+    description: 'Fully connected projection: every source cell connects to every
+      target cell. For a self-projection (same source and target population) the diagonal
+      i->i is governed by the Edge''s allow_self_connections flag.'
+  one_to_one:
+    text: one_to_one
+    description: 'Index-aligned projection: source cell i connects to target cell
+      i (min of the two population sizes).'
+  random:
+    text: random
+    description: 'Sparse random projection (fixed-probability Erdos-Renyi): each of
+      the size_src x size_tgt possible connections is present independently with probability
+      given by the Edge''s `connection_probability` parameter (in `Edge.parameters`,
+      alongside `weight`). For a self-projection the diagonal i->i is governed by
+      Edge.allow_self_connections. A backend that only supports dense projections
+      may reject this rule rather than approximate it.'
+
+```
+</details>
+
+</div>

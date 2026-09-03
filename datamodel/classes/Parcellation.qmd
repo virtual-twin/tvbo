@@ -1,0 +1,289 @@
+# Class: Parcellation 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Parcellation](https://w3id.org/tvbo/Parcellation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Parcellation
+    click Parcellation href "./Parcellation.html"
+      Parcellation : atlas
+        
+          
+    
+        
+        
+        Parcellation --> "0..1" BrainAtlas : atlas
+        click BrainAtlas href "./BrainAtlas.html"
+    
+
+        
+      Parcellation : data_source
+        
+          
+    
+        
+        
+        Parcellation --> "0..1" String : data_source
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Parcellation : iri
+        
+          
+    
+        
+        
+        Parcellation --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Parcellation : label
+        
+          
+    
+        
+        
+        Parcellation --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Parcellation](https://w3id.org/tvbo/Parcellation) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | direct |
+| [data_source](../slots/data_source.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [atlas](../slots/atlas.qmd) | 0..1 <br/> [BrainAtlas](../classes/BrainAtlas.qmd) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [parcellation](../slots/parcellation.qmd) | range | [Parcellation](../classes/Parcellation.qmd) |
+| [Mesh](../classes/Mesh.qmd) | [parcellation](../slots/parcellation.qmd) | range | [Parcellation](../classes/Parcellation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Parcellation |
+| native | tvbo:Parcellation |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Parcellation
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- iri
+attributes:
+  data_source:
+    name: data_source
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Parcellation
+    - Tractogram
+    - Observation
+    range: string
+  atlas:
+    name: atlas
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Surface
+    - Volume
+    - Parcellation
+    - BidsEntities
+    range: BrainAtlas
+    inlined: true
+class_uri: tvbo:Parcellation
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Parcellation
+from_schema: https://w3id.org/tvbo
+attributes:
+  data_source:
+    name: data_source
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Parcellation
+    domain_of:
+    - Parcellation
+    - Tractogram
+    - Observation
+    range: string
+  atlas:
+    name: atlas
+    from_schema: https://w3id.org/tvbo
+    owner: Parcellation
+    domain_of:
+    - Surface
+    - Volume
+    - Parcellation
+    - BidsEntities
+    range: BrainAtlas
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Parcellation
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Parcellation
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+class_uri: tvbo:Parcellation
+
+```
+</details></div>

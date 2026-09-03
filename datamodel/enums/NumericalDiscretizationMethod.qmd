@@ -1,0 +1,82 @@
+# Enum: NumericalDiscretizationMethod 
+
+
+
+
+_Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic tori)._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/NumericalDiscretizationMethod](https://w3id.org/tvbo/enum/NumericalDiscretizationMethod)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| collocation | None | Orthogonal collocation at Gauss points |
+| trapezoid | None | Trapezoidal rule discretization |
+| shooting | None | Standard multiple shooting |
+| poincare | None | Poincaré shooting |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [method](../slots/method.qmd) | Discretization method |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: NumericalDiscretizationMethod
+description: Numerical discretization method for boundary value problems (periodic
+  orbits, connecting orbits, quasi-periodic tori).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  collocation:
+    text: collocation
+    description: Orthogonal collocation at Gauss points.
+  trapezoid:
+    text: trapezoid
+    description: Trapezoidal rule discretization.
+  shooting:
+    text: shooting
+    description: Standard multiple shooting.
+  poincare:
+    text: poincare
+    description: Poincaré shooting.
+
+```
+</details>
+
+</div>

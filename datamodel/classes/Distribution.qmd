@@ -1,0 +1,440 @@
+# Class: Distribution 
+
+
+_A probability distribution for sampling parameters or initial conditions. Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters. Custom distributions use a Function for the PDF/sampling rule. Default name is Uniform when only domain is given._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Distribution](https://w3id.org/tvbo/Distribution)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Distribution
+    click Distribution href "./Distribution.html"
+      Distribution : axis
+        
+          
+    
+        
+        
+        Distribution --> "0..1" SamplingAxis : axis
+        click SamplingAxis href "../../enums/SamplingAxis.html"
+    
+
+        
+      Distribution : correlation
+        
+          
+    
+        
+        
+        Distribution --> "0..1" Matrix : correlation
+        click Matrix href "./Matrix.html"
+    
+
+        
+      Distribution : domain
+        
+          
+    
+        
+        
+        Distribution --> "0..1" Range : domain
+        click Range href "./Range.html"
+    
+
+        
+      Distribution : function
+        
+          
+    
+        
+        
+        Distribution --> "0..1" Function : function
+        click Function href "./Function.html"
+    
+
+        
+      Distribution : name
+        
+          
+    
+        
+        
+        Distribution --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Distribution : parameters
+        
+          
+    
+        
+        
+        Distribution --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Distribution : seed
+        
+          
+    
+        
+        
+        Distribution --> "0..1" Integer : seed
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Distribution](https://w3id.org/tvbo/Distribution) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [domain](../slots/domain.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) | Support of the distribution (sampling bounds) | direct |
+| [function](../slots/function.qmd) | 0..1 <br/> [Function](../classes/Function.qmd) | Custom distribution function (PDF or sampling callable) | direct |
+| [seed](../slots/seed.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Local RNG seed for THIS distribution's draws | direct |
+| [axis](../slots/axis.qmd) | 0..1 <br/> [SamplingAxis](../enums/SamplingAxis.qmd) | Dimension along which the distribution is sampled | direct |
+| [correlation](../slots/correlation.qmd) | 0..1 <br/> [Matrix](../classes/Matrix.qmd) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Event](../classes/Event.qmd) | [weight_distribution](../slots/weight_distribution.qmd) | range | [Distribution](../classes/Distribution.qmd) |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | [distribution](../slots/distribution.qmd) | range | [Distribution](../classes/Distribution.qmd) |
+| [StateVariable](../classes/StateVariable.qmd) | [distribution](../slots/distribution.qmd) | range | [Distribution](../classes/Distribution.qmd) |
+| [Parameter](../classes/Parameter.qmd) | [distribution](../slots/distribution.qmd) | range | [Distribution](../classes/Distribution.qmd) |
+| [DerivedParameter](../classes/DerivedParameter.qmd) | [distribution](../slots/distribution.qmd) | range | [Distribution](../classes/Distribution.qmd) |
+| [Noise](../classes/Noise.qmd) | [distribution](../slots/distribution.qmd) | range | [Distribution](../classes/Distribution.qmd) |
+| [Prior](../classes/Prior.qmd) | [distribution](../slots/distribution.qmd) | range | [Distribution](../classes/Distribution.qmd) |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) | [distribution](../slots/distribution.qmd) | range | [Distribution](../classes/Distribution.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Distribution |
+| native | tvbo:Distribution |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Distribution
+description: A probability distribution for sampling parameters or initial conditions.
+  Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters.
+  Custom distributions use a Function for the PDF/sampling rule. Default name is Uniform
+  when only domain is given.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- parameters
+slot_usage:
+  name:
+    name: name
+    ifabsent: string(Uniform)
+attributes:
+  domain:
+    name: domain
+    description: Support of the distribution (sampling bounds). For Uniform this fully
+      defines the distribution.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: Range
+    inlined: true
+  function:
+    name: function
+    description: Custom distribution function (PDF or sampling callable). Only needed
+      for non-standard distributions.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Distribution
+    - FunctionCall
+    - Noise
+    range: Function
+    inlined: true
+  seed:
+    name: seed
+    description: Local RNG seed for THIS distribution's draws. When set it overrides
+      the experiment-global `execution.random_seed`; when unset the distribution inherits
+      `execution.random_seed`.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - GraphGenerator
+    - Distribution
+    - Noise
+    - Inference
+    range: integer
+  axis:
+    name: axis
+    description: Dimension along which the distribution is sampled. 'space' = per-node
+      (default), 'time' = per-timestep (stochastic input).
+    from_schema: https://w3id.org/tvbo
+    ifabsent: space
+    domain_of:
+    - ProcedureStep
+    - Distribution
+    range: SamplingAxis
+  correlation:
+    name: correlation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Distribution
+    - Partition
+    range: Matrix
+    inlined: true
+class_uri: tvbo:Distribution
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Distribution
+description: A probability distribution for sampling parameters or initial conditions.
+  Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters.
+  Custom distributions use a Function for the PDF/sampling rule. Default name is Uniform
+  when only domain is given.
+from_schema: https://w3id.org/tvbo
+slot_usage:
+  name:
+    name: name
+    ifabsent: string(Uniform)
+attributes:
+  domain:
+    name: domain
+    description: Support of the distribution (sampling bounds). For Uniform this fully
+      defines the distribution.
+    from_schema: https://w3id.org/tvbo
+    owner: Distribution
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: Range
+    inlined: true
+  function:
+    name: function
+    description: Custom distribution function (PDF or sampling callable). Only needed
+      for non-standard distributions.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Distribution
+    domain_of:
+    - Distribution
+    - FunctionCall
+    - Noise
+    range: Function
+    inlined: true
+  seed:
+    name: seed
+    description: Local RNG seed for THIS distribution's draws. When set it overrides
+      the experiment-global `execution.random_seed`; when unset the distribution inherits
+      `execution.random_seed`.
+    from_schema: https://w3id.org/tvbo
+    owner: Distribution
+    domain_of:
+    - GraphGenerator
+    - Distribution
+    - Noise
+    - Inference
+    range: integer
+  axis:
+    name: axis
+    description: Dimension along which the distribution is sampled. 'space' = per-node
+      (default), 'time' = per-timestep (stochastic input).
+    from_schema: https://w3id.org/tvbo
+    ifabsent: space
+    owner: Distribution
+    domain_of:
+    - ProcedureStep
+    - Distribution
+    range: SamplingAxis
+  correlation:
+    name: correlation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Distribution
+    domain_of:
+    - Distribution
+    - Partition
+    range: Matrix
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    ifabsent: string(Uniform)
+    identifier: true
+    owner: Distribution
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Distribution
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+class_uri: tvbo:Distribution
+
+```
+</details></div>

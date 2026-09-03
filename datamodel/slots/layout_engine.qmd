@@ -1,0 +1,101 @@
+# Slot: layout_engine 
+
+
+_Which layout engine positions the panels. Unset lets the backend pick; name one to stop a dense mosaic being laid out by whatever the engine falls back to when its solver gives up, and 'none' to keep the gridspec's own positions when panels place their content at absolute geometry._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/layout_engine](https://w3id.org/tvbo/slot/layout_engine)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [LayoutEngine](../enums/LayoutEngine.qmd) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:layout_engine |
+| native | tvbo:layout_engine |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: layout_engine
+description: Which layout engine positions the panels. Unset lets the backend pick;
+  name one to stop a dense mosaic being laid out by whatever the engine falls back
+  to when its solver gives up, and 'none' to keep the gridspec's own positions when
+  panels place their content at absolute geometry.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: LayoutEngine
+
+```
+</details></div>

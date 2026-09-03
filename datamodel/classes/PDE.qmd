@@ -1,0 +1,637 @@
+# Class: PDE 
+
+
+_Partial differential equation problem definition._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:PDE](https://w3id.org/tvbo/PDE)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class PDE
+    click PDE href "./PDE.html"
+      PDE : boundary_conditions
+        
+          
+    
+        
+        
+        PDE --> "*" BoundaryCondition : boundary_conditions
+        click BoundaryCondition href "./BoundaryCondition.html"
+    
+
+        
+      PDE : derived_parameters
+        
+          
+    
+        
+        
+        PDE --> "*" DerivedParameter : derived_parameters
+        click DerivedParameter href "./DerivedParameter.html"
+    
+
+        
+      PDE : derived_variables
+        
+          
+    
+        
+        
+        PDE --> "*" DerivedVariable : derived_variables
+        click DerivedVariable href "./DerivedVariable.html"
+    
+
+        
+      PDE : description
+        
+          
+    
+        
+        
+        PDE --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      PDE : domain
+        
+          
+    
+        
+        
+        PDE --> "0..1" SpatialDomain : domain
+        click SpatialDomain href "./SpatialDomain.html"
+    
+
+        
+      PDE : functions
+        
+          
+    
+        
+        
+        PDE --> "*" Function : functions
+        click Function href "./Function.html"
+    
+
+        
+      PDE : label
+        
+          
+    
+        
+        
+        PDE --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      PDE : mesh
+        
+          
+    
+        
+        
+        PDE --> "0..1" Mesh : mesh
+        click Mesh href "./Mesh.html"
+    
+
+        
+      PDE : operators
+        
+          
+    
+        
+        
+        PDE --> "*" DifferentialOperator : operators
+        click DifferentialOperator href "./DifferentialOperator.html"
+    
+
+        
+      PDE : parameters
+        
+          
+    
+        
+        
+        PDE --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      PDE : solver
+        
+          
+    
+        
+        
+        PDE --> "0..1" PDESolver : solver
+        click PDESolver href "./PDESolver.html"
+    
+
+        
+      PDE : sources
+        
+          
+    
+        
+        
+        PDE --> "*" Equation : sources
+        click Equation href "./Equation.html"
+    
+
+        
+      PDE : state_variables
+        
+          
+    
+        
+        
+        PDE --> "*" FieldStateVariable : state_variables
+        click FieldStateVariable href "./FieldStateVariable.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:PDE](https://w3id.org/tvbo/PDE) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [domain](../slots/domain.qmd) | 0..1 <br/> [SpatialDomain](../classes/SpatialDomain.qmd) |  | direct |
+| [mesh](../slots/mesh.qmd) | 0..1 <br/> [Mesh](../classes/Mesh.qmd) | Shared mesh for all field state variables in this PDE | direct |
+| [state_variables](../slots/state_variables.qmd) | * <br/> [FieldStateVariable](../classes/FieldStateVariable.qmd) |  | direct |
+| [operators](../slots/operators.qmd) | * <br/> [DifferentialOperator](../classes/DifferentialOperator.qmd) |  | direct |
+| [sources](../slots/sources.qmd) | * <br/> [Equation](../classes/Equation.qmd) |  | direct |
+| [boundary_conditions](../slots/boundary_conditions.qmd) | * <br/> [BoundaryCondition](../classes/BoundaryCondition.qmd) |  | direct |
+| [solver](../slots/solver.qmd) | 0..1 <br/> [PDESolver](../classes/PDESolver.qmd) |  | direct |
+| [derived_parameters](../slots/derived_parameters.qmd) | * <br/> [DerivedParameter](../classes/DerivedParameter.qmd) |  | direct |
+| [derived_variables](../slots/derived_variables.qmd) | * <br/> [DerivedVariable](../classes/DerivedVariable.qmd) |  | direct |
+| [functions](../slots/functions.qmd) | * <br/> [Function](../classes/Function.qmd) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [field_dynamics](../slots/field_dynamics.qmd) | range | [PDE](../classes/PDE.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:PDE |
+| native | tvbo:PDE |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: PDE
+description: Partial differential equation problem definition.
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+- parameters
+attributes:
+  domain:
+    name: domain
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: SpatialDomain
+  mesh:
+    name: mesh
+    description: Shared mesh for all field state variables in this PDE.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Surface
+    - Network
+    - SpatialField
+    - FieldStateVariable
+    - PDE
+    range: Mesh
+  state_variables:
+    name: state_variables
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Dynamics
+    - PDE
+    range: FieldStateVariable
+    multivalued: true
+    inlined_as_list: true
+  operators:
+    name: operators
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - PDE
+    range: DifferentialOperator
+    multivalued: true
+  sources:
+    name: sources
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - PDE
+    range: Equation
+    multivalued: true
+  boundary_conditions:
+    name: boundary_conditions
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - FieldStateVariable
+    - PDE
+    range: BoundaryCondition
+    multivalued: true
+  solver:
+    name: solver
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - InitialState
+    - PDE
+    range: PDESolver
+  derived_parameters:
+    name: derived_parameters
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Dynamics
+    - PDE
+    range: DerivedParameter
+    multivalued: true
+  derived_variables:
+    name: derived_variables
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Dynamics
+    - PDE
+    range: DerivedVariable
+    multivalued: true
+  functions:
+    name: functions
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: Function
+    multivalued: true
+class_uri: tvbo:PDE
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: PDE
+description: Partial differential equation problem definition.
+from_schema: https://w3id.org/tvbo
+attributes:
+  domain:
+    name: domain
+    from_schema: https://w3id.org/tvbo
+    owner: PDE
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: SpatialDomain
+  mesh:
+    name: mesh
+    description: Shared mesh for all field state variables in this PDE.
+    from_schema: https://w3id.org/tvbo
+    owner: PDE
+    domain_of:
+    - Surface
+    - Network
+    - SpatialField
+    - FieldStateVariable
+    - PDE
+    range: Mesh
+  state_variables:
+    name: state_variables
+    from_schema: https://w3id.org/tvbo
+    owner: PDE
+    domain_of:
+    - Dynamics
+    - PDE
+    range: FieldStateVariable
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  operators:
+    name: operators
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: PDE
+    domain_of:
+    - PDE
+    range: DifferentialOperator
+    multivalued: true
+  sources:
+    name: sources
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: PDE
+    domain_of:
+    - PDE
+    range: Equation
+    multivalued: true
+  boundary_conditions:
+    name: boundary_conditions
+    from_schema: https://w3id.org/tvbo
+    owner: PDE
+    domain_of:
+    - FieldStateVariable
+    - PDE
+    range: BoundaryCondition
+    multivalued: true
+  solver:
+    name: solver
+    from_schema: https://w3id.org/tvbo
+    owner: PDE
+    domain_of:
+    - InitialState
+    - PDE
+    range: PDESolver
+  derived_parameters:
+    name: derived_parameters
+    from_schema: https://w3id.org/tvbo
+    owner: PDE
+    domain_of:
+    - Dynamics
+    - PDE
+    range: DerivedParameter
+    multivalued: true
+  derived_variables:
+    name: derived_variables
+    from_schema: https://w3id.org/tvbo
+    owner: PDE
+    domain_of:
+    - Dynamics
+    - PDE
+    range: DerivedVariable
+    multivalued: true
+  functions:
+    name: functions
+    from_schema: https://w3id.org/tvbo
+    owner: PDE
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: Function
+    multivalued: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: PDE
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: PDE
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: PDE
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+class_uri: tvbo:PDE
+
+```
+</details></div>

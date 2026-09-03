@@ -1,0 +1,77 @@
+# Slot: target_variable 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target_variable](https://w3id.org/tvbo/slot/target_variable)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+| [TuningObjective](../classes/TuningObjective.qmd) | Defines what the tuning algorithm optimizes for |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Event](../classes/Event.qmd), [TuningObjective](../classes/TuningObjective.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target_variable |
+| native | tvbo:target_variable |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_variable
+domain_of:
+- Event
+- TuningObjective
+range: string
+
+```
+</details></div>

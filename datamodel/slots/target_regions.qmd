@@ -1,0 +1,102 @@
+# Slot: target_regions 
+
+
+_Regions a stimulus-type event targets: 'all' (broadcast to every node) or explicit region labels / indices. More expressive than the integer-only `regions` slot; when both are absent the event applies to all regions._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target_regions](https://w3id.org/tvbo/slot/target_regions)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Event](../classes/Event.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Event](../classes/Event.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target_regions |
+| native | tvbo:target_regions |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_regions
+description: 'Regions a stimulus-type event targets: ''all'' (broadcast to every node)
+  or explicit region labels / indices. More expressive than the integer-only `regions`
+  slot; when both are absent the event applies to all regions.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Event
+domain_of:
+- Event
+range: string
+multivalued: true
+
+```
+</details></div>

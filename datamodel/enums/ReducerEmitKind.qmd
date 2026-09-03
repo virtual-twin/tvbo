@@ -1,0 +1,73 @@
+# Enum: ReducerEmitKind 
+
+
+
+
+_How often a streaming reducer reads its value out (see Reducer.emit_kind)._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ReducerEmitKind](https://w3id.org/tvbo/enum/ReducerEmitKind)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| window | None | Emit every step, over the current window (a sliding FC) |
+| stride | None | Emit once per stride, at the window boundary (dFC / FCD) |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [emit_kind](../slots/emit_kind.qmd) | Whether the reduced value is read out every step or every stride |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ReducerEmitKind
+description: How often a streaming reducer reads its value out (see Reducer.emit_kind).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  window:
+    text: window
+    description: Emit every step, over the current window (a sliding FC).
+  stride:
+    text: stride
+    description: Emit once per stride, at the window boundary (dFC / FCD).
+
+```
+</details>
+
+</div>

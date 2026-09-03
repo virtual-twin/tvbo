@@ -1,0 +1,77 @@
+# Slot: field 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/field](https://w3id.org/tvbo/slot/field)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd) | Cache-invalidation fingerprint for one ``aux_data`` reference |  no  |
+| [Reference](../classes/Reference.qmd) | A small typed pointer to another TVBO entity (Network, Mesh, Observation, …) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd), [Reference](../classes/Reference.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:field |
+| native | tvbo:field |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: field
+domain_of:
+- ReferenceFingerprint
+- Reference
+range: string
+
+```
+</details></div>

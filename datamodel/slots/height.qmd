@@ -1,0 +1,77 @@
+# Slot: height 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/height](https://w3id.org/tvbo/slot/height)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+| [RenderSpec](../classes/RenderSpec.qmd) | A headless-browser capture recipe turning an `image` panel's HTML/URL `source... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Figure](../classes/Figure.qmd), [RenderSpec](../classes/RenderSpec.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:height |
+| native | tvbo:height |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: height
+domain_of:
+- Figure
+- RenderSpec
+range: string
+
+```
+</details></div>

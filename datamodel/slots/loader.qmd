@@ -1,0 +1,99 @@
+# Slot: loader 
+
+
+_Callable that loads the data (e.g., load_functional_connectivity)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/loader](https://w3id.org/tvbo/slot/loader)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DataSource](../classes/DataSource.qmd) | Specification for loading external/empirical data |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Callable](../classes/Callable.qmd) |
+| Domain Of | [DataSource](../classes/DataSource.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DataSource](../classes/DataSource.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:loader |
+| native | tvbo:loader |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: loader
+description: Callable that loads the data (e.g., load_functional_connectivity)
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: DataSource
+domain_of:
+- DataSource
+range: Callable
+inlined: true
+
+```
+</details></div>

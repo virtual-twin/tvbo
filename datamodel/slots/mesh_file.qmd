@@ -1,0 +1,98 @@
+# Slot: mesh_file 
+
+
+_Path to external mesh file (GIFTI, VTK, MSH, FreeSurfer, etc.)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/mesh_file](https://w3id.org/tvbo/slot/mesh_file)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Mesh](../classes/Mesh.qmd) | Triangle (or higher-order) mesh geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Mesh](../classes/Mesh.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Mesh](../classes/Mesh.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:mesh_file |
+| native | tvbo:mesh_file |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: mesh_file
+description: Path to external mesh file (GIFTI, VTK, MSH, FreeSurfer, etc.).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Mesh
+domain_of:
+- Mesh
+range: string
+
+```
+</details></div>

@@ -1,0 +1,79 @@
+# Slot: role 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/role](https://w3id.org/tvbo/software/slot/role)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StudyDirectory](../classes/StudyDirectory.qmd) | One directory in a study layout |  no  |
+| [StudyFile](../classes/StudyFile.qmd) | One file a study layout accounts for |  no  |
+| [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | An individual software requirement binding a package to a version constraint ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [StudyDirectory](../classes/StudyDirectory.qmd), [StudyFile](../classes/StudyFile.qmd), [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:role |
+| native | tvbo_sw:role |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: role
+domain_of:
+- StudyDirectory
+- StudyFile
+- SoftwareRequirement
+range: string
+
+```
+</details></div>

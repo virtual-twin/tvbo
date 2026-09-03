@@ -1,0 +1,77 @@
+# Slot: axis 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/axis](https://w3id.org/tvbo/slot/axis)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | A single named step (or output) in a Procedure: one typed operation producing... |  no  |
+| [Distribution](../classes/Distribution.qmd) | A probability distribution for sampling parameters or initial conditions |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ProcedureStep](../classes/ProcedureStep.qmd), [Distribution](../classes/Distribution.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:axis |
+| native | tvbo:axis |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: axis
+domain_of:
+- ProcedureStep
+- Distribution
+range: string
+
+```
+</details></div>

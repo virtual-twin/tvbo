@@ -1,0 +1,87 @@
+# Slot: default 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:defaultValue](http://schema.org/defaultValue)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Parameter](../classes/Parameter.qmd) |
+| Slot URI | [schema:defaultValue](http://schema.org/defaultValue) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:defaultValue |
+| native | tvbo:default |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: default
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: schema:defaultValue
+domain_of:
+- Parameter
+range: string
+
+```
+</details></div>

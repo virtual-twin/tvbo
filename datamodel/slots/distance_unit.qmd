@@ -1,0 +1,100 @@
+# Slot: distance_unit 
+
+
+_Unit for distances/lengths in the network_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/distance_unit](https://w3id.org/tvbo/slot/distance_unit)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [UnitEnum](../enums/UnitEnum.qmd) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(mm)` |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:distance_unit |
+| native | tvbo:distance_unit |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: distance_unit
+description: Unit for distances/lengths in the network
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(mm)
+owner: Network
+domain_of:
+- Network
+range: UnitEnum
+
+```
+</details></div>

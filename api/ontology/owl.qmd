@@ -1,0 +1,1402 @@
+# owl { #tvbo.ontology.owl }
+
+`ontology.owl`
+
+--- title: "Ontology Module for TVB-O" author: Leon Martin.
+
+This module provides a set of functions to interact with the ontology of TVB-O.
+It includes functions to:
+
+- Retrieve package version.
+- Render ontology objects using labels or IRIs.
+- Access and extract various parts of the ontology like models, variables, parameters, etc.
+- Compare different models based on their parameters.
+- Get properties of parameters.
+
+### Usage:
+```python
+from tvbo.ontology import owl as ontology
+jansen_rit_model = ontology.get_model("JansenRit")
+```
+
+## Author {.doc-section .doc-section-author}
+
+Leon K. Martin (2023)
+
+## Copyright {.doc-section .doc-section-copyright}
+
+Copyright (c) 2023 Charité Universitätsmedizin Berlin
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [DATA_DIR](#tvbo.ontology.owl.DATA_DIR) |  |
+| [ONTOLOGY_FILENAME](#tvbo.ontology.owl.ONTOLOGY_FILENAME) |  |
+| [ONTO_DIR](#tvbo.ontology.owl.ONTO_DIR) |  |
+| [ROOT_DIR](#tvbo.ontology.owl.ROOT_DIR) |  |
+| [df_tvbo](#tvbo.ontology.owl.df_tvbo) |  |
+| [functional_models](#tvbo.ontology.owl.functional_models) |  |
+| [onto](#tvbo.ontology.owl.onto) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [add_spaces_around_math_chars](#tvbo.ontology.owl.add_spaces_around_math_chars) | Insert spaces around mathematical operator characters in a string. |
+| [compare_models](#tvbo.ontology.owl.compare_models) | Compares two TVB models based on their parameters or another specified metric. |
+| [contains_math_char](#tvbo.ontology.owl.contains_math_char) | Check whether a string contains a mathematical operator character. |
+| [create_acronym](#tvbo.ontology.owl.create_acronym) | Generate a unique upper-case acronym from a camel-case name. |
+| [disintersection](#tvbo.ontology.owl.disintersection) | Computes the unique elements of two lists. |
+| [extract_most_common](#tvbo.ontology.owl.extract_most_common) | Return the most frequently occurring item across several result lists. |
+| [filter_cls_list](#tvbo.ontology.owl.filter_cls_list) | Filters out classes from a list that have a specific ancestor. |
+| [find_best_fuzzy_match](#tvbo.ontology.owl.find_best_fuzzy_match) | Find the best fuzzy match for a target string in a list of strings, prioritizing strings that start with the target followed by an underscore. |
+| [find_variables](#tvbo.ontology.owl.find_variables) | Finds a variable in a TVB model. |
+| [find_version](#tvbo.ontology.owl.find_version) | Retrieves the package version from the `__init__.py` file. |
+| [get_all_annotations](#tvbo.ontology.owl.get_all_annotations) | Collect all distinct values of an annotation property across every class. |
+| [get_class_annotation_properties](#tvbo.ontology.owl.get_class_annotation_properties) | Return the annotation properties of an ontology class. |
+| [get_class_data_properties](#tvbo.ontology.owl.get_class_data_properties) | Return the data properties of an ontology class. |
+| [get_class_object_properties](#tvbo.ontology.owl.get_class_object_properties) | Return the object properties of an ontology class. |
+| [get_class_properties](#tvbo.ontology.owl.get_class_properties) | Collect the label, identifier, annotation, and object properties of a class. |
+| [get_coupling_function](#tvbo.ontology.owl.get_coupling_function) | Retrieve a coupling-function class by its label or a synonym. |
+| [get_coupling_functions](#tvbo.ontology.owl.get_coupling_functions) | Return all coupling-function classes keyed by their label. |
+| [get_def](#tvbo.ontology.owl.get_def) | Retrieve the description or definition of a class based on the specified mode. |
+| [get_default_values](#tvbo.ontology.owl.get_default_values) | Retrieves the default values for a given TVB model's parameters. |
+| [get_definition](#tvbo.ontology.owl.get_definition) | Retrieves the definition for a given ontology class. |
+| [get_info](#tvbo.ontology.owl.get_info) | Build a formatted text summary of an ontology class with its definition and references. |
+| [get_integrator](#tvbo.ontology.owl.get_integrator) | Retrieve the ontology class for a named integration method. |
+| [get_model](#tvbo.ontology.owl.get_model) | Retrieves a specific TVB-O model using its label. |
+| [get_model_acronym](#tvbo.ontology.owl.get_model_acronym) | Retrieves the acronym for a given TVB model. |
+| [get_model_arguments](#tvbo.ontology.owl.get_model_arguments) | Retrieves the arguments for a given TVB model. |
+| [get_model_coefficients](#tvbo.ontology.owl.get_model_coefficients) | Retrieves the coefficients for a given TVB model. |
+| [get_model_conditionals](#tvbo.ontology.owl.get_model_conditionals) | Retrieve the conditional derived variables for a given TVB model. |
+| [get_model_constants](#tvbo.ontology.owl.get_model_constants) | Retrieve the constants for a given TVB model. |
+| [get_model_coupling_terms](#tvbo.ontology.owl.get_model_coupling_terms) | Retrieves the coupling terms for a given TVB model. |
+| [get_model_cvars](#tvbo.ontology.owl.get_model_cvars) | Retrieves the cvars (coupling variables) for a given TVB model. |
+| [get_model_derivatives](#tvbo.ontology.owl.get_model_derivatives) | Retrieves the derivatives for a given TVB model. |
+| [get_model_functions](#tvbo.ontology.owl.get_model_functions) | Retrieves the functions for a given TVB model. |
+| [get_model_parameters](#tvbo.ontology.owl.get_model_parameters) | Retrieves the parameters for a given TVB model. |
+| [get_model_statevariables](#tvbo.ontology.owl.get_model_statevariables) | Retrieves the state variables for a given TVB model. |
+| [get_model_suffix](#tvbo.ontology.owl.get_model_suffix) | Retrieves the suffix for a given TVB model, based on its acronym. |
+| [get_model_variables](#tvbo.ontology.owl.get_model_variables) | Retrieves the variables for a given TVB model. |
+| [get_model_vois](#tvbo.ontology.owl.get_model_vois) | Retrieve the variables of interest (VOIs) for a given TVB model. |
+| [get_models](#tvbo.ontology.owl.get_models) | Retrieves all TVB-O models of a given type. |
+| [get_object_properties](#tvbo.ontology.owl.get_object_properties) | Collect the object-property relationships of an ontology class. |
+| [get_onto](#tvbo.ontology.owl.get_onto) | Return the loaded TVB-O ontology object. |
+| [get_parameters_by_catalogue](#tvbo.ontology.owl.get_parameters_by_catalogue) | Retrieves parameters for a given TVB model, based on a specified parameter catalogue. |
+| [get_property_annotation](#tvbo.ontology.owl.get_property_annotation) | Retrieves annotations for a given ontology class and property. |
+| [get_range](#tvbo.ontology.owl.get_range) | Retrieves the range for a given ontology variable. |
+| [get_sorted_dict](#tvbo.ontology.owl.get_sorted_dict) | Creates a dictionary from a list of ontology classes. The dictionary's keys are the class labels and its values are the class objects. The dictionary is sorted alphabetically based on its keys. |
+| [get_subclass_list](#tvbo.ontology.owl.get_subclass_list) | Retrieves subclasses for a given ontology class, up to a specified depth. |
+| [get_subclasses](#tvbo.ontology.owl.get_subclasses) | Retrieves the subclasses for a given TVB-O class. |
+| [get_superclasses](#tvbo.ontology.owl.get_superclasses) | Retrieves the superclasses for a given TVB-O class. |
+| [get_type](#tvbo.ontology.owl.get_type) | Retrieves the type of a TVB class for a given entity. |
+| [hangident](#tvbo.ontology.owl.hangident) | Indent a string by a specified amount. |
+| [import_model](#tvbo.ontology.owl.import_model) | Import a model from metadata into the ontology. |
+| [intersection](#tvbo.ontology.owl.intersection) | Computes the intersection of two lists. |
+| [join_set](#tvbo.ontology.owl.join_set) | Join the unique elements of an iterable into a comma-separated string. |
+| [ontology_info](#tvbo.ontology.owl.ontology_info) | Summarize the contents of the TVB-O ontology as component counts. |
+| [render_using_iri](#tvbo.ontology.owl.render_using_iri) | Renders the ontology objects using their IRIs. |
+| [render_using_label](#tvbo.ontology.owl.render_using_label) | Renders the ontology objects using their labels. |
+| [replace_suffix](#tvbo.ontology.owl.replace_suffix) | Strip the model-specific suffix from an ontology class's label. |
+| [resolve_class](#tvbo.ontology.owl.resolve_class) | The ontology class *name* refers to, by IRI fragment or by label. |
+| [search_all](#tvbo.ontology.owl.search_all) | Search the ontology by label, synonym, and symbol and return the best match. |
+| [search_class](#tvbo.ontology.owl.search_class) | Searches for an ontology class using a given label. |
+| [search_in_model](#tvbo.ontology.owl.search_in_model) | Search a model's descendant classes by label or definition for a search string. |
+| [select_variables](#tvbo.ontology.owl.select_variables) | Selects variables from a list based on a given property. |
+| [wrap_text](#tvbo.ontology.owl.wrap_text) | Pretty print a string with automatic line breaks at specified intervals, while preserving existing new lines. |
+
+### add_spaces_around_math_chars { #tvbo.ontology.owl.add_spaces_around_math_chars }
+
+```python
+ontology.owl.add_spaces_around_math_chars(s)
+```
+
+Insert spaces around mathematical operator characters in a string.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description             | Default    |
+|--------|--------|-------------------------|------------|
+| s      |        | The string to reformat. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        | str    | The string with a space added on each side of every `+`, `-`, `*`, `/`, |
+|        | str    | or `=` that is not already surrounded by whitespace.                    |
+
+### compare_models { #tvbo.ontology.owl.compare_models }
+
+```python
+ontology.owl.compare_models(model1, model2, by='ParameterCatalogue')
+```
+
+Compares two TVB models based on their parameters or another specified metric.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                                                        | Default                |
+|--------|-----------------------------|--------------------------------------------------------------------|------------------------|
+| model1 | owlready2.ThingClass or str | The first TVB model for comparison.                                | _required_             |
+| model2 | owlready2.ThingClass or str | The second TVB model for comparison.                               | _required_             |
+| by     | str                         | The metric to use for comparison. Default is "ParameterCatalogue". | `'ParameterCatalogue'` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type         | Description                                                                               |
+|--------|--------------|-------------------------------------------------------------------------------------------|
+|        | pd.DataFrame | pandas.DataFrame: A dataframe comparing the two TVB models based on the specified metric. |
+
+### contains_math_char { #tvbo.ontology.owl.contains_math_char }
+
+```python
+ontology.owl.contains_math_char(s)
+```
+
+Check whether a string contains a mathematical operator character.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description            | Default    |
+|--------|--------|------------------------|------------|
+| s      |        | The string to inspect. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                  |
+|--------|--------|--------------------------------------------------------------|
+|        | bool   | True if `s` contains any of `+`, `-`, `*`, `/`, `=`, or `^`. |
+
+### create_acronym { #tvbo.ontology.owl.create_acronym }
+
+```python
+ontology.owl.create_acronym(text)
+```
+
+Generate a unique upper-case acronym from a camel-case name.
+
+Letters are taken from each capitalised word, extending the acronym until it no longer collides with an existing acronym in the ontology.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                       | Default    |
+|--------|--------|-------------------------------------------------------------------|------------|
+| text   |        | The camel-case text (e.g. a model name) to build an acronym from. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                            |
+|--------|--------|------------------------------------------------------------------------|
+|        | str    | An upper-case acronym that is unique among existing ontology acronyms. |
+
+### disintersection { #tvbo.ontology.owl.disintersection }
+
+```python
+ontology.owl.disintersection(lst1, lst2)
+```
+
+Computes the unique elements of two lists.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description      | Default    |
+|--------|--------|------------------|------------|
+| lst1   | list   | The first list.  | _required_ |
+| lst2   | list   | The second list. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                |
+|--------|--------|--------------------------------------------|
+| list   | list   | The elements that are unique to each list. |
+
+### extract_most_common { #tvbo.ontology.owl.extract_most_common }
+
+```python
+ontology.owl.extract_most_common(searches)
+```
+
+Return the most frequently occurring item across several result lists.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                       | Default    |
+|----------|--------|---------------------------------------------------|------------|
+| searches |        | An iterable of result lists to flatten and tally. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                                               |
+|--------|------------------------------|---------------------------------------------------------------------------|
+|        | owlready2.ThingClass \| None | The single most common item, or `None` if the combined results are empty. |
+
+### filter_cls_list { #tvbo.ontology.owl.filter_cls_list }
+
+```python
+ontology.owl.filter_cls_list(cls_list, by)
+```
+
+Filters out classes from a list that have a specific ancestor.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type                 | Description                         | Default    |
+|----------|----------------------|-------------------------------------|------------|
+| cls_list | list                 | The list of classes to be filtered. | _required_ |
+| by       | owlready2.ThingClass | The ancestor class to filter by.    | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                   |
+|--------|------------------------------|-------------------------------|
+| list   | list\[owlready2.ThingClass\] | The filtered list of classes. |
+
+### find_best_fuzzy_match { #tvbo.ontology.owl.find_best_fuzzy_match }
+
+```python
+ontology.owl.find_best_fuzzy_match(target, cls_list)
+```
+
+Find the best fuzzy match for a target string in a list of strings, prioritizing strings that start with the target followed by an underscore.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type        | Description                    | Default    |
+|----------|-------------|--------------------------------|------------|
+| target   | str         | The target string to match.    | _required_ |
+| cls_list | list of str | The list of strings to search. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                 | Description                                            |
+|--------|----------------------|--------------------------------------------------------|
+| str    | owlready2.ThingClass | The string from the list that best matches the target. |
+
+### find_variables { #tvbo.ontology.owl.find_variables }
+
+```python
+ontology.owl.find_variables(
+    var,
+    model,
+    type='all',
+    include_synonyms=False,
+    find_best_match=True,
+)
+```
+
+Finds a variable in a TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name             | Type                        | Description                                                                         | Default    |
+|------------------|-----------------------------|-------------------------------------------------------------------------------------|------------|
+| var              | str                         | The variable to find.                                                               | _required_ |
+| model            | owlready2.ThingClass or str | The TVB model to search in.                                                         | _required_ |
+| type             | str                         | The type of variable to find. Default is "all".                                     | `'all'`    |
+| include_synonyms | bool                        | If True, includes synonyms in the search. Default is False.                         | `False`    |
+| find_best_match  | bool                        | If True, finds the best fuzzy match if multiple matches are found. Default is True. | `True`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                                                   |
+|--------|------------------------------|-------------------------------------------------------------------------------|
+|        | owlready2.ThingClass \| None | owlready2.ThingClass or None: The found variable class, or None if not found. |
+
+### find_version { #tvbo.ontology.owl.find_version }
+
+```python
+ontology.owl.find_version()
+```
+
+Retrieves the package version from the `__init__.py` file.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                      |
+|--------|--------|----------------------------------|
+| str    | str    | The version of the TVBO package. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type         | Description                                               |
+|--------|--------------|-----------------------------------------------------------|
+|        | RuntimeError | If the version cannot be found in the `__init__.py` file. |
+
+### get_all_annotations { #tvbo.ontology.owl.get_all_annotations }
+
+```python
+ontology.owl.get_all_annotations(prop)
+```
+
+Collect all distinct values of an annotation property across every class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                    | Default    |
+|--------|--------|------------------------------------------------|------------|
+| prop   |        | The name of the annotation property to gather. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type        | Description                                                               |
+|--------|-------------|---------------------------------------------------------------------------|
+|        | list\[str\] | A list of the unique annotation values found across all ontology classes. |
+
+### get_class_annotation_properties { #tvbo.ontology.owl.get_class_annotation_properties }
+
+```python
+ontology.owl.get_class_annotation_properties(cls)
+```
+
+Return the annotation properties of an ontology class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                         | Default    |
+|--------|--------|---------------------------------------------------------------------|------------|
+| cls    |        | The ontology class, or its label string to look up in the ontology. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                        |
+|--------|--------|----------------------------------------------------|
+|        |        | The `annotation_properties` mapping for the class. |
+
+### get_class_data_properties { #tvbo.ontology.owl.get_class_data_properties }
+
+```python
+ontology.owl.get_class_data_properties(cls)
+```
+
+Return the data properties of an ontology class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                         | Default    |
+|--------|--------|---------------------------------------------------------------------|------------|
+| cls    |        | The ontology class, or its label string to look up in the ontology. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                |
+|--------|--------|--------------------------------------------|
+|        |        | The `data_properties` entry for the class. |
+
+### get_class_object_properties { #tvbo.ontology.owl.get_class_object_properties }
+
+```python
+ontology.owl.get_class_object_properties(cls)
+```
+
+Return the object properties of an ontology class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                         | Default    |
+|--------|--------|---------------------------------------------------------------------|------------|
+| cls    |        | The ontology class, or its label string to look up in the ontology. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                              |
+|--------|--------|----------------------------------------------------------|
+|        |        | The list of object-property relationships for the class. |
+
+### get_class_properties { #tvbo.ontology.owl.get_class_properties }
+
+```python
+ontology.owl.get_class_properties(cls)
+```
+
+Collect the label, identifier, annotation, and object properties of a class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                         | Default    |
+|--------|--------|---------------------------------------------------------------------|------------|
+| cls    |        | The ontology class, or its label string to look up in the ontology. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                          |
+|--------|--------|------------------------------------------------------|
+|        |        | A dictionary with the class's `label`, `identifier`, |
+|        |        | `annotation_properties`, and `object_properties`.    |
+
+### get_coupling_function { #tvbo.ontology.owl.get_coupling_function }
+
+```python
+ontology.owl.get_coupling_function(label='Linear', verbose=True)
+```
+
+Retrieve a coupling-function class by its label or a synonym.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                                                              | Default    |
+|---------|--------|--------------------------------------------------------------------------|------------|
+| label   |        | The label (or synonym) of the coupling function to retrieve.             | `'Linear'` |
+| verbose |        | If True, print the valid coupling functions when the label is not found. | `True`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                                         |
+|--------|------------------------------|---------------------------------------------------------------------|
+|        | owlready2.ThingClass \| None | The matching coupling-function class, or `None` if it is not found. |
+
+### get_coupling_functions { #tvbo.ontology.owl.get_coupling_functions }
+
+```python
+ontology.owl.get_coupling_functions()
+```
+
+Return all coupling-function classes keyed by their label.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                              | Description                                                                |
+|--------|-----------------------------------|----------------------------------------------------------------------------|
+|        | dict\[str, owlready2.ThingClass\] | A dictionary mapping each coupling function's label to its ontology class. |
+
+### get_def { #tvbo.ontology.owl.get_def }
+
+```python
+ontology.owl.get_def(cls, mode='short')
+```
+
+Retrieve the description or definition of a class based on the specified mode.
+
+This function fetches either a short description or a long definition of the given class.
+If the requested type (short or long) is not available, it attempts to fetch the other type.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+cls : class
+    The class for which the description or definition is being retrieved.
+mode : str, optional
+    The mode specifying the type of text to retrieve: 'short' for a brief description
+    or 'long' for a detailed definition. The default is 'short'.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str
+    The description or definition of the class. If neither is available, it returns None.
+
+### get_default_values { #tvbo.ontology.owl.get_default_values }
+
+```python
+ontology.owl.get_default_values(NMM, tvb_name=False, class_as_key=False)
+```
+
+Retrieves the default values for a given TVB model's parameters.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type                        | Description                                                     | Default    |
+|----------|-----------------------------|-----------------------------------------------------------------|------------|
+| NMM      | owlready2.ThingClass or str | The TVB model to retrieve the default values for.               | _required_ |
+| tvb_name | bool                        | If True, uses the TVB name for the parameter. Default is False. | `False`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                              | Description                                               |
+|--------|-----------------------------------|-----------------------------------------------------------|
+| dict   | dict\[str, float \| bool \| int\] | A dictionary of parameter names and their default values. |
+
+### get_definition { #tvbo.ontology.owl.get_definition }
+
+```python
+ontology.owl.get_definition(tvbo_class)
+```
+
+Retrieves the definition for a given ontology class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type                        | Description                                        | Default    |
+|------------|-----------------------------|----------------------------------------------------|------------|
+| tvbo_class | owlready2.ThingClass or str | The ontology class to retrieve the definition for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                  |
+|--------|--------|----------------------------------------------|
+| str    | str    | The definition for the given ontology class. |
+
+### get_info { #tvbo.ontology.owl.get_info }
+
+```python
+ontology.owl.get_info(cls)
+```
+
+Build a formatted text summary of an ontology class with its definition and references.
+
+A class states as much of itself as it carries. 776 of the ontology's 1516 classes have no ``definition`` and 13 have no ``label``; reading either unconditionally is what made this raise ``AttributeError`` on more than half of them. The IRI fragment stands in for a missing label, and a missing definition simply leaves that section out. ``definition`` and ``has_reference`` are annotation properties TVB-O declares, so a class from an imported ontology — ``owl:Thing`` among them — does not carry the properties at all, let alone empty ones.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                            | Default    |
+|--------|--------|------------------------------------------------------------------------|------------|
+| cls    |        | The ontology class, or a string naming it by IRI fragment or by label. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                  |
+|--------|--------|------------------------------------------------------------------------------|
+|        | str    | A multi-line string with the class label as a heading, its wrapped           |
+|        | str    | definition when it has one, and a references section when it has references. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type     | Description                                 |
+|--------|----------|---------------------------------------------|
+|        | KeyError | If a string names no class in the ontology. |
+
+### get_integrator { #tvbo.ontology.owl.get_integrator }
+
+```python
+ontology.owl.get_integrator(integration_method='Heun')
+```
+
+Retrieve the ontology class for a named integration method.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name               | Type   | Description                                     | Default   |
+|--------------------|--------|-------------------------------------------------|-----------|
+| integration_method |        | The label of the integration method to look up. | `'Heun'`  |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                 | Description                                                             |
+|--------|----------------------|-------------------------------------------------------------------------|
+|        | owlready2.ThingClass | The matching integration-method class, or `None` if none is found. When |
+|        | owlready2.ThingClass | several match, the first is returned (with a message printed).          |
+
+### get_model { #tvbo.ontology.owl.get_model }
+
+```python
+ontology.owl.get_model(label='JansenRit', model_type='NMM', verbose=False)
+```
+
+Retrieves a specific TVB-O model using its label.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                 | Default       |
+|------------|--------|-------------------------------------------------------------|---------------|
+| label      | str    | The label of the model to retrieve. Default is "JansenRit". | `'JansenRit'` |
+| model_type | str    | The type of model to retrieve. Default is "NMM".            | `'NMM'`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                 | Description                                                       |
+|--------|----------------------|-------------------------------------------------------------------|
+|        | owlready2.ThingClass | owlready2.ThingClass: The ontology class for the specified model. |
+
+### get_model_acronym { #tvbo.ontology.owl.get_model_acronym }
+
+```python
+ontology.owl.get_model_acronym(NMM)
+```
+
+Retrieves the acronym for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                                | Default    |
+|--------|-----------------------------|--------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the acronym for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type        | Description                          |
+|--------|-------------|--------------------------------------|
+| str    | str \| None | The acronym for the given TVB model. |
+
+### get_model_arguments { #tvbo.ontology.owl.get_model_arguments }
+
+```python
+ontology.owl.get_model_arguments(NMM)
+```
+
+Retrieves the arguments for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                                  | Default    |
+|--------|-----------------------------|----------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the arguments for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                              | Description                                                                     |
+|--------|-----------------------------------|---------------------------------------------------------------------------------|
+| dict   | dict\[str, owlready2.ThingClass\] | A dictionary of argument labels and their corresponding ontology class objects. |
+
+### get_model_coefficients { #tvbo.ontology.owl.get_model_coefficients }
+
+```python
+ontology.owl.get_model_coefficients(NMM)
+```
+
+Retrieves the coefficients for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                                     | Default    |
+|--------|-----------------------------|-------------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the coefficients for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                              | Description                                                                        |
+|--------|-----------------------------------|------------------------------------------------------------------------------------|
+| dict   | dict\[str, owlready2.ThingClass\] | A dictionary of coefficient labels and their corresponding ontology class objects. |
+
+### get_model_conditionals { #tvbo.ontology.owl.get_model_conditionals }
+
+```python
+ontology.owl.get_model_conditionals(NMM)
+```
+
+Retrieve the conditional derived variables for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                          | Default    |
+|--------|--------|----------------------------------------------------------------------|------------|
+| NMM    |        | The TVB model to retrieve the conditionals for, or its label string. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                              | Description                                                        |
+|--------|-----------------------------------|--------------------------------------------------------------------|
+|        | dict\[str, owlready2.ThingClass\] | A dictionary mapping each suffix-stripped conditional label to its |
+|        | dict\[str, owlready2.ThingClass\] | ontology class object.                                             |
+
+### get_model_constants { #tvbo.ontology.owl.get_model_constants }
+
+```python
+ontology.owl.get_model_constants(NMM, return_as_dict=True)
+```
+
+Retrieve the constants for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description                                                                 | Default    |
+|----------------|--------|-----------------------------------------------------------------------------|------------|
+| NMM            |        | The TVB model to retrieve the constants for, or its label string.           | _required_ |
+| return_as_dict |        | If True, sort and key the constants by their label before suffix stripping. | `True`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                              | Description                                                              |
+|--------|-------------------------------------------------------------------|--------------------------------------------------------------------------|
+|        | dict\[str, owlready2.ThingClass\] \| list\[owlready2.ThingClass\] | A dictionary mapping each suffix-stripped constant label to its ontology |
+|        | dict\[str, owlready2.ThingClass\] \| list\[owlready2.ThingClass\] | class object.                                                            |
+
+### get_model_coupling_terms { #tvbo.ontology.owl.get_model_coupling_terms }
+
+```python
+ontology.owl.get_model_coupling_terms(
+    NMM,
+    only_global=True,
+    return_as_dict=True,
+)
+```
+
+Retrieves the coupling terms for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                                       | Default    |
+|--------|-----------------------------|---------------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the coupling terms for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                              | Description                                                                          |
+|--------|-------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| dict   | dict\[str, owlready2.ThingClass\] \| list\[owlready2.ThingClass\] | A dictionary of coupling term labels and their corresponding ontology class objects. |
+
+### get_model_cvars { #tvbo.ontology.owl.get_model_cvars }
+
+```python
+ontology.owl.get_model_cvars(NMM, return_as_dict=True)
+```
+
+Retrieves the cvars (coupling variables) for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                              | Default    |
+|--------|-----------------------------|------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the cvars for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                              | Description                        |
+|--------|-------------------------------------------------------------------|------------------------------------|
+| list   | dict\[str, owlready2.ThingClass\] \| list\[owlready2.ThingClass\] | The cvars for the given TVB model. |
+
+### get_model_derivatives { #tvbo.ontology.owl.get_model_derivatives }
+
+```python
+ontology.owl.get_model_derivatives(NMM, return_as_dict=True)
+```
+
+Retrieves the derivatives for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                                    | Default    |
+|--------|-----------------------------|------------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the derivatives for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                              | Description                                                                       |
+|--------|-------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| dict   | dict\[str, owlready2.ThingClass\] \| list\[owlready2.ThingClass\] | A dictionary of derivative labels and their corresponding ontology class objects. |
+
+### get_model_functions { #tvbo.ontology.owl.get_model_functions }
+
+```python
+ontology.owl.get_model_functions(NMM)
+```
+
+Retrieves the functions for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                                  | Default    |
+|--------|-----------------------------|----------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the functions for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                              | Description                                                                     |
+|--------|-----------------------------------|---------------------------------------------------------------------------------|
+| dict   | dict\[str, owlready2.ThingClass\] | A dictionary of function labels and their corresponding ontology class objects. |
+
+### get_model_parameters { #tvbo.ontology.owl.get_model_parameters }
+
+```python
+ontology.owl.get_model_parameters(NMM, return_as_dict=True)
+```
+
+Retrieves the parameters for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                                   | Default    |
+|--------|-----------------------------|-----------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the parameters for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                              | Description                                                                      |
+|--------|-------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| dict   | dict\[str, owlready2.ThingClass\] \| list\[owlready2.ThingClass\] | A dictionary of parameter labels and their corresponding ontology class objects. |
+
+### get_model_statevariables { #tvbo.ontology.owl.get_model_statevariables }
+
+```python
+ontology.owl.get_model_statevariables(NMM, return_as_dict=True)
+```
+
+Retrieves the state variables for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type                        | Description                                                            | Default    |
+|----------------|-----------------------------|------------------------------------------------------------------------|------------|
+| NMM            | owlready2.ThingClass or str | The TVB model to retrieve the state variables for.                     | _required_ |
+| return_as_dict | bool                        | If True, returns the state variables as a dictionary. Default is True. | `True`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                              | Description                                                                           |
+|--------|-------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| dict   | dict\[str, owlready2.ThingClass\] \| list\[owlready2.ThingClass\] | A dictionary of state variable labels and their corresponding ontology class objects. |
+
+### get_model_suffix { #tvbo.ontology.owl.get_model_suffix }
+
+```python
+ontology.owl.get_model_suffix(NMM)
+```
+
+Retrieves the suffix for a given TVB model, based on its acronym.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                               | Default    |
+|--------|-----------------------------|-------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the suffix for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                         |
+|--------|--------|-------------------------------------|
+| str    | str    | The suffix for the given TVB model. |
+
+### get_model_variables { #tvbo.ontology.owl.get_model_variables }
+
+```python
+ontology.owl.get_model_variables(NMM)
+```
+
+Retrieves the variables for a given TVB model.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                        | Description                                  | Default    |
+|--------|-----------------------------|----------------------------------------------|------------|
+| NMM    | owlready2.ThingClass or str | The TVB model to retrieve the variables for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                    |
+|--------|------------------------------|------------------------------------------------|
+| list   | list\[owlready2.ThingClass\] | The list of variables for the given TVB model. |
+
+### get_model_vois { #tvbo.ontology.owl.get_model_vois }
+
+```python
+ontology.owl.get_model_vois(model)
+```
+
+Retrieve the variables of interest (VOIs) for a given TVB model.
+
+Combines the model's default VOIs with any extra VOIs listed on the model, spacing out operator-based expressions.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                  | Default    |
+|--------|--------|--------------------------------------------------------------|------------|
+| model  |        | The TVB model to retrieve the VOIs for, or its label string. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type         | Description                                                           |
+|--------|--------------|-----------------------------------------------------------------------|
+|        | tuple\[str\] | A sorted tuple of unique VOI names, falling back to the model's state |
+|        | tuple\[str\] | variables when no VOIs are defined.                                   |
+
+### get_models { #tvbo.ontology.owl.get_models }
+
+```python
+ontology.owl.get_models(model_type='NMM', from_df=False)
+```
+
+Retrieves all TVB-O models of a given type.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                   | Default   |
+|------------|--------|---------------------------------------------------------------|-----------|
+| model_type | str    | The type of model to retrieve. Default is "NMM".              | `'NMM'`   |
+| from_df    | bool   | If True, retrieves models from a dataframe. Default is False. | `False`   |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                              | Description                                                                  |
+|--------|-----------------------------------|------------------------------------------------------------------------------|
+| dict   | dict\[str, owlready2.ThingClass\] | A dictionary of model labels and their corresponding ontology class objects. |
+
+### get_object_properties { #tvbo.ontology.owl.get_object_properties }
+
+```python
+ontology.owl.get_object_properties(ontology_class, include_restriction=True)
+```
+
+Collect the object-property relationships of an ontology class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name                | Type   | Description                                                            | Default    |
+|---------------------|--------|------------------------------------------------------------------------|------------|
+| ontology_class      |        | The ontology class to inspect.                                         | _required_ |
+| include_restriction |        | If True, include `owl:someValuesFrom`-style restriction relationships. | `True`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                      |
+|--------|--------|------------------------------------------------------------------|
+|        |        | A list of single-key dictionaries mapping each property name (or |
+|        |        | `"is_a"`) to its target value.                                   |
+
+### get_onto { #tvbo.ontology.owl.get_onto }
+
+```python
+ontology.owl.get_onto()
+```
+
+Return the loaded TVB-O ontology object.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                          |
+|--------|------------------------------|------------------------------------------------------|
+|        | owlready2.namespace.Ontology | The loaded `owlready2` ontology backing this module. |
+
+### get_parameters_by_catalogue { #tvbo.ontology.owl.get_parameters_by_catalogue }
+
+```python
+ontology.owl.get_parameters_by_catalogue(NMM, param_key)
+```
+
+Retrieves parameters for a given TVB model, based on a specified parameter catalogue.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type                        | Description                                               | Default    |
+|-----------|-----------------------------|-----------------------------------------------------------|------------|
+| NMM       | owlready2.ThingClass or str | The TVB model to retrieve parameters for.                 | _required_ |
+| param_key | str                         | The parameter catalogue to use for retrieving parameters. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type         | Description                                                                           |
+|--------|--------------|---------------------------------------------------------------------------------------|
+|        | pd.DataFrame | pandas.DataFrame: A dataframe of parameters, their definitions, and their categories. |
+
+### get_property_annotation { #tvbo.ontology.owl.get_property_annotation }
+
+```python
+ontology.owl.get_property_annotation(tvbo_class, property)
+```
+
+Retrieves annotations for a given ontology class and property.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type                        | Description                                     | Default    |
+|------------|-----------------------------|-------------------------------------------------|------------|
+| tvbo_class | owlready2.ThingClass or str | The ontology class to retrieve annotations for. | _required_ |
+| property   | str                         | The property to retrieve annotations for.       | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                                |
+|--------|------------------------------|------------------------------------------------------------|
+| list   | list\[owlready2.ThingClass\] | The annotations for the given ontology class and property. |
+
+### get_range { #tvbo.ontology.owl.get_range }
+
+```python
+ontology.owl.get_range(variable, return_array=False)
+```
+
+Retrieves the range for a given ontology variable.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type                        | Description                                               | Default    |
+|--------------|-----------------------------|-----------------------------------------------------------|------------|
+| variable     | owlready2.ThingClass or str | The ontology variable to retrieve the range for.          | _required_ |
+| return_array | bool                        | If True, returns the range as an array. Default is False. | `False`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                | Description                                                        |
+|--------|---------------------|--------------------------------------------------------------------|
+|        | tuple \| np.ndarray | tuple or numpy.ndarray: The range for the given ontology variable. |
+
+### get_sorted_dict { #tvbo.ontology.owl.get_sorted_dict }
+
+```python
+ontology.owl.get_sorted_dict(class_list)
+```
+
+Creates a dictionary from a list of ontology classes. The dictionary's keys are the class labels and its values are the class objects. The dictionary is sorted alphabetically based on its keys.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                   | Default    |
+|------------|--------|-------------------------------|------------|
+| class_list | list   | The list of ontology classes. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                |
+|--------|--------|----------------------------------------------------------------------------|
+| dict   | dict   | A sorted dictionary of class labels and their corresponding class objects. |
+
+### get_subclass_list { #tvbo.ontology.owl.get_subclass_list }
+
+```python
+ontology.owl.get_subclass_list(cls, level=1, exclude_cls=None)
+```
+
+Retrieves subclasses for a given ontology class, up to a specified depth.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type                 | Description                                           | Default    |
+|-------------|----------------------|-------------------------------------------------------|------------|
+| cls         | owlready2.ThingClass | The ontology class to retrieve subclasses for.        | _required_ |
+| level       | int                  | The depth to retrieve subclasses up to. Default is 1. | `1`        |
+| exclude_cls | owlready2.ThingClass | A class to exclude from the results. Default is None. | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                          |
+|--------|------------------------------|------------------------------------------------------|
+| list   | list\[owlready2.ThingClass\] | The list of subclasses for the given ontology class. |
+
+### get_subclasses { #tvbo.ontology.owl.get_subclasses }
+
+```python
+ontology.owl.get_subclasses(tvbo_class, recursive=False)
+```
+
+Retrieves the subclasses for a given TVB-O class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type                 | Description                                                  | Default    |
+|------------|----------------------|--------------------------------------------------------------|------------|
+| tvbo_class | owlready2.ThingClass | The TVB-O class to retrieve subclasses for.                  | _required_ |
+| recursive  | bool                 | If True, retrieves subclasses recursively. Default is False. | `False`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                       |
+|--------|------------------------------|---------------------------------------------------|
+| list   | list\[owlready2.ThingClass\] | The list of subclasses for the given TVB-O class. |
+
+### get_superclasses { #tvbo.ontology.owl.get_superclasses }
+
+```python
+ontology.owl.get_superclasses(tvbo_class)
+```
+
+Retrieves the superclasses for a given TVB-O class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type                 | Description                                   | Default    |
+|------------|----------------------|-----------------------------------------------|------------|
+| tvbo_class | owlready2.ThingClass | The TVB-O class to retrieve superclasses for. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                         |
+|--------|------------------------------|-----------------------------------------------------|
+| list   | list\[owlready2.ThingClass\] | The list of superclasses for the given TVB-O class. |
+
+### get_type { #tvbo.ontology.owl.get_type }
+
+```python
+ontology.owl.get_type(c)
+```
+
+Retrieves the type of a TVB class for a given entity.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                 | Description             | Default    |
+|--------|----------------------|-------------------------|------------|
+| c      | owlready2.ThingClass | The TVB class instance. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                 | Description                 |
+|--------|----------------------|-----------------------------|
+| str    | owlready2.ThingClass | The type of the TVB entity. |
+
+### hangident { #tvbo.ontology.owl.hangident }
+
+```python
+ontology.owl.hangident(text, indent=4)
+```
+
+Indent a string by a specified amount.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                       | Default    |
+|--------|--------|-----------------------------------|------------|
+| text   | str    | The text to be indented.          | _required_ |
+| indent | int    | The amount to indent the text by. | `4`        |
+
+### import_model { #tvbo.ontology.owl.import_model }
+
+```python
+ontology.owl.import_model(model_metadata, model_name=None)
+```
+
+Import a model from metadata into the ontology.
+
+Creates ontology subclasses for state variables, parameters, derived variables, and output transforms.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type                                                                             | Description                                                     | Default    |
+|----------------|----------------------------------------------------------------------------------|-----------------------------------------------------------------|------------|
+| model_metadata | Union\[str, dict, tvbo_datamodel.Dynamics, tvbo_datamodel.SimulationExperiment\] | A Dynamics, SimulationExperiment, dict, or path to a YAML file. | _required_ |
+| model_name     | str \| None                                                                      | Name to use for the created ontology class.                     | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                 | Description                                                    |
+|--------|----------------------|----------------------------------------------------------------|
+|        | owlready2.ThingClass | owlready2.entity.ThingClass: The created ontology model class. |
+
+### intersection { #tvbo.ontology.owl.intersection }
+
+```python
+ontology.owl.intersection(lst1, lst2)
+```
+
+Computes the intersection of two lists.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description      | Default    |
+|--------|--------|------------------|------------|
+| lst1   | list   | The first list.  | _required_ |
+| lst2   | list   | The second list. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                              |
+|--------|--------|------------------------------------------|
+| list   | list   | The intersection of the two given lists. |
+
+### join_set { #tvbo.ontology.owl.join_set }
+
+```python
+ontology.owl.join_set(a)
+```
+
+Join the unique elements of an iterable into a comma-separated string.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                               | Default    |
+|--------|--------|-----------------------------------------------------------|------------|
+| a      |        | The iterable of strings whose distinct values are joined. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                        |
+|--------|--------|----------------------------------------------------|
+|        |        | A comma-separated string of the distinct elements. |
+
+### ontology_info { #tvbo.ontology.owl.ontology_info }
+
+```python
+ontology.owl.ontology_info(print_info=True, return_info=False, return_df=False)
+```
+
+Summarize the contents of the TVB-O ontology as component counts.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                      | Default   |
+|-------------|--------|------------------------------------------------------------------|-----------|
+| print_info  |        | If True, print the base IRI and a count of each component group. | `True`    |
+| return_info |        | If True, return the collected components as a `Bunch`.           | `False`   |
+| return_df   |        | If True, return the component counts as a `pandas.DataFrame`.    | `False`   |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                              |
+|--------|--------|--------------------------------------------------------------------------|
+|        |        | A `Bunch` of component lists when `return_info` is set, or a count       |
+|        |        | `DataFrame` indexed by component name when `return_df` is set; otherwise |
+|        |        | nothing is returned.                                                     |
+
+### render_using_iri { #tvbo.ontology.owl.render_using_iri }
+
+```python
+ontology.owl.render_using_iri(entity)
+```
+
+Renders the ontology objects using their IRIs.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type             | Description                                  | Default    |
+|--------|------------------|----------------------------------------------|------------|
+| entity | owlready2.entity | The ontology class or entity to be rendered. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                           |
+|--------|--------|---------------------------------------|
+| str    | str    | The IRI of the given ontology entity. |
+
+### render_using_label { #tvbo.ontology.owl.render_using_label }
+
+```python
+ontology.owl.render_using_label(entity)
+```
+
+Renders the ontology objects using their labels.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type             | Description                                  | Default    |
+|--------|------------------|----------------------------------------------|------------|
+| entity | owlready2.entity | The ontology class or entity to be rendered. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                             |
+|--------|--------|-----------------------------------------|
+| str    | str    | The label of the given ontology entity. |
+
+### replace_suffix { #tvbo.ontology.owl.replace_suffix }
+
+```python
+ontology.owl.replace_suffix(cls)
+```
+
+Strip the model-specific suffix from an ontology class's label.
+
+The suffix is derived from the acronyms of the class's neural-mass-model, coupling, or data-type ancestors.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                         | Default    |
+|--------|--------|---------------------------------------------------------------------|------------|
+| cls    |        | The ontology class, or its label string to look up in the ontology. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        | str    | The class label with any matching ancestor suffix removed. The original |
+|        | str    | label (or string) is returned when no suffix matches.                   |
+
+### resolve_class { #tvbo.ontology.owl.resolve_class }
+
+```python
+ontology.owl.resolve_class(name)
+```
+
+The ontology class *name* refers to, by IRI fragment or by label.
+
+``onto[...]`` resolves a fragment only within the ontology's own IRI, so every class reached through an import — ``Annotation``, ``Space``, the UBERON and NCBITaxon terms — is invisible to it. The imported classes are searched here too.
+
+Both lookups are exact. The ontology's own ``label_search`` matches loosely, which is right for a search box and wrong for resolving a name: it answers ``'Annotation'`` with ``'annotation criteria application'``, a different class, with no sign that it guessed. A name that matches nothing raises rather than yielding ``None`` for the caller to fail on later.
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type     | Description                                                |
+|--------|----------|------------------------------------------------------------|
+|        | KeyError | If no class carries that IRI fragment or that exact label. |
+
+### search_all { #tvbo.ontology.owl.search_all }
+
+```python
+ontology.owl.search_all(search_term, from_class=None, case_sensitive=False)
+```
+
+Search the ontology by label, synonym, and symbol and return the best match.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description                                                                              | Default    |
+|----------------|--------|------------------------------------------------------------------------------------------|------------|
+| search_term    |        | The prefix to search for.                                                                | _required_ |
+| from_class     |        | Restrict the search to this class's descendants; if `None`, search all ontology classes. | `None`     |
+| case_sensitive |        | If True, perform a case-sensitive search.                                                | `False`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description                                                        |
+|--------|------------------------------|--------------------------------------------------------------------|
+|        | owlready2.ThingClass \| None | The class matching across the most search dimensions, or `None` if |
+|        | owlready2.ThingClass \| None | nothing matches.                                                   |
+
+### search_class { #tvbo.ontology.owl.search_class }
+
+```python
+ontology.owl.search_class(label)
+```
+
+Searches for an ontology class using a given label.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                  | Default    |
+|--------|--------|----------------------------------------------|------------|
+| label  | str    | The label to search for, with regex support. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                     | Description                                               |
+|--------|----------------------------------------------------------|-----------------------------------------------------------|
+|        | owlready2.ThingClass \| owlready2.triplelite._SearchList | owlready2.ThingClass or owlready2.triplelite._SearchList: |
+|        | owlready2.ThingClass \| owlready2.triplelite._SearchList | The ontology class(es) that match the given label.        |
+
+### search_in_model { #tvbo.ontology.owl.search_in_model }
+
+```python
+ontology.owl.search_in_model(search_str, model, wildcards=True)
+```
+
+Search a model's descendant classes by label or definition for a search string.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type                 | Description                                                                                            | Default    |
+|------------|----------------------|--------------------------------------------------------------------------------------------------------|------------|
+| search_str |                      | The text to search for.                                                                                | _required_ |
+| model      | owlready2.ThingClass | The TVB model to search within, or its label string.                                                   | _required_ |
+| wildcards  |                      | If True, wrap `search_str` in `*` wildcards; otherwise append the model's suffix to the search string. | `True`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                         | Description                                                           |
+|--------|--------------------------------------------------------------|-----------------------------------------------------------------------|
+|        | owlready2.ThingClass \| list\[owlready2.ThingClass\] \| None | The single matching class when exactly one is found, `None` when none |
+|        | owlready2.ThingClass \| list\[owlready2.ThingClass\] \| None | match, or the list of matching classes otherwise.                     |
+
+### select_variables { #tvbo.ontology.owl.select_variables }
+
+```python
+ontology.owl.select_variables(variables, property)
+```
+
+Selects variables from a list based on a given property.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                  | Default    |
+|-----------|--------|----------------------------------------------|------------|
+| variables | list   | The list of variables to select from.        | _required_ |
+| property  | str    | The property to use for selecting variables. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                         | Description             |
+|--------|------------------------------|-------------------------|
+| list   | list\[owlready2.ThingClass\] | The selected variables. |
+
+### wrap_text { #tvbo.ontology.owl.wrap_text }
+
+```python
+ontology.owl.wrap_text(text, line_length=100, line_breaks='\n')
+```
+
+Pretty print a string with automatic line breaks at specified intervals, while preserving existing new lines.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                      | Default    |
+|-------------|--------|----------------------------------|------------|
+| text        | str    | The text to be printed.          | _required_ |
+| line_length | int    | The maximum length of each line. | `100`      |

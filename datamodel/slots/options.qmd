@@ -1,0 +1,81 @@
+# Slot: options 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/options](https://w3id.org/tvbo/slot/options)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Discretization](../classes/Discretization.qmd) | Discretization method for boundary value problems in continuation (periodic o... |  no  |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | Specification for switching from a detected bifurcation point to a new branch... |  no  |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Discretization](../classes/Discretization.qmd), [BranchSwitch](../classes/BranchSwitch.qmd), [Continuation](../classes/Continuation.qmd), [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:options |
+| native | tvbo:options |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: options
+domain_of:
+- Discretization
+- BranchSwitch
+- Continuation
+- WorkflowEngineConfig
+range: string
+
+```
+</details></div>

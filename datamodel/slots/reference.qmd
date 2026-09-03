@@ -1,0 +1,82 @@
+# Slot: reference 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/reference](https://w3id.org/tvbo/slot/reference)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dataset](../classes/Dataset.qmd) | A collection of subjects for a multi-subject study |  no  |
+| [DBSDataset](../classes/DBSDataset.qmd) | Collection of data related to a specific DBS study |  no  |
+| [ClinicalScale](../classes/ClinicalScale.qmd) | A clinical assessment inventory or structured scale composed of multiple scor... |  no  |
+| [ClinicalScore](../classes/ClinicalScore.qmd) | Metadata about a clinical score or scale |  no  |
+| [Tractogram](../classes/Tractogram.qmd) | Reference to tractography/diffusion MRI data used to derive structural connec... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Dataset](../classes/Dataset.qmd), [ClinicalScale](../classes/ClinicalScale.qmd), [ClinicalScore](../classes/ClinicalScore.qmd), [Tractogram](../classes/Tractogram.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:reference |
+| native | tvbo:reference |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: reference
+domain_of:
+- Dataset
+- ClinicalScale
+- ClinicalScore
+- Tractogram
+range: string
+
+```
+</details></div>

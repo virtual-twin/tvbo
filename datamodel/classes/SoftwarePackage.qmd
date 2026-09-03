@@ -1,0 +1,651 @@
+# Class: SoftwarePackage 
+
+
+_Identity and metadata for a software package, aligned with schema.org/SoftwareApplication and CodeMeta v3._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:SoftwareApplication](http://schema.org/SoftwareApplication)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class SoftwarePackage
+    click SoftwarePackage href "./SoftwarePackage.html"
+      SoftwarePackage <|-- SimulationTool
+        click SimulationTool href "./SimulationTool.html"
+      
+      SoftwarePackage : acted_on_behalf_of
+        
+          
+    
+        
+        
+        SoftwarePackage --> "*" SoftwarePackage : acted_on_behalf_of
+        click SoftwarePackage href "./SoftwarePackage.html"
+    
+
+        
+      SoftwarePackage : alternative_identifier
+        
+          
+    
+        
+        
+        SoftwarePackage --> "*" Uriorcurie : alternative_identifier
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      SoftwarePackage : description
+        
+          
+    
+        
+        
+        SoftwarePackage --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwarePackage : doi
+        
+          
+    
+        
+        
+        SoftwarePackage --> "0..1" String : doi
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwarePackage : ecosystem
+        
+          
+    
+        
+        
+        SoftwarePackage --> "*" EcosystemEnum : ecosystem
+        click EcosystemEnum href "../../enums/EcosystemEnum.html"
+    
+
+        
+      SoftwarePackage : homepage
+        
+          
+    
+        
+        
+        SoftwarePackage --> "0..1" Uri : homepage
+        click Uri href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      SoftwarePackage : license
+        
+          
+    
+        
+        
+        SoftwarePackage --> "0..1" String : license
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwarePackage : name
+        
+          
+    
+        
+        
+        SoftwarePackage --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwarePackage : repository
+        
+          
+    
+        
+        
+        SoftwarePackage --> "0..1" Uri : repository
+        click Uri href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      SoftwarePackage : version
+        
+          
+    
+        
+        
+        SoftwarePackage --> "0..1" String : version
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **SoftwarePackage**
+    * [SimulationTool](../classes/SimulationTool.qmd)
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [schema:SoftwareApplication](http://schema.org/SoftwareApplication) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [homepage](../slots/homepage.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Project homepage URL | direct |
+| [license](../slots/license.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | SPDX license identifier (e | direct |
+| [repository](../slots/repository.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Source code repository URL | direct |
+| [doi](../slots/doi.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Digital Object Identifier for the software or its reference publication | direct |
+| [version](../slots/version.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Version of the package as it ran | direct |
+| [alternative_identifier](../slots/alternative_identifier.qmd) | * <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Further identifiers for the same package, an RRID among them (BEP028 ``Altern... | direct |
+| [acted_on_behalf_of](../slots/acted_on_behalf_of.qmd) | * <br/> [SoftwarePackage](../classes/SoftwarePackage.qmd) | Packages whose use triggered this one, so a backend invoked through a framewo... | direct |
+| [ecosystem](../slots/ecosystem.qmd) | * <br/> [EcosystemEnum](../enums/EcosystemEnum.qmd) | Package ecosystem(s) through which the software is distributed | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SoftwarePackage](../classes/SoftwarePackage.qmd) | [acted_on_behalf_of](../slots/acted_on_behalf_of.qmd) | range | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [SimulationTool](../classes/SimulationTool.qmd) | [acted_on_behalf_of](../slots/acted_on_behalf_of.qmd) | range | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | [package](../slots/package.qmd) | range | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [Activity](../classes/Activity.qmd) | [associated_with](../slots/associated_with.qmd) | range | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [requires](../slots/requires.qmd) | range | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:SoftwareApplication |
+| native | tvbo_sw:SoftwarePackage |
+| close | prov:SoftwareAgent |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: SoftwarePackage
+description: Identity and metadata for a software package, aligned with schema.org/SoftwareApplication
+  and CodeMeta v3.
+from_schema: https://w3id.org/tvbo/software
+close_mappings:
+- prov:SoftwareAgent
+slots:
+- name
+attributes:
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: dcterms:description
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  homepage:
+    name: homepage
+    description: Project homepage URL.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:url
+    domain_of:
+    - SoftwarePackage
+    range: uri
+  license:
+    name: license
+    description: SPDX license identifier (e.g., MIT, GPL-3.0-only).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: dcterms:license
+    domain_of:
+    - CommonCoordinateSpace
+    - SoftwarePackage
+    - SoftwareRequirement
+    - Provenance
+    range: string
+  repository:
+    name: repository
+    description: Source code repository URL.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:codeRepository
+    domain_of:
+    - SoftwarePackage
+    range: uri
+  doi:
+    name: doi
+    description: Digital Object Identifier for the software or its reference publication.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: bibo:doi
+    domain_of:
+    - SoftwarePackage
+    - Study
+    range: string
+  version:
+    name: version
+    description: Version of the package as it ran. Required by BEP028's software record,
+      where a provenance claim without a version is unverifiable.
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: schema:softwareVersion
+    domain_of:
+    - ClinicalScale
+    - SoftwarePackage
+    - SimulationTool
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    range: string
+  alternative_identifier:
+    name: alternative_identifier
+    description: Further identifiers for the same package, an RRID among them (BEP028
+      ``AlternativeIdentifier``).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwarePackage
+    range: uriorcurie
+    multivalued: true
+  acted_on_behalf_of:
+    name: acted_on_behalf_of
+    description: Packages whose use triggered this one, so a backend invoked through
+      a framework records the chain rather than only the innermost caller.
+    from_schema: https://w3id.org/tvbo/software
+    exact_mappings:
+    - prov:actedOnBehalfOf
+    rank: 1000
+    domain_of:
+    - SoftwarePackage
+    range: SoftwarePackage
+    multivalued: true
+    inlined: false
+  ecosystem:
+    name: ecosystem
+    description: Package ecosystem(s) through which the software is distributed.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwarePackage
+    range: EcosystemEnum
+    multivalued: true
+class_uri: schema:SoftwareApplication
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: SoftwarePackage
+description: Identity and metadata for a software package, aligned with schema.org/SoftwareApplication
+  and CodeMeta v3.
+from_schema: https://w3id.org/tvbo/software
+close_mappings:
+- prov:SoftwareAgent
+attributes:
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: dcterms:description
+    owner: SoftwarePackage
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  homepage:
+    name: homepage
+    description: Project homepage URL.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:url
+    owner: SoftwarePackage
+    domain_of:
+    - SoftwarePackage
+    range: uri
+  license:
+    name: license
+    description: SPDX license identifier (e.g., MIT, GPL-3.0-only).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: dcterms:license
+    owner: SoftwarePackage
+    domain_of:
+    - CommonCoordinateSpace
+    - SoftwarePackage
+    - SoftwareRequirement
+    - Provenance
+    range: string
+  repository:
+    name: repository
+    description: Source code repository URL.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:codeRepository
+    owner: SoftwarePackage
+    domain_of:
+    - SoftwarePackage
+    range: uri
+  doi:
+    name: doi
+    description: Digital Object Identifier for the software or its reference publication.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: bibo:doi
+    owner: SoftwarePackage
+    domain_of:
+    - SoftwarePackage
+    - Study
+    range: string
+  version:
+    name: version
+    description: Version of the package as it ran. Required by BEP028's software record,
+      where a provenance claim without a version is unverifiable.
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: schema:softwareVersion
+    owner: SoftwarePackage
+    domain_of:
+    - ClinicalScale
+    - SoftwarePackage
+    - SimulationTool
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    range: string
+  alternative_identifier:
+    name: alternative_identifier
+    description: Further identifiers for the same package, an RRID among them (BEP028
+      ``AlternativeIdentifier``).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwarePackage
+    domain_of:
+    - SoftwarePackage
+    range: uriorcurie
+    multivalued: true
+  acted_on_behalf_of:
+    name: acted_on_behalf_of
+    description: Packages whose use triggered this one, so a backend invoked through
+      a framework records the chain rather than only the innermost caller.
+    from_schema: https://w3id.org/tvbo/software
+    exact_mappings:
+    - prov:actedOnBehalfOf
+    rank: 1000
+    owner: SoftwarePackage
+    domain_of:
+    - SoftwarePackage
+    range: SoftwarePackage
+    multivalued: true
+    inlined: false
+  ecosystem:
+    name: ecosystem
+    description: Package ecosystem(s) through which the software is distributed.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwarePackage
+    domain_of:
+    - SoftwarePackage
+    range: EcosystemEnum
+    multivalued: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: SoftwarePackage
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+class_uri: schema:SoftwareApplication
+
+```
+</details></div>

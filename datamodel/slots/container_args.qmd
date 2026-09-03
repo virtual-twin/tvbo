@@ -1,0 +1,100 @@
+# Slot: container_args 
+
+
+_Additional arguments passed verbatim to the container runtime when it executes a task. The extension point for runtime flags the typed fields do not cover, mirroring ``WorkflowEngineConfig.options`` for scheduler directives._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/container_args](https://w3id.org/tvbo/slot/container_args)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:container_args |
+| native | tvbo:container_args |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: container_args
+description: Additional arguments passed verbatim to the container runtime when it
+  executes a task. The extension point for runtime flags the typed fields do not cover,
+  mirroring ``WorkflowEngineConfig.options`` for scheduler directives.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowConfig
+domain_of:
+- WorkflowConfig
+range: string
+
+```
+</details></div>

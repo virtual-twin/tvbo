@@ -1,0 +1,347 @@
+# Class: Palette 
+
+
+_A project's colours, named by role. The colour half of a `Theme`, and a document in its own right for a consumer that wants colours and nothing else (:mod:`tvbo.plot.palette`, the documentation site's stylesheet). A style sheet carries only what matplotlib has an rcParam for, which stops short of the roles a figure reasons in: the one colour that means *this is the point*, the neutral everything unlabelled is drawn in, the hairline behind it. Naming them here is what makes recolouring a project one edit that every panel follows. The cycler is `[base] + palette`, so a plot that names no colour comes out neutral and only a panel meaning to separate conditions reaches into the hues; `highlight` sits outside the cycler, because a colour handed to the second line of every plot cannot also mean emphasis. TVB-O's own is curated at `tvbo:theme/default`, and is the palette in force until a project names one of its own._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Palette](https://w3id.org/tvbo/class/Palette)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Palette
+    click Palette href "./Palette.html"
+      Palette <|-- Theme
+        click Theme href "./Theme.html"
+      
+      Palette : background
+        
+          
+    
+        
+        
+        Palette --> "0..1" String : background
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Palette : base
+        
+          
+    
+        
+        
+        Palette --> "0..1" String : base
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Palette : colormaps
+        
+          
+    
+        
+        
+        Palette --> "0..1" Colormaps : colormaps
+        click Colormaps href "./Colormaps.html"
+    
+
+        
+      Palette : highlight
+        
+          
+    
+        
+        
+        Palette --> "0..1" String : highlight
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Palette : ink
+        
+          
+    
+        
+        
+        Palette --> "0..1" String : ink
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Palette : muted
+        
+          
+    
+        
+        
+        Palette --> "0..1" String : muted
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Palette : palette
+        
+          
+    
+        
+        
+        Palette --> "*" String : palette
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **Palette**
+    * [Theme](../classes/Theme.qmd)
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [ink](../slots/ink.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Text, spines and ticks: the near-black everything is read against | direct |
+| [base](../slots/base.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Standard lines, bars and markers, wherever the colour carries no meaning | direct |
+| [muted](../slots/muted.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Hairlines and de-emphasised strokes: present, and not competing | direct |
+| [highlight](../slots/highlight.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The single emphasis colour, kept out of the cycler so it never lands on a pan... | direct |
+| [background](../slots/background.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The page the figure is printed on | direct |
+| [palette](../slots/palette.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The categorical hues, reached into only where a panel separates conditions | direct |
+| [colormaps](../slots/colormaps.qmd) | 0..1 <br/> [Colormaps](../classes/Colormaps.qmd) | The continuous scales, so both kinds of colour move together and no figure na... | direct |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Palette |
+| native | tvbo:Palette |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Palette
+description: 'A project''s colours, named by role. The colour half of a `Theme`, and
+  a document in its own right for a consumer that wants colours and nothing else (:mod:`tvbo.plot.palette`,
+  the documentation site''s stylesheet). A style sheet carries only what matplotlib
+  has an rcParam for, which stops short of the roles a figure reasons in: the one
+  colour that means *this is the point*, the neutral everything unlabelled is drawn
+  in, the hairline behind it. Naming them here is what makes recolouring a project
+  one edit that every panel follows. The cycler is `[base] + palette`, so a plot that
+  names no colour comes out neutral and only a panel meaning to separate conditions
+  reaches into the hues; `highlight` sits outside the cycler, because a colour handed
+  to the second line of every plot cannot also mean emphasis. TVB-O''s own is curated
+  at `tvbo:theme/default`, and is the palette in force until a project names one of
+  its own.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  ink:
+    name: ink
+    description: 'Text, spines and ticks: the near-black everything is read against.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Palette
+    range: string
+  base:
+    name: base
+    description: Standard lines, bars and markers, wherever the colour carries no
+      meaning. Leads the cycler.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Palette
+    range: string
+  muted:
+    name: muted
+    description: 'Hairlines and de-emphasised strokes: present, and not competing.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Palette
+    range: string
+  highlight:
+    name: highlight
+    description: The single emphasis colour, kept out of the cycler so it never lands
+      on a panel by accident.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Palette
+    range: string
+  background:
+    name: background
+    description: The page the figure is printed on.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Palette
+    range: string
+  palette:
+    name: palette
+    description: The categorical hues, reached into only where a panel separates conditions.
+      Ordered, and named by index from zero (`palette.0` is the first), so inserting
+      a hue recolours every figure that names one after it.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Palette
+    range: string
+    multivalued: true
+  colormaps:
+    name: colormaps
+    description: The continuous scales, so both kinds of colour move together and
+      no figure names a colormap of its own.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Palette
+    range: Colormaps
+    inlined: true
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Palette
+description: 'A project''s colours, named by role. The colour half of a `Theme`, and
+  a document in its own right for a consumer that wants colours and nothing else (:mod:`tvbo.plot.palette`,
+  the documentation site''s stylesheet). A style sheet carries only what matplotlib
+  has an rcParam for, which stops short of the roles a figure reasons in: the one
+  colour that means *this is the point*, the neutral everything unlabelled is drawn
+  in, the hairline behind it. Naming them here is what makes recolouring a project
+  one edit that every panel follows. The cycler is `[base] + palette`, so a plot that
+  names no colour comes out neutral and only a panel meaning to separate conditions
+  reaches into the hues; `highlight` sits outside the cycler, because a colour handed
+  to the second line of every plot cannot also mean emphasis. TVB-O''s own is curated
+  at `tvbo:theme/default`, and is the palette in force until a project names one of
+  its own.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  ink:
+    name: ink
+    description: 'Text, spines and ticks: the near-black everything is read against.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Palette
+    domain_of:
+    - Palette
+    range: string
+  base:
+    name: base
+    description: Standard lines, bars and markers, wherever the colour carries no
+      meaning. Leads the cycler.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Palette
+    domain_of:
+    - Palette
+    range: string
+  muted:
+    name: muted
+    description: 'Hairlines and de-emphasised strokes: present, and not competing.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Palette
+    domain_of:
+    - Palette
+    range: string
+  highlight:
+    name: highlight
+    description: The single emphasis colour, kept out of the cycler so it never lands
+      on a panel by accident.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Palette
+    domain_of:
+    - Palette
+    range: string
+  background:
+    name: background
+    description: The page the figure is printed on.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Palette
+    domain_of:
+    - Palette
+    range: string
+  palette:
+    name: palette
+    description: The categorical hues, reached into only where a panel separates conditions.
+      Ordered, and named by index from zero (`palette.0` is the first), so inserting
+      a hue recolours every figure that names one after it.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Palette
+    domain_of:
+    - Palette
+    range: string
+    multivalued: true
+  colormaps:
+    name: colormaps
+    description: The continuous scales, so both kinds of colour move together and
+      no figure names a colormap of its own.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Palette
+    domain_of:
+    - Palette
+    range: Colormaps
+    inlined: true
+
+```
+</details></div>

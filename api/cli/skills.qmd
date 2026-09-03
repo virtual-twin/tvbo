@@ -1,0 +1,112 @@
+# skills { #tvbo.cli.skills }
+
+`cli.skills`
+
+``tvbo skills`` — manage TVBO skill files for AI coding assistants.
+
+Three subcommands:
+
+* ``tvbo skills sync``       — repo-side: regenerate ``.claude/skills/``,
+  ``.github/instructions/``, ``.cursor/rules/`` and the index region of ``AGENTS.md`` from the canonical sources in ``skills/`` and ``tvbo/skills/canonical/``.
+* ``tvbo skills install``    — user-side: render canonical user skills onto
+  a user's machine (``~/.claude/skills/``, ``./.cursor/rules/``, stdout, …).
+* ``tvbo skills uninstall``  — user-side: remove files previously written by
+  ``install`` (detected via the ``managed-by: tvbo`` frontmatter marker).
+
+See :mod:`tvbo.skills._render` for the canonical schema.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [app](#tvbo.cli.skills.app) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Audience](#tvbo.cli.skills.Audience) | Intended reader of a skill, used to filter which skills apply. |
+| [Scope](#tvbo.cli.skills.Scope) | Install location for rendered skill files. |
+| [Target](#tvbo.cli.skills.Target) | Output format a skill is rendered to. |
+
+### Audience { #tvbo.cli.skills.Audience }
+
+```python
+cli.skills.Audience()
+```
+
+Intended reader of a skill, used to filter which skills apply.
+
+A skill declares an `audience` of `user`, `maintainer`, or `both`;
+this enum selects the subset to act on, where `all` keeps every skill regardless of its declared audience.
+
+### Scope { #tvbo.cli.skills.Scope }
+
+```python
+cli.skills.Scope()
+```
+
+Install location for rendered skill files.
+
+`user` writes to the per-user config directory (e.g. `~/.claude/skills`), while `project` writes to the current working directory (e.g.
+`./.claude/skills`).
+
+### Target { #tvbo.cli.skills.Target }
+
+```python
+cli.skills.Target()
+```
+
+Output format a skill is rendered to.
+
+Selects which assistant-specific artifact `install` or `sync` produces:
+Claude Code skill files, GitHub Copilot instructions, Cursor rules, the `AGENTS.md` index, a plain prompt on stdout, or `all` of them at once.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [install](#tvbo.cli.skills.install) | Render user skills to ``--target`` and write them to disk (or stdout). |
+| [sync](#tvbo.cli.skills.sync) | Regenerate ``.claude/skills/``, ``.github/instructions/``, ``.cursor/rules/`` and ``AGENTS.md``. |
+| [uninstall](#tvbo.cli.skills.uninstall) | Remove files in *target* whose frontmatter carries ``managed-by: tvbo``. |
+
+### install { #tvbo.cli.skills.install }
+
+```python
+cli.skills.install(
+    target=typer.Option(Target.claude_code, '--target', '-t', help='Adapter format.'),
+    audience=typer.Option(Audience.user, '--audience', help='Which skills to install.'),
+    scope=typer.Option(Scope.user, '--scope', help='user (~/.claude/) or project (./.claude/).'),
+    skill=typer.Option(None, '--skill', '-s', help='Limit to specific skill(s). Repeatable.'),
+    out=typer.Option(None, '--out', '-o', help='Override the install directory or output path.'),
+    force=typer.Option(False, '--force', '-f', help='Overwrite unmanaged files.'),
+    dry_run=typer.Option(False, '--dry-run', help='Show what would happen; write nothing.'),
+    strict=typer.Option(False, '--strict', help='Exit non-zero if any skill is refused/skipped.'),
+)
+```
+
+Render user skills to ``--target`` and write them to disk (or stdout).
+
+### sync { #tvbo.cli.skills.sync }
+
+```python
+cli.skills.sync(
+    check=typer.Option(False, '--check', help='Exit non-zero if any adapter file would change. CI guard.'),
+    repo_root=typer.Option(Path.cwd(), '--repo-root', help='Repo root containing skills/ and AGENTS.md.'),
+)
+```
+
+Regenerate ``.claude/skills/``, ``.github/instructions/``, ``.cursor/rules/`` and ``AGENTS.md``.
+
+### uninstall { #tvbo.cli.skills.uninstall }
+
+```python
+cli.skills.uninstall(
+    target=typer.Option(Target.claude_code, '--target', '-t', help='Adapter format.'),
+    scope=typer.Option(Scope.user, '--scope', help='user or project.'),
+    out=typer.Option(None, '--out', '-o', help='Override the install directory.'),
+    dry_run=typer.Option(False, '--dry-run', help='Show what would be removed.'),
+)
+```
+
+Remove files in *target* whose frontmatter carries ``managed-by: tvbo``.

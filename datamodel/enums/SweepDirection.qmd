@@ -1,0 +1,81 @@
+# Enum: SweepDirection 
+
+
+
+
+_Order in which a branch-following sweep (SweepSeeding.from_previous) traverses its axis. Ignored for independent seeding, where order is irrelevant._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/SweepDirection](https://w3id.org/tvbo/enum/SweepDirection)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| up | None | Increase the parameter monotonically (low to high), once |
+| down | None | Decrease the parameter monotonically (high to low), once |
+| bidirectional | None | Increase then decrease over the same values, recording both branches |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [sweep_direction](../slots/sweep_direction.qmd) | Order in which a branch-following axis (sweep_seeding: from_previous) is trav... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SweepDirection
+description: Order in which a branch-following sweep (SweepSeeding.from_previous)
+  traverses its axis. Ignored for independent seeding, where order is irrelevant.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  up:
+    text: up
+    description: Increase the parameter monotonically (low to high), once.
+  down:
+    text: down
+    description: Decrease the parameter monotonically (high to low), once.
+  bidirectional:
+    text: bidirectional
+    description: Increase then decrease over the same values, recording both branches.
+      Where the two branches differ, the sweep traces a hysteresis loop that exposes
+      coexisting stable states (bistability / multistability). The multivalued generalisation
+      of Continuation.bothside.
+
+```
+</details>
+
+</div>

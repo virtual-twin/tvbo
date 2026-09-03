@@ -1,0 +1,103 @@
+# Slot: conditionals 
+
+
+_Conditional logic for piecewise equations — the one place a piecewise definition is written, for a state variable, a derived variable or a derived parameter alike. When present, the branches define the equation and `rhs` may be omitted._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/conditionals](https://w3id.org/tvbo/slot/conditionals)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Equation](../classes/Equation.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ConditionalBlock](../classes/ConditionalBlock.qmd) |
+| Domain Of | [Equation](../classes/Equation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Equation](../classes/Equation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:conditionals |
+| native | tvbo:conditionals |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: conditionals
+description: Conditional logic for piecewise equations — the one place a piecewise
+  definition is written, for a state variable, a derived variable or a derived parameter
+  alike. When present, the branches define the equation and `rhs` may be omitted.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Equation
+domain_of:
+- Equation
+range: ConditionalBlock
+multivalued: true
+inlined: true
+
+```
+</details></div>

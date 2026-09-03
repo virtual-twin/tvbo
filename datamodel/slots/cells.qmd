@@ -1,0 +1,98 @@
+# Slot: cells 
+
+
+_A `grid`'s cells stated one at a time, for a grid whose cells differ — a first cell showing the bare mesh the rest are maps on, or a row pairing two kinds. Each is merged over `cell:`, and carries its own layers. Mutually exclusive with `layers:`, which is the compact form of the same thing._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/cells](https://w3id.org/tvbo/slot/cells)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+| [Inset](../classes/Inset.qmd) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, ann... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Inset](../classes/Inset.qmd) |
+| Domain Of | [Panel](../classes/Panel.qmd), [Inset](../classes/Inset.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:cells |
+| native | tvbo:cells |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: cells
+description: A `grid`'s cells stated one at a time, for a grid whose cells differ
+  — a first cell showing the bare mesh the rest are maps on, or a row pairing two
+  kinds. Each is merged over `cell:`, and carries its own layers. Mutually exclusive
+  with `layers:`, which is the compact form of the same thing.
+from_schema: https://w3id.org/tvbo/figure
+domain_of:
+- Panel
+- Inset
+range: Inset
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

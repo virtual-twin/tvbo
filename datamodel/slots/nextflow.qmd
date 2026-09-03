@@ -1,0 +1,99 @@
+# Slot: nextflow 
+
+
+_Nextflow execution directives._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/nextflow](https://w3id.org/tvbo/slot/nextflow)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+| Domain Of | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:nextflow |
+| native | tvbo:nextflow |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: nextflow
+description: Nextflow execution directives.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowConfig
+domain_of:
+- WorkflowConfig
+range: WorkflowEngineConfig
+inlined: true
+
+```
+</details></div>

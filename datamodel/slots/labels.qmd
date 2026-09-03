@@ -1,0 +1,77 @@
+# Slot: labels 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/labels](https://w3id.org/tvbo/slot/labels)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Graph](../classes/Graph.qmd) | A node-link panel's graph and how it is drawn: the connectome the model actua... |  no  |
+| [Legend](../classes/Legend.qmd) | A panel's key: whether it is drawn, where it sits, and the three things a fig... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Graph](../classes/Graph.qmd), [Legend](../classes/Legend.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:labels |
+| native | tvbo:labels |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: labels
+domain_of:
+- Graph
+- Legend
+range: string
+
+```
+</details></div>

@@ -1,0 +1,83 @@
+# Enum: ComparisonOperator 
+
+
+
+
+_Comparison used by a `stochastic_mask` step. Named rather than written as an operator so the step stays metadata: `!=` in particular cannot survive expression parsing (it evaluates to a plain boolean)._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ComparisonOperator](https://w3id.org/tvbo/enum/ComparisonOperator)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| le | None | less than or equal (<=) |
+| lt | None | strictly less than (<) |
+| ge | None | greater than or equal (>=) |
+| gt | None | strictly greater than (>) |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [comparison](../slots/comparison.qmd) | Comparison a `stochastic_mask` applies between `of` and the draw |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ComparisonOperator
+description: 'Comparison used by a `stochastic_mask` step. Named rather than written
+  as an operator so the step stays metadata: `!=` in particular cannot survive expression
+  parsing (it evaluates to a plain boolean).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  le:
+    text: le
+    description: less than or equal (<=)
+  lt:
+    text: lt
+    description: strictly less than (<)
+  ge:
+    text: ge
+    description: greater than or equal (>=)
+  gt:
+    text: gt
+    description: strictly greater than (>)
+
+```
+</details>
+
+</div>

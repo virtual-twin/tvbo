@@ -1,0 +1,103 @@
+# Slot: sessions 
+
+
+_Data collection sessions for this subject. Each session can have its own network, empirical data, and conditions._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/sessions](https://w3id.org/tvbo/study/slot/sessions)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Subject](../classes/Subject.qmd) | A participant in a study |  no  |
+| [DBSSubject](../classes/DBSSubject.qmd) | Human or animal subject receiving DBS |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Session](../classes/Session.qmd) |
+| Domain Of | [Subject](../classes/Subject.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Subject](../classes/Subject.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:sessions |
+| native | tvbo_study:sessions |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sessions
+description: Data collection sessions for this subject. Each session can have its
+  own network, empirical data, and conditions.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+owner: Subject
+domain_of:
+- Subject
+range: Session
+multivalued: true
+inlined: true
+
+```
+</details></div>

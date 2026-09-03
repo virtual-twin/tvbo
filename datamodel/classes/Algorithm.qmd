@@ -1,0 +1,900 @@
+# Class: Algorithm 
+
+
+_A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives, observations, and hyperparameters._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Algorithm](https://w3id.org/tvbo/Algorithm)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Algorithm
+    click Algorithm href "./Algorithm.html"
+      Algorithm : apply_every
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" Integer : apply_every
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Algorithm : depends_on
+        
+          
+    
+        
+        
+        Algorithm --> "*" Algorithm : depends_on
+        click Algorithm href "./Algorithm.html"
+    
+
+        
+      Algorithm : description
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Algorithm : evaluate
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" Boolean : evaluate
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Algorithm : execution
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" ExecutionConfig : execution
+        click ExecutionConfig href "./ExecutionConfig.html"
+    
+
+        
+      Algorithm : functions
+        
+          
+    
+        
+        
+        Algorithm --> "*" FunctionCall : functions
+        click FunctionCall href "./FunctionCall.html"
+    
+
+        
+      Algorithm : hyperparameters
+        
+          
+    
+        
+        
+        Algorithm --> "*" Parameter : hyperparameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Algorithm : includes
+        
+          
+    
+        
+        
+        Algorithm --> "*" AlgorithmInclude : includes
+        click AlgorithmInclude href "./AlgorithmInclude.html"
+    
+
+        
+      Algorithm : learning_rate
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" Float : learning_rate
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Algorithm : learning_rate_schedule
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" String : learning_rate_schedule
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Algorithm : learning_rate_warmup
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" Boolean : learning_rate_warmup
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Algorithm : n_iterations
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" Integer : n_iterations
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Algorithm : name
+        
+          
+    
+        
+        
+        Algorithm --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Algorithm : objective
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" TuningObjective : objective
+        click TuningObjective href "./TuningObjective.html"
+    
+
+        
+      Algorithm : observations
+        
+          
+    
+        
+        
+        Algorithm --> "*" Observation : observations
+        click Observation href "./Observation.html"
+    
+
+        
+      Algorithm : simulation_period
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" Float : simulation_period
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Algorithm : stages
+        
+          
+    
+        
+        
+        Algorithm --> "*" AlgorithmStage : stages
+        click AlgorithmStage href "./AlgorithmStage.html"
+    
+
+        
+      Algorithm : type
+        
+          
+    
+        
+        
+        Algorithm --> "0..1" String : type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Algorithm : update_rules
+        
+          
+    
+        
+        
+        Algorithm --> "*" UpdateRule : update_rules
+        click UpdateRule href "./UpdateRule.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Algorithm](https://w3id.org/tvbo/Algorithm) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [execution](../slots/execution.qmd) | 0..1 <br/> [ExecutionConfig](../classes/ExecutionConfig.qmd) | Per-algorithm execution configuration (overrides experiment-level defaults) | direct |
+| [type](../slots/type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Algorithm type: 'fic', 'eib', 'homeostatic', 'custom' | direct |
+| [includes](../slots/includes.qmd) | * <br/> [AlgorithmInclude](../classes/AlgorithmInclude.qmd) | Include update rules from other algorithms with optional argument overrides | direct |
+| [stages](../slots/stages.qmd) | * <br/> [AlgorithmStage](../classes/AlgorithmStage.qmd) | Optional multi-stage schedule | direct |
+| [objective](../slots/objective.qmd) | 0..1 <br/> [TuningObjective](../classes/TuningObjective.qmd) | What the algorithm optimizes for | direct |
+| [observations](../slots/observations.qmd) | * <br/> [Observation](../classes/Observation.qmd) | References to observations defined in the observations section | direct |
+| [update_rules](../slots/update_rules.qmd) | * <br/> [UpdateRule](../classes/UpdateRule.qmd) | How parameters are updated each iteration | direct |
+| [hyperparameters](../slots/hyperparameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) | Additional algorithm-specific parameters | direct |
+| [learning_rate](../slots/learning_rate.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Learning rate (eta) for the tuning algorithm | direct |
+| [learning_rate_warmup](../slots/learning_rate_warmup.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Linear warmup of learning rate from 0 to learning_rate over n_iterations | direct |
+| [n_iterations](../slots/n_iterations.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of iterations to run | direct |
+| [learning_rate_schedule](../slots/learning_rate_schedule.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Learning rate schedule: 'constant', 'linear', 'exponential' | direct |
+| [simulation_period](../slots/simulation_period.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Duration of each simulation step (e | direct |
+| [apply_every](../slots/apply_every.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Apply update every N iterations | direct |
+| [functions](../slots/functions.qmd) | * <br/> [FunctionCall](../classes/FunctionCall.qmd) | Function calls for tracking progress, computing metrics, etc | direct |
+| [depends_on](../slots/depends_on.qmd) | * <br/> [Algorithm](../classes/Algorithm.qmd) | Other algorithms that must run first (e | direct |
+| [evaluate](../slots/evaluate.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Materialise this algorithm's post-tuning evaluation: a simulation of the tune... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Optimization](../classes/Optimization.qmd) | [depends_on](../slots/depends_on.qmd) | any_of[range] | [Algorithm](../classes/Algorithm.qmd) |
+| [Inference](../classes/Inference.qmd) | [depends_on](../slots/depends_on.qmd) | range | [Algorithm](../classes/Algorithm.qmd) |
+| [AlgorithmInclude](../classes/AlgorithmInclude.qmd) | [algorithm](../slots/algorithm.qmd) | range | [Algorithm](../classes/Algorithm.qmd) |
+| [Algorithm](../classes/Algorithm.qmd) | [depends_on](../slots/depends_on.qmd) | range | [Algorithm](../classes/Algorithm.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [algorithms](../slots/algorithms.qmd) | range | [Algorithm](../classes/Algorithm.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Algorithm |
+| native | tvbo:Algorithm |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Algorithm
+description: A complete specification of an iterative parameter tuning algorithm.
+  Combines update rules, objectives, observations, and hyperparameters.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+attributes:
+  execution:
+    name: execution
+    description: Per-algorithm execution configuration (overrides experiment-level
+      defaults). Useful for setting random_seed per algorithm to ensure reproducibility.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  type:
+    name: type
+    description: 'Algorithm type: ''fic'', ''eib'', ''homeostatic'', ''custom'''
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  includes:
+    name: includes
+    description: 'Include update rules from other algorithms with optional argument
+      overrides. Unlike depends_on (sequential), includes means combined execution.
+      Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Algorithm
+    range: AlgorithmInclude
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  stages:
+    name: stages
+    description: 'Optional multi-stage schedule. When present, the algorithm body
+      is run once per stage IN ORDER, carrying trajectory state, FC window buffer,
+      and monitors forward (one continuous online run). Each stage overrides n_iterations
+      + selected hyperparameters. Replaces the top-level n_iterations for execution.
+      Example (Schirner 2023): 6 stages with eta halving and window_size doubling
+      per stage.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Optimization
+    - Algorithm
+    range: AlgorithmStage
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  objective:
+    name: objective
+    description: What the algorithm optimizes for
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Algorithm
+    range: TuningObjective
+    inlined: true
+  observations:
+    name: observations
+    description: References to observations defined in the observations section. Includes
+      both simulated observations and external data (via data_source).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Algorithm
+    - SimulationExperiment
+    range: Observation
+    multivalued: true
+    inlined: false
+  update_rules:
+    name: update_rules
+    description: How parameters are updated each iteration. When using 'includes',
+      update_rules are inherited from included algorithms.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Algorithm
+    range: UpdateRule
+    required: false
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  hyperparameters:
+    name: hyperparameters
+    description: Additional algorithm-specific parameters
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - OptimizationStage
+    - Algorithm
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  learning_rate:
+    name: learning_rate
+    description: Learning rate (eta) for the tuning algorithm
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - OptimizationStage
+    - Algorithm
+    range: float
+  learning_rate_warmup:
+    name: learning_rate_warmup
+    description: Linear warmup of learning rate from 0 to learning_rate over n_iterations.
+      eta_effective = eta * (i+1) / n_iterations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(false)
+    domain_of:
+    - Algorithm
+    range: boolean
+  n_iterations:
+    name: n_iterations
+    description: Number of iterations to run
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - AlgorithmStage
+    - Algorithm
+    range: integer
+  learning_rate_schedule:
+    name: learning_rate_schedule
+    description: 'Learning rate schedule: ''constant'', ''linear'', ''exponential'''
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Algorithm
+    range: string
+  simulation_period:
+    name: simulation_period
+    description: Duration of each simulation step (e.g., one BOLD TR)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Algorithm
+    range: float
+  apply_every:
+    name: apply_every
+    description: Apply update every N iterations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    domain_of:
+    - Algorithm
+    range: integer
+  functions:
+    name: functions
+    description: Function calls for tracking progress, computing metrics, etc. Each
+      FunctionCall references a function from the experiment's functions section and
+      specifies arguments for that specific algorithm context.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: FunctionCall
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  depends_on:
+    name: depends_on
+    description: Other algorithms that must run first (e.g., EIB depends on FIC)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Optimization
+    - Inference
+    - Algorithm
+    range: Algorithm
+    multivalued: true
+  evaluate:
+    name: evaluate
+    description: 'Materialise this algorithm''s post-tuning evaluation: a simulation
+      of the tuned model over the experiment''s full duration, recorded as algorithm__<name>__<observation>.
+      False keeps only the tuned parameters and state, which is all a dependency of
+      another algorithm contributes - the algorithm that follows supersedes its observations
+      - while the evaluation itself costs a complete run of the experiment''s duration.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    domain_of:
+    - Algorithm
+    range: boolean
+class_uri: tvbo:Algorithm
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Algorithm
+description: A complete specification of an iterative parameter tuning algorithm.
+  Combines update rules, objectives, observations, and hyperparameters.
+from_schema: https://w3id.org/tvbo
+attributes:
+  execution:
+    name: execution
+    description: Per-algorithm execution configuration (overrides experiment-level
+      defaults). Useful for setting random_seed per algorithm to ensure reproducibility.
+    from_schema: https://w3id.org/tvbo
+    owner: Algorithm
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  type:
+    name: type
+    description: 'Algorithm type: ''fic'', ''eib'', ''homeostatic'', ''custom'''
+    from_schema: https://w3id.org/tvbo
+    owner: Algorithm
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  includes:
+    name: includes
+    description: 'Include update rules from other algorithms with optional argument
+      overrides. Unlike depends_on (sequential), includes means combined execution.
+      Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Algorithm
+    domain_of:
+    - Algorithm
+    range: AlgorithmInclude
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  stages:
+    name: stages
+    description: 'Optional multi-stage schedule. When present, the algorithm body
+      is run once per stage IN ORDER, carrying trajectory state, FC window buffer,
+      and monitors forward (one continuous online run). Each stage overrides n_iterations
+      + selected hyperparameters. Replaces the top-level n_iterations for execution.
+      Example (Schirner 2023): 6 stages with eta halving and window_size doubling
+      per stage.'
+    from_schema: https://w3id.org/tvbo
+    owner: Algorithm
+    domain_of:
+    - Optimization
+    - Algorithm
+    range: AlgorithmStage
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  objective:
+    name: objective
+    description: What the algorithm optimizes for
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Algorithm
+    domain_of:
+    - Algorithm
+    range: TuningObjective
+    inlined: true
+  observations:
+    name: observations
+    description: References to observations defined in the observations section. Includes
+      both simulated observations and external data (via data_source).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Algorithm
+    domain_of:
+    - Algorithm
+    - SimulationExperiment
+    range: Observation
+    multivalued: true
+    inlined: false
+  update_rules:
+    name: update_rules
+    description: How parameters are updated each iteration. When using 'includes',
+      update_rules are inherited from included algorithms.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Algorithm
+    domain_of:
+    - Algorithm
+    range: UpdateRule
+    required: false
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  hyperparameters:
+    name: hyperparameters
+    description: Additional algorithm-specific parameters
+    from_schema: https://w3id.org/tvbo
+    owner: Algorithm
+    domain_of:
+    - OptimizationStage
+    - Algorithm
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  learning_rate:
+    name: learning_rate
+    description: Learning rate (eta) for the tuning algorithm
+    from_schema: https://w3id.org/tvbo
+    owner: Algorithm
+    domain_of:
+    - OptimizationStage
+    - Algorithm
+    range: float
+  learning_rate_warmup:
+    name: learning_rate_warmup
+    description: Linear warmup of learning rate from 0 to learning_rate over n_iterations.
+      eta_effective = eta * (i+1) / n_iterations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(false)
+    owner: Algorithm
+    domain_of:
+    - Algorithm
+    range: boolean
+  n_iterations:
+    name: n_iterations
+    description: Number of iterations to run
+    from_schema: https://w3id.org/tvbo
+    owner: Algorithm
+    domain_of:
+    - AlgorithmStage
+    - Algorithm
+    range: integer
+  learning_rate_schedule:
+    name: learning_rate_schedule
+    description: 'Learning rate schedule: ''constant'', ''linear'', ''exponential'''
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Algorithm
+    domain_of:
+    - Algorithm
+    range: string
+  simulation_period:
+    name: simulation_period
+    description: Duration of each simulation step (e.g., one BOLD TR)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Algorithm
+    domain_of:
+    - Algorithm
+    range: float
+  apply_every:
+    name: apply_every
+    description: Apply update every N iterations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    owner: Algorithm
+    domain_of:
+    - Algorithm
+    range: integer
+  functions:
+    name: functions
+    description: Function calls for tracking progress, computing metrics, etc. Each
+      FunctionCall references a function from the experiment's functions section and
+      specifies arguments for that specific algorithm context.
+    from_schema: https://w3id.org/tvbo
+    owner: Algorithm
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: FunctionCall
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  depends_on:
+    name: depends_on
+    description: Other algorithms that must run first (e.g., EIB depends on FIC)
+    from_schema: https://w3id.org/tvbo
+    owner: Algorithm
+    domain_of:
+    - Optimization
+    - Inference
+    - Algorithm
+    range: Algorithm
+    multivalued: true
+  evaluate:
+    name: evaluate
+    description: 'Materialise this algorithm''s post-tuning evaluation: a simulation
+      of the tuned model over the experiment''s full duration, recorded as algorithm__<name>__<observation>.
+      False keeps only the tuned parameters and state, which is all a dependency of
+      another algorithm contributes - the algorithm that follows supersedes its observations
+      - while the evaluation itself costs a complete run of the experiment''s duration.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    owner: Algorithm
+    domain_of:
+    - Algorithm
+    range: boolean
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Algorithm
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Algorithm
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Algorithm
+
+```
+</details></div>

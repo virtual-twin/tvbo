@@ -1,0 +1,98 @@
+# Slot: lo 
+
+
+_Lower bound or starting value. Can be a number or argument name._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/lo](https://w3id.org/tvbo/slot/lo)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Range](../classes/Range.qmd) | Specifies a range for array generation, parameter bounds, or grid exploration |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ScalarValue](../classes/ScalarValue.qmd) |
+| Domain Of | [Range](../classes/Range.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Range](../classes/Range.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:lo |
+| native | tvbo:lo |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: lo
+description: Lower bound or starting value. Can be a number or argument name.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Range
+domain_of:
+- Range
+range: ScalarValue
+
+```
+</details></div>

@@ -1,0 +1,101 @@
+# Slot: targets 
+
+
+_State variables this noise applies to; if omitted, applies globally._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/targets](https://w3id.org/tvbo/slot/targets)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [StateVariable](../classes/StateVariable.qmd) |
+| Domain Of | [Noise](../classes/Noise.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Noise](../classes/Noise.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:targets |
+| native | tvbo:targets |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: targets
+description: State variables this noise applies to; if omitted, applies globally.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Noise
+domain_of:
+- Noise
+range: StateVariable
+multivalued: true
+inlined: true
+
+```
+</details></div>

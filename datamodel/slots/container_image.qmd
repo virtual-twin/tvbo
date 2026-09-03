@@ -1,0 +1,98 @@
+# Slot: container_image 
+
+
+_Container image reference (e.g., ghcr.io/org/img:tag@sha256:...)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/container_image](https://w3id.org/tvbo/software/slot/container_image)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | A reproducible software environment aggregating one or more SoftwareRequireme... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:container_image |
+| native | tvbo_sw:container_image |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: container_image
+description: Container image reference (e.g., ghcr.io/org/img:tag@sha256:...).
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+owner: SoftwareEnvironment
+domain_of:
+- SoftwareEnvironment
+range: string
+
+```
+</details></div>

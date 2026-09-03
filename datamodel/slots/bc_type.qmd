@@ -1,0 +1,92 @@
+# Slot: bc_type 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/bc_type](https://w3id.org/tvbo/slot/bc_type)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BoundaryCondition](../classes/BoundaryCondition.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [BoundaryConditionType](../enums/BoundaryConditionType.qmd) |
+| Domain Of | [BoundaryCondition](../classes/BoundaryCondition.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [BoundaryCondition](../classes/BoundaryCondition.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:bc_type |
+| native | tvbo:bc_type |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: bc_type
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: BoundaryCondition
+domain_of:
+- BoundaryCondition
+range: BoundaryConditionType
+
+```
+</details></div>

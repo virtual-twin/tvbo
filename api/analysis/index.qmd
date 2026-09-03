@@ -1,0 +1,80 @@
+# analysis { #tvbo.analysis }
+
+`analysis`
+
+Analysis subpackage.
+
+Houses analysis result container classes (e.g., BifurcationResult) and related APIs that are logically distinct from plotting utilities or simulation drivers.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [compare_timeseries](#tvbo.analysis.compare_timeseries) | Compare state variables between two time series using multiple measures. |
+| [per_window_fc](#tvbo.analysis.per_window_fc) | Calculate per-window functional connectivity. |
+| [ttest_correlation_strength](#tvbo.analysis.ttest_correlation_strength) | Perform a t-test on the strength of the correlation. |
+
+### compare_timeseries { #tvbo.analysis.compare_timeseries }
+
+```python
+analysis.compare_timeseries(exp, ts1, ts2, atol=1e-10)
+```
+
+Compare state variables between two time series using multiple measures.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type                 | Description                                                  | Default    |
+|--------|----------------------|--------------------------------------------------------------|------------|
+| exp    | SimulationExperiment | Experiment object containing metadata about state variables. | _required_ |
+| ts1    | Any                  | First time series.                                           | _required_ |
+| ts2    | Any                  | Second time series.                                          | _required_ |
+| atol   | float                | Absolute tolerance for broader identity check.               | `1e-10`    |
+
+### per_window_fc { #tvbo.analysis.per_window_fc }
+
+```python
+analysis.per_window_fc(tv, xv, window=1000.0)
+```
+
+Calculate per-window functional connectivity.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+tv : ndarray
+    Time vector.
+xv : ndarray
+    Data vector.
+window : float, optional
+    Time window for calculation. Default is 1e3.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+ndarray
+    Correlation coefficients for each window.
+
+### ttest_correlation_strength { #tvbo.analysis.ttest_correlation_strength }
+
+```python
+analysis.ttest_correlation_strength(cs)
+```
+
+Perform a t-test on the strength of the correlation.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+cs : ndarray
+    Correlation coefficients.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+ndarray
+    P-values of the t-test for each correlation coefficient.

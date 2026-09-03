@@ -1,0 +1,77 @@
+# Slot: loc 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/loc](https://w3id.org/tvbo/slot/loc)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Annotation](../classes/Annotation.qmd) | A positioned text label on a panel, in axes-fraction coordinates |  no  |
+| [Legend](../classes/Legend.qmd) | A panel's key: whether it is drawn, where it sits, and the three things a fig... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Annotation](../classes/Annotation.qmd), [Legend](../classes/Legend.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:loc |
+| native | tvbo:loc |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: loc
+domain_of:
+- Annotation
+- Legend
+range: string
+
+```
+</details></div>

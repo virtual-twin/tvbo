@@ -1,0 +1,77 @@
+# Enum: NodeReconciliation 
+
+
+
+
+_Strategy for aligning a sourced array's nodes to the consuming model network before use. Keyed alignment guards against a differing node count or ordering (e.g. a 998-parcel empirical FC against a 1000-parcel model, or a hemisphere-swapped connectome) silently misaligning the data._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/NodeReconciliation](https://w3id.org/tvbo/enum/NodeReconciliation)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| by_label | None | Restrict to the shared node labels by name (keyed `` |
+| none | None | No reconciliation; the node sets are assumed identical |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [reconcile](../slots/reconcile.qmd) | Align the sourced array's nodes to the consuming network by label (``by_label... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/common
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: NodeReconciliation
+description: Strategy for aligning a sourced array's nodes to the consuming model
+  network before use. Keyed alignment guards against a differing node count or ordering
+  (e.g. a 998-parcel empirical FC against a 1000-parcel model, or a hemisphere-swapped
+  connectome) silently misaligning the data.
+from_schema: https://w3id.org/tvbo/common
+permissible_values:
+  by_label:
+    text: by_label
+    description: Restrict to the shared node labels by name (keyed ``.sel``), preserving
+      the consuming network's order, on every node axis (a vector on its node axis,
+      a matrix on both). Never positional.
+  none:
+    text: none
+    description: No reconciliation; the node sets are assumed identical.
+
+```
+</details>
+
+</div>

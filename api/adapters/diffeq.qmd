@@ -1,0 +1,61 @@
+# diffeq { #tvbo.adapters.diffeq }
+
+`adapters.diffeq`
+
+DifferentialEquations.jl backend adapter for SimulationExperiment.
+
+Generates a self-contained Julia script from the existing Julia templates and executes it via juliacall, returning a TVBO TimeSeries.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [REQUIRED_PACKAGES](#tvbo.adapters.diffeq.REQUIRED_PACKAGES) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [DiffEqAdapter](#tvbo.adapters.diffeq.DiffEqAdapter) | Adapter for running SimulationExperiment via DifferentialEquations.jl. |
+
+### DiffEqAdapter { #tvbo.adapters.diffeq.DiffEqAdapter }
+
+```python
+adapters.diffeq.DiffEqAdapter(experiment)
+```
+
+Adapter for running SimulationExperiment via DifferentialEquations.jl.
+
+Renders the Julia DifferentialEquations template, executes it via juliacall, and returns a TVBO TimeSeries.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [render_code](#tvbo.adapters.diffeq.DiffEqAdapter.render_code) | Render Julia code for this experiment. |
+| [run](#tvbo.adapters.diffeq.DiffEqAdapter.run) | Run simulation using DifferentialEquations.jl. |
+
+##### render_code { #tvbo.adapters.diffeq.DiffEqAdapter.render_code }
+
+```python
+adapters.diffeq.DiffEqAdapter.render_code(**kwargs)
+```
+
+Render Julia code for this experiment.
+
+Reads the experiment and does not modify it, like every other renderer: a model is normalised when it is built, and re-normalising here made the emitted source depend on how many times it had already been rendered.
+
+##### run { #tvbo.adapters.diffeq.DiffEqAdapter.run }
+
+```python
+adapters.diffeq.DiffEqAdapter.run(**kwargs)
+```
+
+Run simulation using DifferentialEquations.jl.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+ExperimentResult
+    Simulation results with named dimensions and coordinates.

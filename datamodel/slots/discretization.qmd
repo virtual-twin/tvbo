@@ -1,0 +1,77 @@
+# Slot: discretization 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/discretization](https://w3id.org/tvbo/slot/discretization)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | Specification for switching from a detected bifurcation point to a new branch... |  no  |
+| [PDESolver](../classes/PDESolver.qmd) | Numerical solver for a PDE: the time-integration algorithm, tolerances and st... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [BranchSwitch](../classes/BranchSwitch.qmd), [PDESolver](../classes/PDESolver.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:discretization |
+| native | tvbo:discretization |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: discretization
+domain_of:
+- BranchSwitch
+- PDESolver
+range: string
+
+```
+</details></div>

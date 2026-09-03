@@ -1,0 +1,98 @@
+# Slot: mark 
+
+
+_Cartesian mark; omitted for heatmap panels (implied by the panel kind)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/mark](https://w3id.org/tvbo/slot/mark)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Layer](../classes/Layer.qmd) | One mark bound to one data reference, with its encoding |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [MarkType](../enums/MarkType.qmd) |
+| Domain Of | [Layer](../classes/Layer.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Layer](../classes/Layer.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:mark |
+| native | tvbo:mark |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: mark
+description: Cartesian mark; omitted for heatmap panels (implied by the panel kind).
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Layer
+domain_of:
+- Layer
+range: MarkType
+
+```
+</details></div>

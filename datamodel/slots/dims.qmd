@@ -1,0 +1,77 @@
+# Slot: dims 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/dims](https://w3id.org/tvbo/slot/dims)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Observation](../classes/Observation.qmd), [Analysis](../classes/Analysis.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:dims |
+| native | tvbo:dims |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: dims
+domain_of:
+- Observation
+- Analysis
+range: string
+
+```
+</details></div>

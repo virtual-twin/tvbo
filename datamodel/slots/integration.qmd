@@ -1,0 +1,81 @@
+# Slot: integration 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/integration](https://w3id.org/tvbo/slot/integration)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+| [Inference](../classes/Inference.qmd) | Bayesian inference of model parameters from an observation, via MCMC |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Network](../classes/Network.qmd), [Optimization](../classes/Optimization.qmd), [Inference](../classes/Inference.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:integration |
+| native | tvbo:integration |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: integration
+domain_of:
+- Network
+- Optimization
+- Inference
+- SimulationExperiment
+range: string
+
+```
+</details></div>

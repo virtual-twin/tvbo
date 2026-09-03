@@ -1,0 +1,93 @@
+# Slot: encoding 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/encoding](https://w3id.org/tvbo/slot/encoding)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Layer](../classes/Layer.qmd) | One mark bound to one data reference, with its encoding |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Encoding](../classes/Encoding.qmd) |
+| Domain Of | [Layer](../classes/Layer.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Layer](../classes/Layer.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:encoding |
+| native | tvbo:encoding |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: encoding
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Layer
+domain_of:
+- Layer
+range: Encoding
+inlined: true
+
+```
+</details></div>

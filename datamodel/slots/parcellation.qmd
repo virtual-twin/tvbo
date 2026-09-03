@@ -1,0 +1,77 @@
+# Slot: parcellation 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/parcellation](https://w3id.org/tvbo/slot/parcellation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+| [Mesh](../classes/Mesh.qmd) | Triangle (or higher-order) mesh geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Network](../classes/Network.qmd), [Mesh](../classes/Mesh.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:parcellation |
+| native | tvbo:parcellation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: parcellation
+domain_of:
+- Network
+- Mesh
+range: string
+
+```
+</details></div>

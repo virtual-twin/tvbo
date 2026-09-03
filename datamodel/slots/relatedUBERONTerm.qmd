@@ -1,0 +1,98 @@
+# Slot: relatedUBERONTerm 
+
+
+_Add the related anatomical entity as defined by the UBERON ontology._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:slot/relatedUBERONTerm](http://uri.interlex.org/tgbugs/uris/readable/slot/relatedUBERONTerm)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:relatedUBERONTerm |
+| native | atom:relatedUBERONTerm |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: relatedUBERONTerm
+description: Add the related anatomical entity as defined by the UBERON ontology.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+rank: 1000
+owner: ParcellationEntity
+domain_of:
+- ParcellationEntity
+range: string
+
+```
+</details></div>

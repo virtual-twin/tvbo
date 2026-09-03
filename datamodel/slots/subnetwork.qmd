@@ -1,0 +1,108 @@
+# Slot: subnetwork 
+
+
+_Optional finer-scale Network that "lives inside" this Node (network-of-networks / multi-scale primitive). The subnetwork's nodes map (one-to-many) to this single parent Node. Cross-scale signal flow is declared as ordinary Edges in the subnetwork's `edges` list, using `source_network` / `target_network` with the `parent` sentinel to traverse up the hierarchy. The subnetwork may carry its own `graph_generator` (discrete sub-network — reservoir, spiking population, jaxley compartments) and/or `mesh` (continuous surface field) — one unified slot for reservoirs-per-region, spiking-populations-per-region, cells-per-region, and surface-mesh-patches-per-region. Recursive: a subnetwork's Nodes can themselves carry subnetworks._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/subnetwork](https://w3id.org/tvbo/slot/subnetwork)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Node](../classes/Node.qmd) | A node in a network with its own dynamics and properties |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Network](../classes/Network.qmd) |
+| Domain Of | [Node](../classes/Node.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Node](../classes/Node.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:subnetwork |
+| native | tvbo:subnetwork |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: subnetwork
+description: 'Optional finer-scale Network that "lives inside" this Node (network-of-networks
+  / multi-scale primitive). The subnetwork''s nodes map (one-to-many) to this single
+  parent Node. Cross-scale signal flow is declared as ordinary Edges in the subnetwork''s
+  `edges` list, using `source_network` / `target_network` with the `parent` sentinel
+  to traverse up the hierarchy. The subnetwork may carry its own `graph_generator`
+  (discrete sub-network — reservoir, spiking population, jaxley compartments) and/or
+  `mesh` (continuous surface field) — one unified slot for reservoirs-per-region,
+  spiking-populations-per-region, cells-per-region, and surface-mesh-patches-per-region.
+  Recursive: a subnetwork''s Nodes can themselves carry subnetworks.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Node
+domain_of:
+- Node
+range: Network
+required: false
+inlined: true
+
+```
+</details></div>

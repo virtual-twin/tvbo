@@ -1,0 +1,98 @@
+# Slot: location 
+
+
+_Which side of the panel it sits on._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/location](https://w3id.org/tvbo/slot/location)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [AxisSide](../enums/AxisSide.qmd) |
+| Domain Of | [Colorbar](../classes/Colorbar.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Colorbar](../classes/Colorbar.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:location |
+| native | tvbo:location |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: location
+description: Which side of the panel it sits on.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Colorbar
+domain_of:
+- Colorbar
+range: AxisSide
+
+```
+</details></div>

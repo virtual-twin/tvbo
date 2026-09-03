@@ -1,0 +1,393 @@
+# code { #tvbo.codegen.code }
+
+`codegen.code`
+
+SymPy expression printers that render symbolic model math to backend source code.
+
+Each printer subclasses a SymPy code printer and layers on TVBO's array-function vocabulary (defined in `tvbo.parse.expression`), the backend-abstracted array primitives from `_ArrayFunctionPrinterMixin` (slicing, reductions, broadcasting), and per-backend syntax fixes. `get_printer` selects a printer by target format (`numpy`, `jax`, `julia`, `mtk`, `fortran`, `python`, `lems`, `sympy`), and `render_expression` is the high-level entry point that parses a string or SymPy expression and prints it for the chosen backend.
+
+Array-manipulation primitives are the ones SymPy cannot represent natively. Each is a handler `(printer, expr) -> code string` in `ARRAY_FUNCTION_PRINTERS`, shared by the NumPy and JAX printers so a new primitive is one dict entry rather than one per backend. A handler stays backend-agnostic by calling the printer's own rendering primitives — `_cat`, `_render_index`, `_slice_axis`, `_transpose`, `_reduce_axis`, `_shape` — which each printer implements for its own conventions: numpy and jax use Python's 0-based slicing, Julia 1-based and `end`-relative. Adding an operation is therefore one handler, plus one primitive override wherever a backend's syntax genuinely differs, and never the same string-building duplicated across printers.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [ARRAY_FUNCTION_MAPPINGS](#tvbo.codegen.code.ARRAY_FUNCTION_MAPPINGS) |  |
+| [logger](#tvbo.codegen.code.logger) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Brian2Printer](#tvbo.codegen.code.Brian2Printer) | Code printer for Brian2 equation strings. |
+| [FortranPrinter](#tvbo.codegen.code.FortranPrinter) | Fortran code printer for TVBO symbolic expressions. |
+| [JaxPrinter](#tvbo.codegen.code.JaxPrinter) | JAX code printer for TVBO symbolic expressions. |
+| [JuliaPrinter](#tvbo.codegen.code.JuliaPrinter) | Julia code printer for TVBO symbolic expressions. |
+| [LEMSPrinter](#tvbo.codegen.code.LEMSPrinter) | Printer for LEMS (Low Entropy Model Specification) math expressions. |
+| [MTKPrinter](#tvbo.codegen.code.MTKPrinter) | Printer for ModelingToolkit.jl @mtkmodel equations. |
+| [NumPyPrinter](#tvbo.codegen.code.NumPyPrinter) | NumPy code printer for TVBO symbolic expressions. |
+| [PythonCodePrinter](#tvbo.codegen.code.PythonCodePrinter) | Plain-Python code printer for TVBO symbolic expressions. |
+| [TVBEquationPrinter](#tvbo.codegen.code.TVBEquationPrinter) | Print an expression for TVB's ``Equation.equation`` DSL. |
+
+### Brian2Printer { #tvbo.codegen.code.Brian2Printer }
+
+```python
+codegen.code.Brian2Printer(settings=None)
+```
+
+Code printer for Brian2 equation strings.
+
+Brian2's equation DSL is Python-like but expects **unqualified** function names (``exp``, ``sin``, ``abs`` …), not the ``math.``-prefixed forms SymPy's ``PythonCodePrinter`` emits — Brian2 resolves them against its own runtime functions so the same equation compiles under any codegen target. Otherwise the plain-Python scalar printing (including the nested-conditional ``Piecewise``, which Brian2 accepts) is exactly what a per-neuron Brian2 equation needs. Units are not printed here — they are carried by the Brian2 namespace and the ``: dimension`` annotations the template adds.
+
+### FortranPrinter { #tvbo.codegen.code.FortranPrinter }
+
+```python
+codegen.code.FortranPrinter(settings=None)
+```
+
+Fortran code printer for TVBO symbolic expressions.
+
+Extends SymPy's `FCodePrinter` with free-form source, the Fortran 2003 standard, and array contraction disabled. Symbolic constants (`pi`, `E`, …) are emitted as plain double-precision literals instead of `parameter` declarations, which would be invalid in an expression context.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                      | Default   |
+|----------|--------|------------------------------------------------------------------------------------------------------------------|-----------|
+| settings |        | Printer settings forwarded to the SymPy base printer; `source_format`, `standard`, and `contract` are defaulted. | `None`    |
+
+### JaxPrinter { #tvbo.codegen.code.JaxPrinter }
+
+```python
+codegen.code.JaxPrinter(settings=None, module='jnp')
+```
+
+JAX code printer for TVBO symbolic expressions.
+
+Extends SymPy's `JaxPrinter` with the array-function vocabulary from `ARRAY_FUNCTION_MAPPINGS["jax"]` and the mixin's array primitives, routing `erf`/`erfc` to `jsp.special`. When broadcasting inference is enabled it analyzes the index usage of indexed subexpressions to insert explicit axes so that `jnp` operations broadcast correctly.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                           | Default   |
+|----------|--------|-------------------------------------------------------|-----------|
+| settings |        | Printer settings forwarded to the SymPy base printer. | `None`    |
+| module   |        | Module prefix used to qualify JAX names (e.g. `jnp`). | `'jnp'`   |
+
+### JuliaPrinter { #tvbo.codegen.code.JuliaPrinter }
+
+```python
+codegen.code.JuliaPrinter(settings=None)
+```
+
+Julia code printer for TVBO symbolic expressions.
+
+Extends SymPy's `JuliaCodePrinter` with the `ARRAY_FUNCTION_MAPPINGS["julia"]` vocabulary and Julia-specific overrides of the mixin's array primitives, which use 1-based, `end`-relative indexing. Runs non-strict so unknown constructs print partially rather than raising, maps the legacy `atan2` name onto Julia's two-argument `atan`, and routes domain-restricted powers inside `Piecewise` branches through NaNMath.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                         | Default   |
+|----------|--------|-------------------------------------------------------------------------------------|-----------|
+| settings |        | Printer settings forwarded to the SymPy base printer; `strict` defaults to `False`. | `None`    |
+
+### LEMSPrinter { #tvbo.codegen.code.LEMSPrinter }
+
+```python
+codegen.code.LEMSPrinter(settings=None)
+```
+
+Printer for LEMS (Low Entropy Model Specification) math expressions.
+
+Key differences from plain StrPrinter:
+- Powers use ``^`` instead of ``**``
+- Natural log is ``log`` (both SymPy and LEMS ``log`` are natural log)
+- ``abs`` instead of ``Abs``
+- ``sign(x)`` → ``(H(x) - H(-1*x))`` (Heaviside decomposition)
+- ``Mod(x, y)`` → ``(x + y*ceil(-(x/y)))``
+- Relational operators use LEMS dot-notation: ``.gt.``, ``.geq.``, ``.lt.``,
+  ``.leq.``, ``.eq.``, ``.neq.``
+- Boolean operators: ``.and.``, ``.or.``, ``.not.``
+- ``Piecewise`` rendered via Heaviside trick (``H(cond)*val)``
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+settings : dict, optional
+    Printer settings.  Recognised key:
+
+    ``parameters`` : list of str
+        Model symbol names.  When a SymPy ``Function`` whose name matches
+        a parameter is encountered, it is printed as implicit multiplication
+        (``gamma*x``) instead of a function call (``gamma(x)``).  This
+        defends against symbols that were parsed without proper
+        ``parameters=`` overrides.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [parenthesize](#tvbo.codegen.code.LEMSPrinter.parenthesize) | Bracket a `Piecewise` operand as the sum this printer renders it into. |
+
+##### parenthesize { #tvbo.codegen.code.LEMSPrinter.parenthesize }
+
+```python
+codegen.code.LEMSPrinter.parenthesize(item, level, strict=False)
+```
+
+Bracket a `Piecewise` operand as the sum this printer renders it into.
+
+SymPy gives `Piecewise` `Func` precedence — right for the printers that emit `np.where(...)` or `ifelse(...)`, which really are atoms, and wrong here, where the output is `H(c) * a + (1 - H(c)) * b`. Without this an enclosing `Mul`, `Pow` or negation binds to the first arm alone.
+
+Declaring the precedence rather than wrapping in `_print_Piecewise` keeps the brackets to the contexts that need them: `parenthesize` is only ever called by an enclosing operator, so a top-level equation stays unwrapped.
+
+### MTKPrinter { #tvbo.codegen.code.MTKPrinter }
+
+```python
+codegen.code.MTKPrinter(settings=None)
+```
+
+Printer for ModelingToolkit.jl @mtkmodel equations.
+
+MTK equations are scalar symbolic, so we use plain ``+``, ``-``, ``*``, ``/``, ``^`` instead of Julia's element-wise ``.+``, ``.-``, ``.*``, ``./``, ``.^``.
+
+### NumPyPrinter { #tvbo.codegen.code.NumPyPrinter }
+
+```python
+codegen.code.NumPyPrinter(settings=None, module='np')
+```
+
+NumPy code printer for TVBO symbolic expressions.
+
+Extends SymPy's `NumPyPrinter` with the array-function vocabulary from `ARRAY_FUNCTION_MAPPINGS["numpy"]` and the backend-abstracted array primitives supplied by `_ArrayFunctionPrinterMixin`. Known functions and constants are module-qualified with `module`, and `erf`/`erfc` are routed to `scipy.special`.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                            | Default   |
+|----------|--------|--------------------------------------------------------|-----------|
+| settings |        | Printer settings forwarded to the SymPy base printer.  | `None`    |
+| module   |        | Module prefix used to qualify NumPy names (e.g. `np`). | `'np'`    |
+
+### PythonCodePrinter { #tvbo.codegen.code.PythonCodePrinter }
+
+```python
+codegen.code.PythonCodePrinter(settings=None)
+```
+
+Plain-Python code printer for TVBO symbolic expressions.
+
+Extends SymPy's `PythonCodePrinter` to run non-strict (partial printing of unknown constructs) and adds `ceil`, `sign`, and the `ARRAY_FUNCTION_MAPPINGS["python"]` vocabulary. `Piecewise` is rendered as nested conditional expressions and `sign(x)` as an inline comparison, so the output depends only on `math` and the standard library.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                         | Default   |
+|----------|--------|-------------------------------------------------------------------------------------|-----------|
+| settings |        | Printer settings forwarded to the SymPy base printer; `strict` defaults to `False`. | `None`    |
+
+### TVBEquationPrinter { #tvbo.codegen.code.TVBEquationPrinter }
+
+```python
+codegen.code.TVBEquationPrinter(settings=None)
+```
+
+Print an expression for TVB's ``Equation.equation`` DSL.
+
+TVB evaluates that string with `numexpr` (falling back to `eval` against ``numpy.__dict__``), a vocabulary narrower than NumPy's in three ways: names are unqualified, comparisons are operators rather than ``numpy.greater`` calls, and boolean connectives are bitwise. Everything else is NumPy — in particular a `Piecewise` still lowers to ``where(...)`` through the one shared [`print_Piecewise`](#print_Piecewise), which is what makes a conditional stimulus array-safe. Rendering one as a Python ``a if c else b`` instead, as TVBO did before, produces a string `numexpr` refuses outright.
+
+The relational and boolean methods come from `StrPrinter`, whose operator spelling is already exactly the accepted one, so this printer states only which vocabulary it borrows rather than restating how to print a comparison.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [get_printer](#tvbo.codegen.code.get_printer) | Return a code printer instance for the given target format. |
+| [inline_functions](#tvbo.codegen.code.inline_functions) | Replace every call to a model-defined function with that function's body. |
+| [print_Piecewise](#tvbo.codegen.code.print_Piecewise) | Print Piecewise expressions as nested np.where statements. |
+| [render_equation](#tvbo.codegen.code.render_equation) | Render an equation to a target format. |
+| [render_equation_cse](#tvbo.codegen.code.render_equation_cse) | Render ``equation`` as ``(setup, final)`` with common subexpressions hoisted. |
+| [render_expression](#tvbo.codegen.code.render_expression) | Render a SymPy expression or string to target format code. |
+
+### get_printer { #tvbo.codegen.code.get_printer }
+
+```python
+codegen.code.get_printer(format, parameters=None, order=None)
+```
+
+Return a code printer instance for the given target format.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                                                                                                 | Default    |
+|------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| format     |        | Target output format. One of `numpy`, `jax`, `julia`, `mtk`, `fortran`, `python`, `brian2`, `tvb`, `lems`, or `sympy`/`symbolic`/`pyrates`. | _required_ |
+| parameters |        | Parameter names passed to `LEMSPrinter`; used only for the `lems` format.                                                                   | `None`     |
+| order      |        | Term ordering passed to the printer; `none` preserves source term order. When omitted the printer's default ordering is used.               | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                 |
+|--------|--------|---------------------------------------------|
+|        |        | A configured printer instance for `format`. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                   |
+|--------|------------|-----------------------------------------------|
+|        | ValueError | If `format` is not a supported output format. |
+
+### inline_functions { #tvbo.codegen.code.inline_functions }
+
+```python
+codegen.code.inline_functions(expr, func_defs)
+```
+
+Replace every call to a model-defined function with that function's body.
+
+The one inliner in TVBO. Backends with no user-function mechanism (LEMS, PyRates) must expand every call before printing, and the generic printers expand on request; all of them arrive here. Build *func_defs* with [`function_bodies`](../parse/expression.qmd#function_bodies), which reads each body from the model's symbolic layer, parsed once against the model's own scope.
+
+A body may itself call a function — the call graph is a DAG, e.g. Zerlaut's ``TF_e`` calls ``sigmaV`` calls ``muV`` — so the bodies are first expanded into *each other*, once, and only then substituted into *expr* in a single pass.
+
+Reaching the fixed point on *expr* instead re-probes every body against an expression that grows as it is inlined: Zerlaut's NeuroML render spent 5.6 s of 10 s here, walking a 12 000-node expression four times over to find nothing on the last pass. Flattening the bodies costs the same work once, over expressions that are small, and the result is memoised because every equation in a model inlines against the same table.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+expr : sympy.Expr
+    The expression containing function calls to inline.
+func_defs : dict
+    Maps function name -> (arg_names, body_expr). *arg_names* are the formal
+    arguments, as strings or as Symbols; *body_expr* is the parsed body.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+sympy.Expr
+    Expression with all function calls replaced by their inlined bodies.
+
+
+
+#### Example: {.doc-section .doc-section-example}
+
+>>> from sympy import symbols, Function, exp
+>>> A, x, y, e0, r, v0 = symbols('A x y e0 r v0')
+>>> func_defs = {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - symbols('v')))))}
+>>> inline_functions(A*Function('Sigm')(x - y), func_defs)
+2*A*e0/(1 + exp(r*(v0 - x + y)))
+
+### print_Piecewise { #tvbo.codegen.code.print_Piecewise }
+
+```python
+codegen.code.print_Piecewise(Printer, expr, verbose=False)
+```
+
+Print Piecewise expressions as nested np.where statements.
+
+### render_equation { #tvbo.codegen.code.render_equation }
+
+```python
+codegen.code.render_equation(
+    equation,
+    format='jax',
+    local_dict=None,
+    user_functions=None,
+    replace=None,
+    remove=None,
+    inline_funcs=None,
+    preserve_order=False,
+    **kwargs,
+)
+```
+
+Render an equation to a target format.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+equation : Equation
+    The equation to render.
+format : str
+    Target format: 'jax', 'numpy', 'python', 'julia', 'fortran', 'latex'.
+local_dict : dict
+    Dictionary of local symbols/functions for parsing.
+user_functions : dict
+    Custom function mappings for the printer.
+replace : dict
+    Symbol replacements {old_name: new_name}.
+remove : list
+    Symbols to replace with zero.
+inline_funcs : dict, optional
+    Dictionary mapping function name -> (arg_names, body_expr) for inlining
+    custom functions. The body_expr should be a sympy expression.
+    Example: {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - v))))}
+preserve_order : bool
+    If True, keep the source term order (no SymPy canonicalization).
+**kwargs
+    Additional arguments passed to parse_eq.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str
+    The rendered equation string.
+
+### render_equation_cse { #tvbo.codegen.code.render_equation_cse }
+
+```python
+codegen.code.render_equation_cse(
+    equation,
+    format='numpy',
+    local_dict=None,
+    user_functions=None,
+    replace=None,
+    remove=None,
+    inline_funcs=None,
+    preserve_order=False,
+    symbol_prefix='_cse',
+    **kwargs,
+)
+```
+
+Render ``equation`` as ``(setup, final)`` with common subexpressions hoisted.
+
+``setup`` is a list of ``(name, expr_str)`` assignments (dependency order) and ``final`` is the return-expression string. Repeated subexpressions — notably repeated model-function calls such as ``muV(fe, fi, ...)`` — are computed once via :func:`sympy.cse`. Interpreted backends (numpy / TVB) would otherwise re-evaluate every occurrence; the jax path keeps the flat ``render_equation`` form and leans on XLA's JIT-time CSE. ``setup`` is empty when nothing is shared.
+
+### render_expression { #tvbo.codegen.code.render_expression }
+
+```python
+codegen.code.render_expression(
+    expression,
+    format='jax',
+    user_functions=None,
+    parameters=None,
+    infer_broadcasting=False,
+    preserve_order=False,
+)
+```
+
+Render a SymPy expression or string to target format code.
+
+Uses parse_eq for proper handling of indexed expressions and Sum/Product.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+expression : str or sympy.Expr
+    The expression to render.
+format : str
+    Target format ('jax', 'numpy', 'julia', 'python', etc.)
+user_functions : dict
+    Custom function name mappings for the printer. These are also passed
+    to parse_eq so they're recognized as functions (not implicit multiplication).
+parameters : list of str, optional
+    Parameter names to define as Symbols. These OVERRIDE SymPy built-in
+    functions (e.g., 'gamma' becomes Symbol('gamma'), not the gamma function).
+infer_broadcasting : bool
+    If True, analyze indexed expressions and automatically add broadcasting
+    dimensions (e.g., rmse[i] -> rmse[:, None] when used with a[i,j]).
+    This enables mathematically correct notation to generate correct array code.
+preserve_order : bool
+    If True, keep the source term order (no SymPy Add/Mul canonicalization)
+    so generated code matches reference code operation-for-operation.

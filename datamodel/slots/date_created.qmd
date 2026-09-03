@@ -1,0 +1,77 @@
+# Slot: date_created 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/date_created](https://w3id.org/tvbo/slot/date_created)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd), [Provenance](../classes/Provenance.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:date_created |
+| native | tvbo:date_created |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: date_created
+domain_of:
+- SimulationTool
+- Provenance
+range: string
+
+```
+</details></div>

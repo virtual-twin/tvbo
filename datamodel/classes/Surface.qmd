@@ -1,0 +1,716 @@
+# Class: Surface 
+
+
+_A cortical surface panel's geometry and how a field is painted on it. One object, so the three mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Surface](https://w3id.org/tvbo/class/Surface)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Surface
+    click Surface href "./Surface.html"
+      ColorScale <|-- Surface
+        click ColorScale href "./ColorScale.html"
+      
+      Surface : atlas
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : atlas
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : color
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : colormap
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : colormap
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : connectome
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : connectome
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : density
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : density
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : edge_color
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : edge_color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : edge_width
+        
+          
+    
+        
+        
+        Surface --> "0..1" Float : edge_width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Surface : geometry
+        
+          
+    
+        
+        
+        Surface --> "0..1" Boolean : geometry
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Surface : hemi
+        
+          
+    
+        
+        
+        Surface --> "0..1" Hemisphere : hemi
+        click Hemisphere href "../../enums/Hemisphere.html"
+    
+
+        
+      Surface : mask
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : mask
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : mesh
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : mesh
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : mesh_format
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : mesh_format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : percentile
+        
+          
+    
+        
+        
+        Surface --> "0..1" Float : percentile
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Surface : surface_atlas
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : surface_atlas
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : symmetric
+        
+          
+    
+        
+        
+        Surface --> "0..1" Boolean : symmetric
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Surface : template
+        
+          
+    
+        
+        
+        Surface --> "0..1" String : template
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surface : view
+        
+          
+    
+        
+        
+        Surface --> "0..1" SurfaceView : view
+        click SurfaceView href "../../enums/SurfaceView.html"
+    
+
+        
+      Surface : vmax
+        
+          
+    
+        
+        
+        Surface --> "0..1" Float : vmax
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Surface : vmin
+        
+          
+    
+        
+        
+        Surface --> "0..1" Float : vmin
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [ColorScale](../classes/ColorScale.qmd)
+    * **Surface**
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [connectome](../slots/connectome.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | A tvbo `Network` whose companion carries a mesh group | direct |
+| [mesh](../slots/mesh.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | A surface mesh file — GIFTI, VTK, FreeSurfer, or an ` | direct |
+| [mesh_format](../slots/mesh_format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The mesh file's format, where the extension does not say | direct |
+| [template](../slots/template.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | A named template surface (`fsaverage`), fetched rather than committed, so a p... | direct |
+| [density](../slots/density.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The template's vertex density (`164k`) | direct |
+| [hemi](../slots/hemi.qmd) | 0..1 <br/> [Hemisphere](../enums/Hemisphere.qmd) | Which hemisphere to draw (`left`, `right`, or `both` joined into one mesh — w... | direct |
+| [view](../slots/view.qmd) | 0..1 <br/> [SurfaceView](../enums/SurfaceView.qmd) | Where the camera sits | direct |
+| [atlas](../slots/atlas.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The parcellation the layer's per-region values are placed through, BY LABEL —... | direct |
+| [surface_atlas](../slots/surface_atlas.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The atlas to read vertex labels from, where it differs from the one the value... | direct |
+| [mask](../slots/mask.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | A per-vertex 0/1 file | direct |
+| [geometry](../slots/geometry.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Read the layer as (V, 3) vertex COORDINATES rather than as a field: what the ... | direct |
+| [color](../slots/color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Draw the mesh itself in one flat colour instead of painting a map on it | direct |
+| [edge_color](../slots/edge_color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Draw the triangulation in this colour, for a panel whose subject is the mesh ... | direct |
+| [edge_width](../slots/edge_width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Line weight of the triangulation | direct |
+| [colormap](../slots/colormap.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`, or... | [ColorScale](../classes/ColorScale.qmd) |
+| [vmin](../slots/vmin.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale starts at | [ColorScale](../classes/ColorScale.qmd) |
+| [vmax](../slots/vmax.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale ends at | [ColorScale](../classes/ColorScale.qmd) |
+| [symmetric](../slots/symmetric.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Centre the limits on zero, so zero is the map's midpoint | [ColorScale](../classes/ColorScale.qmd) |
+| [percentile](../slots/percentile.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Clip the limit to this percentile of the values (100 = no clipping), so one o... | [ColorScale](../classes/ColorScale.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [surface](../slots/surface.qmd) | range | [Surface](../classes/Surface.qmd) |
+| [Inset](../classes/Inset.qmd) | [surface](../slots/surface.qmd) | range | [Surface](../classes/Surface.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Surface |
+| native | tvbo:Surface |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Surface
+description: A cortical surface panel's geometry and how a field is painted on it.
+  One object, so the three mutually exclusive places a mesh can come from — a tvbo
+  `Network` carrying one, a mesh file, or a named template — sit together with the
+  options that only apply to each, instead of being loose names that could be given
+  in any combination.
+from_schema: https://w3id.org/tvbo/figure
+is_a: ColorScale
+attributes:
+  connectome:
+    name: connectome
+    description: A tvbo `Network` whose companion carries a mesh group. Geometry belongs
+      to the network, so a study that has one needs no mesh file beside it.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    - Graph
+    range: string
+  mesh:
+    name: mesh
+    description: A surface mesh file — GIFTI, VTK, FreeSurfer, or an `.npz` holding
+      `vertices`/`faces` for a mesh an analysis derived rather than measured.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    - Network
+    - SpatialField
+    - FieldStateVariable
+    - PDE
+    range: string
+  mesh_format:
+    name: mesh_format
+    description: The mesh file's format, where the extension does not say.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    - Mesh
+    range: string
+  template:
+    name: template
+    description: A named template surface (`fsaverage`), fetched rather than committed,
+      so a parcellated map needs no mesh checked in beside the page.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - StudyFile
+    - LayoutTemplateVariant
+    - Surface
+    - BidsEntities
+    range: string
+  density:
+    name: density
+    description: The template's vertex density (`164k`). Applies only to `template`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    range: string
+  hemi:
+    name: hemi
+    description: Which hemisphere to draw (`left`, `right`, or `both` joined into
+      one mesh — what a paper prints for a dorsal view). Applies only to `template`.
+      The vocabulary is the schema's own, shared with everything else that names a
+      hemisphere.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    - BidsEntities
+    range: Hemisphere
+  view:
+    name: view
+    description: Where the camera sits.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    - Volume
+    range: SurfaceView
+  atlas:
+    name: atlas
+    description: The parcellation the layer's per-region values are placed through,
+      BY LABEL — a per-region array ordered differently would otherwise paint every
+      region with its neighbour's number and still look like a brain.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    - Volume
+    - Parcellation
+    - BidsEntities
+    range: string
+  surface_atlas:
+    name: surface_atlas
+    description: The atlas to read vertex labels from, where it differs from the one
+      the values are keyed by.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    range: string
+  mask:
+    name: mask
+    description: A per-vertex 0/1 file. Vertices OUTSIDE it — a medial wall — are
+      drawn grey and kept out of the colour range rather than coloured as zeros.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    range: string
+  geometry:
+    name: geometry
+    description: 'Read the layer as (V, 3) vertex COORDINATES rather than as a field:
+      what the panel then shows is the surface a reconstruction rebuilt, not a quantity
+      living on a fixed one.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    - SpatialDomain
+    range: boolean
+  color:
+    name: color
+    description: Draw the mesh itself in one flat colour instead of painting a map
+      on it. With no layer, that is the bare geometry.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  edge_color:
+    name: edge_color
+    description: Draw the triangulation in this colour, for a panel whose subject
+      is the mesh the model is solved on.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    - Graph
+    range: string
+  edge_width:
+    name: edge_width
+    description: Line weight of the triangulation.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Surface
+    - Graph
+    range: float
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Surface
+description: A cortical surface panel's geometry and how a field is painted on it.
+  One object, so the three mutually exclusive places a mesh can come from — a tvbo
+  `Network` carrying one, a mesh file, or a named template — sit together with the
+  options that only apply to each, instead of being loose names that could be given
+  in any combination.
+from_schema: https://w3id.org/tvbo/figure
+is_a: ColorScale
+attributes:
+  connectome:
+    name: connectome
+    description: A tvbo `Network` whose companion carries a mesh group. Geometry belongs
+      to the network, so a study that has one needs no mesh file beside it.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    - Graph
+    range: string
+  mesh:
+    name: mesh
+    description: A surface mesh file — GIFTI, VTK, FreeSurfer, or an `.npz` holding
+      `vertices`/`faces` for a mesh an analysis derived rather than measured.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    - Network
+    - SpatialField
+    - FieldStateVariable
+    - PDE
+    range: string
+  mesh_format:
+    name: mesh_format
+    description: The mesh file's format, where the extension does not say.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    - Mesh
+    range: string
+  template:
+    name: template
+    description: A named template surface (`fsaverage`), fetched rather than committed,
+      so a parcellated map needs no mesh checked in beside the page.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Surface
+    domain_of:
+    - StudyFile
+    - LayoutTemplateVariant
+    - Surface
+    - BidsEntities
+    range: string
+  density:
+    name: density
+    description: The template's vertex density (`164k`). Applies only to `template`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    range: string
+  hemi:
+    name: hemi
+    description: Which hemisphere to draw (`left`, `right`, or `both` joined into
+      one mesh — what a paper prints for a dorsal view). Applies only to `template`.
+      The vocabulary is the schema's own, shared with everything else that names a
+      hemisphere.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    - BidsEntities
+    range: Hemisphere
+  view:
+    name: view
+    description: Where the camera sits.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    - Volume
+    range: SurfaceView
+  atlas:
+    name: atlas
+    description: The parcellation the layer's per-region values are placed through,
+      BY LABEL — a per-region array ordered differently would otherwise paint every
+      region with its neighbour's number and still look like a brain.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    - Volume
+    - Parcellation
+    - BidsEntities
+    range: string
+  surface_atlas:
+    name: surface_atlas
+    description: The atlas to read vertex labels from, where it differs from the one
+      the values are keyed by.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    range: string
+  mask:
+    name: mask
+    description: A per-vertex 0/1 file. Vertices OUTSIDE it — a medial wall — are
+      drawn grey and kept out of the colour range rather than coloured as zeros.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    range: string
+  geometry:
+    name: geometry
+    description: 'Read the layer as (V, 3) vertex COORDINATES rather than as a field:
+      what the panel then shows is the surface a reconstruction rebuilt, not a quantity
+      living on a fixed one.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    - SpatialDomain
+    range: boolean
+  color:
+    name: color
+    description: Draw the mesh itself in one flat colour instead of painting a map
+      on it. With no layer, that is the bare geometry.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Surface
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  edge_color:
+    name: edge_color
+    description: Draw the triangulation in this colour, for a panel whose subject
+      is the mesh the model is solved on.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    - Graph
+    range: string
+  edge_width:
+    name: edge_width
+    description: Line weight of the triangulation.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - Surface
+    - Graph
+    range: float
+  colormap:
+    name: colormap
+    description: The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`,
+      or one a project added) or a name the backend knows. Unset takes the theme's
+      `sequential`, or its `diverging` where the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Surface
+    domain_of:
+    - Style
+    - ColorScale
+    range: string
+  vmin:
+    name: vmin
+    description: The value the scale starts at. A declared end is honoured as given;
+      the other is still derived from the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - ColorScale
+    range: float
+  vmax:
+    name: vmax
+    description: The value the scale ends at. See `vmin`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - ColorScale
+    range: float
+  symmetric:
+    name: symmetric
+    description: Centre the limits on zero, so zero is the map's midpoint. What a
+      field of signed deviations needs — read on an off-centre scale it is misleading
+      in a way no axis label catches.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - ColorScale
+    range: boolean
+  percentile:
+    name: percentile
+    description: Clip the limit to this percentile of the values (100 = no clipping),
+      so one outlier region cannot wash the whole map out. Applies whether or not
+      the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Surface
+    domain_of:
+    - ColorScale
+    range: float
+
+```
+</details></div>

@@ -1,0 +1,98 @@
+# Slot: legend_pad 
+
+
+_Distance from a legend to the axes it sits against, in font-size units._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/legend_pad](https://w3id.org/tvbo/slot/legend_pad)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Theme](../classes/Theme.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Theme](../classes/Theme.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:legend_pad |
+| native | tvbo:legend_pad |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: legend_pad
+description: Distance from a legend to the axes it sits against, in font-size units.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Theme
+domain_of:
+- Theme
+range: float
+
+```
+</details></div>

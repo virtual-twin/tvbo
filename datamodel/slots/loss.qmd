@@ -1,0 +1,101 @@
+# Slot: loss 
+
+
+_Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/loss](https://w3id.org/tvbo/slot/loss)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [FunctionCall](../classes/FunctionCall.qmd) |
+| Domain Of | [Optimization](../classes/Optimization.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Optimization](../classes/Optimization.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:loss |
+| native | tvbo:loss |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: loss
+description: 'Loss function call. Uses FunctionCall to either: 1. Reference existing
+  function: function: rmse 2. Inline callable: callable: {module: ..., name: ...}
+  Arguments specify inputs (simulated_fc, empirical_fc, etc.)'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Optimization
+domain_of:
+- Optimization
+range: FunctionCall
+inlined: true
+
+```
+</details></div>

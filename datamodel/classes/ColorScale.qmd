@@ -1,0 +1,286 @@
+# Class: ColorScale 
+
+
+_How values become colours, and where the scale starts and stops. Shared by everything that paints a field rather than drawing marks — a colour bar, a cortical surface, a labelled volume, a connectome — so the same question is answered with the same words wherever it is asked, and a limit means the same thing on all four. Every slot here reaches all four; a scale concern only one of them can answer is declared on that one, which is why `center` sits on `Colorbar`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/ColorScale](https://w3id.org/tvbo/class/ColorScale)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ColorScale
+    click ColorScale href "./ColorScale.html"
+      ColorScale <|-- Colorbar
+        click Colorbar href "./Colorbar.html"
+      ColorScale <|-- Surface
+        click Surface href "./Surface.html"
+      ColorScale <|-- Volume
+        click Volume href "./Volume.html"
+      ColorScale <|-- Graph
+        click Graph href "./Graph.html"
+      
+      ColorScale : colormap
+        
+          
+    
+        
+        
+        ColorScale --> "0..1" String : colormap
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ColorScale : percentile
+        
+          
+    
+        
+        
+        ColorScale --> "0..1" Float : percentile
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      ColorScale : symmetric
+        
+          
+    
+        
+        
+        ColorScale --> "0..1" Boolean : symmetric
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      ColorScale : vmax
+        
+          
+    
+        
+        
+        ColorScale --> "0..1" Float : vmax
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      ColorScale : vmin
+        
+          
+    
+        
+        
+        ColorScale --> "0..1" Float : vmin
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **ColorScale**
+    * [Colorbar](../classes/Colorbar.qmd)
+    * [Surface](../classes/Surface.qmd)
+    * [Volume](../classes/Volume.qmd)
+    * [Graph](../classes/Graph.qmd)
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [colormap](../slots/colormap.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`, or... | direct |
+| [vmin](../slots/vmin.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale starts at | direct |
+| [vmax](../slots/vmax.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale ends at | direct |
+| [symmetric](../slots/symmetric.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Centre the limits on zero, so zero is the map's midpoint | direct |
+| [percentile](../slots/percentile.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Clip the limit to this percentile of the values (100 = no clipping), so one o... | direct |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ColorScale |
+| native | tvbo:ColorScale |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ColorScale
+description: How values become colours, and where the scale starts and stops. Shared
+  by everything that paints a field rather than drawing marks — a colour bar, a cortical
+  surface, a labelled volume, a connectome — so the same question is answered with
+  the same words wherever it is asked, and a limit means the same thing on all four.
+  Every slot here reaches all four; a scale concern only one of them can answer is
+  declared on that one, which is why `center` sits on `Colorbar`.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  colormap:
+    name: colormap
+    description: The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`,
+      or one a project added) or a name the backend knows. Unset takes the theme's
+      `sequential`, or its `diverging` where the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Style
+    - ColorScale
+    range: string
+  vmin:
+    name: vmin
+    description: The value the scale starts at. A declared end is honoured as given;
+      the other is still derived from the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - ColorScale
+    range: float
+  vmax:
+    name: vmax
+    description: The value the scale ends at. See `vmin`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - ColorScale
+    range: float
+  symmetric:
+    name: symmetric
+    description: Centre the limits on zero, so zero is the map's midpoint. What a
+      field of signed deviations needs — read on an off-centre scale it is misleading
+      in a way no axis label catches.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - ColorScale
+    range: boolean
+  percentile:
+    name: percentile
+    description: Clip the limit to this percentile of the values (100 = no clipping),
+      so one outlier region cannot wash the whole map out. Applies whether or not
+      the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - ColorScale
+    range: float
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ColorScale
+description: How values become colours, and where the scale starts and stops. Shared
+  by everything that paints a field rather than drawing marks — a colour bar, a cortical
+  surface, a labelled volume, a connectome — so the same question is answered with
+  the same words wherever it is asked, and a limit means the same thing on all four.
+  Every slot here reaches all four; a scale concern only one of them can answer is
+  declared on that one, which is why `center` sits on `Colorbar`.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  colormap:
+    name: colormap
+    description: The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`,
+      or one a project added) or a name the backend knows. Unset takes the theme's
+      `sequential`, or its `diverging` where the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: ColorScale
+    domain_of:
+    - Style
+    - ColorScale
+    range: string
+  vmin:
+    name: vmin
+    description: The value the scale starts at. A declared end is honoured as given;
+      the other is still derived from the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: ColorScale
+    domain_of:
+    - ColorScale
+    range: float
+  vmax:
+    name: vmax
+    description: The value the scale ends at. See `vmin`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: ColorScale
+    domain_of:
+    - ColorScale
+    range: float
+  symmetric:
+    name: symmetric
+    description: Centre the limits on zero, so zero is the map's midpoint. What a
+      field of signed deviations needs — read on an off-centre scale it is misleading
+      in a way no axis label catches.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: ColorScale
+    domain_of:
+    - ColorScale
+    range: boolean
+  percentile:
+    name: percentile
+    description: Clip the limit to this percentile of the values (100 = no clipping),
+      so one outlier region cannot wash the whole map out. Applies whether or not
+      the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: ColorScale
+    domain_of:
+    - ColorScale
+    range: float
+
+```
+</details></div>

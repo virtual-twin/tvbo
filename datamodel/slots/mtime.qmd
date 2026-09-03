@@ -1,0 +1,98 @@
+# Slot: mtime 
+
+
+_File modification time at fingerprinting (POSIX timestamp)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/mtime](https://w3id.org/tvbo/slot/mtime)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd) | Cache-invalidation fingerprint for one ``aux_data`` reference |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:mtime |
+| native | tvbo:mtime |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: mtime
+description: File modification time at fingerprinting (POSIX timestamp).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ReferenceFingerprint
+domain_of:
+- ReferenceFingerprint
+range: float
+
+```
+</details></div>

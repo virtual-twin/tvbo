@@ -1,0 +1,172 @@
+# analysis_io { #tvbo.data.analysis_io }
+
+`data.analysis_io`
+
+Run a study's declarative ``analyses:`` and persist each as its own container.
+
+A study reports quantities that no simulation produced — a basis decomposition of empirical maps, a spectrum, a permutation test — and reductions that span several experiments. ``SimulationStudy.analyses`` declares each as the same ``FunctionCall`` a ``Parameter.producer`` uses, and this module is what executes one: resolve its arguments (a literal ``value``, or a ``used:`` DataRef reading an experiment, another analysis, or a dataset), call it, and write the result to ``<results_root>/ana-<name>_result.h5`` beside its one YAML provenance sidecar.
+
+That path is the container convention every consumer already resolves, so a figure layer binds an analysis exactly as it binds a run. Arrays are written through xarray untouched: an invocation that returns labelled ``DataArray``s keeps its dims and coordinates, which is what lets a grammar panel name them in an ``encoding``.
+
+Which backend renders an analysis is declared, not assumed — ``Analysis.execution`` carries the same choice a ``SimulationExperiment`` makes. :data:`RENDERERS` maps a backend name to the renderer that runs it; a backend with no renderer raises rather than being quietly run by another.
+
+The ``used:`` edges also order the work. :func:`schedule` splits the analyses into those that run before the experiments (an experiment may source one through a parameter) and those that run after (they read an experiment's result), each topologically ordered.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [RENDERERS](#tvbo.data.analysis_io.RENDERERS) | Backend name -> renderer ``fn(analysis, kwargs) -> produced``. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [analysis_closure](#tvbo.data.analysis_io.analysis_closure) | The named analyses plus the upstream ones that have no container yet. |
+| [analysis_name](#tvbo.data.analysis_io.analysis_name) | The analysis's declared name — its container key and its identity in a ``used:``. |
+| [container_path](#tvbo.data.analysis_io.container_path) | Path an analysis named ``name`` writes, whether or not it exists yet. |
+| [dependencies](#tvbo.data.analysis_io.dependencies) | What this analysis consumes, read off its arguments' ``used:`` edges. |
+| [dependents_of](#tvbo.data.analysis_io.dependents_of) | Every analysis downstream of the given experiments or analyses, in declaration order. |
+| [render_inprocess](#tvbo.data.analysis_io.render_inprocess) | Renderer that performs the declared invocation in this interpreter. |
+| [render_tvboptim](#tvbo.data.analysis_io.render_tvboptim) | Renderer that lowers a declarative ``equation:`` analysis to JAX and vmaps it. |
+| [run_analyses](#tvbo.data.analysis_io.run_analyses) | Execute ``analyses`` in the given order, returning the containers written. |
+| [run_analysis](#tvbo.data.analysis_io.run_analysis) | Execute one declared analysis and persist its result. Returns the container path. |
+| [schedule](#tvbo.data.analysis_io.schedule) | Split the analyses into ``(before_experiments, after_experiments)``. |
+| [study_analyses](#tvbo.data.analysis_io.study_analyses) | A study's declared analyses as a list, whatever spelling the loader produced. |
+
+### analysis_closure { #tvbo.data.analysis_io.analysis_closure }
+
+```python
+data.analysis_io.analysis_closure(analyses, names, exists)
+```
+
+The named analyses plus the upstream ones that have no container yet.
+
+The upstream counterpart of :func:`dependents_of`, and it belongs beside it: both walk the study's ``used:`` edges, and a caller that needs one usually needs the other.
+
+Asking for an analysis by name means asking for it to be RE-derived, so its own inputs are left alone wherever they already exist — re-running them would be the whole study, which is what asking by name is an alternative to. An input that has never been produced is different: it cannot be read, so it is pulled in, and transitively, because the first missing container's own inputs may be missing too.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                          | Default    |
+|----------|--------|----------------------------------------------------------------------|------------|
+| analyses |        | The study's declared analyses.                                       | _required_ |
+| names    |        | The names asked for.                                                 | _required_ |
+| exists   |        | Predicate saying whether an analysis's container is already on disk. | _required_ |
+
+### analysis_name { #tvbo.data.analysis_io.analysis_name }
+
+```python
+data.analysis_io.analysis_name(analysis)
+```
+
+The analysis's declared name — its container key and its identity in a ``used:``.
+
+### container_path { #tvbo.data.analysis_io.container_path }
+
+```python
+data.analysis_io.container_path(name, results_root=None)
+```
+
+Path an analysis named ``name`` writes, whether or not it exists yet.
+
+The layout itself is defined once, by :func:`tvbo.data.dataref.locate_analysis_container`; this is its write-side counterpart, which must not raise on a container that has not been produced.
+
+### dependencies { #tvbo.data.analysis_io.dependencies }
+
+```python
+data.analysis_io.dependencies(analysis)
+```
+
+What this analysis consumes, read off its arguments' ``used:`` edges.
+
+Returns ``{"experiments": {...}, "analyses": {...}}`` — the ids/names that must have run before it. A literal argument contributes nothing.
+
+An ``experiment:`` edge contributes BOTH the spelling the recipe used and its bare numeric id, because a recipe may write ``exp-3``, ``exp3`` or ``3`` for the same experiment while the runtime identifies it by ``{key, name, label, id}``. Keeping only the literal string makes every dotted spelling silently match nothing — an empty stale set reads exactly like a clean one.
+
+### dependents_of { #tvbo.data.analysis_io.dependents_of }
+
+```python
+data.analysis_io.dependents_of(analyses, *, experiments=(), changed_analyses=())
+```
+
+Every analysis downstream of the given experiments or analyses, in declaration order.
+
+An analysis container records no link back to the run it was derived from, so re-running part of a study leaves each downstream container holding the PREVIOUS run's numbers with nothing to raise. This names the set to invalidate, and it must be transitive: the second-order analyses (a landscape built from a per-cell reduction, a correlation built from that) are exactly the ones a hand-written list forgets.
+
+The seed is either kind of node, because both partial-run modes exist: ``--experiment`` re-runs a simulation, ``--analysis`` re-runs a derivation, and what goes stale downstream is found by the same walk over the study's own ``used:`` edges. Analyses named in ``changed_analyses`` come back in the result — a caller that just ran them drops them.
+
+### render_inprocess { #tvbo.data.analysis_io.render_inprocess }
+
+```python
+data.analysis_io.render_inprocess(analysis, kwargs)
+```
+
+Renderer that performs the declared invocation in this interpreter.
+
+``callable:`` calls the function with the resolved arguments. ``class_call:`` instantiates the class with its ``constructor_args`` and calls the instance with the resolved arguments, so an analysis carried by a class (a fitted estimator, a stateful reduction) declares the same way a monitor does. The ``function:`` and ``equation:`` forms are refused rather than half-executed — they describe a step inside an observation pipeline, whose inputs come from a running solve, not a container.
+
+It imposes no array library: whatever the declared code uses is what runs. The written container is xarray either way.
+
+### render_tvboptim { #tvbo.data.analysis_io.render_tvboptim }
+
+```python
+data.analysis_io.render_tvboptim(analysis, kwargs)
+```
+
+Renderer that lowers a declarative ``equation:`` analysis to JAX and vmaps it.
+
+This is the metadata-native form: instead of pointing at arbitrary ``code/`` Python, the analysis states an expression over its named arguments and the axis to map it over, and tvbo emits the realization — so the framework, not the study, owns the parallelism. ``apply_on_dimension`` becomes a ``jax.vmap`` over that axis of every argument carrying it (arguments without it are broadcast, not copied per element), and ``aggregate`` reduces a named axis of the result.
+
+The expression is ELEMENTWISE over the inputs' axes; ``aggregate`` is what reduces.
+Output axes are derived from that contract — ``apply_on_dimension`` first, then the inputs' own axes minus ``aggregate.over`` — and cross-checked against the result's rank, never read off its shape. An expression that reshapes or reduces on its own (an outer product, a correlation) fails that check and must declare ``dims:``, which is honoured as written.
+
+How that map is spread is declared too. By default it is one ``jit``-ed vmap on one device; ``execution.n_workers`` shards the mapped axis across devices and ``execution.batch_size`` bounds how many lanes are live per device, both through the same tvboptim machinery an experiment's grid uses (see :func:`_map_over`).
+``execution.accelerator`` pins the platform when JAX has not yet initialised.
+
+Host-only work stays host-only: a sparse eigensolve, a CIFTI read or a spin-permutation generator is not JAX-expressible and belongs on the ``inprocess`` renderer. This renderer refuses a ``callable:``/``class_call:`` analysis rather than silently jitting code that was never written to be traced.
+
+### run_analyses { #tvbo.data.analysis_io.run_analyses }
+
+```python
+data.analysis_io.run_analyses(
+    analyses,
+    results_root=None,
+    *,
+    compress=True,
+    on_start=None,
+    on_done=None,
+)
+```
+
+Execute ``analyses`` in the given order, returning the containers written.
+
+``on_start(name)`` / ``on_done(name, path)`` report progress to a caller's logger without this module choosing an output style.
+
+Names are checked against each other first: a BIDS entity value keeps only the alphanumeric characters, so ``calcium_c10`` and ``calciumC10`` would write the same container and the second would silently replace the first.
+
+### run_analysis { #tvbo.data.analysis_io.run_analysis }
+
+```python
+data.analysis_io.run_analysis(analysis, results_root=None, *, compress=True)
+```
+
+Execute one declared analysis and persist its result. Returns the container path.
+
+### schedule { #tvbo.data.analysis_io.schedule }
+
+```python
+data.analysis_io.schedule(analyses)
+```
+
+Split the analyses into ``(before_experiments, after_experiments)``.
+
+An analysis that reads an experiment result runs after the experiments, and so does everything downstream of it. The rest run first, so an experiment's own parameter can source one through a ``used:``. Each list is topologically ordered.
+
+### study_analyses { #tvbo.data.analysis_io.study_analyses }
+
+```python
+data.analysis_io.study_analyses(study)
+```
+
+A study's declared analyses as a list, whatever spelling the loader produced.

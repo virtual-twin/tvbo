@@ -1,0 +1,2771 @@
+# pydantic { #tvbo.datamodel.pydantic }
+
+`datamodel.pydantic`
+
+
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [AnyShapeArray](#tvbo.datamodel.pydantic.AnyShapeArray) |  |
+| [linkml_meta](#tvbo.datamodel.pydantic.linkml_meta) |  |
+| [metamodel_version](#tvbo.datamodel.pydantic.metamodel_version) |  |
+| [version](#tvbo.datamodel.pydantic.version) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Activity](#tvbo.datamodel.pydantic.Activity) | One thing that was done: a solve, a fit, an analysis, a render. The PROV complement of ``Provenance``, which describes an artifact — an artifact is ``prov:wasGeneratedBy`` an Activity, and an Activity ``prov:used`` the artifacts and environment it consumed. Slot names follow BEP028's activity record (``Id``, ``Label``, ``Command``, ``AssociatedWith``, ``Used``, ``StartedAtTime``, ``EndedAtTime``) so a record in that vocabulary serializes to it without a translation table. |
+| [Aggregation](#tvbo.datamodel.pydantic.Aggregation) | Specifies how to aggregate values across a dimension. Used for loss functions to define per-element loss with reduction. |
+| [AggregationType](#tvbo.datamodel.pydantic.AggregationType) | How to aggregate time series data |
+| [Algorithm](#tvbo.datamodel.pydantic.Algorithm) | A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives, observations, and hyperparameters. |
+| [AlgorithmCompositionMode](#tvbo.datamodel.pydantic.AlgorithmCompositionMode) | How an included algorithm is composed with the outer algorithm. Determines whether the inner algorithm's update rules are merged into the same loop (combined) or run as a converging inner loop on each outer iteration (nested). |
+| [AlgorithmInclude](#tvbo.datamodel.pydantic.AlgorithmInclude) | Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different hyperparameter values. |
+| [AlgorithmStage](#tvbo.datamodel.pydantic.AlgorithmStage) | One stage of a multi-stage tuning schedule. The algorithm body runs once per stage, in order, each stage overriding n_iterations and selected hyperparameters — so a schedule can anneal a learning rate or widen an estimation window as tuning proceeds. |
+| [Analysis](#tvbo.datamodel.pydantic.Analysis) | A quantity obtained by ANALYZING something — a model, its solve, a derived loss, simulated results, or empirical data — rather than by transforming a recorded trajectory. Nothing here requires a model: decomposing empirical maps into a basis, taking their spectrum, or running a permutation test over measured data are analyses in exactly this sense, and so are parameter sensitivities/gradients (autodiff or finite-difference), stability spectra (Lyapunov), bifurcation quantities, identifiability metrics, and reductions spanning several experiments. |
+| [Animation](#tvbo.datamodel.pydantic.Animation) | A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the frames advance along the axis the spec means rather than along whatever happens to be axis 0; and because the frame is the same mosaic the still would draw, an animated figure and its still cannot disagree about what they show. |
+| [Annotation](#tvbo.datamodel.pydantic.Annotation) | A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it. |
+| [ArchiveConfig](#tvbo.datamodel.pydantic.ArchiveConfig) | How a study packages its run into a COMBINE/OMEX archive: the output location and format, plus any extra files to include beyond the recipes, derived containers, figures and manifest added automatically. |
+| [Argument](#tvbo.datamodel.pydantic.Argument) | A function argument with explicit value specification. A value is either ``value`` (a literal / array / local reference) or ``used`` (a labelled array sourced from another experiment or dataset); the two are mutually exclusive. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key). A bare scalar is the value, as it is for a Parameter: ``sel: {variable: phi}`` and ``opts: {xlabel: "time (s)"}`` mean ``{value: …}``, which is how both are written throughout the docs. |
+| [Assignment](#tvbo.datamodel.pydantic.Assignment) | One step of a sequential recurrence: the expression assigned to a target name. Sequential rather than simultaneous — a later step's expression sees the value the steps above it assigned — which is what lets a reducer's update be authored as ordinary arithmetic instead of with `new_*` temporaries. Authored terse as a `[target, expression]` pair and lifted to this form on load. |
+| [AxisReduction](#tvbo.datamodel.pydantic.AxisReduction) | Marks an exploration/sweep axis to be collapsed by a statistic in the result container. When set on an ExplorationAxis, that axis's named grid dimension is reduced across every observation that carries it (e.g. an `execution.random_seed` trial ensemble becomes a first-class reduced observation). Backend-independent: states the reduction intent; the result layer applies it by dimension name. |
+| [AxisReductionStatistic](#tvbo.datamodel.pydantic.AxisReductionStatistic) | Statistic used to collapse an exploration/sweep axis into a single reduced value in the result container (see ExplorationAxis.reduce). Applied across the named grid dimension of every observation that carries it. |
+| [AxisScale](#tvbo.datamodel.pydantic.AxisScale) | How an axis maps values to distance. Part of what a panel claims, not decoration: a straight line on a log axis is a power law, and the same points on a linear axis are not. |
+| [AxisSide](#tvbo.datamodel.pydantic.AxisSide) | Which edge of the axes a label or tick row sits on. |
+| [BarOrientation](#tvbo.datamodel.pydantic.BarOrientation) | Which way a colour bar runs. |
+| [BidsDatasetType](#tvbo.datamodel.pydantic.BidsDatasetType) | BIDS ``DatasetType``: how a dataset is to be interpreted. ``study`` has been in the released standard since BIDS 1.10.1 and is the type a simulation study takes. |
+| [BidsDirectoryStatus](#tvbo.datamodel.pydantic.BidsDirectoryStatus) | A directory's standing with the BIDS standard, which is what decides whether it needs a ``.bidsignore`` entry. |
+| [BidsEntities](#tvbo.datamodel.pydantic.BidsEntities) | BIDS filename entities (BEP017-aligned) for provenance and data discovery. Reusable on Network, BrainAtlas, Tractogram, or any dataset with BIDS-conformant naming. |
+| [Binding](#tvbo.datamodel.pydantic.Binding) | Per-backend construction binding for a GraphGenerator: how to build the graph in a specific target library.  Keyed by backend id — the ``name`` is the backend (e.g. python, julia, networkx). |
+| [BoundaryCondition](#tvbo.datamodel.pydantic.BoundaryCondition) |  |
+| [BoundaryConditionType](#tvbo.datamodel.pydantic.BoundaryConditionType) |  |
+| [BrainAtlas](#tvbo.datamodel.pydantic.BrainAtlas) | A schema for representing a version of a brain atlas. |
+| [BrainRegionSeries](#tvbo.datamodel.pydantic.BrainRegionSeries) | A series whose values represent latitude |
+| [BranchSwitch](#tvbo.datamodel.pydantic.BranchSwitch) | Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says: "from which special point on the parent branch, continue what kind of object, with what settings." Override parent solver settings via the inline continuation field — only explicitly set attributes take effect; everything else is inherited from the parent Continuation. |
+| [CachedArray](#tvbo.datamodel.pydantic.CachedArray) | One numeric array inside a cached-result ``.h5`` companion, described by name, shape and dtype so a reader can check the layout it expects without opening the file. |
+| [Callable](#tvbo.datamodel.pydantic.Callable) |  |
+| [Camera](#tvbo.datamodel.pydantic.Camera) | Where a 3-D panel is looked at from. Only a `line3d` panel or a surface reads it; every other kind ignores it. Stated as a class rather than three loose options because a viewpoint is one thing, and a figure that states two of its three numbers is under-specified in a way nothing else would catch. |
+| [ClassReference](#tvbo.datamodel.pydantic.ClassReference) | Reference to a class that can be instantiated and called. Used for external library classes (e.g., tvboptim.Bold, custom monitors). The class is instantiated with constructor_args, then called with call_args. Generalizable pattern: works for tvboptim, TVB, or any Python class. |
+| [ClinicalImprovement](#tvbo.datamodel.pydantic.ClinicalImprovement) | Relative improvement on a defined clinical score. |
+| [ClinicalScale](#tvbo.datamodel.pydantic.ClinicalScale) | A clinical assessment inventory or structured scale composed of multiple scores or items. |
+| [ClinicalScore](#tvbo.datamodel.pydantic.ClinicalScore) | Metadata about a clinical score or scale. |
+| [CodeSource](#tvbo.datamodel.pydantic.CodeSource) | Location of a recipe's callable code so the specification is decoupled from where the code lives. Either a local directory or a git repository; the resolved directory (optionally a ``subdir`` within it) is placed on the import path at load time so ``module:`` references resolve by bare name. ``path`` and ``git`` are mutually exclusive. |
+| [ColorScale](#tvbo.datamodel.pydantic.ColorScale) | How values become colours, and where the scale starts and stops. Shared by everything that paints a field rather than drawing marks — a colour bar, a cortical surface, a labelled volume, a connectome — so the same question is answered with the same words wherever it is asked, and a limit means the same thing on all four. Every slot here reaches all four; a scale concern only one of them can answer is declared on that one, which is why `center` sits on `Colorbar`. |
+| [Colorbar](#tvbo.datamodel.pydantic.Colorbar) | The colour scale a panel prints beside its field. Declared as one object because nine loose `colorbar_*` options were nine chances to style a bar that is not drawn, and because a tick list written in an options bag is not a list of numbers to anything that reads it. |
+| [Colormaps](#tvbo.datamodel.pydantic.Colormaps) | Continuous colour scales, by key: anything ordinal or continuous draws from one of these, anything categorical draws from `Palette.palette`, and an ordinal scale drawn as discrete swatches samples one rather than picking hues that imply no order. A value is either a registered colormap name (`viridis`) or the list of colours to ramp between (`['#000000', '#ffffff']`). The namespace is open — a project adds its own keys for the scales it distinguishes (`bold: viridis, meg: plasma, eeg: cividis`) and names them anywhere a colormap is named. `sequential` and `diverging` are the two the renderer reaches for on its own, so they are typed here and always present: a project that declares neither still has both. An open namespace cannot catch a misspelt key — `sequentiel` is read as a project key, not as a typo — which is the price of letting a project name its own scales. A key that shadows a registered colormap name is refused, so a name cannot mean two things at once. |
+| [CommonCoordinateSpace](#tvbo.datamodel.pydantic.CommonCoordinateSpace) | A schema for representing a version of a common coordinate space. |
+| [ComparisonOperator](#tvbo.datamodel.pydantic.ComparisonOperator) | Comparison used by a `stochastic_mask` step. Named rather than written as an operator so the step stays metadata: `!=` in particular cannot survive expression parsing (it evaluates to a plain boolean). |
+| [ConditionalBlock](#tvbo.datamodel.pydantic.ConditionalBlock) | A single condition and its corresponding equation segment. |
+| [ConfiguredBaseModel](#tvbo.datamodel.pydantic.ConfiguredBaseModel) |  |
+| [ConnectivityRule](#tvbo.datamodel.pydantic.ConnectivityRule) | Rule for expanding a population-level Edge into individual cell-to-cell connections. Names a connectivity pattern between the source and target populations so a network of populations declares its projections once, without enumerating every connection; each backend expands the rule into its native connection set (e.g. the NeuroML exporter emits one <projection> with size_src x size_tgt <connection> elements). Backend-independent: it states the connectivity pattern, not how any simulator stores it. |
+| [Contact](#tvbo.datamodel.pydantic.Contact) | Individual contact on a DBS electrode. |
+| [Continuation](#tvbo.datamodel.pydantic.Continuation) | Complete specification of a numerical continuation / bifurcation analysis. All universal solver settings live directly here. Toolkit-specific string options go in the options slot. When used inside a BranchSwitch, only explicitly set attributes override the parent's values. |
+| [ContinuationAlgorithm](#tvbo.datamodel.pydantic.ContinuationAlgorithm) | Predictor-corrector algorithm for numerical continuation. |
+| [Coordinate](#tvbo.datamodel.pydantic.Coordinate) | A 3D coordinate with X, Y, Z values. |
+| [Corner](#tvbo.datamodel.pydantic.Corner) | A named corner for placing a panel number inside its axes — the four corners bsplot's add_panel_number anchors to. An enum so a typo is a validation error, not a silent fallback to the default corner. |
+| [Coupling](#tvbo.datamodel.pydantic.Coupling) |  |
+| [CouplingInput](#tvbo.datamodel.pydantic.CouplingInput) | Specification of a coupling input channel for multi-coupling dynamics |
+| [CouplingStageEvaluation](#tvbo.datamodel.pydantic.CouplingStageEvaluation) | How the network coupling term is evaluated within one step of a multi-stage integrator (Heun, RK4, ...). A backend-neutral numerical contract: whether the coupling is part of the vector field, re-evaluated at each solver stage, or computed once per step and held constant across the stages. Matters because the two choices integrate a different effective system — for stiff / chaotic / multistable dynamics they can converge to different trajectories or attractors. |
+| [DBSDataset](#tvbo.datamodel.pydantic.DBSDataset) | Collection of data related to a specific DBS study. |
+| [DBSProtocol](#tvbo.datamodel.pydantic.DBSProtocol) | A protocol describing DBS therapy, potentially bilateral or multi-lead. |
+| [DBSSubject](#tvbo.datamodel.pydantic.DBSSubject) | Human or animal subject receiving DBS. |
+| [DataRef](#tvbo.datamodel.pydantic.DataRef) | A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container reference primitive (a PROV entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study experiment id, resolved like ``initial_state.source_experiment``), ``analysis`` (an in-study analysis name), or the full ``iri`` (a curated / result / external pointer); at most one. WHICH is ``output`` (a recorded variable, ``observation__<name>``, ``estimate__<param>``, or external variable). SLICE is ``sel`` (label-keyed ``.sel``, never positional). ``reconcile`` optionally aligns the sourced array to the consuming network's node order by label. One model reused by figure layers (``Layer.used``), sourced arguments (``Argument.used``) and sourced parameters (``Parameter.used``), so data binding, cross-experiment sourcing and PROV provenance are the same edge. A sourced array is resolved lazily and never inlined into generated code. |
+| [DataSource](#tvbo.datamodel.pydantic.DataSource) | Specification for loading external/empirical data. |
+| [Dataset](#tvbo.datamodel.pydantic.Dataset) | A collection of subjects for a multi-subject study. Provides the subject/session structure needed for workflow rendering. Optionally backed by a BIDS directory layout. |
+| [DerivedParameter](#tvbo.datamodel.pydantic.DerivedParameter) |  |
+| [DerivedVariable](#tvbo.datamodel.pydantic.DerivedVariable) |  |
+| [DevelopmentStatus](#tvbo.datamodel.pydantic.DevelopmentStatus) | Development status of the software. Based on repostatus.org categories. |
+| [DifferentialOperator](#tvbo.datamodel.pydantic.DifferentialOperator) |  |
+| [Differentiation](#tvbo.datamodel.pydantic.Differentiation) | Backend-neutral configuration for how gradients are propagated through the temporal integration. Expressed in physical/semantic terms; each backend maps it to its own mechanism (JAX solver grad_horizon / block_size, Julia adjoint sensitivity, ...). Backends without autodiff (e.g. MATLAB) emit a comment noting differentiation is unsupported and proceed with the plain forward integration -- they do not raise. |
+| [Digest](#tvbo.datamodel.pydantic.Digest) | One checksum of an artifact, keyed by the function that produced it. Collected on ``Provenance.digest``, whose collection KEY is the function name — BEP028 takes the names ``MD5``, ``SHA1``, ``SHA-256`` and the rest of that list, and allows an arbitrary label otherwise. Keyed rather than a bare string so an artifact can carry several digests and a reader knows which function to check with. |
+| [DimensionType](#tvbo.datamodel.pydantic.DimensionType) | Dimensions along which operations can be applied |
+| [Discretization](#tvbo.datamodel.pydantic.Discretization) | Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific numerics go in parameters. |
+| [DiscretizationMethod](#tvbo.datamodel.pydantic.DiscretizationMethod) |  |
+| [Distribution](#tvbo.datamodel.pydantic.Distribution) | A probability distribution for sampling parameters or initial conditions. Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters. Custom distributions use a Function for the PDF/sampling rule. Default name is Uniform when only domain is given. |
+| [DistributionConfig](#tvbo.datamodel.pydantic.DistributionConfig) | Policy for mapping a parameter sweep's exploration axes onto the two parallelism tiers when rendering a distributed workflow. Vectorized axes are packed into a single batched backend call (e.g. vmap/pmap); workflow axes are fanned out into independent scheduler tasks, one per value combination. Backend-independent: the emitter validates that a requested vectorized axis is one the chosen backend can actually batch. |
+| [DomainEnforcement](#tvbo.datamodel.pydantic.DomainEnforcement) | Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means the domain is descriptive metadata only (expected range, plot limits, initial- condition sampling support) and never alters the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap`` opt in to active enforcement using the domain's ``lo``/``hi``. |
+| [Dynamics](#tvbo.datamodel.pydantic.Dynamics) |  |
+| [EField](#tvbo.datamodel.pydantic.EField) | Simulated electric field from DBS modeling. |
+| [EcosystemEnum](#tvbo.datamodel.pydantic.EcosystemEnum) | Package ecosystem or registry the software is distributed through. |
+| [Edge](#tvbo.datamodel.pydantic.Edge) | An edge in a network. Three modes: explicit (source+target set, scalar parameters in YAML), template (no source/target, N×N matrix measure in HDF5), or produced (a `producer:` computes the whole matrix from the spec's own inputs, so no pre-built file is needed). All coexist in the same edges list. |
+| [Electrode](#tvbo.datamodel.pydantic.Electrode) | Implanted DBS electrode and contact geometry. |
+| [ElementType](#tvbo.datamodel.pydantic.ElementType) |  |
+| [Encoding](#tvbo.datamodel.pydantic.Encoding) | Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel may later accept a scale object without breaking this string form. |
+| [EnvironmentType](#tvbo.datamodel.pydantic.EnvironmentType) |  |
+| [EnvironmentVariable](#tvbo.datamodel.pydantic.EnvironmentVariable) | One environment variable assignment exported before executing the workflow task command. Use this for reproducible runtime knobs such as XLA/OMP settings in emitted workflow artefacts. |
+| [Equation](#tvbo.datamodel.pydantic.Equation) |  |
+| [Event](#tvbo.datamodel.pydantic.Event) | A discrete or continuous event that modifies the system during simulation. Generalizes Stimulus: can represent external inputs (stimulus type), threshold-triggered state changes (continuous/discrete type), or time-scheduled interventions (preset_time type). Attaches to components (nodes/edges) or to the experiment level. |
+| [EventType](#tvbo.datamodel.pydantic.EventType) | Type of event triggering mechanism. |
+| [ExecutionConfig](#tvbo.datamodel.pydantic.ExecutionConfig) | Configuration for computational execution (parallelization, precision, hardware). |
+| [ExperimentResultSidecar](#tvbo.datamodel.pydantic.ExperimentResultSidecar) | Descriptor for a cached ``ExperimentResult``: the ``.h5`` companion holding the fitted parameter arrays, one ``CachedArray`` entry per array, and the provenance a downstream cache needs to decide whether the result is still valid. Written by ``tvbo.data.experiment_result_io.save_sidecar``, so it is generated rather than authored — but it is self-describing (it carries a ``tvbo_class`` envelope naming this class), which is what lets ``tvbo validate schema`` check a generated sidecar instead of falling back to some unrelated class and failing on its required slots. |
+| [Exploration](#tvbo.datamodel.pydantic.Exploration) | Parameter space exploration (grid search, sweep). |
+| [ExplorationAxis](#tvbo.datamodel.pydantic.ExplorationAxis) | One axis of a parameter exploration grid. Points to an existing Parameter (by dotted reference, e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and supplies the sweep specification (domain, explored_values, or per-element overrides). No new Parameter is created. |
+| [FieldStateVariable](#tvbo.datamodel.pydantic.FieldStateVariable) |  |
+| [Figure](#tvbo.datamodel.pydantic.Figure) | A publication figure, a mosaic of panels rendered from result containers. Reuses name (identifier) and description (caption). |
+| [File](#tvbo.datamodel.pydantic.File) |  |
+| [FrameRole](#tvbo.datamodel.pydantic.FrameRole) | What a layer does while a figure animates. Read only under `Figure.animation`; a still figure ignores it. Unset, a layer whose data carries the animated dimension is sliced and one that does not is static, which is the reading that needs no annotation in the common case. |
+| [FreeParameter](#tvbo.datamodel.pydantic.FreeParameter) | One degree of freedom in an OptimizationStage. References an existing Parameter by dotted scope (e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and supplies optimization-specific metadata (heterogeneous, shape, bounds, initial value). No new Parameter is created here. |
+| [Function](#tvbo.datamodel.pydantic.Function) | A function with explicit input -> transformation -> output flow. Can be equation-based (symbolic) or software-based (callable). In a pipeline, functions are chained: output of one becomes input of next. |
+| [FunctionCall](#tvbo.datamodel.pydantic.FunctionCall) | Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly for external library functions, OR inline an equation, OR use class_call for class instantiation, OR name a curated step with `iri` and state only what differs from it. Mirrors Function attributes so pipeline steps can be self-contained. The `name` is an optional step label (used in pipelines for keyed access to step outputs); it is NOT a global identifier (singleton uses like `loss`, `observable` may omit it). |
+| [Graph](#tvbo.datamodel.pydantic.Graph) | A node-link panel's graph and how it is drawn: the connectome the model actually ran on, with a state living on it. The geometry is the network's own — one marker per region at its anatomical centre — and a layer supplies one value per region, placed by label. |
+| [GraphGenerator](#tvbo.datamodel.pydantic.GraphGenerator) | Backend-agnostic graph generator specification.  Captures the mathematical family and its parameter declarations so that each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.) via per-backend ``bindings``; derived generators may also carry a symbolic ``procedure``.  The number of nodes is always taken from Network.number_of_nodes. |
+| [GraphRepresentation](#tvbo.datamodel.pydantic.GraphRepresentation) | How a Network's connectivity is represented when evaluating coupling. This is a backend-independent performance contract, not a numerical one: both representations compute the same coupling, but a sparse representation sums over the existing edges (cost scales with the number of edges) while a dense representation operates on the full adjacency (cost scales with nodes-squared). A backend maps the choice onto its own primitives (edge gather / segment-sum vs matrix product). Orthogonal to whether the coupling reads *delayed* states — that is decided per coupling by its conduction delay — so the two dimensions together yield the four backend graph kinds: dense/sparse × instantaneous/delayed. |
+| [Grid](#tvbo.datamodel.pydantic.Grid) | How a `grid` panel tiles its cells, and what the strips around them are labelled with. Rows and columns are labelled ONCE, at the left and the top — the whole reason a paper's composite panel is one lettered panel rather than n of them. |
+| [Hemisphere](#tvbo.datamodel.pydantic.Hemisphere) |  |
+| [ImagingModality](#tvbo.datamodel.pydantic.ImagingModality) |  |
+| [Inference](#tvbo.datamodel.pydantic.Inference) | Bayesian inference of model parameters from an observation, via MCMC. A standalone, first-class concept (NOT an Optimization): it produces a POSTERIOR, not a point estimate, using priors + a likelihood + a sampler instead of a loss + optimizer. It runs the SAME differentiable forward model, wrapped in a probabilistic model (sample priors -> forward -> likelihood). |
+| [InitialState](#tvbo.datamodel.pydantic.InitialState) | How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady state. |
+| [InitialStateMethod](#tvbo.datamodel.pydantic.InitialStateMethod) | Strategy for obtaining the starting equilibrium or periodic orbit. |
+| [Inset](#tvbo.datamodel.pydantic.Inset) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, annotations — minus the things only a mosaic cell has (a panel letter, a placeholder, a position in the layout). One class for both an inset and a grid cell, so a cell cannot behave unlike the inset beside it; they differ only in who positions them. |
+| [Integrator](#tvbo.datamodel.pydantic.Integrator) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits abs_tol, rel_tol from Solver. Overrides method default to 'euler'. |
+| [Layer](#tvbo.datamodel.pydantic.Layer) | One mark bound to one data reference, with its encoding. |
+| [LayoutEngine](#tvbo.datamodel.pydantic.LayoutEngine) | Which matplotlib layout engine positions the mosaic's axes. Unset lets the backend pick (bsplot asks for 'compressed' and falls back to 'tight'), which is right for a plain grid of plots. A figure whose panels carry their own absolute geometry — a schematic stepped out in axes fractions, or a mosaic dense enough that the constrained solver reports cells collapsed to zero and silently falls back — has to say so, because an engine that gives up still leaves the figure laid out by a fallback nobody declared. |
+| [LayoutTemplateVariant](#tvbo.datamodel.pydantic.LayoutTemplateVariant) | One variant's seed for a file the record already accounts for. |
+| [Legend](#tvbo.datamodel.pydantic.Legend) | A panel's key: whether it is drawn, where it sits, and the three things a figure actually asks of one beyond that. An object rather than a bare position because `frame` had nowhere to live — the renderer drew every key frameless whatever the theme said, so a theme asking for a boxed legend never got one. |
+| [LegendLoc](#tvbo.datamodel.pydantic.LegendLoc) | Where a panel's key sits. `best` lets the backend find the emptiest corner, which is right while a figure is still moving and wrong once it is printed — a key that relocates between two renders of the same figure is a difference the spec never stated. |
+| [Likelihood](#tvbo.datamodel.pydantic.Likelihood) | Observation model for Bayesian inference: p(data \| sim(theta)). Points at the observation holding the data and specifies the noise family + scale. `name` is the noise family (default Normal); `source` uses the same referencing as `Observation.source`, so the observed data can come from this experiment's integration, an empirical network measure, or a runtime-bound array — one flexible hook, no data-loading path of its own. `predicted` names the other side of the residual when it differs from the data's own observable. |
+| [LinkMLMeta](#tvbo.datamodel.pydantic.LinkMLMeta) |  |
+| [LossFunction](#tvbo.datamodel.pydantic.LossFunction) | A loss function for optimization with optional aggregation. Extends Function with aggregation specification for per-element losses. |
+| [MarkType](#tvbo.datamodel.pydantic.MarkType) | The cartesian primitive a grammar layer draws (heatmap is implied by a heatmap panel, not a mark). |
+| [Matrix](#tvbo.datamodel.pydantic.Matrix) | Adjacency matrix of a network. |
+| [MeasureSpec](#tvbo.datamodel.pydantic.MeasureSpec) | Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``. |
+| [Mesh](#tvbo.datamodel.pydantic.Mesh) | Triangle (or higher-order) mesh geometry. May stand alone (via ``mesh_file`` pointing at an external GIFTI/VTK/MSH file) OR be inlined on a Network as ``Network.mesh``. In the inlined-on-Network case, the vertices are the parent Network's ``nodes/coordinates`` (so ``coordinates`` here may be left empty), the faces live in the same h5 companion under a path given by ``elements`` (default ``mesh/faces``), and optional per-vertex ``normals`` / ``curvature`` live alongside. The optional ``parcel_map_field`` points at the parent Network's per-vertex parcel-id array (default ``nodes/parent_index`` from the hierarchical-Network pattern, see Network.qmd §7.1). |
+| [ModelParadigm](#tvbo.datamodel.pydantic.ModelParadigm) | Computational paradigm or modeling approach supported by the tool. |
+| [ModelType](#tvbo.datamodel.pydantic.ModelType) | Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in list_db(). |
+| [NDArray](#tvbo.datamodel.pydantic.NDArray) |  |
+| [NamedArray](#tvbo.datamodel.pydantic.NamedArray) | A named numeric array. Used as a sidecar slot value where a schema-typed object (e.g. ``ExperimentResult.parameters``) holds multiple arrays addressable by name (``w_LRE``, ``w_FFI``, ``J_i``, ...). The actual numeric data lives in the companion ``.h5`` at ``parameters/<name>``; the YAML carries only the descriptor. |
+| [Network](#tvbo.datamodel.pydantic.Network) | Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility). |
+| [Node](#tvbo.datamodel.pydantic.Node) | A node in a network with its own dynamics and properties |
+| [NodeReconciliation](#tvbo.datamodel.pydantic.NodeReconciliation) | Strategy for aligning a sourced array's nodes to the consuming model network before use. Keyed alignment guards against a differing node count or ordering (e.g. a 998-parcel empirical FC against a 1000-parcel model, or a hemisphere-swapped connectome) silently misaligning the data. |
+| [Noise](#tvbo.datamodel.pydantic.Noise) |  |
+| [NoiseDraw](#tvbo.datamodel.pydantic.NoiseDraw) | How a stochastic run's noise realization is generated. |
+| [NoiseType](#tvbo.datamodel.pydantic.NoiseType) |  |
+| [NumericalDiscretizationMethod](#tvbo.datamodel.pydantic.NumericalDiscretizationMethod) | Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic tori). |
+| [Observation](#tvbo.datamodel.pydantic.Observation) | Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a sequence of Functions with input -> output flow. |
+| [ObservationReductionMode](#tvbo.datamodel.pydantic.ObservationReductionMode) | How an observation is evaluated over the trajectory (see Observation.reduce). Absent (the default) keeps the post-scan pipeline: the observation is computed from a materialised trajectory. `streaming` opts the observation into an incremental reducer that is folded into the integrator carry via prepare(reduce=...), so the trajectory is never held — byte-identical to the post-scan value (to f64 rounding), but with O(block) instead of O(n_time) peak memory. Required for whole-brain fits whose per-stage simulation is long enough that the full trajectory would not fit in memory (e.g. the Schirner 2023 BOLD/FC group fit). |
+| [OperatorType](#tvbo.datamodel.pydantic.OperatorType) |  |
+| [Optimization](#tvbo.datamodel.pydantic.Optimization) | Configuration for parameter optimization. Inherits single-stage fields from OptimizationStage. For multi-stage workflows, use 'stages' (ignores inherited single-stage fields). Loss equation references observations directly by name. |
+| [OptimizationStage](#tvbo.datamodel.pydantic.OptimizationStage) | A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using different parameters, shapes, learning rates, and algorithms. |
+| [Option](#tvbo.datamodel.pydantic.Option) | A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal numeric parameters (e.g., solver name, tangent method, jacobian type). |
+| [PDE](#tvbo.datamodel.pydantic.PDE) | Partial differential equation problem definition. |
+| [PDESolver](#tvbo.datamodel.pydantic.PDESolver) | Numerical solver for a PDE: the time-integration algorithm, tolerances and step inherited from `Solver`, plus the spatial discretization and preconditioner a PDE additionally needs. |
+| [Palette](#tvbo.datamodel.pydantic.Palette) | A project's colours, named by role. The colour half of a `Theme`, and a document in its own right for a consumer that wants colours and nothing else (:mod:`tvbo.plot.palette`, the documentation site's stylesheet). A style sheet carries only what matplotlib has an rcParam for, which stops short of the roles a figure reasons in: the one colour that means *this is the point*, the neutral everything unlabelled is drawn in, the hairline behind it. Naming them here is what makes recolouring a project one edit that every panel follows. The cycler is `[base] + palette`, so a plot that names no colour comes out neutral and only a panel meaning to separate conditions reaches into the hues; `highlight` sits outside the cycler, because a colour handed to the second line of every plot cannot also mean emphasis. TVB-O's own is curated at `tvbo:theme/default`, and is the palette in force until a project names one of its own. |
+| [Panel](#tvbo.datamodel.pydantic.Panel) | One cell of the figure. kind selects grammar (cartesian/heatmap) vs escape-hatch (image/custom); every kind shares the label, placeholder, legend and annotation machinery. Reuses label (human title). |
+| [PanelKind](#tvbo.datamodel.pydantic.PanelKind) | What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); surface paints a layer on a mesh, volume projects one through a labelled volume and network draws one on a node-link graph; grid tiles a composite of sub-panels; colorbar/legend are shared keys in their own slot; image (external file) and custom (registered callable) are peer escape-hatch kinds. A new kind is added when its bsplot leaf exists. |
+| [ParallelMode](#tvbo.datamodel.pydantic.ParallelMode) | How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput: vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map`` (memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits and lax_map otherwise. |
+| [Parameter](#tvbo.datamodel.pydantic.Parameter) |  |
+| [Parcellation](#tvbo.datamodel.pydantic.Parcellation) |  |
+| [ParcellationEntity](#tvbo.datamodel.pydantic.ParcellationEntity) | A schema for representing a parcellation entity, which is an anatomical location or study target. |
+| [ParcellationTerminology](#tvbo.datamodel.pydantic.ParcellationTerminology) | A schema for representing a parcellation terminology, which consists of parcellation entities. |
+| [Partition](#tvbo.datamodel.pydantic.Partition) | A grouped streaming reduction over a node partition (e.g. per-hemisphere cortical wave metrics): the per-timestep observer body is evaluated ONCE for a single group and vmapped over the partition axis, and the per-group outputs are folded to per-group scalar metrics. General in its group-vmap (``gather`` + ``over``); the metric roles (``waves`` / ``directed`` / ``correlation``) name the per-group derived variables the wave finalize reduces to proportion-of-waves, proportion-directed and the median flow–instrength correlation (rho). |
+| [Phenotype](#tvbo.datamodel.pydantic.Phenotype) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales, demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the measure list; the h5 carries ``measures/<name>`` 1-D float arrays of length ``len(subjects)``. |
+| [Prior](#tvbo.datamodel.pydantic.Prior) | Prior belief over one inferred parameter. In `Inference.priors` the collection KEY is the parameter's dotted name; the value wraps a `Distribution` as the belief (reusing the standard distribution vocabulary rather than inventing a new one). Distinct from `Parameter.distribution`, which specifies per-node SAMPLING, not a prior. |
+| [Procedure](#tvbo.datamodel.pydantic.Procedure) | Symbolic procedure: an ordered list of steps producing named outputs.  Documents a derived generator's algorithm independently of any backend binding. |
+| [ProcedureStep](#tvbo.datamodel.pydantic.ProcedureStep) | A single named step (or output) in a Procedure: one typed operation producing one named intermediate. |
+| [ProcedureStepType](#tvbo.datamodel.pydantic.ProcedureStepType) | The operation a ProcedureStep performs. `equation` is the general case (author-written algebra over previously-named intermediates); the others are named graph-construction operations whose options are fields rather than call syntax, so each lowers to a backend-native primitive without an expression string having to survive a parser. |
+| [ProgrammingLanguageEnum](#tvbo.datamodel.pydantic.ProgrammingLanguageEnum) | Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers. |
+| [Projection](#tvbo.datamodel.pydantic.Projection) | Which anatomical plane a network's region centres flatten onto. |
+| [Provenance](#tvbo.datamodel.pydantic.Provenance) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable on any entity (Network, TimeSeries, Dynamics, ...), which is why it holds no identity of its own: the parent supplies that. The identified ``prov:Entity`` a standalone provenance record names is ``ResultEntity``, which carries one of these. |
+| [RandomStream](#tvbo.datamodel.pydantic.RandomStream) |  |
+| [Range](#tvbo.datamodel.pydantic.Range) | Specifies a range for array generation, parameter bounds, or grid exploration. |
+| [Reducer](#tvbo.datamodel.pydantic.Reducer) | A streaming reduction, authored as symbolic recurrences over its own state rather than as backend code. Folded into the integrator carry so a windowed observable (a sliding-window FC, a running mean) is computed without ever materialising the trajectory. `add` folds an arriving sample in, `evict` takes a leaving one back out, `resync` rebuilds the state exactly from the window when incremental drift would accumulate, and `emit` reads the reduced value out. TVBO lowers all four through the sympy printers, so no backend ships a reducer and adding one is a YAML file rather than code. |
+| [ReducerEmitKind](#tvbo.datamodel.pydantic.ReducerEmitKind) | How often a streaming reducer reads its value out (see Reducer.emit_kind). |
+| [ReductionType](#tvbo.datamodel.pydantic.ReductionType) | Operations for reducing/aggregating values across dimensions |
+| [Reference](#tvbo.datamodel.pydantic.Reference) | A small typed pointer to another TVBO entity (Network, Mesh, Observation, …). The ``iri`` identifies the target via the registry; the optional ``field`` is a dotted-path subkey resolved by attribute walk on the loaded target (e.g. ``field: 'weight_alpha'`` picks the ``weight_alpha`` named edge matrix on a Network; ``field: 'mesh.faces'`` picks the mesh face array). Used uniformly anywhere a TVBO entity needs to point at a sub-array of another entity without inlining the data. |
+| [ReferenceFingerprint](#tvbo.datamodel.pydantic.ReferenceFingerprint) | Cache-invalidation fingerprint for one ``aux_data`` reference. Captures enough about the upstream artifact that a downstream cache can decide cheaply (via mtime + size) whether to trust the cached result, falling back to a hash recompute on mismatch. |
+| [Region](#tvbo.datamodel.pydantic.Region) | A rectangle drawn over a panel to ring the window a paper calls out — the parameter band a regime lives in, the interval a statistic was taken over. Declared rather than drawn by a custom callable, so the window a figure highlights is part of the spec that can be read back. |
+| [RegionMapping](#tvbo.datamodel.pydantic.RegionMapping) | Maps vertices to parent regions for hierarchical/aggregated coupling |
+| [RenderSpec](#tvbo.datamodel.pydantic.RenderSpec) | A headless-browser capture recipe turning an `image` panel's HTML/URL `source` into the static file placed at its `path`. Mirrors one shot of code/capture-screenshots.py so a screenshot of the live platform (or any HTML render) is reproducible from the spec, not hand-captured. Only the `source` needs committing alongside the rendered `path`. |
+| [ReportPart](#tvbo.datamodel.pydantic.ReportPart) | Where a declared item appears in a generated report. A study with many near-identical experiments marks the routine ones ``supplementary``, so the Methods carries the experiments that make the argument and the rest stay a table row plus a paragraph in the SI. |
+| [RequirementLevel](#tvbo.datamodel.pydantic.RequirementLevel) | BIDS requirement level: whether something MUST, SHOULD or MAY be present. |
+| [RequirementRole](#tvbo.datamodel.pydantic.RequirementRole) |  |
+| [ResultBinding](#tvbo.datamodel.pydantic.ResultBinding) | One entry in a study's results manifest: a manuscript key bound to the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN — ``used:`` a DataRef reading a scalar out of a nested study's or this study's own analysis/experiment, formatted through ``format`` — COMPUTED FROM THE SPEC — ``count:`` a structural tally of a collection (e.g. the figures a nested study regenerates), needing no run — or AUTHORED — a literal ``value`` quoted from prior work and attributed by ``source``. So a number printed in prose is computed or an authored constant marked as such, never transcribed by hand. |
+| [ResultEntity](#tvbo.datamodel.pydantic.ResultEntity) | One persisted result container, described. The ``prov:Entity`` of BEP028's ``prov-<label>_ent`` record: what the file is, what produced it, and what it holds. Every field is either a pointer or read off the artifact when it is written — nothing here restates a value the frozen spec beside the container already carries, which is what made the earlier curated JSON sidecar drift from the YAML next to it. |
+| [Rule](#tvbo.datamodel.pydantic.Rule) | A straight reference line drawn across a panel: the zero a signal is measured from, the threshold a value has to clear, the agreement line of a target-versus-simulated plot. One object, so the line and the colour it is drawn in cannot be stated apart — as two loose panel options they could disagree, and a colour could be given to a rule that was never declared. |
+| [RuleOrientation](#tvbo.datamodel.pydantic.RuleOrientation) | Which way a reference line runs. |
+| [Sample](#tvbo.datamodel.pydantic.Sample) |  |
+| [SamplingAxis](#tvbo.datamodel.pydantic.SamplingAxis) | Dimension along which a distribution is sampled. |
+| [SchedulerDirective](#tvbo.datamodel.pydantic.SchedulerDirective) | One engine-native scheduler directive passed through verbatim by the engine's emitter (e.g. a Slurm ``#SBATCH --<name>=<value>`` line). The open extension point of WorkflowEngineConfig: it carries any directive the typed fields do not name, so a new scheduler flag needs no schema change. |
+| [Session](#tvbo.datamodel.pydantic.Session) | A data collection session for a subject. Corresponds to a BIDS 'ses-' entity. Sessions capture longitudinal timepoints (baseline, follow-up), different experimental conditions, or repeated measures. |
+| [SexEnum](#tvbo.datamodel.pydantic.SexEnum) |  |
+| [SimulationExperiment](#tvbo.datamodel.pydantic.SimulationExperiment) |  |
+| [SimulationScale](#tvbo.datamodel.pydantic.SimulationScale) | Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to SIO and Wikidata where possible. |
+| [SimulationStudy](#tvbo.datamodel.pydantic.SimulationStudy) |  |
+| [SimulationTool](#tvbo.datamodel.pydantic.SimulationTool) | A software tool for computational neuroscience simulation, analysis, or model specification. Extends SoftwarePackage with neuroscience-specific controlled vocabularies for scale, paradigm, role, and interoperability. Aligned with CodeMeta v3 and DOAP. |
+| [SoftwareEnvironment](#tvbo.datamodel.pydantic.SoftwareEnvironment) | A reproducible software environment aggregating one or more SoftwareRequirement entries. Used by SimulationExperiment to specify the execution context. |
+| [SoftwarePackage](#tvbo.datamodel.pydantic.SoftwarePackage) | Identity and metadata for a software package, aligned with schema.org/SoftwareApplication and CodeMeta v3. |
+| [SoftwareRequirement](#tvbo.datamodel.pydantic.SoftwareRequirement) | An individual software requirement binding a package to a version constraint and a role within an environment. |
+| [Solver](#tvbo.datamodel.pydantic.Solver) | Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and tolerances matter. |
+| [SparseFormat](#tvbo.datamodel.pydantic.SparseFormat) |  |
+| [SpatialDomain](#tvbo.datamodel.pydantic.SpatialDomain) |  |
+| [SpatialField](#tvbo.datamodel.pydantic.SpatialField) |  |
+| [SpecimenEnum](#tvbo.datamodel.pydantic.SpecimenEnum) | A set of permissible types for specimens used in brain atlas creation. |
+| [StandardGraphType](#tvbo.datamodel.pydantic.StandardGraphType) | Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX). |
+| [StateValue](#tvbo.datamodel.pydantic.StateValue) | A named state variable value for per-node initialization. |
+| [StateVariable](#tvbo.datamodel.pydantic.StateVariable) |  |
+| [StimulationSetting](#tvbo.datamodel.pydantic.StimulationSetting) | DBS parameters for a specific session. |
+| [Stimulus](#tvbo.datamodel.pydantic.Stimulus) |  |
+| [Study](#tvbo.datamodel.pydantic.Study) | Bibliographic anchor for a source publication, identified by its citation key (``citekey``).  The full bibliographic record lives in the project BibTeX library (references.bib) and is resolved by citekey; this node carries only identity, display fields and the knowledge-graph hooks (the concepts that cite it).  Specialised by SimulationStudy, which adds the experiments derived from the source. |
+| [StudyDirectory](#tvbo.datamodel.pydantic.StudyDirectory) | One directory in a study layout. ``role`` is the stable key code resolves by: a resolver asks the layout where the ``results`` go and never for a literal path, so moving a directory is a one-line edit to this record. ``bids`` states the directory's standing with the standard, which is what decides whether it needs a ``.bidsignore`` entry, and ``tracked`` states what version control keeps. |
+| [StudyDirectoryRole](#tvbo.datamodel.pydantic.StudyDirectoryRole) | What a directory is for, as a key code resolves paths by. Roles are properties of a study dataset in general, so a layout that renames or moves a directory keeps working without touching the code that reads it. |
+| [StudyFile](#tvbo.datamodel.pydantic.StudyFile) | One file a study layout accounts for. ``name`` may interpolate ``{study}``, the dataset's own name, which is how the entry recipe is named without the layout knowing any particular study. |
+| [StudyFileRole](#tvbo.datamodel.pydantic.StudyFileRole) | What a file at a known place in the layout is. |
+| [StudyLayout](#tvbo.datamodel.pydantic.StudyLayout) | Directory layout of a study dataset, and the single ground truth for it. Everything that creates, resolves, ignores, validates or documents a study's directories reads this record instead of restating the tree, so the layout cannot drift between the scaffolder, the path resolvers, the ignore files, the validator and the docs. The vocabulary deliberately mirrors the BIDS ``rules/directories.yaml`` (``name``, ``level``, ``opaque``, ``subdirs``) so a layout can be diffed against the standard. |
+| [StudyTemplate](#tvbo.datamodel.pydantic.StudyTemplate) | One kind of study the layout accounts for. A template is a *specialisation*: it names the entries a kind adds to the study every kind already shares, and nothing else. The general study is therefore not a template and names none — a kind earns an entry here only once some directory or file genuinely belongs to it and not to the rest. |
+| [Style](#tvbo.datamodel.pydantic.Style) | Layer/panel styling, portable intent plus a namespaced backend passthrough. Reuses Argument for the passthrough (matplotlib implicit in the MVP). |
+| [Subject](#tvbo.datamodel.pydantic.Subject) | A participant in a study. Each subject typically has their own brain network (connectome) and empirical recordings. Corresponds to a BIDS 'sub-' entity. |
+| [SubjectBatchMode](#tvbo.datamodel.pydantic.SubjectBatchMode) | How a multi-subject dataset's per-subject fits are executed. |
+| [Surface](#tvbo.datamodel.pydantic.Surface) | A cortical surface panel's geometry and how a field is painted on it. One object, so the three mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination. |
+| [SurfaceView](#tvbo.datamodel.pydantic.SurfaceView) | Where the camera sits for a cortical surface. Distinct from `VolumeView`: a mesh is viewed from a side of the brain, a volume is sliced along an anatomical axis, and the two vocabularies do not overlap. |
+| [Surrogate](#tvbo.datamodel.pydantic.Surrogate) | A permutation-significance test: re-evaluate a named statistic under n_perm fixed permutations of a field and report the per-element exceedance p-value. General (any permutation null — spatial nulls, FC significance, wave detection, …). Codegen emits ``(vmap(lambda p: stat(field[p]))(perms) <cmp> stat(field)).mean(axis over perms)``; the wrapped statistic is an ordinary symbolic derived variable, so only the permutation fold is structural. |
+| [SweepDirection](#tvbo.datamodel.pydantic.SweepDirection) | Order in which a branch-following sweep (SweepSeeding.from_previous) traverses its axis. Ignored for independent seeding, where order is irrelevant. |
+| [SweepSeeding](#tvbo.datamodel.pydantic.SweepSeeding) | How each point of a parameter sweep (Exploration) obtains its initial state. Determines whether the sweep points are independent (and therefore parallelisable) or whether the trajectory follows a solution branch as the swept parameter is changed quasi-statically. The latter is forward-time-integration branch following — distinct from numerical continuation of equilibria (the Continuation class), which tracks branches with a Newton corrector rather than by simulation. |
+| [SystemType](#tvbo.datamodel.pydantic.SystemType) |  |
+| [Theme](#tvbo.datamodel.pydantic.Theme) | A project's whole look in one declarable object: its colours (inherited from `Palette`) and the geometry a style sheet used to own — tick shape, axis weight, line weights, legend, grid, font. Declared on a figure, it beats every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec, where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:theme/default`; a project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means to fix and nothing else. |
+| [TickDirection](#tvbo.datamodel.pydantic.TickDirection) | Which side of the axes a tick mark is drawn on. |
+| [TickFormat](#tvbo.datamodel.pydantic.TickFormat) | How a tick number is written. |
+| [TickPrune](#tvbo.datamodel.pydantic.TickPrune) | Which end ticks to drop where a corner tick would collide with its neighbour panel's. |
+| [TimeSeries](#tvbo.datamodel.pydantic.TimeSeries) | Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling (BEP034). |
+| [ToolRole](#tvbo.datamodel.pydantic.ToolRole) | Primary function of the tool in a simulation workflow. |
+| [ToolUnit](#tvbo.datamodel.pydantic.ToolUnit) | One TVBO unit as a single tool writes it. |
+| [TrackedContent](#tvbo.datamodel.pydantic.TrackedContent) | What version control keeps of a directory. |
+| [Tractogram](#tvbo.datamodel.pydantic.Tractogram) | Reference to tractography/diffusion MRI data used to derive structural connectivity |
+| [Triangle](#tvbo.datamodel.pydantic.Triangle) | Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as one image. The conventional way to show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for the drawn halves: with the matrix convention (row 0 at top, set invert_y) 'upper' is the top-right triangle. |
+| [TuningObjective](#tvbo.datamodel.pydantic.TuningObjective) | Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB). |
+| [UnitEnum](#tvbo.datamodel.pydantic.UnitEnum) | Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available. |
+| [UpdateRule](#tvbo.datamodel.pydantic.UpdateRule) | Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates. Functions from experiment.functions are available in the equation. |
+| [Volume](#tvbo.datamodel.pydantic.Volume) | A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, same layer and same colour scale, with the geometry coming from an atlas instead of a mesh. Values are placed BY LABEL through the atlas crosswalk, never by array position. |
+| [VolumeView](#tvbo.datamodel.pydantic.VolumeView) | Which anatomical plane a labelled volume is projected along. |
+| [WorkflowConfig](#tvbo.datamodel.pydantic.WorkflowConfig) | Declarative orchestration for rendering a parameter sweep into a distributed, reproducible workflow (Slurm array, Snakemake, Nextflow). Backend- and engine-independent: it names *what* to distribute, *where* results go, and the per-engine resources, while each engine emitter renders the concrete artefact. Declared on a study as ``workflow`` and refined per experiment via ``workflow_overrides``; unset fields fall back to the emitter's defaults so an override sets only what it names. |
+| [WorkflowDistributeBy](#tvbo.datamodel.pydantic.WorkflowDistributeBy) | Default tier a sweep axis is placed on when it is not named explicitly in a DistributionConfig. Vectorized axes are packed into one batched backend call; workflow axes are fanned out into independent scheduler tasks. |
+| [WorkflowEngineConfig](#tvbo.datamodel.pydantic.WorkflowEngineConfig) | Execution directives for a workflow engine. Every field is optional and each engine's emitter consumes the subset it supports, so one block may carry directives for more than one target. The generic resource fields (cpus_per_task, mem, time) map across engines; the remaining fields are named for the engine that reads them (Slurm: partition/account/gres/ mail_*/array_chunk; Snakemake: cores; Nextflow: executor/queue). Any directive not named here is passed through ``options`` verbatim, so the block stays extensible without a schema change. |
+
+### Activity { #tvbo.datamodel.pydantic.Activity }
+
+```python
+datamodel.pydantic.Activity()
+```
+
+One thing that was done: a solve, a fit, an analysis, a render. The PROV complement of ``Provenance``, which describes an artifact — an artifact is ``prov:wasGeneratedBy`` an Activity, and an Activity ``prov:used`` the artifacts and environment it consumed. Slot names follow BEP028's activity record (``Id``, ``Label``, ``Command``, ``AssociatedWith``, ``Used``, ``StartedAtTime``, ``EndedAtTime``) so a record in that vocabulary serializes to it without a translation table.
+
+### Aggregation { #tvbo.datamodel.pydantic.Aggregation }
+
+```python
+datamodel.pydantic.Aggregation()
+```
+
+Specifies how to aggregate values across a dimension. Used for loss functions to define per-element loss with reduction.
+
+### AggregationType { #tvbo.datamodel.pydantic.AggregationType }
+
+```python
+datamodel.pydantic.AggregationType()
+```
+
+How to aggregate time series data
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [first](#tvbo.datamodel.pydantic.AggregationType.first) | First value in window |
+| [first_passage](#tvbo.datamodel.pydantic.AggregationType.first_passage) | First-passage time index (per node): the first sample at which the source crosses the observation's `threshold` parameter (>=), or the sample count if it never crosses. Backend-independent (argmax of the threshold-crossing). Multiply by the sampling step for a time. |
+| [last](#tvbo.datamodel.pydantic.AggregationType.last) | Last value in window |
+| [mean](#tvbo.datamodel.pydantic.AggregationType.mean) | Average over time |
+| [median](#tvbo.datamodel.pydantic.AggregationType.median) | Median over time (per node). Robust to phase-slip / outlier samples that bias the mean. For an Observation.dynamics observer this is computed streaming: a per-node histogram (bins from the observation's `histogram` slot) is folded into the integrator carry and the 0.5 quantile is read at finalize, so no trajectory is held. |
+| [none](#tvbo.datamodel.pydantic.AggregationType.none) | No aggregation |
+| [std](#tvbo.datamodel.pydantic.AggregationType.std) | Standard deviation over time (per node) |
+| [variance](#tvbo.datamodel.pydantic.AggregationType.variance) | Variance over time (per node) |
+| [window](#tvbo.datamodel.pydantic.AggregationType.window) | Sliding window aggregation |
+
+### Algorithm { #tvbo.datamodel.pydantic.Algorithm }
+
+```python
+datamodel.pydantic.Algorithm()
+```
+
+A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives, observations, and hyperparameters.
+
+### AlgorithmCompositionMode { #tvbo.datamodel.pydantic.AlgorithmCompositionMode }
+
+```python
+datamodel.pydantic.AlgorithmCompositionMode()
+```
+
+How an included algorithm is composed with the outer algorithm. Determines whether the inner algorithm's update rules are merged into the same loop (combined) or run as a converging inner loop on each outer iteration (nested).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [combined](#tvbo.datamodel.pydantic.AlgorithmCompositionMode.combined) | The included algorithm's update rules are merged into the outer loop and applied ONCE per outer iteration (1:1). Use when both algorithms update at the same cadence on the same observations. This is the default. |
+| [nested](#tvbo.datamodel.pydantic.AlgorithmCompositionMode.nested) | The included algorithm runs as a full inner loop on EACH outer iteration, re-converging before the outer update rules are applied. Use when the inner algorithm maintains an invariant the outer one would otherwise perturb — e.g. FIC holding the E-I working point (mean S_e = 0.25) while EIB retunes per-edge coupling. The outer update's validity depends on that invariant, so the inner loop must re-settle it between every outer step. |
+
+### AlgorithmInclude { #tvbo.datamodel.pydantic.AlgorithmInclude }
+
+```python
+datamodel.pydantic.AlgorithmInclude()
+```
+
+Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different hyperparameter values.
+
+### AlgorithmStage { #tvbo.datamodel.pydantic.AlgorithmStage }
+
+```python
+datamodel.pydantic.AlgorithmStage()
+```
+
+One stage of a multi-stage tuning schedule. The algorithm body runs once per stage, in order, each stage overriding n_iterations and selected hyperparameters — so a schedule can anneal a learning rate or widen an estimation window as tuning proceeds.
+
+### Analysis { #tvbo.datamodel.pydantic.Analysis }
+
+```python
+datamodel.pydantic.Analysis()
+```
+
+A quantity obtained by ANALYZING something — a model, its solve, a derived loss, simulated results, or empirical data — rather than by transforming a recorded trajectory. Nothing here requires a model: decomposing empirical maps into a basis, taking their spectrum, or running a permutation test over measured data are analyses in exactly this sense, and so are parameter sensitivities/gradients (autodiff or finite-difference), stability spectra (Lyapunov), bifurcation quantities, identifiability metrics, and reductions spanning several experiments.
+It is an invocation (``is_a: FunctionCall``) with two mutually exclusive ways of saying WHAT is analyzed, the same alternative-specification idiom ``Parameter`` uses for provenance:
+- **the solve** — ``type`` names the analysis (a free string, extensible;
+  the vocabulary lives in the ontology as AnalysisObservable concepts rather
+  than a closed enum), ``target`` and ``wrt`` bind it to what is analyzed and
+  with respect to what, and ``parameters`` configures it. Evaluated as part
+  of the integration, so it is emitted by the same codegen and limited to
+  what that backend can trace. Declared on ``Observation.analysis``.
+
+- **saved data** — ``callable`` (or ``class_call``) invoked with
+  ``arguments``, each a literal ``value`` or a ``used:`` DataRef reading an
+  experiment, another analysis, or a dataset. The data need not be simulated:
+  this is equally the form for analysing empirical maps, an atlas, or a
+  measured connectome. Because it consumes containers rather than a running
+  solve, it is scheduled on its own — before or after the experiments,
+  according to what it uses. Declared in ``SimulationStudy.analyses``, where
+  the result is persisted as its own container
+  (``derivatives/tvbo/ana-<name>_result.h5``) — which is what lets a figure bind it
+  with ``used: {analysis: <name>}`` exactly as it binds a run, and why a study
+  needs no driver script for its non-simulation figures. ``name`` is then
+  required and unique, since it keys that container. The invocation yields a
+  mapping of name -> labelled array (or one array, keyed by the analysis
+  name); each key becomes an ``observation__<key>`` data-variable keeping its
+  dims and coordinates, so a figure ``encoding`` can name them.
+
+Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: which backend renders it, at what precision, on which accelerator. That states a requirement, not a mechanism — the same analysis is renderable by more than one backend, and one that cannot render it says so rather than silently substituting another.
+
+### Animation { #tvbo.datamodel.pydantic.Animation }
+
+```python
+datamodel.pydantic.Animation()
+```
+
+A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the frames advance along the axis the spec means rather than along whatever happens to be axis 0; and because the frame is the same mosaic the still would draw, an animated figure and its still cannot disagree about what they show.
+
+### Annotation { #tvbo.datamodel.pydantic.Annotation }
+
+```python
+datamodel.pydantic.Annotation()
+```
+
+A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it.
+
+### ArchiveConfig { #tvbo.datamodel.pydantic.ArchiveConfig }
+
+```python
+datamodel.pydantic.ArchiveConfig()
+```
+
+How a study packages its run into a COMBINE/OMEX archive: the output location and format, plus any extra files to include beyond the recipes, derived containers, figures and manifest added automatically.
+
+### Argument { #tvbo.datamodel.pydantic.Argument }
+
+```python
+datamodel.pydantic.Argument()
+```
+
+A function argument with explicit value specification. A value is either ``value`` (a literal / array / local reference) or ``used`` (a labelled array sourced from another experiment or dataset); the two are mutually exclusive. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key). A bare scalar is the value, as it is for a Parameter: ``sel: {variable: phi}`` and ``opts: {xlabel: "time (s)"}`` mean ``{value: …}``, which is how both are written throughout the docs.
+
+### Assignment { #tvbo.datamodel.pydantic.Assignment }
+
+```python
+datamodel.pydantic.Assignment()
+```
+
+One step of a sequential recurrence: the expression assigned to a target name. Sequential rather than simultaneous — a later step's expression sees the value the steps above it assigned — which is what lets a reducer's update be authored as ordinary arithmetic instead of with `new_*` temporaries. Authored terse as a `[target, expression]` pair and lifted to this form on load.
+
+### AxisReduction { #tvbo.datamodel.pydantic.AxisReduction }
+
+```python
+datamodel.pydantic.AxisReduction()
+```
+
+Marks an exploration/sweep axis to be collapsed by a statistic in the result container. When set on an ExplorationAxis, that axis's named grid dimension is reduced across every observation that carries it (e.g. an `execution.random_seed` trial ensemble becomes a first-class reduced observation). Backend-independent: states the reduction intent; the result layer applies it by dimension name.
+
+### AxisReductionStatistic { #tvbo.datamodel.pydantic.AxisReductionStatistic }
+
+```python
+datamodel.pydantic.AxisReductionStatistic()
+```
+
+Statistic used to collapse an exploration/sweep axis into a single reduced value in the result container (see ExplorationAxis.reduce). Applied across the named grid dimension of every observation that carries it.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [mean](#tvbo.datamodel.pydantic.AxisReductionStatistic.mean) | Arithmetic mean across the axis. |
+| [median](#tvbo.datamodel.pydantic.AxisReductionStatistic.median) | Median across the axis. |
+| [sem](#tvbo.datamodel.pydantic.AxisReductionStatistic.sem) | Standard error of the mean: std across the axis divided by sqrt(n). |
+| [std](#tvbo.datamodel.pydantic.AxisReductionStatistic.std) | Standard deviation across the axis. |
+| [sum](#tvbo.datamodel.pydantic.AxisReductionStatistic.sum) | Sum across the axis. |
+
+### AxisScale { #tvbo.datamodel.pydantic.AxisScale }
+
+```python
+datamodel.pydantic.AxisScale()
+```
+
+How an axis maps values to distance. Part of what a panel claims, not decoration: a straight line on a log axis is a power law, and the same points on a linear axis are not.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [linear](#tvbo.datamodel.pydantic.AxisScale.linear) | Equal value, equal distance. |
+| [log](#tvbo.datamodel.pydantic.AxisScale.log) | Equal ratio, equal distance. Refuses non-positive data. |
+| [logit](#tvbo.datamodel.pydantic.AxisScale.logit) | For a probability: stretches both ends of [0, 1] so behaviour near 0 and 1 is visible. |
+| [symlog](#tvbo.datamodel.pydantic.AxisScale.symlog) | Logarithmic either side of zero, linear across it, so a quantity that changes sign still spans decades. |
+
+### AxisSide { #tvbo.datamodel.pydantic.AxisSide }
+
+```python
+datamodel.pydantic.AxisSide()
+```
+
+Which edge of the axes a label or tick row sits on.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [bottom](#tvbo.datamodel.pydantic.AxisSide.bottom) | The bottom edge. |
+| [left](#tvbo.datamodel.pydantic.AxisSide.left) | The left edge. |
+| [right](#tvbo.datamodel.pydantic.AxisSide.right) | The right edge. |
+| [top](#tvbo.datamodel.pydantic.AxisSide.top) | The top edge. |
+
+### BarOrientation { #tvbo.datamodel.pydantic.BarOrientation }
+
+```python
+datamodel.pydantic.BarOrientation()
+```
+
+Which way a colour bar runs.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [horizontal](#tvbo.datamodel.pydantic.BarOrientation.horizontal) | Flat, under or over the panel. |
+| [vertical](#tvbo.datamodel.pydantic.BarOrientation.vertical) | Upright, beside the panel. |
+
+### BidsDatasetType { #tvbo.datamodel.pydantic.BidsDatasetType }
+
+```python
+datamodel.pydantic.BidsDatasetType()
+```
+
+BIDS ``DatasetType``: how a dataset is to be interpreted. ``study`` has been in the released standard since BIDS 1.10.1 and is the type a simulation study takes.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [derivative](#tvbo.datamodel.pydantic.BidsDatasetType.derivative) | Data computed from another dataset. |
+| [raw](#tvbo.datamodel.pydantic.BidsDatasetType.raw) | Unprocessed acquired data. |
+| [study](#tvbo.datamodel.pydantic.BidsDatasetType.study) | A dataset that organises the material of one study: its inputs under ``sourcedata/``, its outputs under ``derivatives/``, its prose under ``docs/``. |
+
+### BidsDirectoryStatus { #tvbo.datamodel.pydantic.BidsDirectoryStatus }
+
+```python
+datamodel.pydantic.BidsDirectoryStatus()
+```
+
+A directory's standing with the BIDS standard, which is what decides whether it needs a ``.bidsignore`` entry.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [hidden](#tvbo.datamodel.pydantic.BidsDirectoryStatus.hidden) | Dot-prefixed, so validators skip it by convention and no ``.bidsignore`` entry is needed. |
+| [nested_dataset](#tvbo.datamodel.pydantic.BidsDirectoryStatus.nested_dataset) | A BIDS dataset in its own right, carrying its own ``dataset_description.json`` and validated as that type. |
+| [proposed](#tvbo.datamodel.pydantic.BidsDirectoryStatus.proposed) | Named only by a BEP still under review, so a released validator does not know it. Ignored until the BEP merges, which ``expires_with`` records. |
+| [sanctioned](#tvbo.datamodel.pydantic.BidsDirectoryStatus.sanctioned) | Named in the released BIDS ``rules/directories.yaml`` for this ``DatasetType``. Needs no ``.bidsignore`` entry. |
+| [unsanctioned](#tvbo.datamodel.pydantic.BidsDirectoryStatus.unsanctioned) | Outside the BIDS vocabulary. Must be listed in ``.bidsignore``, and ``expires_with`` must say what would retire the entry. |
+
+### BidsEntities { #tvbo.datamodel.pydantic.BidsEntities }
+
+```python
+datamodel.pydantic.BidsEntities()
+```
+
+BIDS filename entities (BEP017-aligned) for provenance and data discovery. Reusable on Network, BrainAtlas, Tractogram, or any dataset with BIDS-conformant naming.
+
+### Binding { #tvbo.datamodel.pydantic.Binding }
+
+```python
+datamodel.pydantic.Binding()
+```
+
+Per-backend construction binding for a GraphGenerator: how to build the graph in a specific target library.  Keyed by backend id — the ``name`` is the backend (e.g. python, julia, networkx).
+
+### BoundaryCondition { #tvbo.datamodel.pydantic.BoundaryCondition }
+
+```python
+datamodel.pydantic.BoundaryCondition()
+```
+
+
+
+### BoundaryConditionType { #tvbo.datamodel.pydantic.BoundaryConditionType }
+
+```python
+datamodel.pydantic.BoundaryConditionType()
+```
+
+
+
+### BrainAtlas { #tvbo.datamodel.pydantic.BrainAtlas }
+
+```python
+datamodel.pydantic.BrainAtlas()
+```
+
+A schema for representing a version of a brain atlas.
+
+### BrainRegionSeries { #tvbo.datamodel.pydantic.BrainRegionSeries }
+
+```python
+datamodel.pydantic.BrainRegionSeries()
+```
+
+A series whose values represent latitude
+
+### BranchSwitch { #tvbo.datamodel.pydantic.BranchSwitch }
+
+```python
+datamodel.pydantic.BranchSwitch()
+```
+
+Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says: "from which special point on the parent branch, continue what kind of object, with what settings." Override parent solver settings via the inline continuation field — only explicitly set attributes take effect; everything else is inherited from the parent Continuation.
+
+### CachedArray { #tvbo.datamodel.pydantic.CachedArray }
+
+```python
+datamodel.pydantic.CachedArray()
+```
+
+One numeric array inside a cached-result ``.h5`` companion, described by name, shape and dtype so a reader can check the layout it expects without opening the file.
+
+### Callable { #tvbo.datamodel.pydantic.Callable }
+
+```python
+datamodel.pydantic.Callable()
+```
+
+
+
+### Camera { #tvbo.datamodel.pydantic.Camera }
+
+```python
+datamodel.pydantic.Camera()
+```
+
+Where a 3-D panel is looked at from. Only a `line3d` panel or a surface reads it; every other kind ignores it. Stated as a class rather than three loose options because a viewpoint is one thing, and a figure that states two of its three numbers is under-specified in a way nothing else would catch.
+
+### ClassReference { #tvbo.datamodel.pydantic.ClassReference }
+
+```python
+datamodel.pydantic.ClassReference()
+```
+
+Reference to a class that can be instantiated and called. Used for external library classes (e.g., tvboptim.Bold, custom monitors). The class is instantiated with constructor_args, then called with call_args. Generalizable pattern: works for tvboptim, TVB, or any Python class.
+
+### ClinicalImprovement { #tvbo.datamodel.pydantic.ClinicalImprovement }
+
+```python
+datamodel.pydantic.ClinicalImprovement()
+```
+
+Relative improvement on a defined clinical score.
+
+### ClinicalScale { #tvbo.datamodel.pydantic.ClinicalScale }
+
+```python
+datamodel.pydantic.ClinicalScale()
+```
+
+A clinical assessment inventory or structured scale composed of multiple scores or items.
+
+### ClinicalScore { #tvbo.datamodel.pydantic.ClinicalScore }
+
+```python
+datamodel.pydantic.ClinicalScore()
+```
+
+Metadata about a clinical score or scale.
+
+### CodeSource { #tvbo.datamodel.pydantic.CodeSource }
+
+```python
+datamodel.pydantic.CodeSource()
+```
+
+Location of a recipe's callable code so the specification is decoupled from where the code lives. Either a local directory or a git repository; the resolved directory (optionally a ``subdir`` within it) is placed on the import path at load time so ``module:`` references resolve by bare name. ``path`` and ``git`` are mutually exclusive.
+
+### ColorScale { #tvbo.datamodel.pydantic.ColorScale }
+
+```python
+datamodel.pydantic.ColorScale()
+```
+
+How values become colours, and where the scale starts and stops. Shared by everything that paints a field rather than drawing marks — a colour bar, a cortical surface, a labelled volume, a connectome — so the same question is answered with the same words wherever it is asked, and a limit means the same thing on all four. Every slot here reaches all four; a scale concern only one of them can answer is declared on that one, which is why `center` sits on `Colorbar`.
+
+### Colorbar { #tvbo.datamodel.pydantic.Colorbar }
+
+```python
+datamodel.pydantic.Colorbar()
+```
+
+The colour scale a panel prints beside its field. Declared as one object because nine loose `colorbar_*` options were nine chances to style a bar that is not drawn, and because a tick list written in an options bag is not a list of numbers to anything that reads it.
+
+A heatmap carries one unasked, since it is unreadable without one; a scatter shaded by a third quantity asks with `show: true`, because a row of them conventionally shares ONE bar. `kind: colorbar` is the standalone form — a bar occupying its own cell of the mosaic, keying the panels around it, and the only case that states its own `colormap` and limits rather than taking them from the field it sits beside.
+
+### Colormaps { #tvbo.datamodel.pydantic.Colormaps }
+
+```python
+datamodel.pydantic.Colormaps()
+```
+
+Continuous colour scales, by key: anything ordinal or continuous draws from one of these, anything categorical draws from `Palette.palette`, and an ordinal scale drawn as discrete swatches samples one rather than picking hues that imply no order. A value is either a registered colormap name (`viridis`) or the list of colours to ramp between (`['#000000', '#ffffff']`). The namespace is open — a project adds its own keys for the scales it distinguishes (`bold: viridis, meg: plasma, eeg: cividis`) and names them anywhere a colormap is named. `sequential` and `diverging` are the two the renderer reaches for on its own, so they are typed here and always present: a project that declares neither still has both. An open namespace cannot catch a misspelt key — `sequentiel` is read as a project key, not as a typo — which is the price of letting a project name its own scales. A key that shadows a registered colormap name is refused, so a name cannot mean two things at once.
+
+### CommonCoordinateSpace { #tvbo.datamodel.pydantic.CommonCoordinateSpace }
+
+```python
+datamodel.pydantic.CommonCoordinateSpace()
+```
+
+A schema for representing a version of a common coordinate space.
+
+### ComparisonOperator { #tvbo.datamodel.pydantic.ComparisonOperator }
+
+```python
+datamodel.pydantic.ComparisonOperator()
+```
+
+Comparison used by a `stochastic_mask` step. Named rather than written as an operator so the step stays metadata: `!=` in particular cannot survive expression parsing (it evaluates to a plain boolean).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [ge](#tvbo.datamodel.pydantic.ComparisonOperator.ge) | greater than or equal (>=) |
+| [gt](#tvbo.datamodel.pydantic.ComparisonOperator.gt) | strictly greater than (>) |
+| [le](#tvbo.datamodel.pydantic.ComparisonOperator.le) | less than or equal (<=) |
+| [lt](#tvbo.datamodel.pydantic.ComparisonOperator.lt) | strictly less than (<) |
+
+### ConditionalBlock { #tvbo.datamodel.pydantic.ConditionalBlock }
+
+```python
+datamodel.pydantic.ConditionalBlock()
+```
+
+A single condition and its corresponding equation segment.
+
+### ConfiguredBaseModel { #tvbo.datamodel.pydantic.ConfiguredBaseModel }
+
+```python
+datamodel.pydantic.ConfiguredBaseModel()
+```
+
+
+
+### ConnectivityRule { #tvbo.datamodel.pydantic.ConnectivityRule }
+
+```python
+datamodel.pydantic.ConnectivityRule()
+```
+
+Rule for expanding a population-level Edge into individual cell-to-cell connections. Names a connectivity pattern between the source and target populations so a network of populations declares its projections once, without enumerating every connection; each backend expands the rule into its native connection set (e.g. the NeuroML exporter emits one <projection> with size_src x size_tgt <connection> elements). Backend-independent: it states the connectivity pattern, not how any simulator stores it.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [all_to_all](#tvbo.datamodel.pydantic.ConnectivityRule.all_to_all) | Fully connected projection: every source cell connects to every target cell. For a self-projection (same source and target population) the diagonal i->i is governed by the Edge's allow_self_connections flag. |
+| [one_to_one](#tvbo.datamodel.pydantic.ConnectivityRule.one_to_one) | Index-aligned projection: source cell i connects to target cell i (min of the two population sizes). |
+| [random](#tvbo.datamodel.pydantic.ConnectivityRule.random) | Sparse random projection (fixed-probability Erdos-Renyi): each of the size_src x size_tgt possible connections is present independently with probability given by the Edge's `connection_probability` parameter (in `Edge.parameters`, alongside `weight`). For a self-projection the diagonal i->i is governed by Edge.allow_self_connections. A backend that only supports dense projections may reject this rule rather than approximate it. |
+
+### Contact { #tvbo.datamodel.pydantic.Contact }
+
+```python
+datamodel.pydantic.Contact()
+```
+
+Individual contact on a DBS electrode.
+
+### Continuation { #tvbo.datamodel.pydantic.Continuation }
+
+```python
+datamodel.pydantic.Continuation()
+```
+
+Complete specification of a numerical continuation / bifurcation analysis. All universal solver settings live directly here. Toolkit-specific string options go in the options slot. When used inside a BranchSwitch, only explicitly set attributes override the parent's values.
+
+### ContinuationAlgorithm { #tvbo.datamodel.pydantic.ContinuationAlgorithm }
+
+```python
+datamodel.pydantic.ContinuationAlgorithm()
+```
+
+Predictor-corrector algorithm for numerical continuation.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [MoorePenrose](#tvbo.datamodel.pydantic.ContinuationAlgorithm.MoorePenrose) | Moore-Penrose continuation. |
+| [Natural](#tvbo.datamodel.pydantic.ContinuationAlgorithm.Natural) | Natural parameter continuation. Simple parameter stepping, no arc-length constraint. |
+| [PALC](#tvbo.datamodel.pydantic.ContinuationAlgorithm.PALC) | Pseudo-arclength continuation (default). Uses weighted dot product constraint. |
+
+### Coordinate { #tvbo.datamodel.pydantic.Coordinate }
+
+```python
+datamodel.pydantic.Coordinate()
+```
+
+A 3D coordinate with X, Y, Z values.
+
+### Corner { #tvbo.datamodel.pydantic.Corner }
+
+```python
+datamodel.pydantic.Corner()
+```
+
+A named corner for placing a panel number inside its axes — the four corners bsplot's add_panel_number anchors to. An enum so a typo is a validation error, not a silent fallback to the default corner.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [lower_left](#tvbo.datamodel.pydantic.Corner.lower_left) | Bottom-left. |
+| [lower_right](#tvbo.datamodel.pydantic.Corner.lower_right) | Bottom-right. |
+| [upper_left](#tvbo.datamodel.pydantic.Corner.upper_left) | Top-left inside the axes (the bsplot default). |
+| [upper_right](#tvbo.datamodel.pydantic.Corner.upper_right) | Top-right (many journals; Taher Fig 5). |
+
+### Coupling { #tvbo.datamodel.pydantic.Coupling }
+
+```python
+datamodel.pydantic.Coupling()
+```
+
+
+
+### CouplingInput { #tvbo.datamodel.pydantic.CouplingInput }
+
+```python
+datamodel.pydantic.CouplingInput()
+```
+
+Specification of a coupling input channel for multi-coupling dynamics
+
+### CouplingStageEvaluation { #tvbo.datamodel.pydantic.CouplingStageEvaluation }
+
+```python
+datamodel.pydantic.CouplingStageEvaluation()
+```
+
+How the network coupling term is evaluated within one step of a multi-stage integrator (Heun, RK4, ...). A backend-neutral numerical contract: whether the coupling is part of the vector field, re-evaluated at each solver stage, or computed once per step and held constant across the stages. Matters because the two choices integrate a different effective system — for stiff / chaotic / multistable dynamics they can converge to different trajectories or attractors.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [per_stage](#tvbo.datamodel.pydantic.CouplingStageEvaluation.per_stage) | Re-evaluate the coupling at every integrator stage — the coupling is a full part of the vector field (standard ODE integration). Accurate; required to reproduce reference integrators for stiff / chaotic / multistable systems. (tvboptim maps this to recompute_coupling_per_stage=True; diffrax already recomputes the whole RHS per stage.) |
+| [per_step](#tvbo.datamodel.pydantic.CouplingStageEvaluation.per_step) | Evaluate the coupling once per integration step and hold it constant across the stages — a TVB-style efficiency shortcut (the coupling reduction runs once per step). Faster but lower- order in the coupling; can change the trajectory for sensitive systems. (tvboptim: recompute_coupling_per_stage=False, the current backend default.) |
+
+### DBSDataset { #tvbo.datamodel.pydantic.DBSDataset }
+
+```python
+datamodel.pydantic.DBSDataset()
+```
+
+Collection of data related to a specific DBS study.
+
+### DBSProtocol { #tvbo.datamodel.pydantic.DBSProtocol }
+
+```python
+datamodel.pydantic.DBSProtocol()
+```
+
+A protocol describing DBS therapy, potentially bilateral or multi-lead.
+
+### DBSSubject { #tvbo.datamodel.pydantic.DBSSubject }
+
+```python
+datamodel.pydantic.DBSSubject()
+```
+
+Human or animal subject receiving DBS.
+
+### DataRef { #tvbo.datamodel.pydantic.DataRef }
+
+```python
+datamodel.pydantic.DataRef()
+```
+
+A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container reference primitive (a PROV entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study experiment id, resolved like ``initial_state.source_experiment``), ``analysis`` (an in-study analysis name), or the full ``iri`` (a curated / result / external pointer); at most one. WHICH is ``output`` (a recorded variable, ``observation__<name>``, ``estimate__<param>``, or external variable). SLICE is ``sel`` (label-keyed ``.sel``, never positional). ``reconcile`` optionally aligns the sourced array to the consuming network's node order by label. One model reused by figure layers (``Layer.used``), sourced arguments (``Argument.used``) and sourced parameters (``Parameter.used``), so data binding, cross-experiment sourcing and PROV provenance are the same edge. A sourced array is resolved lazily and never inlined into generated code.
+
+### DataSource { #tvbo.datamodel.pydantic.DataSource }
+
+```python
+datamodel.pydantic.DataSource()
+```
+
+Specification for loading external/empirical data.
+
+### Dataset { #tvbo.datamodel.pydantic.Dataset }
+
+```python
+datamodel.pydantic.Dataset()
+```
+
+A collection of subjects for a multi-subject study. Provides the subject/session structure needed for workflow rendering. Optionally backed by a BIDS directory layout.
+
+### DerivedParameter { #tvbo.datamodel.pydantic.DerivedParameter }
+
+```python
+datamodel.pydantic.DerivedParameter()
+```
+
+
+
+### DerivedVariable { #tvbo.datamodel.pydantic.DerivedVariable }
+
+```python
+datamodel.pydantic.DerivedVariable()
+```
+
+
+
+### DevelopmentStatus { #tvbo.datamodel.pydantic.DevelopmentStatus }
+
+```python
+datamodel.pydantic.DevelopmentStatus()
+```
+
+Development status of the software. Based on repostatus.org categories.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [active](#tvbo.datamodel.pydantic.DevelopmentStatus.active) | Actively developed with regular releases. |
+| [concept](#tvbo.datamodel.pydantic.DevelopmentStatus.concept) | Minimal or no implementation; ideas / prototypes. |
+| [inactive](#tvbo.datamodel.pydantic.DevelopmentStatus.inactive) | No longer actively developed; may still work. |
+| [moved](#tvbo.datamodel.pydantic.DevelopmentStatus.moved) | Project has been moved to a different location. |
+| [suspended](#tvbo.datamodel.pydantic.DevelopmentStatus.suspended) | Development paused; may resume in future. |
+| [unsupported](#tvbo.datamodel.pydantic.DevelopmentStatus.unsupported) | Released but no longer supported. |
+| [wip](#tvbo.datamodel.pydantic.DevelopmentStatus.wip) | Work in progress; not yet feature-complete. |
+
+### DifferentialOperator { #tvbo.datamodel.pydantic.DifferentialOperator }
+
+```python
+datamodel.pydantic.DifferentialOperator()
+```
+
+
+
+### Differentiation { #tvbo.datamodel.pydantic.Differentiation }
+
+```python
+datamodel.pydantic.Differentiation()
+```
+
+Backend-neutral configuration for how gradients are propagated through the temporal integration. Expressed in physical/semantic terms; each backend maps it to its own mechanism (JAX solver grad_horizon / block_size, Julia adjoint sensitivity, ...). Backends without autodiff (e.g. MATLAB) emit a comment noting differentiation is unsupported and proceed with the plain forward integration -- they do not raise.
+
+### Digest { #tvbo.datamodel.pydantic.Digest }
+
+```python
+datamodel.pydantic.Digest()
+```
+
+One checksum of an artifact, keyed by the function that produced it. Collected on ``Provenance.digest``, whose collection KEY is the function name — BEP028 takes the names ``MD5``, ``SHA1``, ``SHA-256`` and the rest of that list, and allows an arbitrary label otherwise. Keyed rather than a bare string so an artifact can carry several digests and a reader knows which function to check with.
+
+### DimensionType { #tvbo.datamodel.pydantic.DimensionType }
+
+```python
+datamodel.pydantic.DimensionType()
+```
+
+Dimensions along which operations can be applied
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [batch](#tvbo.datamodel.pydantic.DimensionType.batch) | Batch dimension (for parallel processing) |
+| [frequency](#tvbo.datamodel.pydantic.DimensionType.frequency) | Frequency dimension (spectral analysis) |
+| [mode](#tvbo.datamodel.pydantic.DimensionType.mode) | Mode dimension (e.g., coupling modes) |
+| [node](#tvbo.datamodel.pydantic.DimensionType.node) | Network node dimension (general graph term) |
+| [region](#tvbo.datamodel.pydantic.DimensionType.region) | Spatial/regional dimension (alias for node in brain networks) |
+| [sample](#tvbo.datamodel.pydantic.DimensionType.sample) | Sample/trial/realization dimension |
+| [state](#tvbo.datamodel.pydantic.DimensionType.state) | State variable dimension |
+| [time](#tvbo.datamodel.pydantic.DimensionType.time) | Temporal dimension |
+
+### Discretization { #tvbo.datamodel.pydantic.Discretization }
+
+```python
+datamodel.pydantic.Discretization()
+```
+
+Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits, quasi-periodic tori). Specifies the method; method-specific numerics go in parameters.
+
+### DiscretizationMethod { #tvbo.datamodel.pydantic.DiscretizationMethod }
+
+```python
+datamodel.pydantic.DiscretizationMethod()
+```
+
+
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [FDM](#tvbo.datamodel.pydantic.DiscretizationMethod.FDM) | Finite Difference Method |
+| [FEM](#tvbo.datamodel.pydantic.DiscretizationMethod.FEM) | Finite Element Method |
+| [FVM](#tvbo.datamodel.pydantic.DiscretizationMethod.FVM) | Finite Volume Method |
+
+### Distribution { #tvbo.datamodel.pydantic.Distribution }
+
+```python
+datamodel.pydantic.Distribution()
+```
+
+A probability distribution for sampling parameters or initial conditions. Standard distributions (Uniform, Gaussian) are specified by name and domain/parameters. Custom distributions use a Function for the PDF/sampling rule. Default name is Uniform when only domain is given.
+
+### DistributionConfig { #tvbo.datamodel.pydantic.DistributionConfig }
+
+```python
+datamodel.pydantic.DistributionConfig()
+```
+
+Policy for mapping a parameter sweep's exploration axes onto the two parallelism tiers when rendering a distributed workflow. Vectorized axes are packed into a single batched backend call (e.g. vmap/pmap); workflow axes are fanned out into independent scheduler tasks, one per value combination. Backend-independent: the emitter validates that a requested vectorized axis is one the chosen backend can actually batch.
+
+### DomainEnforcement { #tvbo.datamodel.pydantic.DomainEnforcement }
+
+```python
+datamodel.pydantic.DomainEnforcement()
+```
+
+Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means the domain is descriptive metadata only (expected range, plot limits, initial- condition sampling support) and never alters the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap`` opt in to active enforcement using the domain's ``lo``/``hi``.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [clamp](#tvbo.datamodel.pydantic.DomainEnforcement.clamp) | Hard-clip every integration step to [lo, hi]. |
+| [none](#tvbo.datamodel.pydantic.DomainEnforcement.none) | Metadata only; the trajectory is never constrained (default). |
+| [wrap](#tvbo.datamodel.pydantic.DomainEnforcement.wrap) | Periodic wrap into [lo, hi) — e.g. a phase variable on [0, 2π). The recorded timeseries stays within the range while remaining continuous mod (hi - lo)." |
+
+### Dynamics { #tvbo.datamodel.pydantic.Dynamics }
+
+```python
+datamodel.pydantic.Dynamics()
+```
+
+
+
+### EField { #tvbo.datamodel.pydantic.EField }
+
+```python
+datamodel.pydantic.EField()
+```
+
+Simulated electric field from DBS modeling.
+
+### EcosystemEnum { #tvbo.datamodel.pydantic.EcosystemEnum }
+
+```python
+datamodel.pydantic.EcosystemEnum()
+```
+
+Package ecosystem or registry the software is distributed through.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [bioconda](#tvbo.datamodel.pydantic.EcosystemEnum.bioconda) | Bioinformatics Conda channel. |
+| [conda_forge](#tvbo.datamodel.pydantic.EcosystemEnum.conda_forge) | Conda-Forge community channel. |
+| [cran](#tvbo.datamodel.pydantic.EcosystemEnum.cran) | Comprehensive R Archive Network. |
+| [docker](#tvbo.datamodel.pydantic.EcosystemEnum.docker) | Docker container registry / image distribution. |
+| [github](#tvbo.datamodel.pydantic.EcosystemEnum.github) | Distributed via GitHub releases. |
+| [julia_registry](#tvbo.datamodel.pydantic.EcosystemEnum.julia_registry) | Julia General package registry. |
+| [maven](#tvbo.datamodel.pydantic.EcosystemEnum.maven) | Maven Central Repository (Java). |
+| [npm](#tvbo.datamodel.pydantic.EcosystemEnum.npm) | Node Package Manager registry. |
+| [pypi](#tvbo.datamodel.pydantic.EcosystemEnum.pypi) | Python Package Index. |
+
+### Edge { #tvbo.datamodel.pydantic.Edge }
+
+```python
+datamodel.pydantic.Edge()
+```
+
+An edge in a network. Three modes: explicit (source+target set, scalar parameters in YAML), template (no source/target, N×N matrix measure in HDF5), or produced (a `producer:` computes the whole matrix from the spec's own inputs, so no pre-built file is needed). All coexist in the same edges list.
+
+### Electrode { #tvbo.datamodel.pydantic.Electrode }
+
+```python
+datamodel.pydantic.Electrode()
+```
+
+Implanted DBS electrode and contact geometry.
+
+### ElementType { #tvbo.datamodel.pydantic.ElementType }
+
+```python
+datamodel.pydantic.ElementType()
+```
+
+
+
+### Encoding { #tvbo.datamodel.pydantic.Encoding }
+
+```python
+datamodel.pydantic.Encoding()
+```
+
+Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel may later accept a scale object without breaking this string form.
+
+### EnvironmentType { #tvbo.datamodel.pydantic.EnvironmentType }
+
+```python
+datamodel.pydantic.EnvironmentType()
+```
+
+
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [conda](#tvbo.datamodel.pydantic.EnvironmentType.conda) | Conda environment. |
+| [docker](#tvbo.datamodel.pydantic.EnvironmentType.docker) | Docker container. |
+| [singularity](#tvbo.datamodel.pydantic.EnvironmentType.singularity) | Singularity/Apptainer container. |
+| [venv](#tvbo.datamodel.pydantic.EnvironmentType.venv) | Python virtual environment. |
+
+### EnvironmentVariable { #tvbo.datamodel.pydantic.EnvironmentVariable }
+
+```python
+datamodel.pydantic.EnvironmentVariable()
+```
+
+One environment variable assignment exported before executing the workflow task command. Use this for reproducible runtime knobs such as XLA/OMP settings in emitted workflow artefacts.
+
+### Equation { #tvbo.datamodel.pydantic.Equation }
+
+```python
+datamodel.pydantic.Equation()
+```
+
+
+
+### Event { #tvbo.datamodel.pydantic.Event }
+
+```python
+datamodel.pydantic.Event()
+```
+
+A discrete or continuous event that modifies the system during simulation. Generalizes Stimulus: can represent external inputs (stimulus type), threshold-triggered state changes (continuous/discrete type), or time-scheduled interventions (preset_time type). Attaches to components (nodes/edges) or to the experiment level.
+
+### EventType { #tvbo.datamodel.pydantic.EventType }
+
+```python
+datamodel.pydantic.EventType()
+```
+
+Type of event triggering mechanism.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [continuous](#tvbo.datamodel.pydantic.EventType.continuous) | Triggered when condition function crosses zero (root-finding). Maps to ContinuousCallback / ContinuousComponentCallback. |
+| [discrete](#tvbo.datamodel.pydantic.EventType.discrete) | Triggered when condition function returns true (checked at each step). Maps to DiscreteCallback / DiscreteComponentCallback. |
+| [preset_time](#tvbo.datamodel.pydantic.EventType.preset_time) | Triggered at predetermined time points. Maps to PresetTimeCallback / PresetTimeComponentCallback. |
+| [stimulation](#tvbo.datamodel.pydantic.EventType.stimulation) | Synonym of 'stimulus' — a continuous time-dependent input signal injected into a target state variable across target regions. The codegen treats 'stimulation' and 'stimulus' identically. |
+| [stimulus](#tvbo.datamodel.pydantic.EventType.stimulus) | Continuous time-dependent input signal (e.g., external current). Legacy Stimulus behavior. |
+
+### ExecutionConfig { #tvbo.datamodel.pydantic.ExecutionConfig }
+
+```python
+datamodel.pydantic.ExecutionConfig()
+```
+
+Configuration for computational execution (parallelization, precision, hardware).
+
+### ExperimentResultSidecar { #tvbo.datamodel.pydantic.ExperimentResultSidecar }
+
+```python
+datamodel.pydantic.ExperimentResultSidecar()
+```
+
+Descriptor for a cached ``ExperimentResult``: the ``.h5`` companion holding the fitted parameter arrays, one ``CachedArray`` entry per array, and the provenance a downstream cache needs to decide whether the result is still valid. Written by ``tvbo.data.experiment_result_io.save_sidecar``, so it is generated rather than authored — but it is self-describing (it carries a ``tvbo_class`` envelope naming this class), which is what lets ``tvbo validate schema`` check a generated sidecar instead of falling back to some unrelated class and failing on its required slots.
+
+### Exploration { #tvbo.datamodel.pydantic.Exploration }
+
+```python
+datamodel.pydantic.Exploration()
+```
+
+Parameter space exploration (grid search, sweep).
+
+### ExplorationAxis { #tvbo.datamodel.pydantic.ExplorationAxis }
+
+```python
+datamodel.pydantic.ExplorationAxis()
+```
+
+One axis of a parameter exploration grid. Points to an existing Parameter (by dotted reference, e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and supplies the sweep specification (domain, explored_values, or per-element overrides). No new Parameter is created.
+
+### FieldStateVariable { #tvbo.datamodel.pydantic.FieldStateVariable }
+
+```python
+datamodel.pydantic.FieldStateVariable()
+```
+
+
+
+### Figure { #tvbo.datamodel.pydantic.Figure }
+
+```python
+datamodel.pydantic.Figure()
+```
+
+A publication figure, a mosaic of panels rendered from result containers. Reuses name (identifier) and description (caption).
+
+### File { #tvbo.datamodel.pydantic.File }
+
+```python
+datamodel.pydantic.File()
+```
+
+
+
+### FrameRole { #tvbo.datamodel.pydantic.FrameRole }
+
+```python
+datamodel.pydantic.FrameRole()
+```
+
+What a layer does while a figure animates. Read only under `Figure.animation`; a still figure ignores it. Unset, a layer whose data carries the animated dimension is sliced and one that does not is static, which is the reading that needs no annotation in the common case.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [cursor](#tvbo.datamodel.pydantic.FrameRole.cursor) | Draw a rule at the current frame's coordinate value rather than at the data. What marks *now* on a panel that shows the whole time course, so a reader can see which instant the other panels are at. |
+| [slice](#tvbo.datamodel.pydantic.FrameRole.slice) | Redraw the layer at the current frame's position along the animated dimension — the moving quantity itself. |
+| [static](#tvbo.datamodel.pydantic.FrameRole.static) | Draw the layer whole in every frame — the full trace a cursor sweeps across, or a fixed reference the moving quantity is read against. |
+
+### FreeParameter { #tvbo.datamodel.pydantic.FreeParameter }
+
+```python
+datamodel.pydantic.FreeParameter()
+```
+
+One degree of freedom in an OptimizationStage. References an existing Parameter by dotted scope (e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and supplies optimization-specific metadata (heterogeneous, shape, bounds, initial value). No new Parameter is created here.
+
+### Function { #tvbo.datamodel.pydantic.Function }
+
+```python
+datamodel.pydantic.Function()
+```
+
+A function with explicit input -> transformation -> output flow. Can be equation-based (symbolic) or software-based (callable). In a pipeline, functions are chained: output of one becomes input of next.
+
+### FunctionCall { #tvbo.datamodel.pydantic.FunctionCall }
+
+```python
+datamodel.pydantic.FunctionCall()
+```
+
+Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly for external library functions, OR inline an equation, OR use class_call for class instantiation, OR name a curated step with `iri` and state only what differs from it. Mirrors Function attributes so pipeline steps can be self-contained. The `name` is an optional step label (used in pipelines for keyed access to step outputs); it is NOT a global identifier (singleton uses like `loss`, `observable` may omit it).
+
+### Graph { #tvbo.datamodel.pydantic.Graph }
+
+```python
+datamodel.pydantic.Graph()
+```
+
+A node-link panel's graph and how it is drawn: the connectome the model actually ran on, with a state living on it. The geometry is the network's own — one marker per region at its anatomical centre — and a layer supplies one value per region, placed by label.
+
+### GraphGenerator { #tvbo.datamodel.pydantic.GraphGenerator }
+
+```python
+datamodel.pydantic.GraphGenerator()
+```
+
+Backend-agnostic graph generator specification.  Captures the mathematical family and its parameter declarations so that each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.) via per-backend ``bindings``; derived generators may also carry a symbolic ``procedure``.  The number of nodes is always taken from Network.number_of_nodes.
+
+### GraphRepresentation { #tvbo.datamodel.pydantic.GraphRepresentation }
+
+```python
+datamodel.pydantic.GraphRepresentation()
+```
+
+How a Network's connectivity is represented when evaluating coupling. This is a backend-independent performance contract, not a numerical one: both representations compute the same coupling, but a sparse representation sums over the existing edges (cost scales with the number of edges) while a dense representation operates on the full adjacency (cost scales with nodes-squared). A backend maps the choice onto its own primitives (edge gather / segment-sum vs matrix product). Orthogonal to whether the coupling reads *delayed* states — that is decided per coupling by its conduction delay — so the two dimensions together yield the four backend graph kinds: dense/sparse × instantaneous/delayed.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [auto](#tvbo.datamodel.pydantic.GraphRepresentation.auto) | Select by connection density: use the sparse representation when the adjacency is sparse enough that edge-wise evaluation is cheaper than the dense product, dense otherwise. Default. Lets the backend apply its own crossover without the recipe hard-coding a data structure. |
+| [dense](#tvbo.datamodel.pydantic.GraphRepresentation.dense) | Force the dense-adjacency representation. Preferred for densely connected or small networks, where dense linear algebra's constant-factor efficiency outweighs its nodes-squared scaling. |
+| [sparse](#tvbo.datamodel.pydantic.GraphRepresentation.sparse) | Force the edge-list (sparse) representation. Preferred for large, sparsely connected networks (structural connectomes, power grids) where coupling cost then scales with the number of edges rather than nodes-squared. |
+
+### Grid { #tvbo.datamodel.pydantic.Grid }
+
+```python
+datamodel.pydantic.Grid()
+```
+
+How a `grid` panel tiles its cells, and what the strips around them are labelled with. Rows and columns are labelled ONCE, at the left and the top — the whole reason a paper's composite panel is one lettered panel rather than n of them.
+
+The reserved label strips are taken out of the drawable area, so declaring one shrinks the cells to make room instead of being drawn over them. The axis labels the cells SHARE are the panel's own `xlabel`/`ylabel`, one word at two levels, not slots of this object.
+
+A directive that varies down the rows or across the columns is still written as `row.<name>` / `col.<name>` in `opts`: it supplies one value per row or column of ANY directive, so it cannot be a fixed slot of anything.
+
+### Hemisphere { #tvbo.datamodel.pydantic.Hemisphere }
+
+```python
+datamodel.pydantic.Hemisphere()
+```
+
+
+
+### ImagingModality { #tvbo.datamodel.pydantic.ImagingModality }
+
+```python
+datamodel.pydantic.ImagingModality()
+```
+
+
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [BOLD](#tvbo.datamodel.pydantic.ImagingModality.BOLD) | Blood Oxygen Level Dependent signal. |
+| [EEG](#tvbo.datamodel.pydantic.ImagingModality.EEG) | Electroencephalography. |
+| [IEEG](#tvbo.datamodel.pydantic.ImagingModality.IEEG) | Intracranial Electroencephalography. |
+| [MEG](#tvbo.datamodel.pydantic.ImagingModality.MEG) | Magnetoencephalography. |
+| [SEEG](#tvbo.datamodel.pydantic.ImagingModality.SEEG) | Stereoelectroencephalography. |
+
+### Inference { #tvbo.datamodel.pydantic.Inference }
+
+```python
+datamodel.pydantic.Inference()
+```
+
+Bayesian inference of model parameters from an observation, via MCMC. A standalone, first-class concept (NOT an Optimization): it produces a POSTERIOR, not a point estimate, using priors + a likelihood + a sampler instead of a loss + optimizer. It runs the SAME differentiable forward model, wrapped in a probabilistic model (sample priors -> forward -> likelihood).
+
+### InitialState { #tvbo.datamodel.pydantic.InitialState }
+
+```python
+datamodel.pydantic.InitialState()
+```
+
+How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady state.
+
+### InitialStateMethod { #tvbo.datamodel.pydantic.InitialStateMethod }
+
+```python
+datamodel.pydantic.InitialStateMethod()
+```
+
+Strategy for obtaining the starting equilibrium or periodic orbit.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [from_branch](#tvbo.datamodel.pydantic.InitialStateMethod.from_branch) | Start from a point on a previously computed branch. |
+| [from_experiment](#tvbo.datamodel.pydantic.InitialStateMethod.from_experiment) | Seed from the settled endpoint state of another already-run experiment in the study (referenced by InitialState.source_experiment). Reuses a working point that experiment already reached instead of recomputing it — the cross-experiment counterpart of from_working_point (which recomputes the ramp inline). source_point selects which settled point of the source run (default 'endpoint'). |
+| [from_working_point](#tvbo.datamodel.pydantic.InitialStateMethod.from_working_point) | Ramp a parameter quasi-statically (warm-start / from_previous) to a target value (see InitialState.ramp) and start from the endpoint state — reach a working point on the solution branch before the run. |
+| [given](#tvbo.datamodel.pydantic.InitialStateMethod.given) | Use the model's default initial values directly. |
+| [newton](#tvbo.datamodel.pydantic.InitialStateMethod.newton) | Use Newton's method to find the nearest fixed point. |
+| [time_integration](#tvbo.datamodel.pydantic.InitialStateMethod.time_integration) | Integrate the ODE forward until convergence (robust, default). |
+
+### Inset { #tvbo.datamodel.pydantic.Inset }
+
+```python
+datamodel.pydantic.Inset()
+```
+
+A sub-axes that draws exactly as a panel does — same kinds, layers, opts, annotations — minus the things only a mosaic cell has (a panel letter, a placeholder, a position in the layout). One class for both an inset and a grid cell, so a cell cannot behave unlike the inset beside it; they differ only in who positions them.
+
+### Integrator { #tvbo.datamodel.pydantic.Integrator }
+
+```python
+datamodel.pydantic.Integrator()
+```
+
+Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits abs_tol, rel_tol from Solver. Overrides method default to 'euler'.
+
+### Layer { #tvbo.datamodel.pydantic.Layer }
+
+```python
+datamodel.pydantic.Layer()
+```
+
+One mark bound to one data reference, with its encoding.
+
+### LayoutEngine { #tvbo.datamodel.pydantic.LayoutEngine }
+
+```python
+datamodel.pydantic.LayoutEngine()
+```
+
+Which matplotlib layout engine positions the mosaic's axes. Unset lets the backend pick (bsplot asks for 'compressed' and falls back to 'tight'), which is right for a plain grid of plots. A figure whose panels carry their own absolute geometry — a schematic stepped out in axes fractions, or a mosaic dense enough that the constrained solver reports cells collapsed to zero and silently falls back — has to say so, because an engine that gives up still leaves the figure laid out by a fallback nobody declared.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [compressed](#tvbo.datamodel.pydantic.LayoutEngine.compressed) | Constrained, then pull fixed-aspect axes together so equal-aspect panels leave no gap between them. |
+| [constrained](#tvbo.datamodel.pydantic.LayoutEngine.constrained) | Solve the margins so no decoration overlaps another panel. The general-purpose engine. |
+| [none](#tvbo.datamodel.pydantic.LayoutEngine.none) | No engine: every axes keeps the position its gridspec cell gives it, and anything placed at absolute geometry survives the draw. |
+| [tight](#tvbo.datamodel.pydantic.LayoutEngine.tight) | Adjust the subplot parameters after the fact to fit the decorations. No solver, so it cannot honour a shared aspect. |
+
+### LayoutTemplateVariant { #tvbo.datamodel.pydantic.LayoutTemplateVariant }
+
+```python
+datamodel.pydantic.LayoutTemplateVariant()
+```
+
+One variant's seed for a file the record already accounts for.
+
+### Legend { #tvbo.datamodel.pydantic.Legend }
+
+```python
+datamodel.pydantic.Legend()
+```
+
+A panel's key: whether it is drawn, where it sits, and the three things a figure actually asks of one beyond that. An object rather than a bare position because `frame` had nowhere to live — the renderer drew every key frameless whatever the theme said, so a theme asking for a boxed legend never got one.
+
+The shorthands are the same slot: `legend: true` is `{show: true}` and `legend: upper right` is `{loc: upper right}`, expanded on load, so a panel that starts with a corner and later needs two columns keeps the word it had.
+
+Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cell of the mosaic and sharing no axes with anything.
+
+### LegendLoc { #tvbo.datamodel.pydantic.LegendLoc }
+
+```python
+datamodel.pydantic.LegendLoc()
+```
+
+Where a panel's key sits. `best` lets the backend find the emptiest corner, which is right while a figure is still moving and wrong once it is printed — a key that relocates between two renders of the same figure is a difference the spec never stated.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [best](#tvbo.datamodel.pydantic.LegendLoc.best) | Wherever the backend finds the least data underneath. |
+| [center](#tvbo.datamodel.pydantic.LegendLoc.center) | The middle of the axes. |
+| [center_left](#tvbo.datamodel.pydantic.LegendLoc.center_left) | Centred on the left edge. |
+| [center_right](#tvbo.datamodel.pydantic.LegendLoc.center_right) | Centred on the right edge, inside. |
+| [lower_center](#tvbo.datamodel.pydantic.LegendLoc.lower_center) | Centred on the bottom edge. |
+| [lower_left](#tvbo.datamodel.pydantic.LegendLoc.lower_left) | Bottom-left inside the axes. |
+| [lower_right](#tvbo.datamodel.pydantic.LegendLoc.lower_right) | Bottom-right inside the axes. |
+| [right](#tvbo.datamodel.pydantic.LegendLoc.right) | Centred on the right edge. |
+| [upper_center](#tvbo.datamodel.pydantic.LegendLoc.upper_center) | Centred on the top edge. |
+| [upper_left](#tvbo.datamodel.pydantic.LegendLoc.upper_left) | Top-left inside the axes. |
+| [upper_right](#tvbo.datamodel.pydantic.LegendLoc.upper_right) | Top-right inside the axes. |
+
+### Likelihood { #tvbo.datamodel.pydantic.Likelihood }
+
+```python
+datamodel.pydantic.Likelihood()
+```
+
+Observation model for Bayesian inference: p(data | sim(theta)). Points at the observation holding the data and specifies the noise family + scale. `name` is the noise family (default Normal); `source` uses the same referencing as `Observation.source`, so the observed data can come from this experiment's integration, an empirical network measure, or a runtime-bound array — one flexible hook, no data-loading path of its own. `predicted` names the other side of the residual when it differs from the data's own observable.
+
+### LinkMLMeta { #tvbo.datamodel.pydantic.LinkMLMeta }
+
+```python
+datamodel.pydantic.LinkMLMeta()
+```
+
+
+
+### LossFunction { #tvbo.datamodel.pydantic.LossFunction }
+
+```python
+datamodel.pydantic.LossFunction()
+```
+
+A loss function for optimization with optional aggregation. Extends Function with aggregation specification for per-element losses.
+
+### MarkType { #tvbo.datamodel.pydantic.MarkType }
+
+```python
+datamodel.pydantic.MarkType()
+```
+
+The cartesian primitive a grammar layer draws (heatmap is implied by a heatmap panel, not a mark).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [area](#tvbo.datamodel.pydantic.MarkType.area) | Series filled down to the baseline (a density/pdf, a cumulative share). Distinct from `band`, which spans two series, and from `bar`, which asserts the x values are discrete categories. |
+| [band](#tvbo.datamodel.pydantic.MarkType.band) | Filled band between two series (an error band, a CI). Its layer's output carries a length-2 axis beside the swept one, holding the two edges in ONE array — binding a lower edge and an upper edge as separate layers lets them come from different runs. |
+| [bar](#tvbo.datamodel.pydantic.MarkType.bar) | Vertical bars, one per x (spectrum, per-category magnitude). Distinct from `line` because a spectrum read as a line implies interpolation between mode numbers that do not exist. |
+| [line](#tvbo.datamodel.pydantic.MarkType.line) | Connected line (timeseries, bifurcation branch, trajectory). |
+| [rule](#tvbo.datamodel.pydantic.MarkType.rule) | Reference line at a value the layer's output HOLDS (a threshold, a published number, an ensemble mean) — one line per value. The encoded channel picks the orientation: `x:` draws vertical, `y:` horizontal. Distinct from the `axvline`/`axhline` opts, which take a literal typed into the spec and are drawn as subdued gridlines. |
+| [scatter](#tvbo.datamodel.pydantic.MarkType.scatter) | Points (fixed points, special points, per-node profiles). |
+
+### Matrix { #tvbo.datamodel.pydantic.Matrix }
+
+```python
+datamodel.pydantic.Matrix()
+```
+
+Adjacency matrix of a network.
+
+### MeasureSpec { #tvbo.datamodel.pydantic.MeasureSpec }
+
+```python
+datamodel.pydantic.MeasureSpec()
+```
+
+Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``.
+
+### Mesh { #tvbo.datamodel.pydantic.Mesh }
+
+```python
+datamodel.pydantic.Mesh()
+```
+
+Triangle (or higher-order) mesh geometry. May stand alone (via ``mesh_file`` pointing at an external GIFTI/VTK/MSH file) OR be inlined on a Network as ``Network.mesh``. In the inlined-on-Network case, the vertices are the parent Network's ``nodes/coordinates`` (so ``coordinates`` here may be left empty), the faces live in the same h5 companion under a path given by ``elements`` (default ``mesh/faces``), and optional per-vertex ``normals`` / ``curvature`` live alongside. The optional ``parcel_map_field`` points at the parent Network's per-vertex parcel-id array (default ``nodes/parent_index`` from the hierarchical-Network pattern, see Network.qmd §7.1).
+
+### ModelParadigm { #tvbo.datamodel.pydantic.ModelParadigm }
+
+```python
+datamodel.pydantic.ModelParadigm()
+```
+
+Computational paradigm or modeling approach supported by the tool.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [bifurcation_analysis](#tvbo.datamodel.pydantic.ModelParadigm.bifurcation_analysis) | Dynamical systems bifurcation / continuation analysis. |
+| [compartmental](#tvbo.datamodel.pydantic.ModelParadigm.compartmental) | Multi-compartment morphologically detailed models. |
+| [conductance_based](#tvbo.datamodel.pydantic.ModelParadigm.conductance_based) | Conductance-based / Hodgkin-Huxley-type models. |
+| [data_standard](#tvbo.datamodel.pydantic.ModelParadigm.data_standard) | Data format or exchange standard. |
+| [dynamic_mean_field](#tvbo.datamodel.pydantic.ModelParadigm.dynamic_mean_field) | Dynamic mean-field approximation (e.g., Deco et al.). |
+| [generic](#tvbo.datamodel.pydantic.ModelParadigm.generic) | General-purpose, not specific to neuroscience. |
+| [mean_field](#tvbo.datamodel.pydantic.ModelParadigm.mean_field) | Mean-field reductions of spiking networks. |
+| [model_description](#tvbo.datamodel.pydantic.ModelParadigm.model_description) | Declarative model specification language. |
+| [multiscale](#tvbo.datamodel.pydantic.ModelParadigm.multiscale) | Bridging multiple spatial/temporal scales. |
+| [neural_field](#tvbo.datamodel.pydantic.ModelParadigm.neural_field) | Continuous neural field equations (Amari, Wilson-Cowan field). |
+| [neural_mass](#tvbo.datamodel.pydantic.ModelParadigm.neural_mass) | Phenomenological population-rate / neural-mass models. |
+| [phase_oscillator](#tvbo.datamodel.pydantic.ModelParadigm.phase_oscillator) | Phase-reduced or Kuramoto-type oscillator models. |
+| [plasticity](#tvbo.datamodel.pydantic.ModelParadigm.plasticity) | Synaptic plasticity (STDP, homeostatic, etc.). |
+| [rate_based](#tvbo.datamodel.pydantic.ModelParadigm.rate_based) | Firing-rate models. |
+| [reaction_diffusion](#tvbo.datamodel.pydantic.ModelParadigm.reaction_diffusion) | Stochastic or deterministic reaction-diffusion. |
+| [spiking](#tvbo.datamodel.pydantic.ModelParadigm.spiking) | Spiking neuron models (LIF, AdEx, Izhikevich, etc.). |
+
+### ModelType { #tvbo.datamodel.pydantic.ModelType }
+
+```python
+datamodel.pydantic.ModelType()
+```
+
+Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in list_db().
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [field](#tvbo.datamodel.pydantic.ModelType.field) | Spatially distributed neural-field models described by integro- differential or PDE formulations. |
+| [generic](#tvbo.datamodel.pydantic.ModelType.generic) | Generic / normal-form dynamical systems not specific to neural modelling (e.g. Generic2dOscillator, GenericLinear). |
+| [mean_field](#tvbo.datamodel.pydantic.ModelType.mean_field) | Mathematically derived mean-field models obtained by exact reduction of spiking networks (Ott-Antonsen ansatz, Lorentzian heterogeneity, etc.). Examples: MontbrioPazoRoxin, CoombesByrne, ReducedWongWang, ZerlautAdaptationFirstOrder. |
+| [neural_mass](#tvbo.datamodel.pydantic.ModelType.neural_mass) | Phenomenological population-rate / neural-mass models that describe synaptic and firing-rate dynamics without an explicit derivation from single-neuron statistics. Examples: JansenRit, WilsonCowan, LarterBreakspear, TsodyksMarkram. |
+| [phase_oscillator](#tvbo.datamodel.pydantic.ModelType.phase_oscillator) | Phase-reduced or Kuramoto-type oscillator models. Examples: Kuramoto, SupHopf. |
+| [phenomenological](#tvbo.datamodel.pydantic.ModelType.phenomenological) | Empirical / phenomenological models that capture macroscopic dynamics without direct biophysical derivation. Examples: Epileptor2D, Epileptor5D. |
+| [spiking](#tvbo.datamodel.pydantic.ModelType.spiking) | Single-neuron or conductance-based spiking models (HH, AdEx, LIF, Izhikevich, etc.). These can be used as nodes in a network alongside mean-field models. |
+
+### NDArray { #tvbo.datamodel.pydantic.NDArray }
+
+```python
+datamodel.pydantic.NDArray()
+```
+
+
+
+### NamedArray { #tvbo.datamodel.pydantic.NamedArray }
+
+```python
+datamodel.pydantic.NamedArray()
+```
+
+A named numeric array. Used as a sidecar slot value where a schema-typed object (e.g. ``ExperimentResult.parameters``) holds multiple arrays addressable by name (``w_LRE``, ``w_FFI``, ``J_i``, ...). The actual numeric data lives in the companion ``.h5`` at ``parameters/<name>``; the YAML carries only the descriptor.
+
+### Network { #tvbo.datamodel.pydantic.Network }
+
+```python
+datamodel.pydantic.Network()
+```
+
+Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility).
+
+### Node { #tvbo.datamodel.pydantic.Node }
+
+```python
+datamodel.pydantic.Node()
+```
+
+A node in a network with its own dynamics and properties
+
+### NodeReconciliation { #tvbo.datamodel.pydantic.NodeReconciliation }
+
+```python
+datamodel.pydantic.NodeReconciliation()
+```
+
+Strategy for aligning a sourced array's nodes to the consuming model network before use. Keyed alignment guards against a differing node count or ordering (e.g. a 998-parcel empirical FC against a 1000-parcel model, or a hemisphere-swapped connectome) silently misaligning the data.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [by_label](#tvbo.datamodel.pydantic.NodeReconciliation.by_label) | Restrict to the shared node labels by name (keyed ``.sel``), preserving the consuming network's order, on every node axis (a vector on its node axis, a matrix on both). Never positional. |
+| [none](#tvbo.datamodel.pydantic.NodeReconciliation.none) | No reconciliation; the node sets are assumed identical. |
+
+### Noise { #tvbo.datamodel.pydantic.Noise }
+
+```python
+datamodel.pydantic.Noise()
+```
+
+
+
+### NoiseDraw { #tvbo.datamodel.pydantic.NoiseDraw }
+
+```python
+datamodel.pydantic.NoiseDraw()
+```
+
+How a stochastic run's noise realization is generated.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [blocked](#tvbo.datamodel.pydantic.NoiseDraw.blocked) | Regenerate each block's noise from the key and the block index. The realization never depends on the total step count, so a run measured by folding an observable in-carry and the same run materialized in full agree sample for sample. Holds no O(n_steps) noise tensor, and regenerates rather than stores on the backward pass. Keyed by Integrator.block_size. |
+| [fused](#tvbo.datamodel.pydantic.NoiseDraw.fused) | Draw the whole [n_steps, n_noise_states, n_nodes] tensor once from the key. Fuses with the scan, but the realization is a function of the step count, so the same recipe measured two ways gives two trajectories, and the tensor costs as much memory as the trajectory it drives. |
+
+### NoiseType { #tvbo.datamodel.pydantic.NoiseType }
+
+```python
+datamodel.pydantic.NoiseType()
+```
+
+
+
+### NumericalDiscretizationMethod { #tvbo.datamodel.pydantic.NumericalDiscretizationMethod }
+
+```python
+datamodel.pydantic.NumericalDiscretizationMethod()
+```
+
+Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic tori).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [collocation](#tvbo.datamodel.pydantic.NumericalDiscretizationMethod.collocation) | Orthogonal collocation at Gauss points. |
+| [poincare](#tvbo.datamodel.pydantic.NumericalDiscretizationMethod.poincare) | Poincaré shooting. |
+| [shooting](#tvbo.datamodel.pydantic.NumericalDiscretizationMethod.shooting) | Standard multiple shooting. |
+| [trapezoid](#tvbo.datamodel.pydantic.NumericalDiscretizationMethod.trapezoid) | Trapezoidal rule discretization. |
+
+### Observation { #tvbo.datamodel.pydantic.Observation }
+
+```python
+datamodel.pydantic.Observation()
+```
+
+Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a sequence of Functions with input -> output flow.
+
+### ObservationReductionMode { #tvbo.datamodel.pydantic.ObservationReductionMode }
+
+```python
+datamodel.pydantic.ObservationReductionMode()
+```
+
+How an observation is evaluated over the trajectory (see Observation.reduce). Absent (the default) keeps the post-scan pipeline: the observation is computed from a materialised trajectory. `streaming` opts the observation into an incremental reducer that is folded into the integrator carry via prepare(reduce=...), so the trajectory is never held — byte-identical to the post-scan value (to f64 rounding), but with O(block) instead of O(n_time) peak memory. Required for whole-brain fits whose per-stage simulation is long enough that the full trajectory would not fit in memory (e.g. the Schirner 2023 BOLD/FC group fit).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [streaming](#tvbo.datamodel.pydantic.ObservationReductionMode.streaming) | Fold this observation into the integrator carry as an (init, update, finalize) reducer; never materialise the trajectory. Supported for the HRF-Volterra BOLD pipeline (hemodynamic convolution, whose kernel / downsample stride / TR stride / Volterra scaling the resolver lifts from the declared pipeline), cumulative mean/std/variance aggregations, and a matrix co-moment FC (compute_fc as a running covariance). |
+| [trials](#tvbo.datamodel.pydantic.ObservationReductionMode.trials) | Evaluate the pipeline across the trial ensemble rather than per solve: the (single) source observation is computed per trial as usual, and after the trial map this observation's (single) pipeline stage runs host-side on the trial-stacked source (n_trials, ...) — e.g. a pattern-entropy over an ensemble of per-trial evoked patterns. Requires a trial-only exploration (n_trials without parameter axes). |
+
+### OperatorType { #tvbo.datamodel.pydantic.OperatorType }
+
+```python
+datamodel.pydantic.OperatorType()
+```
+
+
+
+### Optimization { #tvbo.datamodel.pydantic.Optimization }
+
+```python
+datamodel.pydantic.Optimization()
+```
+
+Configuration for parameter optimization. Inherits single-stage fields from OptimizationStage. For multi-stage workflows, use 'stages' (ignores inherited single-stage fields). Loss equation references observations directly by name.
+
+### OptimizationStage { #tvbo.datamodel.pydantic.OptimizationStage }
+
+```python
+datamodel.pydantic.OptimizationStage()
+```
+
+A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using different parameters, shapes, learning rates, and algorithms.
+
+### Option { #tvbo.datamodel.pydantic.Option }
+
+```python
+datamodel.pydantic.Option()
+```
+
+A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal numeric parameters (e.g., solver name, tangent method, jacobian type).
+
+### PDE { #tvbo.datamodel.pydantic.PDE }
+
+```python
+datamodel.pydantic.PDE()
+```
+
+Partial differential equation problem definition.
+
+### PDESolver { #tvbo.datamodel.pydantic.PDESolver }
+
+```python
+datamodel.pydantic.PDESolver()
+```
+
+Numerical solver for a PDE: the time-integration algorithm, tolerances and step inherited from `Solver`, plus the spatial discretization and preconditioner a PDE additionally needs.
+
+### Palette { #tvbo.datamodel.pydantic.Palette }
+
+```python
+datamodel.pydantic.Palette()
+```
+
+A project's colours, named by role. The colour half of a `Theme`, and a document in its own right for a consumer that wants colours and nothing else (:mod:`tvbo.plot.palette`, the documentation site's stylesheet). A style sheet carries only what matplotlib has an rcParam for, which stops short of the roles a figure reasons in: the one colour that means *this is the point*, the neutral everything unlabelled is drawn in, the hairline behind it. Naming them here is what makes recolouring a project one edit that every panel follows. The cycler is `[base] + palette`, so a plot that names no colour comes out neutral and only a panel meaning to separate conditions reaches into the hues; `highlight` sits outside the cycler, because a colour handed to the second line of every plot cannot also mean emphasis. TVB-O's own is curated at `tvbo:theme/default`, and is the palette in force until a project names one of its own.
+
+### Panel { #tvbo.datamodel.pydantic.Panel }
+
+```python
+datamodel.pydantic.Panel()
+```
+
+One cell of the figure. kind selects grammar (cartesian/heatmap) vs escape-hatch (image/custom); every kind shares the label, placeholder, legend and annotation machinery. Reuses label (human title).
+
+### PanelKind { #tvbo.datamodel.pydantic.PanelKind }
+
+```python
+datamodel.pydantic.PanelKind()
+```
+
+What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); surface paints a layer on a mesh, volume projects one through a labelled volume and network draws one on a node-link graph; grid tiles a composite of sub-panels; colorbar/legend are shared keys in their own slot; image (external file) and custom (registered callable) are peer escape-hatch kinds. A new kind is added when its bsplot leaf exists.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [cartesian](#tvbo.datamodel.pydantic.PanelKind.cartesian) | Line/scatter/rule/band marks in a 2-D cartesian frame. |
+| [colorbar](#tvbo.datamodel.pydantic.PanelKind.colorbar) | A colour scale in its own slot, for panels that share one. Attaching it to any single panel steals that panel's width and implies the scale is local to it. Limits come from opts or, with a layer bound, from the data. Built in. |
+| [custom](#tvbo.datamodel.pydantic.PanelKind.custom) | A registered callable fn(container, ax, **opts). |
+| [grid](#tvbo.datamodel.pydantic.PanelKind.grid) | A composite of sub-panels inside ONE lettered panel, labelled once per row and column. What a paper's lettered panel usually is: a row of mode surfaces under a single (a), or a Data/Reconstruction matrix whose task name is written once at the left. Declaring each cell as its own mosaic entry instead would repeat those labels in every cell and renumber panels the paper letters once. Cells come from `cells:` or, in the common case, from `layers:` — one cell per layer, all drawn by the shared `cell:` template. |
+| [heatmap](#tvbo.datamodel.pydantic.PanelKind.heatmap) | A 2-D array field drawn as pcolormesh/imshow. |
+| [image](#tvbo.datamodel.pydantic.PanelKind.image) | An external raster/vector file placed in the grid cell. |
+| [legend](#tvbo.datamodel.pydantic.PanelKind.legend) | A key in its own slot, for a convention several panels share. Entries are parallel `labels`/`colors`/`linestyles` lists. Built in. |
+| [line3d](#tvbo.datamodel.pydantic.PanelKind.line3d) | Line/scatter marks in a 3-D frame (x/y/z channels) — a phase-space orbit or trajectory. Camera via opts (elev, azim); axis via zlabel/zlim. |
+| [network](#tvbo.datamodel.pydantic.PanelKind.network) | The connectome as a node-link graph: one marker per region at its anatomical centre, edges drawn for the connections that survive `edge_percentile`. A layer supplies one value per region and colours the markers with it, so what the panel shows is a state living ON the network rather than beside it. Geometry comes from the `network:` the panel names, values are placed BY LABEL through the node labels, and `projection` picks the anatomical plane the centres flatten onto. Needs no code_modules — the drawing is built in. |
+| [surface](#tvbo.datamodel.pydantic.PanelKind.surface) | A layer's per-vertex values painted on a mesh. Geometry comes from the network (`network:`, whose companion carries a mesh group) or a mesh file (`mesh:` — GIFTI/VTK/FreeSurfer, or an npz of vertices/faces); camera via opts (view, hemi), colour via cmap/symmetric/percentile/vmin/vmax, and `mask:` greys a medial wall out of both the map and its colour range. A layer shorter than the mesh is placed BY LABEL from its `vertex` coordinate. With `color:`/`edgecolor:` and no layer it draws the bare geometry. Needs no code_modules — the drawing is built in. |
+| [volume](#tvbo.datamodel.pydantic.PanelKind.volume) | A layer's per-region values painted into a labelled volume and projected as a glass brain — the volumetric counterpart of `surface`, and how a paper shows a whole-brain map without committing to a cortical mesh. Geometry and the label lookup come from a curated atlas (`atlas:`, whose companion dseg carries one integer label per region) or a segmentation file (`volume:`); values are placed BY LABEL through the atlas terminology, never by array position, so a region's value cannot land on its neighbour. Camera via opts (view, intensity_projection), colour via cmap/symmetric/percentile/vmin/vmax. Needs no code_modules — the drawing is built in. |
+
+### ParallelMode { #tvbo.datamodel.pydantic.ParallelMode }
+
+```python
+datamodel.pydantic.ParallelMode()
+```
+
+How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput: vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map`` (memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits and lax_map otherwise.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [auto](#tvbo.datamodel.pydantic.ParallelMode.auto) | Pick vmap when memory permits, lax_map otherwise. |
+| [lax_map](#tvbo.datamodel.pydantic.ParallelMode.lax_map) | Sequential execution via jax.lax.map. Slower; bounded memory. |
+| [pmap](#tvbo.datamodel.pydantic.ParallelMode.pmap) | Parallel execution across the local devices of a single node (jax.pmap over the several GPUs/TPUs visible to that task). Intra-task only — it never spans nodes; inter-node parallelism is scheduler fan-out (DistributionConfig.chunk), not pmap. On a one-GPU (or CPU) task this degenerates to vmap. |
+| [vmap](#tvbo.datamodel.pydantic.ParallelMode.vmap) | Parallel batched execution (jax.vmap). Fast; high peak memory. |
+
+### Parameter { #tvbo.datamodel.pydantic.Parameter }
+
+```python
+datamodel.pydantic.Parameter()
+```
+
+
+
+### Parcellation { #tvbo.datamodel.pydantic.Parcellation }
+
+```python
+datamodel.pydantic.Parcellation()
+```
+
+
+
+### ParcellationEntity { #tvbo.datamodel.pydantic.ParcellationEntity }
+
+```python
+datamodel.pydantic.ParcellationEntity()
+```
+
+A schema for representing a parcellation entity, which is an anatomical location or study target.
+
+### ParcellationTerminology { #tvbo.datamodel.pydantic.ParcellationTerminology }
+
+```python
+datamodel.pydantic.ParcellationTerminology()
+```
+
+A schema for representing a parcellation terminology, which consists of parcellation entities.
+
+### Partition { #tvbo.datamodel.pydantic.Partition }
+
+```python
+datamodel.pydantic.Partition()
+```
+
+A grouped streaming reduction over a node partition (e.g. per-hemisphere cortical wave metrics): the per-timestep observer body is evaluated ONCE for a single group and vmapped over the partition axis, and the per-group outputs are folded to per-group scalar metrics. General in its group-vmap (``gather`` + ``over``); the metric roles (``waves`` / ``directed`` / ``correlation``) name the per-group derived variables the wave finalize reduces to proportion-of-waves, proportion-directed and the median flow–instrength correlation (rho).
+
+### Phenotype { #tvbo.datamodel.pydantic.Phenotype }
+
+```python
+datamodel.pydantic.Phenotype()
+```
+
+Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales, demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the measure list; the h5 carries ``measures/<name>`` 1-D float arrays of length ``len(subjects)``.
+Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html) and with NIDM's ``nidm:Phenotype`` concept. Per-measure metadata can optionally carry Cognitive Atlas (https://www.cognitiveatlas.org/) ``cogat:Task`` and ``cogat:Concept`` IRIs via ``measure_specs``.
+
+### Prior { #tvbo.datamodel.pydantic.Prior }
+
+```python
+datamodel.pydantic.Prior()
+```
+
+Prior belief over one inferred parameter. In `Inference.priors` the collection KEY is the parameter's dotted name; the value wraps a `Distribution` as the belief (reusing the standard distribution vocabulary rather than inventing a new one). Distinct from `Parameter.distribution`, which specifies per-node SAMPLING, not a prior.
+
+### Procedure { #tvbo.datamodel.pydantic.Procedure }
+
+```python
+datamodel.pydantic.Procedure()
+```
+
+Symbolic procedure: an ordered list of steps producing named outputs.  Documents a derived generator's algorithm independently of any backend binding.
+
+### ProcedureStep { #tvbo.datamodel.pydantic.ProcedureStep }
+
+```python
+datamodel.pydantic.ProcedureStep()
+```
+
+A single named step (or output) in a Procedure: one typed operation producing one named intermediate.
+`type` selects the operation and therefore which of the fields below apply; it defaults to `equation`, the general case, so a Procedure written purely as equations needs no type annotations. The remaining fields carry each operation's options as *metadata* rather than as call syntax, which is what lets a step lower directly to a backend-native primitive: expression parsing cannot represent keyword arguments at all, so any option written as one would be unresolvable.
+
+### ProcedureStepType { #tvbo.datamodel.pydantic.ProcedureStepType }
+
+```python
+datamodel.pydantic.ProcedureStepType()
+```
+
+The operation a ProcedureStep performs. `equation` is the general case (author-written algebra over previously-named intermediates); the others are named graph-construction operations whose options are fields rather than call syntax, so each lowers to a backend-native primitive without an expression string having to survive a parser.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [distribution_pdf](#tvbo.datamodel.pydantic.ProcedureStepType.distribution_pdf) | Evaluate `distribution`'s density at the positions named by `of` — a spatial field (e.g. a Gaussian sink/source whose difference forms an in-strength gradient). |
+| [equation](#tvbo.datamodel.pydantic.ProcedureStepType.equation) | Evaluate `equation.rhs` over previously-named intermediates and the generator's parameters. The default. |
+| [minmax_rescale](#tvbo.datamodel.pydantic.ProcedureStepType.minmax_rescale) | Affinely rescale the intermediate named by `of` from its own min/max onto `target_range`. |
+| [normalize](#tvbo.datamodel.pydantic.ProcedureStepType.normalize) | Divide the intermediate named by `of` by its sum along `axis` (axis 0 gives uniform in-strength). |
+| [pairwise_distance](#tvbo.datamodel.pydantic.ProcedureStepType.pairwise_distance) | Distance matrix between the rows of the positions named by `of` (euclidean). `diagonal` optionally overwrites the self-distance, e.g. to infinity so a decaying distance kernel evaluates to zero there and no node connects to itself. |
+| [sample](#tvbo.datamodel.pydantic.ProcedureStepType.sample) | A random matrix drawn from `distribution` — the draw itself, e.g. the substrate of a random reservoir. Distinct from `stochastic_mask`, which compares a draw and yields a boolean. |
+| [stochastic_mask](#tvbo.datamodel.pydantic.ProcedureStepType.stochastic_mask) | Boolean connection mask: compare the quantity named by `of` against a draw from `distribution` using `comparison`. The declarative form of a distance-dependent connection probability. |
+
+### ProgrammingLanguageEnum { #tvbo.datamodel.pydantic.ProgrammingLanguageEnum }
+
+```python
+datamodel.pydantic.ProgrammingLanguageEnum()
+```
+
+Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [HOC](#tvbo.datamodel.pydantic.ProgrammingLanguageEnum.HOC) | NEURON's high-level interpreted language. |
+
+### Projection { #tvbo.datamodel.pydantic.Projection }
+
+```python
+datamodel.pydantic.Projection()
+```
+
+Which anatomical plane a network's region centres flatten onto.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [axial](#tvbo.datamodel.pydantic.Projection.axial) | Seen from above — the default, and what most connectome figures print. |
+| [coronal](#tvbo.datamodel.pydantic.Projection.coronal) | Seen from the front. |
+| [sagittal](#tvbo.datamodel.pydantic.Projection.sagittal) | Seen from the side. |
+
+### Provenance { #tvbo.datamodel.pydantic.Provenance }
+
+```python
+datamodel.pydantic.Provenance()
+```
+
+W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable on any entity (Network, TimeSeries, Dynamics, ...), which is why it holds no identity of its own: the parent supplies that. The identified ``prov:Entity`` a standalone provenance record names is ``ResultEntity``, which carries one of these.
+Carried by the frozen spec beside a result container, this is the whole record of the run: ``activities`` says what was executed and when, ``environment`` says on what machine and against which package versions, and ``digest`` checksums what came out. None of that is derivable from a recipe, which is why it is recorded — and all of it travels with the artifact it describes rather than in a parallel directory that has to be kept in step.
+
+### RandomStream { #tvbo.datamodel.pydantic.RandomStream }
+
+```python
+datamodel.pydantic.RandomStream()
+```
+
+
+
+### Range { #tvbo.datamodel.pydantic.Range }
+
+```python
+datamodel.pydantic.Range()
+```
+
+Specifies a range for array generation, parameter bounds, or grid exploration.
+
+### Reducer { #tvbo.datamodel.pydantic.Reducer }
+
+```python
+datamodel.pydantic.Reducer()
+```
+
+A streaming reduction, authored as symbolic recurrences over its own state rather than as backend code. Folded into the integrator carry so a windowed observable (a sliding-window FC, a running mean) is computed without ever materialising the trajectory. `add` folds an arriving sample in, `evict` takes a leaving one back out, `resync` rebuilds the state exactly from the window when incremental drift would accumulate, and `emit` reads the reduced value out. TVBO lowers all four through the sympy printers, so no backend ships a reducer and adding one is a YAML file rather than code.
+
+### ReducerEmitKind { #tvbo.datamodel.pydantic.ReducerEmitKind }
+
+```python
+datamodel.pydantic.ReducerEmitKind()
+```
+
+How often a streaming reducer reads its value out (see Reducer.emit_kind).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [stride](#tvbo.datamodel.pydantic.ReducerEmitKind.stride) | Emit once per stride, at the window boundary (dFC / FCD). |
+| [window](#tvbo.datamodel.pydantic.ReducerEmitKind.window) | Emit every step, over the current window (a sliding FC). |
+
+### ReductionType { #tvbo.datamodel.pydantic.ReductionType }
+
+```python
+datamodel.pydantic.ReductionType()
+```
+
+Operations for reducing/aggregating values across dimensions
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [max](#tvbo.datamodel.pydantic.ReductionType.max) | Maximum value |
+| [mean](#tvbo.datamodel.pydantic.ReductionType.mean) | Arithmetic mean |
+| [min](#tvbo.datamodel.pydantic.ReductionType.min) | Minimum value |
+| [none](#tvbo.datamodel.pydantic.ReductionType.none) | No reduction (return per-element values) |
+| [sum](#tvbo.datamodel.pydantic.ReductionType.sum) | Sum of values |
+
+### Reference { #tvbo.datamodel.pydantic.Reference }
+
+```python
+datamodel.pydantic.Reference()
+```
+
+A small typed pointer to another TVBO entity (Network, Mesh, Observation, …). The ``iri`` identifies the target via the registry; the optional ``field`` is a dotted-path subkey resolved by attribute walk on the loaded target (e.g. ``field: 'weight_alpha'`` picks the ``weight_alpha`` named edge matrix on a Network; ``field: 'mesh.faces'`` picks the mesh face array). Used uniformly anywhere a TVBO entity needs to point at a sub-array of another entity without inlining the data.
+
+### ReferenceFingerprint { #tvbo.datamodel.pydantic.ReferenceFingerprint }
+
+```python
+datamodel.pydantic.ReferenceFingerprint()
+```
+
+Cache-invalidation fingerprint for one ``aux_data`` reference. Captures enough about the upstream artifact that a downstream cache can decide cheaply (via mtime + size) whether to trust the cached result, falling back to a hash recompute on mismatch.
+
+### Region { #tvbo.datamodel.pydantic.Region }
+
+```python
+datamodel.pydantic.Region()
+```
+
+A rectangle drawn over a panel to ring the window a paper calls out — the parameter band a regime lives in, the interval a statistic was taken over. Declared rather than drawn by a custom callable, so the window a figure highlights is part of the spec that can be read back.
+
+### RegionMapping { #tvbo.datamodel.pydantic.RegionMapping }
+
+```python
+datamodel.pydantic.RegionMapping()
+```
+
+Maps vertices to parent regions for hierarchical/aggregated coupling
+
+### RenderSpec { #tvbo.datamodel.pydantic.RenderSpec }
+
+```python
+datamodel.pydantic.RenderSpec()
+```
+
+A headless-browser capture recipe turning an `image` panel's HTML/URL `source` into the static file placed at its `path`. Mirrors one shot of code/capture-screenshots.py so a screenshot of the live platform (or any HTML render) is reproducible from the spec, not hand-captured. Only the `source` needs committing alongside the rendered `path`.
+
+### ReportPart { #tvbo.datamodel.pydantic.ReportPart }
+
+```python
+datamodel.pydantic.ReportPart()
+```
+
+Where a declared item appears in a generated report. A study with many near-identical experiments marks the routine ones ``supplementary``, so the Methods carries the experiments that make the argument and the rest stay a table row plus a paragraph in the SI.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [main](#tvbo.datamodel.pydantic.ReportPart.main) | The main Methods, in full. |
+| [supplementary](#tvbo.datamodel.pydantic.ReportPart.supplementary) | Supplementary material. The item still appears as a row in the Methods' experiment table, so the reader sees that it exists. |
+
+### RequirementLevel { #tvbo.datamodel.pydantic.RequirementLevel }
+
+```python
+datamodel.pydantic.RequirementLevel()
+```
+
+BIDS requirement level: whether something MUST, SHOULD or MAY be present.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [optional](#tvbo.datamodel.pydantic.RequirementLevel.optional) | MAY be present. |
+| [recommended](#tvbo.datamodel.pydantic.RequirementLevel.recommended) | SHOULD be present. |
+| [required](#tvbo.datamodel.pydantic.RequirementLevel.required) | MUST be present. |
+
+### RequirementRole { #tvbo.datamodel.pydantic.RequirementRole }
+
+```python
+datamodel.pydantic.RequirementRole()
+```
+
+
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [analysis](#tvbo.datamodel.pydantic.RequirementRole.analysis) | Post-processing / analysis tool. |
+| [dev](#tvbo.datamodel.pydantic.RequirementRole.dev) | Development / build dependency. |
+| [engine](#tvbo.datamodel.pydantic.RequirementRole.engine) | Primary simulation/processing engine. |
+| [optional](#tvbo.datamodel.pydantic.RequirementRole.optional) | Optional or extra feature dependency. |
+| [runtime](#tvbo.datamodel.pydantic.RequirementRole.runtime) | General runtime dependency. |
+
+### ResultBinding { #tvbo.datamodel.pydantic.ResultBinding }
+
+```python
+datamodel.pydantic.ResultBinding()
+```
+
+One entry in a study's results manifest: a manuscript key bound to the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN — ``used:`` a DataRef reading a scalar out of a nested study's or this study's own analysis/experiment, formatted through ``format`` — COMPUTED FROM THE SPEC — ``count:`` a structural tally of a collection (e.g. the figures a nested study regenerates), needing no run — or AUTHORED — a literal ``value`` quoted from prior work and attributed by ``source``. So a number printed in prose is computed or an authored constant marked as such, never transcribed by hand.
+
+### ResultEntity { #tvbo.datamodel.pydantic.ResultEntity }
+
+```python
+datamodel.pydantic.ResultEntity()
+```
+
+One persisted result container, described. The ``prov:Entity`` of BEP028's ``prov-<label>_ent`` record: what the file is, what produced it, and what it holds. Every field is either a pointer or read off the artifact when it is written — nothing here restates a value the frozen spec beside the container already carries, which is what made the earlier curated JSON sidecar drift from the YAML next to it.
+Named for the entity rather than for the experiment because an analysis container (``ana-<name>_result.h5``) gets one too, and because the in-memory ``tvbo.data.types.ExperimentResult`` is a different thing: the arrays themselves, not the description of the file holding them.
+
+### Rule { #tvbo.datamodel.pydantic.Rule }
+
+```python
+datamodel.pydantic.Rule()
+```
+
+A straight reference line drawn across a panel: the zero a signal is measured from, the threshold a value has to clear, the agreement line of a target-versus-simulated plot. One object, so the line and the colour it is drawn in cannot be stated apart — as two loose panel options they could disagree, and a colour could be given to a rule that was never declared.
+
+### RuleOrientation { #tvbo.datamodel.pydantic.RuleOrientation }
+
+```python
+datamodel.pydantic.RuleOrientation()
+```
+
+Which way a reference line runs.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [diagonal](#tvbo.datamodel.pydantic.RuleOrientation.diagonal) | Slope and intercept — the identity line `[1, 0]` a target-versus-simulated panel is read against. |
+| [horizontal](#tvbo.datamodel.pydantic.RuleOrientation.horizontal) | Constant y, at a single value. |
+| [vertical](#tvbo.datamodel.pydantic.RuleOrientation.vertical) | Constant x, at a single value. |
+
+### Sample { #tvbo.datamodel.pydantic.Sample }
+
+```python
+datamodel.pydantic.Sample()
+```
+
+
+
+### SamplingAxis { #tvbo.datamodel.pydantic.SamplingAxis }
+
+```python
+datamodel.pydantic.SamplingAxis()
+```
+
+Dimension along which a distribution is sampled.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [space](#tvbo.datamodel.pydantic.SamplingAxis.space) | Sample once per node (heterogeneous parameter or spatially varying IC). |
+| [time](#tvbo.datamodel.pydantic.SamplingAxis.time) | Resample every integration timestep (stochastic time-varying input). |
+
+### SchedulerDirective { #tvbo.datamodel.pydantic.SchedulerDirective }
+
+```python
+datamodel.pydantic.SchedulerDirective()
+```
+
+One engine-native scheduler directive passed through verbatim by the engine's emitter (e.g. a Slurm ``#SBATCH --<name>=<value>`` line). The open extension point of WorkflowEngineConfig: it carries any directive the typed fields do not name, so a new scheduler flag needs no schema change.
+
+### Session { #tvbo.datamodel.pydantic.Session }
+
+```python
+datamodel.pydantic.Session()
+```
+
+A data collection session for a subject. Corresponds to a BIDS 'ses-' entity. Sessions capture longitudinal timepoints (baseline, follow-up), different experimental conditions, or repeated measures.
+
+### SexEnum { #tvbo.datamodel.pydantic.SexEnum }
+
+```python
+datamodel.pydantic.SexEnum()
+```
+
+
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [female](#tvbo.datamodel.pydantic.SexEnum.female) | Female |
+| [male](#tvbo.datamodel.pydantic.SexEnum.male) | Male |
+| [other](#tvbo.datamodel.pydantic.SexEnum.other) | Other or not reported |
+
+### SimulationExperiment { #tvbo.datamodel.pydantic.SimulationExperiment }
+
+```python
+datamodel.pydantic.SimulationExperiment()
+```
+
+
+
+### SimulationScale { #tvbo.datamodel.pydantic.SimulationScale }
+
+```python
+datamodel.pydantic.SimulationScale()
+```
+
+Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to SIO and Wikidata where possible.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [channel](#tvbo.datamodel.pydantic.SimulationScale.channel) | Ion channel / sub-cellular molecular dynamics. |
+| [network_system](#tvbo.datamodel.pydantic.SimulationScale.network_system) | Whole-brain or large-scale network of regions. |
+| [neural_mass](#tvbo.datamodel.pydantic.SimulationScale.neural_mass) | Population-level neural mass or mean-field model. |
+| [neural_network](#tvbo.datamodel.pydantic.SimulationScale.neural_network) | Microcircuit / local network of neurons. |
+| [neuron](#tvbo.datamodel.pydantic.SimulationScale.neuron) | Single neuron (compartmental or point). |
+| [whole_brain](#tvbo.datamodel.pydantic.SimulationScale.whole_brain) | Whole-brain models targeting cortex-wide dynamics. |
+
+### SimulationStudy { #tvbo.datamodel.pydantic.SimulationStudy }
+
+```python
+datamodel.pydantic.SimulationStudy()
+```
+
+
+
+### SimulationTool { #tvbo.datamodel.pydantic.SimulationTool }
+
+```python
+datamodel.pydantic.SimulationTool()
+```
+
+A software tool for computational neuroscience simulation, analysis, or model specification. Extends SoftwarePackage with neuroscience-specific controlled vocabularies for scale, paradigm, role, and interoperability. Aligned with CodeMeta v3 and DOAP.
+
+### SoftwareEnvironment { #tvbo.datamodel.pydantic.SoftwareEnvironment }
+
+```python
+datamodel.pydantic.SoftwareEnvironment()
+```
+
+A reproducible software environment aggregating one or more SoftwareRequirement entries. Used by SimulationExperiment to specify the execution context.
+
+### SoftwarePackage { #tvbo.datamodel.pydantic.SoftwarePackage }
+
+```python
+datamodel.pydantic.SoftwarePackage()
+```
+
+Identity and metadata for a software package, aligned with schema.org/SoftwareApplication and CodeMeta v3.
+
+### SoftwareRequirement { #tvbo.datamodel.pydantic.SoftwareRequirement }
+
+```python
+datamodel.pydantic.SoftwareRequirement()
+```
+
+An individual software requirement binding a package to a version constraint and a role within an environment.
+
+### Solver { #tvbo.datamodel.pydantic.Solver }
+
+```python
+datamodel.pydantic.Solver()
+```
+
+Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and tolerances matter.
+
+### SparseFormat { #tvbo.datamodel.pydantic.SparseFormat }
+
+```python
+datamodel.pydantic.SparseFormat()
+```
+
+
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [coo](#tvbo.datamodel.pydantic.SparseFormat.coo) | Coordinate list (data, row, col) |
+| [csr](#tvbo.datamodel.pydantic.SparseFormat.csr) | Compressed Sparse Row (data, indices, indptr) |
+| [dense](#tvbo.datamodel.pydantic.SparseFormat.dense) | Dense N×N array with gzip compression |
+
+### SpatialDomain { #tvbo.datamodel.pydantic.SpatialDomain }
+
+```python
+datamodel.pydantic.SpatialDomain()
+```
+
+
+
+### SpatialField { #tvbo.datamodel.pydantic.SpatialField }
+
+```python
+datamodel.pydantic.SpatialField()
+```
+
+
+
+### SpecimenEnum { #tvbo.datamodel.pydantic.SpecimenEnum }
+
+```python
+datamodel.pydantic.SpecimenEnum()
+```
+
+A set of permissible types for specimens used in brain atlas creation.
+
+### StandardGraphType { #tvbo.datamodel.pydantic.StandardGraphType }
+
+```python
+datamodel.pydantic.StandardGraphType()
+```
+
+Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python (NetworkX).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [BarabasiAlbert](#tvbo.datamodel.pydantic.StandardGraphType.BarabasiAlbert) | Barabasi-Albert preferential attachment (params: k) |
+| [Complete](#tvbo.datamodel.pydantic.StandardGraphType.Complete) | Complete graph (all-to-all) |
+| [Cycle](#tvbo.datamodel.pydantic.StandardGraphType.Cycle) | Cycle graph (ring) |
+| [ErdosRenyi](#tvbo.datamodel.pydantic.StandardGraphType.ErdosRenyi) | Erdos-Renyi random graph (params: p) |
+| [Grid](#tvbo.datamodel.pydantic.StandardGraphType.Grid) | Grid/lattice graph (params: dims) |
+| [RandomRegular](#tvbo.datamodel.pydantic.StandardGraphType.RandomRegular) | Random regular graph (params: k) |
+| [RandomReservoir](#tvbo.datamodel.pydantic.StandardGraphType.RandomReservoir) | Sparse random recurrent adjacency with post-hoc spectral- radius rescaling. Parameters: sparsity, spectral_radius, weight_distribution, seed (the size comes from Network.number_of_nodes). Canonical Echo State Network substrate (Jaeger 2001) for reservoir computing. |
+| [Star](#tvbo.datamodel.pydantic.StandardGraphType.Star) | Star graph |
+| [WattsStrogatz](#tvbo.datamodel.pydantic.StandardGraphType.WattsStrogatz) | Watts-Strogatz small-world (params: k, p) |
+| [WeightShuffle](#tvbo.datamodel.pydantic.StandardGraphType.WeightShuffle) | Derived generator: permute the non-zero entries of a source matrix. Parameters: source (IRI to another Network), preserve (binary_mask), seed. Used for null-model controls (e.g. shuffled SC). |
+
+### StateValue { #tvbo.datamodel.pydantic.StateValue }
+
+```python
+datamodel.pydantic.StateValue()
+```
+
+A named state variable value for per-node initialization.
+
+### StateVariable { #tvbo.datamodel.pydantic.StateVariable }
+
+```python
+datamodel.pydantic.StateVariable()
+```
+
+
+
+### StimulationSetting { #tvbo.datamodel.pydantic.StimulationSetting }
+
+```python
+datamodel.pydantic.StimulationSetting()
+```
+
+DBS parameters for a specific session.
+
+### Stimulus { #tvbo.datamodel.pydantic.Stimulus }
+
+```python
+datamodel.pydantic.Stimulus()
+```
+
+
+
+### Study { #tvbo.datamodel.pydantic.Study }
+
+```python
+datamodel.pydantic.Study()
+```
+
+Bibliographic anchor for a source publication, identified by its citation key (``citekey``).  The full bibliographic record lives in the project BibTeX library (references.bib) and is resolved by citekey; this node carries only identity, display fields and the knowledge-graph hooks (the concepts that cite it).  Specialised by SimulationStudy, which adds the experiments derived from the source.
+
+### StudyDirectory { #tvbo.datamodel.pydantic.StudyDirectory }
+
+```python
+datamodel.pydantic.StudyDirectory()
+```
+
+One directory in a study layout. ``role`` is the stable key code resolves by: a resolver asks the layout where the ``results`` go and never for a literal path, so moving a directory is a one-line edit to this record. ``bids`` states the directory's standing with the standard, which is what decides whether it needs a ``.bidsignore`` entry, and ``tracked`` states what version control keeps.
+
+### StudyDirectoryRole { #tvbo.datamodel.pydantic.StudyDirectoryRole }
+
+```python
+datamodel.pydantic.StudyDirectoryRole()
+```
+
+What a directory is for, as a key code resolves paths by. Roles are properties of a study dataset in general, so a layout that renames or moves a directory keeps working without touching the code that reads it.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [analysis](#tvbo.datamodel.pydantic.StudyDirectoryRole.analysis) | Analysis definitions the report and figures read. |
+| [build](#tvbo.datamodel.pydantic.StudyDirectoryRole.build) | Build root for artifacts that are pure products and reproduce from the spec. |
+| [cache](#tvbo.datamodel.pydantic.StudyDirectoryRole.cache) | Cached intermediate results, keyed on their inputs. |
+| [code](#tvbo.datamodel.pydantic.StudyDirectoryRole.code) | Callables the recipe references by bare module name. |
+| [derivatives](#tvbo.datamodel.pydantic.StudyDirectoryRole.derivatives) | Grouping directory for the nested derivative datasets. |
+| [docs](#tvbo.datamodel.pydantic.StudyDirectoryRole.docs) | Report sources: the prose, its bibliography and its render config. |
+| [figure_scripts](#tvbo.datamodel.pydantic.StudyDirectoryRole.figure_scripts) | The self-contained plotting script each declarative figure generates: the editable escape hatch from the spec, kept beside what it renders rather than beside the authored code, which it is not. |
+| [figures](#tvbo.datamodel.pydantic.StudyDirectoryRole.figures) | Rendered figures cleared for publication. |
+| [figures_restricted](#tvbo.datamodel.pydantic.StudyDirectoryRole.figures_restricted) | Rendered figures that reproduce copyrighted material and are never tracked or published, so an internal comparison stays possible without redistributing it. |
+| [kits](#tvbo.datamodel.pydantic.StudyDirectoryRole.kits) | Self-contained runnable kits packaged from the spec. |
+| [logs](#tvbo.datamodel.pydantic.StudyDirectoryRole.logs) | Run logs. |
+| [manuscript_sections](#tvbo.datamodel.pydantic.StudyDirectoryRole.manuscript_sections) | The document's sections, one file each, included by the document in the order it names them. |
+| [notes](#tvbo.datamodel.pydantic.StudyDirectoryRole.notes) | Working notes kept beside the study and never published: the gap register a reproduction accumulates, the open threads. Untracked, so a note can be blunt. |
+| [original_study](#tvbo.datamodel.pydantic.StudyDirectoryRole.original_study) | Material published by the work being reproduced, kept apart from the study's own inputs so it is never mistaken for an output. |
+| [raw_bids](#tvbo.datamodel.pydantic.StudyDirectoryRole.raw_bids) | An input that is itself a BIDS raw dataset, mounted rather than copied. |
+| [results](#tvbo.datamodel.pydantic.StudyDirectoryRole.results) | Result containers a run and its analyses write, and figures read. |
+| [sourcedata](#tvbo.datamodel.pydantic.StudyDirectoryRole.sourcedata) | Inputs the study did not compute: connectomes, atlases, empirical data. |
+| [spec](#tvbo.datamodel.pydantic.StudyDirectoryRole.spec) | Recipe fragments the entry recipe includes. |
+
+### StudyFile { #tvbo.datamodel.pydantic.StudyFile }
+
+```python
+datamodel.pydantic.StudyFile()
+```
+
+One file a study layout accounts for. ``name`` may interpolate ``{study}``, the dataset's own name, which is how the entry recipe is named without the layout knowing any particular study.
+
+### StudyFileRole { #tvbo.datamodel.pydantic.StudyFileRole }
+
+```python
+datamodel.pydantic.StudyFileRole()
+```
+
+What a file at a known place in the layout is.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [bidsignore](#tvbo.datamodel.pydantic.StudyFileRole.bidsignore) | ``.bidsignore``, generated from the layout's ``bids`` fields. |
+| [changelog](#tvbo.datamodel.pydantic.StudyFileRole.changelog) | ``CHANGES``. |
+| [citation](#tvbo.datamodel.pydantic.StudyFileRole.citation) | ``CITATION.cff``. |
+| [dataset_description](#tvbo.datamodel.pydantic.StudyFileRole.dataset_description) | The BIDS ``dataset_description.json``. |
+| [gitignore](#tvbo.datamodel.pydantic.StudyFileRole.gitignore) | ``.gitignore``, generated from the layout's ``tracked`` fields. |
+| [license](#tvbo.datamodel.pydantic.StudyFileRole.license) | The dataset license. |
+| [readme](#tvbo.datamodel.pydantic.StudyFileRole.readme) | The dataset or directory README. |
+| [recipe](#tvbo.datamodel.pydantic.StudyFileRole.recipe) | The entry recipe: the one specification a run is given. |
+| [results_manifest](#tvbo.datamodel.pydantic.StudyFileRole.results_manifest) | The resolved ``results:`` bindings, emitted for the document to read. |
+
+### StudyLayout { #tvbo.datamodel.pydantic.StudyLayout }
+
+```python
+datamodel.pydantic.StudyLayout()
+```
+
+Directory layout of a study dataset, and the single ground truth for it. Everything that creates, resolves, ignores, validates or documents a study's directories reads this record instead of restating the tree, so the layout cannot drift between the scaffolder, the path resolvers, the ignore files, the validator and the docs. The vocabulary deliberately mirrors the BIDS ``rules/directories.yaml`` (``name``, ``level``, ``opaque``, ``subdirs``) so a layout can be diffed against the standard.
+
+### StudyTemplate { #tvbo.datamodel.pydantic.StudyTemplate }
+
+```python
+datamodel.pydantic.StudyTemplate()
+```
+
+One kind of study the layout accounts for. A template is a *specialisation*: it names the entries a kind adds to the study every kind already shares, and nothing else. The general study is therefore not a template and names none — a kind earns an entry here only once some directory or file genuinely belongs to it and not to the rest.
+
+### Style { #tvbo.datamodel.pydantic.Style }
+
+```python
+datamodel.pydantic.Style()
+```
+
+Layer/panel styling, portable intent plus a namespaced backend passthrough. Reuses Argument for the passthrough (matplotlib implicit in the MVP).
+
+### Subject { #tvbo.datamodel.pydantic.Subject }
+
+```python
+datamodel.pydantic.Subject()
+```
+
+A participant in a study. Each subject typically has their own brain network (connectome) and empirical recordings. Corresponds to a BIDS 'sub-' entity.
+
+### SubjectBatchMode { #tvbo.datamodel.pydantic.SubjectBatchMode }
+
+```python
+datamodel.pydantic.SubjectBatchMode()
+```
+
+How a multi-subject dataset's per-subject fits are executed.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [fan_out](#tvbo.datamodel.pydantic.SubjectBatchMode.fan_out) | One per-subject job; each binds its own targets at run time. |
+| [on_device](#tvbo.datamodel.pydantic.SubjectBatchMode.on_device) | The whole cohort evaluated together as one vectorised on-device batch. |
+
+### Surface { #tvbo.datamodel.pydantic.Surface }
+
+```python
+datamodel.pydantic.Surface()
+```
+
+A cortical surface panel's geometry and how a field is painted on it. One object, so the three mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination.
+
+### SurfaceView { #tvbo.datamodel.pydantic.SurfaceView }
+
+```python
+datamodel.pydantic.SurfaceView()
+```
+
+Where the camera sits for a cortical surface. Distinct from `VolumeView`: a mesh is viewed from a side of the brain, a volume is sliced along an anatomical axis, and the two vocabularies do not overlap.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [anterior](#tvbo.datamodel.pydantic.SurfaceView.anterior) | From the front. |
+| [dorsal](#tvbo.datamodel.pydantic.SurfaceView.dorsal) | From above. |
+| [lateral](#tvbo.datamodel.pydantic.SurfaceView.lateral) | From the side, outward face. |
+| [medial](#tvbo.datamodel.pydantic.SurfaceView.medial) | From the side, inward face. |
+| [posterior](#tvbo.datamodel.pydantic.SurfaceView.posterior) | From behind. |
+| [ventral](#tvbo.datamodel.pydantic.SurfaceView.ventral) | From below. |
+
+### Surrogate { #tvbo.datamodel.pydantic.Surrogate }
+
+```python
+datamodel.pydantic.Surrogate()
+```
+
+A permutation-significance test: re-evaluate a named statistic under n_perm fixed permutations of a field and report the per-element exceedance p-value. General (any permutation null — spatial nulls, FC significance, wave detection, …). Codegen emits ``(vmap(lambda p: stat(field[p]))(perms) <cmp> stat(field)).mean(axis over perms)``; the wrapped statistic is an ordinary symbolic derived variable, so only the permutation fold is structural.
+
+### SweepDirection { #tvbo.datamodel.pydantic.SweepDirection }
+
+```python
+datamodel.pydantic.SweepDirection()
+```
+
+Order in which a branch-following sweep (SweepSeeding.from_previous) traverses its axis. Ignored for independent seeding, where order is irrelevant.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [bidirectional](#tvbo.datamodel.pydantic.SweepDirection.bidirectional) | Increase then decrease over the same values, recording both branches. Where the two branches differ, the sweep traces a hysteresis loop that exposes coexisting stable states (bistability / multistability). The multivalued generalisation of Continuation.bothside. |
+| [down](#tvbo.datamodel.pydantic.SweepDirection.down) | Decrease the parameter monotonically (high to low), once. |
+| [up](#tvbo.datamodel.pydantic.SweepDirection.up) | Increase the parameter monotonically (low to high), once. |
+
+### SweepSeeding { #tvbo.datamodel.pydantic.SweepSeeding }
+
+```python
+datamodel.pydantic.SweepSeeding()
+```
+
+How each point of a parameter sweep (Exploration) obtains its initial state. Determines whether the sweep points are independent (and therefore parallelisable) or whether the trajectory follows a solution branch as the swept parameter is changed quasi-statically. The latter is forward-time-integration branch following — distinct from numerical continuation of equilibria (the Continuation class), which tracks branches with a Newton corrector rather than by simulation.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [from_previous](#tvbo.datamodel.pydantic.SweepSeeding.from_previous) | Each point is seeded from the final state of the preceding point, so the trajectory follows the solution branch as the swept parameter changes quasi-statically. Forces sequential, order-dependent execution (emitted as a scan, not a vmap). Used to reach a working point by slowly ramping a parameter (e.g. global coupling) and, with sweep_direction, to expose hysteresis / multistability. Sweep-granularity analogue of InitialStateMethod.from_branch. |
+| [independent](#tvbo.datamodel.pydantic.SweepSeeding.independent) | Points are order-independent and may be evaluated in parallel (see parallel_mode). Default. Independent of each OTHER, which is not the same as each cold-starting: where the experiment declares a transient, the settle is integrated once and every point opens from the state it reached, so what is shared between points is a settled state rather than a running trajectory. That is sound while the swept parameter does not change the approach, and unsound wherever the sweep crosses a bifurcation, since a point then inherits an attractor it would not have reached on its own. A settle per point would make the name literal and is not what the emitter does today; read this as the guarantee it gives rather than the one the word suggests. |
+
+### SystemType { #tvbo.datamodel.pydantic.SystemType }
+
+```python
+datamodel.pydantic.SystemType()
+```
+
+
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [continuous](#tvbo.datamodel.pydantic.SystemType.continuous) | Continuous-time dynamics (e.g., ODE/SDE). |
+| [discrete](#tvbo.datamodel.pydantic.SystemType.discrete) | Discrete-time dynamics (e.g., maps, iterated updates). |
+
+### Theme { #tvbo.datamodel.pydantic.Theme }
+
+```python
+datamodel.pydantic.Theme()
+```
+
+A project's whole look in one declarable object: its colours (inherited from `Palette`) and the geometry a style sheet used to own — tick shape, axis weight, line weights, legend, grid, font. Declared on a figure, it beats every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec, where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:theme/default`; a project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means to fix and nothing else.
+
+### TickDirection { #tvbo.datamodel.pydantic.TickDirection }
+
+```python
+datamodel.pydantic.TickDirection()
+```
+
+Which side of the axes a tick mark is drawn on.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [in_](#tvbo.datamodel.pydantic.TickDirection.in_) | Inward, over the data. Saves the margin a dense mosaic needs. |
+| [inout](#tvbo.datamodel.pydantic.TickDirection.inout) | Crossing the spine in both directions. |
+| [out](#tvbo.datamodel.pydantic.TickDirection.out) | Outward, away from the data. The convention in most journals. |
+
+### TickFormat { #tvbo.datamodel.pydantic.TickFormat }
+
+```python
+datamodel.pydantic.TickFormat()
+```
+
+How a tick number is written.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [plain](#tvbo.datamodel.pydantic.TickFormat.plain) | Plain decimals, never scientific notation. |
+| [sci](#tvbo.datamodel.pydantic.TickFormat.sci) | Scientific notation, always. |
+
+### TickPrune { #tvbo.datamodel.pydantic.TickPrune }
+
+```python
+datamodel.pydantic.TickPrune()
+```
+
+Which end ticks to drop where a corner tick would collide with its neighbour panel's.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [both](#tvbo.datamodel.pydantic.TickPrune.both) | Drop both end ticks. |
+| [lower](#tvbo.datamodel.pydantic.TickPrune.lower) | Drop the first tick. |
+| [upper](#tvbo.datamodel.pydantic.TickPrune.upper) | Drop the last tick. |
+
+### TimeSeries { #tvbo.datamodel.pydantic.TimeSeries }
+
+```python
+datamodel.pydantic.TimeSeries()
+```
+
+Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling (BEP034).
+
+### ToolRole { #tvbo.datamodel.pydantic.ToolRole }
+
+```python
+datamodel.pydantic.ToolRole()
+```
+
+Primary function of the tool in a simulation workflow.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [analysis_tool](#tvbo.datamodel.pydantic.ToolRole.analysis_tool) | Post-processing, signal analysis, or statistics. |
+| [backend_runtime](#tvbo.datamodel.pydantic.ToolRole.backend_runtime) | Optimized execution backend for another simulator. |
+| [continuation_tool](#tvbo.datamodel.pydantic.ToolRole.continuation_tool) | Numerical continuation / bifurcation analysis. |
+| [feature_extraction](#tvbo.datamodel.pydantic.ToolRole.feature_extraction) | Feature library or pipeline for derived signal descriptors. |
+| [framework](#tvbo.datamodel.pydantic.ToolRole.framework) | Multi-paradigm simulation framework. |
+| [inference_framework](#tvbo.datamodel.pydantic.ToolRole.inference_framework) | Probabilistic / Bayesian inference toolkit for model parameters. |
+| [model_repository](#tvbo.datamodel.pydantic.ToolRole.model_repository) | Database or repository of published models. |
+| [optimization_framework](#tvbo.datamodel.pydantic.ToolRole.optimization_framework) | Parameter optimization / fitting tool. |
+| [simulator](#tvbo.datamodel.pydantic.ToolRole.simulator) | Core numerical simulator. |
+| [specification_language](#tvbo.datamodel.pydantic.ToolRole.specification_language) | Model description language or data standard. |
+| [visualization_tool](#tvbo.datamodel.pydantic.ToolRole.visualization_tool) | Visualization or graphical user interface. |
+| [workflow_framework](#tvbo.datamodel.pydantic.ToolRole.workflow_framework) | Orchestration, model-building, or pipeline tool. |
+
+### ToolUnit { #tvbo.datamodel.pydantic.ToolUnit }
+
+```python
+datamodel.pydantic.ToolUnit()
+```
+
+One TVBO unit as a single tool writes it.
+A tool's unit vocabulary is a fact about that tool, not about the unit — LEMS calls `Hz` a `per_time` quantity and writes it `per_s`, and no other backend need agree. Keyed by the `UnitEnum` value so a record states only the units its tool knows.
+
+### TrackedContent { #tvbo.datamodel.pydantic.TrackedContent }
+
+```python
+datamodel.pydantic.TrackedContent()
+```
+
+What version control keeps of a directory.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [all](#tvbo.datamodel.pydantic.TrackedContent.all) | Everything in it is tracked. |
+| [declared_files](#tvbo.datamodel.pydantic.TrackedContent.declared_files) | Only the files the record declares under it are tracked, at whatever depth they sit; everything else it accumulates is not. A source directory keeps its README, so third-party material is documented without being redistributed, and a derivative dataset keeps the description that declares what it is, so a checkout validates before anything has been run. |
+| [none](#tvbo.datamodel.pydantic.TrackedContent.none) | Nothing in it is tracked; the directory is reproduced by running the study. |
+
+### Tractogram { #tvbo.datamodel.pydantic.Tractogram }
+
+```python
+datamodel.pydantic.Tractogram()
+```
+
+Reference to tractography/diffusion MRI data used to derive structural connectivity
+
+### Triangle { #tvbo.datamodel.pydantic.Triangle }
+
+```python
+datamodel.pydantic.Triangle()
+```
+
+Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as one image. The conventional way to show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for the drawn halves: with the matrix convention (row 0 at top, set invert_y) 'upper' is the top-right triangle.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [lower](#tvbo.datamodel.pydantic.Triangle.lower) | The triangle below the diagonal. |
+| [upper](#tvbo.datamodel.pydantic.Triangle.upper) | The triangle above the diagonal. |
+
+### TuningObjective { #tvbo.datamodel.pydantic.TuningObjective }
+
+```python
+datamodel.pydantic.TuningObjective()
+```
+
+Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).
+
+### UnitEnum { #tvbo.datamodel.pydantic.UnitEnum }
+
+```python
+datamodel.pydantic.UnitEnum()
+```
+
+Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [A](#tvbo.datamodel.pydantic.UnitEnum.A) | Ampere |
+| [H_per_m](#tvbo.datamodel.pydantic.UnitEnum.H_per_m) | Henry per metre (permeability) |
+| [Hz](#tvbo.datamodel.pydantic.UnitEnum.Hz) | Hertz (s⁻¹) |
+| [Hz_per_nA](#tvbo.datamodel.pydantic.UnitEnum.Hz_per_nA) | Hertz per nanoampere (neural gain) |
+| [MW](#tvbo.datamodel.pydantic.UnitEnum.MW) | Megawatt (10⁶ W); grid real/net power |
+| [Mohm](#tvbo.datamodel.pydantic.UnitEnum.Mohm) | Megaohm (MΩ) |
+| [N_per_m](#tvbo.datamodel.pydantic.UnitEnum.N_per_m) | Newton per metre (spring constant) |
+| [S_per_cm2](#tvbo.datamodel.pydantic.UnitEnum.S_per_cm2) | Siemens per square centimetre (conductance density) |
+| [S_per_m](#tvbo.datamodel.pydantic.UnitEnum.S_per_m) | Siemens per metre (conductivity) |
+| [S_per_m2](#tvbo.datamodel.pydantic.UnitEnum.S_per_m2) | Siemens per square metre (conductance density, SI) |
+| [V](#tvbo.datamodel.pydantic.UnitEnum.V) | Volt |
+| [W](#tvbo.datamodel.pydantic.UnitEnum.W) | Watt (power) |
+| [arbitrary_unit](#tvbo.datamodel.pydantic.UnitEnum.arbitrary_unit) | Arbitrary units (a.u.) |
+| [cm](#tvbo.datamodel.pydantic.UnitEnum.cm) | Centimetre |
+| [day](#tvbo.datamodel.pydantic.UnitEnum.day) | Day (86400 s) |
+| [degC](#tvbo.datamodel.pydantic.UnitEnum.degC) | Degree Celsius |
+| [dimensionless](#tvbo.datamodel.pydantic.UnitEnum.dimensionless) | Dimensionless (unitless) |
+| [h](#tvbo.datamodel.pydantic.UnitEnum.h) | Hour (3600 s) |
+| [kHz](#tvbo.datamodel.pydantic.UnitEnum.kHz) | Kilohertz |
+| [kg](#tvbo.datamodel.pydantic.UnitEnum.kg) | Kilogram |
+| [kg_m2](#tvbo.datamodel.pydantic.UnitEnum.kg_m2) | Kilogram metre squared (moment of inertia) |
+| [kg_per_s](#tvbo.datamodel.pydantic.UnitEnum.kg_per_s) | Kilogram per second |
+| [km](#tvbo.datamodel.pydantic.UnitEnum.km) | Kilometre |
+| [kohm_cm](#tvbo.datamodel.pydantic.UnitEnum.kohm_cm) | Kilo-ohm centimetre (axial resistivity) |
+| [m](#tvbo.datamodel.pydantic.UnitEnum.m) | Metre |
+| [mS_per_cm2](#tvbo.datamodel.pydantic.UnitEnum.mS_per_cm2) | Millisiemens per square centimetre (conductance density) |
+| [mV](#tvbo.datamodel.pydantic.UnitEnum.mV) | Millivolt |
+| [mV_per_ms](#tvbo.datamodel.pydantic.UnitEnum.mV_per_ms) | Millivolt per millisecond |
+| [mV_per_s](#tvbo.datamodel.pydantic.UnitEnum.mV_per_s) | Millivolt per second |
+| [m_per_s](#tvbo.datamodel.pydantic.UnitEnum.m_per_s) | Metre per second |
+| [m_per_s2](#tvbo.datamodel.pydantic.UnitEnum.m_per_s2) | Metre per second squared (acceleration) |
+| [min](#tvbo.datamodel.pydantic.UnitEnum.min) | Minute (60 s) |
+| [mm](#tvbo.datamodel.pydantic.UnitEnum.mm) | Millimetre |
+| [mm_per_ms](#tvbo.datamodel.pydantic.UnitEnum.mm_per_ms) | Millimetre per millisecond (= m/s) |
+| [mmol_per_m3](#tvbo.datamodel.pydantic.UnitEnum.mmol_per_m3) | Millimole per cubic metre (mmol/m³), a thousandth of mM |
+| [mol_per_cm3](#tvbo.datamodel.pydantic.UnitEnum.mol_per_cm3) | Mole per cubic centimetre (mol/cm³) |
+| [mol_per_m3](#tvbo.datamodel.pydantic.UnitEnum.mol_per_m3) | Mole per cubic metre (mol/m³), which is millimolar exactly: one mM is one mmol per litre and a litre is 10⁻³ m³. |
+| [mol_per_m_per_A_per_s](#tvbo.datamodel.pydantic.UnitEnum.mol_per_m_per_A_per_s) | Mole per metre per ampere per second (concentration-current coupling) |
+| [ms](#tvbo.datamodel.pydantic.UnitEnum.ms) | Millisecond |
+| [nA](#tvbo.datamodel.pydantic.UnitEnum.nA) | Nanoampere |
+| [nF](#tvbo.datamodel.pydantic.UnitEnum.nF) | Nanofarad |
+| [nS](#tvbo.datamodel.pydantic.UnitEnum.nS) | Nanosiemens |
+| [nS_per_mV](#tvbo.datamodel.pydantic.UnitEnum.nS_per_mV) | Nanosiemens per millivolt |
+| [ns](#tvbo.datamodel.pydantic.UnitEnum.ns) | Nanosecond |
+| [ohm](#tvbo.datamodel.pydantic.UnitEnum.ohm) | Ohm (Ω) |
+| [pA](#tvbo.datamodel.pydantic.UnitEnum.pA) | Picoampere |
+| [pF](#tvbo.datamodel.pydantic.UnitEnum.pF) | Picofarad |
+| [pS](#tvbo.datamodel.pydantic.UnitEnum.pS) | Picosiemens |
+| [per_m2](#tvbo.datamodel.pydantic.UnitEnum.per_m2) | Per square metre (m⁻²) |
+| [per_mV](#tvbo.datamodel.pydantic.UnitEnum.per_mV) | Reciprocal millivolt (mV⁻¹) |
+| [per_mm2](#tvbo.datamodel.pydantic.UnitEnum.per_mm2) | Per square millimetre (mm⁻²). The unit of a Laplace-Beltrami eigenvalue and of Gaussian curvature. |
+| [per_ms](#tvbo.datamodel.pydantic.UnitEnum.per_ms) | Per millisecond (ms⁻¹) |
+| [per_nC](#tvbo.datamodel.pydantic.UnitEnum.per_nC) | Reciprocal nanocoulomb (nC⁻¹) |
+| [per_pC](#tvbo.datamodel.pydantic.UnitEnum.per_pC) | Reciprocal picocoulomb (pC⁻¹) |
+| [per_s](#tvbo.datamodel.pydantic.UnitEnum.per_s) | Per second (s⁻¹) |
+| [per_unit](#tvbo.datamodel.pydantic.UnitEnum.per_unit) | Per-unit (dimensionless power-systems convention) |
+| [percent](#tvbo.datamodel.pydantic.UnitEnum.percent) | Percent (%) |
+| [rad](#tvbo.datamodel.pydantic.UnitEnum.rad) | Radian |
+| [rad_per_ms](#tvbo.datamodel.pydantic.UnitEnum.rad_per_ms) | Radian per millisecond |
+| [rad_per_s](#tvbo.datamodel.pydantic.UnitEnum.rad_per_s) | Radian per second (angular velocity) |
+| [s](#tvbo.datamodel.pydantic.UnitEnum.s) | Second |
+| [s2](#tvbo.datamodel.pydantic.UnitEnum.s2) | Second squared (inertia constant) |
+| [uA_per_cm2](#tvbo.datamodel.pydantic.UnitEnum.uA_per_cm2) | Microampere per square centimetre (current density) |
+| [uF_per_cm2](#tvbo.datamodel.pydantic.UnitEnum.uF_per_cm2) | Microfarad per square centimetre (specific capacitance) |
+| [uS](#tvbo.datamodel.pydantic.UnitEnum.uS) | Microsiemens |
+| [um3](#tvbo.datamodel.pydantic.UnitEnum.um3) | Cubic micrometre (µm³) |
+| [us](#tvbo.datamodel.pydantic.UnitEnum.us) | Microsecond |
+| [year](#tvbo.datamodel.pydantic.UnitEnum.year) | Julian year (365.25 d) |
+
+### UpdateRule { #tvbo.datamodel.pydantic.UpdateRule }
+
+```python
+datamodel.pydantic.UpdateRule()
+```
+
+Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB updates. Functions from experiment.functions are available in the equation.
+
+### Volume { #tvbo.datamodel.pydantic.Volume }
+
+```python
+datamodel.pydantic.Volume()
+```
+
+A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, same layer and same colour scale, with the geometry coming from an atlas instead of a mesh. Values are placed BY LABEL through the atlas crosswalk, never by array position.
+
+### VolumeView { #tvbo.datamodel.pydantic.VolumeView }
+
+```python
+datamodel.pydantic.VolumeView()
+```
+
+Which anatomical plane a labelled volume is projected along.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [coronal](#tvbo.datamodel.pydantic.VolumeView.coronal) | Along the front-back axis. |
+| [horizontal](#tvbo.datamodel.pydantic.VolumeView.horizontal) | Along the top-bottom axis. |
+| [sagittal](#tvbo.datamodel.pydantic.VolumeView.sagittal) | Along the left-right axis. |
+
+### WorkflowConfig { #tvbo.datamodel.pydantic.WorkflowConfig }
+
+```python
+datamodel.pydantic.WorkflowConfig()
+```
+
+Declarative orchestration for rendering a parameter sweep into a distributed, reproducible workflow (Slurm array, Snakemake, Nextflow). Backend- and engine-independent: it names *what* to distribute, *where* results go, and the per-engine resources, while each engine emitter renders the concrete artefact. Declared on a study as ``workflow`` and refined per experiment via ``workflow_overrides``; unset fields fall back to the emitter's defaults so an override sets only what it names.
+
+### WorkflowDistributeBy { #tvbo.datamodel.pydantic.WorkflowDistributeBy }
+
+```python
+datamodel.pydantic.WorkflowDistributeBy()
+```
+
+Default tier a sweep axis is placed on when it is not named explicitly in a DistributionConfig. Vectorized axes are packed into one batched backend call; workflow axes are fanned out into independent scheduler tasks.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [auto](#tvbo.datamodel.pydantic.WorkflowDistributeBy.auto) | Vectorize every axis the backend can batch; fan out the rest. |
+| [vectorize](#tvbo.datamodel.pydantic.WorkflowDistributeBy.vectorize) | Place all otherwise-unassigned axes on the vectorized tier. |
+| [workflow](#tvbo.datamodel.pydantic.WorkflowDistributeBy.workflow) | Fan out all otherwise-unassigned axes as scheduler tasks. |
+
+### WorkflowEngineConfig { #tvbo.datamodel.pydantic.WorkflowEngineConfig }
+
+```python
+datamodel.pydantic.WorkflowEngineConfig()
+```
+
+Execution directives for a workflow engine. Every field is optional and each engine's emitter consumes the subset it supports, so one block may carry directives for more than one target. The generic resource fields (cpus_per_task, mem, time) map across engines; the remaining fields are named for the engine that reads them (Slurm: partition/account/gres/ mail_*/array_chunk; Snakemake: cores; Nextflow: executor/queue). Any directive not named here is passed through ``options`` verbatim, so the block stays extensible without a schema change.

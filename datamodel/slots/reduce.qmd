@@ -1,0 +1,77 @@
+# Slot: reduce 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/reduce](https://w3id.org/tvbo/slot/reduce)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [ExplorationAxis](../classes/ExplorationAxis.qmd) | One axis of a parameter exploration grid |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Observation](../classes/Observation.qmd), [ExplorationAxis](../classes/ExplorationAxis.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:reduce |
+| native | tvbo:reduce |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: reduce
+domain_of:
+- Observation
+- ExplorationAxis
+range: string
+
+```
+</details></div>

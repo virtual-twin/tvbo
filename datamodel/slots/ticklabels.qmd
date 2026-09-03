@@ -1,0 +1,102 @@
+# Slot: ticklabels 
+
+
+_Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/ticklabels](https://w3id.org/tvbo/slot/ticklabels)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Colorbar](../classes/Colorbar.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Colorbar](../classes/Colorbar.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ticklabels |
+| native | tvbo:ticklabels |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ticklabels
+description: 'Text for the marked values of a STANDALONE `kind: colorbar` panel, where
+  the numbers themselves are not what the figure wants to print. A bar attached to
+  a panel writes its own numbers, which the shared format pass rounds to `decimals`.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Colorbar
+domain_of:
+- Colorbar
+range: string
+multivalued: true
+
+```
+</details></div>

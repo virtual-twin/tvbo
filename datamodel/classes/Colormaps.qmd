@@ -1,0 +1,205 @@
+# Class: Colormaps 
+
+
+_Continuous colour scales, by key: anything ordinal or continuous draws from one of these, anything categorical draws from `Palette.palette`, and an ordinal scale drawn as discrete swatches samples one rather than picking hues that imply no order. A value is either a registered colormap name (`viridis`) or the list of colours to ramp between (`['#000000', '#ffffff']`). The namespace is open — a project adds its own keys for the scales it distinguishes (`bold: viridis, meg: plasma, eeg: cividis`) and names them anywhere a colormap is named. `sequential` and `diverging` are the two the renderer reaches for on its own, so they are typed here and always present: a project that declares neither still has both. An open namespace cannot catch a misspelt key — `sequentiel` is read as a project key, not as a typo — which is the price of letting a project name its own scales. A key that shadows a registered colormap name is refused, so a name cannot mean two things at once._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Colormaps](https://w3id.org/tvbo/class/Colormaps)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Colormaps
+    click Colormaps href "./Colormaps.html"
+      Colormaps : diverging
+        
+          
+    
+        
+        
+        Colormaps --> "0..1" String : diverging
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Colormaps : sequential
+        
+          
+    
+        
+        
+        Colormaps --> "0..1" String : sequential
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [sequential](../slots/sequential.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Ordered magnitudes with no meaningful zero | direct |
+| [diverging](../slots/diverging.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Signed quantities read against a midpoint, where the two directions must be t... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Palette](../classes/Palette.qmd) | [colormaps](../slots/colormaps.qmd) | range | [Colormaps](../classes/Colormaps.qmd) |
+| [Theme](../classes/Theme.qmd) | [colormaps](../slots/colormaps.qmd) | range | [Colormaps](../classes/Colormaps.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Colormaps |
+| native | tvbo:Colormaps |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Colormaps
+description: 'Continuous colour scales, by key: anything ordinal or continuous draws
+  from one of these, anything categorical draws from `Palette.palette`, and an ordinal
+  scale drawn as discrete swatches samples one rather than picking hues that imply
+  no order. A value is either a registered colormap name (`viridis`) or the list of
+  colours to ramp between (`[''#000000'', ''#ffffff'']`). The namespace is open —
+  a project adds its own keys for the scales it distinguishes (`bold: viridis, meg:
+  plasma, eeg: cividis`) and names them anywhere a colormap is named. `sequential`
+  and `diverging` are the two the renderer reaches for on its own, so they are typed
+  here and always present: a project that declares neither still has both. An open
+  namespace cannot catch a misspelt key — `sequentiel` is read as a project key, not
+  as a typo — which is the price of letting a project name its own scales. A key that
+  shadows a registered colormap name is refused, so a name cannot mean two things
+  at once.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  sequential:
+    name: sequential
+    description: Ordered magnitudes with no meaningful zero. The scale an undeclared
+      continuous mark takes, and what `image.cmap` is set to.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Colormaps
+    range: string
+    any_of:
+    - range: string
+  diverging:
+    name: diverging
+    description: Signed quantities read against a midpoint, where the two directions
+      must be told apart at a glance. The scale a mark whose limits are centred takes,
+      so a map of signed deviations is not drawn on a one-directional ramp.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Colormaps
+    range: string
+    any_of:
+    - range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Colormaps
+description: 'Continuous colour scales, by key: anything ordinal or continuous draws
+  from one of these, anything categorical draws from `Palette.palette`, and an ordinal
+  scale drawn as discrete swatches samples one rather than picking hues that imply
+  no order. A value is either a registered colormap name (`viridis`) or the list of
+  colours to ramp between (`[''#000000'', ''#ffffff'']`). The namespace is open —
+  a project adds its own keys for the scales it distinguishes (`bold: viridis, meg:
+  plasma, eeg: cividis`) and names them anywhere a colormap is named. `sequential`
+  and `diverging` are the two the renderer reaches for on its own, so they are typed
+  here and always present: a project that declares neither still has both. An open
+  namespace cannot catch a misspelt key — `sequentiel` is read as a project key, not
+  as a typo — which is the price of letting a project name its own scales. A key that
+  shadows a registered colormap name is refused, so a name cannot mean two things
+  at once.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  sequential:
+    name: sequential
+    description: Ordered magnitudes with no meaningful zero. The scale an undeclared
+      continuous mark takes, and what `image.cmap` is set to.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colormaps
+    domain_of:
+    - Colormaps
+    range: string
+    any_of:
+    - range: string
+  diverging:
+    name: diverging
+    description: Signed quantities read against a midpoint, where the two directions
+      must be told apart at a glance. The scale a mark whose limits are centred takes,
+      so a map of signed deviations is not drawn on a one-directional ramp.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colormaps
+    domain_of:
+    - Colormaps
+    range: string
+    any_of:
+    - range: string
+
+```
+</details></div>

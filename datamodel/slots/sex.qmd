@@ -1,0 +1,99 @@
+# Slot: sex 
+
+
+_Biological sex._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/sex](https://w3id.org/tvbo/study/slot/sex)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Subject](../classes/Subject.qmd) | A participant in a study |  no  |
+| [DBSSubject](../classes/DBSSubject.qmd) | Human or animal subject receiving DBS |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SexEnum](../enums/SexEnum.qmd) |
+| Domain Of | [Subject](../classes/Subject.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Subject](../classes/Subject.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:sex |
+| native | tvbo_study:sex |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sex
+description: Biological sex.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+owner: Subject
+domain_of:
+- Subject
+range: SexEnum
+
+```
+</details></div>

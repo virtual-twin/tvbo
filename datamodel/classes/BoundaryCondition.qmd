@@ -1,0 +1,425 @@
+# Class: BoundaryCondition 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:BoundaryCondition](https://w3id.org/tvbo/BoundaryCondition)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class BoundaryCondition
+    click BoundaryCondition href "./BoundaryCondition.html"
+      BoundaryCondition : bc_type
+        
+          
+    
+        
+        
+        BoundaryCondition --> "0..1" BoundaryConditionType : bc_type
+        click BoundaryConditionType href "../../enums/BoundaryConditionType.html"
+    
+
+        
+      BoundaryCondition : description
+        
+          
+    
+        
+        
+        BoundaryCondition --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BoundaryCondition : equation
+        
+          
+    
+        
+        
+        BoundaryCondition --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      BoundaryCondition : label
+        
+          
+    
+        
+        
+        BoundaryCondition --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BoundaryCondition : on_region
+        
+          
+    
+        
+        
+        BoundaryCondition --> "0..1" String : on_region
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BoundaryCondition : time_dependent
+        
+          
+    
+        
+        
+        BoundaryCondition --> "0..1" Boolean : time_dependent
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:BoundaryCondition](https://w3id.org/tvbo/BoundaryCondition) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [bc_type](../slots/bc_type.qmd) | 0..1 <br/> [BoundaryConditionType](../enums/BoundaryConditionType.qmd) |  | direct |
+| [on_region](../slots/on_region.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Mesh/atlas subset where BC applies | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | What the boundary is held at — a constant, a parameter, or an expression in s... | direct |
+| [time_dependent](../slots/time_dependent.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) | [boundary_conditions](../slots/boundary_conditions.qmd) | range | [BoundaryCondition](../classes/BoundaryCondition.qmd) |
+| [PDE](../classes/PDE.qmd) | [boundary_conditions](../slots/boundary_conditions.qmd) | range | [BoundaryCondition](../classes/BoundaryCondition.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:BoundaryCondition |
+| native | tvbo:BoundaryCondition |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: BoundaryCondition
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+attributes:
+  bc_type:
+    name: bc_type
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BoundaryCondition
+    range: BoundaryConditionType
+  on_region:
+    name: on_region
+    description: Mesh/atlas subset where BC applies.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BoundaryCondition
+    range: string
+  equation:
+    name: equation
+    description: 'What the boundary is held at — a constant, a parameter, or an expression
+      in space and time. An `Equation` because a Dirichlet value is not always a number:
+      `value` is the older spelling, and said `Parameter.value` (a number) about something
+      that is not one.'
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - value
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+  time_dependent:
+    name: time_dependent
+    from_schema: https://w3id.org/tvbo
+    ifabsent: 'False'
+    domain_of:
+    - SpatialField
+    - BoundaryCondition
+    range: boolean
+class_uri: tvbo:BoundaryCondition
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: BoundaryCondition
+from_schema: https://w3id.org/tvbo
+attributes:
+  bc_type:
+    name: bc_type
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BoundaryCondition
+    domain_of:
+    - BoundaryCondition
+    range: BoundaryConditionType
+  on_region:
+    name: on_region
+    description: Mesh/atlas subset where BC applies.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BoundaryCondition
+    domain_of:
+    - BoundaryCondition
+    range: string
+  equation:
+    name: equation
+    description: 'What the boundary is held at — a constant, a parameter, or an expression
+      in space and time. An `Equation` because a Dirichlet value is not always a number:
+      `value` is the older spelling, and said `Parameter.value` (a number) about something
+      that is not one.'
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - value
+    owner: BoundaryCondition
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+  time_dependent:
+    name: time_dependent
+    from_schema: https://w3id.org/tvbo
+    ifabsent: 'False'
+    owner: BoundaryCondition
+    domain_of:
+    - SpatialField
+    - BoundaryCondition
+    range: boolean
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: BoundaryCondition
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: BoundaryCondition
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:BoundaryCondition
+
+```
+</details></div>

@@ -1,0 +1,98 @@
+# Slot: delta_p 
+
+
+_Initial parameter offset from the bifurcation point._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/delta_p](https://w3id.org/tvbo/slot/delta_p)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | Specification for switching from a detected bifurcation point to a new branch... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [BranchSwitch](../classes/BranchSwitch.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [BranchSwitch](../classes/BranchSwitch.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:delta_p |
+| native | tvbo:delta_p |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: delta_p
+description: Initial parameter offset from the bifurcation point.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: BranchSwitch
+domain_of:
+- BranchSwitch
+range: float
+
+```
+</details></div>

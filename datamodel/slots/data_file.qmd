@@ -1,0 +1,79 @@
+# Slot: data_file 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/data_file](https://w3id.org/tvbo/slot/data_file)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd) | Descriptor for a cached ``ExperimentResult``: the `` |  no  |
+| [Phenotype](../classes/Phenotype.qmd) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention) |  no  |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd), [Phenotype](../classes/Phenotype.qmd), [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:data_file |
+| native | tvbo:data_file |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: data_file
+domain_of:
+- ExperimentResultSidecar
+- Phenotype
+- Network
+range: string
+
+```
+</details></div>

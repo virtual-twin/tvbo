@@ -1,0 +1,83 @@
+# Slot: functions 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/functions](https://w3id.org/tvbo/slot/functions)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+| [PDE](../classes/PDE.qmd) | Partial differential equation problem definition |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Observation](../classes/Observation.qmd), [Dynamics](../classes/Dynamics.qmd), [Algorithm](../classes/Algorithm.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd), [PDE](../classes/PDE.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:functions |
+| native | tvbo:functions |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: functions
+domain_of:
+- Observation
+- Dynamics
+- Algorithm
+- SimulationExperiment
+- PDE
+range: string
+
+```
+</details></div>

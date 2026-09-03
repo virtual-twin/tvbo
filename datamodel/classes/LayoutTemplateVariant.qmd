@@ -1,0 +1,173 @@
+# Class: LayoutTemplateVariant 
+
+
+_One variant's seed for a file the record already accounts for._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:class/LayoutTemplateVariant](https://w3id.org/tvbo/study/class/LayoutTemplateVariant)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class LayoutTemplateVariant
+    click LayoutTemplateVariant href "./LayoutTemplateVariant.html"
+      LayoutTemplateVariant : template
+        
+          
+    
+        
+        
+        LayoutTemplateVariant --> "0..1" String : template
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      LayoutTemplateVariant : variant
+        
+          
+    
+        
+        
+        LayoutTemplateVariant --> "1" String : variant
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [variant](../slots/variant.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The ``tvbo study init --template`` name this seed belongs to | direct |
+| [template](../slots/template.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Asset seeding the file when that variant is selected | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [StudyFile](../classes/StudyFile.qmd) | [template_variants](../slots/template_variants.qmd) | range | [LayoutTemplateVariant](../classes/LayoutTemplateVariant.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:LayoutTemplateVariant |
+| native | tvbo_study:LayoutTemplateVariant |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: LayoutTemplateVariant
+description: One variant's seed for a file the record already accounts for.
+from_schema: https://w3id.org/tvbo/study
+attributes:
+  variant:
+    name: variant
+    description: The ``tvbo study init --template`` name this seed belongs to.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    key: true
+    domain_of:
+    - LayoutTemplateVariant
+    range: string
+  template:
+    name: template
+    description: Asset seeding the file when that variant is selected.
+    from_schema: https://w3id.org/tvbo/study
+    domain_of:
+    - StudyFile
+    - LayoutTemplateVariant
+    - Surface
+    - BidsEntities
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: LayoutTemplateVariant
+description: One variant's seed for a file the record already accounts for.
+from_schema: https://w3id.org/tvbo/study
+attributes:
+  variant:
+    name: variant
+    description: The ``tvbo study init --template`` name this seed belongs to.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    key: true
+    owner: LayoutTemplateVariant
+    domain_of:
+    - LayoutTemplateVariant
+    range: string
+    required: true
+  template:
+    name: template
+    description: Asset seeding the file when that variant is selected.
+    from_schema: https://w3id.org/tvbo/study
+    owner: LayoutTemplateVariant
+    domain_of:
+    - StudyFile
+    - LayoutTemplateVariant
+    - Surface
+    - BidsEntities
+    range: string
+
+```
+</details></div>

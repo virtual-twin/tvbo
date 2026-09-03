@@ -1,0 +1,199 @@
+# Class: Procedure 
+
+
+_Symbolic procedure: an ordered list of steps producing named outputs.  Documents a derived generator's algorithm independently of any backend binding._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Procedure](https://w3id.org/tvbo/Procedure)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Procedure
+    click Procedure href "./Procedure.html"
+      Procedure : output
+        
+          
+    
+        
+        
+        Procedure --> "*" ProcedureStep : output
+        click ProcedureStep href "./ProcedureStep.html"
+    
+
+        
+      Procedure : steps
+        
+          
+    
+        
+        
+        Procedure --> "*" ProcedureStep : steps
+        click ProcedureStep href "./ProcedureStep.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Procedure](https://w3id.org/tvbo/Procedure) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [steps](../slots/steps.qmd) | * <br/> [ProcedureStep](../classes/ProcedureStep.qmd) | Ordered intermediate steps, keyed by name — the same keyed-collection form as... | direct |
+| [output](../slots/output.qmd) | * <br/> [ProcedureStep](../classes/ProcedureStep.qmd) | Named outputs (keyed by name), e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | [procedure](../slots/procedure.qmd) | range | [Procedure](../classes/Procedure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Procedure |
+| native | tvbo:Procedure |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Procedure
+description: 'Symbolic procedure: an ordered list of steps producing named outputs.  Documents
+  a derived generator''s algorithm independently of any backend binding.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  steps:
+    name: steps
+    description: 'Ordered intermediate steps, keyed by name — the same keyed-collection
+      form as ``output``, so a step''s name is its key rather than a field repeated
+      inside it. Order is the evaluation order: a step may only reference names defined
+      before it.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Procedure
+    - Integrator
+    range: ProcedureStep
+    multivalued: true
+    inlined: true
+  output:
+    name: output
+    description: Named outputs (keyed by name), e.g. 'weights'.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DataRef
+    - Procedure
+    - Dynamics
+    - Function
+    - FunctionCall
+    range: ProcedureStep
+    multivalued: true
+    inlined: true
+class_uri: tvbo:Procedure
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Procedure
+description: 'Symbolic procedure: an ordered list of steps producing named outputs.  Documents
+  a derived generator''s algorithm independently of any backend binding.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  steps:
+    name: steps
+    description: 'Ordered intermediate steps, keyed by name — the same keyed-collection
+      form as ``output``, so a step''s name is its key rather than a field repeated
+      inside it. Order is the evaluation order: a step may only reference names defined
+      before it.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Procedure
+    domain_of:
+    - Procedure
+    - Integrator
+    range: ProcedureStep
+    multivalued: true
+    inlined: true
+  output:
+    name: output
+    description: Named outputs (keyed by name), e.g. 'weights'.
+    from_schema: https://w3id.org/tvbo
+    owner: Procedure
+    domain_of:
+    - DataRef
+    - Procedure
+    - Dynamics
+    - Function
+    - FunctionCall
+    range: ProcedureStep
+    multivalued: true
+    inlined: true
+class_uri: tvbo:Procedure
+
+```
+</details></div>

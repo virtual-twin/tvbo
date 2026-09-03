@@ -1,0 +1,104 @@
+# Slot: compile 
+
+
+_Code-generation hint (opt-in, backend-independent): request that the generated dynamics be compiled to machine code rather than interpreted, where the target backend supports it. Purely a performance hint with no effect on results; a backend that is inherently compiled (or cannot compile) honours it as a no-op. Off by default. Independent of, and composable with, ``cse``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/compile](https://w3id.org/tvbo/slot/compile)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:compile |
+| native | tvbo:compile |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: compile
+description: 'Code-generation hint (opt-in, backend-independent): request that the
+  generated dynamics be compiled to machine code rather than interpreted, where the
+  target backend supports it. Purely a performance hint with no effect on results;
+  a backend that is inherently compiled (or cannot compile) honours it as a no-op.
+  Off by default. Independent of, and composable with, ``cse``.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: Dynamics
+domain_of:
+- Dynamics
+range: boolean
+
+```
+</details></div>

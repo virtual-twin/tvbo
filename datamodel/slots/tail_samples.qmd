@@ -1,0 +1,101 @@
+# Slot: tail_samples 
+
+
+_Number of samples from the end to use. Takes the last N samples before aggregation. E.g., tail_samples: 500 means use data[-500:]. Prefer `tail_duration` when the window means a duration — a sample count silently rescales when the step size changes._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/tail_samples](https://w3id.org/tvbo/slot/tail_samples)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Observation](../classes/Observation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Observation](../classes/Observation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:tail_samples |
+| native | tvbo:tail_samples |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: tail_samples
+description: 'Number of samples from the end to use. Takes the last N samples before
+  aggregation. E.g., tail_samples: 500 means use data[-500:]. Prefer `tail_duration`
+  when the window means a duration — a sample count silently rescales when the step
+  size changes.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Observation
+domain_of:
+- Observation
+range: integer
+
+```
+</details></div>

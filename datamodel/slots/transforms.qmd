@@ -1,0 +1,107 @@
+# Slot: transforms 
+
+
+_Ordered list of transforms applied to edge property matrices. Each entry's `name:` is the edge property it rewrites (e.g. 'weight', 'length'), and that property is also the value under transform inside the entry's own equation, which is written over the network's edge attributes. Supports equation-based (symbolic) or callable-based (software) transforms. Multiple transforms on the same target are applied sequentially, each seeing the previous one's output._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/transforms](https://w3id.org/tvbo/slot/transforms)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Function](../classes/Function.qmd) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:transforms |
+| native | tvbo:transforms |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: transforms
+description: Ordered list of transforms applied to edge property matrices. Each entry's
+  `name:` is the edge property it rewrites (e.g. 'weight', 'length'), and that property
+  is also the value under transform inside the entry's own equation, which is written
+  over the network's edge attributes. Supports equation-based (symbolic) or callable-based
+  (software) transforms. Multiple transforms on the same target are applied sequentially,
+  each seeing the previous one's output.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Network
+domain_of:
+- Network
+range: Function
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

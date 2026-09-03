@@ -1,0 +1,145 @@
+# log { #tvbo.log }
+
+`log`
+
+Central logging configuration for TVBO.
+
+Every part of TVBO logs through the ``tvbo`` logger hierarchy:
+
+* in-package modules use ``logger = logging.getLogger(__name__)`` — their names
+  already sit under ``tvbo`` (e.g. ``tvbo.classes.experiment``);
+* generated backend scripts (tvboptim, …) use ``logging.getLogger("tvbo.run")``
+  so their progress output is controlled by the very same switch, regardless of which backend produced them or whether they run in-process or standalone.
+
+Importing tvbo as a library stays silent: the package installs only a :class:`~logging.NullHandler`. Entry points that are meant to surface progress — ``tvbo run`` and :meth:`SimulationExperiment.run` — call :func:`configure_logging` (directly, or via :func:`ensure_configured`) to attach a stderr handler.
+
+One switch controls all of it, no matter the entry point:
+
+* the ``TVBO_LOG_LEVEL`` environment variable
+  (``DEBUG`` / ``INFO`` / ``WARNING`` / ``ERROR`` / ``CRITICAL`` / ``OFF``), or
+* :func:`set_log_level` / :func:`silence` at runtime, or
+* an explicit ``configure_logging(level=...)``.
+
+## Example {.doc-section .doc-section-example}
+
+>>> import tvbo
+>>> tvbo.set_log_level("WARNING")   # quiet the progress banners everywhere
+>>> tvbo.silence()                  # turn tvbo logging off entirely
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [ENV_VAR](#tvbo.log.ENV_VAR) | Environment variable read as the central level switch when nothing is passed. |
+| [LOGGER_NAME](#tvbo.log.LOGGER_NAME) | Root of the tvbo logger hierarchy; every package and generated-code logger is a child of this and inherits its level and handlers. |
+| [logger](#tvbo.log.logger) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [configure_logging](#tvbo.log.configure_logging) | Attach a stderr handler to the ``tvbo`` logger and set its level. |
+| [ensure_configured](#tvbo.log.ensure_configured) | Make tvbo logs visible for a run without clobbering an app's logging setup. |
+| [get_log_level](#tvbo.log.get_log_level) | Return the effective numeric level of the central ``tvbo`` logger. |
+| [log_level](#tvbo.log.log_level) | Temporarily set the ``tvbo`` logger level within a ``with`` block. |
+| [set_log_level](#tvbo.log.set_log_level) | Set the central ``tvbo`` logger level — the global on/off/verbosity switch. |
+| [silence](#tvbo.log.silence) | Turn tvbo logging off (equivalent to ``TVBO_LOG_LEVEL=OFF``). |
+
+### configure_logging { #tvbo.log.configure_logging }
+
+```python
+log.configure_logging(
+    level=None,
+    *,
+    stream=None,
+    fmt=None,
+    datefmt=None,
+    force=False,
+)
+```
+
+Attach a stderr handler to the ``tvbo`` logger and set its level.
+
+Idempotent: the tvbo logger keeps at most one handler owned by this module.
+When *level* is ``None`` the level falls back to ``TVBO_LOG_LEVEL`` and then to :data:`DEFAULT_LEVEL`. Because the tvbo logger then owns its own output, its records stop propagating to the root logger (so an embedding application that also configured root logging does not print every line twice).
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type        | Description                                                        | Default   |
+|---------|-------------|--------------------------------------------------------------------|-----------|
+| level   | LevelLike   | Desired level (int, name, or ``"OFF"``); ``None`` → env → default. | `None`    |
+| stream  |             | Target stream for the handler; ``None`` uses stderr.               | `None`    |
+| fmt     | str \| None | Handler format string; ``None`` uses :data:`DEFAULT_FORMAT`.       | `None`    |
+| datefmt | str \| None | Optional date format for the handler.                              | `None`    |
+| force   | bool        | Replace an existing tvbo-managed handler (e.g. to change stream).  | `False`   |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type           | Description                  |
+|--------|----------------|------------------------------|
+|        | logging.Logger | The central ``tvbo`` logger. |
+
+### ensure_configured { #tvbo.log.ensure_configured }
+
+```python
+log.ensure_configured(level=None)
+```
+
+Make tvbo logs visible for a run without clobbering an app's logging setup.
+
+Called from the run entry points (``tvbo run``, ``SimulationExperiment.run``) so that logging behaves the same however a run is launched:
+
+* if the tvbo logger or the root logger already has a real handler (an app,
+  notebook, or a prior :func:`configure_logging` set things up), only the level is applied and the existing handlers keep emitting;
+* otherwise a default stderr handler is installed via :func:`configure_logging`.
+
+A level explicitly set earlier (``set_log_level`` / ``silence`` / a prior ``configure_logging``) is preserved: with no explicit *level* this only installs a default level the first time (while the logger is still at ``NOTSET``), so the central switch stays put across repeated ``.run()`` calls.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type      | Description                                                                                                                       | Default   |
+|--------|-----------|-----------------------------------------------------------------------------------------------------------------------------------|-----------|
+| level  | LevelLike | Level to apply; ``None`` keeps any level already set, else falls back to ``TVBO_LOG_LEVEL`` → :data:`DEFAULT_LEVEL` on first use. | `None`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type           | Description                  |
+|--------|----------------|------------------------------|
+|        | logging.Logger | The central ``tvbo`` logger. |
+
+### get_log_level { #tvbo.log.get_log_level }
+
+```python
+log.get_log_level()
+```
+
+Return the effective numeric level of the central ``tvbo`` logger.
+
+### log_level { #tvbo.log.log_level }
+
+```python
+log.log_level(level)
+```
+
+Temporarily set the ``tvbo`` logger level within a ``with`` block.
+
+Useful to quiet a noisy section or to force verbosity in a test without leaking the change to the rest of the process.
+
+### set_log_level { #tvbo.log.set_log_level }
+
+```python
+log.set_log_level(level)
+```
+
+Set the central ``tvbo`` logger level — the global on/off/verbosity switch.
+
+Affects every tvbo module and every generated backend script in the process.
+``"OFF"`` (or :func:`silence`) turns tvbo logging off entirely.
+
+### silence { #tvbo.log.silence }
+
+```python
+log.silence()
+```
+
+Turn tvbo logging off (equivalent to ``TVBO_LOG_LEVEL=OFF``).

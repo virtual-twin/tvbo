@@ -1,0 +1,240 @@
+# Class: Coordinate 
+
+
+_A 3D coordinate with X, Y, Z values._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:class/Coordinate](http://uri.interlex.org/tgbugs/uris/readable/class/Coordinate)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Coordinate
+    click Coordinate href "./Coordinate.html"
+      Coordinate : coordinateSpace
+        
+          
+    
+        
+        
+        Coordinate --> "0..1" CommonCoordinateSpace : coordinateSpace
+        click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+    
+
+        
+      Coordinate : x
+        
+          
+    
+        
+        
+        Coordinate --> "0..1" Float : x
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Coordinate : y
+        
+          
+    
+        
+        
+        Coordinate --> "0..1" Float : y
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Coordinate : z
+        
+          
+    
+        
+        
+        Coordinate --> "0..1" Float : z
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [coordinateSpace](../slots/coordinateSpace.qmd) | 0..1 <br/> [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | Common coordinate space (e | direct |
+| [x](../slots/x.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | X coordinate | direct |
+| [y](../slots/y.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Y coordinate | direct |
+| [z](../slots/z.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Z coordinate | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | [center](../slots/center.qmd) | range | [Coordinate](../classes/Coordinate.qmd) |
+| [Electrode](../classes/Electrode.qmd) | [head](../slots/head.qmd) | range | [Coordinate](../classes/Coordinate.qmd) |
+| [Electrode](../classes/Electrode.qmd) | [tail](../slots/tail.qmd) | range | [Coordinate](../classes/Coordinate.qmd) |
+| [Electrode](../classes/Electrode.qmd) | [trajectory](../slots/trajectory.qmd) | range | [Coordinate](../classes/Coordinate.qmd) |
+| [Contact](../classes/Contact.qmd) | [coordinate](../slots/coordinate.qmd) | range | [Coordinate](../classes/Coordinate.qmd) |
+| [Node](../classes/Node.qmd) | [position](../slots/position.qmd) | range | [Coordinate](../classes/Coordinate.qmd) |
+| [Mesh](../classes/Mesh.qmd) | [coordinates](../slots/coordinates.qmd) | range | [Coordinate](../classes/Coordinate.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:Coordinate |
+| native | atom:Coordinate |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Coordinate
+description: A 3D coordinate with X, Y, Z values.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slots:
+- coordinateSpace
+attributes:
+  x:
+    name: x
+    description: X coordinate
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: float
+  y:
+    name: y
+    description: Y coordinate
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: float
+  z:
+    name: z
+    description: Z coordinate
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - Coordinate
+    - Encoding
+    range: float
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Coordinate
+description: A 3D coordinate with X, Y, Z values.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+attributes:
+  x:
+    name: x
+    description: X coordinate
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: Coordinate
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: float
+  y:
+    name: y
+    description: Y coordinate
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: Coordinate
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: float
+  z:
+    name: z
+    description: Z coordinate
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: Coordinate
+    domain_of:
+    - Coordinate
+    - Encoding
+    range: float
+  coordinateSpace:
+    name: coordinateSpace
+    description: Common coordinate space (e.g. FSLMNI152, MNI152NLin2009cAsym). Reference
+      by name; the CommonCoordinateSpace must be defined in tvbo/database/coordinate_spaces/
+      (or future equivalent location).
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    owner: Coordinate
+    domain_of:
+    - Coordinate
+    - BrainAtlas
+    range: CommonCoordinateSpace
+
+```
+</details></div>

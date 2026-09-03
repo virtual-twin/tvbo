@@ -1,0 +1,336 @@
+# Class: Prior 
+
+
+_Prior belief over one inferred parameter. In `Inference.priors` the collection KEY is the parameter's dotted name; the value wraps a `Distribution` as the belief (reusing the standard distribution vocabulary rather than inventing a new one). Distinct from `Parameter.distribution`, which specifies per-node SAMPLING, not a prior._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Prior](https://w3id.org/tvbo/Prior)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Prior
+    click Prior href "./Prior.html"
+      Prior : description
+        
+          
+    
+        
+        
+        Prior --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Prior : distribution
+        
+          
+    
+        
+        
+        Prior --> "1" Distribution : distribution
+        click Distribution href "./Distribution.html"
+    
+
+        
+      Prior : name
+        
+          
+    
+        
+        
+        Prior --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Prior](https://w3id.org/tvbo/Prior) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [distribution](../slots/distribution.qmd) | 1 <br/> [Distribution](../classes/Distribution.qmd) | The prior distribution: e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Inference](../classes/Inference.qmd) | [priors](../slots/priors.qmd) | range | [Prior](../classes/Prior.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Prior |
+| native | tvbo:Prior |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Prior
+description: Prior belief over one inferred parameter. In `Inference.priors` the collection
+  KEY is the parameter's dotted name; the value wraps a `Distribution` as the belief
+  (reusing the standard distribution vocabulary rather than inventing a new one).
+  Distinct from `Parameter.distribution`, which specifies per-node SAMPLING, not a
+  prior.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+attributes:
+  distribution:
+    name: distribution
+    description: 'The prior distribution: e.g. {name: Normal, parameters: {mean, std}}
+      or {name: Uniform, domain: {lo, hi}}.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    range: Distribution
+    required: true
+    inlined: true
+class_uri: tvbo:Prior
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Prior
+description: Prior belief over one inferred parameter. In `Inference.priors` the collection
+  KEY is the parameter's dotted name; the value wraps a `Distribution` as the belief
+  (reusing the standard distribution vocabulary rather than inventing a new one).
+  Distinct from `Parameter.distribution`, which specifies per-node SAMPLING, not a
+  prior.
+from_schema: https://w3id.org/tvbo
+attributes:
+  distribution:
+    name: distribution
+    description: 'The prior distribution: e.g. {name: Normal, parameters: {mean, std}}
+      or {name: Uniform, domain: {lo, hi}}.'
+    from_schema: https://w3id.org/tvbo
+    owner: Prior
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    range: Distribution
+    required: true
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Prior
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Prior
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Prior
+
+```
+</details></div>

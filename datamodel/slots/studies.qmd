@@ -1,0 +1,112 @@
+# Slot: studies 
+
+
+_Other studies this one aggregates, each a ``SimulationStudy`` in its own right — so a study-of-studies is the same class as the studies it holds, and nesting recurses to any depth without a wrapper class standing between a study and the studies it holds. A whole manuscript is then one runnable specification whose sub-studies are runnable specifications. Written as ``!include <path>`` so each sub-study keeps its own recipe file and therefore its own directory: its ``code_source``, its results root and its relative references all resolve against where it lives, not against whoever included it. ``tvbo run`` walks the nested studies depth first, then runs the owning study's own experiments, analyses and figures — the paper-native content belonging to no sub-study. Legitimized by COMBINE/OMEX, SED-ML and the ISA ``Investigation`` top-level container it parallels._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/studies](https://w3id.org/tvbo/slot/studies)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| Domain Of | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:studies |
+| native | tvbo:studies |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: studies
+description: 'Other studies this one aggregates, each a ``SimulationStudy`` in its
+  own right — so a study-of-studies is the same class as the studies it holds, and
+  nesting recurses to any depth without a wrapper class standing between a study and
+  the studies it holds. A whole manuscript is then one runnable specification whose
+  sub-studies are runnable specifications. Written as ``!include <path>`` so each
+  sub-study keeps its own recipe file and therefore its own directory: its ``code_source``,
+  its results root and its relative references all resolve against where it lives,
+  not against whoever included it. ``tvbo run`` walks the nested studies depth first,
+  then runs the owning study''s own experiments, analyses and figures — the paper-native
+  content belonging to no sub-study. Legitimized by COMBINE/OMEX, SED-ML and the ISA
+  ``Investigation`` top-level container it parallels.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationStudy
+domain_of:
+- SimulationStudy
+range: SimulationStudy
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

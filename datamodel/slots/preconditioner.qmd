@@ -1,0 +1,92 @@
+# Slot: preconditioner 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/preconditioner](https://w3id.org/tvbo/slot/preconditioner)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [PDESolver](../classes/PDESolver.qmd) | Numerical solver for a PDE: the time-integration algorithm, tolerances and st... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [PDESolver](../classes/PDESolver.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [PDESolver](../classes/PDESolver.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:preconditioner |
+| native | tvbo:preconditioner |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: preconditioner
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: PDESolver
+domain_of:
+- PDESolver
+range: string
+
+```
+</details></div>

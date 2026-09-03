@@ -1,0 +1,77 @@
+# Slot: statistic 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/statistic](https://w3id.org/tvbo/slot/statistic)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [AxisReduction](../classes/AxisReduction.qmd) | Marks an exploration/sweep axis to be collapsed by a statistic in the result ... |  no  |
+| [Surrogate](../classes/Surrogate.qmd) | A permutation-significance test: re-evaluate a named statistic under n_perm f... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [AxisReduction](../classes/AxisReduction.qmd), [Surrogate](../classes/Surrogate.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:statistic |
+| native | tvbo:statistic |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: statistic
+domain_of:
+- AxisReduction
+- Surrogate
+range: string
+
+```
+</details></div>

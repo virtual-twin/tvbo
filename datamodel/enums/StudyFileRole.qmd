@@ -1,0 +1,94 @@
+# Enum: StudyFileRole 
+
+
+
+
+_What a file at a known place in the layout is._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_study:enum/StudyFileRole](https://w3id.org/tvbo/study/enum/StudyFileRole)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| dataset_description | None | The BIDS ``dataset_description |
+| readme | None | The dataset or directory README |
+| citation | None | ``CITATION |
+| license | None | The dataset license |
+| changelog | None | ``CHANGES`` |
+| recipe | None | The entry recipe: the one specification a run is given |
+| gitignore | None | `` |
+| bidsignore | None | `` |
+| results_manifest | None | The resolved ``results:`` bindings, emitted for the document to read |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: StudyFileRole
+description: What a file at a known place in the layout is.
+from_schema: https://w3id.org/tvbo/study
+permissible_values:
+  dataset_description:
+    text: dataset_description
+    description: The BIDS ``dataset_description.json``.
+  readme:
+    text: readme
+    description: The dataset or directory README.
+  citation:
+    text: citation
+    description: '``CITATION.cff``.'
+  license:
+    text: license
+    description: The dataset license.
+  changelog:
+    text: changelog
+    description: '``CHANGES``.'
+  recipe:
+    text: recipe
+    description: 'The entry recipe: the one specification a run is given.'
+  gitignore:
+    text: gitignore
+    description: '``.gitignore``, generated from the layout''s ``tracked`` fields.'
+  bidsignore:
+    text: bidsignore
+    description: '``.bidsignore``, generated from the layout''s ``bids`` fields.'
+  results_manifest:
+    text: results_manifest
+    description: The resolved ``results:`` bindings, emitted for the document to read.
+
+```
+</details>
+
+</div>

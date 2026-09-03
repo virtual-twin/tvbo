@@ -1,0 +1,100 @@
+# Slot: generated 
+
+
+_Written by tooling and overwritten on the next run, so it is never hand-edited._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/generated](https://w3id.org/tvbo/study/slot/generated)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StudyFile](../classes/StudyFile.qmd) | One file a study layout accounts for |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [StudyFile](../classes/StudyFile.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `false` |
+| Owner | [StudyFile](../classes/StudyFile.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:generated |
+| native | tvbo_study:generated |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: generated
+description: Written by tooling and overwritten on the next run, so it is never hand-edited.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+ifabsent: 'false'
+owner: StudyFile
+domain_of:
+- StudyFile
+range: boolean
+
+```
+</details></div>

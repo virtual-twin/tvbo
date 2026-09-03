@@ -1,0 +1,100 @@
+# Slot: elements 
+
+
+_Topology indices: either a file reference, or (when inlined on a Network) a dotted path inside the parent Network's h5 companion to the (M, 3) int triangle face array. Default convention: ``mesh/faces``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/elements](https://w3id.org/tvbo/slot/elements)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Mesh](../classes/Mesh.qmd) | Triangle (or higher-order) mesh geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Mesh](../classes/Mesh.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Mesh](../classes/Mesh.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:elements |
+| native | tvbo:elements |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: elements
+description: 'Topology indices: either a file reference, or (when inlined on a Network)
+  a dotted path inside the parent Network''s h5 companion to the (M, 3) int triangle
+  face array. Default convention: ``mesh/faces``.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Mesh
+domain_of:
+- Mesh
+range: string
+
+```
+</details></div>

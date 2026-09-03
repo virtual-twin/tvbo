@@ -1,0 +1,5 @@
+# xarray_pytrees { #tvbo.jax.xarray_pytrees }
+
+`jax.xarray_pytrees`
+
+Register xarray data structures as JAX pytree nodes.

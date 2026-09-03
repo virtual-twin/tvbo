@@ -1,0 +1,111 @@
+# Slot: dataLocation 
+
+
+_Add the location of the data file containing the parcellation terminology._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:slot/dataLocation](http://uri.interlex.org/tgbugs/uris/readable/slot/dataLocation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationTerminology](../classes/ParcellationTerminology.qmd) | A schema for representing a parcellation terminology, which consists of parce... |  no  |
+| [Stimulus](../classes/Stimulus.qmd) |  |  no  |
+| [Matrix](../classes/Matrix.qmd) | Adjacency matrix of a network |  no  |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+| [RandomStream](../classes/RandomStream.qmd) |  |  no  |
+| [RegionMapping](../classes/RegionMapping.qmd) | Maps vertices to parent regions for hierarchical/aggregated coupling |  no  |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+| [Mesh](../classes/Mesh.qmd) | Triangle (or higher-order) mesh geometry |  no  |
+| [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | An individual software requirement binding a package to a version constraint ... |  no  |
+| [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | A reproducible software environment aggregating one or more SoftwareRequireme... |  no  |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+| [NDArray](../classes/NDArray.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ParcellationTerminology](../classes/ParcellationTerminology.qmd), [SoftwareRequirement](../classes/SoftwareRequirement.qmd), [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd), [Stimulus](../classes/Stimulus.qmd), [Event](../classes/Event.qmd), [Matrix](../classes/Matrix.qmd), [Dynamics](../classes/Dynamics.qmd), [RandomStream](../classes/RandomStream.qmd), [RegionMapping](../classes/RegionMapping.qmd), [TimeSeries](../classes/TimeSeries.qmd), [NDArray](../classes/NDArray.qmd), [Mesh](../classes/Mesh.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:dataLocation |
+| native | atom:dataLocation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: dataLocation
+description: Add the location of the data file containing the parcellation terminology.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+domain_of:
+- ParcellationTerminology
+- SoftwareRequirement
+- SoftwareEnvironment
+- Stimulus
+- Event
+- Matrix
+- Dynamics
+- RandomStream
+- RegionMapping
+- TimeSeries
+- NDArray
+- Mesh
+range: string
+
+```
+</details></div>

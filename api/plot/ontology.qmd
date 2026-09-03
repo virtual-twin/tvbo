@@ -1,0 +1,1040 @@
+# ontology { #tvbo.plot.ontology }
+
+`plot.ontology`
+
+Plots of the ontology graph and of a model's place in it.
+
+```python
+# | fig-align: center
+import matplotlib.pyplot as plt
+from tvbo import plot
+
+fig, ax = plt.subplots()
+plot.ontology.plot_model('Generic2dOscillator', ax=ax)
+```
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [color_params](#tvbo.plot.ontology.color_params) |  |
+| [edge_params](#tvbo.plot.ontology.edge_params) |  |
+| [figure_params](#tvbo.plot.ontology.figure_params) |  |
+| [layout_params](#tvbo.plot.ontology.layout_params) |  |
+| [legend_params](#tvbo.plot.ontology.legend_params) |  |
+| [logo_params](#tvbo.plot.ontology.logo_params) |  |
+| [node_params](#tvbo.plot.ontology.node_params) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [add_arrow](#tvbo.plot.ontology.add_arrow) | Add an arrow to a line. |
+| [adjust_arrow_end](#tvbo.plot.ontology.adjust_arrow_end) | Clip an arrow's endpoint to the edge of the target node's bounding box. |
+| [compute_bezier_midpoint](#tvbo.plot.ontology.compute_bezier_midpoint) | Compute the midpoint of a quadratic Bézier curve at a given t. |
+| [compute_midpoint](#tvbo.plot.ontology.compute_midpoint) | Compute the midpoint of a quadratic Bézier curve. |
+| [count_directed_edges](#tvbo.plot.ontology.count_directed_edges) | Count number of edges between each directed node pair (u, v), not treating (u, v) ≡ (v, u). |
+| [create_adj_matrix](#tvbo.plot.ontology.create_adj_matrix) | Build an adjacency mapping of directed node pairs to their edge descriptors. |
+| [create_colormap_legend](#tvbo.plot.ontology.create_colormap_legend) | Create a space-efficient legend for given edge and node colormap dictionaries. |
+| [draw_custom_arrows](#tvbo.plot.ontology.draw_custom_arrows) | Draw custom arrows on a graph `G` with given positions and styles. |
+| [draw_custom_edges](#tvbo.plot.ontology.draw_custom_edges) | Draw curved Bézier edges between connected node pairs on an axes. |
+| [draw_custom_nodes](#tvbo.plot.ontology.draw_custom_nodes) | Custom function to draw nodes as text in a network graph. |
+| [draw_edge_labels](#tvbo.plot.ontology.draw_edge_labels) | A function to draw the edge labels on the graph. The labels are extracted from the edge attributes and can be customized using various parameters in the params dictionary. |
+| [draw_edges](#tvbo.plot.ontology.draw_edges) | A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges and adjust the width of the edges. |
+| [draw_legend](#tvbo.plot.ontology.draw_legend) | A function to draw the legend on the graph. The legend is created based on the node types and their respective colors, which are derived from the 'tvb_colors' parameter in the params dictionary. |
+| [draw_nodes](#tvbo.plot.ontology.draw_nodes) | A function to draw the nodes on the graph with specified attributes such as color, size, and using a specified colormap. |
+| [get_actual_bounds](#tvbo.plot.ontology.get_actual_bounds) | Compute the data-coordinate extent of all rendered text on an axes. |
+| [get_ax](#tvbo.plot.ontology.get_ax) | A function to get the ax for the plot. If ax is None, a new figure and ax are created using the specified figsize. |
+| [get_categories_from_graph](#tvbo.plot.ontology.get_categories_from_graph) | Retrieve all unique categories from the graph's nodes. |
+| [get_category_from_graph](#tvbo.plot.ontology.get_category_from_graph) | Retrieve the category of a given node from the graph. |
+| [get_default_params](#tvbo.plot.ontology.get_default_params) | Return the merged dictionary of all default plotting parameters. |
+| [get_edge_color_mapping](#tvbo.plot.ontology.get_edge_color_mapping) | Generate a color mapping for edges in graph G based on their specified attribute. |
+| [get_edge_info](#tvbo.plot.ontology.get_edge_info) | Return the edge counts and edge lists between two nodes in both directions. |
+| [get_labels](#tvbo.plot.ontology.get_labels) | Generate labels for the nodes in the graph based on the node names and ontology search results. If the label_as_symbol parameter is True, the labels are formatted as LaTeX symbols. Additionally, specific substrings ("_RWW") are removed from the labels. |
+| [get_layout](#tvbo.plot.ontology.get_layout) | Get the layout positions for the nodes in the graph. |
+| [get_node_color_and_cmap](#tvbo.plot.ontology.get_node_color_and_cmap) | A function to get the node colors and the colormap based on node attributes such as type or degree. |
+| [get_node_color_mapping](#tvbo.plot.ontology.get_node_color_mapping) | Generate a color mapping for nodes in graph G based on their specified attribute. |
+| [get_node_size](#tvbo.plot.ontology.get_node_size) | A function to get the node size for the graph, which can be determined by various parameters including the degree of the nodes, the length of the labels, or a specified factor. |
+| [get_unique_node_pairs](#tvbo.plot.ontology.get_unique_node_pairs) | Return the set of unordered node pairs that share at least one edge. |
+| [hierarchy_pos](#tvbo.plot.ontology.hierarchy_pos) | If the graph is a DAG this will return the positions to plot this in a hierarchical layout. |
+| [n1n2_edgecounts](#tvbo.plot.ontology.n1n2_edgecounts) | Return the number of edges between nodes n1 and n2, treating (n1, n2) ≡ (n2, n1). |
+| [plot_curve](#tvbo.plot.ontology.plot_curve) | Draw a quadratic Bézier arrow from *start* to *end* on *ax*. |
+| [plot_edge](#tvbo.plot.ontology.plot_edge) | Draw a single edge as an arrow ending at the target node's box edge. |
+| [plot_hierarchy](#tvbo.plot.ontology.plot_hierarchy) | Plot the ontology class hierarchy around a given class as a tree. |
+| [plot_model](#tvbo.plot.ontology.plot_model) | Render a `Dynamics` model as a directed graph: parameters → equations → state vars. |
+| [plot_multidigraph](#tvbo.plot.ontology.plot_multidigraph) | Plots a MultiDiGraph with curved edges to visualize multiple edges between two nodes. |
+| [plot_ontology_graph](#tvbo.plot.ontology.plot_ontology_graph) | Plot the ontology graph using matplotlib. |
+| [plot_tvbo_graph](#tvbo.plot.ontology.plot_tvbo_graph) | A function to plot a TVBO graph with various customizable parameters. |
+| [relabel_graph](#tvbo.plot.ontology.relabel_graph) | A function to relabel the nodes of the graph if a relabel dictionary is provided. |
+| [reverse_edges](#tvbo.plot.ontology.reverse_edges) | Reverse the coordinates of the positions in the pos dictionary. |
+| [set_axis_limits](#tvbo.plot.ontology.set_axis_limits) | Set the axis limits based on node positions. |
+| [set_plt_params](#tvbo.plot.ontology.set_plt_params) | A function to set certain plt parameters. |
+| [validate_parameters](#tvbo.plot.ontology.validate_parameters) | A function to validate and set default values for various parameters. |
+
+### add_arrow { #tvbo.plot.ontology.add_arrow }
+
+```python
+plot.ontology.add_arrow(
+    line,
+    ax,
+    position=None,
+    direction='right',
+    color=None,
+    label='',
+)
+```
+
+Add an arrow to a line.
+
+line:       Line2D object position:   x-position of the arrow. If None, mean of xdata is taken direction:  'left' or 'right' color:      if None, line color is taken.
+label:      label for arrow
+
+### adjust_arrow_end { #tvbo.plot.ontology.adjust_arrow_end }
+
+```python
+plot.ontology.adjust_arrow_end(start, end, bbox_end)
+```
+
+Clip an arrow's endpoint to the edge of the target node's bounding box.
+
+Computes where the line from `start` to `end` crosses the top or bottom edge of `bbox_end` (chosen by arrow direction) and clamps the crossing to the box's horizontal extent, so the arrow stops at the node border instead of its center.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                  | Default    |
+|----------|--------|--------------------------------------------------------------|------------|
+| start    |        | `(x, y)` start coordinate of the arrow.                      | _required_ |
+| end      |        | `(x, y)` target coordinate at the node center.               | _required_ |
+| bbox_end |        | Bounding box of the target node, exposing a `.bounds` tuple. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                            |
+|--------|--------|--------------------------------------------------------|
+|        |        | The adjusted `(x, y)` endpoint on the target box edge. |
+
+### compute_bezier_midpoint { #tvbo.plot.ontology.compute_bezier_midpoint }
+
+```python
+plot.ontology.compute_bezier_midpoint(p0, p1, p2, t=0.5)
+```
+
+Compute the midpoint of a quadratic Bézier curve at a given t.
+
+Parameters:
+- p0, p1, p2: Control points of the Bézier curve.
+- t: The parameter at which to evaluate the midpoint (default is 0.5 for true midpoint).
+
+Returns:
+- tuple of (x, y) coordinates of the midpoint.
+
+### compute_midpoint { #tvbo.plot.ontology.compute_midpoint }
+
+```python
+plot.ontology.compute_midpoint(start, end, rad)
+```
+
+Compute the midpoint of a quadratic Bézier curve.
+
+Parameters:
+- start: tuple of (x, y) coordinates of the start point.
+- end: tuple of (x, y) coordinates of the end point.
+- rad: curvature radius as a percentage.
+
+Returns:
+- tuple of (x, y) coordinates of the midpoint.
+
+### count_directed_edges { #tvbo.plot.ontology.count_directed_edges }
+
+```python
+plot.ontology.count_directed_edges(G)
+```
+
+Count number of edges between each directed node pair (u, v), not treating (u, v) ≡ (v, u).
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                           | Description                                                              |
+|--------|--------------------------------|--------------------------------------------------------------------------|
+|        | dict\[tuple\[Any, Any\], int\] | Dict[Tuple[Any, Any], int]: Mapping (u, v) → count of edges from u to v. |
+
+### create_adj_matrix { #tvbo.plot.ontology.create_adj_matrix }
+
+```python
+plot.ontology.create_adj_matrix(G)
+```
+
+Build an adjacency mapping of directed node pairs to their edge descriptors.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                              | Default    |
+|--------|--------|----------------------------------------------------------|------------|
+| G      |        | A networkx graph whose adjacency structure is traversed. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                               |
+|--------|--------|---------------------------------------------------------------------------|
+|        |        | A dictionary mapping each `(node, neighbor)` pair to a list of dicts, one |
+|        |        | per edge, each holding the edge `type` and a `direction` string.          |
+
+### create_colormap_legend { #tvbo.plot.ontology.create_colormap_legend }
+
+```python
+plot.ontology.create_colormap_legend(
+    edge_colmap=None,
+    node_colmap=None,
+    ax=None,
+    fontsize=12,
+    title_fontsize=14,
+    edge_cols=8,
+    node_cols=8,
+)
+```
+
+Create a space-efficient legend for given edge and node colormap dictionaries.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description                                                                                    | Default   |
+|----------------|--------|------------------------------------------------------------------------------------------------|-----------|
+| edge_colmap    |        | Labels mapped to RGBA tuples, for edges.                                                       | `None`    |
+| node_colmap    |        | Labels mapped to RGBA tuples, for nodes.                                                       | `None`    |
+| ax             |        | Axes to draw the legend on. A new figure is created when None.                                 | `None`    |
+| fontsize       |        | Font size for the legend labels.                                                               | `12`      |
+| title_fontsize |        | Font size for the legend titles.                                                               | `14`      |
+| edge_cols      |        | Columns the edge legend is laid out in; also sets how far the y-axis is inflated to make room. | `8`       |
+| node_cols      |        | Columns the node legend is laid out in.                                                        | `8`       |
+
+### draw_custom_arrows { #tvbo.plot.ontology.draw_custom_arrows }
+
+```python
+plot.ontology.draw_custom_arrows(
+    G,
+    pos,
+    edge_width=1,
+    ax=None,
+    edge_colors='grey',
+    edge_labels=False,
+    scatter_edges=True,
+    color_by=None,
+    return_color_mapping=False,
+    radius=-0.3,
+    **kwargs,
+)
+```
+
+Draw custom arrows on a graph `G` with given positions and styles.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name                 | Type                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Default    |
+|----------------------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| G                    | networkx.Graph       | The graph on which arrows will be drawn.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | _required_ |
+| pos                  | dict                 | A dictionary with nodes as keys and positions as values. Positions should be tuples of (x, y) coordinates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | _required_ |
+| edge_width           | int                  | Width of the edges. Defaults to 1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `1`        |
+| ax                   | matplotlib.axes.Axes | Matplotlib axes object to draw the arrows on. If None, the current axes will be used. Defaults to None.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `None`     |
+| edge_colors          | str or list          | Color(s) of the edges. If a single string, all edges will have the same color. If a list, it should be the same length as the number of edges. Defaults to "grey".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `'grey'`   |
+| scatter_edges        | bool                 | If True, scatter multiple edges between nodes to make them distinguishable. Defaults to False.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `True`     |
+| edge_labels          | bool                 | Annotate each arrow with its edge type. Defaults to False.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `False`    |
+| color_by             | str                  | Edge attribute whose value selects the colour. Defaults to None, which uses `edge_colors` for every edge.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `None`     |
+| return_color_mapping | bool                 | Return the attribute-value → colour dict instead of None. Defaults to False.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `False`    |
+| radius               | float                | Curvature of the arrows; negative bends left. Defaults to -0.3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `-0.3`     |
+| **kwargs             | Any                  | Additional keyword arguments to customize arrow properties. This can include: connectionstyle (str, optional): The connection style of the arrows.     More info: https://matplotlib.org/stable/gallery/userdemo/connectionstyle_demo.html.     Defaults to "arc3, rad=-0.3". arrowstyle (str, optional): The style of the arrow.     Defaults to "-\|>,head_length=0.4,head_width=0.2". mutation_scale (float, optional): The scale factor for the arrow head.     Defaults to 10.0. shrinkA (float, optional): Shrink factor at the start of the arrow.     Defaults to 15. shrinkB (float, optional): Shrink factor at the end of the arrow.     Defaults to 15. | `{}`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                     | Description                                                                              |
+|--------|--------------------------|------------------------------------------------------------------------------------------|
+|        | dict\[Any, Any\] \| None | Optional[Dict[Any, Any]]: Color mapping if return_color_mapping is True, otherwise None. |
+
+#### Example {.doc-section .doc-section-example}
+
+```python
+import networkx as nx
+import matplotlib.pyplot as plt
+from tvbo.plot.ontology import draw_custom_arrows, draw_custom_nodes
+
+G = nx.DiGraph()
+G.add_edges_from([(0, 1, {"type": 1}), (1, 2, {"type": 2}), (0, 2, {"type": 3})])
+pos = {0: (0, 0), 1: (1, 1), 2: (2, 0)}
+fig, ax = plt.subplots(figsize=(2,2))
+draw_custom_nodes(G, pos, ax=ax)
+draw_custom_arrows(G, pos, ax=ax, color_by="type", edge_colors="viridis")
+ax.axis("off");
+```
+
+#### Notes {.doc-section .doc-section-notes}
+
+This function uses `FancyArrowPatch` from `matplotlib.patches` to draw arrows.
+
+### draw_custom_edges { #tvbo.plot.ontology.draw_custom_edges }
+
+```python
+plot.ontology.draw_custom_edges(
+    G,
+    pos,
+    ax=None,
+    edge_labels=False,
+    color_by='type',
+    edge_colors='#606060',
+    edge_radius=0,
+    **kwargs,
+)
+```
+
+Draw curved Bézier edges between connected node pairs on an axes.
+
+For every unique node pair, edges in each direction are fanned out with distinct curvature so that parallel and bidirectional edges stay distinguishable. Colors may be a single color or resolved from a colormap.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                | Default     |
+|-------------|--------|----------------------------------------------------------------------------|-------------|
+| G           |        | The graph whose edges are drawn.                                           | _required_  |
+| pos         |        | Mapping of nodes to `(x, y)` positions.                                    | _required_  |
+| ax          |        | Target matplotlib axes.                                                    | `None`      |
+| edge_labels |        | Whether to annotate each edge with its `type`.                             | `False`     |
+| color_by    |        | Edge attribute used to look up colors when `edge_colors` names a colormap. | `'type'`    |
+| edge_colors |        | A single color, or the name of a colormap to map edge attributes onto.     | `'#606060'` |
+| edge_radius |        | Curvature used when a pair has a single edge.                              | `0`         |
+| **kwargs    |        | Additional keyword arguments forwarded to `plot_curve`.                    | `{}`        |
+
+### draw_custom_nodes { #tvbo.plot.ontology.draw_custom_nodes }
+
+```python
+plot.ontology.draw_custom_nodes(
+    G,
+    pos,
+    labels=None,
+    font_size=10,
+    ax=None,
+    node_colors=None,
+    alpha=0.8,
+    facecolor=None,
+    edgecolor=None,
+)
+```
+
+Custom function to draw nodes as text in a network graph.
+
+
+
+#### Parameters: {.doc-section .doc-section-parameters}
+
+G : networkx.Graph
+    The graph on which nodes will be drawn.
+pos : dict
+    A dictionary with nodes as keys and positions as values. Positions should be tuples of (x, y) coordinates.
+labels : dict, optional
+    A dictionary with node labels. If None, nodes are labeled with node names.
+font_size : int, optional
+    The font size of the node labels (default is 10).
+ax : matplotlib.axes.Axes, optional
+    Matplotlib axes object to draw the nodes on. If None, the current axes will be used (default is None).
+node_colors : dict or str, optional
+    A dictionary specifying the color for each node or a single color for all nodes (default is None).
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+list
+    A list of text objects for the node labels.
+
+### draw_edge_labels { #tvbo.plot.ontology.draw_edge_labels }
+
+```python
+plot.ontology.draw_edge_labels(g, pos, ax, params)
+```
+
+A function to draw the edge labels on the graph. The labels are extracted from the edge attributes and can be customized using various parameters in the params dictionary.
+
+Parameters:
+g (networkx.Graph): The graph on which the edge labels are to be drawn.
+pos (dict): The positions of the nodes.
+ax (matplotlib.axes._axes.Axes): The ax on which the edge labels are to be drawn.
+params (dict): A dictionary with various parameters including 'edge_font_size'.
+
+Returns:
+None
+
+### draw_edges { #tvbo.plot.ontology.draw_edges }
+
+```python
+plot.ontology.draw_edges(g, pos, ax, params)
+```
+
+A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges and adjust the width of the edges.
+
+Parameters:
+g (networkx.Graph): The graph on which the edges are to be drawn.
+pos (dict): The positions of the nodes.
+ax (matplotlib.axes._axes.Axes): The ax on which the edges are to be drawn.
+params (dict): A dictionary with various parameters including 'colored_edges' and 'edge_width'.
+
+Returns:
+None
+
+### draw_legend { #tvbo.plot.ontology.draw_legend }
+
+```python
+plot.ontology.draw_legend(g, ax, params)
+```
+
+A function to draw the legend on the graph. The legend is created based on the node types and their respective colors, which are derived from the 'tvb_colors' parameter in the params dictionary.
+
+Parameters:
+g (networkx.Graph): The graph on which the legend is to be drawn.
+ax (matplotlib.axes._axes.Axes): The ax on which the legend is to be drawn.
+params (dict): A dictionary with various parameters including 'tvb_colors' and 'c_order'.
+
+Returns:
+None
+
+### draw_nodes { #tvbo.plot.ontology.draw_nodes }
+
+```python
+plot.ontology.draw_nodes(g, pos, node_color, cmap, node_size, ax, params)
+```
+
+A function to draw the nodes on the graph with specified attributes such as color, size, and using a specified colormap.
+
+Additional parameters like linewidth and alpha are taken from the params dictionary.
+
+Parameters:
+g (networkx.Graph): The graph on which the nodes are to be drawn.
+pos (dict): The positions of the nodes.
+node_color: The color of the nodes, specified either as a single color or a list of colors.
+cmap: The colormap for the nodes.
+node_size: The size of the nodes, specified either as a single size or a list of sizes.
+ax (matplotlib.axes._axes.Axes): The ax on which the nodes are to be drawn.
+params (dict): A dictionary with various parameters including 'alpha' and 'node_linewidth'.
+
+Returns:
+None
+
+### get_actual_bounds { #tvbo.plot.ontology.get_actual_bounds }
+
+```python
+plot.ontology.get_actual_bounds(ax, axis='x')
+```
+
+Compute the data-coordinate extent of all rendered text on an axes.
+
+Iterates over the non-empty text artists, transforms each one's window extent into data coordinates, and returns the min and max along the requested axis.
+The axes must already be drawn so that text extents are available.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                           | Default    |
+|--------|--------|-------------------------------------------------------|------------|
+| ax     |        | The matplotlib axes to inspect.                       | _required_ |
+| axis   |        | Either `"x"` or `"y"`, selecting which axis to bound. | `'x'`      |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                      |
+|--------|--------|------------------------------------------------------------------|
+|        |        | A `(min, max)` tuple of the text bounds along the selected axis. |
+
+### get_ax { #tvbo.plot.ontology.get_ax }
+
+```python
+plot.ontology.get_ax(ax, figsize)
+```
+
+A function to get the ax for the plot. If ax is None, a new figure and ax are created using the specified figsize.
+
+Parameters:
+ax (matplotlib.axes._axes.Axes or None): The ax parameter passed to the function. If None, a new ax is created.
+figsize (tuple): The size of the figure, specified as a tuple of width and height.
+
+Returns:
+matplotlib.axes._axes.Axes: The ax for the plot.
+
+### get_categories_from_graph { #tvbo.plot.ontology.get_categories_from_graph }
+
+```python
+plot.ontology.get_categories_from_graph(G)
+```
+
+Retrieve all unique categories from the graph's nodes.
+
+
+
+#### Parameters: {.doc-section .doc-section-parameters}
+
+G : networkx.Graph
+    The graph from which categories are to be retrieved.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+list
+    A sorted list of unique categories from the graph.
+
+### get_category_from_graph { #tvbo.plot.ontology.get_category_from_graph }
+
+```python
+plot.ontology.get_category_from_graph(G, node)
+```
+
+Retrieve the category of a given node from the graph.
+
+
+
+#### Parameters: {.doc-section .doc-section-parameters}
+
+G : networkx.Graph
+    The graph containing the node.
+node : hashable
+    The node for which the category is to be retrieved.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str
+    The category of the node.
+
+### get_default_params { #tvbo.plot.ontology.get_default_params }
+
+```python
+plot.ontology.get_default_params()
+```
+
+Return the merged dictionary of all default plotting parameters.
+
+Combines the module-level `node_params`, `edge_params`, `figure_params`, `color_params`, `logo_params`, `layout_params`, and `legend_params` into a single dictionary.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                               |
+|--------|--------|-----------------------------------------------------------|
+|        |        | The combined default parameters, keyed by parameter name. |
+
+### get_edge_color_mapping { #tvbo.plot.ontology.get_edge_color_mapping }
+
+```python
+plot.ontology.get_edge_color_mapping(G, colormap='viridis', color_by='type')
+```
+
+Generate a color mapping for edges in graph G based on their specified attribute.
+
+
+
+#### Parameters: {.doc-section .doc-section-parameters}
+
+G : networkx.Graph
+    The graph containing the edges with the specified attribute.
+colormap : str, optional
+    The name of the colormap to use (default is 'viridis').
+color_by : str, optional
+    The edge attribute to color by (default is 'type').
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+edge_colors : dict
+    A dictionary mapping edge attributes to colors.
+
+### get_edge_info { #tvbo.plot.ontology.get_edge_info }
+
+```python
+plot.ontology.get_edge_info(n1, n2, adj_matrix)
+```
+
+Return the edge counts and edge lists between two nodes in both directions.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                                                                       | Default    |
+|------------|--------|-------------------------------------------------------------------------------------------------------------------|------------|
+| n1         |        | First node.                                                                                                       | _required_ |
+| n2         |        | Second node.                                                                                                      | _required_ |
+| adj_matrix |        | Adjacency mapping from `(source, target)` pairs to lists of edge descriptors, as produced by `create_adj_matrix`. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                 |
+|--------|--------|-----------------------------------------------------------------------------|
+|        |        | A 4-tuple `(num_edges_n1_n2, edges_n1_n2, num_edges_n2_n1, edges_n2_n1)`    |
+|        |        | giving the count and list of edges from `n1` to `n2` and from `n2` to `n1`. |
+
+### get_labels { #tvbo.plot.ontology.get_labels }
+
+```python
+plot.ontology.get_labels(g, label_as_symbol)
+```
+
+Generate labels for the nodes in the graph based on the node names and ontology search results. If the label_as_symbol parameter is True, the labels are formatted as LaTeX symbols. Additionally, specific substrings ("_RWW") are removed from the labels.
+
+Parameters:
+g (networkx.Graph): The graph object containing the nodes for which labels are to be generated.
+label_as_symbol (bool): A flag indicating whether to format the labels as LaTeX symbols.
+
+Returns:
+dict: A dictionary where keys are node names and values are the corresponding labels.
+
+### get_layout { #tvbo.plot.ontology.get_layout }
+
+```python
+plot.ontology.get_layout(
+    G,
+    layout_type='spring',
+    k_factor=1,
+    save_pos=None,
+    use_precomputed_pos=None,
+)
+```
+
+Get the layout positions for the nodes in the graph.
+
+
+
+#### Parameters: {.doc-section .doc-section-parameters}
+
+G : networkx.Graph
+    The graph for which the layout positions are calculated.
+layout_type : str, optional
+    The type of layout algorithm to use ('spring', 'kamada', etc.) (default is "spring").
+k_factor : float, optional
+    Scaling factor for the layout algorithm (default is 1).
+save_pos : str, optional
+    Path to save the computed positions to a file (default is None).
+use_precomputed_pos : str, optional
+    Path to a file with precomputed positions (default is None).
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    A dictionary with nodes as keys and positions as values.
+
+### get_node_color_and_cmap { #tvbo.plot.ontology.get_node_color_and_cmap }
+
+```python
+plot.ontology.get_node_color_and_cmap(g, params=None)
+```
+
+A function to get the node colors and the colormap based on node attributes such as type or degree.
+
+Parameters:
+g (networkx.Graph): The graph for which the node colors and colormap are to be generated.
+params (dict): A dictionary with various parameters including node_filling and tvb_colors.
+
+Returns:
+tuple: A tuple with the node colors and the colormap.
+
+### get_node_color_mapping { #tvbo.plot.ontology.get_node_color_mapping }
+
+```python
+plot.ontology.get_node_color_mapping(
+    G,
+    node_colors='math_type',
+    colors='tvb',
+    return_categories=False,
+)
+```
+
+Generate a color mapping for nodes in graph G based on their specified attribute.
+
+
+
+#### Parameters: {.doc-section .doc-section-parameters}
+
+G : networkx.Graph
+    The graph containing the nodes with the specified attribute.
+node_colors : str, optional
+    The node attribute to color by (default is 'math_type').
+colors : str, optional
+    The color scheme to use (default is 'tvb').
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+node_color_dict : dict
+    A dictionary mapping node attributes to colors.
+categories : dict
+    A dictionary mapping nodes to their categories.
+
+### get_node_size { #tvbo.plot.ontology.get_node_size }
+
+```python
+plot.ontology.get_node_size(g, params=None)
+```
+
+A function to get the node size for the graph, which can be determined by various parameters including the degree of the nodes, the length of the labels, or a specified factor.
+
+Parameters:
+g (networkx.Graph): The graph for which the node size is to be generated.
+pos (dict): The positions of the nodes.
+labels (dict): The labels of the nodes.
+params (dict): A dictionary with various parameters including 'node_size_by' and 'node_size_factor'.
+
+Returns:
+list or int: A list with the node sizes or a single integer representing a uniform node size for all nodes.
+
+### get_unique_node_pairs { #tvbo.plot.ontology.get_unique_node_pairs }
+
+```python
+plot.ontology.get_unique_node_pairs(G)
+```
+
+Return the set of unordered node pairs that share at least one edge.
+
+Each pair is sorted so that `(a, b)` and `(b, a)` collapse to a single entry;
+nodes are ordered by their string value or, for object nodes, their `name` attribute.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                             | Default    |
+|--------|--------|-----------------------------------------|------------|
+| G      |        | A networkx graph to extract edges from. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                |
+|--------|--------|----------------------------------------------------------------------------|
+|        |        | A set of node-pair tuples, one per connected pair regardless of direction. |
+
+### hierarchy_pos { #tvbo.plot.ontology.hierarchy_pos }
+
+```python
+plot.ontology.hierarchy_pos(
+    G,
+    root=None,
+    width=1.0,
+    vert_gap=0.2,
+    hor_gap=1,
+    vert_loc=0,
+    xcenter=0.5,
+    direction='down',
+    vert_scatter=0.0,
+)
+```
+
+If the graph is a DAG this will return the positions to plot this in a hierarchical layout.
+
+G: the graph (must be a DAG) root: the root node of current branch width: horizontal space allocated for this branch vert_gap: gap between levels of hierarchy hor_gap: gap between nodes within the same level vert_loc: vertical location of root xcenter: horizontal location of root direction: 'down' for top-down layout, 'up' for bottom-up layout vert_scatter: vertical scatter factor for nodes on the same level
+
+### n1n2_edgecounts { #tvbo.plot.ontology.n1n2_edgecounts }
+
+```python
+plot.ontology.n1n2_edgecounts(G, n1, n2, edge_counts=None)
+```
+
+Return the number of edges between nodes n1 and n2, treating (n1, n2) ≡ (n2, n1).
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type                         | Description                                      | Default    |
+|-------------|------------------------------|--------------------------------------------------|------------|
+| G           | networkx.Graph or MultiGraph | Input graph.                                     | _required_ |
+| n1          | hashable                     | First node identifier.                           | _required_ |
+| n2          | hashable                     | Second node identifier.                          | _required_ |
+| edge_counts | dict                         | Precomputed output from count_directed_edges(G). | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                 |
+|--------|--------|-------------------------------------------------------------|
+| int    | int    | Number of edges between n1 and n2, regardless of direction. |
+
+### plot_curve { #tvbo.plot.ontology.plot_curve }
+
+```python
+plot.ontology.plot_curve(
+    ax,
+    start,
+    end,
+    rad,
+    color='black',
+    shrinkA=0,
+    shrinkB=0.03,
+    arrow_size=0.1,
+    arrow_style='->',
+    annotate=None,
+    **kwargs,
+)
+```
+
+Draw a quadratic Bézier arrow from *start* to *end* on *ax*.
+
+Used internally by the ontology-graph layout to render edges with smooth curvature controlled by *rad*. Optional *annotate* renders a midpoint label.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type                  | Description                                                     | Default    |
+|-------------|-----------------------|-----------------------------------------------------------------|------------|
+| ax          | Any                   | Target matplotlib axes.                                         | _required_ |
+| start       | tuple\[float, float\] | `(x, y)` start coordinate.                                      | _required_ |
+| end         | tuple\[float, float\] | `(x, y)` end coordinate.                                        | _required_ |
+| rad         | float                 | Curvature offset; `0` is a straight line, positive bends right. | _required_ |
+| color       | str                   | Stroke color.                                                   | `'black'`  |
+| shrinkA     | float                 | Start-point shrinkage (fraction of segment length).             | `0`        |
+| shrinkB     | float                 | End-point shrinkage (fraction of segment length).               | `0.03`     |
+| arrow_size  | float                 | Head width.                                                     | `0.1`      |
+| arrow_style | str                   | Matplotlib arrow style (e.g. `"->"`, `"-\|>"`).                 | `'->'`     |
+| annotate    | str \| None           | Optional midpoint label string.                                 | `None`     |
+| **kwargs    |                       | Forwarded to `FancyArrowPatch`.                                 | `{}`       |
+
+### plot_edge { #tvbo.plot.ontology.plot_edge }
+
+```python
+plot.ontology.plot_edge(edge, pos, bbox_positions_data, ax, **kwargs)
+```
+
+Draw a single edge as an arrow ending at the target node's box edge.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name                | Type   | Description                                                                                               | Default    |
+|---------------------|--------|-----------------------------------------------------------------------------------------------------------|------------|
+| edge                |        | A `(source, target)` node pair.                                                                           | _required_ |
+| pos                 |        | Mapping of nodes to `(x, y)` positions.                                                                   | _required_ |
+| bbox_positions_data |        | Mapping of nodes to their bounding boxes, used to trim the arrow so it stops at the target node's border. | _required_ |
+| ax                  |        | Target matplotlib axes.                                                                                   | _required_ |
+| **kwargs            |        | Additional keyword arguments forwarded to `FancyArrowPatch`.                                              | `{}`       |
+
+### plot_hierarchy { #tvbo.plot.ontology.plot_hierarchy }
+
+```python
+plot.ontology.plot_hierarchy(cls, hierarchy_type='ancestors', ax=None, **kwargs)
+```
+
+Plot the ontology class hierarchy around a given class as a tree.
+
+Builds an `is_a` graph relating `cls` to the requested set of related classes and lays it out top-down or bottom-up depending on the hierarchy direction.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description                                                                                                                                             | Default       |
+|----------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| cls            |        | The ontology class at the center of the hierarchy.                                                                                                      | _required_    |
+| hierarchy_type |        | Which related classes to include; one of `"ancestors"`, `"parents"`/`"is_a"`/`"isa"`/`"superclasses"`, `"children"`/`"subclasses"`, or `"descendants"`. | `'ancestors'` |
+| ax             |        | Existing matplotlib axes; a new figure is created if `None`.                                                                                            | `None`        |
+| **kwargs       |        | Additional keyword arguments forwarded to `hierarchy_pos`.                                                                                              | `{}`          |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                |
+|--------|--------|------------------------------------------------------------|
+|        |        | The created figure when `ax` is `None`, otherwise nothing. |
+
+### plot_model { #tvbo.plot.ontology.plot_model }
+
+```python
+plot.ontology.plot_model(
+    model,
+    k_factor=1,
+    edge_cmap='viridis',
+    node_cmap='viridis',
+    edge_width=1,
+    font_size=20,
+    node_colors='math_type',
+    add_equations_to_labels=False,
+    add_parameter_values=False,
+    circle_matches=False,
+    ax=None,
+    legend=True,
+    figsize=(10, 6),
+    legend_kwargs=None,
+    edge_kwargs=None,
+    node_kwargs=None,
+    **kwargs,
+)
+```
+
+Render a `Dynamics` model as a directed graph: parameters → equations → state vars.
+
+The graph layout is computed via a force-directed algorithm tuned by
+*k_factor*. Node coloring is driven by the variable's `math_type`
+(parameter / derived variable / state variable / function) unless overridden.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name                    | Type                  | Description                                                              | Default       |
+|-------------------------|-----------------------|--------------------------------------------------------------------------|---------------|
+| model                   | Any                   | A `Dynamics` instance.                                                   | _required_    |
+| k_factor                | float                 | Spring-constant multiplier for the force-directed layout.                | `1`           |
+| edge_cmap               | str                   | Matplotlib colormap name for edges.                                      | `'viridis'`   |
+| node_cmap               | str                   | Matplotlib colormap name for nodes.                                      | `'viridis'`   |
+| edge_width              | float                 | Stroke width for edges (auto-scaled with *font_size*).                   | `1`           |
+| font_size               | float                 | Axes font size; also rescales edge width.                                | `20`          |
+| node_colors             | Any                   | Either a category attribute (`"math_type"`) or a dict of overrides.      | `'math_type'` |
+| add_equations_to_labels | bool                  | Append the LaTeX equation to each node label.                            | `False`       |
+| add_parameter_values    | bool                  | Append the current value to parameter labels.                            | `False`       |
+| circle_matches          | bool                  | Draw a circle around nodes whose name matches the model's coupling vars. | `False`       |
+| ax                      | Any                   | Existing matplotlib axes; created if `None`.                             | `None`        |
+| legend                  | bool                  | Whether to render the category legend.                                   | `True`        |
+| legend_kwargs           | dict                  | Forwarded to the legend constructor.                                     | `None`        |
+| figsize                 | tuple\[float, float\] | Figure size when *ax* is `None`.                                         | `(10, 6)`     |
+| edge_kwargs             | dict                  | Forwarded to the edge-drawing helper.                                    | `None`        |
+| node_kwargs             | dict                  | Forwarded to the node-drawing helper.                                    | `None`        |
+| **kwargs                |                       | Forwarded to the layout routine.                                         | `{}`          |
+
+### plot_multidigraph { #tvbo.plot.ontology.plot_multidigraph }
+
+```python
+plot.ontology.plot_multidigraph(G, figsize=(12, 8))
+```
+
+Plots a MultiDiGraph with curved edges to visualize multiple edges between two nodes.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type                  | Description                       | Default    |
+|---------|-----------------------|-----------------------------------|------------|
+| G       | networkx.MultiDiGraph | The MultiDiGraph to be plotted.   | _required_ |
+| figsize | Tuple\[int, int\]     | Figure size. Defaults to (12, 8). | `(12, 8)`  |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description   |
+|--------|--------|---------------|
+|        | None   | None          |
+
+### plot_ontology_graph { #tvbo.plot.ontology.plot_ontology_graph }
+
+```python
+plot.ontology.plot_ontology_graph(
+    G,
+    node_size_factor=10,
+    draw_labels=False,
+    edge_width=1.0,
+    k_factor=1,
+    colors='viridis',
+    edge_colors='grey',
+    preferred_label='symbol',
+    alternative_label='label',
+    font_size=12,
+    legend=True,
+    edge_legend=True,
+    ax=None,
+    colorby='category',
+    **kwargs,
+)
+```
+
+Plot the ontology graph using matplotlib.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name              | Type                 | Description                                                                                      | Default      |
+|-------------------|----------------------|--------------------------------------------------------------------------------------------------|--------------|
+| G                 | networkx.DiGraph     | A directed graph representation of the ontology.                                                 | _required_   |
+| node_size_factor  | int                  | Factor by which node size is multiplied. Defaults to 10.                                         | `10`         |
+| draw_labels       | bool                 | Whether to draw node labels. Defaults to False.                                                  | `False`      |
+| edge_width        | float                | Width of the edges. Defaults to 1.0.                                                             | `1.0`        |
+| k_factor          | float                | Scaling factor for the layout algorithm. Defaults to 1.                                          | `1`          |
+| colors            | str or list          | Color map or list of colors for nodes. Defaults to "viridis".                                    | `'viridis'`  |
+| edge_colors       | str or list          | Color map or list of colors for edges. Defaults to "grey".                                       | `'grey'`     |
+| preferred_label   | str                  | Node attribute to use as the preferred label. Defaults to "symbol".                              | `'symbol'`   |
+| alternative_label | str                  | Node attribute to use as the alternative label. Defaults to "label".                             | `'label'`    |
+| font_size         | int                  | Font size for labels. Defaults to 12.                                                            | `12`         |
+| legend            | bool                 | Whether to draw the legend. Defaults to True.                                                    | `True`       |
+| edge_legend       | bool                 | Whether to include edge types in the legend. Defaults to True.                                   | `True`       |
+| ax                | matplotlib.axes.Axes | Matplotlib axes object to draw the graph on. If None, a new figure is created. Defaults to None. | `None`       |
+| colorby           | str                  | Node attribute to determine the node colors. Defaults to "category".                             | `'category'` |
+| **kwargs          | Any                  | Additional keyword arguments for node and edge drawing functions.                                | `{}`         |
+
+### plot_tvbo_graph { #tvbo.plot.ontology.plot_tvbo_graph }
+
+```python
+plot.ontology.plot_tvbo_graph(g, ax=None, **kwargs)
+```
+
+A function to plot a TVBO graph with various customizable parameters.
+
+Parameters:
+g (networkx.Graph): The graph to be plotted.
+kwargs: Various other optional parameters to customize the plot.
+
+Returns:
+None
+
+### relabel_graph { #tvbo.plot.ontology.relabel_graph }
+
+```python
+plot.ontology.relabel_graph(g, relabel)
+```
+
+A function to relabel the nodes of the graph if a relabel dictionary is provided.
+
+Parameters:
+g (networkx.Graph): The graph to be relabeled.
+relabel (dict): A dictionary with the relabeling information.
+
+Returns:
+None
+
+### reverse_edges { #tvbo.plot.ontology.reverse_edges }
+
+```python
+plot.ontology.reverse_edges(pos)
+```
+
+Reverse the coordinates of the positions in the pos dictionary.
+
+
+
+#### Parameters: {.doc-section .doc-section-parameters}
+
+pos : dict
+    A dictionary with nodes as keys and (x, y) coordinates as values.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    A dictionary with nodes as keys and reversed (y, x) coordinates as values.
+
+### set_axis_limits { #tvbo.plot.ontology.set_axis_limits }
+
+```python
+plot.ontology.set_axis_limits(pos, ax)
+```
+
+Set the axis limits based on node positions.
+
+
+
+#### Parameters: {.doc-section .doc-section-parameters}
+
+pos : dict
+    A dictionary with nodes as keys and positions as values.
+ax : matplotlib.axes.Axes
+    The matplotlib axes object to set the limits on.
+
+### set_plt_params { #tvbo.plot.ontology.set_plt_params }
+
+```python
+plot.ontology.set_plt_params(rc_params=None)
+```
+
+A function to set certain plt parameters.
+
+Returns:
+None
+
+### validate_parameters { #tvbo.plot.ontology.validate_parameters }
+
+```python
+plot.ontology.validate_parameters(params=None)
+```
+
+A function to validate and set default values for various parameters.
+
+Parameters:
+params (dict): The parameters passed to the function.
+
+Returns:
+dict: The validated and updated parameters.

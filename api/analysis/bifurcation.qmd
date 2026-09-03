@@ -1,0 +1,501 @@
+# bifurcation { #tvbo.analysis.bifurcation }
+
+`analysis.bifurcation`
+
+Bifurcation analysis result objects and helpers.
+
+Contains the BifurcationResult class whose instances are returned by `model.run(format="bifurcation-julia", ...)`.
+
+
+
+## Key attributes {.doc-section .doc-section-key-attributes}
+
+df : pandas.DataFrame
+    Continuation branch points with columns (x, param, itnewton, itlinear, ds, n_unstable, n_imag, stable, step, specialpoint, ...).
+hopf_indices / bp_indices : list[int]
+    Row indices in `df` where Hopf / Branch (bp) special points occur.
+hopf_steps / bp_steps : list[int]
+    Corresponding continuation step values.
+periodic_orbits : list[BifurcationResult | Any]
+    If periodic orbits were computed in Julia (`po_results`), each periodic orbit branch is wrapped as a child
+    BifurcationResult when possible; otherwise the raw Julia object is stored.
+
+Backend extractors convert a backend-native object — a PyCoBi ``ODESystem``, an AUTO-07p ``bifDiag`` — into the unified DataFrame schema this class consumes, as ``backend_object → _extract_<backend>_df(...) → BifurcationResult(df=...)``. They sit at module level rather than nested in subclasses, which makes that flow explicit and lets one set of plotting, legend and export code serve every backend without inheritance.
+
+Special-point labels are normalised to canonical short codes (``LP``, ``HB``, ``BP``). The authoritative source is the ontology's bifurcation taxonomy in ``ontology/tvb-o-bifurcation.ttl``, merged into ``tvbo.owl``, where each type carries a ``tvbo:canonicalCode`` and a ``skos:altLabel`` for every backend spelling. ``_TY_ALIASES_FALLBACK`` is a built-in fallback used verbatim only when the ontology cannot be read, on a headless or minimal install; the ontology is layered over it so it stays the single source of truth.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [BIF_STYLES](#tvbo.analysis.bifurcation.BIF_STYLES) |  |
+| [PO_REDUCTIONS](#tvbo.analysis.bifurcation.PO_REDUCTIONS) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [BifurcationResult](#tvbo.analysis.bifurcation.BifurcationResult) | Backend-agnostic bifurcation result. |
+| [CurvePicker](#tvbo.analysis.bifurcation.CurvePicker) | Click any branch line to inspect the underlying point. |
+
+### BifurcationResult { #tvbo.analysis.bifurcation.BifurcationResult }
+
+```python
+analysis.bifurcation.BifurcationResult(br=None, *, df=None, **kwargs)
+```
+
+Backend-agnostic bifurcation result.
+
+A single ``BifurcationResult`` represents one continuation branch (equilibrium, periodic orbit, or codim-2 curve) regardless of the backend that produced it (BifurcationKit.jl, PyRates/PyCoBi, AUTO-07p/numcont). Once the data lives in ``self.df`` and the nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting, legend, and export methods (``plot``, ``plot_3d``, ``bif_legend``, ``enable_picker``, ...) work uniformly across backends.
+
+There are *no* backend-specific result subclasses. Each adapter extracts a unified DataFrame and either calls the constructor directly with ``df=...`` or one of the factory shortcuts:
+
+* ``BifurcationResult.from_bifkit(br, ...)`` — BifurcationKit.jl
+  ``ContResult`` (juliacall).
+* ``BifurcationResult.from_pycobi(ode, cont_name, ...)`` —
+  PyRates / PyCoBi ``ODESystem`` continuations.
+* ``BifurcationResult.from_auto(bd, ...)`` — in-tree AUTO-07p
+  ``bifDiag`` (numcont backend).
+
+All visual differences between backends are encoded in the unified :data:`BIF_STYLES` registry, not in subclasses.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [animate](#tvbo.analysis.bifurcation.BifurcationResult.animate) | Animate ``dynamics`` alongside this 3D bifurcation diagram. |
+| [bif_legend](#tvbo.analysis.bifurcation.BifurcationResult.bif_legend) | Add a curated legend listing the selected TYs. |
+| [extract_orbit_meshes](#tvbo.analysis.bifurcation.BifurcationResult.extract_orbit_meshes) | Extract full periodic orbit solution meshes from a PO branch. |
+| [from_auto](#tvbo.analysis.bifurcation.BifurcationResult.from_auto) | Wrap an AUTO-07p ``bifDiag`` (numcont backend). |
+| [from_bifkit](#tvbo.analysis.bifurcation.BifurcationResult.from_bifkit) | Wrap a BifurcationKit.jl ``ContResult`` (juliacall object). |
+| [from_pycobi](#tvbo.analysis.bifurcation.BifurcationResult.from_pycobi) | Wrap a PyRates / PyCoBi continuation by name. |
+| [plot](#tvbo.analysis.bifurcation.BifurcationResult.plot) | Render the full bifurcation diagram for this branch. |
+| [plot_3d](#tvbo.analysis.bifurcation.BifurcationResult.plot_3d) | Plot 3D bifurcation diagram with periodic orbit surfaces. |
+| [plot_branch](#tvbo.analysis.bifurcation.BifurcationResult.plot_branch) | Draw the continuation branch as stability-coded line segments. |
+| [plot_equilibrium_branch](#tvbo.analysis.bifurcation.BifurcationResult.plot_equilibrium_branch) | Draw the equilibrium branch and overlay its special points. |
+| [plot_special_points](#tvbo.analysis.bifurcation.BifurcationResult.plot_special_points) | Mark codim-1 special points (LP/HB/BP/PD/TR/...) on ``ax``. |
+| [to_dataset](#tvbo.analysis.bifurcation.BifurcationResult.to_dataset) | Return the continuation branch as a native, self-describing xarray ``Dataset``. |
+
+##### animate { #tvbo.analysis.bifurcation.BifurcationResult.animate }
+
+```python
+analysis.bifurcation.BifurcationResult.animate(
+    dynamics,
+    parameter,
+    values,
+    *dims,
+    kind='phaseplane',
+    VOI=None,
+    interval=80,
+    figsize=(11, 4.8),
+    title_fmt='{name} = {value:+.2f}',
+    marker_kwargs=None,
+    simulation=False,
+    simulation_duration=200.0,
+    simulation_dt=0.01,
+    simulation_backend='tvboptim',
+    simulation_initial_values=None,
+    trajectory_kwargs=None,
+    show_periodic_orbit=True,
+    orbit_kwargs=None,
+    **plot_kwargs,
+)
+```
+
+Animate ``dynamics`` alongside this 3D bifurcation diagram.
+
+For each value of ``parameter`` a left panel re-renders a ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`, defaults to ``"phaseplane"``), while a right panel shows :meth:`plot_3d` once with a moving marker that tracks the current parameter value on the equilibrium backbone.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+dynamics : Dynamics
+    Model whose parameter is being swept.
+parameter : str
+    Parameter name (must exist in ``dynamics.parameters`` and
+    match this result's continuation parameter).
+values : sequence of float
+    Parameter values, one per frame.
+*dims, **plot_kwargs
+    Forwarded to :func:`tvbo.plot.dynamics.plot_dynamics`.
+kind : str
+    Plot kind for the left panel (default ``"phaseplane"``).
+VOI : str, optional
+    State variable plotted on the z-axis of the 3D diagram.
+interval : int
+    Delay between frames in ms.
+figsize : (float, float) title_fmt : str
+    Title format with ``{name}`` and ``{value}`` placeholders.
+marker_kwargs : dict, optional
+    Style overrides for the moving marker.
+simulation : bool
+    If true, overlay a trajectory computed with
+    :class:`tvbo.classes.experiment.SimulationExperiment` for each
+    frame. This keeps animated trajectories on the same backend path
+    as full experiments instead of using ``Dynamics.run``.
+simulation_duration, simulation_dt : float
+    Integration settings used when ``simulation`` is true.
+simulation_backend : str
+    Backend passed to ``SimulationExperiment.run``.
+simulation_initial_values : dict or callable, optional
+    State-variable initial values used for each simulated frame. If a
+    callable is supplied, it receives the current parameter value and
+    returns a mapping for that frame. Returning ``None`` skips the
+    simulated trajectory for that frame.
+trajectory_kwargs : dict, optional
+    Style overrides for simulated trajectory overlays.
+show_periodic_orbit : bool
+    Draw the current periodic orbit in phase-plane coordinates when a
+    periodic-orbit ring is also available in the bifurcation panel.
+orbit_kwargs : dict, optional
+    Style overrides for the phase-plane periodic-orbit circle.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.animation.FuncAnimation
+
+##### bif_legend { #tvbo.analysis.bifurcation.BifurcationResult.bif_legend }
+
+```python
+analysis.bifurcation.BifurcationResult.bif_legend(
+    ax,
+    tys,
+    labels=None,
+    **lgd_kwargs,
+)
+```
+
+Add a curated legend listing the selected TYs.
+
+Mirrors ``ContinuationPlot.BifLegend``: draws an off-screen artist per TY using the central style registry and feeds them to a single ``ax.legend`` call so the user can pin exactly which entries appear.
+
+##### extract_orbit_meshes { #tvbo.analysis.bifurcation.BifurcationResult.extract_orbit_meshes }
+
+```python
+analysis.bifurcation.BifurcationResult.extract_orbit_meshes(n_samples=40)
+```
+
+Extract full periodic orbit solution meshes from a PO branch.
+
+Works with BifurcationKit.jl ContResult objects that store ``.sol`` (vector of orbit solutions at each continuation step).
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+n_samples : int
+    Number of orbits to sample evenly across the branch.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+list[dict]
+    Each dict has keys: ``param`` (float), state variable names
+    (1D arrays of the orbit trace), and ``t`` (mesh times).
+    Returns empty list if orbit data is unavailable.
+
+##### from_auto { #tvbo.analysis.bifurcation.BifurcationResult.from_auto }
+
+```python
+analysis.bifurcation.BifurcationResult.from_auto(
+    bd,
+    *,
+    cont_name=None,
+    model=None,
+    continuation=None,
+    ICS=None,
+    periodic_orbits_raw=None,
+    codim2_raw=None,
+    workdir=None,
+    **kwargs,
+)
+```
+
+Wrap an AUTO-07p ``bifDiag`` (numcont backend).
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+bd : auto.bifDiag
+    The codim-1 equilibrium continuation result.
+codim2_raw : list, optional
+    ``[(name, source_type, fp1_name, fp2_name, R_c2), …]`` —
+    codim-2 fold/Hopf/BP curves produced by
+    ``NumContAdapter._run_codim2_branches``. Each entry is wrapped
+    as a child ``BifurcationResult`` and attached to
+    ``self.codim2_curves`` with metadata (``_source_type``,
+    ``_fp2_name``) that ``_plot_codim2`` consumes.
+
+##### from_bifkit { #tvbo.analysis.bifurcation.BifurcationResult.from_bifkit }
+
+```python
+analysis.bifurcation.BifurcationResult.from_bifkit(br, **kwargs)
+```
+
+Wrap a BifurcationKit.jl ``ContResult`` (juliacall object).
+
+##### from_pycobi { #tvbo.analysis.bifurcation.BifurcationResult.from_pycobi }
+
+```python
+analysis.bifurcation.BifurcationResult.from_pycobi(
+    ode,
+    cont_name,
+    *,
+    model=None,
+    state_var_names=None,
+    icp=1,
+    fp_name='param',
+    periodic_orbit_results=None,
+    codim2_results=None,
+    **kwargs,
+)
+```
+
+Wrap a PyRates / PyCoBi continuation by name.
+
+All visualisation/export logic lives on this class -- the adapter just hands the extracted DataFrame straight to ``__init__``.
+
+##### plot { #tvbo.analysis.bifurcation.BifurcationResult.plot }
+
+```python
+analysis.bifurcation.BifurcationResult.plot(
+    ax=None,
+    ICS=None,
+    VOI=None,
+    save=None,
+    **kwargs,
+)
+```
+
+Render the full bifurcation diagram for this branch.
+
+Draws the equilibrium branch, its special points and any periodic-orbit envelopes (a filled min/max region, or a `max` line when only maxima are available), labels the axes, adds a legend and applies publication styling. When nested continuation produced codim-2 curves, dispatches to the codim-2 renderer instead.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                  | Default   |
+|----------|--------|----------------------------------------------------------------------------------------------|-----------|
+| ax       |        | Existing axes to draw on; a new figure is created when `None`.                               | `None`    |
+| ICS      |        | Label for the x-axis (the free/continuation parameter); defaults to `self.ICS` or `"param"`. | `None`    |
+| VOI      |        | Variable of interest plotted on the y-axis; resolved to a default branch column when `None`. | `None`    |
+| save     |        | File path to write the figure to (at 500 dpi); skipped when `None`.                          | `None`    |
+| **kwargs |        | Style overrides forwarded to `plot_branch` and `plot_special_points`.                        | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                   |
+|--------|--------|-----------------------------------------------|
+|        |        | The matplotlib axes the diagram was drawn on. |
+
+##### plot_3d { #tvbo.analysis.bifurcation.BifurcationResult.plot_3d }
+
+```python
+analysis.bifurcation.BifurcationResult.plot_3d(
+    ax=None,
+    ICS=None,
+    ICS2=None,
+    VOI=None,
+    save=None,
+    n_orbit_samples=40,
+    **kwargs,
+)
+```
+
+Plot 3D bifurcation diagram with periodic orbit surfaces.
+
+Shows:
+- Codim-1 equilibrium backbone (stable=solid, unstable=dashed)
+- Periodic orbit tube surface with W displacement cross-sections
+- Codim-2 curves (Hopf/fold loci)
+- Special codim-2 points (BT, GH, cusp, ZH)
+
+###### Axis convention {.doc-section .doc-section-axis-convention}
+
+x = primary free parameter (codim-1, e.g. I)
+y = secondary parameter (codim-2, e.g. b)
+z = state variable (VOI, e.g. V)
+
+##### plot_branch { #tvbo.analysis.bifurcation.BifurcationResult.plot_branch }
+
+```python
+analysis.bifurcation.BifurcationResult.plot_branch(
+    ax,
+    ICS=None,
+    VOI=None,
+    **kwargs,
+)
+```
+
+Draw the continuation branch as stability-coded line segments.
+
+Splits the branch into contiguous stable/unstable runs (and, when a `branch_id` column is present, per branch) and plots each segment with the style from the central registry — `SFP`/`UFP` for equilibria or `SLC`/`ULC` for periodic orbits. Does nothing when the branch is empty.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                                                              | Default    |
+|----------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| ax       |        | Matplotlib axes to draw on.                                                                                                                              | _required_ |
+| ICS      |        | Free (continuation) parameter name; accepted for parity with the other plot methods and not used here.                                                   | `None`     |
+| VOI      |        | Variable of interest plotted on the y-axis; resolved to a default branch column when `None`.                                                             | `None`     |
+| **kwargs |        | Line-style overrides forwarded to `matplotlib` (e.g. `linewidth`/`lw`, `color`, `linestyle`); continuation-config keys are filtered out before plotting. | `{}`       |
+
+##### plot_equilibrium_branch { #tvbo.analysis.bifurcation.BifurcationResult.plot_equilibrium_branch }
+
+```python
+analysis.bifurcation.BifurcationResult.plot_equilibrium_branch(
+    ax,
+    ICS=None,
+    VOI=None,
+    **kwargs,
+)
+```
+
+Draw the equilibrium branch and overlay its special points.
+
+Convenience wrapper that calls `plot_branch` and then `plot_special_points` on the same axes.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                  | Default    |
+|----------|--------|----------------------------------------------------------------------------------------------|------------|
+| ax       |        | Matplotlib axes to draw on.                                                                  | _required_ |
+| ICS      |        | Free (continuation) parameter name, passed through to the underlying calls.                  | `None`     |
+| VOI      |        | Variable of interest plotted on the y-axis; resolved to a default branch column when `None`. | `None`     |
+| **kwargs |        | Style overrides forwarded to `plot_branch` and `plot_special_points`.                        | `{}`       |
+
+##### plot_special_points { #tvbo.analysis.bifurcation.BifurcationResult.plot_special_points }
+
+```python
+analysis.bifurcation.BifurcationResult.plot_special_points(
+    VOI,
+    ax=None,
+    types=None,
+    **kwargs,
+)
+```
+
+Mark codim-1 special points (LP/HB/BP/PD/TR/...) on ``ax``.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+types : iterable[str], optional
+    Restrict markers to these canonical TYs (e.g. ``['LP','HB']``).
+    By default every TY found in ``df.specialpoint`` is plotted
+    (except ``endpoint``).
+
+##### to_dataset { #tvbo.analysis.bifurcation.BifurcationResult.to_dataset }
+
+```python
+analysis.bifurcation.BifurcationResult.to_dataset()
+```
+
+Return the continuation branch as a native, self-describing xarray ``Dataset``.
+
+The branch is a labelled table indexed by continuation ``step``; the continuation parameter (``ICS``, e.g. ``G``) is a coordinate along it and every recorded observable / stability flag becomes a data variable. This is the same labelled container the rest of tvbo uses (``ExperimentResult`` holds it under ``continuations``), so continuation results persist through the standard result format instead of any ad-hoc per-figure array dump.
+
+### CurvePicker { #tvbo.analysis.bifurcation.CurvePicker }
+
+```python
+analysis.bifurcation.CurvePicker(fig, result, callback=None)
+```
+
+Click any branch line to inspect the underlying point.
+
+Activated via ``BifurcationResult.enable_picker(ax, callback=...)``.
+Each branch line drawn by ``plot_branch`` carries ``picker=True`` so matplotlib raises a ``pick_event`` on click; the picker resolves the nearest df row and forwards it to ``callback(result, row_index)``.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [disconnect](#tvbo.analysis.bifurcation.CurvePicker.disconnect) | Detach the pick-event handler so clicks are no longer captured. |
+
+##### disconnect { #tvbo.analysis.bifurcation.CurvePicker.disconnect }
+
+```python
+analysis.bifurcation.CurvePicker.disconnect()
+```
+
+Detach the pick-event handler so clicks are no longer captured.
+
+Safe to call more than once; the connection id is cleared after the first disconnect.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [canonical_ty](#tvbo.analysis.bifurcation.canonical_ty) | Normalise any backend label to a key in ``BIF_STYLES``. |
+| [get_bif_style](#tvbo.analysis.bifurcation.get_bif_style) | Look up the merged style dict for a TY (e.g. 'LP', 'fold', 'SLC'). |
+| [resolve_coord](#tvbo.analysis.bifurcation.resolve_coord) | Evaluate one coord expression against ``df`` (and optionally PO meshes). |
+| [resolve_coords](#tvbo.analysis.bifurcation.resolve_coords) | Normalise the user's ``coords`` argument to a tuple of arrays. |
+
+### canonical_ty { #tvbo.analysis.bifurcation.canonical_ty }
+
+```python
+analysis.bifurcation.canonical_ty(ty)
+```
+
+Normalise any backend label to a key in ``BIF_STYLES``.
+
+### get_bif_style { #tvbo.analysis.bifurcation.get_bif_style }
+
+```python
+analysis.bifurcation.get_bif_style(ty, base=None)
+```
+
+Look up the merged style dict for a TY (e.g. 'LP', 'fold', 'SLC').
+
+``base`` defaults to the line/marker base style depending on whether the entry is a branch (no marker) or a point (marker is present).
+
+### resolve_coord { #tvbo.analysis.bifurcation.resolve_coord }
+
+```python
+analysis.bifurcation.resolve_coord(
+    df,
+    expr,
+    state_var_index=None,
+    po_orbits=None,
+)
+```
+
+Evaluate one coord expression against ``df`` (and optionally PO meshes).
+
+#### Accepts {.doc-section .doc-section-accepts}
+
+* a column name in ``df`` (e.g. ``'x'``, ``'param'``)
+* a sympy-parseable expression of column names (e.g. ``'V**2 + W'``)
+* a reduction call ``'minmax(V)'`` / ``'avg(V)'`` / ``'norm(V)'``
+  which uses the PO orbit meshes if available, else falls back to
+  the column itself.
+
+Returns a pandas Series (or ndarray for minmax → shape (2, N)).
+
+### resolve_coords { #tvbo.analysis.bifurcation.resolve_coords }
+
+```python
+analysis.bifurcation.resolve_coords(
+    coords,
+    df,
+    state_var_index=None,
+    po_orbits=None,
+    default_voi=None,
+    default_param='param',
+)
+```
+
+Normalise the user's ``coords`` argument to a tuple of arrays.
+
+``coords`` accepts:
+  * ``None``               → ``(param, default_voi)``
+  * ``'V'``                → ``(param, V)``
+  * ``'minmax(V)'``        → ``(param, [Vmin, Vmax])``
+  * ``(p, V)``             → 2D
+  * ``(p, V, W)``          → 3D
+Each element may itself be a string or already-resolved array.

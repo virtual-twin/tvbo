@@ -1,0 +1,100 @@
+# Slot: placeholder 
+
+
+_Honest-placeholder text drawn when this panel's data is missing or degenerate (never a source-replot). Setting it wraps the draw so a missing container falls back to this label instead of erroring._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/placeholder](https://w3id.org/tvbo/slot/placeholder)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Panel](../classes/Panel.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Panel](../classes/Panel.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:placeholder |
+| native | tvbo:placeholder |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: placeholder
+description: Honest-placeholder text drawn when this panel's data is missing or degenerate
+  (never a source-replot). Setting it wraps the draw so a missing container falls
+  back to this label instead of erroring.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Panel
+domain_of:
+- Panel
+range: string
+
+```
+</details></div>

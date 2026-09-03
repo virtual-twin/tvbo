@@ -1,0 +1,95 @@
+# registry { #tvbo.data.registry }
+
+`data.registry`
+
+Canonical database registry — resolves short names to YAML file paths.
+
+Works both from pip-installed packages and editable/dev installs.
+Searches recursively within each category directory so that models in subfolders (e.g. database/models/julia/) are automatically discovered.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [DATABASE_ROOT](#tvbo.data.registry.DATABASE_ROOT) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [database_dir](#tvbo.data.registry.database_dir) | Return the database directory for a given entity class. |
+| [iri_target](#tvbo.data.registry.iri_target) | ``(class_name, local_name)`` for a curated-entity IRI, or ``None`` when it is not one. |
+| [list_entries](#tvbo.data.registry.list_entries) | List all available database entries for a class. |
+| [list_entries_with_metadata](#tvbo.data.registry.list_entries_with_metadata) | Every entry in the given class category, as dicts with `name`, `model_type`, `description`, `path`. |
+| [local_name](#tvbo.data.registry.local_name) | Strip an optional ``prefix:`` from a CURIE / IRI, returning the local name. |
+| [resolve](#tvbo.data.registry.resolve) | Resolve a short name to a database YAML file path. |
+| [resolve_iri](#tvbo.data.registry.resolve_iri) | Resolve a curated-entity IRI to its database YAML path. |
+
+### database_dir { #tvbo.data.registry.database_dir }
+
+```python
+data.registry.database_dir(cls_name)
+```
+
+Return the database directory for a given entity class.
+
+### iri_target { #tvbo.data.registry.iri_target }
+
+```python
+data.registry.iri_target(iri)
+```
+
+``(class_name, local_name)`` for a curated-entity IRI, or ``None`` when it is not one.
+
+``tvbo:experiment/JR_MEG_FrequencyGradient_Optimization`` -> ``("SimulationExperiment", "JR_MEG_FrequencyGradient_Optimization")``. Returns ``None`` for a bare name (no scope), for a ``result/`` reference (a produced container, which :mod:`tvbo.data.dataref` resolves against a study's results directory), and for any unknown scope — so a caller falls back rather than being handed the wrong entity.
+
+The ``prefix:`` is required, and that is what separates an IRI from a relative path: without it ``network/Glasser.yaml`` reads as scope ``network``, and a path the caller meant to open would be resolved against the database instead.
+
+### list_entries { #tvbo.data.registry.list_entries }
+
+```python
+data.registry.list_entries(cls_name)
+```
+
+List all available database entries for a class.
+
+### list_entries_with_metadata { #tvbo.data.registry.list_entries_with_metadata }
+
+```python
+data.registry.list_entries_with_metadata(cls_name)
+```
+
+Every entry in the given class category, as dicts with `name`, `model_type`, `description`, `path`.
+
+Fast — reads only the first ~30 lines of each YAML file.
+
+### local_name { #tvbo.data.registry.local_name }
+
+```python
+data.registry.local_name(iri)
+```
+
+Strip an optional ``prefix:`` from a CURIE / IRI, returning the local name.
+
+``tvbo:KuramotoCoupling`` -> ``KuramotoCoupling``; a bare name is returned unchanged. Single source of truth for CURIE-prefix stripping, so the class-layer ``_iri_local`` helpers don't each re-implement it.
+
+### resolve { #tvbo.data.registry.resolve }
+
+```python
+data.registry.resolve(cls_name, name)
+```
+
+Resolve a short name to a database YAML file path.
+
+Tries exact top-level stem match first (fast path), then searches recursively by canonical `name:` field and file stem (case-insensitive).
+For Network, also matches BIDS filenames containing the atlas name.
+
+### resolve_iri { #tvbo.data.registry.resolve_iri }
+
+```python
+data.registry.resolve_iri(iri)
+```
+
+Resolve a curated-entity IRI to its database YAML path.
+
+New specs reference curated entities this way because a relative path is not portable: ``!include`` splices a document without rebasing the paths inside it, so an experiment included out of the database resolves its own ``network.bids_dir`` against the including file and loads the wrong root. An IRI carries no path, so the database resolves it against the database.

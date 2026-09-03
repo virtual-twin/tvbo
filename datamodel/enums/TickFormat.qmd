@@ -1,0 +1,73 @@
+# Enum: TickFormat 
+
+
+
+
+_How a tick number is written._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/TickFormat](https://w3id.org/tvbo/enum/TickFormat)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| sci | None | Scientific notation, always |
+| plain | None | Plain decimals, never scientific notation |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [xtick_format](../slots/xtick_format.qmd) | How x tick numbers are written: `sci` forces scientific notation, `plain` for... |
+| [ytick_format](../slots/ytick_format.qmd) | How y tick numbers are written |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: TickFormat
+description: How a tick number is written.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  sci:
+    text: sci
+    description: Scientific notation, always.
+  plain:
+    text: plain
+    description: Plain decimals, never scientific notation.
+
+```
+</details>
+
+</div>

@@ -1,0 +1,81 @@
+# Slot: frame 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/frame](https://w3id.org/tvbo/slot/frame)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+| [Inset](../classes/Inset.qmd) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, ann... |  no  |
+| [Layer](../classes/Layer.qmd) | One mark bound to one data reference, with its encoding |  no  |
+| [Legend](../classes/Legend.qmd) | A panel's key: whether it is drawn, where it sits, and the three things a fig... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Panel](../classes/Panel.qmd), [Inset](../classes/Inset.qmd), [Layer](../classes/Layer.qmd), [Legend](../classes/Legend.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:frame |
+| native | tvbo:frame |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: frame
+domain_of:
+- Panel
+- Inset
+- Layer
+- Legend
+range: string
+
+```
+</details></div>

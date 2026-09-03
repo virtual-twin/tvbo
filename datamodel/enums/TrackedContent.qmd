@@ -1,0 +1,81 @@
+# Enum: TrackedContent 
+
+
+
+
+_What version control keeps of a directory._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_study:enum/TrackedContent](https://w3id.org/tvbo/study/enum/TrackedContent)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| all | None | Everything in it is tracked |
+| declared_files | None | Only the files the record declares under it are tracked, at whatever depth th... |
+| none | None | Nothing in it is tracked; the directory is reproduced by running the study |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [tracked](../slots/tracked.qmd) | What version control keeps, which is what the `` |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: TrackedContent
+description: What version control keeps of a directory.
+from_schema: https://w3id.org/tvbo/study
+permissible_values:
+  all:
+    text: all
+    description: Everything in it is tracked.
+  declared_files:
+    text: declared_files
+    description: Only the files the record declares under it are tracked, at whatever
+      depth they sit; everything else it accumulates is not. A source directory keeps
+      its README, so third-party material is documented without being redistributed,
+      and a derivative dataset keeps the description that declares what it is, so
+      a checkout validates before anything has been run.
+  none:
+    text: none
+    description: Nothing in it is tracked; the directory is reproduced by running
+      the study.
+
+```
+</details>
+
+</div>

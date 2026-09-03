@@ -1,0 +1,98 @@
+# Slot: newton_tol 
+
+
+_Absolute tolerance for Newton corrector convergence._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/newton_tol](https://w3id.org/tvbo/slot/newton_tol)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Continuation](../classes/Continuation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Continuation](../classes/Continuation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:newton_tol |
+| native | tvbo:newton_tol |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: newton_tol
+description: Absolute tolerance for Newton corrector convergence.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Continuation
+domain_of:
+- Continuation
+range: float
+
+```
+</details></div>

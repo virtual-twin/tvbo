@@ -1,0 +1,102 @@
+# Slot: is_accessible_for_free 
+
+
+_Whether the tool is free/open-source._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:isAccessibleForFree](http://schema.org/isAccessibleForFree)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+| Slot URI | [schema:isAccessibleForFree](http://schema.org/isAccessibleForFree) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `True` |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:isAccessibleForFree |
+| native | tvbo_sw:is_accessible_for_free |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: is_accessible_for_free
+description: Whether the tool is free/open-source.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+slot_uri: schema:isAccessibleForFree
+ifabsent: 'True'
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: boolean
+
+```
+</details></div>

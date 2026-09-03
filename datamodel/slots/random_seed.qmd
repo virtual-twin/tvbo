@@ -1,0 +1,102 @@
+# Slot: random_seed 
+
+
+_Experiment-global RNG seed (default 0). Governs every stochastic draw — additive noise, initial-condition and parameter distributions, and n_trials ensembles — unless a specific `Distribution.seed` overrides it for that distribution._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/random_seed](https://w3id.org/tvbo/slot/random_seed)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ExecutionConfig](../classes/ExecutionConfig.qmd) | Configuration for computational execution (parallelization, precision, hardwa... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `integer(0)` |
+| Owner | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:random_seed |
+| native | tvbo:random_seed |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: random_seed
+description: Experiment-global RNG seed (default 0). Governs every stochastic draw
+  — additive noise, initial-condition and parameter distributions, and n_trials ensembles
+  — unless a specific `Distribution.seed` overrides it for that distribution.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: integer(0)
+owner: ExecutionConfig
+domain_of:
+- ExecutionConfig
+range: integer
+
+```
+</details></div>

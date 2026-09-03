@@ -1,0 +1,99 @@
+# Slot: columns 
+
+
+_How many columns the entries are laid out in. A wide panel with six short labels reads better as one row than as a six-deep column over the data._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/columns](https://w3id.org/tvbo/slot/columns)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Legend](../classes/Legend.qmd) | A panel's key: whether it is drawn, where it sits, and the three things a fig... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Legend](../classes/Legend.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Legend](../classes/Legend.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:columns |
+| native | tvbo:columns |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: columns
+description: How many columns the entries are laid out in. A wide panel with six short
+  labels reads better as one row than as a six-deep column over the data.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Legend
+domain_of:
+- Legend
+range: integer
+
+```
+</details></div>

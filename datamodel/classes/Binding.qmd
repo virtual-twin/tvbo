@@ -1,0 +1,291 @@
+# Class: Binding 
+
+
+_Per-backend construction binding for a GraphGenerator: how to build the graph in a specific target library.  Keyed by backend id — the ``name`` is the backend (e.g. python, julia, networkx)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Binding](https://w3id.org/tvbo/Binding)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Binding
+    click Binding href "./Binding.html"
+      Binding : args
+        
+          
+    
+        
+        
+        Binding --> "*" String : args
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Binding : callable
+        
+          
+    
+        
+        
+        Binding --> "0..1" String : callable
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Binding : library
+        
+          
+    
+        
+        
+        Binding --> "0..1" String : library
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Binding : name
+        
+          
+    
+        
+        
+        Binding --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Binding](https://w3id.org/tvbo/Binding) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [library](../slots/library.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Native library/module providing the callable | direct |
+| [callable](../slots/callable.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name of the constructor function in the library | direct |
+| [args](../slots/args.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Ordered parameter names passed to the callable | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | [bindings](../slots/bindings.qmd) | range | [Binding](../classes/Binding.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Binding |
+| native | tvbo:Binding |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Binding
+description: 'Per-backend construction binding for a GraphGenerator: how to build
+  the graph in a specific target library.  Keyed by backend id — the ``name`` is the
+  backend (e.g. python, julia, networkx).'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+attributes:
+  library:
+    name: library
+    description: Native library/module providing the callable.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Binding
+    range: string
+  callable:
+    name: callable
+    description: Name of the constructor function in the library.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Binding
+    - Function
+    - FunctionCall
+    range: string
+  args:
+    name: args
+    description: Ordered parameter names passed to the callable.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Binding
+    range: string
+    multivalued: true
+class_uri: tvbo:Binding
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Binding
+description: 'Per-backend construction binding for a GraphGenerator: how to build
+  the graph in a specific target library.  Keyed by backend id — the ``name`` is the
+  backend (e.g. python, julia, networkx).'
+from_schema: https://w3id.org/tvbo
+attributes:
+  library:
+    name: library
+    description: Native library/module providing the callable.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Binding
+    domain_of:
+    - Binding
+    range: string
+  callable:
+    name: callable
+    description: Name of the constructor function in the library.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Binding
+    domain_of:
+    - Binding
+    - Function
+    - FunctionCall
+    range: string
+  args:
+    name: args
+    description: Ordered parameter names passed to the callable.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Binding
+    domain_of:
+    - Binding
+    range: string
+    multivalued: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Binding
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+class_uri: tvbo:Binding
+
+```
+</details></div>

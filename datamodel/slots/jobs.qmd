@@ -1,0 +1,108 @@
+# Slot: jobs 
+
+
+_Concurrent jobs the workflow engine keeps in flight (Snakemake ``--jobs``, written into the emitted profile). A site's queue limit is a property of the run, so it belongs beside partition and account; unset means 100._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/jobs](https://w3id.org/tvbo/slot/jobs)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+
+### Value Constraints
+
+| Property | Value |
+| --- | --- |
+| Minimum Value | 1 |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:jobs |
+| native | tvbo:jobs |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: jobs
+description: Concurrent jobs the workflow engine keeps in flight (Snakemake ``--jobs``,
+  written into the emitted profile). A site's queue limit is a property of the run,
+  so it belongs beside partition and account; unset means 100.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowEngineConfig
+domain_of:
+- WorkflowEngineConfig
+range: integer
+minimum_value: 1
+
+```
+</details></div>

@@ -1,0 +1,742 @@
+# Class: WorkflowEngineConfig 
+
+
+_Execution directives for a workflow engine. Every field is optional and each engine's emitter consumes the subset it supports, so one block may carry directives for more than one target. The generic resource fields (cpus_per_task, mem, time) map across engines; the remaining fields are named for the engine that reads them (Slurm: partition/account/gres/ mail_*/array_chunk; Snakemake: cores; Nextflow: executor/queue). Any directive not named here is passed through ``options`` verbatim, so the block stays extensible without a schema change._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:WorkflowEngineConfig](https://w3id.org/tvbo/WorkflowEngineConfig)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class WorkflowEngineConfig
+    click WorkflowEngineConfig href "./WorkflowEngineConfig.html"
+      WorkflowEngineConfig : account
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : account
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : array_chunk
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" Integer : array_chunk
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      WorkflowEngineConfig : comment
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : comment
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : cores
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" Integer : cores
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      WorkflowEngineConfig : cpus_per_task
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" Integer : cpus_per_task
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      WorkflowEngineConfig : env
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "*" EnvironmentVariable : env
+        click EnvironmentVariable href "./EnvironmentVariable.html"
+    
+
+        
+      WorkflowEngineConfig : executor
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : executor
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : gres
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : gres
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : jobs
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" Integer : jobs
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      WorkflowEngineConfig : mail_type
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : mail_type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : mail_user
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : mail_user
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : mem
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : mem
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : modules
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "*" String : modules
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : options
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "*" SchedulerDirective : options
+        click SchedulerDirective href "./SchedulerDirective.html"
+    
+
+        
+      WorkflowEngineConfig : partition
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : partition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : queue
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : queue
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : setup
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "*" String : setup
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : time
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : time
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      WorkflowEngineConfig : venv
+        
+          
+    
+        
+        
+        WorkflowEngineConfig --> "0..1" String : venv
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:WorkflowEngineConfig](https://w3id.org/tvbo/WorkflowEngineConfig) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [cpus_per_task](../slots/cpus_per_task.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | CPU cores requested per task (Slurm --cpus-per-task) | direct |
+| [mem](../slots/mem.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Memory per task in scheduler syntax (e | direct |
+| [time](../slots/time.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Wall-clock limit per task (e | direct |
+| [gres](../slots/gres.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Generic scheduler resources, e | direct |
+| [partition](../slots/partition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Scheduler partition to submit to (Slurm) | direct |
+| [account](../slots/account.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Accounting allocation to charge the tasks against (Slurm) | direct |
+| [comment](../slots/comment.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Free-text provenance tag on each submitted job (Slurm ``--comment``), visible... | direct |
+| [cores](../slots/cores.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Total cores for local engines (Snakemake --cores) | direct |
+| [jobs](../slots/jobs.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Concurrent jobs the workflow engine keeps in flight (Snakemake ``--jobs``, wr... | direct |
+| [executor](../slots/executor.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Executor to run the pipeline through (Nextflow process | direct |
+| [queue](../slots/queue.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Scheduler queue for the executor (Nextflow process | direct |
+| [modules](../slots/modules.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Environment modules to load before running (module load …) | direct |
+| [venv](../slots/venv.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to a virtual environment to activate before running | direct |
+| [setup](../slots/setup.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Shell lines run verbatim before the task command, after ``set -euo pipefail``... | direct |
+| [mail_type](../slots/mail_type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Scheduler notification trigger (e | direct |
+| [mail_user](../slots/mail_user.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Notification email address | direct |
+| [array_chunk](../slots/array_chunk.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Overrides ``distribute | direct |
+| [options](../slots/options.qmd) | * <br/> [SchedulerDirective](../classes/SchedulerDirective.qmd) | Additional engine-native scheduler directives passed through verbatim, each i... | direct |
+| [env](../slots/env.qmd) | * <br/> [EnvironmentVariable](../classes/EnvironmentVariable.qmd) | Environment variables exported before the task command on every engine (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | [slurm](../slots/slurm.qmd) | range | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | [snakemake](../slots/snakemake.qmd) | range | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | [nextflow](../slots/nextflow.qmd) | range | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:WorkflowEngineConfig |
+| native | tvbo:WorkflowEngineConfig |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: WorkflowEngineConfig
+description: 'Execution directives for a workflow engine. Every field is optional
+  and each engine''s emitter consumes the subset it supports, so one block may carry
+  directives for more than one target. The generic resource fields (cpus_per_task,
+  mem, time) map across engines; the remaining fields are named for the engine that
+  reads them (Slurm: partition/account/gres/ mail_*/array_chunk; Snakemake: cores;
+  Nextflow: executor/queue). Any directive not named here is passed through ``options``
+  verbatim, so the block stays extensible without a schema change.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  cpus_per_task:
+    name: cpus_per_task
+    description: CPU cores requested per task (Slurm --cpus-per-task).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: integer
+    minimum_value: 1
+  mem:
+    name: mem
+    description: Memory per task in scheduler syntax (e.g. '16G').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  time:
+    name: time
+    description: Wall-clock limit per task (e.g. '24:00:00').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    - TimeSeries
+    range: string
+  gres:
+    name: gres
+    description: Generic scheduler resources, e.g. 'gpu:1' (Slurm --gres).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  partition:
+    name: partition
+    description: Scheduler partition to submit to (Slurm).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Observation
+    - WorkflowEngineConfig
+    range: string
+  account:
+    name: account
+    description: Accounting allocation to charge the tasks against (Slurm).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  comment:
+    name: comment
+    description: Free-text provenance tag on each submitted job (Slurm ``--comment``),
+      visible in ``squeue -o %k``. Unset means an auto-generated ``tvbo:<study>/exp_<experiment>``
+      tag so a queued job maps back to its experiment; set it to override with a custom
+      string.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Parameter
+    - WorkflowEngineConfig
+    range: string
+  cores:
+    name: cores
+    description: Total cores for local engines (Snakemake --cores).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: integer
+    minimum_value: 1
+  jobs:
+    name: jobs
+    description: Concurrent jobs the workflow engine keeps in flight (Snakemake ``--jobs``,
+      written into the emitted profile). A site's queue limit is a property of the
+      run, so it belongs beside partition and account; unset means 100.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: integer
+    minimum_value: 1
+  executor:
+    name: executor
+    description: Executor to run the pipeline through (Nextflow process.executor).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  queue:
+    name: queue
+    description: Scheduler queue for the executor (Nextflow process.queue).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  modules:
+    name: modules
+    description: Environment modules to load before running (module load …).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - SoftwareRequirement
+    - WorkflowEngineConfig
+    range: string
+    multivalued: true
+  venv:
+    name: venv
+    description: Path to a virtual environment to activate before running.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  setup:
+    name: setup
+    description: Shell lines run verbatim before the task command, after ``set -euo
+      pipefail`` and any module/venv activation. The general hook for environment
+      setup the typed fields do not cover, e.g. activating a conda env (``conda activate
+      <name>``), sourcing a profile, or exporting a computed path. Ordered; each line
+      is emitted as-is.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+    multivalued: true
+  mail_type:
+    name: mail_type
+    description: Scheduler notification trigger (e.g. 'END,FAIL').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  mail_user:
+    name: mail_user
+    description: Notification email address.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  array_chunk:
+    name: array_chunk
+    description: 'Overrides ``distribute.chunk`` for this engine only: the number
+      of array-task shards to split the vectorized sweep across.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: integer
+    minimum_value: 1
+  options:
+    name: options
+    description: 'Additional engine-native scheduler directives passed through verbatim,
+      each in the target''s native form: a Slurm ``#SBATCH --<name>=<value>`` line,
+      a Snakemake ``resources:`` entry, or a Nextflow ``process.<name>`` assignment.
+      The extension point for any flag the typed fields do not cover.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Discretization
+    - BranchSwitch
+    - Continuation
+    - WorkflowEngineConfig
+    range: SchedulerDirective
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  env:
+    name: env
+    description: Environment variables exported before the task command on every engine
+      (e.g. XLA_PYTHON_CLIENT_PREALLOCATE=false). An ordered list of {name, value};
+      values are shell-quoted at emit time.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - WorkflowEngineConfig
+    range: EnvironmentVariable
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+class_uri: tvbo:WorkflowEngineConfig
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: WorkflowEngineConfig
+description: 'Execution directives for a workflow engine. Every field is optional
+  and each engine''s emitter consumes the subset it supports, so one block may carry
+  directives for more than one target. The generic resource fields (cpus_per_task,
+  mem, time) map across engines; the remaining fields are named for the engine that
+  reads them (Slurm: partition/account/gres/ mail_*/array_chunk; Snakemake: cores;
+  Nextflow: executor/queue). Any directive not named here is passed through ``options``
+  verbatim, so the block stays extensible without a schema change.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  cpus_per_task:
+    name: cpus_per_task
+    description: CPU cores requested per task (Slurm --cpus-per-task).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: integer
+    minimum_value: 1
+  mem:
+    name: mem
+    description: Memory per task in scheduler syntax (e.g. '16G').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  time:
+    name: time
+    description: Wall-clock limit per task (e.g. '24:00:00').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    - TimeSeries
+    range: string
+  gres:
+    name: gres
+    description: Generic scheduler resources, e.g. 'gpu:1' (Slurm --gres).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  partition:
+    name: partition
+    description: Scheduler partition to submit to (Slurm).
+    from_schema: https://w3id.org/tvbo
+    owner: WorkflowEngineConfig
+    domain_of:
+    - Observation
+    - WorkflowEngineConfig
+    range: string
+  account:
+    name: account
+    description: Accounting allocation to charge the tasks against (Slurm).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  comment:
+    name: comment
+    description: Free-text provenance tag on each submitted job (Slurm ``--comment``),
+      visible in ``squeue -o %k``. Unset means an auto-generated ``tvbo:<study>/exp_<experiment>``
+      tag so a queued job maps back to its experiment; set it to override with a custom
+      string.
+    from_schema: https://w3id.org/tvbo
+    owner: WorkflowEngineConfig
+    domain_of:
+    - Parameter
+    - WorkflowEngineConfig
+    range: string
+  cores:
+    name: cores
+    description: Total cores for local engines (Snakemake --cores).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: integer
+    minimum_value: 1
+  jobs:
+    name: jobs
+    description: Concurrent jobs the workflow engine keeps in flight (Snakemake ``--jobs``,
+      written into the emitted profile). A site's queue limit is a property of the
+      run, so it belongs beside partition and account; unset means 100.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: integer
+    minimum_value: 1
+  executor:
+    name: executor
+    description: Executor to run the pipeline through (Nextflow process.executor).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  queue:
+    name: queue
+    description: Scheduler queue for the executor (Nextflow process.queue).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  modules:
+    name: modules
+    description: Environment modules to load before running (module load …).
+    from_schema: https://w3id.org/tvbo
+    owner: WorkflowEngineConfig
+    domain_of:
+    - SoftwareRequirement
+    - WorkflowEngineConfig
+    range: string
+    multivalued: true
+  venv:
+    name: venv
+    description: Path to a virtual environment to activate before running.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  setup:
+    name: setup
+    description: Shell lines run verbatim before the task command, after ``set -euo
+      pipefail`` and any module/venv activation. The general hook for environment
+      setup the typed fields do not cover, e.g. activating a conda env (``conda activate
+      <name>``), sourcing a profile, or exporting a computed path. Ordered; each line
+      is emitted as-is.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+    multivalued: true
+  mail_type:
+    name: mail_type
+    description: Scheduler notification trigger (e.g. 'END,FAIL').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  mail_user:
+    name: mail_user
+    description: Notification email address.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: string
+  array_chunk:
+    name: array_chunk
+    description: 'Overrides ``distribute.chunk`` for this engine only: the number
+      of array-task shards to split the vectorized sweep across.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: integer
+    minimum_value: 1
+  options:
+    name: options
+    description: 'Additional engine-native scheduler directives passed through verbatim,
+      each in the target''s native form: a Slurm ``#SBATCH --<name>=<value>`` line,
+      a Snakemake ``resources:`` entry, or a Nextflow ``process.<name>`` assignment.
+      The extension point for any flag the typed fields do not cover.'
+    from_schema: https://w3id.org/tvbo
+    owner: WorkflowEngineConfig
+    domain_of:
+    - Discretization
+    - BranchSwitch
+    - Continuation
+    - WorkflowEngineConfig
+    range: SchedulerDirective
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  env:
+    name: env
+    description: Environment variables exported before the task command on every engine
+      (e.g. XLA_PYTHON_CLIENT_PREALLOCATE=false). An ordered list of {name, value};
+      values are shell-quoted at emit time.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: WorkflowEngineConfig
+    domain_of:
+    - WorkflowEngineConfig
+    range: EnvironmentVariable
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+class_uri: tvbo:WorkflowEngineConfig
+
+```
+</details></div>

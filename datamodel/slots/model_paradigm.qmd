@@ -1,0 +1,100 @@
+# Slot: model_paradigm 
+
+
+_Computational paradigms supported._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/model_paradigm](https://w3id.org/tvbo/software/slot/model_paradigm)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ModelParadigm](../enums/ModelParadigm.qmd) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:model_paradigm |
+| native | tvbo_sw:model_paradigm |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: model_paradigm
+description: Computational paradigms supported.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: ModelParadigm
+multivalued: true
+
+```
+</details></div>

@@ -1,0 +1,77 @@
+# Slot: pad 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/pad](https://w3id.org/tvbo/slot/pad)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Figure](../classes/Figure.qmd), [Colorbar](../classes/Colorbar.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:pad |
+| native | tvbo:pad |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: pad
+domain_of:
+- Figure
+- Colorbar
+range: string
+
+```
+</details></div>

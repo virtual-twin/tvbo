@@ -1,0 +1,83 @@
+# Slot: mesh 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/mesh](https://w3id.org/tvbo/slot/mesh)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+| [SpatialField](../classes/SpatialField.qmd) |  |  no  |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+| [PDE](../classes/PDE.qmd) | Partial differential equation problem definition |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surface](../classes/Surface.qmd), [Network](../classes/Network.qmd), [SpatialField](../classes/SpatialField.qmd), [FieldStateVariable](../classes/FieldStateVariable.qmd), [PDE](../classes/PDE.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:mesh |
+| native | tvbo:mesh |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: mesh
+domain_of:
+- Surface
+- Network
+- SpatialField
+- FieldStateVariable
+- PDE
+range: string
+
+```
+</details></div>

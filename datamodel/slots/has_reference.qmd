@@ -1,0 +1,86 @@
+# Slot: has_reference 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:references](http://purl.org/dc/terms/references)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+| Slot URI | [dcterms:references](http://purl.org/dc/terms/references) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:references |
+| native | tvbo:has_reference |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: has_reference
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: dcterms:references
+domain_of:
+- Dynamics
+range: string
+
+```
+</details></div>

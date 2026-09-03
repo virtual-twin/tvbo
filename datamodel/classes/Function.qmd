@@ -1,0 +1,846 @@
+# Class: Function 
+
+
+_A function with explicit input -> transformation -> output flow. Can be equation-based (symbolic) or software-based (callable). In a pipeline, functions are chained: output of one becomes input of next._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Function](https://w3id.org/tvbo/Function)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Function
+    click Function href "./Function.html"
+      Function <|-- LossFunction
+        click LossFunction href "./LossFunction.html"
+      
+      Function : acronym
+        
+          
+    
+        
+        
+        Function --> "0..1" String : acronym
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Function : aggregate
+        
+          
+    
+        
+        
+        Function --> "0..1" Aggregation : aggregate
+        click Aggregation href "./Aggregation.html"
+    
+
+        
+      Function : apply_on_dimension
+        
+          
+    
+        
+        
+        Function --> "0..1" DimensionType : apply_on_dimension
+        click DimensionType href "../../enums/DimensionType.html"
+    
+
+        
+      Function : arguments
+        
+          
+    
+        
+        
+        Function --> "*" Argument : arguments
+        click Argument href "./Argument.html"
+    
+
+        
+      Function : callable
+        
+          
+    
+        
+        
+        Function --> "0..1" Callable : callable
+        click Callable href "./Callable.html"
+    
+
+        
+      Function : definition
+        
+          
+    
+        
+        
+        Function --> "0..1" String : definition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Function : description
+        
+          
+    
+        
+        
+        Function --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Function : equation
+        
+          
+    
+        
+        
+        Function --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      Function : input
+        
+          
+    
+        
+        
+        Function --> "0..1" Function : input
+        click Function href "./Function.html"
+    
+
+        
+      Function : iri
+        
+          
+    
+        
+        
+        Function --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Function : label
+        
+          
+    
+        
+        
+        Function --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Function : name
+        
+          
+    
+        
+        
+        Function --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Function : output
+        
+          
+    
+        
+        
+        Function --> "0..1" String : output
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Function : output_equation
+        
+          
+    
+        
+        
+        Function --> "0..1" Equation : output_equation
+        click Equation href "./Equation.html"
+    
+
+        
+      Function : requirements
+        
+          
+    
+        
+        
+        Function --> "*" SoftwareRequirement : requirements
+        click SoftwareRequirement href "./SoftwareRequirement.html"
+    
+
+        
+      Function : source_code
+        
+          
+    
+        
+        
+        Function --> "0..1" String : source_code
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Function : time_range
+        
+          
+    
+        
+        
+        Function --> "0..1" Range : time_range
+        click Range href "./Range.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **Function**
+    * [LossFunction](../classes/LossFunction.qmd)
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Function](https://w3id.org/tvbo/Function) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [acronym](../slots/acronym.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | direct |
+| [definition](../slots/definition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [requirements](../slots/requirements.qmd) | * <br/> [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |  | direct |
+| [input](../slots/input.qmd) | 0..1 <br/> [Function](../classes/Function.qmd) | Simple input reference: name of previous function's output in pipeline | direct |
+| [output](../slots/output.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name for this function's output (referenced by subsequent functions) | direct |
+| [arguments](../slots/arguments.qmd) | * <br/> [Argument](../classes/Argument.qmd) | Variables consumed by the function (referenced in the equation), keyed by arg... | direct |
+| [output_equation](../slots/output_equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Output transformation equation (if equation-based) | direct |
+| [source_code](../slots/source_code.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [callable](../slots/callable.qmd) | 0..1 <br/> [Callable](../classes/Callable.qmd) | Software implementation reference (if software-based) | direct |
+| [apply_on_dimension](../slots/apply_on_dimension.qmd) | 0..1 <br/> [DimensionType](../enums/DimensionType.qmd) | Which dimension to apply the transformation on | direct |
+| [aggregate](../slots/aggregate.qmd) | 0..1 <br/> [Aggregation](../classes/Aggregation.qmd) | How to aggregate the result across dimensions | direct |
+| [time_range](../slots/time_range.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) | Time range for generated TimeSeries (for kernel generators) | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [transforms](../slots/transforms.qmd) | range | [Function](../classes/Function.qmd) |
+| [Observation](../classes/Observation.qmd) | [functions](../slots/functions.qmd) | range | [Function](../classes/Function.qmd) |
+| [Analysis](../classes/Analysis.qmd) | [function](../slots/function.qmd) | range | [Function](../classes/Function.qmd) |
+| [Dynamics](../classes/Dynamics.qmd) | [functions](../slots/functions.qmd) | range | [Function](../classes/Function.qmd) |
+| [Distribution](../classes/Distribution.qmd) | [function](../slots/function.qmd) | range | [Function](../classes/Function.qmd) |
+| [Function](../classes/Function.qmd) | [input](../slots/input.qmd) | range | [Function](../classes/Function.qmd) |
+| [LossFunction](../classes/LossFunction.qmd) | [input](../slots/input.qmd) | range | [Function](../classes/Function.qmd) |
+| [FunctionCall](../classes/FunctionCall.qmd) | [function](../slots/function.qmd) | range | [Function](../classes/Function.qmd) |
+| [Noise](../classes/Noise.qmd) | [function](../slots/function.qmd) | range | [Function](../classes/Function.qmd) |
+| [DataSource](../classes/DataSource.qmd) | [preprocessing](../slots/preprocessing.qmd) | range | [Function](../classes/Function.qmd) |
+| [Coupling](../classes/Coupling.qmd) | [aggregation](../slots/aggregation.qmd) | any_of[range] | [Function](../classes/Function.qmd) |
+| [Coupling](../classes/Coupling.qmd) | [distribution](../slots/distribution.qmd) | any_of[range] | [Function](../classes/Function.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [functions](../slots/functions.qmd) | range | [Function](../classes/Function.qmd) |
+| [PDE](../classes/PDE.qmd) | [functions](../slots/functions.qmd) | range | [Function](../classes/Function.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Function |
+| native | tvbo:Function |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Function
+description: 'A function with explicit input -> transformation -> output flow. Can
+  be equation-based (symbolic) or software-based (callable). In a pipeline, functions
+  are chained: output of one becomes input of next.'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- acronym
+- label
+- iri
+- equation
+- definition
+- description
+- requirements
+attributes:
+  input:
+    name: input
+    description: 'Simple input reference: name of previous function''s output in pipeline.
+      For multi-argument functions, use arguments with value references instead.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Function
+    - FunctionCall
+    range: Function
+    inlined: false
+  output:
+    name: output
+    description: Name for this function's output (referenced by subsequent functions)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DataRef
+    - Procedure
+    - Dynamics
+    - Function
+    - FunctionCall
+    range: string
+  arguments:
+    name: arguments
+    description: Variables consumed by the function (referenced in the equation),
+      keyed by argument name. Each value carries the optional metadata (value, description,
+      unit); the key is the name (no redundant `name:` inside).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Function
+    - FunctionCall
+    - AlgorithmInclude
+    - AlgorithmStage
+    range: Argument
+    multivalued: true
+    inlined: true
+  output_equation:
+    name: output_equation
+    description: Output transformation equation (if equation-based)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Function
+    range: Equation
+    inlined: true
+  source_code:
+    name: source_code
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Function
+    - FunctionCall
+    range: string
+  callable:
+    name: callable
+    description: Software implementation reference (if software-based)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Binding
+    - Function
+    - FunctionCall
+    range: Callable
+    inlined: true
+  apply_on_dimension:
+    name: apply_on_dimension
+    description: Which dimension to apply the transformation on
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Function
+    - FunctionCall
+    range: DimensionType
+  aggregate:
+    name: aggregate
+    description: How to aggregate the result across dimensions. E.g., aggregate.over=node
+      computes per-row (per-node) with keepdims. The type field controls whether to
+      reduce (mean/sum) or keep dimensions (none).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Function
+    - LossFunction
+    - FunctionCall
+    range: Aggregation
+    inlined: true
+  time_range:
+    name: time_range
+    description: Time range for generated TimeSeries (for kernel generators). Equation
+      is evaluated at each time point.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Function
+    - FunctionCall
+    range: Range
+    inlined: true
+class_uri: tvbo:Function
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Function
+description: 'A function with explicit input -> transformation -> output flow. Can
+  be equation-based (symbolic) or software-based (callable). In a pipeline, functions
+  are chained: output of one becomes input of next.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  input:
+    name: input
+    description: 'Simple input reference: name of previous function''s output in pipeline.
+      For multi-argument functions, use arguments with value references instead.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Function
+    domain_of:
+    - Function
+    - FunctionCall
+    range: Function
+    inlined: false
+  output:
+    name: output
+    description: Name for this function's output (referenced by subsequent functions)
+    from_schema: https://w3id.org/tvbo
+    owner: Function
+    domain_of:
+    - DataRef
+    - Procedure
+    - Dynamics
+    - Function
+    - FunctionCall
+    range: string
+  arguments:
+    name: arguments
+    description: Variables consumed by the function (referenced in the equation),
+      keyed by argument name. Each value carries the optional metadata (value, description,
+      unit); the key is the name (no redundant `name:` inside).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Function
+    domain_of:
+    - Function
+    - FunctionCall
+    - AlgorithmInclude
+    - AlgorithmStage
+    range: Argument
+    multivalued: true
+    inlined: true
+  output_equation:
+    name: output_equation
+    description: Output transformation equation (if equation-based)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Function
+    domain_of:
+    - Function
+    range: Equation
+    inlined: true
+  source_code:
+    name: source_code
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Function
+    domain_of:
+    - Function
+    - FunctionCall
+    range: string
+  callable:
+    name: callable
+    description: Software implementation reference (if software-based)
+    from_schema: https://w3id.org/tvbo
+    owner: Function
+    domain_of:
+    - Binding
+    - Function
+    - FunctionCall
+    range: Callable
+    inlined: true
+  apply_on_dimension:
+    name: apply_on_dimension
+    description: Which dimension to apply the transformation on
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Function
+    domain_of:
+    - Function
+    - FunctionCall
+    range: DimensionType
+  aggregate:
+    name: aggregate
+    description: How to aggregate the result across dimensions. E.g., aggregate.over=node
+      computes per-row (per-node) with keepdims. The type field controls whether to
+      reduce (mean/sum) or keep dimensions (none).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Function
+    domain_of:
+    - Function
+    - LossFunction
+    - FunctionCall
+    range: Aggregation
+    inlined: true
+  time_range:
+    name: time_range
+    description: Time range for generated TimeSeries (for kernel generators). Equation
+      is evaluated at each time point.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Function
+    domain_of:
+    - Function
+    - FunctionCall
+    range: Range
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Function
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  acronym:
+    name: acronym
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: skos:notation
+    owner: Function
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - Observation
+    - Function
+    - FunctionCall
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Function
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Function
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:Equation
+    owner: Function
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  definition:
+    name: definition
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: skos:definition
+    owner: Function
+    domain_of:
+    - Equation
+    - StateVariable
+    - Parameter
+    - Function
+    - DifferentialOperator
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Function
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  requirements:
+    name: requirements
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Function
+    domain_of:
+    - SoftwareEnvironment
+    - Function
+    - WorkflowConfig
+    - PDESolver
+    range: SoftwareRequirement
+    multivalued: true
+class_uri: tvbo:Function
+
+```
+</details></div>

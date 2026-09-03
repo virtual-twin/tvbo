@@ -1,0 +1,98 @@
+# Slot: duration 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/duration](https://w3id.org/tvbo/slot/duration)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Stimulus](../classes/Stimulus.qmd) |  |  no  |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  yes  |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+| [InitialState](../classes/InitialState.qmd) | How to obtain the starting equilibrium or periodic orbit for continuation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Stimulus](../classes/Stimulus.qmd), [Event](../classes/Event.qmd), [InitialState](../classes/InitialState.qmd), [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `float(1000)` |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:duration |
+| native | tvbo:duration |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: duration
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: float(1000)
+domain_of:
+- Stimulus
+- Event
+- InitialState
+- Integrator
+range: float
+
+```
+</details></div>

@@ -1,0 +1,102 @@
+# Slot: wrt 
+
+
+_Quantity/quantities the analysis is taken with respect to, e.g. a parameter 'c_sigmJR.G' for a gradient/sensitivity. Omitted for analyses that need no explicit differentiation target._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/wrt](https://w3id.org/tvbo/slot/wrt)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Analysis](../classes/Analysis.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Analysis](../classes/Analysis.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:wrt |
+| native | tvbo:wrt |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: wrt
+description: Quantity/quantities the analysis is taken with respect to, e.g. a parameter
+  'c_sigmJR.G' for a gradient/sensitivity. Omitted for analyses that need no explicit
+  differentiation target.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Analysis
+domain_of:
+- Analysis
+range: string
+multivalued: true
+
+```
+</details></div>

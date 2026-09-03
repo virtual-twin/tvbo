@@ -1,0 +1,119 @@
+# symbols { #tvbo.parse.symbols }
+
+`parse.symbols`
+
+Parsing namespaces: the names an expression is allowed to mean.
+
+Parsing an expression is not a pure function of its text. `"beta * x"` is a product of two symbols in a model that declares a parameter `beta`, and a call to SymPy's beta function in one that does not; `"I"` is a state variable in one model and the imaginary unit in another.
+The namespace handed to the parser decides, so it is part of the input.
+
+TVBO used to keep that namespace in a single dict imported from `sympy.abc._clash1` and mutated in place — by this package at import, by the ontology loader per equation, by the stimulus code per stimulus, and by SymPy's own `auto_symbol`, which rewrites its `local_dict` as a side effect of parsing. Every parse therefore saw a namespace that depended on which parses had already run, in that interpreter, in that order. Two consequences followed: a model could parse differently depending on import order, and any other library in the process that used `sympy.abc._clash1` silently got TVBO's names.
+
+[`SymbolContext`](#tvbo.parse.symbols.SymbolContext) replaces it. A context is frozen, so it cannot pick up names from a previous parse, and it is never handed to SymPy directly — [`parse`](#tvbo.parse.symbols.SymbolContext.parse) passes a private copy, absorbing the mutation. Deriving a namespace is explicit and returns a new context rather than editing a shared one.
+
+Nothing here is a default that applies "unless overridden": a caller states the namespace it means. The only shared piece is [`BUILTIN_SHADOW`](#tvbo.parse.symbols.BUILTIN_SHADOW), which covers the names SymPy would otherwise resolve to its own objects.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [BUILTIN_SHADOW](#tvbo.parse.symbols.BUILTIN_SHADOW) | Names SymPy binds to its own objects, declared as the caller's instead. |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [SymbolContext](#tvbo.parse.symbols.SymbolContext) | A frozen mapping of name to SymPy object, usable as a parser namespace. |
+
+### SymbolContext { #tvbo.parse.symbols.SymbolContext }
+
+```python
+parse.symbols.SymbolContext(*namespaces, **names)
+```
+
+A frozen mapping of name to SymPy object, usable as a parser namespace.
+
+Subclasses `dict` because that is what SymPy means by a `local_dict`, so a context can be inspected, compared and merged with ordinary mapping code. It is frozen because the two bugs it exists to prevent are both writes: SymPy's `auto_symbol` rewriting the namespace while parsing, and callers extending a shared namespace in place so that a later, unrelated parse sees the addition.
+
+A value of [`AUTO`](#tvbo.parse.symbols.AUTO) declares a name without committing to what it is: SymPy resolves it to a `Function` when the text calls it and a `Symbol` otherwise.
+That is the only way to say "this name is the model's, whatever SymPy would make of it" without inspecting the expression first.
+
+#### Example {.doc-section .doc-section-example}
+
+>>> scope = BUILTIN_SHADOW.extend(x=Symbol("x"))
+>>> scope.parse("beta * x")           # beta is a Symbol, not sympy.beta
+>>> scope.extend(beta=Symbol("beta")) # a new context; `scope` is untouched
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [auto](#tvbo.parse.symbols.SymbolContext.auto) | A context declaring `names` without fixing whether each is a Symbol or Function. |
+| [extend](#tvbo.parse.symbols.SymbolContext.extend) | A new context with `namespaces` and `names` layered on top of this one. |
+| [parse](#tvbo.parse.symbols.SymbolContext.parse) | Parse `expression` against this namespace, which `parse_eq` copies before use. |
+| [without](#tvbo.parse.symbols.SymbolContext.without) | A new context with `names` removed, so they parse as plain symbols again. |
+
+##### auto { #tvbo.parse.symbols.SymbolContext.auto }
+
+```python
+parse.symbols.SymbolContext.auto(names)
+```
+
+A context declaring `names` without fixing whether each is a Symbol or Function.
+
+##### extend { #tvbo.parse.symbols.SymbolContext.extend }
+
+```python
+parse.symbols.SymbolContext.extend(*namespaces, **names)
+```
+
+A new context with `namespaces` and `names` layered on top of this one.
+
+##### parse { #tvbo.parse.symbols.SymbolContext.parse }
+
+```python
+parse.symbols.SymbolContext.parse(expression, **kwargs)
+```
+
+Parse `expression` against this namespace, which `parse_eq` copies before use.
+
+The copy is what makes freezing workable: SymPy resolves an [`AUTO`](#tvbo.parse.symbols.AUTO) name by writing the object it chose back into the `local_dict`, and `parse_expr` pops its bookkeeping key afterwards. Both writes land on `parse_eq`'s own copy, so a context yields the same result however many times it is used — and equally for a caller that hands a context straight to `parse_eq`.
+
+##### without { #tvbo.parse.symbols.SymbolContext.without }
+
+```python
+parse.symbols.SymbolContext.without(*names)
+```
+
+A new context with `names` removed, so they parse as plain symbols again.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [assumptions_of](#tvbo.parse.symbols.assumptions_of) | The SymPy assumptions a declared quantity clearly implies. |
+| [symbol_in](#tvbo.parse.symbols.symbol_in) | Whatever a parsed expression uses for *name* — symbol, `y0(t)`, or function head. |
+
+### assumptions_of { #tvbo.parse.symbols.assumptions_of }
+
+```python
+parse.symbols.assumptions_of(element=None)
+```
+
+The SymPy assumptions a declared quantity clearly implies.
+
+A modelled quantity is real. That alone is the difference between SymPy answering a question and not: asked for the fixed points of `Generic2dOscillator` it must otherwise consider complex branches, and does not terminate in 45 s; told the parameters are real it returns in under one.
+
+A declared `domain` says more — a lower bound at or above zero makes the symbol positive or nonnegative, which is what lets `sqrt(x**2)` reduce and a sign test resolve. Nothing beyond that is inferred: a bound admitting negative values implies realness only, and an absent domain implies nothing further. Assumptions SymPy is told are assumptions it will act on, so an over-claim is a wrong answer rather than a missed simplification.
+
+### symbol_in { #tvbo.parse.symbols.symbol_in }
+
+```python
+parse.symbols.symbol_in(scope, name)
+```
+
+Whatever a parsed expression uses for *name* — symbol, `y0(t)`, or function head.
+
+For code that holds an expression and the namespace it was parsed against, but not the model: resolving through the scope is what makes a later `subs` or `free_symbols` test meet the same symbol the parser produced. Falls back to a bare symbol for a name the scope does not declare, which is the right answer for one it never bound — an unbound name is exactly what SymPy's `auto_symbol` turns into a bare symbol while parsing.
+
+Function heads resolve too, because `Function("f") != Function("f", real=True)` and the two `srepr` identically: rebuilding a head to write `f(x)` on a left-hand side yields a different class from the one every calling equation contains.

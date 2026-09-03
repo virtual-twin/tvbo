@@ -1,0 +1,101 @@
+# Slot: permutations 
+
+
+_Name of the observer parameter holding the fixed ``(n_perm, n)`` permutation- index array (a produced/sourced constant, reused across the window and grid)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/permutations](https://w3id.org/tvbo/slot/permutations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surrogate](../classes/Surrogate.qmd) | A permutation-significance test: re-evaluate a named statistic under n_perm f... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surrogate](../classes/Surrogate.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Surrogate](../classes/Surrogate.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:permutations |
+| native | tvbo:permutations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: permutations
+description: Name of the observer parameter holding the fixed ``(n_perm, n)`` permutation-
+  index array (a produced/sourced constant, reused across the window and grid).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Surrogate
+domain_of:
+- Surrogate
+range: string
+required: true
+
+```
+</details></div>

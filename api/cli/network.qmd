@@ -1,0 +1,44 @@
+# network { #tvbo.cli.network }
+
+`cli.network`
+
+``tvbo network`` — build brain-network connectomes from tractograms.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [app](#tvbo.cli.network.app) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [build](#tvbo.cli.network.build) | Build a structural connectome (SC) from a tractogram + parcellation. |
+
+### build { #tvbo.cli.network.build }
+
+```python
+cli.network.build(
+    tractogram=typer.Argument(..., help='Streamline tractogram MRtrix can read (e.g. .tck). Must be in the same space as the parcellation.'),
+    parcellation=typer.Argument(..., help='Integer-labelled parcellation image (e.g. dseg.nii.gz), in the same space as the tractogram.'),
+    output=typer.Option(None, '-o', '--output', help='Sidecar output path (.yaml); the .h5 companion is written next to it. Default: a BIDS-derived name in the current directory.'),
+    atlas=typer.Option(None, '--atlas', help='Parcellation/atlas name (metadata + filename entity).'),
+    space=typer.Option(None, '--space', help='Coordinate space both inputs share (e.g. FSLMNI152). Recorded as the template entity; the build assumes the inputs are already co-registered.'),
+    cohort=typer.Option(None, '--cohort', help='Cohort/dataset entity (e.g. HCPYA).'),
+    reconstruction=typer.Option(None, '--reconstruction', '--rec', help='Tractography pipeline name (e.g. dTOR); recorded as the tractogram and reconstruction entity.'),
+    segmentation=typer.Option(None, '--seg', help='Segmentation entity (e.g. 17Networks).'),
+    scale=typer.Option(None, '--scale', help='Scale entity (e.g. 1000).'),
+    labels=typer.Option(None, '--labels', help='Optional node labels: a text file with one label per line, ordered by parcellation label (1..N).'),
+    symmetric=typer.Option(True, '--symmetric/--no-symmetric', help='Pass -symmetric to tck2connectome.'),
+    zero_diagonal=typer.Option(True, '--zero-diagonal/--no-zero-diagonal', help='Pass -zero_diagonal to tck2connectome.'),
+    keep_assignments=typer.Option(None, '--keep-assignments', help="Also save tck2connectome's -out_assignments to this path."),
+    mrtrix_arg=typer.Option(None, '--mrtrix-arg', help='Extra raw argument forwarded to both tck2connectome calls (repeatable).'),
+    overwrite=typer.Option(False, '--overwrite', help='Overwrite existing output.'),
+    dry_run=typer.Option(False, '--dry-run', help='Print the tck2connectome commands and exit without running them.'),
+)
+```
+
+Build a structural connectome (SC) from a tractogram + parcellation.
+
+A thin wrapper around MRtrix3 ``tck2connectome``: it counts streamlines between parcellation nodes (edge weights) and their mean lengths, then writes a tvbo network (``…_desc-SC_relmat.h5`` + YAML sidecar) you can load with ``tvbo.Network(...)``. The tractogram and parcellation must already be in the same space — this command does not register them.

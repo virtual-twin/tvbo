@@ -1,0 +1,100 @@
+# Slot: auto_format 
+
+
+_Apply bsplot's format_fig (tick/label normalisation + panel numbers). Set false to keep full manual control, e.g. when a study's own .mplstyle already defines the look._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/auto_format](https://w3id.org/tvbo/slot/auto_format)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:auto_format |
+| native | tvbo:auto_format |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: auto_format
+description: Apply bsplot's format_fig (tick/label normalisation + panel numbers).
+  Set false to keep full manual control, e.g. when a study's own .mplstyle already
+  defines the look.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: boolean
+
+```
+</details></div>

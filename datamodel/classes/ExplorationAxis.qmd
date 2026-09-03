@@ -1,0 +1,645 @@
+# Class: ExplorationAxis 
+
+
+_One axis of a parameter exploration grid. Points to an existing Parameter (by dotted reference, e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and supplies the sweep specification (domain, explored_values, or per-element overrides). No new Parameter is created._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:ExplorationAxis](https://w3id.org/tvbo/ExplorationAxis)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ExplorationAxis
+    click ExplorationAxis href "./ExplorationAxis.html"
+      ExplorationAxis : builder
+        
+          
+    
+        
+        
+        ExplorationAxis --> "0..1" FunctionCall : builder
+        click FunctionCall href "./FunctionCall.html"
+    
+
+        
+      ExplorationAxis : description
+        
+          
+    
+        
+        
+        ExplorationAxis --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ExplorationAxis : domain
+        
+          
+    
+        
+        
+        ExplorationAxis --> "0..1" Range : domain
+        click Range href "./Range.html"
+    
+
+        
+      ExplorationAxis : element_domains
+        
+          
+    
+        
+        
+        ExplorationAxis --> "*" Range : element_domains
+        click Range href "./Range.html"
+    
+
+        
+      ExplorationAxis : explored_values
+        
+          
+    
+        
+        
+        ExplorationAxis --> "*" Float : explored_values
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      ExplorationAxis : label
+        
+          
+    
+        
+        
+        ExplorationAxis --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ExplorationAxis : parameter
+        
+          
+    
+        
+        
+        ExplorationAxis --> "1" String : parameter
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ExplorationAxis : reduce
+        
+          
+    
+        
+        
+        ExplorationAxis --> "0..1" AxisReduction : reduce
+        click AxisReduction href "./AxisReduction.html"
+    
+
+        
+      ExplorationAxis : transform
+        
+          
+    
+        
+        
+        ExplorationAxis --> "0..1" String : transform
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ExplorationAxis : unit
+        
+          
+    
+        
+        
+        ExplorationAxis --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:ExplorationAxis](https://w3id.org/tvbo/ExplorationAxis) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [parameter](../slots/parameter.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Dotted reference to the quantity being swept; also the key of the enclosing `... | direct |
+| [domain](../slots/domain.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) | Sweep range for this axis (lo, hi, n, step, log_scale) | direct |
+| [transform](../slots/transform.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional decode applied to this axis's value before it is bound to the refere... | direct |
+| [explored_values](../slots/explored_values.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Explicit list of values to sweep (overrides domain) | direct |
+| [element_domains](../slots/element_domains.qmd) | * <br/> [Range](../classes/Range.qmd) | Per-element sweep overrides for heterogeneous parameters (e | direct |
+| [builder](../slots/builder.qmd) | 0..1 <br/> [FunctionCall](../classes/FunctionCall.qmd) | Callable that generates this axis's swept values, as an alternative to domain... | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional axis unit (defaults to the referenced Parameter's unit) | direct |
+| [reduce](../slots/reduce.qmd) | 0..1 <br/> [AxisReduction](../classes/AxisReduction.qmd) | Optional marker to collapse this axis by a statistic in the result container ... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | [space](../slots/space.qmd) | range | [ExplorationAxis](../classes/ExplorationAxis.qmd) |
+| [InitialState](../classes/InitialState.qmd) | [ramp](../slots/ramp.qmd) | range | [ExplorationAxis](../classes/ExplorationAxis.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ExplorationAxis |
+| native | tvbo:ExplorationAxis |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ExplorationAxis
+description: One axis of a parameter exploration grid. Points to an existing Parameter
+  (by dotted reference, e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and supplies
+  the sweep specification (domain, explored_values, or per-element overrides). No
+  new Parameter is created.
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+attributes:
+  parameter:
+    name: parameter
+    annotations:
+      collection_key:
+        tag: collection_key
+        value: true
+    description: 'Dotted reference to the quantity being swept; also the key of the
+      enclosing `Exploration.space` collection. Format "<scope>.<name>", where <scope>
+      is a Dynamics class name (e.g. "ReducedWongWang.a"), a coupling key (e.g. "FastLinearCoupling.G"),
+      or one of the reserved scopes: "network." for a connectome leaf (e.g. "network.conduction_speed",
+      "network.edges.weight", "network.edges.delay"), "execution.random_seed" for
+      a per-cell noise-seed ensemble, or "initial_conditions.<state_var>" to sweep
+      the initial value of one state variable (a deterministic initial-condition ensemble).
+      Resolved against the enclosing experiment at runtime.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    key: true
+    domain_of:
+    - ExplorationAxis
+    - FreeParameter
+    range: string
+    required: true
+  domain:
+    name: domain
+    description: Sweep range for this axis (lo, hi, n, step, log_scale).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: Range
+    inlined: true
+  transform:
+    name: transform
+    description: 'Optional decode applied to this axis''s value before it is bound
+      to the referenced Parameter: ''none'' (default) or ''log10'' (the parameter
+      is set to 10 ** value, so an adaptive strategy searches the raw bounds in log10
+      units — e.g. sigma searched over domain {lo: -2.0, hi: -0.5}). Distinct from
+      a logarithmic grid *spacing*; this is an evaluation-time decode. Forward-compatible
+      with the harmonised `Axis`.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(none)
+    domain_of:
+    - DataRef
+    - Layer
+    - ExplorationAxis
+    range: string
+  explored_values:
+    name: explored_values
+    description: Explicit list of values to sweep (overrides domain).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Range
+    - Parameter
+    - ExplorationAxis
+    range: float
+    multivalued: true
+  element_domains:
+    name: element_domains
+    description: Per-element sweep overrides for heterogeneous parameters (e.g. shape
+      "(n_nodes,)"). When set, element_domains[i] replaces the shared domain for element
+      i.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Parameter
+    - ExplorationAxis
+    range: Range
+    multivalued: true
+    inlined_as_list: true
+  builder:
+    name: builder
+    description: Callable that generates this axis's swept values, as an alternative
+      to domain / explored_values. Use when the points cannot be written as a static
+      list because each is an array or depends on other results — e.g. per-count control-gain
+      vectors g whose entries are chosen from a runtime-computed solitary-node ordering.
+      The callable returns the stacked sweep values (leading axis = sweep points);
+      its `arguments` may reference other observations by name. The value-supplying
+      analogue of graph_generator.builder, keeping computed sweeps declarative rather
+      than requiring a Python driver.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - GraphGenerator
+    - ExplorationAxis
+    range: FunctionCall
+    inlined: true
+  unit:
+    name: unit
+    description: Optional axis unit (defaults to the referenced Parameter's unit).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  reduce:
+    name: reduce
+    description: Optional marker to collapse this axis by a statistic in the result
+      container instead of keeping it as a grid dimension. Use for an ensemble axis
+      (e.g. `execution.random_seed`, a trial ensemble) so the reduced observation
+      (mean/sem/…) becomes first-class. The named grid dim is reduced across every
+      observation that carries it; observations without that dim are left untouched.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Observation
+    - ExplorationAxis
+    range: AxisReduction
+    inlined: true
+class_uri: tvbo:ExplorationAxis
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ExplorationAxis
+description: One axis of a parameter exploration grid. Points to an existing Parameter
+  (by dotted reference, e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and supplies
+  the sweep specification (domain, explored_values, or per-element overrides). No
+  new Parameter is created.
+from_schema: https://w3id.org/tvbo
+attributes:
+  parameter:
+    name: parameter
+    annotations:
+      collection_key:
+        tag: collection_key
+        value: true
+    description: 'Dotted reference to the quantity being swept; also the key of the
+      enclosing `Exploration.space` collection. Format "<scope>.<name>", where <scope>
+      is a Dynamics class name (e.g. "ReducedWongWang.a"), a coupling key (e.g. "FastLinearCoupling.G"),
+      or one of the reserved scopes: "network." for a connectome leaf (e.g. "network.conduction_speed",
+      "network.edges.weight", "network.edges.delay"), "execution.random_seed" for
+      a per-cell noise-seed ensemble, or "initial_conditions.<state_var>" to sweep
+      the initial value of one state variable (a deterministic initial-condition ensemble).
+      Resolved against the enclosing experiment at runtime.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    key: true
+    owner: ExplorationAxis
+    domain_of:
+    - ExplorationAxis
+    - FreeParameter
+    range: string
+    required: true
+  domain:
+    name: domain
+    description: Sweep range for this axis (lo, hi, n, step, log_scale).
+    from_schema: https://w3id.org/tvbo
+    owner: ExplorationAxis
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: Range
+    inlined: true
+  transform:
+    name: transform
+    description: 'Optional decode applied to this axis''s value before it is bound
+      to the referenced Parameter: ''none'' (default) or ''log10'' (the parameter
+      is set to 10 ** value, so an adaptive strategy searches the raw bounds in log10
+      units — e.g. sigma searched over domain {lo: -2.0, hi: -0.5}). Distinct from
+      a logarithmic grid *spacing*; this is an evaluation-time decode. Forward-compatible
+      with the harmonised `Axis`.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(none)
+    owner: ExplorationAxis
+    domain_of:
+    - DataRef
+    - Layer
+    - ExplorationAxis
+    range: string
+  explored_values:
+    name: explored_values
+    description: Explicit list of values to sweep (overrides domain).
+    from_schema: https://w3id.org/tvbo
+    owner: ExplorationAxis
+    domain_of:
+    - Range
+    - Parameter
+    - ExplorationAxis
+    range: float
+    multivalued: true
+  element_domains:
+    name: element_domains
+    description: Per-element sweep overrides for heterogeneous parameters (e.g. shape
+      "(n_nodes,)"). When set, element_domains[i] replaces the shared domain for element
+      i.
+    from_schema: https://w3id.org/tvbo
+    owner: ExplorationAxis
+    domain_of:
+    - Parameter
+    - ExplorationAxis
+    range: Range
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  builder:
+    name: builder
+    description: Callable that generates this axis's swept values, as an alternative
+      to domain / explored_values. Use when the points cannot be written as a static
+      list because each is an array or depends on other results — e.g. per-count control-gain
+      vectors g whose entries are chosen from a runtime-computed solitary-node ordering.
+      The callable returns the stacked sweep values (leading axis = sweep points);
+      its `arguments` may reference other observations by name. The value-supplying
+      analogue of graph_generator.builder, keeping computed sweeps declarative rather
+      than requiring a Python driver.
+    from_schema: https://w3id.org/tvbo
+    owner: ExplorationAxis
+    domain_of:
+    - GraphGenerator
+    - ExplorationAxis
+    range: FunctionCall
+    inlined: true
+  unit:
+    name: unit
+    description: Optional axis unit (defaults to the referenced Parameter's unit).
+    from_schema: https://w3id.org/tvbo
+    owner: ExplorationAxis
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  reduce:
+    name: reduce
+    description: Optional marker to collapse this axis by a statistic in the result
+      container instead of keeping it as a grid dimension. Use for an ensemble axis
+      (e.g. `execution.random_seed`, a trial ensemble) so the reduced observation
+      (mean/sem/…) becomes first-class. The named grid dim is reduced across every
+      observation that carries it; observations without that dim are left untouched.
+    from_schema: https://w3id.org/tvbo
+    owner: ExplorationAxis
+    domain_of:
+    - Observation
+    - ExplorationAxis
+    range: AxisReduction
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: ExplorationAxis
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: ExplorationAxis
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:ExplorationAxis
+
+```
+</details></div>

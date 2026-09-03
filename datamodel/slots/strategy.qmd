@@ -1,0 +1,106 @@
+# Slot: strategy 
+
+
+_Search strategy over the decision space (the `space` axes). 'grid' (default) exhaustively evaluates the Cartesian/zip grid of axis points — today's behaviour. 'nsga2' runs an adaptive multi-objective genetic search (pymoo NSGA-II) that returns the non-dominated Pareto front over `objectives`; axes then supply only decision-variable bounds (domain lo/hi), and per-strategy hyper-parameters (population_size, num_generations, seed, reference_point) live in `parameters`. Extensible later to 'random' / 'sobol' / 'cmaes'. Forward-compatible with the planned unified `Search.strategy`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/strategy](https://w3id.org/tvbo/slot/strategy)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(grid)` |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:strategy |
+| native | tvbo:strategy |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: strategy
+description: Search strategy over the decision space (the `space` axes). 'grid' (default)
+  exhaustively evaluates the Cartesian/zip grid of axis points — today's behaviour.
+  'nsga2' runs an adaptive multi-objective genetic search (pymoo NSGA-II) that returns
+  the non-dominated Pareto front over `objectives`; axes then supply only decision-variable
+  bounds (domain lo/hi), and per-strategy hyper-parameters (population_size, num_generations,
+  seed, reference_point) live in `parameters`. Extensible later to 'random' / 'sobol'
+  / 'cmaes'. Forward-compatible with the planned unified `Search.strategy`.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(grid)
+owner: Exploration
+domain_of:
+- Exploration
+range: string
+
+```
+</details></div>

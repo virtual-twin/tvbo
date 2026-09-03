@@ -1,0 +1,99 @@
+# Slot: target_data 
+
+
+_Reference to empirical data observation for matching objectives_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target_data](https://w3id.org/tvbo/slot/target_data)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TuningObjective](../classes/TuningObjective.qmd) | Defines what the tuning algorithm optimizes for |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Observation](../classes/Observation.qmd) |
+| Domain Of | [TuningObjective](../classes/TuningObjective.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [TuningObjective](../classes/TuningObjective.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target_data |
+| native | tvbo:target_data |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_data
+description: Reference to empirical data observation for matching objectives
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: TuningObjective
+domain_of:
+- TuningObjective
+range: Observation
+inlined: false
+
+```
+</details></div>

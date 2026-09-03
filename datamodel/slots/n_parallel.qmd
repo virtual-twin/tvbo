@@ -1,0 +1,124 @@
+# Slot: n_parallel 
+
+
+_Grid batch size for parameter exploration — how many sweep cells the backend evaluates as one vectorised chunk. ``auto`` (the default) vectorises the grid, bounded by a cell-count cap (``min(grid_size, 64)``, env ``TVBO_NVMAP_AUTO_CAP``) and a working-memory budget (env ``TVBO_NVMAP_MEM_BUDGET_GB``, default 2 GB) estimated from the per-cell output and live state: fast on every backend, and the memory budget keeps a large-per-cell grid (e.g. a whole-brain delay network) from inflating peak memory. Vectorising still holds ``n_vmap`` cells at once, so auto uses more working memory than a sequential run — the budget bounds it. An integer fixes the chunk size and bypasses both bounds (``1`` = fully sequential, minimal memory; a larger value trades memory for fewer, wider batches). Backends translate this into their own execution primitive (e.g. tvboptim's vmap chunk width) without exposing any backend-specific names in the schema._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/n_parallel](https://w3id.org/tvbo/slot/n_parallel)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(auto)` |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+<details>
+<summary>Expressions & Logic</summary>
+#### Any Of
+
+Value must satisfy at least one of:
+- AnonymousSlotExpression({'range': 'integer'})
+- AnonymousSlotExpression({'range': 'string'})
+
+</details>
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:n_parallel |
+| native | tvbo:n_parallel |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: n_parallel
+description: 'Grid batch size for parameter exploration — how many sweep cells the
+  backend evaluates as one vectorised chunk. ``auto`` (the default) vectorises the
+  grid, bounded by a cell-count cap (``min(grid_size, 64)``, env ``TVBO_NVMAP_AUTO_CAP``)
+  and a working-memory budget (env ``TVBO_NVMAP_MEM_BUDGET_GB``, default 2 GB) estimated
+  from the per-cell output and live state: fast on every backend, and the memory budget
+  keeps a large-per-cell grid (e.g. a whole-brain delay network) from inflating peak
+  memory. Vectorising still holds ``n_vmap`` cells at once, so auto uses more working
+  memory than a sequential run — the budget bounds it. An integer fixes the chunk
+  size and bypasses both bounds (``1`` = fully sequential, minimal memory; a larger
+  value trades memory for fewer, wider batches). Backends translate this into their
+  own execution primitive (e.g. tvboptim''s vmap chunk width) without exposing any
+  backend-specific names in the schema.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(auto)
+owner: Exploration
+domain_of:
+- Exploration
+range: string
+any_of:
+- range: integer
+- range: string
+
+```
+</details></div>

@@ -1,0 +1,85 @@
+# Slot: path 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/path](https://w3id.org/tvbo/slot/path)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+| [Inset](../classes/Inset.qmd) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, ann... |  no  |
+| [File](../classes/File.qmd) |  |  no  |
+| [DataSource](../classes/DataSource.qmd) | Specification for loading external/empirical data |  no  |
+| [CodeSource](../classes/CodeSource.qmd) | Location of a recipe's callable code so the specification is decoupled from w... |  no  |
+| [ArchiveConfig](../classes/ArchiveConfig.qmd) | How a study packages its run into a COMBINE/OMEX archive: the output location... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Panel](../classes/Panel.qmd), [Inset](../classes/Inset.qmd), [File](../classes/File.qmd), [DataSource](../classes/DataSource.qmd), [CodeSource](../classes/CodeSource.qmd), [ArchiveConfig](../classes/ArchiveConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:path |
+| native | tvbo:path |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: path
+domain_of:
+- Panel
+- Inset
+- File
+- DataSource
+- CodeSource
+- ArchiveConfig
+range: string
+
+```
+</details></div>

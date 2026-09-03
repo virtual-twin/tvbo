@@ -1,0 +1,100 @@
+# Slot: group 
+
+
+_Group assignment (e.g., 'control', 'patient', 'healthy'). Maps to participants.tsv 'group' column in BIDS._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/group](https://w3id.org/tvbo/study/slot/group)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Subject](../classes/Subject.qmd) | A participant in a study |  no  |
+| [DBSSubject](../classes/DBSSubject.qmd) | Human or animal subject receiving DBS |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Subject](../classes/Subject.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Subject](../classes/Subject.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:group |
+| native | tvbo_study:group |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: group
+description: Group assignment (e.g., 'control', 'patient', 'healthy'). Maps to participants.tsv
+  'group' column in BIDS.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+owner: Subject
+domain_of:
+- Subject
+range: string
+
+```
+</details></div>

@@ -1,0 +1,533 @@
+# Class: Matrix 
+
+
+_Adjacency matrix of a network._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Matrix](https://w3id.org/tvbo/Matrix)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Matrix
+    click Matrix href "./Matrix.html"
+      Matrix : dataLocation
+        
+          
+    
+        
+        
+        Matrix --> "0..1" String : dataLocation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Matrix : description
+        
+          
+    
+        
+        
+        Matrix --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Matrix : dtype
+        
+          
+    
+        
+        
+        Matrix --> "0..1" String : dtype
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Matrix : format
+        
+          
+    
+        
+        
+        Matrix --> "0..1" SparseFormat : format
+        click SparseFormat href "../../enums/SparseFormat.html"
+    
+
+        
+      Matrix : label
+        
+          
+    
+        
+        
+        Matrix --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Matrix : shape
+        
+          
+    
+        
+        
+        Matrix --> "*" Integer : shape
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Matrix : values
+        
+          
+    
+        
+        
+        Matrix --> "*" Float : values
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Matrix : x
+        
+          
+    
+        
+        
+        Matrix --> "0..1" BrainRegionSeries : x
+        click BrainRegionSeries href "./BrainRegionSeries.html"
+    
+
+        
+      Matrix : y
+        
+          
+    
+        
+        
+        Matrix --> "0..1" BrainRegionSeries : y
+        click BrainRegionSeries href "./BrainRegionSeries.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Matrix](https://w3id.org/tvbo/Matrix) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dataLocation](../slots/dataLocation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add the location of the data file containing the parcellation terminology | direct |
+| [x](../slots/x.qmd) | 0..1 <br/> [BrainRegionSeries](../classes/BrainRegionSeries.qmd) |  | direct |
+| [y](../slots/y.qmd) | 0..1 <br/> [BrainRegionSeries](../classes/BrainRegionSeries.qmd) |  | direct |
+| [values](../slots/values.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) |  | direct |
+| [format](../slots/format.qmd) | 0..1 <br/> [SparseFormat](../enums/SparseFormat.qmd) | Storage format in binary companion (dense, csr, coo) | direct |
+| [shape](../slots/shape.qmd) | * <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Matrix dimensions [N, M] | direct |
+| [dtype](../slots/dtype.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Data type the matrix values are stored as | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Distribution](../classes/Distribution.qmd) | [correlation](../slots/correlation.qmd) | range | [Matrix](../classes/Matrix.qmd) |
+| [TimeSeries](../classes/TimeSeries.qmd) | [data](../slots/data.qmd) | range | [Matrix](../classes/Matrix.qmd) |
+| [TimeSeries](../classes/TimeSeries.qmd) | [time](../slots/time.qmd) | range | [Matrix](../classes/Matrix.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Matrix |
+| native | tvbo:Matrix |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Matrix
+description: Adjacency matrix of a network.
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+- dataLocation
+attributes:
+  x:
+    name: x
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: BrainRegionSeries
+  y:
+    name: y
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: BrainRegionSeries
+  values:
+    name: values
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Matrix
+    - BrainRegionSeries
+    - SpatialField
+    range: float
+    multivalued: true
+  format:
+    name: format
+    description: Storage format in binary companion (dense, csr, coo)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: SparseFormat
+  shape:
+    name: shape
+    description: Matrix dimensions [N, M]
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Parameter
+    - FreeParameter
+    - NDArray
+    range: integer
+    multivalued: true
+  dtype:
+    name: dtype
+    description: Data type the matrix values are stored as. Absent stores them as
+      computed.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Edge
+    - NDArray
+    range: string
+class_uri: tvbo:Matrix
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Matrix
+description: Adjacency matrix of a network.
+from_schema: https://w3id.org/tvbo
+attributes:
+  x:
+    name: x
+    from_schema: https://w3id.org/tvbo
+    owner: Matrix
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: BrainRegionSeries
+  y:
+    name: y
+    from_schema: https://w3id.org/tvbo
+    owner: Matrix
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: BrainRegionSeries
+  values:
+    name: values
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Matrix
+    domain_of:
+    - Matrix
+    - BrainRegionSeries
+    - SpatialField
+    range: float
+    multivalued: true
+  format:
+    name: format
+    description: Storage format in binary companion (dense, csr, coo)
+    from_schema: https://w3id.org/tvbo
+    owner: Matrix
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: SparseFormat
+  shape:
+    name: shape
+    description: Matrix dimensions [N, M]
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Matrix
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Parameter
+    - FreeParameter
+    - NDArray
+    range: integer
+    multivalued: true
+  dtype:
+    name: dtype
+    description: Data type the matrix values are stored as. Absent stores them as
+      computed.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Matrix
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Edge
+    - NDArray
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Matrix
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Matrix
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  dataLocation:
+    name: dataLocation
+    description: Add the location of the data file containing the parcellation terminology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    owner: Matrix
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+class_uri: tvbo:Matrix
+
+```
+</details></div>

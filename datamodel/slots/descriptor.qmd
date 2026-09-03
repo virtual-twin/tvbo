@@ -1,0 +1,99 @@
+# Slot: descriptor 
+
+
+_Short alphanumeric identifier for the BIDS desc- filename entity (e.g., SC, FC, EC, SCFC). Classifies the connectivity modality of the network's edge measures._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/descriptor](https://w3id.org/tvbo/slot/descriptor)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:descriptor |
+| native | tvbo:descriptor |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: descriptor
+description: Short alphanumeric identifier for the BIDS desc- filename entity (e.g.,
+  SC, FC, EC, SCFC). Classifies the connectivity modality of the network's edge measures.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Network
+domain_of:
+- Network
+range: string
+
+```
+</details></div>

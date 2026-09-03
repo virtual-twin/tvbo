@@ -1,0 +1,574 @@
+# Class: Annotation 
+
+
+_A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Annotation](https://w3id.org/tvbo/class/Annotation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Annotation
+    click Annotation href "./Annotation.html"
+      Annotation : arrow
+        
+          
+    
+        
+        
+        Annotation --> "*" Float : arrow
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Annotation : color
+        
+          
+    
+        
+        
+        Annotation --> "0..1" String : color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Annotation : ha
+        
+          
+    
+        
+        
+        Annotation --> "0..1" String : ha
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Annotation : loc
+        
+          
+    
+        
+        
+        Annotation --> "0..1" String : loc
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Annotation : rotation
+        
+          
+    
+        
+        
+        Annotation --> "0..1" Float : rotation
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Annotation : size
+        
+          
+    
+        
+        
+        Annotation --> "0..1" Float : size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Annotation : tail_used
+        
+          
+    
+        
+        
+        Annotation --> "0..1" DataRef : tail_used
+        click DataRef href "./DataRef.html"
+    
+
+        
+      Annotation : tail_x
+        
+          
+    
+        
+        
+        Annotation --> "0..1" Float : tail_x
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Annotation : text
+        
+          
+    
+        
+        
+        Annotation --> "1" String : text
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Annotation : used
+        
+          
+    
+        
+        
+        Annotation --> "0..1" DataRef : used
+        click DataRef href "./DataRef.html"
+    
+
+        
+      Annotation : va
+        
+          
+    
+        
+        
+        Annotation --> "0..1" String : va
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Annotation : x
+        
+          
+    
+        
+        
+        Annotation --> "0..1" Float : x
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Annotation : y
+        
+          
+    
+        
+        
+        Annotation --> "0..1" Float : y
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [text](../slots/text.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The label | direct |
+| [used](../slots/used.qmd) | 0..1 <br/> [DataRef](../classes/DataRef.qmd) | Bind the annotation to a scalar in a result container (same reference form a ... | direct |
+| [x](../slots/x.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | x in axes fraction (0 = left, 1 = right); defaults to 0 | direct |
+| [y](../slots/y.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | y in axes fraction (0 = bottom, 1 = top); defaults to 0 | direct |
+| [loc](../slots/loc.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Named corner ('upper right', 'upper left', 'center',  | direct |
+| [arrow](../slots/arrow.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in axes frac... | direct |
+| [tail_x](../slots/tail_x.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Start the arrow at this x in DATA coordinates instead of at an axes-fraction ... | direct |
+| [tail_used](../slots/tail_used.qmd) | 0..1 <br/> [DataRef](../classes/DataRef.qmd) | The arrow tail's y, read from a result container (same reference form a Layer... | direct |
+| [rotation](../slots/rotation.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Text rotation in degrees counter-clockwise; 90 for a label running up the sid... | direct |
+| [ha](../slots/ha.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Horizontal alignment against (x, y) — left, center, right | direct |
+| [va](../slots/va.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Vertical alignment against (x, y) — bottom, center, top, baseline | direct |
+| [size](../slots/size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Text size in points, overriding the figure's font size for this label alone | direct |
+| [color](../slots/color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Text colour; defaults to the current text colour | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [annotations](../slots/annotations.qmd) | range | [Annotation](../classes/Annotation.qmd) |
+| [Inset](../classes/Inset.qmd) | [annotations](../slots/annotations.qmd) | range | [Annotation](../classes/Annotation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Annotation |
+| native | tvbo:Annotation |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Annotation
+description: A positioned text label on a panel, in axes-fraction coordinates. With
+  a `used:` binding the number in it is READ from a result rather than typed, which
+  is what keeps a panel's printed statistic (an r, a p-value) from drifting away from
+  the run that produced it.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  text:
+    name: text
+    description: The label. With `used:` it is a Python format string applied to the
+      referenced value, e.g. 'r = {:.2f}'.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Annotation
+    range: string
+    required: true
+  used:
+    name: used
+    description: Bind the annotation to a scalar in a result container (same reference
+      form a Layer uses, and the same PROV edge). The referenced value is formatted
+      through `text` at render time, so a statistic printed on a panel is computed,
+      never transcribed.
+    from_schema: https://w3id.org/tvbo/figure
+    slot_uri: prov:used
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: DataRef
+    inlined: true
+  x:
+    name: x
+    description: x in axes fraction (0 = left, 1 = right); defaults to 0.5.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: float
+  y:
+    name: y
+    description: y in axes fraction (0 = bottom, 1 = top); defaults to 0.95.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: float
+  loc:
+    name: loc
+    description: Named corner ('upper right', 'upper left', 'center', ...) as an alternative
+      to x/y.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Annotation
+    - Legend
+    range: string
+  arrow:
+    name: arrow
+    description: Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it
+      in axes fractions — e.g. [-0.08, 0.06] for one coming from the upper left. The
+      text, when non-empty, sits at the tail. This is how a paper's callout arrowheads
+      are declared instead of drawn in code.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Annotation
+    range: float
+    multivalued: true
+  tail_x:
+    name: tail_x
+    description: 'Start the arrow at this x in DATA coordinates instead of at an axes-fraction
+      offset. Pair with tail_used, which supplies the y: together they anchor the
+      arrow''s tail on a point the run computed, so a callout keeps pointing at its
+      data when the data changes. Ignored unless tail_used is also set.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Annotation
+    range: float
+  tail_used:
+    name: tail_used
+    description: The arrow tail's y, read from a result container (same reference
+      form a Layer uses). What lets a panel point AT a computed value — a curve's
+      height at a marked x — without that height being typed into the spec.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    slot_uri: prov:used
+    domain_of:
+    - Annotation
+    range: DataRef
+    inlined: true
+  rotation:
+    name: rotation
+    description: Text rotation in degrees counter-clockwise; 90 for a label running
+      up the side of a reference line.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Annotation
+    range: float
+  ha:
+    name: ha
+    description: Horizontal alignment against (x, y) — left, center, right. Defaults
+      to center.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Annotation
+    range: string
+  va:
+    name: va
+    description: Vertical alignment against (x, y) — bottom, center, top, baseline.
+      Defaults to center.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Annotation
+    range: string
+  size:
+    name: size
+    description: Text size in points, overriding the figure's font size for this label
+      alone.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Annotation
+    - ReferenceFingerprint
+    - Node
+    - Sample
+    range: float
+  color:
+    name: color
+    description: Text colour; defaults to the current text colour.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Annotation
+description: A positioned text label on a panel, in axes-fraction coordinates. With
+  a `used:` binding the number in it is READ from a result rather than typed, which
+  is what keeps a panel's printed statistic (an r, a p-value) from drifting away from
+  the run that produced it.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  text:
+    name: text
+    description: The label. With `used:` it is a Python format string applied to the
+      referenced value, e.g. 'r = {:.2f}'.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Annotation
+    domain_of:
+    - Annotation
+    range: string
+    required: true
+  used:
+    name: used
+    description: Bind the annotation to a scalar in a result container (same reference
+      form a Layer uses, and the same PROV edge). The referenced value is formatted
+      through `text` at render time, so a statistic printed on a panel is computed,
+      never transcribed.
+    from_schema: https://w3id.org/tvbo/figure
+    slot_uri: prov:used
+    owner: Annotation
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: DataRef
+    inlined: true
+  x:
+    name: x
+    description: x in axes fraction (0 = left, 1 = right); defaults to 0.5.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Annotation
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: float
+  y:
+    name: y
+    description: y in axes fraction (0 = bottom, 1 = top); defaults to 0.95.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Annotation
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: float
+  loc:
+    name: loc
+    description: Named corner ('upper right', 'upper left', 'center', ...) as an alternative
+      to x/y.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Annotation
+    domain_of:
+    - Annotation
+    - Legend
+    range: string
+  arrow:
+    name: arrow
+    description: Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it
+      in axes fractions — e.g. [-0.08, 0.06] for one coming from the upper left. The
+      text, when non-empty, sits at the tail. This is how a paper's callout arrowheads
+      are declared instead of drawn in code.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Annotation
+    domain_of:
+    - Annotation
+    range: float
+    multivalued: true
+  tail_x:
+    name: tail_x
+    description: 'Start the arrow at this x in DATA coordinates instead of at an axes-fraction
+      offset. Pair with tail_used, which supplies the y: together they anchor the
+      arrow''s tail on a point the run computed, so a callout keeps pointing at its
+      data when the data changes. Ignored unless tail_used is also set.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Annotation
+    domain_of:
+    - Annotation
+    range: float
+  tail_used:
+    name: tail_used
+    description: The arrow tail's y, read from a result container (same reference
+      form a Layer uses). What lets a panel point AT a computed value — a curve's
+      height at a marked x — without that height being typed into the spec.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    slot_uri: prov:used
+    owner: Annotation
+    domain_of:
+    - Annotation
+    range: DataRef
+    inlined: true
+  rotation:
+    name: rotation
+    description: Text rotation in degrees counter-clockwise; 90 for a label running
+      up the side of a reference line.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Annotation
+    domain_of:
+    - Annotation
+    range: float
+  ha:
+    name: ha
+    description: Horizontal alignment against (x, y) — left, center, right. Defaults
+      to center.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Annotation
+    domain_of:
+    - Annotation
+    range: string
+  va:
+    name: va
+    description: Vertical alignment against (x, y) — bottom, center, top, baseline.
+      Defaults to center.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Annotation
+    domain_of:
+    - Annotation
+    range: string
+  size:
+    name: size
+    description: Text size in points, overriding the figure's font size for this label
+      alone.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Annotation
+    domain_of:
+    - Annotation
+    - ReferenceFingerprint
+    - Node
+    - Sample
+    range: float
+  color:
+    name: color
+    description: Text colour; defaults to the current text colour.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Annotation
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+
+```
+</details></div>

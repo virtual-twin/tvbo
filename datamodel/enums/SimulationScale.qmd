@@ -1,0 +1,93 @@
+# Enum: SimulationScale 
+
+
+
+
+_Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to SIO and Wikidata where possible._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_sw:enum/SimulationScale](https://w3id.org/tvbo/software/enum/SimulationScale)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| channel | wd:Q898786 | Ion channel / sub-cellular molecular dynamics |
+| neuron | wd:Q43054 | Single neuron (compartmental or point) |
+| neural_network | wd:Q484761 | Microcircuit / local network of neurons |
+| neural_mass | wd:Q7003015 | Population-level neural mass or mean-field model |
+| network_system | wd:Q1073340 | Whole-brain or large-scale network of regions |
+| whole_brain | wd:Q239456 | Whole-brain models targeting cortex-wide dynamics |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SimulationScale
+description: 'Spatial / organizational scale at which a tool operates. Multi-valued:
+  a tool can span multiple scales. Mapped to SIO and Wikidata where possible.'
+from_schema: https://w3id.org/tvbo/software
+permissible_values:
+  channel:
+    text: channel
+    description: Ion channel / sub-cellular molecular dynamics.
+    meaning: wd:Q898786
+    exact_mappings:
+    - sio:SIO_010056
+  neuron:
+    text: neuron
+    description: Single neuron (compartmental or point).
+    meaning: wd:Q43054
+    exact_mappings:
+    - sio:SIO_010025
+  neural_network:
+    text: neural_network
+    description: Microcircuit / local network of neurons.
+    meaning: wd:Q484761
+  neural_mass:
+    text: neural_mass
+    description: Population-level neural mass or mean-field model.
+    meaning: wd:Q7003015
+  network_system:
+    text: network_system
+    description: Whole-brain or large-scale network of regions.
+    meaning: wd:Q1073340
+  whole_brain:
+    text: whole_brain
+    description: Whole-brain models targeting cortex-wide dynamics.
+    meaning: wd:Q239456
+
+```
+</details>
+
+</div>

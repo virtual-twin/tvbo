@@ -1,0 +1,77 @@
+# Slot: algorithms 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/algorithms](https://w3id.org/tvbo/slot/algorithms)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Exploration](../classes/Exploration.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:algorithms |
+| native | tvbo:algorithms |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: algorithms
+domain_of:
+- Exploration
+- SimulationExperiment
+range: string
+
+```
+</details></div>

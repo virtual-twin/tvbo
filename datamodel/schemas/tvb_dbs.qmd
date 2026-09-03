@@ -1,0 +1,5 @@
+# tvb_dbs 
+
+Extension of the TVB data model for Deep Brain Stimulation (DBS) studies, including subject metadata, electrode configurations, and stimulation parameters.
+
+URI: https://w3id.org/tvbo/dbs

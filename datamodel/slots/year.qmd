@@ -1,0 +1,95 @@
+# Slot: year 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:issued](http://purl.org/dc/terms/issued)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Study](../classes/Study.qmd) | Bibliographic anchor for a source publication, identified by its citation key... |  no  |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Study](../classes/Study.qmd) |
+| Slot URI | [dcterms:issued](http://purl.org/dc/terms/issued) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Study](../classes/Study.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:issued |
+| native | tvbo:year |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: year
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: dcterms:issued
+owner: Study
+domain_of:
+- Study
+range: integer
+
+```
+</details></div>

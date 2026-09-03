@@ -1,0 +1,92 @@
+# Slot: timing_info 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/timing_info](https://w3id.org/tvbo/dbs/slot/timing_info)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DBSProtocol](../classes/DBSProtocol.qmd) | A protocol describing DBS therapy, potentially bilateral or multi-lead |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [DBSProtocol](../classes/DBSProtocol.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DBSProtocol](../classes/DBSProtocol.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:timing_info |
+| native | tvbo_dbs:timing_info |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: timing_info
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: DBSProtocol
+domain_of:
+- DBSProtocol
+range: string
+
+```
+</details></div>

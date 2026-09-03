@@ -1,0 +1,158 @@
+# transforms { #tvbo.codegen.transforms }
+
+`codegen.transforms`
+
+Transform vocabulary: the network's own edge attributes, and masked reductions.
+
+A ``transforms:`` entry is a ``Function`` whose equation is written over the network's edge attributes — ``weight``, ``length``, or the canonical ``network.edges.<label>`` — resolved by the same :func:`tvbo.utils.edge_label` that observation sources and exploration axes go through. There is no second, invented vocabulary: a derived quantity is spelled as the reduction it is (``max(weight)``), so nothing has to be declared twice and no backend can be handed a name the runtime never defined.
+
+A reduction may be scoped by a boolean mask, in either of two spellings, because the notation people reach for differs and both are unambiguous:
+
+.. code-block:: yaml
+
+    rhs: "weight / mean(weight[weight > 0])"    # the boolean subscript
+    rhs: "weight / mean(weight, weight > 0)"    # the predicate as an argument
+
+Both normalise to one node, ``red(expr, predicate)``, lowered once into ``Piecewise``.
+Each printer already turns that into its own ``where``/``ifelse``, so the mask is backend-independent for free and no two backends can disagree about what it means. A boolean subscript is only legal *inside* a reduction: on its own it has a data-dependent output shape, so it cannot be jitted and is rejected.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [MASK_PREFIX](#tvbo.codegen.transforms.MASK_PREFIX) |  |
+| [REDUCTIONS](#tvbo.codegen.transforms.REDUCTIONS) | Reduction head to the value a masked-out entry contributes. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [canonical_reductions](#tvbo.codegen.transforms.canonical_reductions) | Rewrite either mask spelling into the canonical ``red(operand, predicate)``. |
+| [edge_symbols](#tvbo.codegen.transforms.edge_symbols) | Names to resolve as edge attributes, in sorted order. |
+| [emit_env](#tvbo.codegen.transforms.emit_env) | Source lines binding the edge attributes *symbols* names, for an emitted script. |
+| [lower_reductions](#tvbo.codegen.transforms.lower_reductions) | Lower canonical masked reductions to ``Piecewise``, which every printer handles. |
+| [prepare](#tvbo.codegen.transforms.prepare) | Normalise, lower and validate a transform expression. The one entry point. |
+| [runtime_env](#tvbo.codegen.transforms.runtime_env) | Bind every symbol *expr* names to a live array. |
+| [subscript_locals](#tvbo.codegen.transforms.subscript_locals) | An ``IndexedBase`` for every name *source* subscripts, to hand the parser. |
+
+### canonical_reductions { #tvbo.codegen.transforms.canonical_reductions }
+
+```python
+codegen.transforms.canonical_reductions(expr)
+```
+
+Rewrite either mask spelling into the canonical ``red(operand, predicate)``.
+
+### edge_symbols { #tvbo.codegen.transforms.edge_symbols }
+
+```python
+codegen.transforms.edge_symbols(expr, masks=None)
+```
+
+Names to resolve as edge attributes, in sorted order.
+
+A mask symbol stands for a predicate the caller binds itself, so it is excluded while the names *inside* that predicate are included — those are edge attributes too.
+
+### emit_env { #tvbo.codegen.transforms.emit_env }
+
+```python
+codegen.transforms.emit_env(symbols, resolve, target=None)
+```
+
+Source lines binding the edge attributes *symbols* names, for an emitted script.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type            | Description                                                                                                                                                                                                  | Default    |
+|---------|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| symbols | Sequence\[str\] | The names to bind, from :func:`edge_symbols`.                                                                                                                                                                | _required_ |
+| resolve |                 | Callable mapping an edge-attribute name to the expression the emitted code calls it, or None for a name that is not an edge attribute.                                                                       | _required_ |
+| target  | str \| None     | The transform's own target. That attribute binds to the value flowing through the chain, so a second transform sees the first one's output; every other attribute binds once to the network's stored matrix. | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type        | Description                                                                      |
+|--------|-------------|----------------------------------------------------------------------------------|
+|        | list\[str\] | A ``(chained_lines, constant_lines)`` pair. ``chained_lines`` are re-emitted for |
+|        | list\[str\] | each transform in a chain; ``constant_lines`` are bound once.                    |
+
+### lower_reductions { #tvbo.codegen.transforms.lower_reductions }
+
+```python
+codegen.transforms.lower_reductions(expr)
+```
+
+Lower canonical masked reductions to ``Piecewise``, which every printer handles.
+
+``mean`` becomes a kept-sum over a kept-count rather than a masked ``mean``, because an array library's ``mean`` divides by the full size no matter what it was handed.
+That mentions the predicate twice, so each distinct one is replaced by a symbol the caller binds once: ``create_network`` runs eagerly, and XLA never gets to CSE the duplicate.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                     |
+|--------|--------|---------------------------------------------------------------------------------|
+|        |        | A ``(lowered, mask_bindings)`` pair, mapping each mask symbol to its predicate. |
+
+### prepare { #tvbo.codegen.transforms.prepare }
+
+```python
+codegen.transforms.prepare(expr, what='transform')
+```
+
+Normalise, lower and validate a transform expression. The one entry point.
+
+Both the runtime and every emitter go through this, so a mask cannot mean one thing when evaluated and another when printed.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                            | Default       |
+|--------|--------|----------------------------------------|---------------|
+| expr   |        | The parsed transform expression.       | _required_    |
+| what   | str    | How to name the transform in an error. | `'transform'` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                           |
+|--------|--------|-----------------------------------------------------------------------|
+|        |        | A ``(lowered, mask_bindings)`` pair, both ready for                   |
+|        |        | func:`tvbo.codegen.code.render_expression`. Bind each mask before the |
+|        |        | expression that reads it.                                             |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                 |
+|--------|------------|-----------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | A boolean subscript survived outside a reduction. Its output shape depends on the data, so there is nothing static to emit. |
+
+### runtime_env { #tvbo.codegen.transforms.runtime_env }
+
+```python
+codegen.transforms.runtime_env(resolve, symbols, jnp, jsp=None)
+```
+
+Bind every symbol *expr* names to a live array.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type            | Description                                                       | Default    |
+|---------|-----------------|-------------------------------------------------------------------|------------|
+| resolve |                 | Callable mapping an edge-attribute name to its matrix, or None.   | _required_ |
+| symbols | Sequence\[str\] | The names to bind, from :func:`edge_symbols`.                     | _required_ |
+| jnp     |                 | The array module the lowered expression is evaluated against.     | _required_ |
+| jsp     |                 | Optional scipy namespace, for a transform equation that uses one. | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                | Description                                                           |
+|--------|---------------------|-----------------------------------------------------------------------|
+|        | dict\[str, object\] | Mapping of each resolvable name to its array, plus the array modules. |
+
+### subscript_locals { #tvbo.codegen.transforms.subscript_locals }
+
+```python
+codegen.transforms.subscript_locals(source)
+```
+
+An ``IndexedBase`` for every name *source* subscripts, to hand the parser.
+
+``parse_expr`` builds a plain ``Symbol`` for a name it has not been given, and a ``Symbol`` is not subscriptable — so ``mean(weight[weight > 0])`` would die with ``'Symbol' object is not subscriptable`` before anything could read the mask.

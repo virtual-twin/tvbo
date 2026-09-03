@@ -1,0 +1,72 @@
+# Enum: BarOrientation 
+
+
+
+
+_Which way a colour bar runs._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/BarOrientation](https://w3id.org/tvbo/enum/BarOrientation)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| vertical | None | Upright, beside the panel |
+| horizontal | None | Flat, under or over the panel |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [orientation](../slots/orientation.qmd) | Which way the bar runs |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: BarOrientation
+description: Which way a colour bar runs.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  vertical:
+    text: vertical
+    description: Upright, beside the panel.
+  horizontal:
+    text: horizontal
+    description: Flat, under or over the panel.
+
+```
+</details>
+
+</div>

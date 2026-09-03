@@ -1,0 +1,100 @@
+# Slot: continuation 
+
+
+_Override solver settings for this branch. Uses the same Continuation type — only explicitly set attributes override the parent's values._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/continuation](https://w3id.org/tvbo/slot/continuation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | Specification for switching from a detected bifurcation point to a new branch... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Continuation](../classes/Continuation.qmd) |
+| Domain Of | [BranchSwitch](../classes/BranchSwitch.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [BranchSwitch](../classes/BranchSwitch.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:continuation |
+| native | tvbo:continuation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: continuation
+description: Override solver settings for this branch. Uses the same Continuation
+  type — only explicitly set attributes override the parent's values.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: BranchSwitch
+domain_of:
+- BranchSwitch
+range: Continuation
+inlined: true
+
+```
+</details></div>

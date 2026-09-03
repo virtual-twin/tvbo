@@ -1,0 +1,30 @@
+# auto { #tvbo.utils.auto }
+
+`utils.auto`
+
+Helpers for locating the auto-07p installation used by the NumCont backend.
+
+TVBO requires the ``AUTO_DIR`` environment variable to be set to the root of an existing auto-07p installation. There is no fallback file lookup -- the environment variable is the single source of truth.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [check_auto_dir](#tvbo.utils.auto.check_auto_dir) | Return a validated absolute ``AUTO_DIR`` path. |
+
+### check_auto_dir { #tvbo.utils.auto.check_auto_dir }
+
+```python
+utils.auto.check_auto_dir()
+```
+
+Return a validated absolute ``AUTO_DIR`` path.
+
+
+
+#### Raises: {.doc-section .doc-section-raises}
+
+EnvironmentError
+    If ``AUTO_DIR`` is unset or empty.
+FileNotFoundError
+    If ``AUTO_DIR`` does not point to an existing directory.

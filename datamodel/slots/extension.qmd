@@ -1,0 +1,92 @@
+# Slot: extension 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/extension](https://w3id.org/tvbo/slot/extension)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [File](../classes/File.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [File](../classes/File.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [File](../classes/File.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:extension |
+| native | tvbo:extension |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: extension
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: File
+domain_of:
+- File
+range: string
+
+```
+</details></div>

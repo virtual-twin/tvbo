@@ -1,0 +1,473 @@
+# Class: FreeParameter 
+
+
+_One degree of freedom in an OptimizationStage. References an existing Parameter by dotted scope (e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and supplies optimization-specific metadata (heterogeneous, shape, bounds, initial value). No new Parameter is created here._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:FreeParameter](https://w3id.org/tvbo/FreeParameter)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class FreeParameter
+    click FreeParameter href "./FreeParameter.html"
+      FreeParameter : description
+        
+          
+    
+        
+        
+        FreeParameter --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      FreeParameter : domain
+        
+          
+    
+        
+        
+        FreeParameter --> "0..1" Range : domain
+        click Range href "./Range.html"
+    
+
+        
+      FreeParameter : heterogeneous
+        
+          
+    
+        
+        
+        FreeParameter --> "0..1" Boolean : heterogeneous
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      FreeParameter : initial_value
+        
+          
+    
+        
+        
+        FreeParameter --> "0..1" ScalarValue : initial_value
+        click ScalarValue href "./ScalarValue.html"
+    
+
+        
+      FreeParameter : label
+        
+          
+    
+        
+        
+        FreeParameter --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      FreeParameter : parameter
+        
+          
+    
+        
+        
+        FreeParameter --> "1" Parameter : parameter
+        click Parameter href "./Parameter.html"
+    
+
+        
+      FreeParameter : shape
+        
+          
+    
+        
+        
+        FreeParameter --> "0..1" String : shape
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:FreeParameter](https://w3id.org/tvbo/FreeParameter) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [parameter](../slots/parameter.qmd) | 1 <br/> [Parameter](../classes/Parameter.qmd) | Dotted reference to the Parameter to optimize | direct |
+| [heterogeneous](../slots/heterogeneous.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | If true, the parameter is optimized per-element (broadcast to `shape`) | direct |
+| [shape](../slots/shape.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optimization shape as a Python-tuple-style string (e | direct |
+| [initial_value](../slots/initial_value.qmd) | 0..1 <br/> [ScalarValue](../classes/ScalarValue.qmd) | Optional initial value for the optimizer (overrides the referenced Parameter'... | direct |
+| [domain](../slots/domain.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) | Optional bounds (lo, hi) for constrained optimization | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [OptimizationStage](../classes/OptimizationStage.qmd) | [free_parameters](../slots/free_parameters.qmd) | range | [FreeParameter](../classes/FreeParameter.qmd) |
+| [Optimization](../classes/Optimization.qmd) | [free_parameters](../slots/free_parameters.qmd) | range | [FreeParameter](../classes/FreeParameter.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:FreeParameter |
+| native | tvbo:FreeParameter |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: FreeParameter
+description: One degree of freedom in an OptimizationStage. References an existing
+  Parameter by dotted scope (e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and
+  supplies optimization-specific metadata (heterogeneous, shape, bounds, initial value).
+  No new Parameter is created here.
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+attributes:
+  parameter:
+    name: parameter
+    description: 'Dotted reference to the Parameter to optimize. Format: "<scope>.<param_name>"
+      where <scope> is either a Dynamics class name or a coupling key.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ExplorationAxis
+    - FreeParameter
+    range: Parameter
+    required: true
+    inlined: false
+  heterogeneous:
+    name: heterogeneous
+    description: If true, the parameter is optimized per-element (broadcast to `shape`).
+      If false, a single scalar is optimized and broadcast at runtime.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: boolean(false)
+    domain_of:
+    - Parameter
+    - FreeParameter
+    range: boolean
+  shape:
+    name: shape
+    description: Optimization shape as a Python-tuple-style string (e.g. "(n_nodes,)"
+      or "(n_nodes, n_nodes)"). Required when heterogeneous is true.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Parameter
+    - FreeParameter
+    - NDArray
+    range: string
+  initial_value:
+    name: initial_value
+    description: Optional initial value for the optimizer (overrides the referenced
+      Parameter's value).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - StateVariable
+    - FreeParameter
+    - SpatialField
+    range: ScalarValue
+  domain:
+    name: domain
+    description: Optional bounds (lo, hi) for constrained optimization.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: Range
+    inlined: true
+class_uri: tvbo:FreeParameter
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: FreeParameter
+description: One degree of freedom in an OptimizationStage. References an existing
+  Parameter by dotted scope (e.g. "ReducedWongWang.w" or "FastLinearCoupling.G") and
+  supplies optimization-specific metadata (heterogeneous, shape, bounds, initial value).
+  No new Parameter is created here.
+from_schema: https://w3id.org/tvbo
+attributes:
+  parameter:
+    name: parameter
+    description: 'Dotted reference to the Parameter to optimize. Format: "<scope>.<param_name>"
+      where <scope> is either a Dynamics class name or a coupling key.'
+    from_schema: https://w3id.org/tvbo
+    owner: FreeParameter
+    domain_of:
+    - ExplorationAxis
+    - FreeParameter
+    range: Parameter
+    required: true
+    inlined: false
+  heterogeneous:
+    name: heterogeneous
+    description: If true, the parameter is optimized per-element (broadcast to `shape`).
+      If false, a single scalar is optimized and broadcast at runtime.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: boolean(false)
+    owner: FreeParameter
+    domain_of:
+    - Parameter
+    - FreeParameter
+    range: boolean
+  shape:
+    name: shape
+    description: Optimization shape as a Python-tuple-style string (e.g. "(n_nodes,)"
+      or "(n_nodes, n_nodes)"). Required when heterogeneous is true.
+    from_schema: https://w3id.org/tvbo
+    owner: FreeParameter
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Parameter
+    - FreeParameter
+    - NDArray
+    range: string
+  initial_value:
+    name: initial_value
+    description: Optional initial value for the optimizer (overrides the referenced
+      Parameter's value).
+    from_schema: https://w3id.org/tvbo
+    owner: FreeParameter
+    domain_of:
+    - StateVariable
+    - FreeParameter
+    - SpatialField
+    range: ScalarValue
+  domain:
+    name: domain
+    description: Optional bounds (lo, hi) for constrained optimization.
+    from_schema: https://w3id.org/tvbo
+    owner: FreeParameter
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: Range
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: FreeParameter
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: FreeParameter
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:FreeParameter
+
+```
+</details></div>

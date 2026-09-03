@@ -1,0 +1,18 @@
+# dialect_tables { #tvbo.datamodel.dialect_tables }
+
+`datamodel.dialect_tables`
+
+Generated dialect tables — see :mod:`tvbo.datamodel.dialect`.
+
+``SCALAR_SHORTCUTS`` maps ``{class: {slot: (slot the bare scalar stands for,
+multivalued, keyed)}}``, from ``annotations.simple_dict_value`` on each range class.
+``SLOT_ALIASES`` maps ``{class: {alias: canonical slot}}`` from the schema's ``aliases:``.
+``KEYED_COLLECTIONS`` maps ``{class: {slot: the member slot its key states}}``.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [KEYED_COLLECTIONS](#tvbo.datamodel.dialect_tables.KEYED_COLLECTIONS) |  |
+| [SCALAR_SHORTCUTS](#tvbo.datamodel.dialect_tables.SCALAR_SHORTCUTS) |  |
+| [SLOT_ALIASES](#tvbo.datamodel.dialect_tables.SLOT_ALIASES) |  |

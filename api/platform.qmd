@@ -1,0 +1,269 @@
+# platform { #tvbo.platform }
+
+`platform`
+
+Client for the TVBO platform REST API (load/push saved models & experiments).
+
+This mirrors ``tvbo_platform`` shipped in the tvbo-platform repo (clients/python), bundled here so users with the ``tvbo`` package can simply::
+
+    from tvbo.platform import TVBOPlatform
+
+    tvbo = TVBOPlatform(base_url="https://platform.example", api_key="tvbo_…")
+    exp = tvbo.load_experiment(123)          # -> SimulationExperiment
+    tvbo.push_experiment(exp, visibility="shared")
+
+Mint an API key at ``<platform>/my/api-keys``.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [TVBOPlatform](#tvbo.platform.TVBOPlatform) | Client for the TVBO platform REST API. |
+| [TVBOPlatformError](#tvbo.platform.TVBOPlatformError) | Raised when the platform returns an error response. |
+
+### TVBOPlatform { #tvbo.platform.TVBOPlatform }
+
+```python
+platform.TVBOPlatform(base_url, api_key, timeout=60)
+```
+
+Client for the TVBO platform REST API.
+
+Wraps an authenticated `requests` session against a TVBO platform instance, exposing helpers to list, fetch, load, and push saved models and experiments. Load helpers return live `tvbo` objects (a `Dynamics` or a [SimulationExperiment](/api/classes/experiment.qmd)); push helpers accept YAML text, a `dict`, or a `tvbo` object and serialize it for upload.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                             | Default    |
+|----------|--------|-------------------------------------------------------------------------|------------|
+| base_url | str    | Base URL of the platform (a trailing slash is stripped).                | _required_ |
+| api_key  | str    | API key sent as a `Bearer` token; mint one at `<platform>/my/api-keys`. | _required_ |
+| timeout  | int    | Per-request timeout in seconds.                                         | `60`       |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                          |
+|--------|------------|--------------------------------------|
+|        | ValueError | If `base_url` or `api_key` is empty. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [get_experiment_dict](#tvbo.platform.TVBOPlatform.get_experiment_dict) | Fetch an experiment's specification as a JSON dictionary. |
+| [get_experiment_yaml](#tvbo.platform.TVBOPlatform.get_experiment_yaml) | Fetch an experiment's raw YAML specification. |
+| [get_model_dict](#tvbo.platform.TVBOPlatform.get_model_dict) | Fetch a model's specification as a JSON dictionary. |
+| [get_model_yaml](#tvbo.platform.TVBOPlatform.get_model_yaml) | Fetch a model's raw YAML specification. |
+| [list_experiments](#tvbo.platform.TVBOPlatform.list_experiments) | List the experiments available on the platform. |
+| [list_models](#tvbo.platform.TVBOPlatform.list_models) | List the models available on the platform. |
+| [load_experiment](#tvbo.platform.TVBOPlatform.load_experiment) | Load an experiment from the platform into a `SimulationExperiment`. |
+| [load_model](#tvbo.platform.TVBOPlatform.load_model) | Load a model from the platform into a `Dynamics` object. |
+| [push_experiment](#tvbo.platform.TVBOPlatform.push_experiment) | Upload an experiment specification to the platform. |
+| [push_model](#tvbo.platform.TVBOPlatform.push_model) | Upload a model specification to the platform. |
+
+##### get_experiment_dict { #tvbo.platform.TVBOPlatform.get_experiment_dict }
+
+```python
+platform.TVBOPlatform.get_experiment_dict(experiment_id)
+```
+
+Fetch an experiment's specification as a JSON dictionary.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                               | Default    |
+|---------------|--------|-------------------------------------------|------------|
+| experiment_id | int    | Identifier of the experiment to retrieve. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                        |
+|--------|--------|--------------------------------------------------------------------|
+|        | dict   | The experiment specification decoded from the JSON `data` payload. |
+
+##### get_experiment_yaml { #tvbo.platform.TVBOPlatform.get_experiment_yaml }
+
+```python
+platform.TVBOPlatform.get_experiment_yaml(experiment_id)
+```
+
+Fetch an experiment's raw YAML specification.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                               | Default    |
+|---------------|--------|-------------------------------------------|------------|
+| experiment_id | int    | Identifier of the experiment to retrieve. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                 |
+|--------|--------|-----------------------------|
+|        | str    | The experiment's YAML text. |
+
+##### get_model_dict { #tvbo.platform.TVBOPlatform.get_model_dict }
+
+```python
+platform.TVBOPlatform.get_model_dict(model_id)
+```
+
+Fetch a model's specification as a JSON dictionary.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                          | Default    |
+|----------|--------|--------------------------------------|------------|
+| model_id | int    | Identifier of the model to retrieve. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                   |
+|--------|--------|---------------------------------------------------------------|
+|        | dict   | The model specification decoded from the JSON `data` payload. |
+
+##### get_model_yaml { #tvbo.platform.TVBOPlatform.get_model_yaml }
+
+```python
+platform.TVBOPlatform.get_model_yaml(model_id)
+```
+
+Fetch a model's raw YAML specification.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                          | Default    |
+|----------|--------|--------------------------------------|------------|
+| model_id | int    | Identifier of the model to retrieve. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description            |
+|--------|--------|------------------------|
+|        | str    | The model's YAML text. |
+
+##### list_experiments { #tvbo.platform.TVBOPlatform.list_experiments }
+
+```python
+platform.TVBOPlatform.list_experiments()
+```
+
+List the experiments available on the platform.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                 |
+|--------|--------|---------------------------------------------|
+|        | list   | A list of experiment metadata dictionaries. |
+
+##### list_models { #tvbo.platform.TVBOPlatform.list_models }
+
+```python
+platform.TVBOPlatform.list_models(mine=False)
+```
+
+List the models available on the platform.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                    | Default   |
+|--------|--------|----------------------------------------------------------------|-----------|
+| mine   | bool   | If `True`, return only models owned by the authenticated user. | `False`   |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                            |
+|--------|--------|----------------------------------------|
+|        | list   | A list of model metadata dictionaries. |
+
+##### load_experiment { #tvbo.platform.TVBOPlatform.load_experiment }
+
+```python
+platform.TVBOPlatform.load_experiment(experiment_id)
+```
+
+Load an experiment from the platform into a `SimulationExperiment`.
+
+Fetches the experiment's YAML and parses it via [SimulationExperiment.from_string](/api/classes/experiment.qmd).
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                           | Default    |
+|---------------|--------|---------------------------------------|------------|
+| experiment_id | int    | Identifier of the experiment to load. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                 |
+|--------|--------|---------------------------------------------|
+|        |        | The parsed `SimulationExperiment` instance. |
+
+##### load_model { #tvbo.platform.TVBOPlatform.load_model }
+
+```python
+platform.TVBOPlatform.load_model(model_id)
+```
+
+Load a model from the platform into a `Dynamics` object.
+
+Fetches the model's YAML and parses it with the `tvbo` pydantic loader.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                      | Default    |
+|----------|--------|----------------------------------|------------|
+| model_id | int    | Identifier of the model to load. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                     |
+|--------|--------|---------------------------------|
+|        |        | The parsed `Dynamics` instance. |
+
+##### push_experiment { #tvbo.platform.TVBOPlatform.push_experiment }
+
+```python
+platform.TVBOPlatform.push_experiment(spec, visibility='private')
+```
+
+Upload an experiment specification to the platform.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                                                                   | Default     |
+|------------|--------|---------------------------------------------------------------------------------------------------------------|-------------|
+| spec       |        | The experiment to push, given as YAML text, a `dict`, or a `tvbo` object (anything `_to_yaml` can serialize). | _required_  |
+| visibility | str    | Access level for the created experiment, e.g. `"private"`, `"shared"`, or `"public"`.                         | `'private'` |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                     |
+|--------|--------|-----------------------------------------------------------------|
+|        | dict   | The platform's JSON response describing the created experiment. |
+
+##### push_model { #tvbo.platform.TVBOPlatform.push_model }
+
+```python
+platform.TVBOPlatform.push_model(spec, visibility='private')
+```
+
+Upload a model specification to the platform.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                                                              | Default     |
+|------------|--------|----------------------------------------------------------------------------------------------------------|-------------|
+| spec       |        | The model to push, given as YAML text, a `dict`, or a `tvbo` object (anything `_to_yaml` can serialize). | _required_  |
+| visibility | str    | Access level for the created model, e.g. `"private"`, `"shared"`, or `"public"`.                         | `'private'` |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                |
+|--------|--------|------------------------------------------------------------|
+|        | dict   | The platform's JSON response describing the created model. |
+
+### TVBOPlatformError { #tvbo.platform.TVBOPlatformError }
+
+```python
+platform.TVBOPlatformError()
+```
+
+Raised when the platform returns an error response.

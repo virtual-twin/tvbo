@@ -1,0 +1,98 @@
+# Slot: tick_direction 
+
+
+_Whether tick marks point out of the axes, into them, or both._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/tick_direction](https://w3id.org/tvbo/slot/tick_direction)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [TickDirection](../enums/TickDirection.qmd) |
+| Domain Of | [Theme](../classes/Theme.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Theme](../classes/Theme.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:tick_direction |
+| native | tvbo:tick_direction |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: tick_direction
+description: Whether tick marks point out of the axes, into them, or both.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Theme
+domain_of:
+- Theme
+range: TickDirection
+
+```
+</details></div>

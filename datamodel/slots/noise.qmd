@@ -1,0 +1,80 @@
+# Slot: noise 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/noise](https://w3id.org/tvbo/slot/noise)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Stimulus](../classes/Stimulus.qmd) |  |  no  |
+| [StateVariable](../classes/StateVariable.qmd) |  |  no  |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Stimulus](../classes/Stimulus.qmd), [StateVariable](../classes/StateVariable.qmd), [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:noise |
+| native | tvbo:noise |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: noise
+domain_of:
+- Stimulus
+- StateVariable
+- Integrator
+range: string
+
+```
+</details></div>

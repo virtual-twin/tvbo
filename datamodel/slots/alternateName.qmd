@@ -1,0 +1,97 @@
+# Slot: alternateName 
+
+
+_Enter any alternate names, including abbreviations, for this entity._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:atlas/hasName](http://uri.interlex.org/tgbugs/uris/readable/atlas/hasName)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | A schema for representing a version of a common coordinate space |  no  |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+| [Node](../classes/Node.qmd) | A node in a network with its own dynamics and properties |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd), [ParcellationEntity](../classes/ParcellationEntity.qmd), [Node](../classes/Node.qmd) |
+| Slot URI | [atom:atlas/hasName](http://uri.interlex.org/tgbugs/uris/readable/atlas/hasName) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:atlas/hasName |
+| native | atom:alternateName |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: alternateName
+description: Enter any alternate names, including abbreviations, for this entity.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: atom:atlas/hasName
+domain_of:
+- CommonCoordinateSpace
+- ParcellationEntity
+- Node
+range: string
+multivalued: true
+
+```
+</details></div>

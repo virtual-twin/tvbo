@@ -1,0 +1,80 @@
+# Slot: software 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/software](https://w3id.org/tvbo/slot/software)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Callable](../classes/Callable.qmd) |  |  no  |
+| [ClassReference](../classes/ClassReference.qmd) | Reference to a class that can be instantiated and called |  no  |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Callable](../classes/Callable.qmd), [Continuation](../classes/Continuation.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:software |
+| native | tvbo:software |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: software
+domain_of:
+- Callable
+- Continuation
+- SimulationExperiment
+range: string
+
+```
+</details></div>

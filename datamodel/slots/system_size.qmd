@@ -1,0 +1,108 @@
+# Slot: system_size 
+
+
+_System size (van Kampen Ω) for the stochastic 'gillespie' backend: the number of discrete units per unit of the activity variable, and the sole source of noise. Runs a mean-field rate model as a finite birth-death process (Gillespie SSA): the activity state variable X becomes a discrete count n ≈ Ω·X, its relaxation equation tau*X' = -X + F(...) is read as birth propensity Ω·F/tau (the gain) and death propensity n/tau (the leak), while the remaining state variables integrate deterministically between events. Larger Ω means finer discreteness and weaker fluctuations, recovering the deterministic mean field as Ω→∞. For an activity already expressed as a fraction in [0,1], Ω is the population size N; for a firing rate it is N divided by the rate at full activation. Required by the 'gillespie' backend; ignored by every other backend._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/system_size](https://w3id.org/tvbo/slot/system_size)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ExecutionConfig](../classes/ExecutionConfig.qmd) | Configuration for computational execution (parallelization, precision, hardwa... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:system_size |
+| native | tvbo:system_size |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: system_size
+description: 'System size (van Kampen Ω) for the stochastic ''gillespie'' backend:
+  the number of discrete units per unit of the activity variable, and the sole source
+  of noise. Runs a mean-field rate model as a finite birth-death process (Gillespie
+  SSA): the activity state variable X becomes a discrete count n ≈ Ω·X, its relaxation
+  equation tau*X'' = -X + F(...) is read as birth propensity Ω·F/tau (the gain) and
+  death propensity n/tau (the leak), while the remaining state variables integrate
+  deterministically between events. Larger Ω means finer discreteness and weaker fluctuations,
+  recovering the deterministic mean field as Ω→∞. For an activity already expressed
+  as a fraction in [0,1], Ω is the population size N; for a firing rate it is N divided
+  by the rate at full activation. Required by the ''gillespie'' backend; ignored by
+  every other backend.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ExecutionConfig
+domain_of:
+- ExecutionConfig
+range: float
+
+```
+</details></div>

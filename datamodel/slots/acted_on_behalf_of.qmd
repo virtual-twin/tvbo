@@ -1,0 +1,106 @@
+# Slot: acted_on_behalf_of 
+
+
+_Packages whose use triggered this one, so a backend invoked through a framework records the chain rather than only the innermost caller._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/acted_on_behalf_of](https://w3id.org/tvbo/software/slot/acted_on_behalf_of)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SoftwarePackage](../classes/SoftwarePackage.qmd) | Identity and metadata for a software package, aligned with schema |  no  |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| Domain Of | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:acted_on_behalf_of |
+| native | tvbo_sw:acted_on_behalf_of |
+| exact | prov:actedOnBehalfOf |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: acted_on_behalf_of
+description: Packages whose use triggered this one, so a backend invoked through a
+  framework records the chain rather than only the innermost caller.
+from_schema: https://w3id.org/tvbo/software
+exact_mappings:
+- prov:actedOnBehalfOf
+rank: 1000
+owner: SoftwarePackage
+domain_of:
+- SoftwarePackage
+range: SoftwarePackage
+multivalued: true
+inlined: false
+
+```
+</details></div>

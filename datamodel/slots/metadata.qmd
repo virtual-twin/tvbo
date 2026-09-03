@@ -1,0 +1,78 @@
+# Slot: metadata 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/metadata](https://w3id.org/tvbo/slot/metadata)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Subject](../classes/Subject.qmd) | A participant in a study |  no  |
+| [DBSSubject](../classes/DBSSubject.qmd) | Human or animal subject receiving DBS |  no  |
+| [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd) | Descriptor for a cached ``ExperimentResult``: the `` |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Subject](../classes/Subject.qmd), [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:metadata |
+| native | tvbo:metadata |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: metadata
+domain_of:
+- Subject
+- ExperimentResultSidecar
+range: string
+
+```
+</details></div>

@@ -1,0 +1,378 @@
+# Class: Session 
+
+
+_A data collection session for a subject. Corresponds to a BIDS 'ses-' entity. Sessions capture longitudinal timepoints (baseline, follow-up), different experimental conditions, or repeated measures._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:class/Session](https://w3id.org/tvbo/study/class/Session)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Session
+    click Session href "./Session.html"
+      Session : condition
+        
+          
+    
+        
+        
+        Session --> "0..1" String : condition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Session : empirical_data
+        
+          
+    
+        
+        
+        Session --> "*" String : empirical_data
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Session : label
+        
+          
+    
+        
+        
+        Session --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Session : network
+        
+          
+    
+        
+        
+        Session --> "0..1" String : network
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Session : session_id
+        
+          
+    
+        
+        
+        Session --> "1" String : session_id
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [session_id](../slots/session_id.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS session identifier (without 'ses-' prefix) | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Human-readable session label | direct |
+| [network](../slots/network.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to session-specific connectome | direct |
+| [empirical_data](../slots/empirical_data.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Paths to empirical recordings for this session (e | direct |
+| [condition](../slots/condition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Experimental condition label (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Subject](../classes/Subject.qmd) | [sessions](../slots/sessions.qmd) | range | [Session](../classes/Session.qmd) |
+| [DBSSubject](../classes/DBSSubject.qmd) | [sessions](../slots/sessions.qmd) | range | [Session](../classes/Session.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:Session |
+| native | tvbo_study:Session |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Session
+description: A data collection session for a subject. Corresponds to a BIDS 'ses-'
+  entity. Sessions capture longitudinal timepoints (baseline, follow-up), different
+  experimental conditions, or repeated measures.
+from_schema: https://w3id.org/tvbo/study
+slots:
+- session_id
+attributes:
+  label:
+    name: label
+    description: Human-readable session label.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: rdfs:label
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  network:
+    name: network
+    description: Path to session-specific connectome. Overrides Subject.network when
+      set. Relative to dataset root or BIDS derivatives.
+    from_schema: https://w3id.org/tvbo/study
+    domain_of:
+    - Subject
+    - Session
+    - Panel
+    - Inset
+    - SimulationExperiment
+    range: string
+  empirical_data:
+    name: empirical_data
+    description: Paths to empirical recordings for this session (e.g., BOLD time series,
+      MEG/EEG). Relative to dataset root.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Session
+    range: string
+    multivalued: true
+  condition:
+    name: condition
+    description: Experimental condition label (e.g., 'rest', 'task-nback'). Maps to
+      BIDS 'task-' entity.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Session
+    - ConditionalBlock
+    - Event
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Session
+description: A data collection session for a subject. Corresponds to a BIDS 'ses-'
+  entity. Sessions capture longitudinal timepoints (baseline, follow-up), different
+  experimental conditions, or repeated measures.
+from_schema: https://w3id.org/tvbo/study
+attributes:
+  label:
+    name: label
+    description: Human-readable session label.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: rdfs:label
+    owner: Session
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  network:
+    name: network
+    description: Path to session-specific connectome. Overrides Subject.network when
+      set. Relative to dataset root or BIDS derivatives.
+    from_schema: https://w3id.org/tvbo/study
+    owner: Session
+    domain_of:
+    - Subject
+    - Session
+    - Panel
+    - Inset
+    - SimulationExperiment
+    range: string
+  empirical_data:
+    name: empirical_data
+    description: Paths to empirical recordings for this session (e.g., BOLD time series,
+      MEG/EEG). Relative to dataset root.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Session
+    domain_of:
+    - Session
+    range: string
+    multivalued: true
+  condition:
+    name: condition
+    description: Experimental condition label (e.g., 'rest', 'task-nback'). Maps to
+      BIDS 'task-' entity.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Session
+    domain_of:
+    - Session
+    - ConditionalBlock
+    - Event
+    range: string
+  session_id:
+    name: session_id
+    description: 'BIDS session identifier (without ''ses-'' prefix). Examples: ''baseline'',
+      ''6month'', ''pre'', ''post''.'
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: dcterms:identifier
+    identifier: true
+    owner: Session
+    domain_of:
+    - Session
+    - TimeSeries
+    range: string
+    required: true
+
+```
+</details></div>

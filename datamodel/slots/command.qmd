@@ -1,0 +1,99 @@
+# Slot: command 
+
+
+_The command performed, parameters included. Null for something done by hand, which BEP028 reads as a manual step and asks a ``description`` for._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/command](https://w3id.org/tvbo/slot/command)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Activity](../classes/Activity.qmd) | One thing that was done: a solve, a fit, an analysis, a render |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Activity](../classes/Activity.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Activity](../classes/Activity.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:command |
+| native | tvbo:command |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: command
+description: The command performed, parameters included. Null for something done by
+  hand, which BEP028 reads as a manual step and asks a ``description`` for.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Activity
+domain_of:
+- Activity
+range: string
+
+```
+</details></div>

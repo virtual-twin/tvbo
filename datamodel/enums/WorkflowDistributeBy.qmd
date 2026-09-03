@@ -1,0 +1,79 @@
+# Enum: WorkflowDistributeBy 
+
+
+
+
+_Default tier a sweep axis is placed on when it is not named explicitly in a DistributionConfig. Vectorized axes are packed into one batched backend call; workflow axes are fanned out into independent scheduler tasks._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/WorkflowDistributeBy](https://w3id.org/tvbo/enum/WorkflowDistributeBy)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| auto | None | Vectorize every axis the backend can batch; fan out the rest |
+| vectorize | None | Place all otherwise-unassigned axes on the vectorized tier |
+| workflow | None | Fan out all otherwise-unassigned axes as scheduler tasks |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [by](../slots/by.qmd) | Default tier for axes not named in ``vectorize`` or ``workflow`` |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: WorkflowDistributeBy
+description: Default tier a sweep axis is placed on when it is not named explicitly
+  in a DistributionConfig. Vectorized axes are packed into one batched backend call;
+  workflow axes are fanned out into independent scheduler tasks.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  auto:
+    text: auto
+    description: Vectorize every axis the backend can batch; fan out the rest.
+  vectorize:
+    text: vectorize
+    description: Place all otherwise-unassigned axes on the vectorized tier.
+  workflow:
+    text: workflow
+    description: Fan out all otherwise-unassigned axes as scheduler tasks.
+
+```
+</details>
+
+</div>

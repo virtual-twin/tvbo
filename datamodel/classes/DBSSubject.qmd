@@ -1,0 +1,479 @@
+# Class: DBSSubject 
+
+
+_Human or animal subject receiving DBS._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:class/DBSSubject](https://w3id.org/tvbo/dbs/class/DBSSubject)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DBSSubject
+    click DBSSubject href "./DBSSubject.html"
+      Subject <|-- DBSSubject
+        click Subject href "./Subject.html"
+      
+      DBSSubject : age
+        
+          
+    
+        
+        
+        DBSSubject --> "0..1" Float : age
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      DBSSubject : coordinate_space
+        
+          
+    
+        
+        
+        DBSSubject --> "0..1" CommonCoordinateSpace : coordinate_space
+        click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+    
+
+        
+      DBSSubject : diagnosis
+        
+          
+    
+        
+        
+        DBSSubject --> "0..1" String : diagnosis
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSSubject : group
+        
+          
+    
+        
+        
+        DBSSubject --> "0..1" String : group
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSSubject : handedness
+        
+          
+    
+        
+        
+        DBSSubject --> "0..1" String : handedness
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSSubject : label
+        
+          
+    
+        
+        
+        DBSSubject --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSSubject : metadata
+        
+          
+    
+        
+        
+        DBSSubject --> "0..1" String : metadata
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSSubject : network
+        
+          
+    
+        
+        
+        DBSSubject --> "0..1" String : network
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSSubject : protocols
+        
+          
+    
+        
+        
+        DBSSubject --> "*" DBSProtocol : protocols
+        click DBSProtocol href "./DBSProtocol.html"
+    
+
+        
+      DBSSubject : sessions
+        
+          
+    
+        
+        
+        DBSSubject --> "*" Session : sessions
+        click Session href "./Session.html"
+    
+
+        
+      DBSSubject : sex
+        
+          
+    
+        
+        
+        DBSSubject --> "0..1" SexEnum : sex
+        click SexEnum href "../../enums/SexEnum.html"
+    
+
+        
+      DBSSubject : subject_id
+        
+          
+    
+        
+        
+        DBSSubject --> "1" String : subject_id
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [Subject](../classes/Subject.qmd)
+    * **DBSSubject**
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [diagnosis](../slots/diagnosis.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [handedness](../slots/handedness.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [protocols](../slots/protocols.qmd) | * <br/> [DBSProtocol](../classes/DBSProtocol.qmd) | All DBS protocols assigned to this subject | direct |
+| [coordinate_space](../slots/coordinate_space.qmd) | 0..1 <br/> [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | Coordinate space used for this subject's data | direct |
+| [subject_id](../slots/subject_id.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS-compatible subject identifier (without 'sub-' prefix) | [Subject](../classes/Subject.qmd) |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Human-readable label for the subject | [Subject](../classes/Subject.qmd) |
+| [group](../slots/group.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Group assignment (e | [Subject](../classes/Subject.qmd) |
+| [age](../slots/age.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Age at time of study (years) | [Subject](../classes/Subject.qmd) |
+| [sex](../slots/sex.qmd) | 0..1 <br/> [SexEnum](../enums/SexEnum.qmd) | Biological sex | [Subject](../classes/Subject.qmd) |
+| [sessions](../slots/sessions.qmd) | * <br/> [Session](../classes/Session.qmd) | Data collection sessions for this subject | [Subject](../classes/Subject.qmd) |
+| [network](../slots/network.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to subject-specific connectome (when not session-dependent) | [Subject](../classes/Subject.qmd) |
+| [metadata](../slots/metadata.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Additional subject metadata as key-value pairs or path to a sidecar JSON file | [Subject](../classes/Subject.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [DBSDataset](../classes/DBSDataset.qmd) | [subjects](../slots/subjects.qmd) | range | [DBSSubject](../classes/DBSSubject.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:DBSSubject |
+| native | tvbo_dbs:DBSSubject |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DBSSubject
+description: Human or animal subject receiving DBS.
+from_schema: https://w3id.org/tvbo/dbs
+is_a: Subject
+attributes:
+  diagnosis:
+    name: diagnosis
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSSubject
+    range: string
+  handedness:
+    name: handedness
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSSubject
+    range: string
+  protocols:
+    name: protocols
+    description: All DBS protocols assigned to this subject.
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSSubject
+    range: DBSProtocol
+    multivalued: true
+  coordinate_space:
+    name: coordinate_space
+    description: Coordinate space used for this subject's data
+    from_schema: https://w3id.org/tvbo/dbs
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DBSSubject
+description: Human or animal subject receiving DBS.
+from_schema: https://w3id.org/tvbo/dbs
+is_a: Subject
+attributes:
+  diagnosis:
+    name: diagnosis
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSSubject
+    domain_of:
+    - DBSSubject
+    range: string
+  handedness:
+    name: handedness
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSSubject
+    domain_of:
+    - DBSSubject
+    range: string
+  protocols:
+    name: protocols
+    description: All DBS protocols assigned to this subject.
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSSubject
+    domain_of:
+    - DBSSubject
+    range: DBSProtocol
+    multivalued: true
+  coordinate_space:
+    name: coordinate_space
+    description: Coordinate space used for this subject's data
+    from_schema: https://w3id.org/tvbo/dbs
+    owner: DBSSubject
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  subject_id:
+    name: subject_id
+    description: 'BIDS-compatible subject identifier (without ''sub-'' prefix). Examples:
+      ''01'', ''ctrl03'', ''patient17''.'
+    from_schema: https://w3id.org/tvbo/study
+    exact_mappings:
+    - schema:identifier
+    slot_uri: dcterms:identifier
+    identifier: true
+    owner: DBSSubject
+    domain_of:
+    - Subject
+    - TimeSeries
+    range: string
+    required: true
+  label:
+    name: label
+    description: Human-readable label for the subject.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: rdfs:label
+    owner: DBSSubject
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  group:
+    name: group
+    description: Group assignment (e.g., 'control', 'patient', 'healthy'). Maps to
+      participants.tsv 'group' column in BIDS.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSSubject
+    domain_of:
+    - Subject
+    range: string
+  age:
+    name: age
+    description: Age at time of study (years).
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSSubject
+    domain_of:
+    - Subject
+    range: float
+  sex:
+    name: sex
+    description: Biological sex.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSSubject
+    domain_of:
+    - Subject
+    range: SexEnum
+  sessions:
+    name: sessions
+    description: Data collection sessions for this subject. Each session can have
+      its own network, empirical data, and conditions.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSSubject
+    domain_of:
+    - Subject
+    range: Session
+    multivalued: true
+    inlined: true
+  network:
+    name: network
+    description: Path to subject-specific connectome (when not session-dependent).
+      Relative to dataset root or BIDS derivatives. For session-specific networks,
+      use Session.network instead.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSSubject
+    domain_of:
+    - Subject
+    - Session
+    - Panel
+    - Inset
+    - SimulationExperiment
+    range: string
+  metadata:
+    name: metadata
+    description: Additional subject metadata as key-value pairs or path to a sidecar
+      JSON file.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSSubject
+    domain_of:
+    - Subject
+    - ExperimentResultSidecar
+    range: string
+
+```
+</details></div>

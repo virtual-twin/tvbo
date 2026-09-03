@@ -1,0 +1,78 @@
+# Enum: Hemisphere 
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [atom:enum/Hemisphere](http://uri.interlex.org/tgbugs/uris/readable/enum/Hemisphere)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| left | None |  |
+| right | None |  |
+| both | None |  |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [hemisphere](../slots/hemisphere.qmd) | Add the hemisphere of this entity |
+| [hemi](../slots/hemi.qmd) | Which hemisphere to draw (`left`, `right`, or `both` joined into one mesh — w... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: Hemisphere
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+permissible_values:
+  left:
+    text: left
+    aliases:
+    - L
+    - lh
+  right:
+    text: right
+    aliases:
+    - R
+    - rh
+  both:
+    text: both
+    aliases:
+    - B
+    - bilateral
+    - LR
+
+```
+</details>
+
+</div>

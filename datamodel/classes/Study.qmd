@@ -1,0 +1,415 @@
+# Class: Study 
+
+
+_Bibliographic anchor for a source publication, identified by its citation key (``citekey``).  The full bibliographic record lives in the project BibTeX library (references.bib) and is resolved by citekey; this node carries only identity, display fields and the knowledge-graph hooks (the concepts that cite it).  Specialised by SimulationStudy, which adds the experiments derived from the source._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Study](https://w3id.org/tvbo/Study)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Study
+    click Study href "./Study.html"
+      Study <|-- SimulationStudy
+        click SimulationStudy href "./SimulationStudy.html"
+      
+      Study : authors
+        
+          
+    
+        
+        
+        Study --> "*" String : authors
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Study : citekey
+        
+          
+    
+        
+        
+        Study --> "0..1" String : citekey
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Study : description
+        
+          
+    
+        
+        
+        Study --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Study : doi
+        
+          
+    
+        
+        
+        Study --> "0..1" String : doi
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Study : title
+        
+          
+    
+        
+        
+        Study --> "0..1" String : title
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Study : type
+        
+          
+    
+        
+        
+        Study --> "0..1" String : type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Study : year
+        
+          
+    
+        
+        
+        Study --> "0..1" Integer : year
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **Study**
+    * [SimulationStudy](../classes/SimulationStudy.qmd)
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Study](https://w3id.org/tvbo/Study) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [citekey](../slots/citekey.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BibTeX citation key; the join key into references | direct |
+| [type](../slots/type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Publication type (article, book, inproceedings, …) | direct |
+| [title](../slots/title.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [authors](../slots/authors.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Author display strings (full detail in references | direct |
+| [year](../slots/year.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+| [doi](../slots/doi.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Study |
+| native | tvbo:Study |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Study
+description: Bibliographic anchor for a source publication, identified by its citation
+  key (``citekey``).  The full bibliographic record lives in the project BibTeX library
+  (references.bib) and is resolved by citekey; this node carries only identity, display
+  fields and the knowledge-graph hooks (the concepts that cite it).  Specialised by
+  SimulationStudy, which adds the experiments derived from the source.
+from_schema: https://w3id.org/tvbo
+slots:
+- description
+attributes:
+  citekey:
+    name: citekey
+    description: BibTeX citation key; the join key into references.bib for full bibliographic
+      detail. A study is identified by its key/citekey and described by its title
+      — no ``name`` needed.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Study
+    range: string
+  type:
+    name: type
+    description: Publication type (article, book, inproceedings, …).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  title:
+    name: title
+    from_schema: https://w3id.org/tvbo
+    slot_uri: dcterms:title
+    domain_of:
+    - Panel
+    - Inset
+    - Legend
+    - Study
+    range: string
+  authors:
+    name: authors
+    description: Author display strings (full detail in references.bib).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Study
+    range: string
+    multivalued: true
+  year:
+    name: year
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:issued
+    domain_of:
+    - Study
+    range: integer
+  doi:
+    name: doi
+    from_schema: https://w3id.org/tvbo
+    slot_uri: bibo:doi
+    domain_of:
+    - SoftwarePackage
+    - Study
+    range: string
+class_uri: tvbo:Study
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Study
+description: Bibliographic anchor for a source publication, identified by its citation
+  key (``citekey``).  The full bibliographic record lives in the project BibTeX library
+  (references.bib) and is resolved by citekey; this node carries only identity, display
+  fields and the knowledge-graph hooks (the concepts that cite it).  Specialised by
+  SimulationStudy, which adds the experiments derived from the source.
+from_schema: https://w3id.org/tvbo
+attributes:
+  citekey:
+    name: citekey
+    description: BibTeX citation key; the join key into references.bib for full bibliographic
+      detail. A study is identified by its key/citekey and described by its title
+      — no ``name`` needed.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Study
+    domain_of:
+    - Study
+    range: string
+  type:
+    name: type
+    description: Publication type (article, book, inproceedings, …).
+    from_schema: https://w3id.org/tvbo
+    owner: Study
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  title:
+    name: title
+    from_schema: https://w3id.org/tvbo
+    slot_uri: dcterms:title
+    owner: Study
+    domain_of:
+    - Panel
+    - Inset
+    - Legend
+    - Study
+    range: string
+  authors:
+    name: authors
+    description: Author display strings (full detail in references.bib).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Study
+    domain_of:
+    - Study
+    range: string
+    multivalued: true
+  year:
+    name: year
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:issued
+    owner: Study
+    domain_of:
+    - Study
+    range: integer
+  doi:
+    name: doi
+    from_schema: https://w3id.org/tvbo
+    slot_uri: bibo:doi
+    owner: Study
+    domain_of:
+    - SoftwarePackage
+    - Study
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Study
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Study
+
+```
+</details></div>

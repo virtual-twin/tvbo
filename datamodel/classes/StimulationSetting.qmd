@@ -1,0 +1,307 @@
+# Class: StimulationSetting 
+
+
+_DBS parameters for a specific session._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:class/StimulationSetting](https://w3id.org/tvbo/dbs/class/StimulationSetting)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class StimulationSetting
+    click StimulationSetting href "./StimulationSetting.html"
+      StimulationSetting : active_contacts
+        
+          
+    
+        
+        
+        StimulationSetting --> "*" Integer : active_contacts
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      StimulationSetting : amplitude
+        
+          
+    
+        
+        
+        StimulationSetting --> "0..1" Parameter : amplitude
+        click Parameter href "./Parameter.html"
+    
+
+        
+      StimulationSetting : efield
+        
+          
+    
+        
+        
+        StimulationSetting --> "0..1" EField : efield
+        click EField href "./EField.html"
+    
+
+        
+      StimulationSetting : electrode_reference
+        
+          
+    
+        
+        
+        StimulationSetting --> "0..1" Electrode : electrode_reference
+        click Electrode href "./Electrode.html"
+    
+
+        
+      StimulationSetting : frequency
+        
+          
+    
+        
+        
+        StimulationSetting --> "0..1" Parameter : frequency
+        click Parameter href "./Parameter.html"
+    
+
+        
+      StimulationSetting : mode
+        
+          
+    
+        
+        
+        StimulationSetting --> "0..1" String : mode
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StimulationSetting : pulse_width
+        
+          
+    
+        
+        
+        StimulationSetting --> "0..1" Parameter : pulse_width
+        click Parameter href "./Parameter.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [electrode_reference](../slots/electrode_reference.qmd) | 0..1 <br/> [Electrode](../classes/Electrode.qmd) |  | direct |
+| [amplitude](../slots/amplitude.qmd) | 0..1 <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [frequency](../slots/frequency.qmd) | 0..1 <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [pulse_width](../slots/pulse_width.qmd) | 0..1 <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [mode](../slots/mode.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [active_contacts](../slots/active_contacts.qmd) | * <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+| [efield](../slots/efield.qmd) | 0..1 <br/> [EField](../classes/EField.qmd) | Metadata about the E-field result for this setting | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [DBSProtocol](../classes/DBSProtocol.qmd) | [settings](../slots/settings.qmd) | range | [StimulationSetting](../classes/StimulationSetting.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:StimulationSetting |
+| native | tvbo_dbs:StimulationSetting |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: StimulationSetting
+description: DBS parameters for a specific session.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  electrode_reference:
+    name: electrode_reference
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - StimulationSetting
+    range: Electrode
+  amplitude:
+    name: amplitude
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - StimulationSetting
+    range: Parameter
+  frequency:
+    name: frequency
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - StimulationSetting
+    range: Parameter
+  pulse_width:
+    name: pulse_width
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - StimulationSetting
+    range: Parameter
+  mode:
+    name: mode
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - StimulationSetting
+    - Exploration
+    - AlgorithmInclude
+    - Differentiation
+    range: string
+  active_contacts:
+    name: active_contacts
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - StimulationSetting
+    range: integer
+    multivalued: true
+  efield:
+    name: efield
+    description: Metadata about the E-field result for this setting
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - StimulationSetting
+    range: EField
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: StimulationSetting
+description: DBS parameters for a specific session.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  electrode_reference:
+    name: electrode_reference
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: StimulationSetting
+    domain_of:
+    - StimulationSetting
+    range: Electrode
+  amplitude:
+    name: amplitude
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: StimulationSetting
+    domain_of:
+    - StimulationSetting
+    range: Parameter
+  frequency:
+    name: frequency
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: StimulationSetting
+    domain_of:
+    - StimulationSetting
+    range: Parameter
+  pulse_width:
+    name: pulse_width
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: StimulationSetting
+    domain_of:
+    - StimulationSetting
+    range: Parameter
+  mode:
+    name: mode
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: StimulationSetting
+    domain_of:
+    - StimulationSetting
+    - Exploration
+    - AlgorithmInclude
+    - Differentiation
+    range: string
+  active_contacts:
+    name: active_contacts
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: StimulationSetting
+    domain_of:
+    - StimulationSetting
+    range: integer
+    multivalued: true
+  efield:
+    name: efield
+    description: Metadata about the E-field result for this setting
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: StimulationSetting
+    domain_of:
+    - StimulationSetting
+    range: EField
+
+```
+</details></div>

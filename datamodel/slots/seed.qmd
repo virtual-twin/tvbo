@@ -1,0 +1,81 @@
+# Slot: seed 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/seed](https://w3id.org/tvbo/slot/seed)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | Backend-agnostic graph generator specification |  no  |
+| [Distribution](../classes/Distribution.qmd) | A probability distribution for sampling parameters or initial conditions |  no  |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+| [Inference](../classes/Inference.qmd) | Bayesian inference of model parameters from an observation, via MCMC |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [GraphGenerator](../classes/GraphGenerator.qmd), [Distribution](../classes/Distribution.qmd), [Noise](../classes/Noise.qmd), [Inference](../classes/Inference.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:seed |
+| native | tvbo:seed |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: seed
+domain_of:
+- GraphGenerator
+- Distribution
+- Noise
+- Inference
+range: string
+
+```
+</details></div>

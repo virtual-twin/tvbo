@@ -1,0 +1,94 @@
+# Slot: number_of_stages 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/number_of_stages](https://w3id.org/tvbo/slot/number_of_stages)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `integer(1)` |
+| Owner | [Integrator](../classes/Integrator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:number_of_stages |
+| native | tvbo:number_of_stages |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: number_of_stages
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: integer(1)
+owner: Integrator
+domain_of:
+- Integrator
+range: integer
+
+```
+</details></div>

@@ -1,0 +1,4653 @@
+# schema { #tvbo.datamodel.schema }
+
+`datamodel.schema`
+
+
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [ATOM](#tvbo.datamodel.schema.ATOM) |  |
+| [BIBO](#tvbo.datamodel.schema.BIBO) |  |
+| [BIOTOOLS](#tvbo.datamodel.schema.BIOTOOLS) |  |
+| [CHEBI](#tvbo.datamodel.schema.CHEBI) |  |
+| [CL](#tvbo.datamodel.schema.CL) |  |
+| [DCTERMS](#tvbo.datamodel.schema.DCTERMS) |  |
+| [DEFAULT_](#tvbo.datamodel.schema.DEFAULT_) |  |
+| [GO](#tvbo.datamodel.schema.GO) |  |
+| [LINKML](#tvbo.datamodel.schema.LINKML) |  |
+| [MESH](#tvbo.datamodel.schema.MESH) |  |
+| [NIDM](#tvbo.datamodel.schema.NIDM) |  |
+| [OBOINOWL](#tvbo.datamodel.schema.OBOINOWL) |  |
+| [PROV](#tvbo.datamodel.schema.PROV) |  |
+| [QUDT](#tvbo.datamodel.schema.QUDT) |  |
+| [RDFS](#tvbo.datamodel.schema.RDFS) |  |
+| [SCHEMA](#tvbo.datamodel.schema.SCHEMA) |  |
+| [SIO](#tvbo.datamodel.schema.SIO) |  |
+| [SKOS](#tvbo.datamodel.schema.SKOS) |  |
+| [ScalarValue](#tvbo.datamodel.schema.ScalarValue) |  |
+| [TVBO](#tvbo.datamodel.schema.TVBO) |  |
+| [TVBO_DBS](#tvbo.datamodel.schema.TVBO_DBS) |  |
+| [TVBO_STUDY](#tvbo.datamodel.schema.TVBO_STUDY) |  |
+| [TVBO_SW](#tvbo.datamodel.schema.TVBO_SW) |  |
+| [UBERON](#tvbo.datamodel.schema.UBERON) |  |
+| [UO](#tvbo.datamodel.schema.UO) |  |
+| [WD](#tvbo.datamodel.schema.WD) |  |
+| [metamodel_version](#tvbo.datamodel.schema.metamodel_version) |  |
+| [version](#tvbo.datamodel.schema.version) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Activity](#tvbo.datamodel.schema.Activity) | One thing that was done: a solve, a fit, an analysis, a render. The PROV complement of ``Provenance``, which |
+| [ActivityName](#tvbo.datamodel.schema.ActivityName) |  |
+| [Aggregation](#tvbo.datamodel.schema.Aggregation) | Specifies how to aggregate values across a dimension. Used for loss functions to define per-element loss with |
+| [AggregationType](#tvbo.datamodel.schema.AggregationType) | How to aggregate time series data |
+| [Algorithm](#tvbo.datamodel.schema.Algorithm) | A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives, |
+| [AlgorithmCompositionMode](#tvbo.datamodel.schema.AlgorithmCompositionMode) | How an included algorithm is composed with the outer algorithm. Determines whether the inner algorithm's update |
+| [AlgorithmInclude](#tvbo.datamodel.schema.AlgorithmInclude) | Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different |
+| [AlgorithmName](#tvbo.datamodel.schema.AlgorithmName) |  |
+| [AlgorithmStage](#tvbo.datamodel.schema.AlgorithmStage) | One stage of a multi-stage tuning schedule. The algorithm body runs once per stage, in order, each stage |
+| [Analysis](#tvbo.datamodel.schema.Analysis) | A quantity obtained by ANALYZING something — a model, its solve, a derived loss, simulated results, or empirical |
+| [Animation](#tvbo.datamodel.schema.Animation) | A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the |
+| [Annotation](#tvbo.datamodel.schema.Annotation) | A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ |
+| [ArchiveConfig](#tvbo.datamodel.schema.ArchiveConfig) | How a study packages its run into a COMBINE/OMEX archive: the output location and format, plus any extra files to |
+| [Argument](#tvbo.datamodel.schema.Argument) | A function argument with explicit value specification. A value is either ``value`` (a literal / array / local |
+| [ArgumentName](#tvbo.datamodel.schema.ArgumentName) |  |
+| [Assignment](#tvbo.datamodel.schema.Assignment) | One step of a sequential recurrence: the expression assigned to a target name. Sequential rather than simultaneous |
+| [AxisReduction](#tvbo.datamodel.schema.AxisReduction) | Marks an exploration/sweep axis to be collapsed by a statistic in the result container. When set on an |
+| [AxisReductionStatistic](#tvbo.datamodel.schema.AxisReductionStatistic) | Statistic used to collapse an exploration/sweep axis into a single reduced value in the result container (see |
+| [AxisScale](#tvbo.datamodel.schema.AxisScale) | How an axis maps values to distance. Part of what a panel claims, not decoration: a straight line on a log axis is |
+| [AxisSide](#tvbo.datamodel.schema.AxisSide) | Which edge of the axes a label or tick row sits on. |
+| [BarOrientation](#tvbo.datamodel.schema.BarOrientation) | Which way a colour bar runs. |
+| [BidsDatasetType](#tvbo.datamodel.schema.BidsDatasetType) | BIDS ``DatasetType``: how a dataset is to be interpreted. ``study`` has been in the released standard since BIDS |
+| [BidsDirectoryStatus](#tvbo.datamodel.schema.BidsDirectoryStatus) | A directory's standing with the BIDS standard, which is what decides whether it needs a ``.bidsignore`` entry. |
+| [BidsEntities](#tvbo.datamodel.schema.BidsEntities) | BIDS filename entities (BEP017-aligned) for provenance and data discovery. Reusable on Network, BrainAtlas, |
+| [Binding](#tvbo.datamodel.schema.Binding) | Per-backend construction binding for a GraphGenerator: how to build the graph in a specific target library. Keyed |
+| [BindingName](#tvbo.datamodel.schema.BindingName) |  |
+| [BoundaryCondition](#tvbo.datamodel.schema.BoundaryCondition) |  |
+| [BoundaryConditionType](#tvbo.datamodel.schema.BoundaryConditionType) |  |
+| [BrainAtlas](#tvbo.datamodel.schema.BrainAtlas) | A schema for representing a version of a brain atlas. |
+| [BrainAtlasName](#tvbo.datamodel.schema.BrainAtlasName) |  |
+| [BrainRegionSeries](#tvbo.datamodel.schema.BrainRegionSeries) | A series whose values represent latitude |
+| [BranchSwitch](#tvbo.datamodel.schema.BranchSwitch) | Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold |
+| [BranchSwitchName](#tvbo.datamodel.schema.BranchSwitchName) |  |
+| [CachedArray](#tvbo.datamodel.schema.CachedArray) | One numeric array inside a cached-result ``.h5`` companion, described by name, shape and dtype so a reader can |
+| [CachedArrayName](#tvbo.datamodel.schema.CachedArrayName) |  |
+| [Callable](#tvbo.datamodel.schema.Callable) |  |
+| [CallableName](#tvbo.datamodel.schema.CallableName) |  |
+| [Camera](#tvbo.datamodel.schema.Camera) | Where a 3-D panel is looked at from. Only a `line3d` panel or a surface reads it; every other kind ignores it. |
+| [ClassReference](#tvbo.datamodel.schema.ClassReference) | Reference to a class that can be instantiated and called. Used for external library classes (e.g., tvboptim.Bold, |
+| [ClassReferenceName](#tvbo.datamodel.schema.ClassReferenceName) |  |
+| [ClinicalImprovement](#tvbo.datamodel.schema.ClinicalImprovement) | Relative improvement on a defined clinical score. |
+| [ClinicalScale](#tvbo.datamodel.schema.ClinicalScale) | A clinical assessment inventory or structured scale composed of multiple scores or items. |
+| [ClinicalScore](#tvbo.datamodel.schema.ClinicalScore) | Metadata about a clinical score or scale. |
+| [CodeSource](#tvbo.datamodel.schema.CodeSource) | Location of a recipe's callable code so the specification is decoupled from where the code lives. Either a local |
+| [ColorScale](#tvbo.datamodel.schema.ColorScale) | How values become colours, and where the scale starts and stops. Shared by everything that paints a field rather |
+| [Colorbar](#tvbo.datamodel.schema.Colorbar) | The colour scale a panel prints beside its field. Declared as one object because nine loose `colorbar_*` options |
+| [Colormaps](#tvbo.datamodel.schema.Colormaps) | Continuous colour scales, by key: anything ordinal or continuous draws from one of these, anything categorical |
+| [CommonCoordinateSpace](#tvbo.datamodel.schema.CommonCoordinateSpace) | A schema for representing a version of a common coordinate space. |
+| [CommonCoordinateSpaceName](#tvbo.datamodel.schema.CommonCoordinateSpaceName) |  |
+| [ComparisonOperator](#tvbo.datamodel.schema.ComparisonOperator) | Comparison used by a `stochastic_mask` step. Named rather than written as an operator so the step stays metadata: |
+| [ConditionalBlock](#tvbo.datamodel.schema.ConditionalBlock) | A single condition and its corresponding equation segment. |
+| [ConnectivityRule](#tvbo.datamodel.schema.ConnectivityRule) | Rule for expanding a population-level Edge into individual cell-to-cell connections. Names a connectivity pattern |
+| [Contact](#tvbo.datamodel.schema.Contact) | Individual contact on a DBS electrode. |
+| [Continuation](#tvbo.datamodel.schema.Continuation) | Complete specification of a numerical continuation / bifurcation analysis. All universal solver settings live |
+| [ContinuationAlgorithm](#tvbo.datamodel.schema.ContinuationAlgorithm) | Predictor-corrector algorithm for numerical continuation. |
+| [ContinuationName](#tvbo.datamodel.schema.ContinuationName) |  |
+| [Coordinate](#tvbo.datamodel.schema.Coordinate) | A 3D coordinate with X, Y, Z values. |
+| [Corner](#tvbo.datamodel.schema.Corner) | A named corner for placing a panel number inside its axes — the four corners bsplot's add_panel_number anchors to. |
+| [Coupling](#tvbo.datamodel.schema.Coupling) |  |
+| [CouplingInput](#tvbo.datamodel.schema.CouplingInput) | Specification of a coupling input channel for multi-coupling dynamics |
+| [CouplingInputName](#tvbo.datamodel.schema.CouplingInputName) |  |
+| [CouplingName](#tvbo.datamodel.schema.CouplingName) |  |
+| [CouplingStageEvaluation](#tvbo.datamodel.schema.CouplingStageEvaluation) | How the network coupling term is evaluated within one step of a multi-stage integrator (Heun, RK4, ...). A |
+| [DBSDataset](#tvbo.datamodel.schema.DBSDataset) | Collection of data related to a specific DBS study. |
+| [DBSDatasetDatasetId](#tvbo.datamodel.schema.DBSDatasetDatasetId) |  |
+| [DBSProtocol](#tvbo.datamodel.schema.DBSProtocol) | A protocol describing DBS therapy, potentially bilateral or multi-lead. |
+| [DBSProtocolName](#tvbo.datamodel.schema.DBSProtocolName) |  |
+| [DBSSubject](#tvbo.datamodel.schema.DBSSubject) | Human or animal subject receiving DBS. |
+| [DBSSubjectSubjectId](#tvbo.datamodel.schema.DBSSubjectSubjectId) |  |
+| [DataRef](#tvbo.datamodel.schema.DataRef) | A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container |
+| [DataSource](#tvbo.datamodel.schema.DataSource) | Specification for loading external/empirical data. |
+| [DataSourceName](#tvbo.datamodel.schema.DataSourceName) |  |
+| [Dataset](#tvbo.datamodel.schema.Dataset) | A collection of subjects for a multi-subject study. Provides the subject/session structure needed for workflow |
+| [DatasetDatasetId](#tvbo.datamodel.schema.DatasetDatasetId) |  |
+| [DerivedParameter](#tvbo.datamodel.schema.DerivedParameter) |  |
+| [DerivedParameterName](#tvbo.datamodel.schema.DerivedParameterName) |  |
+| [DerivedVariable](#tvbo.datamodel.schema.DerivedVariable) |  |
+| [DerivedVariableName](#tvbo.datamodel.schema.DerivedVariableName) |  |
+| [DevelopmentStatus](#tvbo.datamodel.schema.DevelopmentStatus) | Development status of the software. Based on repostatus.org categories. |
+| [DifferentialOperator](#tvbo.datamodel.schema.DifferentialOperator) |  |
+| [Differentiation](#tvbo.datamodel.schema.Differentiation) | Backend-neutral configuration for how gradients are propagated through the temporal integration. Expressed in |
+| [Digest](#tvbo.datamodel.schema.Digest) | One checksum of an artifact, keyed by the function that produced it. Collected on ``Provenance.digest``, whose |
+| [DigestAlgorithm](#tvbo.datamodel.schema.DigestAlgorithm) |  |
+| [DimensionType](#tvbo.datamodel.schema.DimensionType) | Dimensions along which operations can be applied |
+| [Discretization](#tvbo.datamodel.schema.Discretization) | Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits, |
+| [DiscretizationMethod](#tvbo.datamodel.schema.DiscretizationMethod) |  |
+| [Distribution](#tvbo.datamodel.schema.Distribution) | A probability distribution for sampling parameters or initial conditions. Standard distributions (Uniform, |
+| [DistributionConfig](#tvbo.datamodel.schema.DistributionConfig) | Policy for mapping a parameter sweep's exploration axes onto the two parallelism tiers when rendering a |
+| [DistributionName](#tvbo.datamodel.schema.DistributionName) |  |
+| [DomainEnforcement](#tvbo.datamodel.schema.DomainEnforcement) | Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means |
+| [Dynamics](#tvbo.datamodel.schema.Dynamics) |  |
+| [DynamicsName](#tvbo.datamodel.schema.DynamicsName) |  |
+| [EField](#tvbo.datamodel.schema.EField) | Simulated electric field from DBS modeling. |
+| [EcosystemEnum](#tvbo.datamodel.schema.EcosystemEnum) | Package ecosystem or registry the software is distributed through. |
+| [Edge](#tvbo.datamodel.schema.Edge) | An edge in a network. Three modes: explicit (source+target set, scalar parameters in YAML), template (no |
+| [Electrode](#tvbo.datamodel.schema.Electrode) | Implanted DBS electrode and contact geometry. |
+| [ElementType](#tvbo.datamodel.schema.ElementType) |  |
+| [Encoding](#tvbo.datamodel.schema.Encoding) | Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: |
+| [EnvironmentType](#tvbo.datamodel.schema.EnvironmentType) |  |
+| [EnvironmentVariable](#tvbo.datamodel.schema.EnvironmentVariable) | One environment variable assignment exported before executing the workflow task command. Use this for reproducible |
+| [EnvironmentVariableName](#tvbo.datamodel.schema.EnvironmentVariableName) |  |
+| [Equation](#tvbo.datamodel.schema.Equation) |  |
+| [Event](#tvbo.datamodel.schema.Event) | A discrete or continuous event that modifies the system during simulation. Generalizes Stimulus: can represent |
+| [EventName](#tvbo.datamodel.schema.EventName) |  |
+| [EventType](#tvbo.datamodel.schema.EventType) | Type of event triggering mechanism. |
+| [ExecutionConfig](#tvbo.datamodel.schema.ExecutionConfig) | Configuration for computational execution (parallelization, precision, hardware). |
+| [ExperimentResultSidecar](#tvbo.datamodel.schema.ExperimentResultSidecar) | Descriptor for a cached ``ExperimentResult``: the ``.h5`` companion holding the fitted parameter arrays, one |
+| [Exploration](#tvbo.datamodel.schema.Exploration) | Parameter space exploration (grid search, sweep). |
+| [ExplorationAxis](#tvbo.datamodel.schema.ExplorationAxis) | One axis of a parameter exploration grid. Points to an existing Parameter (by dotted reference, e.g. |
+| [ExplorationAxisParameter](#tvbo.datamodel.schema.ExplorationAxisParameter) |  |
+| [ExplorationName](#tvbo.datamodel.schema.ExplorationName) |  |
+| [FieldStateVariable](#tvbo.datamodel.schema.FieldStateVariable) |  |
+| [FieldStateVariableName](#tvbo.datamodel.schema.FieldStateVariableName) |  |
+| [Figure](#tvbo.datamodel.schema.Figure) | A publication figure, a mosaic of panels rendered from result containers. Reuses name (identifier) and description |
+| [FigureName](#tvbo.datamodel.schema.FigureName) |  |
+| [File](#tvbo.datamodel.schema.File) |  |
+| [FileName](#tvbo.datamodel.schema.FileName) |  |
+| [FrameRole](#tvbo.datamodel.schema.FrameRole) | What a layer does while a figure animates. Read only under `Figure.animation`; a still figure ignores it. Unset, a |
+| [FreeParameter](#tvbo.datamodel.schema.FreeParameter) | One degree of freedom in an OptimizationStage. References an existing Parameter by dotted scope (e.g. |
+| [Function](#tvbo.datamodel.schema.Function) | A function with explicit input -> transformation -> output flow. Can be equation-based (symbolic) or |
+| [FunctionCall](#tvbo.datamodel.schema.FunctionCall) | Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly |
+| [FunctionName](#tvbo.datamodel.schema.FunctionName) |  |
+| [Graph](#tvbo.datamodel.schema.Graph) | A node-link panel's graph and how it is drawn: the connectome the model actually ran on, with a state living on |
+| [GraphGenerator](#tvbo.datamodel.schema.GraphGenerator) | Backend-agnostic graph generator specification. Captures the mathematical family and its parameter declarations so |
+| [GraphGeneratorName](#tvbo.datamodel.schema.GraphGeneratorName) |  |
+| [GraphRepresentation](#tvbo.datamodel.schema.GraphRepresentation) | How a Network's connectivity is represented when evaluating coupling. This is a backend-independent performance |
+| [Grid](#tvbo.datamodel.schema.Grid) | How a `grid` panel tiles its cells, and what the strips around them are labelled with. Rows and columns are |
+| [Hemisphere](#tvbo.datamodel.schema.Hemisphere) |  |
+| [ImagingModality](#tvbo.datamodel.schema.ImagingModality) |  |
+| [Inference](#tvbo.datamodel.schema.Inference) | Bayesian inference of model parameters from an observation, via MCMC. A standalone, first-class concept (NOT an |
+| [InferenceName](#tvbo.datamodel.schema.InferenceName) |  |
+| [InitialState](#tvbo.datamodel.schema.InitialState) | How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady |
+| [InitialStateMethod](#tvbo.datamodel.schema.InitialStateMethod) | Strategy for obtaining the starting equilibrium or periodic orbit. |
+| [Inset](#tvbo.datamodel.schema.Inset) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, annotations — minus the things only a |
+| [Integrator](#tvbo.datamodel.schema.Integrator) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits |
+| [Layer](#tvbo.datamodel.schema.Layer) | One mark bound to one data reference, with its encoding. |
+| [LayoutEngine](#tvbo.datamodel.schema.LayoutEngine) | Which matplotlib layout engine positions the mosaic's axes. Unset lets the backend pick (bsplot asks for |
+| [LayoutTemplateVariant](#tvbo.datamodel.schema.LayoutTemplateVariant) | One variant's seed for a file the record already accounts for. |
+| [LayoutTemplateVariantVariant](#tvbo.datamodel.schema.LayoutTemplateVariantVariant) |  |
+| [Legend](#tvbo.datamodel.schema.Legend) | A panel's key: whether it is drawn, where it sits, and the three things a figure actually asks of one beyond that. |
+| [LegendLoc](#tvbo.datamodel.schema.LegendLoc) | Where a panel's key sits. `best` lets the backend find the emptiest corner, which is right while a figure is still |
+| [Likelihood](#tvbo.datamodel.schema.Likelihood) | Observation model for Bayesian inference: p(data \| sim(theta)). Points at the observation holding the data and |
+| [LikelihoodName](#tvbo.datamodel.schema.LikelihoodName) |  |
+| [LossFunction](#tvbo.datamodel.schema.LossFunction) | A loss function for optimization with optional aggregation. Extends Function with aggregation specification for |
+| [LossFunctionName](#tvbo.datamodel.schema.LossFunctionName) |  |
+| [MarkType](#tvbo.datamodel.schema.MarkType) | The cartesian primitive a grammar layer draws (heatmap is implied by a heatmap panel, not a mark). |
+| [Matrix](#tvbo.datamodel.schema.Matrix) | Adjacency matrix of a network. |
+| [MeasureSpec](#tvbo.datamodel.schema.MeasureSpec) | Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``. |
+| [Mesh](#tvbo.datamodel.schema.Mesh) | Triangle (or higher-order) mesh geometry. May stand alone (via ``mesh_file`` pointing at an external GIFTI/VTK/MSH |
+| [ModelParadigm](#tvbo.datamodel.schema.ModelParadigm) | Computational paradigm or modeling approach supported by the tool. |
+| [ModelType](#tvbo.datamodel.schema.ModelType) | Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in |
+| [NDArray](#tvbo.datamodel.schema.NDArray) |  |
+| [NamedArray](#tvbo.datamodel.schema.NamedArray) | A named numeric array. Used as a sidecar slot value where a schema-typed object (e.g. |
+| [Network](#tvbo.datamodel.schema.Network) | Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge |
+| [Node](#tvbo.datamodel.schema.Node) | A node in a network with its own dynamics and properties |
+| [NodeReconciliation](#tvbo.datamodel.schema.NodeReconciliation) | Strategy for aligning a sourced array's nodes to the consuming model network before use. Keyed alignment guards |
+| [Noise](#tvbo.datamodel.schema.Noise) |  |
+| [NoiseDraw](#tvbo.datamodel.schema.NoiseDraw) | How a stochastic run's noise realization is generated. |
+| [NoiseType](#tvbo.datamodel.schema.NoiseType) |  |
+| [NumericalDiscretizationMethod](#tvbo.datamodel.schema.NumericalDiscretizationMethod) | Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic |
+| [Observation](#tvbo.datamodel.schema.Observation) | Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and |
+| [ObservationName](#tvbo.datamodel.schema.ObservationName) |  |
+| [ObservationReductionMode](#tvbo.datamodel.schema.ObservationReductionMode) | How an observation is evaluated over the trajectory (see Observation.reduce). Absent (the default) keeps the |
+| [OperatorType](#tvbo.datamodel.schema.OperatorType) |  |
+| [Optimization](#tvbo.datamodel.schema.Optimization) | Configuration for parameter optimization. Inherits single-stage fields from OptimizationStage. For multi-stage |
+| [OptimizationName](#tvbo.datamodel.schema.OptimizationName) |  |
+| [OptimizationStage](#tvbo.datamodel.schema.OptimizationStage) | A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using |
+| [OptimizationStageName](#tvbo.datamodel.schema.OptimizationStageName) |  |
+| [Option](#tvbo.datamodel.schema.Option) | A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal |
+| [OptionName](#tvbo.datamodel.schema.OptionName) |  |
+| [PDE](#tvbo.datamodel.schema.PDE) | Partial differential equation problem definition. |
+| [PDESolver](#tvbo.datamodel.schema.PDESolver) | Numerical solver for a PDE: the time-integration algorithm, tolerances and step inherited from `Solver`, plus the |
+| [Palette](#tvbo.datamodel.schema.Palette) | A project's colours, named by role. The colour half of a `Theme`, and a document in its own right for a consumer |
+| [Panel](#tvbo.datamodel.schema.Panel) | One cell of the figure. kind selects grammar (cartesian/heatmap) vs escape-hatch (image/custom); every kind shares |
+| [PanelKind](#tvbo.datamodel.schema.PanelKind) | What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); surface paints a layer on a mesh, |
+| [PanelPanelKey](#tvbo.datamodel.schema.PanelPanelKey) |  |
+| [ParallelMode](#tvbo.datamodel.schema.ParallelMode) | How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput: |
+| [Parameter](#tvbo.datamodel.schema.Parameter) |  |
+| [ParameterName](#tvbo.datamodel.schema.ParameterName) |  |
+| [Parcellation](#tvbo.datamodel.schema.Parcellation) |  |
+| [ParcellationEntity](#tvbo.datamodel.schema.ParcellationEntity) | A schema for representing a parcellation entity, which is an anatomical location or study target. |
+| [ParcellationEntityName](#tvbo.datamodel.schema.ParcellationEntityName) |  |
+| [ParcellationTerminology](#tvbo.datamodel.schema.ParcellationTerminology) | A schema for representing a parcellation terminology, which consists of parcellation entities. |
+| [Partition](#tvbo.datamodel.schema.Partition) | A grouped streaming reduction over a node partition (e.g. per-hemisphere cortical wave metrics): the per-timestep |
+| [Phenotype](#tvbo.datamodel.schema.Phenotype) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales, |
+| [Prior](#tvbo.datamodel.schema.Prior) | Prior belief over one inferred parameter. In `Inference.priors` the collection KEY is the parameter's dotted name; |
+| [PriorName](#tvbo.datamodel.schema.PriorName) |  |
+| [Procedure](#tvbo.datamodel.schema.Procedure) | Symbolic procedure: an ordered list of steps producing named outputs. Documents a derived generator's algorithm |
+| [ProcedureStep](#tvbo.datamodel.schema.ProcedureStep) | A single named step (or output) in a Procedure: one typed operation producing one named intermediate. |
+| [ProcedureStepName](#tvbo.datamodel.schema.ProcedureStepName) |  |
+| [ProcedureStepType](#tvbo.datamodel.schema.ProcedureStepType) | The operation a ProcedureStep performs. `equation` is the general case (author-written algebra over |
+| [ProgrammingLanguageEnum](#tvbo.datamodel.schema.ProgrammingLanguageEnum) | Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers. |
+| [Projection](#tvbo.datamodel.schema.Projection) | Which anatomical plane a network's region centres flatten onto. |
+| [Provenance](#tvbo.datamodel.schema.Provenance) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable on any entity (Network, TimeSeries, |
+| [RandomStream](#tvbo.datamodel.schema.RandomStream) |  |
+| [Range](#tvbo.datamodel.schema.Range) | Specifies a range for array generation, parameter bounds, or grid exploration. |
+| [Reducer](#tvbo.datamodel.schema.Reducer) | A streaming reduction, authored as symbolic recurrences over its own state rather than as backend code. Folded |
+| [ReducerEmitKind](#tvbo.datamodel.schema.ReducerEmitKind) | How often a streaming reducer reads its value out (see Reducer.emit_kind). |
+| [ReducerName](#tvbo.datamodel.schema.ReducerName) |  |
+| [ReductionType](#tvbo.datamodel.schema.ReductionType) | Operations for reducing/aggregating values across dimensions |
+| [Reference](#tvbo.datamodel.schema.Reference) | A small typed pointer to another TVBO entity (Network, Mesh, Observation, …). The ``iri`` identifies the target |
+| [ReferenceFingerprint](#tvbo.datamodel.schema.ReferenceFingerprint) | Cache-invalidation fingerprint for one ``aux_data`` reference. Captures enough about the upstream artifact that a |
+| [Region](#tvbo.datamodel.schema.Region) | A rectangle drawn over a panel to ring the window a paper calls out — the parameter band a regime lives in, the |
+| [RegionMapping](#tvbo.datamodel.schema.RegionMapping) | Maps vertices to parent regions for hierarchical/aggregated coupling |
+| [RenderSpec](#tvbo.datamodel.schema.RenderSpec) | A headless-browser capture recipe turning an `image` panel's HTML/URL `source` into the static file placed at its |
+| [ReportPart](#tvbo.datamodel.schema.ReportPart) | Where a declared item appears in a generated report. A study with many near-identical experiments marks the |
+| [RequirementLevel](#tvbo.datamodel.schema.RequirementLevel) | BIDS requirement level: whether something MUST, SHOULD or MAY be present. |
+| [RequirementRole](#tvbo.datamodel.schema.RequirementRole) |  |
+| [ResultBinding](#tvbo.datamodel.schema.ResultBinding) | One entry in a study's results manifest: a manuscript key bound to the value it stands for. Exactly one of three |
+| [ResultBindingKey](#tvbo.datamodel.schema.ResultBindingKey) |  |
+| [ResultEntity](#tvbo.datamodel.schema.ResultEntity) | One persisted result container, described. The ``prov:Entity`` of BEP028's ``prov-<label>_ent`` record: what the |
+| [ResultEntityName](#tvbo.datamodel.schema.ResultEntityName) |  |
+| [Rule](#tvbo.datamodel.schema.Rule) | A straight reference line drawn across a panel: the zero a signal is measured from, the threshold a value has to |
+| [RuleOrientation](#tvbo.datamodel.schema.RuleOrientation) | Which way a reference line runs. |
+| [Sample](#tvbo.datamodel.schema.Sample) |  |
+| [SamplingAxis](#tvbo.datamodel.schema.SamplingAxis) | Dimension along which a distribution is sampled. |
+| [SchedulerDirective](#tvbo.datamodel.schema.SchedulerDirective) | One engine-native scheduler directive passed through verbatim by the engine's emitter (e.g. a Slurm ``#SBATCH |
+| [SchedulerDirectiveName](#tvbo.datamodel.schema.SchedulerDirectiveName) |  |
+| [Session](#tvbo.datamodel.schema.Session) | A data collection session for a subject. Corresponds to a BIDS 'ses-' entity. Sessions capture longitudinal |
+| [SessionSessionId](#tvbo.datamodel.schema.SessionSessionId) |  |
+| [SexEnum](#tvbo.datamodel.schema.SexEnum) |  |
+| [SimulationExperiment](#tvbo.datamodel.schema.SimulationExperiment) |  |
+| [SimulationExperimentId](#tvbo.datamodel.schema.SimulationExperimentId) |  |
+| [SimulationScale](#tvbo.datamodel.schema.SimulationScale) | Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to |
+| [SimulationStudy](#tvbo.datamodel.schema.SimulationStudy) |  |
+| [SimulationTool](#tvbo.datamodel.schema.SimulationTool) | A software tool for computational neuroscience simulation, analysis, or model specification. Extends |
+| [SimulationToolName](#tvbo.datamodel.schema.SimulationToolName) |  |
+| [SoftwareEnvironment](#tvbo.datamodel.schema.SoftwareEnvironment) | A reproducible software environment aggregating one or more SoftwareRequirement entries. Used by |
+| [SoftwareEnvironmentName](#tvbo.datamodel.schema.SoftwareEnvironmentName) |  |
+| [SoftwarePackage](#tvbo.datamodel.schema.SoftwarePackage) | Identity and metadata for a software package, aligned with schema.org/SoftwareApplication and CodeMeta v3. |
+| [SoftwarePackageName](#tvbo.datamodel.schema.SoftwarePackageName) |  |
+| [SoftwareRequirement](#tvbo.datamodel.schema.SoftwareRequirement) | An individual software requirement binding a package to a version constraint and a role within an environment. |
+| [SoftwareRequirementName](#tvbo.datamodel.schema.SoftwareRequirementName) |  |
+| [Solver](#tvbo.datamodel.schema.Solver) | Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, |
+| [SparseFormat](#tvbo.datamodel.schema.SparseFormat) |  |
+| [SpatialDomain](#tvbo.datamodel.schema.SpatialDomain) |  |
+| [SpatialField](#tvbo.datamodel.schema.SpatialField) |  |
+| [SpecimenEnum](#tvbo.datamodel.schema.SpecimenEnum) | A set of permissible types for specimens used in brain atlas creation. |
+| [StandardGraphType](#tvbo.datamodel.schema.StandardGraphType) | Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free |
+| [StateValue](#tvbo.datamodel.schema.StateValue) | A named state variable value for per-node initialization. |
+| [StateValueName](#tvbo.datamodel.schema.StateValueName) |  |
+| [StateVariable](#tvbo.datamodel.schema.StateVariable) |  |
+| [StateVariableName](#tvbo.datamodel.schema.StateVariableName) |  |
+| [StimulationSetting](#tvbo.datamodel.schema.StimulationSetting) | DBS parameters for a specific session. |
+| [Stimulus](#tvbo.datamodel.schema.Stimulus) |  |
+| [Study](#tvbo.datamodel.schema.Study) | Bibliographic anchor for a source publication, identified by its citation key (``citekey``). The full |
+| [StudyDirectory](#tvbo.datamodel.schema.StudyDirectory) | One directory in a study layout. ``role`` is the stable key code resolves by: a resolver asks the layout where the |
+| [StudyDirectoryName](#tvbo.datamodel.schema.StudyDirectoryName) |  |
+| [StudyDirectoryRole](#tvbo.datamodel.schema.StudyDirectoryRole) | What a directory is for, as a key code resolves paths by. Roles are properties of a study dataset in general, so a |
+| [StudyFile](#tvbo.datamodel.schema.StudyFile) | One file a study layout accounts for. ``name`` may interpolate ``{study}``, the dataset's own name, which is how |
+| [StudyFileName](#tvbo.datamodel.schema.StudyFileName) |  |
+| [StudyFileRole](#tvbo.datamodel.schema.StudyFileRole) | What a file at a known place in the layout is. |
+| [StudyLayout](#tvbo.datamodel.schema.StudyLayout) | Directory layout of a study dataset, and the single ground truth for it. Everything that creates, resolves, |
+| [StudyLayoutName](#tvbo.datamodel.schema.StudyLayoutName) |  |
+| [StudyTemplate](#tvbo.datamodel.schema.StudyTemplate) | One kind of study the layout accounts for. A template is a *specialisation*: it names the entries a kind adds to |
+| [StudyTemplateName](#tvbo.datamodel.schema.StudyTemplateName) |  |
+| [Style](#tvbo.datamodel.schema.Style) | Layer/panel styling, portable intent plus a namespaced backend passthrough. Reuses Argument for the passthrough |
+| [Subject](#tvbo.datamodel.schema.Subject) | A participant in a study. Each subject typically has their own brain network (connectome) and empirical |
+| [SubjectBatchMode](#tvbo.datamodel.schema.SubjectBatchMode) | How a multi-subject dataset's per-subject fits are executed. |
+| [SubjectSubjectId](#tvbo.datamodel.schema.SubjectSubjectId) |  |
+| [Surface](#tvbo.datamodel.schema.Surface) | A cortical surface panel's geometry and how a field is painted on it. One object, so the three mutually exclusive |
+| [SurfaceView](#tvbo.datamodel.schema.SurfaceView) | Where the camera sits for a cortical surface. Distinct from `VolumeView`: a mesh is viewed from a side of the |
+| [Surrogate](#tvbo.datamodel.schema.Surrogate) | A permutation-significance test: re-evaluate a named statistic under n_perm fixed permutations of a field and |
+| [SweepDirection](#tvbo.datamodel.schema.SweepDirection) | Order in which a branch-following sweep (SweepSeeding.from_previous) traverses its axis. Ignored for independent |
+| [SweepSeeding](#tvbo.datamodel.schema.SweepSeeding) | How each point of a parameter sweep (Exploration) obtains its initial state. Determines whether the sweep points |
+| [SystemType](#tvbo.datamodel.schema.SystemType) |  |
+| [Theme](#tvbo.datamodel.schema.Theme) | A project's whole look in one declarable object: its colours (inherited from `Palette`) and the geometry a style |
+| [TickDirection](#tvbo.datamodel.schema.TickDirection) | Which side of the axes a tick mark is drawn on. |
+| [TickFormat](#tvbo.datamodel.schema.TickFormat) | How a tick number is written. |
+| [TickPrune](#tvbo.datamodel.schema.TickPrune) | Which end ticks to drop where a corner tick would collide with its neighbour panel's. |
+| [TimeSeries](#tvbo.datamodel.schema.TimeSeries) | Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling |
+| [ToolRole](#tvbo.datamodel.schema.ToolRole) | Primary function of the tool in a simulation workflow. |
+| [ToolUnit](#tvbo.datamodel.schema.ToolUnit) | One TVBO unit as a single tool writes it. |
+| [ToolUnitUnit](#tvbo.datamodel.schema.ToolUnitUnit) |  |
+| [TrackedContent](#tvbo.datamodel.schema.TrackedContent) | What version control keeps of a directory. |
+| [Tractogram](#tvbo.datamodel.schema.Tractogram) | Reference to tractography/diffusion MRI data used to derive structural connectivity |
+| [TractogramName](#tvbo.datamodel.schema.TractogramName) |  |
+| [Triangle](#tvbo.datamodel.schema.Triangle) | Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as |
+| [TuningObjective](#tvbo.datamodel.schema.TuningObjective) | Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB). |
+| [UnitEnum](#tvbo.datamodel.schema.UnitEnum) | Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional |
+| [UpdateRule](#tvbo.datamodel.schema.UpdateRule) | Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB |
+| [UpdateRuleName](#tvbo.datamodel.schema.UpdateRuleName) |  |
+| [Volume](#tvbo.datamodel.schema.Volume) | A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, same layer and same colour scale, |
+| [VolumeView](#tvbo.datamodel.schema.VolumeView) | Which anatomical plane a labelled volume is projected along. |
+| [WorkflowConfig](#tvbo.datamodel.schema.WorkflowConfig) | Declarative orchestration for rendering a parameter sweep into a distributed, reproducible workflow (Slurm array, |
+| [WorkflowDistributeBy](#tvbo.datamodel.schema.WorkflowDistributeBy) | Default tier a sweep axis is placed on when it is not named explicitly in a DistributionConfig. Vectorized axes |
+| [WorkflowEngineConfig](#tvbo.datamodel.schema.WorkflowEngineConfig) | Execution directives for a workflow engine. Every field is optional and each engine's emitter consumes the subset |
+| [slots](#tvbo.datamodel.schema.slots) |  |
+
+### Activity { #tvbo.datamodel.schema.Activity }
+
+```python
+datamodel.schema.Activity(
+    name=None,
+    description=None,
+    iri=None,
+    command=None,
+    associated_with=empty_list(),
+    used=empty_list(),
+    started_at=None,
+    ended_at=None,
+    type=empty_list(),
+)
+```
+
+One thing that was done: a solve, a fit, an analysis, a render. The PROV complement of ``Provenance``, which
+describes an artifact — an artifact is ``prov:wasGeneratedBy`` an Activity, and an Activity ``prov:used`` the
+artifacts and environment it consumed. Slot names follow BEP028's activity record (``Id``, ``Label``, ``Command``,
+``AssociatedWith``, ``Used``, ``StartedAtTime``, ``EndedAtTime``) so a record in that vocabulary serializes to it
+without a translation table.
+
+### ActivityName { #tvbo.datamodel.schema.ActivityName }
+
+```python
+datamodel.schema.ActivityName()
+```
+
+
+
+### Aggregation { #tvbo.datamodel.schema.Aggregation }
+
+```python
+datamodel.schema.Aggregation(over=None, type='mean')
+```
+
+Specifies how to aggregate values across a dimension. Used for loss functions to define per-element loss with
+reduction.
+
+### AggregationType { #tvbo.datamodel.schema.AggregationType }
+
+```python
+datamodel.schema.AggregationType()
+```
+
+How to aggregate time series data
+
+### Algorithm { #tvbo.datamodel.schema.Algorithm }
+
+```python
+datamodel.schema.Algorithm(
+    name=None,
+    description=None,
+    execution=None,
+    type=None,
+    includes=empty_list(),
+    stages=empty_list(),
+    objective=None,
+    observations=empty_list(),
+    update_rules=empty_dict(),
+    hyperparameters=empty_dict(),
+    learning_rate=None,
+    learning_rate_warmup=False,
+    n_iterations=None,
+    learning_rate_schedule=None,
+    simulation_period=None,
+    apply_every=1,
+    functions=empty_list(),
+    depends_on=empty_list(),
+    evaluate=True,
+)
+```
+
+A complete specification of an iterative parameter tuning algorithm. Combines update rules, objectives,
+observations, and hyperparameters.
+
+### AlgorithmCompositionMode { #tvbo.datamodel.schema.AlgorithmCompositionMode }
+
+```python
+datamodel.schema.AlgorithmCompositionMode()
+```
+
+How an included algorithm is composed with the outer algorithm. Determines whether the inner algorithm's update
+rules are merged into the same loop (combined) or run as a converging inner loop on each outer iteration (nested).
+
+### AlgorithmInclude { #tvbo.datamodel.schema.AlgorithmInclude }
+
+```python
+datamodel.schema.AlgorithmInclude(
+    algorithm=None,
+    arguments=empty_dict(),
+    mode='combined',
+    inner_iterations=None,
+)
+```
+
+Reference to an included algorithm with optional argument overrides. Allows combining algorithms with different
+hyperparameter values.
+
+### AlgorithmName { #tvbo.datamodel.schema.AlgorithmName }
+
+```python
+datamodel.schema.AlgorithmName()
+```
+
+
+
+### AlgorithmStage { #tvbo.datamodel.schema.AlgorithmStage }
+
+```python
+datamodel.schema.AlgorithmStage(
+    n_iterations=None,
+    label=None,
+    description=None,
+    reset_state=False,
+    arguments=empty_dict(),
+)
+```
+
+One stage of a multi-stage tuning schedule. The algorithm body runs once per stage, in order, each stage
+overriding n_iterations and selected hyperparameters — so a schedule can anneal a learning rate or widen an
+estimation window as tuning proceeds.
+
+### Analysis { #tvbo.datamodel.schema.Analysis }
+
+```python
+datamodel.schema.Analysis(
+    acronym=None,
+    label=None,
+    equation=None,
+    description=None,
+    iri=None,
+    name=None,
+    function=None,
+    callable=None,
+    class_call=None,
+    input=None,
+    output=None,
+    apply_on_dimension=None,
+    aggregate=None,
+    arguments=empty_dict(),
+    time_range=None,
+    source_code=None,
+    parameters=empty_dict(),
+    execution=None,
+    dims=empty_list(),
+    type=None,
+    target=None,
+    wrt=empty_list(),
+)
+```
+
+A quantity obtained by ANALYZING something — a model, its solve, a derived loss, simulated results, or empirical
+data — rather than by transforming a recorded trajectory. Nothing here requires a model: decomposing empirical
+maps into a basis, taking their spectrum, or running a permutation test over measured data are analyses in exactly
+this sense, and so are parameter sensitivities/gradients (autodiff or finite-difference), stability spectra
+(Lyapunov), bifurcation quantities, identifiability metrics, and reductions spanning several experiments.
+It is an invocation (``is_a: FunctionCall``) with two mutually exclusive ways of saying WHAT is analyzed, the same
+alternative-specification idiom ``Parameter`` uses for provenance:
+- **the solve** — ``type`` names the analysis (a free string, extensible;
+the vocabulary lives in the ontology as AnalysisObservable concepts rather
+than a closed enum), ``target`` and ``wrt`` bind it to what is analyzed and
+with respect to what, and ``parameters`` configures it. Evaluated as part
+of the integration, so it is emitted by the same codegen and limited to
+what that backend can trace. Declared on ``Observation.analysis``.
+
+- **saved data** — ``callable`` (or ``class_call``) invoked with
+``arguments``, each a literal ``value`` or a ``used:`` DataRef reading an
+experiment, another analysis, or a dataset. The data need not be simulated:
+this is equally the form for analysing empirical maps, an atlas, or a
+measured connectome. Because it consumes containers rather than a running
+solve, it is scheduled on its own — before or after the experiments,
+according to what it uses. Declared in ``SimulationStudy.analyses``, where
+the result is persisted as its own container
+(``derivatives/tvbo/ana-<name>_result.h5``) — which is what lets a figure bind it
+with ``used: {analysis: <name>}`` exactly as it binds a run, and why a study
+needs no driver script for its non-simulation figures. ``name`` is then
+required and unique, since it keys that container. The invocation yields a
+mapping of name -> labelled array (or one array, keyed by the analysis
+name); each key becomes an ``observation__<key>`` data-variable keeping its
+dims and coordinates, so a figure ``encoding`` can name them.
+
+Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: which backend renders it, at what
+precision, on which accelerator. That states a requirement, not a mechanism — the same analysis is renderable by
+more than one backend, and one that cannot render it says so rather than silently substituting another.
+
+### Animation { #tvbo.datamodel.schema.Animation }
+
+```python
+datamodel.schema.Animation(
+    over=None,
+    frames=None,
+    fps=None,
+    format=None,
+    still=None,
+)
+```
+
+A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the
+frames advance along the axis the spec means rather than along whatever happens to be axis 0; and because the
+frame is the same mosaic the still would draw, an animated figure and its still cannot disagree about what they
+show.
+
+### Annotation { #tvbo.datamodel.schema.Annotation }
+
+```python
+datamodel.schema.Annotation(
+    text=None,
+    used=None,
+    x=None,
+    y=None,
+    loc=None,
+    arrow=empty_list(),
+    tail_x=None,
+    tail_used=None,
+    rotation=None,
+    ha=None,
+    va=None,
+    size=None,
+    color=None,
+)
+```
+
+A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ
+from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting
+away from the run that produced it.
+
+### ArchiveConfig { #tvbo.datamodel.schema.ArchiveConfig }
+
+```python
+datamodel.schema.ArchiveConfig(path=None, format='omex', include=empty_list())
+```
+
+How a study packages its run into a COMBINE/OMEX archive: the output location and format, plus any extra files to
+include beyond the recipes, derived containers, figures and manifest added automatically.
+
+### Argument { #tvbo.datamodel.schema.Argument }
+
+```python
+datamodel.schema.Argument(
+    name=None,
+    description=None,
+    value=None,
+    used=None,
+    unit=None,
+)
+```
+
+A function argument with explicit value specification. A value is either ``value`` (a literal / array / local
+reference) or ``used`` (a labelled array sourced from another experiment or dataset); the two are mutually
+exclusive. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference
+(observation_name.output_key). A bare scalar is the value, as it is for a Parameter: ``sel: {variable: phi}`` and
+``opts: {xlabel: "time (s)"}`` mean ``{value: …}``, which is how both are written throughout the docs.
+
+### ArgumentName { #tvbo.datamodel.schema.ArgumentName }
+
+```python
+datamodel.schema.ArgumentName()
+```
+
+
+
+### Assignment { #tvbo.datamodel.schema.Assignment }
+
+```python
+datamodel.schema.Assignment(target=None, expression=None)
+```
+
+One step of a sequential recurrence: the expression assigned to a target name. Sequential rather than simultaneous
+— a later step's expression sees the value the steps above it assigned — which is what lets a reducer's update be
+authored as ordinary arithmetic instead of with `new_*` temporaries. Authored terse as a `[target, expression]`
+pair and lifted to this form on load.
+
+### AxisReduction { #tvbo.datamodel.schema.AxisReduction }
+
+```python
+datamodel.schema.AxisReduction(statistic='mean')
+```
+
+Marks an exploration/sweep axis to be collapsed by a statistic in the result container. When set on an
+ExplorationAxis, that axis's named grid dimension is reduced across every observation that carries it (e.g. an
+`execution.random_seed` trial ensemble becomes a first-class reduced observation). Backend-independent: states the
+reduction intent; the result layer applies it by dimension name.
+
+### AxisReductionStatistic { #tvbo.datamodel.schema.AxisReductionStatistic }
+
+```python
+datamodel.schema.AxisReductionStatistic()
+```
+
+Statistic used to collapse an exploration/sweep axis into a single reduced value in the result container (see
+ExplorationAxis.reduce). Applied across the named grid dimension of every observation that carries it.
+
+### AxisScale { #tvbo.datamodel.schema.AxisScale }
+
+```python
+datamodel.schema.AxisScale()
+```
+
+How an axis maps values to distance. Part of what a panel claims, not decoration: a straight line on a log axis is
+a power law, and the same points on a linear axis are not.
+
+### AxisSide { #tvbo.datamodel.schema.AxisSide }
+
+```python
+datamodel.schema.AxisSide()
+```
+
+Which edge of the axes a label or tick row sits on.
+
+### BarOrientation { #tvbo.datamodel.schema.BarOrientation }
+
+```python
+datamodel.schema.BarOrientation()
+```
+
+Which way a colour bar runs.
+
+### BidsDatasetType { #tvbo.datamodel.schema.BidsDatasetType }
+
+```python
+datamodel.schema.BidsDatasetType()
+```
+
+BIDS ``DatasetType``: how a dataset is to be interpreted. ``study`` has been in the released standard since BIDS
+1.10.1 and is the type a simulation study takes.
+
+### BidsDirectoryStatus { #tvbo.datamodel.schema.BidsDirectoryStatus }
+
+```python
+datamodel.schema.BidsDirectoryStatus()
+```
+
+A directory's standing with the BIDS standard, which is what decides whether it needs a ``.bidsignore`` entry.
+
+### BidsEntities { #tvbo.datamodel.schema.BidsEntities }
+
+```python
+datamodel.schema.BidsEntities(
+    template=None,
+    cohort=None,
+    reconstruction=None,
+    segmentation=None,
+    scale=None,
+    atlas=None,
+    acquisition=None,
+    hemi=None,
+    desc=None,
+    suffix=None,
+)
+```
+
+BIDS filename entities (BEP017-aligned) for provenance and data discovery. Reusable on Network, BrainAtlas,
+Tractogram, or any dataset with BIDS-conformant naming.
+
+### Binding { #tvbo.datamodel.schema.Binding }
+
+```python
+datamodel.schema.Binding(
+    name=None,
+    library=None,
+    callable=None,
+    args=empty_list(),
+)
+```
+
+Per-backend construction binding for a GraphGenerator: how to build the graph in a specific target library. Keyed
+by backend id — the ``name`` is the backend (e.g. python, julia, networkx).
+
+### BindingName { #tvbo.datamodel.schema.BindingName }
+
+```python
+datamodel.schema.BindingName()
+```
+
+
+
+### BoundaryCondition { #tvbo.datamodel.schema.BoundaryCondition }
+
+```python
+datamodel.schema.BoundaryCondition(
+    label=None,
+    description=None,
+    bc_type=None,
+    on_region=None,
+    equation=None,
+    time_dependent=False,
+)
+```
+
+
+
+### BoundaryConditionType { #tvbo.datamodel.schema.BoundaryConditionType }
+
+```python
+datamodel.schema.BoundaryConditionType()
+```
+
+
+
+### BrainAtlas { #tvbo.datamodel.schema.BrainAtlas }
+
+```python
+datamodel.schema.BrainAtlas(
+    name=None,
+    coordinateSpace=None,
+    abbreviation=None,
+    author=empty_list(),
+    isVersionOf=None,
+    versionIdentifier=None,
+    terminology=None,
+)
+```
+
+A schema for representing a version of a brain atlas.
+
+### BrainAtlasName { #tvbo.datamodel.schema.BrainAtlasName }
+
+```python
+datamodel.schema.BrainAtlasName()
+```
+
+
+
+### BrainRegionSeries { #tvbo.datamodel.schema.BrainRegionSeries }
+
+```python
+datamodel.schema.BrainRegionSeries(values=empty_list())
+```
+
+A series whose values represent latitude
+
+### BranchSwitch { #tvbo.datamodel.schema.BranchSwitch }
+
+```python
+datamodel.schema.BranchSwitch(
+    name=None,
+    description=None,
+    parameters=empty_dict(),
+    source_point=None,
+    delta_p=None,
+    continuation=None,
+    discretization=None,
+    bothside=None,
+    options=empty_dict(),
+)
+```
+
+Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold
+continuation, etc.). Each BranchSwitch says: "from which special point on the parent branch, continue what kind of
+object, with what settings." Override parent solver settings via the inline continuation field — only explicitly
+set attributes take effect; everything else is inherited from the parent Continuation.
+
+### BranchSwitchName { #tvbo.datamodel.schema.BranchSwitchName }
+
+```python
+datamodel.schema.BranchSwitchName()
+```
+
+
+
+### CachedArray { #tvbo.datamodel.schema.CachedArray }
+
+```python
+datamodel.schema.CachedArray(name=None, shape=empty_list(), dtype=None)
+```
+
+One numeric array inside a cached-result ``.h5`` companion, described by name, shape and dtype so a reader can
+check the layout it expects without opening the file.
+
+### CachedArrayName { #tvbo.datamodel.schema.CachedArrayName }
+
+```python
+datamodel.schema.CachedArrayName()
+```
+
+
+
+### Callable { #tvbo.datamodel.schema.Callable }
+
+```python
+datamodel.schema.Callable(
+    name=None,
+    description=None,
+    module=None,
+    software=None,
+    traceable=None,
+)
+```
+
+
+
+### CallableName { #tvbo.datamodel.schema.CallableName }
+
+```python
+datamodel.schema.CallableName()
+```
+
+
+
+### Camera { #tvbo.datamodel.schema.Camera }
+
+```python
+datamodel.schema.Camera(elevation=None, azimuth=None, zoom=None)
+```
+
+Where a 3-D panel is looked at from. Only a `line3d` panel or a surface reads it; every other kind ignores it.
+Stated as a class rather than three loose options because a viewpoint is one thing, and a figure that states two
+of its three numbers is under-specified in a way nothing else would catch.
+
+### ClassReference { #tvbo.datamodel.schema.ClassReference }
+
+```python
+datamodel.schema.ClassReference(
+    name=None,
+    description=None,
+    module=None,
+    software=None,
+    traceable=None,
+    constructor_args=empty_dict(),
+    call_args=empty_dict(),
+    warmup=None,
+)
+```
+
+Reference to a class that can be instantiated and called. Used for external library classes (e.g., tvboptim.Bold,
+custom monitors). The class is instantiated with constructor_args, then called with call_args. Generalizable
+pattern: works for tvboptim, TVB, or any Python class.
+
+### ClassReferenceName { #tvbo.datamodel.schema.ClassReferenceName }
+
+```python
+datamodel.schema.ClassReferenceName()
+```
+
+
+
+### ClinicalImprovement { #tvbo.datamodel.schema.ClinicalImprovement }
+
+```python
+datamodel.schema.ClinicalImprovement(
+    score=None,
+    baseline_value=None,
+    absolute_value=None,
+    percent_change=None,
+    time_post_surgery=None,
+    evaluator=None,
+    timepoint=None,
+)
+```
+
+Relative improvement on a defined clinical score.
+
+### ClinicalScale { #tvbo.datamodel.schema.ClinicalScale }
+
+```python
+datamodel.schema.ClinicalScale(
+    acronym=None,
+    name=None,
+    version=None,
+    domain=None,
+    reference=None,
+)
+```
+
+A clinical assessment inventory or structured scale composed of multiple scores or items.
+
+### ClinicalScore { #tvbo.datamodel.schema.ClinicalScore }
+
+```python
+datamodel.schema.ClinicalScore(
+    acronym=None,
+    name=None,
+    description=None,
+    domain=None,
+    reference=None,
+    scale=None,
+    parent_score=None,
+)
+```
+
+Metadata about a clinical score or scale.
+
+### CodeSource { #tvbo.datamodel.schema.CodeSource }
+
+```python
+datamodel.schema.CodeSource(path=None, git=None, ref=None, subdir=None)
+```
+
+Location of a recipe's callable code so the specification is decoupled from where the code lives. Either a local
+directory or a git repository; the resolved directory (optionally a ``subdir`` within it) is placed on the import
+path at load time so ``module:`` references resolve by bare name. ``path`` and ``git`` are mutually exclusive.
+
+### ColorScale { #tvbo.datamodel.schema.ColorScale }
+
+```python
+datamodel.schema.ColorScale(
+    colormap=None,
+    vmin=None,
+    vmax=None,
+    symmetric=None,
+    percentile=None,
+)
+```
+
+How values become colours, and where the scale starts and stops. Shared by everything that paints a field rather
+than drawing marks — a colour bar, a cortical surface, a labelled volume, a connectome — so the same question is
+answered with the same words wherever it is asked, and a limit means the same thing on all four. Every slot here
+reaches all four; a scale concern only one of them can answer is declared on that one, which is why `center` sits
+on `Colorbar`.
+
+### Colorbar { #tvbo.datamodel.schema.Colorbar }
+
+```python
+datamodel.schema.Colorbar(
+    colormap=None,
+    vmin=None,
+    vmax=None,
+    symmetric=None,
+    percentile=None,
+    show=None,
+    label=None,
+    ticks=empty_list(),
+    ticklabels=empty_list(),
+    decimals=None,
+    fraction=None,
+    pad=None,
+    aspect=None,
+    orientation=None,
+    location=None,
+    width=None,
+    center=None,
+)
+```
+
+The colour scale a panel prints beside its field. Declared as one object because nine loose `colorbar_*` options
+were nine chances to style a bar that is not drawn, and because a tick list written in an options bag is not a
+list of numbers to anything that reads it.
+
+A heatmap carries one unasked, since it is unreadable without one; a scatter shaded by a third quantity asks with
+`show: true`, because a row of them conventionally shares ONE bar. `kind: colorbar` is the standalone form — a bar
+occupying its own cell of the mosaic, keying the panels around it, and the only case that states its own
+`colormap` and limits rather than taking them from the field it sits beside.
+
+### Colormaps { #tvbo.datamodel.schema.Colormaps }
+
+```python
+datamodel.schema.Colormaps(sequential=None, diverging=None)
+```
+
+Continuous colour scales, by key: anything ordinal or continuous draws from one of these, anything categorical
+draws from `Palette.palette`, and an ordinal scale drawn as discrete swatches samples one rather than picking hues
+that imply no order. A value is either a registered colormap name (`viridis`) or the list of colours to ramp
+between (`['#000000', '#ffffff']`). The namespace is open — a project adds its own keys for the scales it
+distinguishes (`bold: viridis, meg: plasma, eeg: cividis`) and names them anywhere a colormap is named.
+`sequential` and `diverging` are the two the renderer reaches for on its own, so they are typed here and always
+present: a project that declares neither still has both. An open namespace cannot catch a misspelt key —
+`sequentiel` is read as a project key, not as a typo — which is the price of letting a project name its own
+scales. A key that shadows a registered colormap name is refused, so a name cannot mean two things at once.
+
+### CommonCoordinateSpace { #tvbo.datamodel.schema.CommonCoordinateSpace }
+
+```python
+datamodel.schema.CommonCoordinateSpace(
+    name=None,
+    abbreviation=None,
+    alternateName=empty_list(),
+    description=None,
+    unit=None,
+    license=None,
+    anatomicalAxesOrientation=None,
+    axesOrigin=None,
+    nativeUnit=None,
+    defaultImage=empty_list(),
+)
+```
+
+A schema for representing a version of a common coordinate space.
+
+### CommonCoordinateSpaceName { #tvbo.datamodel.schema.CommonCoordinateSpaceName }
+
+```python
+datamodel.schema.CommonCoordinateSpaceName()
+```
+
+
+
+### ComparisonOperator { #tvbo.datamodel.schema.ComparisonOperator }
+
+```python
+datamodel.schema.ComparisonOperator()
+```
+
+Comparison used by a `stochastic_mask` step. Named rather than written as an operator so the step stays metadata:
+`!=` in particular cannot survive expression parsing (it evaluates to a plain boolean).
+
+### ConditionalBlock { #tvbo.datamodel.schema.ConditionalBlock }
+
+```python
+datamodel.schema.ConditionalBlock(condition=None, expression=None)
+```
+
+A single condition and its corresponding equation segment.
+
+### ConnectivityRule { #tvbo.datamodel.schema.ConnectivityRule }
+
+```python
+datamodel.schema.ConnectivityRule()
+```
+
+Rule for expanding a population-level Edge into individual cell-to-cell connections. Names a connectivity pattern
+between the source and target populations so a network of populations declares its projections once, without
+enumerating every connection; each backend expands the rule into its native connection set (e.g. the NeuroML
+exporter emits one <projection> with size_src x size_tgt <connection> elements). Backend-independent: it states
+the connectivity pattern, not how any simulator stores it.
+
+### Contact { #tvbo.datamodel.schema.Contact }
+
+```python
+datamodel.schema.Contact(contact_id=None, coordinate=None, label=None)
+```
+
+Individual contact on a DBS electrode.
+
+### Continuation { #tvbo.datamodel.schema.Continuation }
+
+```python
+datamodel.schema.Continuation(
+    name=None,
+    label=None,
+    description=None,
+    dynamics=None,
+    free_parameters=empty_dict(),
+    ds=None,
+    ds_min=None,
+    ds_max=None,
+    max_steps=None,
+    newton_tol=None,
+    newton_max_iterations=None,
+    nev=None,
+    tol_stability=None,
+    detect_bifurcation=None,
+    detect_fold=None,
+    n_inversion=None,
+    max_bisection_steps=None,
+    algorithm='PALC',
+    initial_state=None,
+    branches=empty_dict(),
+    bothside=None,
+    execution=None,
+    software=None,
+    options=empty_dict(),
+)
+```
+
+Complete specification of a numerical continuation / bifurcation analysis. All universal solver settings live
+directly here. Toolkit-specific string options go in the options slot. When used inside a BranchSwitch, only
+explicitly set attributes override the parent's values.
+
+### ContinuationAlgorithm { #tvbo.datamodel.schema.ContinuationAlgorithm }
+
+```python
+datamodel.schema.ContinuationAlgorithm()
+```
+
+Predictor-corrector algorithm for numerical continuation.
+
+### ContinuationName { #tvbo.datamodel.schema.ContinuationName }
+
+```python
+datamodel.schema.ContinuationName()
+```
+
+
+
+### Coordinate { #tvbo.datamodel.schema.Coordinate }
+
+```python
+datamodel.schema.Coordinate(coordinateSpace=None, x=None, y=None, z=None)
+```
+
+A 3D coordinate with X, Y, Z values.
+
+### Corner { #tvbo.datamodel.schema.Corner }
+
+```python
+datamodel.schema.Corner()
+```
+
+A named corner for placing a panel number inside its axes — the four corners bsplot's add_panel_number anchors to.
+An enum so a typo is a validation error, not a silent fallback to the default corner.
+
+### Coupling { #tvbo.datamodel.schema.Coupling }
+
+```python
+datamodel.schema.Coupling(
+    name='Linear',
+    label=None,
+    iri=None,
+    parameters=empty_dict(),
+    description=None,
+    coupling_function=None,
+    sparse=False,
+    pre_expression=None,
+    post_expression=None,
+    incoming_states=empty_list(),
+    local_states=empty_list(),
+    delayed=True,
+    interpolate_delays=False,
+    vectorized=False,
+    symmetry='directed',
+    outsym=empty_list(),
+    observed=empty_dict(),
+    inner_coupling=None,
+    region_mapping=None,
+    regional_connectivity=None,
+    aggregation=None,
+    distribution=None,
+)
+```
+
+
+
+### CouplingInput { #tvbo.datamodel.schema.CouplingInput }
+
+```python
+datamodel.schema.CouplingInput(
+    name=None,
+    description=None,
+    symbol=None,
+    source=None,
+    dimension=1,
+    keys=empty_list(),
+    local=False,
+)
+```
+
+Specification of a coupling input channel for multi-coupling dynamics
+
+### CouplingInputName { #tvbo.datamodel.schema.CouplingInputName }
+
+```python
+datamodel.schema.CouplingInputName()
+```
+
+
+
+### CouplingName { #tvbo.datamodel.schema.CouplingName }
+
+```python
+datamodel.schema.CouplingName()
+```
+
+
+
+### CouplingStageEvaluation { #tvbo.datamodel.schema.CouplingStageEvaluation }
+
+```python
+datamodel.schema.CouplingStageEvaluation()
+```
+
+How the network coupling term is evaluated within one step of a multi-stage integrator (Heun, RK4, ...). A
+backend-neutral numerical contract: whether the coupling is part of the vector field, re-evaluated at each solver
+stage, or computed once per step and held constant across the stages. Matters because the two choices integrate a
+different effective system — for stiff / chaotic / multistable dynamics they can converge to different
+trajectories or attractors.
+
+### DBSDataset { #tvbo.datamodel.schema.DBSDataset }
+
+```python
+datamodel.schema.DBSDataset(
+    dataset_id=None,
+    subjects=empty_dict(),
+    label=None,
+    description=None,
+    bids_root=None,
+    bundle=None,
+    batch_mode='fan_out',
+    batch_size=None,
+    conditions=empty_list(),
+    reference=None,
+    clinical_scores=empty_list(),
+    coordinate_space=None,
+)
+```
+
+Collection of data related to a specific DBS study.
+
+### DBSDatasetDatasetId { #tvbo.datamodel.schema.DBSDatasetDatasetId }
+
+```python
+datamodel.schema.DBSDatasetDatasetId()
+```
+
+
+
+### DBSProtocol { #tvbo.datamodel.schema.DBSProtocol }
+
+```python
+datamodel.schema.DBSProtocol(
+    name=None,
+    electrodes=empty_list(),
+    settings=empty_list(),
+    timing_info=None,
+    notes=None,
+    clinical_improvement=empty_list(),
+)
+```
+
+A protocol describing DBS therapy, potentially bilateral or multi-lead.
+
+### DBSProtocolName { #tvbo.datamodel.schema.DBSProtocolName }
+
+```python
+datamodel.schema.DBSProtocolName()
+```
+
+
+
+### DBSSubject { #tvbo.datamodel.schema.DBSSubject }
+
+```python
+datamodel.schema.DBSSubject(
+    subject_id=None,
+    label=None,
+    group=None,
+    age=None,
+    sex=None,
+    sessions=empty_dict(),
+    network=None,
+    metadata=None,
+    diagnosis=None,
+    handedness=None,
+    protocols=empty_list(),
+    coordinate_space=None,
+)
+```
+
+Human or animal subject receiving DBS.
+
+### DBSSubjectSubjectId { #tvbo.datamodel.schema.DBSSubjectSubjectId }
+
+```python
+datamodel.schema.DBSSubjectSubjectId()
+```
+
+
+
+### DataRef { #tvbo.datamodel.schema.DataRef }
+
+```python
+datamodel.schema.DataRef(
+    iri=None,
+    experiment=None,
+    analysis=None,
+    output=None,
+    sel=empty_dict(),
+    transform=None,
+    reconcile='none',
+)
+```
+
+A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container
+reference primitive (a PROV entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study experiment id,
+resolved like ``initial_state.source_experiment``), ``analysis`` (an in-study analysis name), or the full ``iri``
+(a curated / result / external pointer); at most one. WHICH is ``output`` (a recorded variable,
+``observation__<name>``, ``estimate__<param>``, or external variable). SLICE is ``sel`` (label-keyed ``.sel``,
+never positional). ``reconcile`` optionally aligns the sourced array to the consuming network's node order by
+label. One model reused by figure layers (``Layer.used``), sourced arguments (``Argument.used``) and sourced
+parameters (``Parameter.used``), so data binding, cross-experiment sourcing and PROV provenance are the same edge.
+A sourced array is resolved lazily and never inlined into generated code.
+
+### DataSource { #tvbo.datamodel.schema.DataSource }
+
+```python
+datamodel.schema.DataSource(
+    name=None,
+    label=None,
+    description=None,
+    path=None,
+    loader=None,
+    format=None,
+    key=None,
+    preprocessing=None,
+)
+```
+
+Specification for loading external/empirical data.
+
+### DataSourceName { #tvbo.datamodel.schema.DataSourceName }
+
+```python
+datamodel.schema.DataSourceName()
+```
+
+
+
+### Dataset { #tvbo.datamodel.schema.Dataset }
+
+```python
+datamodel.schema.Dataset(
+    dataset_id=None,
+    subjects=empty_dict(),
+    label=None,
+    description=None,
+    bids_root=None,
+    bundle=None,
+    batch_mode='fan_out',
+    batch_size=None,
+    conditions=empty_list(),
+    reference=None,
+)
+```
+
+A collection of subjects for a multi-subject study. Provides the subject/session structure needed for workflow
+rendering. Optionally backed by a BIDS directory layout.
+
+### DatasetDatasetId { #tvbo.datamodel.schema.DatasetDatasetId }
+
+```python
+datamodel.schema.DatasetDatasetId()
+```
+
+
+
+### DerivedParameter { #tvbo.datamodel.schema.DerivedParameter }
+
+```python
+datamodel.schema.DerivedParameter(
+    name=None,
+    label=None,
+    symbol=None,
+    definition=None,
+    value=None,
+    default=None,
+    domain=None,
+    reported_optimum=None,
+    description=None,
+    equation=None,
+    unit=None,
+    grounding=empty_list(),
+    producer=None,
+    comment=None,
+    heterogeneous=None,
+    distribution=None,
+    source=None,
+    measure=None,
+    used=None,
+    free=None,
+    shape=None,
+    explored_values=empty_list(),
+    element_domains=empty_list(),
+    datatype=None,
+    required=None,
+)
+```
+
+
+
+### DerivedParameterName { #tvbo.datamodel.schema.DerivedParameterName }
+
+```python
+datamodel.schema.DerivedParameterName()
+```
+
+
+
+### DerivedVariable { #tvbo.datamodel.schema.DerivedVariable }
+
+```python
+datamodel.schema.DerivedVariable(
+    name=None,
+    label=None,
+    symbol=None,
+    description=None,
+    equation=None,
+    unit=None,
+    record=False,
+    grounding=empty_list(),
+    surrogate=None,
+)
+```
+
+
+
+### DerivedVariableName { #tvbo.datamodel.schema.DerivedVariableName }
+
+```python
+datamodel.schema.DerivedVariableName()
+```
+
+
+
+### DevelopmentStatus { #tvbo.datamodel.schema.DevelopmentStatus }
+
+```python
+datamodel.schema.DevelopmentStatus()
+```
+
+Development status of the software. Based on repostatus.org categories.
+
+### DifferentialOperator { #tvbo.datamodel.schema.DifferentialOperator }
+
+```python
+datamodel.schema.DifferentialOperator(
+    label=None,
+    definition=None,
+    equation=None,
+    operator_type=None,
+    coefficient=None,
+    tensor_coefficient=None,
+    expression=None,
+)
+```
+
+
+
+### Differentiation { #tvbo.datamodel.schema.Differentiation }
+
+```python
+datamodel.schema.Differentiation(
+    truncation_window=None,
+    checkpoint_interval=None,
+    mode='reverse',
+)
+```
+
+Backend-neutral configuration for how gradients are propagated through the temporal integration. Expressed in
+physical/semantic terms; each backend maps it to its own mechanism (JAX solver grad_horizon / block_size, Julia
+adjoint sensitivity, ...). Backends without autodiff (e.g. MATLAB) emit a comment noting differentiation is
+unsupported and proceed with the plain forward integration -- they do not raise.
+
+### Digest { #tvbo.datamodel.schema.Digest }
+
+```python
+datamodel.schema.Digest(algorithm=None, value=None)
+```
+
+One checksum of an artifact, keyed by the function that produced it. Collected on ``Provenance.digest``, whose
+collection KEY is the function name — BEP028 takes the names ``MD5``, ``SHA1``, ``SHA-256`` and the rest of that
+list, and allows an arbitrary label otherwise. Keyed rather than a bare string so an artifact can carry several
+digests and a reader knows which function to check with.
+
+### DigestAlgorithm { #tvbo.datamodel.schema.DigestAlgorithm }
+
+```python
+datamodel.schema.DigestAlgorithm()
+```
+
+
+
+### DimensionType { #tvbo.datamodel.schema.DimensionType }
+
+```python
+datamodel.schema.DimensionType()
+```
+
+Dimensions along which operations can be applied
+
+### Discretization { #tvbo.datamodel.schema.Discretization }
+
+```python
+datamodel.schema.Discretization(
+    parameters=empty_dict(),
+    method='collocation',
+    ode_solver=None,
+    linear_solver=None,
+    mesh_intervals=50,
+    degree=4,
+    n_sections=3,
+    options=empty_dict(),
+)
+```
+
+Discretization method for boundary value problems in continuation (periodic orbits, connecting orbits,
+quasi-periodic tori). Specifies the method; method-specific numerics go in parameters.
+
+### DiscretizationMethod { #tvbo.datamodel.schema.DiscretizationMethod }
+
+```python
+datamodel.schema.DiscretizationMethod()
+```
+
+
+
+### Distribution { #tvbo.datamodel.schema.Distribution }
+
+```python
+datamodel.schema.Distribution(
+    name='Uniform',
+    parameters=empty_dict(),
+    domain=None,
+    function=None,
+    seed=None,
+    axis='space',
+    correlation=None,
+)
+```
+
+A probability distribution for sampling parameters or initial conditions. Standard distributions (Uniform,
+Gaussian) are specified by name and domain/parameters. Custom distributions use a Function for the PDF/sampling
+rule. Default name is Uniform when only domain is given.
+
+### DistributionConfig { #tvbo.datamodel.schema.DistributionConfig }
+
+```python
+datamodel.schema.DistributionConfig(
+    by=None,
+    vectorize=empty_list(),
+    workflow=empty_list(),
+    chunk=None,
+)
+```
+
+Policy for mapping a parameter sweep's exploration axes onto the two parallelism tiers when rendering a
+distributed workflow. Vectorized axes are packed into a single batched backend call (e.g. vmap/pmap); workflow
+axes are fanned out into independent scheduler tasks, one per value combination. Backend-independent: the emitter
+validates that a requested vectorized axis is one the chosen backend can actually batch.
+
+### DistributionName { #tvbo.datamodel.schema.DistributionName }
+
+```python
+datamodel.schema.DistributionName()
+```
+
+
+
+### DomainEnforcement { #tvbo.datamodel.schema.DomainEnforcement }
+
+```python
+datamodel.schema.DomainEnforcement()
+```
+
+Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means
+the domain is descriptive metadata only (expected range, plot limits, initial- condition sampling support) and
+never alters the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap`` opt in to active
+enforcement using the domain's ``lo``/``hi``.
+
+### Dynamics { #tvbo.datamodel.schema.Dynamics }
+
+```python
+datamodel.schema.Dynamics(
+    name='Dynamics',
+    has_reference=None,
+    label=None,
+    iri=None,
+    parameters=empty_dict(),
+    description=None,
+    source=None,
+    references=empty_list(),
+    dataLocation=None,
+    derived_parameters=empty_dict(),
+    derived_variables=empty_dict(),
+    coupling_inputs=empty_dict(),
+    state_variables=empty_dict(),
+    modified=None,
+    output=empty_list(),
+    derived_from_model=None,
+    number_of_modes=1,
+    local_coupling_term=None,
+    functions=empty_dict(),
+    stimulus=None,
+    modes=empty_dict(),
+    model_type=None,
+    system_type=None,
+    autonomous=True,
+    observed=empty_dict(),
+    events=empty_dict(),
+    cse=False,
+    compile=False,
+)
+```
+
+
+
+### DynamicsName { #tvbo.datamodel.schema.DynamicsName }
+
+```python
+datamodel.schema.DynamicsName()
+```
+
+
+
+### EField { #tvbo.datamodel.schema.EField }
+
+```python
+datamodel.schema.EField(
+    volume_data=None,
+    coordinate_space=None,
+    threshold_applied=None,
+)
+```
+
+Simulated electric field from DBS modeling.
+
+### EcosystemEnum { #tvbo.datamodel.schema.EcosystemEnum }
+
+```python
+datamodel.schema.EcosystemEnum()
+```
+
+Package ecosystem or registry the software is distributed through.
+
+### Edge { #tvbo.datamodel.schema.Edge }
+
+```python
+datamodel.schema.Edge(
+    label=None,
+    description=None,
+    parameters=empty_dict(),
+    producer=None,
+    source=None,
+    target=None,
+    weight=None,
+    delay=None,
+    distance=None,
+    unit=None,
+    format=None,
+    dtype=None,
+    weighted=True,
+    valid_diagonal=False,
+    non_negative=True,
+    source_var=None,
+    target_var=None,
+    coupling=None,
+    directed=False,
+    connectivity=None,
+    allow_self_connections=True,
+    source_network=None,
+    target_network=None,
+    dimension_labels=empty_list(),
+    dynamics=None,
+    events=empty_dict(),
+)
+```
+
+An edge in a network. Three modes: explicit (source+target set, scalar parameters in YAML), template (no
+source/target, N×N matrix measure in HDF5), or produced (a `producer:` computes the whole matrix from the spec's
+own inputs, so no pre-built file is needed). All coexist in the same edges list.
+
+### Electrode { #tvbo.datamodel.schema.Electrode }
+
+```python
+datamodel.schema.Electrode(
+    electrode_id=None,
+    manufacturer=None,
+    model=None,
+    hemisphere='left',
+    contacts=empty_list(),
+    head=None,
+    tail=None,
+    trajectory=empty_list(),
+    target_structure=None,
+    coordinate_space=None,
+    recon_path=None,
+)
+```
+
+Implanted DBS electrode and contact geometry.
+
+### ElementType { #tvbo.datamodel.schema.ElementType }
+
+```python
+datamodel.schema.ElementType()
+```
+
+
+
+### Encoding { #tvbo.datamodel.schema.Encoding }
+
+```python
+datamodel.schema.Encoding(x=None, y=None, z=None, color=None, detail=None)
+```
+
+Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y:
+rate}. A channel may later accept a scale object without breaking this string form.
+
+### EnvironmentType { #tvbo.datamodel.schema.EnvironmentType }
+
+```python
+datamodel.schema.EnvironmentType()
+```
+
+
+
+### EnvironmentVariable { #tvbo.datamodel.schema.EnvironmentVariable }
+
+```python
+datamodel.schema.EnvironmentVariable(name=None, value=None)
+```
+
+One environment variable assignment exported before executing the workflow task command. Use this for reproducible
+runtime knobs such as XLA/OMP settings in emitted workflow artefacts.
+
+### EnvironmentVariableName { #tvbo.datamodel.schema.EnvironmentVariableName }
+
+```python
+datamodel.schema.EnvironmentVariableName()
+```
+
+
+
+### Equation { #tvbo.datamodel.schema.Equation }
+
+```python
+datamodel.schema.Equation(
+    label=None,
+    definition=None,
+    parameters=empty_dict(),
+    description=None,
+    lhs=None,
+    rhs=None,
+    conditionals=empty_list(),
+    engine=None,
+    pycode=None,
+    latex=False,
+)
+```
+
+
+
+### Event { #tvbo.datamodel.schema.Event }
+
+```python
+datamodel.schema.Event(
+    name=None,
+    label=None,
+    description=None,
+    parameters=empty_dict(),
+    event_type='stimulus',
+    condition=None,
+    condition_states=empty_list(),
+    condition_parameters=empty_list(),
+    affect=None,
+    affect_states=empty_list(),
+    affect_parameters=empty_list(),
+    affect_negative=None,
+    trigger_times=empty_list(),
+    target_component=None,
+    equation=None,
+    nodes=empty_list(),
+    weights=empty_list(),
+    weight_distribution=None,
+    weight_parameter=None,
+    target_variable=None,
+    target_regions=empty_list(),
+    duration=None,
+    dataLocation=None,
+    sampling_rate=1.0,
+    interpolation='linear',
+)
+```
+
+A discrete or continuous event that modifies the system during simulation. Generalizes Stimulus: can represent
+external inputs (stimulus type), threshold-triggered state changes (continuous/discrete type), or time-scheduled
+interventions (preset_time type). Attaches to components (nodes/edges) or to the experiment level.
+
+### EventName { #tvbo.datamodel.schema.EventName }
+
+```python
+datamodel.schema.EventName()
+```
+
+
+
+### EventType { #tvbo.datamodel.schema.EventType }
+
+```python
+datamodel.schema.EventType()
+```
+
+Type of event triggering mechanism.
+
+### ExecutionConfig { #tvbo.datamodel.schema.ExecutionConfig }
+
+```python
+datamodel.schema.ExecutionConfig(
+    n_workers=1,
+    n_threads=-1,
+    precision='float64',
+    accelerator='auto',
+    backend=None,
+    batch_size=None,
+    random_seed=0,
+    find_fixpoint=False,
+    system_size=None,
+)
+```
+
+Configuration for computational execution (parallelization, precision, hardware).
+
+### ExperimentResultSidecar { #tvbo.datamodel.schema.ExperimentResultSidecar }
+
+```python
+datamodel.schema.ExperimentResultSidecar(
+    data_file=None,
+    parameters=empty_dict(),
+    provenance=None,
+    metadata=None,
+)
+```
+
+Descriptor for a cached ``ExperimentResult``: the ``.h5`` companion holding the fitted parameter arrays, one
+``CachedArray`` entry per array, and the provenance a downstream cache needs to decide whether the result is still
+valid. Written by ``tvbo.data.experiment_result_io.save_sidecar``, so it is generated rather than authored — but
+it is self-describing (it carries a ``tvbo_class`` envelope naming this class), which is what lets ``tvbo validate
+schema`` check a generated sidecar instead of falling back to some unrelated class and failing on its required
+slots.
+
+### Exploration { #tvbo.datamodel.schema.Exploration }
+
+```python
+datamodel.schema.Exploration(
+    name=None,
+    label=None,
+    description=None,
+    execution=None,
+    space=empty_dict(),
+    parameters=empty_dict(),
+    algorithms=empty_list(),
+    mode='product',
+    strategy='grid',
+    objectives=empty_list(),
+    observable=None,
+    record=empty_list(),
+    n_parallel='auto',
+    block_size=None,
+    n_trials=1,
+    average=None,
+    parallel_mode=None,
+    parallel_batch_size=None,
+    sweep_seeding='independent',
+    sweep_direction='up',
+)
+```
+
+Parameter space exploration (grid search, sweep).
+
+### ExplorationAxis { #tvbo.datamodel.schema.ExplorationAxis }
+
+```python
+datamodel.schema.ExplorationAxis(
+    parameter=None,
+    label=None,
+    description=None,
+    domain=None,
+    transform='none',
+    explored_values=empty_list(),
+    element_domains=empty_list(),
+    builder=None,
+    unit=None,
+    reduce=None,
+)
+```
+
+One axis of a parameter exploration grid. Points to an existing Parameter (by dotted reference, e.g.
+"ReducedWongWang.w" or "FastLinearCoupling.G") and supplies the sweep specification (domain, explored_values, or
+per-element overrides). No new Parameter is created.
+
+### ExplorationAxisParameter { #tvbo.datamodel.schema.ExplorationAxisParameter }
+
+```python
+datamodel.schema.ExplorationAxisParameter()
+```
+
+
+
+### ExplorationName { #tvbo.datamodel.schema.ExplorationName }
+
+```python
+datamodel.schema.ExplorationName()
+```
+
+
+
+### FieldStateVariable { #tvbo.datamodel.schema.FieldStateVariable }
+
+```python
+datamodel.schema.FieldStateVariable(
+    name=None,
+    symbol=None,
+    label=None,
+    definition=None,
+    domain=None,
+    description=None,
+    equation=None,
+    unit=None,
+    record=True,
+    grounding=empty_list(),
+    variable_of_interest=True,
+    coupling_variable=False,
+    equation_type='differential',
+    evict_equation=None,
+    equation_order=1,
+    noise=None,
+    stimulation_variable=None,
+    initial_value=None,
+    derivative_initial_value=None,
+    distribution=None,
+    history=None,
+    mesh=None,
+    boundary_conditions=empty_list(),
+)
+```
+
+
+
+### FieldStateVariableName { #tvbo.datamodel.schema.FieldStateVariableName }
+
+```python
+datamodel.schema.FieldStateVariableName()
+```
+
+
+
+### Figure { #tvbo.datamodel.schema.Figure }
+
+```python
+datamodel.schema.Figure(
+    name=None,
+    description=None,
+    provenance=None,
+    part='main',
+    layout=None,
+    theme=None,
+    style=empty_list(),
+    format=None,
+    reference_image=None,
+    label=None,
+    width=None,
+    height=None,
+    dpi=None,
+    trim_margins=None,
+    pad=None,
+    font_size=None,
+    auto_format=None,
+    panel_numbers=None,
+    panel_number_format=None,
+    panel_number_loc=None,
+    panel_number_offset=empty_list(),
+    panel_number_size=None,
+    height_ratios=empty_list(),
+    width_ratios=empty_list(),
+    spines=None,
+    layout_engine=None,
+    spine_offset=None,
+    workflow_overrides=None,
+    code_modules=empty_list(),
+    share_x=empty_list(),
+    share_y=empty_list(),
+    animation=None,
+    panels=empty_dict(),
+)
+```
+
+A publication figure, a mosaic of panels rendered from result containers. Reuses name (identifier) and description
+(caption).
+
+### FigureName { #tvbo.datamodel.schema.FigureName }
+
+```python
+datamodel.schema.FigureName()
+```
+
+
+
+### File { #tvbo.datamodel.schema.File }
+
+```python
+datamodel.schema.File(
+    name=None,
+    description=None,
+    type=None,
+    path=None,
+    extension=None,
+)
+```
+
+
+
+### FileName { #tvbo.datamodel.schema.FileName }
+
+```python
+datamodel.schema.FileName()
+```
+
+
+
+### FrameRole { #tvbo.datamodel.schema.FrameRole }
+
+```python
+datamodel.schema.FrameRole()
+```
+
+What a layer does while a figure animates. Read only under `Figure.animation`; a still figure ignores it. Unset, a
+layer whose data carries the animated dimension is sliced and one that does not is static, which is the reading
+that needs no annotation in the common case.
+
+### FreeParameter { #tvbo.datamodel.schema.FreeParameter }
+
+```python
+datamodel.schema.FreeParameter(
+    parameter=None,
+    label=None,
+    description=None,
+    heterogeneous=False,
+    shape=None,
+    initial_value=None,
+    domain=None,
+)
+```
+
+One degree of freedom in an OptimizationStage. References an existing Parameter by dotted scope (e.g.
+"ReducedWongWang.w" or "FastLinearCoupling.G") and supplies optimization-specific metadata (heterogeneous, shape,
+bounds, initial value). No new Parameter is created here.
+
+### Function { #tvbo.datamodel.schema.Function }
+
+```python
+datamodel.schema.Function(
+    name=None,
+    acronym=None,
+    label=None,
+    iri=None,
+    equation=None,
+    definition=None,
+    description=None,
+    requirements=empty_list(),
+    input=None,
+    output=None,
+    arguments=empty_dict(),
+    output_equation=None,
+    source_code=None,
+    callable=None,
+    apply_on_dimension=None,
+    aggregate=None,
+    time_range=None,
+)
+```
+
+A function with explicit input -> transformation -> output flow. Can be equation-based (symbolic) or
+software-based (callable). In a pipeline, functions are chained: output of one becomes input of next.
+
+### FunctionCall { #tvbo.datamodel.schema.FunctionCall }
+
+```python
+datamodel.schema.FunctionCall(
+    acronym=None,
+    label=None,
+    equation=None,
+    description=None,
+    iri=None,
+    name=None,
+    function=None,
+    callable=None,
+    class_call=None,
+    input=None,
+    output=None,
+    apply_on_dimension=None,
+    aggregate=None,
+    arguments=empty_dict(),
+    time_range=None,
+    source_code=None,
+)
+```
+
+Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly
+for external library functions, OR inline an equation, OR use class_call for class instantiation, OR name a
+curated step with `iri` and state only what differs from it. Mirrors Function attributes so pipeline steps can be
+self-contained. The `name` is an optional step label (used in pipelines for keyed access to step outputs); it is
+NOT a global identifier (singleton uses like `loss`, `observable` may omit it).
+
+### FunctionName { #tvbo.datamodel.schema.FunctionName }
+
+```python
+datamodel.schema.FunctionName()
+```
+
+
+
+### Graph { #tvbo.datamodel.schema.Graph }
+
+```python
+datamodel.schema.Graph(
+    colormap=None,
+    vmin=None,
+    vmax=None,
+    symmetric=None,
+    percentile=None,
+    connectome=None,
+    projection=None,
+    labels=None,
+    color=None,
+    node_size=None,
+    node_edge_color=None,
+    node_edge_width=None,
+    edge_color=None,
+    edge_alpha=None,
+    edge_width=None,
+    edge_percentile=None,
+)
+```
+
+A node-link panel's graph and how it is drawn: the connectome the model actually ran on, with a state living on
+it. The geometry is the network's own — one marker per region at its anatomical centre — and a layer supplies one
+value per region, placed by label.
+
+### GraphGenerator { #tvbo.datamodel.schema.GraphGenerator }
+
+```python
+datamodel.schema.GraphGenerator(
+    name=None,
+    description=None,
+    iri=None,
+    type=None,
+    seed=None,
+    directed=False,
+    parameters=empty_dict(),
+    bindings=empty_dict(),
+    procedure=None,
+    builder=None,
+)
+```
+
+Backend-agnostic graph generator specification. Captures the mathematical family and its parameter declarations so
+that each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.) via per-backend ``bindings``;
+derived generators may also carry a symbolic ``procedure``. The number of nodes is always taken from
+Network.number_of_nodes.
+
+### GraphGeneratorName { #tvbo.datamodel.schema.GraphGeneratorName }
+
+```python
+datamodel.schema.GraphGeneratorName()
+```
+
+
+
+### GraphRepresentation { #tvbo.datamodel.schema.GraphRepresentation }
+
+```python
+datamodel.schema.GraphRepresentation()
+```
+
+How a Network's connectivity is represented when evaluating coupling. This is a backend-independent performance
+contract, not a numerical one: both representations compute the same coupling, but a sparse representation sums
+over the existing edges (cost scales with the number of edges) while a dense representation operates on the full
+adjacency (cost scales with nodes-squared). A backend maps the choice onto its own primitives (edge gather /
+segment-sum vs matrix product). Orthogonal to whether the coupling reads *delayed* states — that is decided per
+coupling by its conduction delay — so the two dimensions together yield the four backend graph kinds: dense/sparse
+× instantaneous/delayed.
+
+### Grid { #tvbo.datamodel.schema.Grid }
+
+```python
+datamodel.schema.Grid(
+    ncols=None,
+    nrows=None,
+    left=None,
+    right=None,
+    top=None,
+    bottom=None,
+    wspace=None,
+    hspace=None,
+    col_labels=empty_list(),
+    row_labels=empty_list(),
+    col_label_size=None,
+    col_label_pad=None,
+    row_label_rotation=None,
+    between=empty_list(),
+    trailing=None,
+)
+```
+
+How a `grid` panel tiles its cells, and what the strips around them are labelled with. Rows and columns are
+labelled ONCE, at the left and the top — the whole reason a paper's composite panel is one lettered panel rather
+than n of them.
+
+The reserved label strips are taken out of the drawable area, so declaring one shrinks the cells to make room
+instead of being drawn over them. The axis labels the cells SHARE are the panel's own `xlabel`/`ylabel`, one word
+at two levels, not slots of this object.
+
+A directive that varies down the rows or across the columns is still written as `row.<name>` / `col.<name>` in
+`opts`: it supplies one value per row or column of ANY directive, so it cannot be a fixed slot of anything.
+
+### Hemisphere { #tvbo.datamodel.schema.Hemisphere }
+
+```python
+datamodel.schema.Hemisphere()
+```
+
+
+
+### ImagingModality { #tvbo.datamodel.schema.ImagingModality }
+
+```python
+datamodel.schema.ImagingModality()
+```
+
+
+
+### Inference { #tvbo.datamodel.schema.Inference }
+
+```python
+datamodel.schema.Inference(
+    name=None,
+    likelihood=None,
+    label=None,
+    description=None,
+    priors=empty_dict(),
+    sampler='nuts',
+    num_samples=1000,
+    num_warmup=1000,
+    num_chains=1,
+    seed=0,
+    execution=None,
+    integration=None,
+    depends_on=None,
+)
+```
+
+Bayesian inference of model parameters from an observation, via MCMC. A standalone, first-class concept (NOT an
+Optimization): it produces a POSTERIOR, not a point estimate, using priors + a likelihood + a sampler instead of a
+loss + optimizer. It runs the SAME differentiable forward model, wrapped in a probabilistic model (sample priors
+-> forward -> likelihood).
+
+### InferenceName { #tvbo.datamodel.schema.InferenceName }
+
+```python
+datamodel.schema.InferenceName()
+```
+
+
+
+### InitialState { #tvbo.datamodel.schema.InitialState }
+
+```python
+datamodel.schema.InitialState(
+    method='time_integration',
+    duration=2000.0,
+    abs_tol=1e-10,
+    rel_tol=1e-10,
+    solver=None,
+    source_branch=None,
+    source_point=None,
+    source_experiment=None,
+    ramp=None,
+)
+```
+
+How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady
+state.
+
+### InitialStateMethod { #tvbo.datamodel.schema.InitialStateMethod }
+
+```python
+datamodel.schema.InitialStateMethod()
+```
+
+Strategy for obtaining the starting equilibrium or periodic orbit.
+
+### Inset { #tvbo.datamodel.schema.Inset }
+
+```python
+datamodel.schema.Inset(
+    kind=None,
+    label=None,
+    cell=None,
+    cells=empty_list(),
+    bounds=empty_list(),
+    layers=empty_list(),
+    render=None,
+    tick_size=None,
+    tick_length=None,
+    tick_prune=None,
+    nbins=None,
+    xticks=empty_list(),
+    yticks=empty_list(),
+    hide_xticklabels=None,
+    hide_yticklabels=None,
+    xtick_rotation=None,
+    ytick_rotation=None,
+    xtick_format=None,
+    ytick_format=None,
+    xtick_side=None,
+    ytick_side=None,
+    xlabel=None,
+    ylabel=None,
+    zlabel=None,
+    title=None,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    zlabel_pad=None,
+    xlabel_side=None,
+    ylabel_side=None,
+    xlim=empty_list(),
+    ylim=empty_list(),
+    zlim=empty_list(),
+    xscale=None,
+    yscale=None,
+    aspect=None,
+    box_aspect=None,
+    invert_x=None,
+    invert_y=None,
+    invert_z=None,
+    frame=None,
+    legend=None,
+    colorbar=None,
+    surface=None,
+    volume=None,
+    network=None,
+    grid=None,
+    fill_cell=None,
+    triangle_gap=None,
+    rules=empty_list(),
+    regions=empty_list(),
+    camera=None,
+    opts=empty_dict(),
+    path=None,
+    annotations=empty_list(),
+)
+```
+
+A sub-axes that draws exactly as a panel does — same kinds, layers, opts, annotations — minus the things only a
+mosaic cell has (a panel letter, a placeholder, a position in the layout). One class for both an inset and a grid
+cell, so a cell cannot behave unlike the inset beside it; they differ only in who positions them.
+
+### Integrator { #tvbo.datamodel.schema.Integrator }
+
+```python
+datamodel.schema.Integrator(
+    method='euler',
+    abs_tol=1e-10,
+    rel_tol=1e-10,
+    step_size=0.01220703125,
+    time_unit=None,
+    unit=None,
+    parameters=empty_dict(),
+    duration=1000,
+    description=None,
+    steps=None,
+    noise=None,
+    state_wise_sigma=empty_list(),
+    transient_time=0,
+    block_size=1000,
+    noise_draw='fused',
+    scipy_ode_base=False,
+    number_of_stages=1,
+    intermediate_expressions=empty_dict(),
+    update_expression=None,
+    delayed=True,
+    differentiation=None,
+    coupling_evaluation='per_step',
+)
+```
+
+Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits
+abs_tol, rel_tol from Solver. Overrides method default to 'euler'.
+
+### Layer { #tvbo.datamodel.schema.Layer }
+
+```python
+datamodel.schema.Layer(
+    used=None,
+    transform=None,
+    mark=None,
+    label=None,
+    triangle=None,
+    frame=None,
+    encoding=None,
+    style=None,
+)
+```
+
+One mark bound to one data reference, with its encoding.
+
+### LayoutEngine { #tvbo.datamodel.schema.LayoutEngine }
+
+```python
+datamodel.schema.LayoutEngine()
+```
+
+Which matplotlib layout engine positions the mosaic's axes. Unset lets the backend pick (bsplot asks for
+'compressed' and falls back to 'tight'), which is right for a plain grid of plots. A figure whose panels carry
+their own absolute geometry — a schematic stepped out in axes fractions, or a mosaic dense enough that the
+constrained solver reports cells collapsed to zero and silently falls back — has to say so, because an engine that
+gives up still leaves the figure laid out by a fallback nobody declared.
+
+### LayoutTemplateVariant { #tvbo.datamodel.schema.LayoutTemplateVariant }
+
+```python
+datamodel.schema.LayoutTemplateVariant(variant=None, template=None)
+```
+
+One variant's seed for a file the record already accounts for.
+
+### LayoutTemplateVariantVariant { #tvbo.datamodel.schema.LayoutTemplateVariantVariant }
+
+```python
+datamodel.schema.LayoutTemplateVariantVariant()
+```
+
+
+
+### Legend { #tvbo.datamodel.schema.Legend }
+
+```python
+datamodel.schema.Legend(
+    show=None,
+    loc=None,
+    frame=None,
+    columns=None,
+    title=None,
+    labels=empty_list(),
+    colors=empty_list(),
+    linestyles=empty_list(),
+    markers=empty_list(),
+    handle_length=None,
+)
+```
+
+A panel's key: whether it is drawn, where it sits, and the three things a figure actually asks of one beyond that.
+An object rather than a bare position because `frame` had nowhere to live — the renderer drew every key frameless
+whatever the theme said, so a theme asking for a boxed legend never got one.
+
+The shorthands are the same slot: `legend: true` is `{show: true}` and `legend: upper right` is `{loc: upper
+right}`, expanded on load, so a panel that starts with a corner and later needs two columns keeps the word it had.
+
+Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cell of the mosaic and sharing no
+axes with anything.
+
+### LegendLoc { #tvbo.datamodel.schema.LegendLoc }
+
+```python
+datamodel.schema.LegendLoc()
+```
+
+Where a panel's key sits. `best` lets the backend find the emptiest corner, which is right while a figure is still
+moving and wrong once it is printed — a key that relocates between two renders of the same figure is a difference
+the spec never stated.
+
+### Likelihood { #tvbo.datamodel.schema.Likelihood }
+
+```python
+datamodel.schema.Likelihood(
+    source=None,
+    name='Normal',
+    description=None,
+    predicted=empty_list(),
+    sigma=None,
+)
+```
+
+Observation model for Bayesian inference: p(data | sim(theta)). Points at the observation holding the data and
+specifies the noise family + scale. `name` is the noise family (default Normal); `source` uses the same
+referencing as `Observation.source`, so the observed data can come from this experiment's integration, an
+empirical network measure, or a runtime-bound array — one flexible hook, no data-loading path of its own.
+`predicted` names the other side of the residual when it differs from the data's own observable.
+
+### LikelihoodName { #tvbo.datamodel.schema.LikelihoodName }
+
+```python
+datamodel.schema.LikelihoodName()
+```
+
+
+
+### LossFunction { #tvbo.datamodel.schema.LossFunction }
+
+```python
+datamodel.schema.LossFunction(
+    name=None,
+    acronym=None,
+    label=None,
+    iri=None,
+    equation=None,
+    definition=None,
+    description=None,
+    requirements=empty_list(),
+    input=None,
+    output=None,
+    arguments=empty_dict(),
+    output_equation=None,
+    source_code=None,
+    callable=None,
+    apply_on_dimension=None,
+    aggregate=None,
+    time_range=None,
+)
+```
+
+A loss function for optimization with optional aggregation. Extends Function with aggregation specification for
+per-element losses.
+
+### LossFunctionName { #tvbo.datamodel.schema.LossFunctionName }
+
+```python
+datamodel.schema.LossFunctionName()
+```
+
+
+
+### MarkType { #tvbo.datamodel.schema.MarkType }
+
+```python
+datamodel.schema.MarkType()
+```
+
+The cartesian primitive a grammar layer draws (heatmap is implied by a heatmap panel, not a mark).
+
+### Matrix { #tvbo.datamodel.schema.Matrix }
+
+```python
+datamodel.schema.Matrix(
+    label=None,
+    description=None,
+    dataLocation=None,
+    x=None,
+    y=None,
+    values=empty_list(),
+    format=None,
+    shape=empty_list(),
+    dtype=None,
+)
+```
+
+Adjacency matrix of a network.
+
+### MeasureSpec { #tvbo.datamodel.schema.MeasureSpec }
+
+```python
+datamodel.schema.MeasureSpec(
+    name=None,
+    task_iri=None,
+    concept_iri=None,
+    unit=None,
+    measure_type=None,
+    description=None,
+)
+```
+
+Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``.
+
+### Mesh { #tvbo.datamodel.schema.Mesh }
+
+```python
+datamodel.schema.Mesh(
+    label=None,
+    description=None,
+    dataLocation=None,
+    element_type=None,
+    coordinates=empty_list(),
+    elements=None,
+    coordinate_space=None,
+    mesh_file=None,
+    mesh_format=None,
+    number_of_vertices=None,
+    number_of_elements=None,
+    parcellation=None,
+    normals=None,
+    curvature=None,
+    vertices_field=None,
+    parcel_map_field=None,
+)
+```
+
+Triangle (or higher-order) mesh geometry. May stand alone (via ``mesh_file`` pointing at an external GIFTI/VTK/MSH
+file) OR be inlined on a Network as ``Network.mesh``. In the inlined-on-Network case, the vertices are the parent
+Network's ``nodes/coordinates`` (so ``coordinates`` here may be left empty), the faces live in the same h5
+companion under a path given by ``elements`` (default ``mesh/faces``), and optional per-vertex ``normals`` /
+``curvature`` live alongside. The optional ``parcel_map_field`` points at the parent Network's per-vertex
+parcel-id array (default ``nodes/parent_index`` from the hierarchical-Network pattern, see Network.qmd §7.1).
+
+### ModelParadigm { #tvbo.datamodel.schema.ModelParadigm }
+
+```python
+datamodel.schema.ModelParadigm()
+```
+
+Computational paradigm or modeling approach supported by the tool.
+
+### ModelType { #tvbo.datamodel.schema.ModelType }
+
+```python
+datamodel.schema.ModelType()
+```
+
+Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in
+list_db().
+
+### NDArray { #tvbo.datamodel.schema.NDArray }
+
+```python
+datamodel.schema.NDArray(
+    label=None,
+    description=None,
+    shape=empty_list(),
+    dtype=None,
+    dataLocation=None,
+    unit=None,
+)
+```
+
+
+
+### NamedArray { #tvbo.datamodel.schema.NamedArray }
+
+```python
+datamodel.schema.NamedArray(
+    name=None,
+    shape=empty_list(),
+    dtype=None,
+    unit=None,
+    description=None,
+)
+```
+
+A named numeric array. Used as a sidecar slot value where a schema-typed object (e.g.
+``ExperimentResult.parameters``) holds multiple arrays addressable by name (``w_LRE``, ``w_FFI``, ``J_i``, ...).
+The actual numeric data lives in the companion ``.h5`` at ``parameters/<name>``; the YAML carries only the
+descriptor.
+
+### Network { #tvbo.datamodel.schema.Network }
+
+```python
+datamodel.schema.Network(
+    label=None,
+    description=None,
+    parameters=empty_dict(),
+    provenance=None,
+    time_unit=None,
+    integration=None,
+    nodes=empty_list(),
+    edges=empty_list(),
+    primary_weight=None,
+    coupling=empty_dict(),
+    graph_representation='auto',
+    dynamics=empty_dict(),
+    node_template=None,
+    edge_template=None,
+    number_of_nodes=None,
+    coordinate_space=None,
+    parcellation=None,
+    tractogram=None,
+    mesh=None,
+    transforms=empty_dict(),
+    data_file=None,
+    descriptor=None,
+    bids_dir=None,
+    bids=None,
+    structural_measures=empty_list(),
+    observational_measures=empty_list(),
+    parent_network=None,
+    node_mapping=None,
+    distance_unit='mm',
+    edge_matrix_files=empty_list(),
+    graph_generator=None,
+)
+```
+
+Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge
+representation and matrix-based connectivity (Connectome compatibility).
+
+### Node { #tvbo.datamodel.schema.Node }
+
+```python
+datamodel.schema.Node(
+    id=None,
+    label=None,
+    alternateName=empty_list(),
+    description=None,
+    parameters=empty_dict(),
+    record=True,
+    size=1,
+    dynamics=None,
+    position=None,
+    region=None,
+    state=empty_dict(),
+    events=empty_dict(),
+    subnetwork=None,
+)
+```
+
+A node in a network with its own dynamics and properties
+
+### NodeReconciliation { #tvbo.datamodel.schema.NodeReconciliation }
+
+```python
+datamodel.schema.NodeReconciliation()
+```
+
+Strategy for aligning a sourced array's nodes to the consuming model network before use. Keyed alignment guards
+against a differing node count or ordering (e.g. a 998-parcel empirical FC against a 1000-parcel model, or a
+hemisphere-swapped connectome) silently misaligning the data.
+
+### Noise { #tvbo.datamodel.schema.Noise }
+
+```python
+datamodel.schema.Noise(
+    parameters=empty_dict(),
+    equation=None,
+    noise_type='gaussian',
+    covariance=None,
+    correlated_over=None,
+    correlated=None,
+    gaussian=False,
+    additive=True,
+    seed=42,
+    settle_seed=None,
+    random_state=None,
+    distribution=None,
+    function=None,
+    pycode=None,
+    targets=empty_dict(),
+)
+```
+
+
+
+### NoiseDraw { #tvbo.datamodel.schema.NoiseDraw }
+
+```python
+datamodel.schema.NoiseDraw()
+```
+
+How a stochastic run's noise realization is generated.
+
+### NoiseType { #tvbo.datamodel.schema.NoiseType }
+
+```python
+datamodel.schema.NoiseType()
+```
+
+
+
+### NumericalDiscretizationMethod { #tvbo.datamodel.schema.NumericalDiscretizationMethod }
+
+```python
+datamodel.schema.NumericalDiscretizationMethod()
+```
+
+Numerical discretization method for boundary value problems (periodic orbits, connecting orbits, quasi-periodic
+tori).
+
+### Observation { #tvbo.datamodel.schema.Observation }
+
+```python
+datamodel.schema.Observation(
+    name=None,
+    acronym=None,
+    label=None,
+    description=None,
+    iri=None,
+    equation=None,
+    parameters=empty_dict(),
+    environment=None,
+    time_unit=None,
+    record=None,
+    unit=None,
+    references=empty_list(),
+    functions=empty_dict(),
+    source=empty_list(),
+    aux_data=empty_list(),
+    dims=empty_list(),
+    period=None,
+    downsample_period=None,
+    voi=None,
+    imaging_modality=None,
+    data_source=None,
+    query=None,
+    reconcile='by_label',
+    min_coverage=None,
+    tail_samples=None,
+    tail_duration=None,
+    aggregation=None,
+    histogram=None,
+    window_size=None,
+    partition=None,
+    pipeline=empty_list(),
+    dynamics=None,
+    reduce=None,
+    class_reference=None,
+    analysis=None,
+)
+```
+
+Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and
+derived quantities. Pipeline is a sequence of Functions with input -> output flow.
+
+### ObservationName { #tvbo.datamodel.schema.ObservationName }
+
+```python
+datamodel.schema.ObservationName()
+```
+
+
+
+### ObservationReductionMode { #tvbo.datamodel.schema.ObservationReductionMode }
+
+```python
+datamodel.schema.ObservationReductionMode()
+```
+
+How an observation is evaluated over the trajectory (see Observation.reduce). Absent (the default) keeps the
+post-scan pipeline: the observation is computed from a materialised trajectory. `streaming` opts the observation
+into an incremental reducer that is folded into the integrator carry via prepare(reduce=...), so the trajectory is
+never held — byte-identical to the post-scan value (to f64 rounding), but with O(block) instead of O(n_time) peak
+memory. Required for whole-brain fits whose per-stage simulation is long enough that the full trajectory would not
+fit in memory (e.g. the Schirner 2023 BOLD/FC group fit).
+
+### OperatorType { #tvbo.datamodel.schema.OperatorType }
+
+```python
+datamodel.schema.OperatorType()
+```
+
+
+
+### Optimization { #tvbo.datamodel.schema.Optimization }
+
+```python
+datamodel.schema.Optimization(
+    name=None,
+    label=None,
+    description=None,
+    free_parameters=empty_list(),
+    algorithm='adam',
+    learning_rate=0.001,
+    max_iterations=100,
+    hyperparameters=empty_dict(),
+    freeze_parameters=empty_list(),
+    warmup_from=None,
+    execution=None,
+    integration=None,
+    loss=None,
+    stages=empty_dict(),
+    depends_on=None,
+)
+```
+
+Configuration for parameter optimization. Inherits single-stage fields from OptimizationStage. For multi-stage
+workflows, use 'stages' (ignores inherited single-stage fields). Loss equation references observations directly by
+name.
+
+### OptimizationName { #tvbo.datamodel.schema.OptimizationName }
+
+```python
+datamodel.schema.OptimizationName()
+```
+
+
+
+### OptimizationStage { #tvbo.datamodel.schema.OptimizationStage }
+
+```python
+datamodel.schema.OptimizationStage(
+    name=None,
+    label=None,
+    description=None,
+    free_parameters=empty_list(),
+    algorithm='adam',
+    learning_rate=0.001,
+    max_iterations=100,
+    hyperparameters=empty_dict(),
+    freeze_parameters=empty_list(),
+    warmup_from=None,
+)
+```
+
+A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using
+different parameters, shapes, learning rates, and algorithms.
+
+### OptimizationStageName { #tvbo.datamodel.schema.OptimizationStageName }
+
+```python
+datamodel.schema.OptimizationStageName()
+```
+
+
+
+### Option { #tvbo.datamodel.schema.Option }
+
+```python
+datamodel.schema.Option(name=None, value=None)
+```
+
+A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal
+numeric parameters (e.g., solver name, tangent method, jacobian type).
+
+### OptionName { #tvbo.datamodel.schema.OptionName }
+
+```python
+datamodel.schema.OptionName()
+```
+
+
+
+### PDE { #tvbo.datamodel.schema.PDE }
+
+```python
+datamodel.schema.PDE(
+    label=None,
+    description=None,
+    parameters=empty_dict(),
+    domain=None,
+    mesh=None,
+    state_variables=empty_dict(),
+    operators=empty_list(),
+    sources=empty_list(),
+    boundary_conditions=empty_list(),
+    solver=None,
+    derived_parameters=empty_list(),
+    derived_variables=empty_list(),
+    functions=empty_list(),
+)
+```
+
+Partial differential equation problem definition.
+
+### PDESolver { #tvbo.datamodel.schema.PDESolver }
+
+```python
+datamodel.schema.PDESolver(
+    method=None,
+    abs_tol=1e-10,
+    rel_tol=1e-10,
+    step_size=None,
+    label=None,
+    description=None,
+    requirements=empty_list(),
+    environment=None,
+    discretization=None,
+    preconditioner=None,
+)
+```
+
+Numerical solver for a PDE: the time-integration algorithm, tolerances and step inherited from `Solver`, plus the
+spatial discretization and preconditioner a PDE additionally needs.
+
+### Palette { #tvbo.datamodel.schema.Palette }
+
+```python
+datamodel.schema.Palette(
+    ink=None,
+    base=None,
+    muted=None,
+    highlight=None,
+    background=None,
+    palette=empty_list(),
+    colormaps=None,
+)
+```
+
+A project's colours, named by role. The colour half of a `Theme`, and a document in its own right for a consumer
+that wants colours and nothing else (:mod:`tvbo.plot.palette`, the documentation site's stylesheet). A style sheet
+carries only what matplotlib has an rcParam for, which stops short of the roles a figure reasons in: the one
+colour that means *this is the point*, the neutral everything unlabelled is drawn in, the hairline behind it.
+Naming them here is what makes recolouring a project one edit that every panel follows. The cycler is `[base] +
+palette`, so a plot that names no colour comes out neutral and only a panel meaning to separate conditions reaches
+into the hues; `highlight` sits outside the cycler, because a colour handed to the second line of every plot
+cannot also mean emphasis. TVB-O's own is curated at `tvbo:theme/default`, and is the palette in force until a
+project names one of its own.
+
+### Panel { #tvbo.datamodel.schema.Panel }
+
+```python
+datamodel.schema.Panel(
+    panel_key=None,
+    kind=None,
+    label=None,
+    description=None,
+    cell=None,
+    cells=empty_list(),
+    source=None,
+    capture=None,
+    number_loc=None,
+    number=None,
+    placeholder=None,
+    layers=empty_list(),
+    path=None,
+    render=None,
+    opts=empty_dict(),
+    tick_size=None,
+    tick_length=None,
+    tick_prune=None,
+    nbins=None,
+    xticks=empty_list(),
+    yticks=empty_list(),
+    hide_xticklabels=None,
+    hide_yticklabels=None,
+    xtick_rotation=None,
+    ytick_rotation=None,
+    xtick_format=None,
+    ytick_format=None,
+    xtick_side=None,
+    ytick_side=None,
+    xlabel=None,
+    ylabel=None,
+    zlabel=None,
+    title=None,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    zlabel_pad=None,
+    xlabel_side=None,
+    ylabel_side=None,
+    xlim=empty_list(),
+    ylim=empty_list(),
+    zlim=empty_list(),
+    xscale=None,
+    yscale=None,
+    aspect=None,
+    box_aspect=None,
+    invert_x=None,
+    invert_y=None,
+    invert_z=None,
+    frame=None,
+    legend=None,
+    colorbar=None,
+    surface=None,
+    volume=None,
+    network=None,
+    grid=None,
+    fill_cell=None,
+    triangle_gap=None,
+    rules=empty_list(),
+    regions=empty_list(),
+    camera=None,
+    annotations=empty_list(),
+    insets=empty_list(),
+)
+```
+
+One cell of the figure. kind selects grammar (cartesian/heatmap) vs escape-hatch (image/custom); every kind shares
+the label, placeholder, legend and annotation machinery. Reuses label (human title).
+
+### PanelKind { #tvbo.datamodel.schema.PanelKind }
+
+```python
+datamodel.schema.PanelKind()
+```
+
+What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); surface paints a layer on a mesh,
+volume projects one through a labelled volume and network draws one on a node-link graph; grid tiles a composite
+of sub-panels; colorbar/legend are shared keys in their own slot; image (external file) and custom (registered
+callable) are peer escape-hatch kinds. A new kind is added when its bsplot leaf exists.
+
+### PanelPanelKey { #tvbo.datamodel.schema.PanelPanelKey }
+
+```python
+datamodel.schema.PanelPanelKey()
+```
+
+
+
+### ParallelMode { #tvbo.datamodel.schema.ParallelMode }
+
+```python
+datamodel.schema.ParallelMode()
+```
+
+How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput:
+vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map``
+(memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits
+and lax_map otherwise.
+
+### Parameter { #tvbo.datamodel.schema.Parameter }
+
+```python
+datamodel.schema.Parameter(
+    name=None,
+    label=None,
+    symbol=None,
+    definition=None,
+    value=None,
+    default=None,
+    domain=None,
+    reported_optimum=None,
+    description=None,
+    equation=None,
+    unit=None,
+    grounding=empty_list(),
+    producer=None,
+    comment=None,
+    heterogeneous=None,
+    distribution=None,
+    source=None,
+    measure=None,
+    used=None,
+    free=None,
+    shape=None,
+    explored_values=empty_list(),
+    element_domains=empty_list(),
+    datatype=None,
+    required=None,
+)
+```
+
+
+
+### ParameterName { #tvbo.datamodel.schema.ParameterName }
+
+```python
+datamodel.schema.ParameterName()
+```
+
+
+
+### Parcellation { #tvbo.datamodel.schema.Parcellation }
+
+```python
+datamodel.schema.Parcellation(
+    label=None,
+    iri=None,
+    data_source=None,
+    atlas=None,
+)
+```
+
+
+
+### ParcellationEntity { #tvbo.datamodel.schema.ParcellationEntity }
+
+```python
+datamodel.schema.ParcellationEntity(
+    name=None,
+    abbreviation=None,
+    alternateName=empty_list(),
+    lookupLabel=None,
+    hasParent=empty_list(),
+    ontologyIdentifier=empty_list(),
+    versionIdentifier=None,
+    relatedUBERONTerm=None,
+    originalLookupLabel=None,
+    hemisphere=None,
+    center=None,
+    color=None,
+)
+```
+
+A schema for representing a parcellation entity, which is an anatomical location or study target.
+
+### ParcellationEntityName { #tvbo.datamodel.schema.ParcellationEntityName }
+
+```python
+datamodel.schema.ParcellationEntityName()
+```
+
+
+
+### ParcellationTerminology { #tvbo.datamodel.schema.ParcellationTerminology }
+
+```python
+datamodel.schema.ParcellationTerminology(
+    label=None,
+    dataLocation=None,
+    ontologyIdentifier=empty_list(),
+    versionIdentifier=None,
+    entities=empty_dict(),
+)
+```
+
+A schema for representing a parcellation terminology, which consists of parcellation entities.
+
+### Partition { #tvbo.datamodel.schema.Partition }
+
+```python
+datamodel.schema.Partition(
+    gather=None,
+    waves=None,
+    directed=None,
+    correlation=None,
+    over=empty_list(),
+)
+```
+
+A grouped streaming reduction over a node partition (e.g. per-hemisphere cortical wave metrics): the per-timestep
+observer body is evaluated ONCE for a single group and vmapped over the partition axis, and the per-group outputs
+are folded to per-group scalar metrics. General in its group-vmap (``gather`` + ``over``); the metric roles
+(``waves`` / ``directed`` / ``correlation``) name the per-group derived variables the wave finalize reduces to
+proportion-of-waves, proportion-directed and the median flow–instrength correlation (rho).
+
+### Phenotype { #tvbo.datamodel.schema.Phenotype }
+
+```python
+datamodel.schema.Phenotype(
+    dataset_id=None,
+    subjects=None,
+    data_file=None,
+    label=None,
+    description=None,
+    provenance=None,
+    measures=empty_list(),
+    measure_specs=empty_list(),
+    category='cognitive',
+    cohort=None,
+)
+```
+
+Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales,
+demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric
+measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that
+correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner
+2023). The yaml carries metadata + the measure list; the h5 carries ``measures/<name>`` 1-D float arrays of length
+``len(subjects)``.
+Aligns with the BIDS phenotype standard
+(https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html)
+and with NIDM's ``nidm:Phenotype`` concept. Per-measure metadata can optionally carry Cognitive Atlas
+(https://www.cognitiveatlas.org/) ``cogat:Task`` and ``cogat:Concept`` IRIs via ``measure_specs``.
+
+### Prior { #tvbo.datamodel.schema.Prior }
+
+```python
+datamodel.schema.Prior(name=None, distribution=None, description=None)
+```
+
+Prior belief over one inferred parameter. In `Inference.priors` the collection KEY is the parameter's dotted name;
+the value wraps a `Distribution` as the belief (reusing the standard distribution vocabulary rather than inventing
+a new one). Distinct from `Parameter.distribution`, which specifies per-node SAMPLING, not a prior.
+
+### PriorName { #tvbo.datamodel.schema.PriorName }
+
+```python
+datamodel.schema.PriorName()
+```
+
+
+
+### Procedure { #tvbo.datamodel.schema.Procedure }
+
+```python
+datamodel.schema.Procedure(steps=empty_dict(), output=empty_dict())
+```
+
+Symbolic procedure: an ordered list of steps producing named outputs. Documents a derived generator's algorithm
+independently of any backend binding.
+
+### ProcedureStep { #tvbo.datamodel.schema.ProcedureStep }
+
+```python
+datamodel.schema.ProcedureStep(
+    name=None,
+    description=None,
+    type='equation',
+    equation=None,
+    of=None,
+    axis=None,
+    diagonal=None,
+    distribution=None,
+    comparison='le',
+    seed_offset=0,
+    target_range=None,
+)
+```
+
+A single named step (or output) in a Procedure: one typed operation producing one named intermediate.
+`type` selects the operation and therefore which of the fields below apply; it defaults to `equation`, the general
+case, so a Procedure written purely as equations needs no type annotations. The remaining fields carry each
+operation's options as *metadata* rather than as call syntax, which is what lets a step lower directly to a
+backend-native primitive: expression parsing cannot represent keyword arguments at all, so any option written as
+one would be unresolvable.
+
+### ProcedureStepName { #tvbo.datamodel.schema.ProcedureStepName }
+
+```python
+datamodel.schema.ProcedureStepName()
+```
+
+
+
+### ProcedureStepType { #tvbo.datamodel.schema.ProcedureStepType }
+
+```python
+datamodel.schema.ProcedureStepType()
+```
+
+The operation a ProcedureStep performs. `equation` is the general case (author-written algebra over
+previously-named intermediates); the others are named graph-construction operations whose options are fields
+rather than call syntax, so each lowers to a backend-native primitive without an expression string having to
+survive a parser.
+
+### ProgrammingLanguageEnum { #tvbo.datamodel.schema.ProgrammingLanguageEnum }
+
+```python
+datamodel.schema.ProgrammingLanguageEnum()
+```
+
+Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers.
+
+### Projection { #tvbo.datamodel.schema.Projection }
+
+```python
+datamodel.schema.Projection()
+```
+
+Which anatomical plane a network's region centres flatten onto.
+
+### Provenance { #tvbo.datamodel.schema.Provenance }
+
+```python
+datamodel.schema.Provenance(
+    derived_from=None,
+    references=empty_list(),
+    environment=None,
+    date_created=None,
+    outputs=empty_list(),
+    license=None,
+    generated_by=None,
+    experiment_yaml_hash=None,
+    digest=empty_dict(),
+    activities=empty_dict(),
+    inputs=empty_list(),
+)
+```
+
+W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable on any entity (Network, TimeSeries,
+Dynamics, ...), which is why it holds no identity of its own: the parent supplies that. The identified
+``prov:Entity`` a standalone provenance record names is ``ResultEntity``, which carries one of these.
+Carried by the frozen spec beside a result container, this is the whole record of the run: ``activities`` says
+what was executed and when, ``environment`` says on what machine and against which package versions, and
+``digest`` checksums what came out. None of that is derivable from a recipe, which is why it is recorded — and all
+of it travels with the artifact it describes rather than in a parallel directory that has to be kept in step.
+
+### RandomStream { #tvbo.datamodel.schema.RandomStream }
+
+```python
+datamodel.schema.RandomStream(label=None, description=None, dataLocation=None)
+```
+
+
+
+### Range { #tvbo.datamodel.schema.Range }
+
+```python
+datamodel.schema.Range(
+    enforce='none',
+    lo=None,
+    hi=None,
+    step=None,
+    n=None,
+    log_scale=False,
+    explored_values=empty_list(),
+    element=None,
+)
+```
+
+Specifies a range for array generation, parameter bounds, or grid exploration.
+
+### Reducer { #tvbo.datamodel.schema.Reducer }
+
+```python
+datamodel.schema.Reducer(
+    name=None,
+    state=None,
+    emit=None,
+    description=None,
+    replaces=empty_list(),
+    backends=empty_list(),
+    emit_kind='window',
+    add=empty_list(),
+    evict=empty_list(),
+    resync=empty_list(),
+    resync_masked=empty_list(),
+)
+```
+
+A streaming reduction, authored as symbolic recurrences over its own state rather than as backend code. Folded
+into the integrator carry so a windowed observable (a sliding-window FC, a running mean) is computed without ever
+materialising the trajectory. `add` folds an arriving sample in, `evict` takes a leaving one back out, `resync`
+rebuilds the state exactly from the window when incremental drift would accumulate, and `emit` reads the reduced
+value out. TVBO lowers all four through the sympy printers, so no backend ships a reducer and adding one is a YAML
+file rather than code.
+
+### ReducerEmitKind { #tvbo.datamodel.schema.ReducerEmitKind }
+
+```python
+datamodel.schema.ReducerEmitKind()
+```
+
+How often a streaming reducer reads its value out (see Reducer.emit_kind).
+
+### ReducerName { #tvbo.datamodel.schema.ReducerName }
+
+```python
+datamodel.schema.ReducerName()
+```
+
+
+
+### ReductionType { #tvbo.datamodel.schema.ReductionType }
+
+```python
+datamodel.schema.ReductionType()
+```
+
+Operations for reducing/aggregating values across dimensions
+
+### Reference { #tvbo.datamodel.schema.Reference }
+
+```python
+datamodel.schema.Reference(iri=None, field=None)
+```
+
+A small typed pointer to another TVBO entity (Network, Mesh, Observation, …). The ``iri`` identifies the target
+via the registry; the optional ``field`` is a dotted-path subkey resolved by attribute walk on the loaded target
+(e.g. ``field: 'weight_alpha'`` picks the ``weight_alpha`` named edge matrix on a Network; ``field: 'mesh.faces'``
+picks the mesh face array). Used uniformly anywhere a TVBO entity needs to point at a sub-array of another entity
+without inlining the data.
+
+### ReferenceFingerprint { #tvbo.datamodel.schema.ReferenceFingerprint }
+
+```python
+datamodel.schema.ReferenceFingerprint(
+    iri=None,
+    field=None,
+    mtime=None,
+    size=None,
+    hash=None,
+)
+```
+
+Cache-invalidation fingerprint for one ``aux_data`` reference. Captures enough about the upstream artifact that a
+downstream cache can decide cheaply (via mtime + size) whether to trust the cached result, falling back to a hash
+recompute on mismatch.
+
+### Region { #tvbo.datamodel.schema.Region }
+
+```python
+datamodel.schema.Region(bounds=None, color=None, fill=None, opacity=None)
+```
+
+A rectangle drawn over a panel to ring the window a paper calls out — the parameter band a regime lives in, the
+interval a statistic was taken over. Declared rather than drawn by a custom callable, so the window a figure
+highlights is part of the spec that can be read back.
+
+### RegionMapping { #tvbo.datamodel.schema.RegionMapping }
+
+```python
+datamodel.schema.RegionMapping(
+    label=None,
+    description=None,
+    dataLocation=None,
+    vertex_to_region=empty_list(),
+    n_vertices=None,
+    n_regions=None,
+)
+```
+
+Maps vertices to parent regions for hierarchical/aggregated coupling
+
+### RenderSpec { #tvbo.datamodel.schema.RenderSpec }
+
+```python
+datamodel.schema.RenderSpec(
+    width=None,
+    height=None,
+    device_scale_factor=None,
+    wait_selector=None,
+    warmup=None,
+    clip=empty_list(),
+    format=None,
+)
+```
+
+A headless-browser capture recipe turning an `image` panel's HTML/URL `source` into the static file placed at its
+`path`. Mirrors one shot of code/capture-screenshots.py so a screenshot of the live platform (or any HTML render)
+is reproducible from the spec, not hand-captured. Only the `source` needs committing alongside the rendered
+`path`.
+
+### ReportPart { #tvbo.datamodel.schema.ReportPart }
+
+```python
+datamodel.schema.ReportPart()
+```
+
+Where a declared item appears in a generated report. A study with many near-identical experiments marks the
+routine ones ``supplementary``, so the Methods carries the experiments that make the argument and the rest stay a
+table row plus a paragraph in the SI.
+
+### RequirementLevel { #tvbo.datamodel.schema.RequirementLevel }
+
+```python
+datamodel.schema.RequirementLevel()
+```
+
+BIDS requirement level: whether something MUST, SHOULD or MAY be present.
+
+### RequirementRole { #tvbo.datamodel.schema.RequirementRole }
+
+```python
+datamodel.schema.RequirementRole()
+```
+
+
+
+### ResultBinding { #tvbo.datamodel.schema.ResultBinding }
+
+```python
+datamodel.schema.ResultBinding(
+    key=None,
+    description=None,
+    used=None,
+    count=None,
+    format=None,
+    value=None,
+    source=None,
+)
+```
+
+One entry in a study's results manifest: a manuscript key bound to the value it stands for. Exactly one of three
+forms: COMPUTED FROM A RUN — ``used:`` a DataRef reading a scalar out of a nested study's or this study's own
+analysis/experiment, formatted through ``format`` — COMPUTED FROM THE SPEC — ``count:`` a structural tally of a
+collection (e.g. the figures a nested study regenerates), needing no run — or AUTHORED — a literal ``value``
+quoted from prior work and attributed by ``source``. So a number printed in prose is computed or an authored
+constant marked as such, never transcribed by hand.
+
+### ResultBindingKey { #tvbo.datamodel.schema.ResultBindingKey }
+
+```python
+datamodel.schema.ResultBindingKey()
+```
+
+
+
+### ResultEntity { #tvbo.datamodel.schema.ResultEntity }
+
+```python
+datamodel.schema.ResultEntity(
+    name=None,
+    container=None,
+    description=None,
+    iri=None,
+    produced_by=None,
+    outputs=empty_list(),
+    provenance=None,
+)
+```
+
+One persisted result container, described. The ``prov:Entity`` of BEP028's ``prov-<label>_ent`` record: what the
+file is, what produced it, and what it holds. Every field is either a pointer or read off the artifact when it is
+written — nothing here restates a value the frozen spec beside the container already carries, which is what made
+the earlier curated JSON sidecar drift from the YAML next to it.
+Named for the entity rather than for the experiment because an analysis container (``ana-<name>_result.h5``) gets
+one too, and because the in-memory ``tvbo.data.types.ExperimentResult`` is a different thing: the arrays
+themselves, not the description of the file holding them.
+
+### ResultEntityName { #tvbo.datamodel.schema.ResultEntityName }
+
+```python
+datamodel.schema.ResultEntityName()
+```
+
+
+
+### Rule { #tvbo.datamodel.schema.Rule }
+
+```python
+datamodel.schema.Rule(
+    orientation=None,
+    at=None,
+    color=None,
+    width=None,
+    dash=None,
+    label=None,
+)
+```
+
+A straight reference line drawn across a panel: the zero a signal is measured from, the threshold a value has to
+clear, the agreement line of a target-versus-simulated plot. One object, so the line and the colour it is drawn in
+cannot be stated apart — as two loose panel options they could disagree, and a colour could be given to a rule
+that was never declared.
+
+### RuleOrientation { #tvbo.datamodel.schema.RuleOrientation }
+
+```python
+datamodel.schema.RuleOrientation()
+```
+
+Which way a reference line runs.
+
+### Sample { #tvbo.datamodel.schema.Sample }
+
+```python
+datamodel.schema.Sample(groups=empty_list(), size=None)
+```
+
+
+
+### SamplingAxis { #tvbo.datamodel.schema.SamplingAxis }
+
+```python
+datamodel.schema.SamplingAxis()
+```
+
+Dimension along which a distribution is sampled.
+
+### SchedulerDirective { #tvbo.datamodel.schema.SchedulerDirective }
+
+```python
+datamodel.schema.SchedulerDirective(name=None, value=None)
+```
+
+One engine-native scheduler directive passed through verbatim by the engine's emitter (e.g. a Slurm ``#SBATCH
+--<name>=<value>`` line). The open extension point of WorkflowEngineConfig: it carries any directive the typed
+fields do not name, so a new scheduler flag needs no schema change.
+
+### SchedulerDirectiveName { #tvbo.datamodel.schema.SchedulerDirectiveName }
+
+```python
+datamodel.schema.SchedulerDirectiveName()
+```
+
+
+
+### Session { #tvbo.datamodel.schema.Session }
+
+```python
+datamodel.schema.Session(
+    session_id=None,
+    label=None,
+    network=None,
+    empirical_data=empty_list(),
+    condition=None,
+)
+```
+
+A data collection session for a subject. Corresponds to a BIDS 'ses-' entity. Sessions capture longitudinal
+timepoints (baseline, follow-up), different experimental conditions, or repeated measures.
+
+### SessionSessionId { #tvbo.datamodel.schema.SessionSessionId }
+
+```python
+datamodel.schema.SessionSessionId()
+```
+
+
+
+### SexEnum { #tvbo.datamodel.schema.SexEnum }
+
+```python
+datamodel.schema.SexEnum()
+```
+
+
+
+### SimulationExperiment { #tvbo.datamodel.schema.SimulationExperiment }
+
+```python
+datamodel.schema.SimulationExperiment(
+    id=None,
+    provenance=None,
+    model=None,
+    references=empty_list(),
+    part='main',
+    description=None,
+    additional_equations=empty_list(),
+    label=None,
+    dynamics=None,
+    integration=None,
+    initial_state=None,
+    connectivity=None,
+    network=None,
+    observations=empty_dict(),
+    functions=empty_dict(),
+    stimulation=None,
+    events=empty_dict(),
+    field_dynamics=None,
+    optimizations=empty_dict(),
+    explorations=empty_dict(),
+    inferences=empty_dict(),
+    algorithms=empty_dict(),
+    continuations=empty_dict(),
+    environment=None,
+    execution=None,
+    software=None,
+    dataset=None,
+    workflow=None,
+)
+```
+
+
+
+### SimulationExperimentId { #tvbo.datamodel.schema.SimulationExperimentId }
+
+```python
+datamodel.schema.SimulationExperimentId()
+```
+
+
+
+### SimulationScale { #tvbo.datamodel.schema.SimulationScale }
+
+```python
+datamodel.schema.SimulationScale()
+```
+
+Spatial / organizational scale at which a tool operates. Multi-valued: a tool can span multiple scales. Mapped to
+SIO and Wikidata where possible.
+
+### SimulationStudy { #tvbo.datamodel.schema.SimulationStudy }
+
+```python
+datamodel.schema.SimulationStudy(
+    description=None,
+    citekey=None,
+    type=None,
+    title=None,
+    authors=empty_list(),
+    year=None,
+    doi=None,
+    label=None,
+    derived_from=None,
+    model=None,
+    references=empty_list(),
+    key=None,
+    sample=None,
+    workflow=None,
+    experiments=empty_dict(),
+    analyses=empty_list(),
+    figures=empty_dict(),
+    code_source=None,
+    requires=empty_dict(),
+    studies=empty_list(),
+    results=empty_dict(),
+    archive=None,
+)
+```
+
+
+
+### SimulationTool { #tvbo.datamodel.schema.SimulationTool }
+
+```python
+datamodel.schema.SimulationTool(
+    name=None,
+    description=None,
+    homepage=None,
+    license=None,
+    repository=None,
+    doi=None,
+    version=None,
+    alternative_identifier=empty_list(),
+    acted_on_behalf_of=empty_list(),
+    ecosystem=empty_list(),
+    application_category=None,
+    scale=empty_list(),
+    model_paradigm=empty_list(),
+    tool_role=empty_list(),
+    programming_language=empty_list(),
+    runtime_platform=empty_list(),
+    operating_system=empty_list(),
+    interoperates_with=empty_list(),
+    date_created=None,
+    date_modified=None,
+    development_status=None,
+    author=empty_list(),
+    maintainer=empty_list(),
+    funder=empty_list(),
+    reference_publication=None,
+    citation=empty_list(),
+    keywords=empty_list(),
+    same_as=empty_list(),
+    issue_tracker=None,
+    is_accessible_for_free=True,
+    codegen_format=None,
+    units=empty_dict(),
+)
+```
+
+A software tool for computational neuroscience simulation, analysis, or model specification. Extends
+SoftwarePackage with neuroscience-specific controlled vocabularies for scale, paradigm, role, and
+interoperability. Aligned with CodeMeta v3 and DOAP.
+
+### SimulationToolName { #tvbo.datamodel.schema.SimulationToolName }
+
+```python
+datamodel.schema.SimulationToolName()
+```
+
+
+
+### SoftwareEnvironment { #tvbo.datamodel.schema.SoftwareEnvironment }
+
+```python
+datamodel.schema.SoftwareEnvironment(
+    name=None,
+    label=None,
+    description=None,
+    dataLocation=None,
+    version=None,
+    platform=None,
+    environment_type=None,
+    container_image=None,
+    build_hash=None,
+    requirements=empty_dict(),
+)
+```
+
+A reproducible software environment aggregating one or more SoftwareRequirement entries. Used by
+SimulationExperiment to specify the execution context.
+
+### SoftwareEnvironmentName { #tvbo.datamodel.schema.SoftwareEnvironmentName }
+
+```python
+datamodel.schema.SoftwareEnvironmentName()
+```
+
+
+
+### SoftwarePackage { #tvbo.datamodel.schema.SoftwarePackage }
+
+```python
+datamodel.schema.SoftwarePackage(
+    name=None,
+    description=None,
+    homepage=None,
+    license=None,
+    repository=None,
+    doi=None,
+    version=None,
+    alternative_identifier=empty_list(),
+    acted_on_behalf_of=empty_list(),
+    ecosystem=empty_list(),
+)
+```
+
+Identity and metadata for a software package, aligned with schema.org/SoftwareApplication and CodeMeta v3.
+
+### SoftwarePackageName { #tvbo.datamodel.schema.SoftwarePackageName }
+
+```python
+datamodel.schema.SoftwarePackageName()
+```
+
+
+
+### SoftwareRequirement { #tvbo.datamodel.schema.SoftwareRequirement }
+
+```python
+datamodel.schema.SoftwareRequirement(
+    name=None,
+    description=None,
+    dataLocation=None,
+    package=None,
+    version_spec=None,
+    role='runtime',
+    optional=False,
+    hash=None,
+    source_url=None,
+    url=None,
+    license=None,
+    modules=empty_list(),
+    version=None,
+)
+```
+
+An individual software requirement binding a package to a version constraint and a role within an environment.
+
+### SoftwareRequirementName { #tvbo.datamodel.schema.SoftwareRequirementName }
+
+```python
+datamodel.schema.SoftwareRequirementName()
+```
+
+
+
+### Solver { #tvbo.datamodel.schema.Solver }
+
+```python
+datamodel.schema.Solver(
+    method='Tsit5',
+    abs_tol=1e-10,
+    rel_tol=1e-10,
+    step_size=None,
+)
+```
+
+Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5,
+etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and
+tolerances matter.
+
+### SparseFormat { #tvbo.datamodel.schema.SparseFormat }
+
+```python
+datamodel.schema.SparseFormat()
+```
+
+
+
+### SpatialDomain { #tvbo.datamodel.schema.SpatialDomain }
+
+```python
+datamodel.schema.SpatialDomain(
+    label=None,
+    description=None,
+    coordinate_space=None,
+    region=None,
+    geometry=None,
+)
+```
+
+
+
+### SpatialField { #tvbo.datamodel.schema.SpatialField }
+
+```python
+datamodel.schema.SpatialField(
+    label=None,
+    description=None,
+    quantity_kind=None,
+    unit=None,
+    mesh=None,
+    values=None,
+    time_dependent=False,
+    initial_value=None,
+    initial_expression=None,
+)
+```
+
+
+
+### SpecimenEnum { #tvbo.datamodel.schema.SpecimenEnum }
+
+```python
+datamodel.schema.SpecimenEnum()
+```
+
+A set of permissible types for specimens used in brain atlas creation.
+
+### StandardGraphType { #tvbo.datamodel.schema.StandardGraphType }
+
+```python
+datamodel.schema.StandardGraphType()
+```
+
+Well-known graph generator families with automatic backend mapping. The type field on GraphGenerator is a free
+string; this enum lists common types that get automatic code generation for Julia (Graphs.jl) and Python
+(NetworkX).
+
+### StateValue { #tvbo.datamodel.schema.StateValue }
+
+```python
+datamodel.schema.StateValue(name=None, value=None)
+```
+
+A named state variable value for per-node initialization.
+
+### StateValueName { #tvbo.datamodel.schema.StateValueName }
+
+```python
+datamodel.schema.StateValueName()
+```
+
+
+
+### StateVariable { #tvbo.datamodel.schema.StateVariable }
+
+```python
+datamodel.schema.StateVariable(
+    name=None,
+    symbol=None,
+    label=None,
+    definition=None,
+    domain=None,
+    description=None,
+    equation=None,
+    unit=None,
+    record=True,
+    grounding=empty_list(),
+    variable_of_interest=True,
+    coupling_variable=False,
+    equation_type='differential',
+    evict_equation=None,
+    equation_order=1,
+    noise=None,
+    stimulation_variable=None,
+    initial_value=None,
+    derivative_initial_value=None,
+    distribution=None,
+    history=None,
+)
+```
+
+
+
+### StateVariableName { #tvbo.datamodel.schema.StateVariableName }
+
+```python
+datamodel.schema.StateVariableName()
+```
+
+
+
+### StimulationSetting { #tvbo.datamodel.schema.StimulationSetting }
+
+```python
+datamodel.schema.StimulationSetting(
+    electrode_reference=None,
+    amplitude=None,
+    frequency=None,
+    pulse_width=None,
+    mode=None,
+    active_contacts=empty_list(),
+    efield=None,
+)
+```
+
+DBS parameters for a specific session.
+
+### Stimulus { #tvbo.datamodel.schema.Stimulus }
+
+```python
+datamodel.schema.Stimulus(
+    equation=None,
+    parameters=empty_dict(),
+    description=None,
+    dataLocation=None,
+    duration=1000,
+    label=None,
+    regions=empty_list(),
+    weighting=empty_list(),
+    noise=None,
+)
+```
+
+
+
+### Study { #tvbo.datamodel.schema.Study }
+
+```python
+datamodel.schema.Study(
+    description=None,
+    citekey=None,
+    type=None,
+    title=None,
+    authors=empty_list(),
+    year=None,
+    doi=None,
+)
+```
+
+Bibliographic anchor for a source publication, identified by its citation key (``citekey``). The full
+bibliographic record lives in the project BibTeX library (references.bib) and is resolved by citekey; this node
+carries only identity, display fields and the knowledge-graph hooks (the concepts that cite it). Specialised by
+SimulationStudy, which adds the experiments derived from the source.
+
+### StudyDirectory { #tvbo.datamodel.schema.StudyDirectory }
+
+```python
+datamodel.schema.StudyDirectory(
+    name=None,
+    description=None,
+    role=None,
+    level='optional',
+    opaque=False,
+    bids='sanctioned',
+    tracked='all',
+    expires_with=None,
+    in_templates=empty_list(),
+    not_in_templates=empty_list(),
+    files=empty_dict(),
+    subdirs=empty_dict(),
+)
+```
+
+One directory in a study layout. ``role`` is the stable key code resolves by: a resolver asks the layout where the
+``results`` go and never for a literal path, so moving a directory is a one-line edit to this record. ``bids``
+states the directory's standing with the standard, which is what decides whether it needs a ``.bidsignore`` entry,
+and ``tracked`` states what version control keeps.
+
+### StudyDirectoryName { #tvbo.datamodel.schema.StudyDirectoryName }
+
+```python
+datamodel.schema.StudyDirectoryName()
+```
+
+
+
+### StudyDirectoryRole { #tvbo.datamodel.schema.StudyDirectoryRole }
+
+```python
+datamodel.schema.StudyDirectoryRole()
+```
+
+What a directory is for, as a key code resolves paths by. Roles are properties of a study dataset in general, so a
+layout that renames or moves a directory keeps working without touching the code that reads it.
+
+### StudyFile { #tvbo.datamodel.schema.StudyFile }
+
+```python
+datamodel.schema.StudyFile(
+    name=None,
+    description=None,
+    role=None,
+    level='optional',
+    bids='sanctioned',
+    expires_with=None,
+    tracked='all',
+    template=None,
+    generated=False,
+    in_templates=empty_list(),
+    not_in_templates=empty_list(),
+    template_variants=empty_dict(),
+)
+```
+
+One file a study layout accounts for. ``name`` may interpolate ``{study}``, the dataset's own name, which is how
+the entry recipe is named without the layout knowing any particular study.
+
+### StudyFileName { #tvbo.datamodel.schema.StudyFileName }
+
+```python
+datamodel.schema.StudyFileName()
+```
+
+
+
+### StudyFileRole { #tvbo.datamodel.schema.StudyFileRole }
+
+```python
+datamodel.schema.StudyFileRole()
+```
+
+What a file at a known place in the layout is.
+
+### StudyLayout { #tvbo.datamodel.schema.StudyLayout }
+
+```python
+datamodel.schema.StudyLayout(
+    name=None,
+    description=None,
+    dataset_type='study',
+    bids_version=None,
+    subdirs=empty_dict(),
+    files=empty_dict(),
+    templates=empty_dict(),
+)
+```
+
+Directory layout of a study dataset, and the single ground truth for it. Everything that creates, resolves,
+ignores, validates or documents a study's directories reads this record instead of restating the tree, so the
+layout cannot drift between the scaffolder, the path resolvers, the ignore files, the validator and the docs. The
+vocabulary deliberately mirrors the BIDS ``rules/directories.yaml`` (``name``, ``level``, ``opaque``, ``subdirs``)
+so a layout can be diffed against the standard.
+
+### StudyLayoutName { #tvbo.datamodel.schema.StudyLayoutName }
+
+```python
+datamodel.schema.StudyLayoutName()
+```
+
+
+
+### StudyTemplate { #tvbo.datamodel.schema.StudyTemplate }
+
+```python
+datamodel.schema.StudyTemplate(name=None, description=None)
+```
+
+One kind of study the layout accounts for. A template is a *specialisation*: it names the entries a kind adds to
+the study every kind already shares, and nothing else. The general study is therefore not a template and names
+none — a kind earns an entry here only once some directory or file genuinely belongs to it and not to the rest.
+
+### StudyTemplateName { #tvbo.datamodel.schema.StudyTemplateName }
+
+```python
+datamodel.schema.StudyTemplateName()
+```
+
+
+
+### Style { #tvbo.datamodel.schema.Style }
+
+```python
+datamodel.schema.Style(
+    color=None,
+    colormap=None,
+    opacity=None,
+    opts=empty_dict(),
+)
+```
+
+Layer/panel styling, portable intent plus a namespaced backend passthrough. Reuses Argument for the passthrough
+(matplotlib implicit in the MVP).
+
+### Subject { #tvbo.datamodel.schema.Subject }
+
+```python
+datamodel.schema.Subject(
+    subject_id=None,
+    label=None,
+    group=None,
+    age=None,
+    sex=None,
+    sessions=empty_dict(),
+    network=None,
+    metadata=None,
+)
+```
+
+A participant in a study. Each subject typically has their own brain network (connectome) and empirical
+recordings. Corresponds to a BIDS 'sub-' entity.
+
+### SubjectBatchMode { #tvbo.datamodel.schema.SubjectBatchMode }
+
+```python
+datamodel.schema.SubjectBatchMode()
+```
+
+How a multi-subject dataset's per-subject fits are executed.
+
+### SubjectSubjectId { #tvbo.datamodel.schema.SubjectSubjectId }
+
+```python
+datamodel.schema.SubjectSubjectId()
+```
+
+
+
+### Surface { #tvbo.datamodel.schema.Surface }
+
+```python
+datamodel.schema.Surface(
+    colormap=None,
+    vmin=None,
+    vmax=None,
+    symmetric=None,
+    percentile=None,
+    connectome=None,
+    mesh=None,
+    mesh_format=None,
+    template=None,
+    density=None,
+    hemi=None,
+    view=None,
+    atlas=None,
+    surface_atlas=None,
+    mask=None,
+    geometry=None,
+    color=None,
+    edge_color=None,
+    edge_width=None,
+)
+```
+
+A cortical surface panel's geometry and how a field is painted on it. One object, so the three mutually exclusive
+places a mesh can come from — a tvbo `Network` carrying one, a mesh file, or a named template — sit together with
+the options that only apply to each, instead of being loose names that could be given in any combination.
+
+### SurfaceView { #tvbo.datamodel.schema.SurfaceView }
+
+```python
+datamodel.schema.SurfaceView()
+```
+
+Where the camera sits for a cortical surface. Distinct from `VolumeView`: a mesh is viewed from a side of the
+brain, a volume is sliced along an anatomical axis, and the two vocabularies do not overlap.
+
+### Surrogate { #tvbo.datamodel.schema.Surrogate }
+
+```python
+datamodel.schema.Surrogate(
+    statistic=None,
+    permute=None,
+    permutations=None,
+    direction='greater_equal',
+    family_wise=False,
+)
+```
+
+A permutation-significance test: re-evaluate a named statistic under n_perm fixed permutations of a field and
+report the per-element exceedance p-value. General (any permutation null — spatial nulls, FC significance, wave
+detection, …). Codegen emits ``(vmap(lambda p: stat(field[p]))(perms) <cmp> stat(field)).mean(axis over perms)``;
+the wrapped statistic is an ordinary symbolic derived variable, so only the permutation fold is structural.
+
+### SweepDirection { #tvbo.datamodel.schema.SweepDirection }
+
+```python
+datamodel.schema.SweepDirection()
+```
+
+Order in which a branch-following sweep (SweepSeeding.from_previous) traverses its axis. Ignored for independent
+seeding, where order is irrelevant.
+
+### SweepSeeding { #tvbo.datamodel.schema.SweepSeeding }
+
+```python
+datamodel.schema.SweepSeeding()
+```
+
+How each point of a parameter sweep (Exploration) obtains its initial state. Determines whether the sweep points
+are independent (and therefore parallelisable) or whether the trajectory follows a solution branch as the swept
+parameter is changed quasi-statically. The latter is forward-time-integration branch following — distinct from
+numerical continuation of equilibria (the Continuation class), which tracks branches with a Newton corrector
+rather than by simulation.
+
+### SystemType { #tvbo.datamodel.schema.SystemType }
+
+```python
+datamodel.schema.SystemType()
+```
+
+
+
+### Theme { #tvbo.datamodel.schema.Theme }
+
+```python
+datamodel.schema.Theme(
+    ink=None,
+    base=None,
+    muted=None,
+    highlight=None,
+    background=None,
+    palette=empty_list(),
+    colormaps=None,
+    iri=None,
+    tick_length=None,
+    tick_width=None,
+    tick_direction=None,
+    tick_pad=None,
+    minor_ticks=None,
+    minor_tick_length=None,
+    minor_tick_width=None,
+    axis_width=None,
+    label_pad=None,
+    title_pad=None,
+    line_width=None,
+    marker_size=None,
+    legend_frame=None,
+    legend_handle_length=None,
+    legend_pad=None,
+    grid_lines=None,
+    font_family=empty_list(),
+)
+```
+
+A project's whole look in one declarable object: its colours (inherited from `Palette`) and the geometry a style
+sheet used to own — tick shape, axis weight, line weights, legend, grid, font. Declared on a figure, it beats
+every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It
+is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec,
+where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:theme/default`; a
+project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a
+curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means
+to fix and nothing else.
+
+### TickDirection { #tvbo.datamodel.schema.TickDirection }
+
+```python
+datamodel.schema.TickDirection()
+```
+
+Which side of the axes a tick mark is drawn on.
+
+### TickFormat { #tvbo.datamodel.schema.TickFormat }
+
+```python
+datamodel.schema.TickFormat()
+```
+
+How a tick number is written.
+
+### TickPrune { #tvbo.datamodel.schema.TickPrune }
+
+```python
+datamodel.schema.TickPrune()
+```
+
+Which end ticks to drop where a corner tick would collide with its neighbour panel's.
+
+### TimeSeries { #tvbo.datamodel.schema.TimeSeries }
+
+```python
+datamodel.schema.TimeSeries(
+    label=None,
+    description=None,
+    dataLocation=None,
+    data=None,
+    time=None,
+    sampling_rate=None,
+    sampling_period=None,
+    sampling_period_unit='ms',
+    unit=None,
+    labels_ordering=empty_list(),
+    labels_dimensions=None,
+    source_experiment=None,
+    generated_at=None,
+    software_environment=None,
+    task_name=None,
+    subject_id=None,
+    session_id=None,
+    run_id=None,
+    modality=None,
+    model_equation_ref=None,
+    model_param_ref=None,
+    connectivity_ref=None,
+)
+```
+
+Time series data from simulations or measurements. Supports BIDS-compatible export for computational modeling
+(BEP034).
+
+### ToolRole { #tvbo.datamodel.schema.ToolRole }
+
+```python
+datamodel.schema.ToolRole()
+```
+
+Primary function of the tool in a simulation workflow.
+
+### ToolUnit { #tvbo.datamodel.schema.ToolUnit }
+
+```python
+datamodel.schema.ToolUnit(unit=None, dimension=None, symbol=None)
+```
+
+One TVBO unit as a single tool writes it.
+A tool's unit vocabulary is a fact about that tool, not about the unit — LEMS calls `Hz` a `per_time` quantity and
+writes it `per_s`, and no other backend need agree. Keyed by the `UnitEnum` value so a record states only the
+units its tool knows.
+
+### ToolUnitUnit { #tvbo.datamodel.schema.ToolUnitUnit }
+
+```python
+datamodel.schema.ToolUnitUnit()
+```
+
+
+
+### TrackedContent { #tvbo.datamodel.schema.TrackedContent }
+
+```python
+datamodel.schema.TrackedContent()
+```
+
+What version control keeps of a directory.
+
+### Tractogram { #tvbo.datamodel.schema.Tractogram }
+
+```python
+datamodel.schema.Tractogram(
+    name=None,
+    label=None,
+    iri=None,
+    description=None,
+    data_source=None,
+    number_of_subjects=None,
+    acquisition=None,
+    processing_pipeline=None,
+    reference=None,
+)
+```
+
+Reference to tractography/diffusion MRI data used to derive structural connectivity
+
+### TractogramName { #tvbo.datamodel.schema.TractogramName }
+
+```python
+datamodel.schema.TractogramName()
+```
+
+
+
+### Triangle { #tvbo.datamodel.schema.Triangle }
+
+```python
+datamodel.schema.Triangle()
+```
+
+Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as
+one image. The conventional way to show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for
+the drawn halves: with the matrix convention (row 0 at top, set invert_y) 'upper' is the top-right triangle.
+
+### TuningObjective { #tvbo.datamodel.schema.TuningObjective }
+
+```python
+datamodel.schema.TuningObjective(
+    label=None,
+    description=None,
+    type=None,
+    target_variable=None,
+    target_value=None,
+    target_data=None,
+    metric=None,
+)
+```
+
+Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB).
+
+### UnitEnum { #tvbo.datamodel.schema.UnitEnum }
+
+```python
+datamodel.schema.UnitEnum()
+```
+
+Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional
+abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where
+available.
+
+### UpdateRule { #tvbo.datamodel.schema.UpdateRule }
+
+```python
+datamodel.schema.UpdateRule(
+    name=None,
+    target_parameter=None,
+    equation=None,
+    description=None,
+    bounds=None,
+    warmup=None,
+    requires=empty_list(),
+)
+```
+
+Defines how a parameter is updated based on observables. Represents iterative learning rules like FIC or EIB
+updates. Functions from experiment.functions are available in the equation.
+
+### UpdateRuleName { #tvbo.datamodel.schema.UpdateRuleName }
+
+```python
+datamodel.schema.UpdateRuleName()
+```
+
+
+
+### Volume { #tvbo.datamodel.schema.Volume }
+
+```python
+datamodel.schema.Volume(
+    colormap=None,
+    vmin=None,
+    vmax=None,
+    symmetric=None,
+    percentile=None,
+    atlas=None,
+    image=None,
+    view=None,
+    intensity_projection=None,
+)
+```
+
+A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, same layer and same colour scale,
+with the geometry coming from an atlas instead of a mesh. Values are placed BY LABEL through the atlas crosswalk,
+never by array position.
+
+### VolumeView { #tvbo.datamodel.schema.VolumeView }
+
+```python
+datamodel.schema.VolumeView()
+```
+
+Which anatomical plane a labelled volume is projected along.
+
+### WorkflowConfig { #tvbo.datamodel.schema.WorkflowConfig }
+
+```python
+datamodel.schema.WorkflowConfig(
+    out_dir=None,
+    container=None,
+    container_binds=empty_list(),
+    container_args=None,
+    retries=None,
+    rng=None,
+    chunk=None,
+    distribute=None,
+    requirements=empty_dict(),
+    slurm=None,
+    snakemake=None,
+    nextflow=None,
+)
+```
+
+Declarative orchestration for rendering a parameter sweep into a distributed, reproducible workflow (Slurm array,
+Snakemake, Nextflow). Backend- and engine-independent: it names *what* to distribute, *where* results go, and the
+per-engine resources, while each engine emitter renders the concrete artefact. Declared on a study as ``workflow``
+and refined per experiment via ``workflow_overrides``; unset fields fall back to the emitter's defaults so an
+override sets only what it names.
+
+### WorkflowDistributeBy { #tvbo.datamodel.schema.WorkflowDistributeBy }
+
+```python
+datamodel.schema.WorkflowDistributeBy()
+```
+
+Default tier a sweep axis is placed on when it is not named explicitly in a DistributionConfig. Vectorized axes
+are packed into one batched backend call; workflow axes are fanned out into independent scheduler tasks.
+
+### WorkflowEngineConfig { #tvbo.datamodel.schema.WorkflowEngineConfig }
+
+```python
+datamodel.schema.WorkflowEngineConfig(
+    cpus_per_task=None,
+    mem=None,
+    time=None,
+    gres=None,
+    partition=None,
+    account=None,
+    comment=None,
+    cores=None,
+    jobs=None,
+    executor=None,
+    queue=None,
+    modules=empty_list(),
+    venv=None,
+    setup=empty_list(),
+    mail_type=None,
+    mail_user=None,
+    array_chunk=None,
+    options=empty_dict(),
+    env=empty_dict(),
+)
+```
+
+Execution directives for a workflow engine. Every field is optional and each engine's emitter consumes the subset
+it supports, so one block may carry directives for more than one target. The generic resource fields
+(cpus_per_task, mem, time) map across engines; the remaining fields are named for the engine that reads them
+(Slurm: partition/account/gres/ mail_*/array_chunk; Snakemake: cores; Nextflow: executor/queue). Any directive not
+named here is passed through ``options`` verbatim, so the block stays extensible without a schema change.
+
+### slots { #tvbo.datamodel.schema.slots }
+
+```python
+datamodel.schema.slots()
+```
+

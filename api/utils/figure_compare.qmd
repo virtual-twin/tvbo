@@ -1,0 +1,186 @@
+# figure_compare { #tvbo.utils.figure_compare }
+
+`utils.figure_compare`
+
+Measure how a rendered figure differs in LAYOUT from a reference image.
+
+A replication's figure is meant to land on the published one's layout: same aspect, same panel grid, panels in the same places at the same relative sizes. Judging that by eye does not scale and does not produce a number you can put in a report, so this module reduces both images to their panel geometry and reports the differences.
+
+Panels are found by recursive XY-cut — the classic document-layout decomposition:
+project the ink onto each axis, split at runs of blank, recurse. It needs no knowledge of either figure's provenance, which is the point: the reference is a bitmap from a PDF and ours comes from a mosaic spec, and they are compared on equal terms.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Box](#tvbo.utils.figure_compare.Box) | A content block in fractional page coordinates (0-1, origin top-left). |
+| [Pane](#tvbo.utils.figure_compare.Pane) | One side of an A/B row. |
+
+### Box { #tvbo.utils.figure_compare.Box }
+
+```python
+utils.figure_compare.Box(x0, y0, x1, y1)
+```
+
+A content block in fractional page coordinates (0-1, origin top-left).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [area](#tvbo.utils.figure_compare.Box.area) | Fraction of the page the block covers. |
+| [h](#tvbo.utils.figure_compare.Box.h) | Height as a fraction of the page. |
+| [w](#tvbo.utils.figure_compare.Box.w) | Width as a fraction of the page. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [iou](#tvbo.utils.figure_compare.Box.iou) | Intersection over union — 1.0 when the two blocks coincide exactly. |
+
+##### iou { #tvbo.utils.figure_compare.Box.iou }
+
+```python
+utils.figure_compare.Box.iou(other)
+```
+
+Intersection over union — 1.0 when the two blocks coincide exactly.
+
+### Pane { #tvbo.utils.figure_compare.Pane }
+
+```python
+utils.figure_compare.Pane()
+```
+
+One side of an A/B row.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                                           | Default    |
+|----------|--------|---------------------------------------------------------------------------------------------------------------------------------------|------------|
+| images   |        | The image to draw — a path, several paths stacked vertically (a paper that splits one quantity over separate scans), or None.         | _required_ |
+| title    |        | Heading above the pane.                                                                                                               | _required_ |
+| fallback |        | Drawn in place of a missing image, so the pane still holds its slot in the layout instead of the row silently collapsing to one side. | _required_ |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [compare](#tvbo.utils.figure_compare.compare) | Layout comparison of two figure images. |
+| [content_blocks](#tvbo.utils.figure_compare.content_blocks) | Recursive XY-cut of an ink mask into content blocks, in pixel coordinates. |
+| [image_row](#tvbo.utils.figure_compare.image_row) | A one-row figure holding *panes* at a COMMON height, widths following their aspect. |
+| [match_boxes](#tvbo.utils.figure_compare.match_boxes) | Pair our panels with theirs by best overlap, leaving unmatched panels as ``None``. |
+| [overlay](#tvbo.utils.figure_compare.overlay) | Write a side-by-side of both images with their detected panels outlined. |
+| [page_boxes](#tvbo.utils.figure_compare.page_boxes) | Panel boxes of one image in fractional page coordinates, plus its pixel size. |
+| [report_table](#tvbo.utils.figure_compare.report_table) | The per-panel comparison as a markdown table, built through `md_table`. |
+| [side_by_side](#tvbo.utils.figure_compare.side_by_side) | Write *panes* as one row at a common height — the A/B composite a report embeds. |
+
+### compare { #tvbo.utils.figure_compare.compare }
+
+```python
+utils.figure_compare.compare(ours, theirs, **kwargs)
+```
+
+Layout comparison of two figure images.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                |
+|--------|--------|----------------------------------------------------------------------------|
+|        | dict   | A dict with the page geometry of each, the matched panel pairs and their   |
+|        | dict   | offsets in percent of page, and summary statistics (mean/max offset, IoU). |
+
+### content_blocks { #tvbo.utils.figure_compare.content_blocks }
+
+```python
+utils.figure_compare.content_blocks(
+    mask,
+    *,
+    min_gap_frac=0.012,
+    min_size_frac=0.03,
+    depth=4,
+)
+```
+
+Recursive XY-cut of an ink mask into content blocks, in pixel coordinates.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type       | Description                                                                                                                     | Default    |
+|---------------|------------|---------------------------------------------------------------------------------------------------------------------------------|------------|
+| mask          | np.ndarray | Boolean ink mask, ``(rows, cols)``.                                                                                             | _required_ |
+| min_gap_frac  | float      | Blank run, as a fraction of the page's smaller side, that counts as a gutter. Below this, adjacent panels merge into one block. | `0.012`    |
+| min_size_frac | float      | Blocks smaller than this fraction of the page in BOTH axes are dropped as decorations (tick labels, a stray legend).            | `0.03`     |
+| depth         | int        | Maximum alternating cut depth.                                                                                                  | `4`        |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                | Description                                       |
+|--------|-------------------------------------|---------------------------------------------------|
+|        | list\[tuple\[int, int, int, int\]\] | ``(x0, y0, x1, y1)`` per block, in reading order. |
+
+### image_row { #tvbo.utils.figure_compare.image_row }
+
+```python
+utils.figure_compare.image_row(panes, width=6.7, fontsize=8)
+```
+
+A one-row figure holding *panes* at a COMMON height, widths following their aspect.
+
+Equal heights with aspect-proportional widths is what makes an A/B honest: neither side is stretched to match the other, and the row fills *width* inches exactly, so the pair lands on a report's text block without letterboxing. Returns ``(fig, axes)`` so a caller can annotate before saving.
+
+Built on `matplotlib.figure.Figure` rather than `pyplot`, so calling this from a notebook (a Quarto report is one) neither switches the global backend nor leaks a figure into pyplot's registry.
+
+``fontsize=0`` drops the labels rather than drawing them at zero size, which FreeType rejects outright; it is how a caller measures the row's pure image geometry.
+
+### match_boxes { #tvbo.utils.figure_compare.match_boxes }
+
+```python
+utils.figure_compare.match_boxes(ours, theirs)
+```
+
+Pair our panels with theirs by best overlap, leaving unmatched panels as ``None``.
+
+Greedy on IoU rather than an assignment solve: when the layouts already broadly agree the two are identical, and when they do not, a greedy pairing degrades into obvious ``None`` rows instead of an inscrutable global optimum.
+
+### overlay { #tvbo.utils.figure_compare.overlay }
+
+```python
+utils.figure_compare.overlay(result, outfile, titles=('ours', 'reference'))
+```
+
+Write a side-by-side of both images with their detected panels outlined.
+
+The numbers say how far off the layout is; this says *which* panel drifted.
+
+### page_boxes { #tvbo.utils.figure_compare.page_boxes }
+
+```python
+utils.figure_compare.page_boxes(path, **kwargs)
+```
+
+Panel boxes of one image in fractional page coordinates, plus its pixel size.
+
+### report_table { #tvbo.utils.figure_compare.report_table }
+
+```python
+utils.figure_compare.report_table(result)
+```
+
+The per-panel comparison as a markdown table, built through `md_table`.
+
+### side_by_side { #tvbo.utils.figure_compare.side_by_side }
+
+```python
+utils.figure_compare.side_by_side(
+    panes,
+    outfile,
+    width=6.7,
+    fontsize=6,
+    dpi=300,
+)
+```
+
+Write *panes* as one row at a common height — the A/B composite a report embeds.
+
+A replication report sets the published figure beside its reproduction. Composing that pair at render time, rather than shipping a rendered composite, is what keeps a copyrighted original out of every artifact but the one the caller names here.

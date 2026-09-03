@@ -1,0 +1,98 @@
+# Slot: projection 
+
+
+_Which plane the region centres flatten onto._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/projection](https://w3id.org/tvbo/slot/projection)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Graph](../classes/Graph.qmd) | A node-link panel's graph and how it is drawn: the connectome the model actua... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Projection](../enums/Projection.qmd) |
+| Domain Of | [Graph](../classes/Graph.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Graph](../classes/Graph.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:projection |
+| native | tvbo:projection |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: projection
+description: Which plane the region centres flatten onto.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Graph
+domain_of:
+- Graph
+range: Projection
+
+```
+</details></div>

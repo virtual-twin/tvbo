@@ -1,0 +1,102 @@
+# Slot: outsym 
+
+
+_Output symbol names for the edge model. E.g. ['P'] for a scalar power flow, ['Fx', 'Fy'] for 2D forces. Maps directly to outsym in ND.jl EdgeModel. If not specified, derived from coupling variables of the connected vertex dynamics._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/outsym](https://w3id.org/tvbo/slot/outsym)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Coupling](../classes/Coupling.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:outsym |
+| native | tvbo:outsym |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: outsym
+description: Output symbol names for the edge model. E.g. ['P'] for a scalar power
+  flow, ['Fx', 'Fy'] for 2D forces. Maps directly to outsym in ND.jl EdgeModel. If
+  not specified, derived from coupling variables of the connected vertex dynamics.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Coupling
+domain_of:
+- Coupling
+range: string
+multivalued: true
+
+```
+</details></div>

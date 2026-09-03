@@ -1,0 +1,106 @@
+# Slot: activities 
+
+
+_The runs that produced this artifact, serialized to BEP028's activity record. Each names the command, the software that carried it out and what it consumed._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/activities](https://w3id.org/tvbo/slot/activities)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Activity](../classes/Activity.qmd) |
+| Domain Of | [Provenance](../classes/Provenance.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Provenance](../classes/Provenance.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:activities |
+| native | tvbo:activities |
+| exact | prov:wasGeneratedBy |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: activities
+description: The runs that produced this artifact, serialized to BEP028's activity
+  record. Each names the command, the software that carried it out and what it consumed.
+from_schema: https://w3id.org/tvbo
+exact_mappings:
+- prov:wasGeneratedBy
+rank: 1000
+owner: Provenance
+domain_of:
+- Provenance
+range: Activity
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

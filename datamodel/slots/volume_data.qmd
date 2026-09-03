@@ -1,0 +1,98 @@
+# Slot: volume_data 
+
+
+_Reference to raw or thresholded volume_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/volume_data](https://w3id.org/tvbo/dbs/slot/volume_data)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [EField](../classes/EField.qmd) | Simulated electric field from DBS modeling |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [EField](../classes/EField.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [EField](../classes/EField.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:volume_data |
+| native | tvbo_dbs:volume_data |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: volume_data
+description: Reference to raw or thresholded volume
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: EField
+domain_of:
+- EField
+range: string
+
+```
+</details></div>

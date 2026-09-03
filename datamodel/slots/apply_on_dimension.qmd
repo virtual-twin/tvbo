@@ -1,0 +1,79 @@
+# Slot: apply_on_dimension 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/apply_on_dimension](https://w3id.org/tvbo/slot/apply_on_dimension)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [Function](../classes/Function.qmd) | A function with explicit input -> transformation -> output flow |  no  |
+| [LossFunction](../classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |  no  |
+| [FunctionCall](../classes/FunctionCall.qmd) | Invocation of a function in a pipeline |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Function](../classes/Function.qmd), [FunctionCall](../classes/FunctionCall.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:apply_on_dimension |
+| native | tvbo:apply_on_dimension |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: apply_on_dimension
+domain_of:
+- Function
+- FunctionCall
+range: string
+
+```
+</details></div>

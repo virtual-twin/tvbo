@@ -1,0 +1,102 @@
+# Slot: citation 
+
+
+_Additional citation strings or DOIs._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:citation](http://schema.org/citation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+| Slot URI | [schema:citation](http://schema.org/citation) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:citation |
+| native | tvbo_sw:citation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: citation
+description: Additional citation strings or DOIs.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+slot_uri: schema:citation
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: string
+multivalued: true
+
+```
+</details></div>

@@ -1,0 +1,70 @@
+# converters { #tvbo.data.converters }
+
+`data.converters`
+
+Format converters: BEP017 export.
+
+Uses relmat_entities() + build_path() from §6.5 for BIDS-compliant filenames — no manual filename construction.
+
+TVB converters have moved to :mod:`tvbo.adapters.tvb`.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [relmat_entities](#tvbo.data.converters.relmat_entities) | Extract pybids entities from a tvbo Network instance or dict (§6.5). |
+| [sensor_entities](#tvbo.data.converters.sensor_entities) | Extract pybids entities from a sensor Network (§6.5). |
+| [to_bep017](#tvbo.data.converters.to_bep017) | Export a tvbo Network to BEP017-compatible per-measure files. |
+
+### relmat_entities { #tvbo.data.converters.relmat_entities }
+
+```python
+data.converters.relmat_entities(network)
+```
+
+Extract pybids entities from a tvbo Network instance or dict (§6.5).
+
+Accepts both a Network object (direct attribute access) and a raw sidecar dict (for standalone usage). Returns entity dict for ``build_path()``.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+network : Network or dict
+    Network instance or raw sidecar dict.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    Entity dict with keys matching RELMAT_PATTERNS placeholders.
+
+### sensor_entities { #tvbo.data.converters.sensor_entities }
+
+```python
+data.converters.sensor_entities(network)
+```
+
+Extract pybids entities from a sensor Network (§6.5).
+
+Returns entity dict suitable for ``build_path()`` with ``SENSOR_PATTERNS``.
+
+### to_bep017 { #tvbo.data.converters.to_bep017 }
+
+```python
+data.converters.to_bep017(network, output_dir)
+```
+
+Export a tvbo Network to BEP017-compatible per-measure files.
+
+Each template edge becomes one ``meas-<name>_relmat.dense.tsv`` + JSON sidecar. Filenames use pybids ``build_path`` (§6.5). Reads data directly from the Network object — no YAML round-trip needed.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+network : Network
+    Network instance with loaded arrays.
+output_dir : str or Path
+    Output directory for BEP017 files.

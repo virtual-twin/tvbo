@@ -1,0 +1,102 @@
+# Slot: find_fixpoint 
+
+
+_Whether to find a fixed point (steady state) before time integration. Used as initial condition for ODEProblem. Maps to NLsolve.fixpoint! in ND.jl or similar in other backends._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/find_fixpoint](https://w3id.org/tvbo/slot/find_fixpoint)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ExecutionConfig](../classes/ExecutionConfig.qmd) | Configuration for computational execution (parallelization, precision, hardwa... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:find_fixpoint |
+| native | tvbo:find_fixpoint |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: find_fixpoint
+description: Whether to find a fixed point (steady state) before time integration.
+  Used as initial condition for ODEProblem. Maps to NLsolve.fixpoint! in ND.jl or
+  similar in other backends.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: ExecutionConfig
+domain_of:
+- ExecutionConfig
+range: boolean
+
+```
+</details></div>

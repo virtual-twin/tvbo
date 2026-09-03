@@ -1,0 +1,98 @@
+# Slot: on_region 
+
+
+_Mesh/atlas subset where BC applies._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/on_region](https://w3id.org/tvbo/slot/on_region)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BoundaryCondition](../classes/BoundaryCondition.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [BoundaryCondition](../classes/BoundaryCondition.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [BoundaryCondition](../classes/BoundaryCondition.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:on_region |
+| native | tvbo:on_region |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: on_region
+description: Mesh/atlas subset where BC applies.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: BoundaryCondition
+domain_of:
+- BoundaryCondition
+range: string
+
+```
+</details></div>

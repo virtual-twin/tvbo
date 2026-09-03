@@ -1,0 +1,130 @@
+# software { #tvbo.classes.software }
+
+`classes.software`
+
+The ``SimulationTool`` runtime wrapper, and a tool's own unit vocabulary.
+
+Wraps the auto-generated ``SimulationTool`` dataclass, adding the factory constructors the other database entities have and the lookup that answers *how does this tool write this unit*.
+
+A tool's unit vocabulary is a fact about the tool. LEMS calls ``Hz`` a ``per_time`` quantity and writes it ``per_s``; nothing else need agree, and the same unit means the same thing regardless. Keeping the vocabulary on the tool's own database entry is what lets a second backend declare its own without touching a shared table — and what retired ``PhysicalDimension``, which was LEMS's dimension names restated in TVBO's schema as though they were universal.
+
+
+
+## Usage {.doc-section .doc-section-usage}
+
+>>> from tvbo.classes.software import SimulationTool
+>>> lems = SimulationTool.for_format("neuroml")
+>>> lems.name
+'LEMS'
+>>> lems.dimension_of("mV"), lems.symbol_of("Hz")
+('voltage', 'per_s')
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [SimulationTool](#tvbo.classes.software.SimulationTool) | A software tool's database entry, with its code-generation capabilities. |
+
+### SimulationTool { #tvbo.classes.software.SimulationTool }
+
+```python
+classes.software.SimulationTool(
+    name=None,
+    description=None,
+    homepage=None,
+    license=None,
+    repository=None,
+    doi=None,
+    version=None,
+    alternative_identifier=empty_list(),
+    acted_on_behalf_of=empty_list(),
+    ecosystem=empty_list(),
+    application_category=None,
+    scale=empty_list(),
+    model_paradigm=empty_list(),
+    tool_role=empty_list(),
+    programming_language=empty_list(),
+    runtime_platform=empty_list(),
+    operating_system=empty_list(),
+    interoperates_with=empty_list(),
+    date_created=None,
+    date_modified=None,
+    development_status=None,
+    author=empty_list(),
+    maintainer=empty_list(),
+    funder=empty_list(),
+    reference_publication=None,
+    citation=empty_list(),
+    keywords=empty_list(),
+    same_as=empty_list(),
+    issue_tracker=None,
+    is_accessible_for_free=True,
+    codegen_format=None,
+    units=empty_dict(),
+)
+```
+
+A software tool's database entry, with its code-generation capabilities.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [dimension_of](#tvbo.classes.software.SimulationTool.dimension_of) | This tool's name for the dimension of *unit*, or `"none"`. |
+| [for_format](#tvbo.classes.software.SimulationTool.for_format) | The tool TVBO emits *format_key* for, or `None` if no entry claims it. |
+| [from_db](#tvbo.classes.software.SimulationTool.from_db) | Load a SimulationTool by name from the tvbo database. |
+| [from_file](#tvbo.classes.software.SimulationTool.from_file) | Load a SimulationTool from a YAML file. |
+| [list_db](#tvbo.classes.software.SimulationTool.list_db) | List available software entries in the tvbo database. |
+| [symbol_of](#tvbo.classes.software.SimulationTool.symbol_of) | This tool's spelling of *unit* itself, or `""` to write the value bare. |
+
+##### dimension_of { #tvbo.classes.software.SimulationTool.dimension_of }
+
+```python
+classes.software.SimulationTool.dimension_of(unit)
+```
+
+This tool's name for the dimension of *unit*, or `"none"`.
+
+`"none"` is LEMS's own spelling of dimensionless, and is what a tool that has no dimension for the unit must be told.
+
+##### for_format { #tvbo.classes.software.SimulationTool.for_format }
+
+```python
+classes.software.SimulationTool.for_format(format_key)
+```
+
+The tool TVBO emits *format_key* for, or `None` if no entry claims it.
+
+`format_key` is an export-registry key (`tvbo formats`). `None` rather than a raise: most formats have no tool entry, and a caller asking how a tool spells a unit wants the same answer — "it does not say" — whether the entry is absent or merely silent on that unit.
+
+##### from_db { #tvbo.classes.software.SimulationTool.from_db }
+
+```python
+classes.software.SimulationTool.from_db(name)
+```
+
+Load a SimulationTool by name from the tvbo database.
+
+##### from_file { #tvbo.classes.software.SimulationTool.from_file }
+
+```python
+classes.software.SimulationTool.from_file(path)
+```
+
+Load a SimulationTool from a YAML file.
+
+##### list_db { #tvbo.classes.software.SimulationTool.list_db }
+
+```python
+classes.software.SimulationTool.list_db()
+```
+
+List available software entries in the tvbo database.
+
+##### symbol_of { #tvbo.classes.software.SimulationTool.symbol_of }
+
+```python
+classes.software.SimulationTool.symbol_of(unit)
+```
+
+This tool's spelling of *unit* itself, or `""` to write the value bare.

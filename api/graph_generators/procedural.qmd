@@ -1,0 +1,100 @@
+# procedural { #tvbo.graph_generators.procedural }
+
+`graph_generators.procedural`
+
+Resolve a ``Procedural`` GraphGenerator's typed DAG into backend-independent expressions.
+
+A ``Procedural`` generator describes a network construction as an ordered DAG of *typed* steps — a distance kernel, a stochastic connection mask, a Gaussian field, an axis normalisation — instead of per-generator Python. This module turns that metadata into SymPy expressions, which the printers in ``tvbo/codegen/code.py`` render natively for every backend.
+
+Two properties make it declarative rather than a lowering dialect:
+
+**Nothing is built from expression strings.** Each step's options are schema *fields*, and
+this module constructs the SymPy tree directly (``Function("pairwise_distance")(pos)``).
+That is not a stylistic choice: SymPy's parser cannot represent keyword arguments at all, silently collapses ``M[M != 0]`` to ``True``, and turns an unregistered head into implicit multiplication (``eigvals(M)`` -> ``M*eigvals``) with no error. Building nodes directly makes all three unreachable. The single exception is the ``equation`` step, whose ``rhs`` is author-written algebra — which is what the parser is actually for.
+
+**The deterministic/stochastic split is inferred, not declared.** ``partition`` computes
+which steps transitively depend on the generator's seed. A backend evaluates the deterministic prefix once and traces only the stochastic suffix per realisation, so sweeping N network realisations costs N x (the seeded tail), not N x (the whole construction). The boundary is a property of the DAG, so every backend gets the same answer.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [KEY](#tvbo.graph_generators.procedural.KEY) | The reserved symbol a step's seeded draw is keyed by. |
+| [N_NODES](#tvbo.graph_generators.procedural.N_NODES) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [ProceduralError](#tvbo.graph_generators.procedural.ProceduralError) | A Procedural generator's DAG is malformed (unknown step type, bad reference, ...). |
+
+### ProceduralError { #tvbo.graph_generators.procedural.ProceduralError }
+
+```python
+graph_generators.procedural.ProceduralError()
+```
+
+A Procedural generator's DAG is malformed (unknown step type, bad reference, ...).
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [build](#tvbo.graph_generators.procedural.build) | Resolve a ``Procedure``'s ``steps`` DAG to ordered ``(name, expression)`` pairs. |
+| [draw](#tvbo.graph_generators.procedural.draw) | Sample ``shape`` values from ``distribution``, through the same printer sampler. |
+| [materialize](#tvbo.graph_generators.procedural.materialize) | Evaluate a Procedure's DAG eagerly, in numpy, and return its ``output`` values. |
+| [partition](#tvbo.graph_generators.procedural.partition) | Split the DAG into (deterministic prefix, stochastic suffix), in DAG order. |
+| [seeded_steps](#tvbo.graph_generators.procedural.seeded_steps) | Names of steps that depend on the generator's PRNG state, transitively. |
+
+### build { #tvbo.graph_generators.procedural.build }
+
+```python
+graph_generators.procedural.build(spec)
+```
+
+Resolve a ``Procedure``'s ``steps`` DAG to ordered ``(name, expression)`` pairs.
+
+``spec`` is a ``Procedure`` block — ``steps`` (an ordered mapping of typed ``ProcedureStep``s, keyed by name) and ``output`` — plus the generator's ``parameters``. Node positions are not a special slot: a layout is an ordinary step.
+
+### draw { #tvbo.graph_generators.procedural.draw }
+
+```python
+graph_generators.procedural.draw(distribution, shape, seed=None, substream=0)
+```
+
+Sample ``shape`` values from ``distribution``, through the same printer sampler.
+
+A construction that needs one array of draws rather than a whole DAG — a per-unit downward projection, say — still goes through the printer table, so it cannot drift from what a `sample` step produces for the same distribution and seed.
+
+### materialize { #tvbo.graph_generators.procedural.materialize }
+
+```python
+graph_generators.procedural.materialize(spec, params=None, seed=None)
+```
+
+Evaluate a Procedure's DAG eagerly, in numpy, and return its ``output`` values.
+
+The evaluation goes through the SAME primitive tables the other backends emit from:
+each step is rendered by the numpy printer and evaluated. There is deliberately no second numpy implementation of `sample`, `eigvals`, `normalize` and friends — one definition per backend is what keeps eager materialisation and emitted JAX from drifting apart, which a parallel evaluator cannot guarantee.
+
+Only genuinely non-expression operations stay host-side (see ``_host_env``): resolving a Network IRI is I/O, not array algebra, and no printer should ever emit it.
+
+### partition { #tvbo.graph_generators.procedural.partition }
+
+```python
+graph_generators.procedural.partition(spec)
+```
+
+Split the DAG into (deterministic prefix, stochastic suffix), in DAG order.
+
+The prefix is evaluated once; the suffix is what a backend re-evaluates per network realisation. For a generator whose only randomness is a connection mask, the suffix is a handful of array ops while the geometry stays a constant.
+
+### seeded_steps { #tvbo.graph_generators.procedural.seeded_steps }
+
+```python
+graph_generators.procedural.seeded_steps(spec, resolved=None)
+```
+
+Names of steps that depend on the generator's PRNG state, transitively.
+
+Seededness is read off the RESOLVED EXPRESSION, not the declared step type: a step is seeded if its expression draws randomness anywhere (it carries the PRNG symbol) or if it references a seeded intermediate. Trusting the declared type instead would miss an `equation` step that calls a sampler head directly — and a missed draw is the worst possible failure here, because the step would be hoisted into the deterministic prefix and every "independent" realisation would silently share one draw.

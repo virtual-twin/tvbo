@@ -1,0 +1,102 @@
+# Slot: keywords 
+
+
+_Tags for topic-based discovery and clustering._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:keywords](http://schema.org/keywords)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+| Slot URI | [schema:keywords](http://schema.org/keywords) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:keywords |
+| native | tvbo_sw:keywords |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: keywords
+description: Tags for topic-based discovery and clustering.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+slot_uri: schema:keywords
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: string
+multivalued: true
+
+```
+</details></div>

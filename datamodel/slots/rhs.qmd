@@ -1,0 +1,110 @@
+# Slot: rhs 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/rhs](https://w3id.org/tvbo/slot/rhs)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Equation](../classes/Equation.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Equation](../classes/Equation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Equation](../classes/Equation.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* righthandside
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+### Annotations
+
+| property | value |
+| --- | --- |
+| simple_dict_value | True |
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:rhs |
+| native | tvbo:rhs |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: rhs
+annotations:
+  simple_dict_value:
+    tag: simple_dict_value
+    value: true
+from_schema: https://w3id.org/tvbo
+aliases:
+- righthandside
+rank: 1000
+owner: Equation
+domain_of:
+- Equation
+range: string
+
+```
+</details></div>

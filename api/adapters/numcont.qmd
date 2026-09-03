@@ -1,0 +1,59 @@
+# numcont { #tvbo.adapters.numcont }
+
+`adapters.numcont`
+
+Self-contained AUTO-07p (numcont) backend adapter for SimulationExperiment.
+
+This adapter does NOT depend on any external `numcont` package. It uses the `auto-07p` Python bindings directly (`auto.run`, `auto.sv`, `auto.loadbd`, `auto.merge`) and the Mako template at ``tvbo/templates/numcont/tvbo-auto7p.py.mako`` to emit the model `.f90` file consumed by AUTO.
+
+Requires the ``AUTO_DIR`` environment variable to point at an installed auto-07p tree (validated via :func:`tvbo.utils.auto.check_auto_dir`).
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [NumContAdapter](#tvbo.adapters.numcont.NumContAdapter) | Adapter for bifurcation analysis via AUTO-07p (no external deps). |
+
+### NumContAdapter { #tvbo.adapters.numcont.NumContAdapter }
+
+```python
+adapters.numcont.NumContAdapter(experiment)
+```
+
+Adapter for bifurcation analysis via AUTO-07p (no external deps).
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [cleanup](#tvbo.adapters.numcont.NumContAdapter.cleanup) | Remove the temporary working directory of a NumCont result. |
+| [render_code](#tvbo.adapters.numcont.NumContAdapter.render_code) | Render the AUTO-07p Fortran (.f90) model source as a string. |
+| [run](#tvbo.adapters.numcont.NumContAdapter.run) | Run AUTO-07p continuation for each continuation in the experiment. |
+
+##### cleanup { #tvbo.adapters.numcont.NumContAdapter.cleanup }
+
+```python
+adapters.numcont.NumContAdapter.cleanup(result)
+```
+
+Remove the temporary working directory of a NumCont result.
+
+##### render_code { #tvbo.adapters.numcont.NumContAdapter.render_code }
+
+```python
+adapters.numcont.NumContAdapter.render_code(
+    model=None,
+    continuation=None,
+    **kwargs,
+)
+```
+
+Render the AUTO-07p Fortran (.f90) model source as a string.
+
+##### run { #tvbo.adapters.numcont.NumContAdapter.run }
+
+```python
+adapters.numcont.NumContAdapter.run(**kwargs)
+```
+
+Run AUTO-07p continuation for each continuation in the experiment.

@@ -1,0 +1,77 @@
+# Slot: center 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/center](https://w3id.org/tvbo/slot/center)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ParcellationEntity](../classes/ParcellationEntity.qmd), [Colorbar](../classes/Colorbar.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:center |
+| native | tvbo:center |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: center
+domain_of:
+- ParcellationEntity
+- Colorbar
+range: string
+
+```
+</details></div>

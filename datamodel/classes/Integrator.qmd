@@ -1,0 +1,955 @@
+# Class: Integrator 
+
+
+_Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits abs_tol, rel_tol from Solver. Overrides method default to 'euler'._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Integrator](https://w3id.org/tvbo/Integrator)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Integrator
+    click Integrator href "./Integrator.html"
+      Solver <|-- Integrator
+        click Solver href "./Solver.html"
+      
+      Integrator : abs_tol
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Float : abs_tol
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Integrator : block_size
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Integer : block_size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Integrator : coupling_evaluation
+        
+          
+    
+        
+        
+        Integrator --> "0..1" CouplingStageEvaluation : coupling_evaluation
+        click CouplingStageEvaluation href "../../enums/CouplingStageEvaluation.html"
+    
+
+        
+      Integrator : delayed
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Boolean : delayed
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Integrator : description
+        
+          
+    
+        
+        
+        Integrator --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Integrator : differentiation
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Differentiation : differentiation
+        click Differentiation href "./Differentiation.html"
+    
+
+        
+      Integrator : duration
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Float : duration
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Integrator : intermediate_expressions
+        
+          
+    
+        
+        
+        Integrator --> "*" DerivedVariable : intermediate_expressions
+        click DerivedVariable href "./DerivedVariable.html"
+    
+
+        
+      Integrator : method
+        
+          
+    
+        
+        
+        Integrator --> "0..1" String : method
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Integrator : noise
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Noise : noise
+        click Noise href "./Noise.html"
+    
+
+        
+      Integrator : noise_draw
+        
+          
+    
+        
+        
+        Integrator --> "0..1" NoiseDraw : noise_draw
+        click NoiseDraw href "../../enums/NoiseDraw.html"
+    
+
+        
+      Integrator : number_of_stages
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Integer : number_of_stages
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Integrator : parameters
+        
+          
+    
+        
+        
+        Integrator --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Integrator : rel_tol
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Float : rel_tol
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Integrator : scipy_ode_base
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Boolean : scipy_ode_base
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Integrator : state_wise_sigma
+        
+          
+    
+        
+        
+        Integrator --> "*" Float : state_wise_sigma
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Integrator : step_size
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Float : step_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Integrator : steps
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Integer : steps
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Integrator : time_unit
+        
+          
+    
+        
+        
+        Integrator --> "0..1" UnitEnum : time_unit
+        click UnitEnum href "../../enums/UnitEnum.html"
+    
+
+        
+      Integrator : transient_time
+        
+          
+    
+        
+        
+        Integrator --> "0..1" Float : transient_time
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Integrator : unit
+        
+          
+    
+        
+        
+        Integrator --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Integrator : update_expression
+        
+          
+    
+        
+        
+        Integrator --> "0..1" DerivedVariable : update_expression
+        click DerivedVariable href "./DerivedVariable.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [Solver](../classes/Solver.qmd)
+    * **Integrator**
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Integrator](https://w3id.org/tvbo/Integrator) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [time_unit](../slots/time_unit.qmd) | 0..1 <br/> [UnitEnum](../enums/UnitEnum.qmd) | Unit of every time-valued number in this scope — the step size, any period, a... | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[UnitEnum](../enums/UnitEnum.qmd) | Physical unit of measurement | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [duration](../slots/duration.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Length of the MEASURED window — what the run hands back | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [method](../slots/method.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Integration method (euler, heun, rk4, etc | direct |
+| [step_size](../slots/step_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) |  | direct |
+| [steps](../slots/steps.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+| [noise](../slots/noise.qmd) | 0..1 <br/> [Noise](../classes/Noise.qmd) |  | direct |
+| [state_wise_sigma](../slots/state_wise_sigma.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) |  | direct |
+| [transient_time](../slots/transient_time.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Length of the leading settling window, prepended to `duration` | direct |
+| [block_size](../slots/block_size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Granularity of the nested block scan, in integration steps | direct |
+| [noise_draw](../slots/noise_draw.qmd) | 0..1 <br/> [NoiseDraw](../enums/NoiseDraw.qmd) | How the base solve draws its noise realization, and therefore WHICH realizati... | direct |
+| [scipy_ode_base](../slots/scipy_ode_base.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | direct |
+| [number_of_stages](../slots/number_of_stages.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+| [intermediate_expressions](../slots/intermediate_expressions.qmd) | * <br/> [DerivedVariable](../classes/DerivedVariable.qmd) |  | direct |
+| [update_expression](../slots/update_expression.qmd) | 0..1 <br/> [DerivedVariable](../classes/DerivedVariable.qmd) |  | direct |
+| [delayed](../slots/delayed.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | direct |
+| [differentiation](../slots/differentiation.qmd) | 0..1 <br/> [Differentiation](../classes/Differentiation.qmd) | Backend-neutral strategy for propagating gradients through the temporal integ... | direct |
+| [coupling_evaluation](../slots/coupling_evaluation.qmd) | 0..1 <br/> [CouplingStageEvaluation](../enums/CouplingStageEvaluation.qmd) | Backend-neutral numerical treatment of the network coupling term across the s... | direct |
+| [abs_tol](../slots/abs_tol.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Absolute tolerance for adaptive solvers | [Solver](../classes/Solver.qmd) |
+| [rel_tol](../slots/rel_tol.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Relative tolerance for adaptive solvers | [Solver](../classes/Solver.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [integration](../slots/integration.qmd) | range | [Integrator](../classes/Integrator.qmd) |
+| [Optimization](../classes/Optimization.qmd) | [integration](../slots/integration.qmd) | range | [Integrator](../classes/Integrator.qmd) |
+| [Inference](../classes/Inference.qmd) | [integration](../slots/integration.qmd) | range | [Integrator](../classes/Integrator.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [integration](../slots/integration.qmd) | range | [Integrator](../classes/Integrator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Integrator |
+| native | tvbo:Integrator |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Integrator
+description: Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise,
+  transient time, etc.). Inherits abs_tol, rel_tol from Solver. Overrides method default
+  to 'euler'.
+from_schema: https://w3id.org/tvbo
+is_a: Solver
+slots:
+- time_unit
+- unit
+- parameters
+- duration
+- description
+slot_usage:
+  duration:
+    name: duration
+    description: Length of the MEASURED window — what the run hands back. Any `transient_time`
+      is prepended to it, so total integrated time is `transient_time + duration`
+      and raising the settle never shortens the data. Every backend measures this
+      same window.
+attributes:
+  method:
+    name: method
+    description: Integration method (euler, heun, rk4, etc.)
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(euler)
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: string
+  step_size:
+    name: step_size
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - dt
+    ifabsent: float(0.01220703125)
+    domain_of:
+    - Solver
+    - Integrator
+    range: float
+  steps:
+    name: steps
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Procedure
+    - Integrator
+    range: integer
+  noise:
+    name: noise
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Stimulus
+    - StateVariable
+    - Integrator
+    range: Noise
+    inlined: true
+  state_wise_sigma:
+    name: state_wise_sigma
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Integrator
+    range: float
+    multivalued: true
+  transient_time:
+    name: transient_time
+    description: 'Length of the leading settling window, prepended to `duration`.
+      It marks part of ONE integration — never a separate simulation: the backend
+      integrates `transient_time + duration` in a single scan and the marked head
+      is cut where the run is consumed (observations, analyses, plots, saved data),
+      so the settle is in-band for any observation kernel that needs warm-up. Time
+      is measured from the START of the measured window: the settle carries non-positive
+      timestamps and ends at 0, the measured window opens one step later, and a declared
+      event `t0` is relative to measurement, never to the scan. A settle that a fit
+      reuses across many candidate evaluations is NOT this slot — that is a seed,
+      declared as `initial_state.method: time_integration` with its own `duration`.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(0)
+    domain_of:
+    - Integrator
+    range: float
+  block_size:
+    name: block_size
+    description: 'Granularity of the nested block scan, in integration steps. Bounds
+      the per-block memory so a streaming reduction folds an observable in-carry instead
+      of materializing the trajectory. On a STOCHASTIC network this value is not a
+      free tuning knob: with `noise_draw: blocked` the realization is a pure function
+      of the noise key and the block index, so changing it changes the trajectory.
+      Declare it and leave it alone.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(1000)
+    domain_of:
+    - Exploration
+    - Integrator
+    range: integer
+  noise_draw:
+    name: noise_draw
+    description: 'How the base solve draws its noise realization, and therefore WHICH
+      realization it is: `fused` draws the whole [n_steps, ...] tensor in one call,
+      `blocked` regenerates each block of `block_size` steps from (key, block_index).
+      Those are different draws from the same seed, so the grain is a declared property
+      of the integration rather than something inferred from how the run is consumed.
+      An observable declared `reduce: streaming` folds block by block whatever this
+      says, because a reduction has no trajectory to fold otherwise; declare `blocked`
+      to put the whole run on that same grain.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(fused)
+    domain_of:
+    - Integrator
+    range: NoiseDraw
+  scipy_ode_base:
+    name: scipy_ode_base
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Integrator
+    range: boolean
+  number_of_stages:
+    name: number_of_stages
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    domain_of:
+    - Integrator
+    range: integer
+  intermediate_expressions:
+    name: intermediate_expressions
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Integrator
+    range: DerivedVariable
+    multivalued: true
+    inlined: true
+  update_expression:
+    name: update_expression
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Integrator
+    range: DerivedVariable
+    inlined: true
+  delayed:
+    name: delayed
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'True'
+    domain_of:
+    - Integrator
+    - Coupling
+    range: boolean
+  differentiation:
+    name: differentiation
+    description: Backend-neutral strategy for propagating gradients through the temporal
+      integration (e.g. truncated backprop-through-time).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Integrator
+    range: Differentiation
+    inlined: true
+  coupling_evaluation:
+    name: coupling_evaluation
+    description: 'Backend-neutral numerical treatment of the network coupling term
+      across the stages of a multi-stage integrator (Heun, RK4, ...): re-evaluated
+      at every stage (per_stage — standard ODE accuracy) or computed once per step
+      and held constant across stages (per_step — a TVB-style efficiency shortcut).
+      Single- stage methods (Euler) and always-recompute solvers (diffrax) ignore
+      it. per_stage is required to match reference integrators for stiff / chaotic
+      / multistable systems, where the frozen- coupling error can select a different
+      trajectory or attractor. See CouplingStageEvaluation.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(per_step)
+    domain_of:
+    - Integrator
+    range: CouplingStageEvaluation
+class_uri: tvbo:Integrator
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Integrator
+description: Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise,
+  transient time, etc.). Inherits abs_tol, rel_tol from Solver. Overrides method default
+  to 'euler'.
+from_schema: https://w3id.org/tvbo
+is_a: Solver
+slot_usage:
+  duration:
+    name: duration
+    description: Length of the MEASURED window — what the run hands back. Any `transient_time`
+      is prepended to it, so total integrated time is `transient_time + duration`
+      and raising the settle never shortens the data. Every backend measures this
+      same window.
+attributes:
+  method:
+    name: method
+    description: Integration method (euler, heun, rk4, etc.)
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(euler)
+    owner: Integrator
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: string
+  step_size:
+    name: step_size
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - dt
+    ifabsent: float(0.01220703125)
+    owner: Integrator
+    domain_of:
+    - Solver
+    - Integrator
+    range: float
+  steps:
+    name: steps
+    from_schema: https://w3id.org/tvbo
+    owner: Integrator
+    domain_of:
+    - Procedure
+    - Integrator
+    range: integer
+  noise:
+    name: noise
+    from_schema: https://w3id.org/tvbo
+    owner: Integrator
+    domain_of:
+    - Stimulus
+    - StateVariable
+    - Integrator
+    range: Noise
+    inlined: true
+  state_wise_sigma:
+    name: state_wise_sigma
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Integrator
+    domain_of:
+    - Integrator
+    range: float
+    multivalued: true
+  transient_time:
+    name: transient_time
+    description: 'Length of the leading settling window, prepended to `duration`.
+      It marks part of ONE integration — never a separate simulation: the backend
+      integrates `transient_time + duration` in a single scan and the marked head
+      is cut where the run is consumed (observations, analyses, plots, saved data),
+      so the settle is in-band for any observation kernel that needs warm-up. Time
+      is measured from the START of the measured window: the settle carries non-positive
+      timestamps and ends at 0, the measured window opens one step later, and a declared
+      event `t0` is relative to measurement, never to the scan. A settle that a fit
+      reuses across many candidate evaluations is NOT this slot — that is a seed,
+      declared as `initial_state.method: time_integration` with its own `duration`.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(0)
+    owner: Integrator
+    domain_of:
+    - Integrator
+    range: float
+  block_size:
+    name: block_size
+    description: 'Granularity of the nested block scan, in integration steps. Bounds
+      the per-block memory so a streaming reduction folds an observable in-carry instead
+      of materializing the trajectory. On a STOCHASTIC network this value is not a
+      free tuning knob: with `noise_draw: blocked` the realization is a pure function
+      of the noise key and the block index, so changing it changes the trajectory.
+      Declare it and leave it alone.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(1000)
+    owner: Integrator
+    domain_of:
+    - Exploration
+    - Integrator
+    range: integer
+  noise_draw:
+    name: noise_draw
+    description: 'How the base solve draws its noise realization, and therefore WHICH
+      realization it is: `fused` draws the whole [n_steps, ...] tensor in one call,
+      `blocked` regenerates each block of `block_size` steps from (key, block_index).
+      Those are different draws from the same seed, so the grain is a declared property
+      of the integration rather than something inferred from how the run is consumed.
+      An observable declared `reduce: streaming` folds block by block whatever this
+      says, because a reduction has no trajectory to fold otherwise; declare `blocked`
+      to put the whole run on that same grain.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(fused)
+    owner: Integrator
+    domain_of:
+    - Integrator
+    range: NoiseDraw
+  scipy_ode_base:
+    name: scipy_ode_base
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Integrator
+    domain_of:
+    - Integrator
+    range: boolean
+  number_of_stages:
+    name: number_of_stages
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    owner: Integrator
+    domain_of:
+    - Integrator
+    range: integer
+  intermediate_expressions:
+    name: intermediate_expressions
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Integrator
+    domain_of:
+    - Integrator
+    range: DerivedVariable
+    multivalued: true
+    inlined: true
+  update_expression:
+    name: update_expression
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Integrator
+    domain_of:
+    - Integrator
+    range: DerivedVariable
+    inlined: true
+  delayed:
+    name: delayed
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'True'
+    owner: Integrator
+    domain_of:
+    - Integrator
+    - Coupling
+    range: boolean
+  differentiation:
+    name: differentiation
+    description: Backend-neutral strategy for propagating gradients through the temporal
+      integration (e.g. truncated backprop-through-time).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Integrator
+    domain_of:
+    - Integrator
+    range: Differentiation
+    inlined: true
+  coupling_evaluation:
+    name: coupling_evaluation
+    description: 'Backend-neutral numerical treatment of the network coupling term
+      across the stages of a multi-stage integrator (Heun, RK4, ...): re-evaluated
+      at every stage (per_stage — standard ODE accuracy) or computed once per step
+      and held constant across stages (per_step — a TVB-style efficiency shortcut).
+      Single- stage methods (Euler) and always-recompute solvers (diffrax) ignore
+      it. per_stage is required to match reference integrators for stiff / chaotic
+      / multistable systems, where the frozen- coupling error can select a different
+      trajectory or attractor. See CouplingStageEvaluation.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(per_step)
+    owner: Integrator
+    domain_of:
+    - Integrator
+    range: CouplingStageEvaluation
+  time_unit:
+    name: time_unit
+    description: 'Unit of every time-valued number in this scope — the step size,
+      any period, and the physical meaning of one model time-step. Declared at whichever
+      scope owns the clock (network, integrator, observation); `tvbo.utils.units.time_unit_of`
+      resolves a scope to its effective unit by walking outwards, and states the `ms`
+      fallback once, at the end of that walk. Deliberately carries no default: a defaulted
+      slot cannot be inherited through, so `ifabsent: ms` made an unset unit indistinguishable
+      from one someone wrote, and masked an explicitly declared `s` one scope out.
+      `time_scale` is accepted as a synonym.'
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - time_scale
+    rank: 1000
+    owner: Integrator
+    domain_of:
+    - Network
+    - Observation
+    - Integrator
+    range: UnitEnum
+  unit:
+    name: unit
+    description: 'Physical unit of measurement. `UnitEnum` is the curated vocabulary
+      — each of its values is vendored from QUDT (`ontology/tvb-o-units.ttl`) and
+      can be reasoned about dimensionally. The range is deliberately open beyond it:
+      a unit nobody has curated yet is recorded as written and reported `uncurated`,
+      because a closed range forces the author to either misdeclare the quantity or
+      leave it undeclared, and both lose more than an unrecognised string does. An
+      uncurated unit carries no dimensional claim, so a check involving it reports
+      `underdetermined` rather than guessing. Promote one with `tvbo units add <unit>`,
+      which pulls its QUDT record into the vendored module — so every unit TVBO *reasons*
+      about stays authoritative, and only what it *records* is open.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: qudt:unit
+    owner: Integrator
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+    any_of:
+    - range: UnitEnum
+    - range: string
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Integrator
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  duration:
+    name: duration
+    description: Length of the MEASURED window — what the run hands back. Any `transient_time`
+      is prepended to it, so total integrated time is `transient_time + duration`
+      and raising the settle never shortens the data. Every backend measures this
+      same window.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(1000)
+    owner: Integrator
+    domain_of:
+    - Stimulus
+    - Event
+    - InitialState
+    - Integrator
+    range: float
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Integrator
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  abs_tol:
+    name: abs_tol
+    description: Absolute tolerance for adaptive solvers.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(1e-10)
+    owner: Integrator
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  rel_tol:
+    name: rel_tol
+    description: Relative tolerance for adaptive solvers.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(1e-10)
+    owner: Integrator
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+class_uri: tvbo:Integrator
+
+```
+</details></div>

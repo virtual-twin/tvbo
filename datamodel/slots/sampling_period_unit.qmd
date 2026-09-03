@@ -1,0 +1,100 @@
+# Slot: sampling_period_unit 
+
+
+_Unit of the sampling period (e.g., 'ms', 's')._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/sampling_period_unit](https://w3id.org/tvbo/slot/sampling_period_unit)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [TimeSeries](../classes/TimeSeries.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `ms` |
+| Owner | [TimeSeries](../classes/TimeSeries.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:sampling_period_unit |
+| native | tvbo:sampling_period_unit |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sampling_period_unit
+description: Unit of the sampling period (e.g., 'ms', 's').
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: ms
+owner: TimeSeries
+domain_of:
+- TimeSeries
+range: string
+
+```
+</details></div>

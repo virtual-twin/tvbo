@@ -1,0 +1,103 @@
+# brian2 { #tvbo.adapters.brian2 }
+
+`adapters.brian2`
+
+Native Brian2 backend for small-scale spiking networks.
+
+Consumes the shared small-scale lowering core (:mod:`tvbo.adapters.smallscale`) and emits a Brian2 point-neuron network. The maths is printed through the shared SymPy printer (``render_expression(..., format="brian2")``); this adapter adds only the Brian2 role vocabulary and the synapse rendering.
+
+Two connectivity lowerings, chosen per edge by the ``connectivity`` rule:
+
+**all_to_all → O(N) population sums.** Every post-synaptic neuron sees the same sum
+over pre-synaptic gating, so the gate lives on the *pre-synaptic* neuron and a size-1 "hub" `NeuronGroup` accumulates the population sum once (via a ``(summed)`` `Synapses`), read by every post-synaptic neuron through a ``linked_var``. This is the hand-written Deco 2014 `deco_column.py` structure — it runs the 160E+40I column in seconds where the enumerated LEMS network needs ~190 s per 100 ms in jLEMS.
+
+**random / one_to_one → real sparse `Synapses`.** A genuinely sparse projection cannot
+be a single population sum (each target sees a different subset), so it is emitted as a Brian2 `Synapses` with ``connect(p=…)`` / ``connect(j='i')``. Following the canonical
+Brian2 idioms: the delivered conductance decays on the *post-synaptic* `NeuronGroup` (``dg/dt=-g/tau``) and is incremented event-driven by ``on_pre`` (spike-gated, not summed every step); short-term-plasticity state (u, x) lives *on the synapse* as ``(event-driven)`` variables, mutated in ``on_pre`` in the recipe's declared order, so any facilitation/depression convention is honoured per connection.
+
+## Supported synapse forms {.doc-section .doc-section-supported-synapse-forms}
+
+* ``neuroml:expOneSynapse`` — single-exponential conductance (AMPA, GABA), either lowering;
+* a custom conductance synapse extending ``baseConductanceBasedSynapse`` whose current is
+  *linear* in a single gate: all_to_all lowers any such gate (e.g. the saturating NMDA
+  with Mg block); the sparse path additionally requires that gate to be a pure decaying
+  conductance (``dg/dt=-g/tau``), with the remaining state variables the per-synapse STP;
+* ``neuroml:poissonFiringSynapse`` — independent Poisson background → `PoissonInput`.
+
+Anything outside this set (non-Poisson spike sources, constant-current inputs, a summed-gate current nonlinear in its gate, or a sparse synapse whose gate is not a pure decay) raises a clear ``NotImplementedError`` rather than mis-simulating.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Brian2Adapter](#tvbo.adapters.brian2.Brian2Adapter) | Render/run a small-scale spiking network natively in Brian2. |
+
+### Brian2Adapter { #tvbo.adapters.brian2.Brian2Adapter }
+
+```python
+adapters.brian2.Brian2Adapter(experiment)
+```
+
+Render/run a small-scale spiking network natively in Brian2.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [prepare_context](#tvbo.adapters.brian2.Brian2Adapter.prepare_context) | Reduce the experiment to a backend-neutral Brian2 build description. |
+| [run](#tvbo.adapters.brian2.Brian2Adapter.run) | Build and run the network in Brian2, returning an ExperimentResult. |
+
+##### prepare_context { #tvbo.adapters.brian2.Brian2Adapter.prepare_context }
+
+```python
+adapters.brian2.Brian2Adapter.prepare_context()
+```
+
+Reduce the experiment to a backend-neutral Brian2 build description.
+
+Returns a dict the template renders and ``_instantiate`` builds:
+``populations`` (per cell pop: eqs data, namespace, poisson, size), ``hubs`` (summed-gate accumulators), ``duration_ms``, ``dt_ms``.
+
+##### run { #tvbo.adapters.brian2.Brian2Adapter.run }
+
+```python
+adapters.brian2.Brian2Adapter.run(
+    seed=None,
+    record_v=False,
+    codegen_target='numpy',
+    **kwargs,
+)
+```
+
+Build and run the network in Brian2, returning an ExperimentResult.
+
+Population firing rates (from Brian2 ``SpikeMonitor``) are the primary output — the exact quantity the Deco 2014 replication targets — and are exposed both as ``result.integration.observations.firing_rate_<pop>`` and, raw, under ``result._extras``.
+
+``codegen_target`` defaults to ``"numpy"`` (no C compilation, portable);
+pass ``"cython"`` for the faster compiled path where the toolchain allows.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [assemble_eqs](#tvbo.adapters.brian2.assemble_eqs) | The Brian2 ``Equations`` block for a cell population. |
+| [reset_code](#tvbo.adapters.brian2.reset_code) | The Brian2 reset statement: v reset plus pre-synaptic gate increments. |
+
+### assemble_eqs { #tvbo.adapters.brian2.assemble_eqs }
+
+```python
+adapters.brian2.assemble_eqs(pop)
+```
+
+The Brian2 ``Equations`` block for a cell population.
+
+Membrane ODE + a summed drive ``iSyn`` + the pre-synaptic gate ODEs (dimensionless) + any linked summed-gate variables. Shared by the in-process ``run`` path and the generated script so the two never diverge. A conductance-based cell's drive is a current (``amp``);
+a current-based cell (one declaring a membrane time constant ``tau_m``, whose membrane is ``(-v + ... + iSyn)/tau_m``) has a voltage drive (``volt``) — the Mongillo/Amit-Brunel form.
+
+### reset_code { #tvbo.adapters.brian2.reset_code }
+
+```python
+adapters.brian2.reset_code(pop)
+```
+
+The Brian2 reset statement: v reset plus pre-synaptic gate increments.

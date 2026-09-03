@@ -1,0 +1,98 @@
+# Slot: initial_expression 
+
+
+_Analytic initial condition for the field._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/initial_expression](https://w3id.org/tvbo/slot/initial_expression)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SpatialField](../classes/SpatialField.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Equation](../classes/Equation.qmd) |
+| Domain Of | [SpatialField](../classes/SpatialField.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SpatialField](../classes/SpatialField.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:initial_expression |
+| native | tvbo:initial_expression |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: initial_expression
+description: Analytic initial condition for the field.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SpatialField
+domain_of:
+- SpatialField
+range: Equation
+
+```
+</details></div>

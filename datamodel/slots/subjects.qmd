@@ -1,0 +1,95 @@
+# Slot: subjects 
+
+
+_Subjects in a dataset._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/subjects](https://w3id.org/tvbo/study/slot/subjects)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dataset](../classes/Dataset.qmd) | A collection of subjects for a multi-subject study |  no  |
+| [DBSDataset](../classes/DBSDataset.qmd) | Collection of data related to a specific DBS study |  yes  |
+| [Phenotype](../classes/Phenotype.qmd) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Subject](../classes/Subject.qmd) |
+| Domain Of | [Dataset](../classes/Dataset.qmd), [Phenotype](../classes/Phenotype.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:subjects |
+| native | tvbo_study:subjects |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: subjects
+description: Subjects in a dataset.
+from_schema: https://w3id.org/tvbo/study
+domain_of:
+- Dataset
+- Phenotype
+range: Subject
+multivalued: true
+inlined: true
+
+```
+</details></div>

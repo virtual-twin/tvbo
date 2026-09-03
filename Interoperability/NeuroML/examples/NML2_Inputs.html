@@ -109,6 +109,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../../_static/tvbo-icons.js"></script>
 
 
+<link rel="stylesheet" href="../../../_static/palette.css">
 <link rel="stylesheet" href="../../../_static/phases.css">
 <link rel="stylesheet" href="../../../styles.css">
 </head>
@@ -150,7 +151,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Reference</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../../platform.html"> 
+    <a class="nav-link" href="../../../1-explore/platform.html"> 
 <span class="menu-text">Platform</span></a>
   </li>  
 </ul>
@@ -203,11 +204,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<nav class="tvbo-phase tvbo-phase--interop" style="--phase-color:#5c6f6e" aria-label="Documentation phase"><i class="fa-solid fa-plug" aria-hidden="true"></i><span class="tvbo-phase__name">Interoperability</span><span class="tvbo-phase__sep">·</span><span class="tvbo-phase__section">NeuroML / LEMS</span></nav>
+<nav class="tvbo-phase tvbo-phase--interop" style="--phase-color:#3f5457" aria-label="Documentation phase"><i class="fa-solid fa-plug" aria-hidden="true"></i><span class="tvbo-phase__name">Interoperability</span><span class="tvbo-phase__sep">·</span><span class="tvbo-phase__section">NeuroML / LEMS</span></nav>
 <section id="nml2_inputs.nml" class="level2">
 <h2 class="anchored" data-anchor-id="nml2_inputs.nml">NML2_Inputs.nml</h2>
 <p>Catalog of all NeuroML2 input generator types, with their XML declarations:</p>
-<div id="59892aa7" class="cell" data-execution_count="1">
+<div id="775af2c4" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://raw.githubusercontent.com/NeuroML/NeuroML2/master/examples/NML2_Inputs.nml"</span></span>
@@ -266,7 +267,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo-representation-iaf-cell-with-inputs" class="level2">
 <h2 class="anchored" data-anchor-id="tvbo-representation-iaf-cell-with-inputs">TVBO Representation: IaF Cell with Inputs</h2>
-<div id="e0dfb658" class="cell" data-execution_count="2">
+<div id="6dd6f5f3" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
@@ -321,31 +322,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     &lt;Parameter name="leakReversal" dimension="none"/&gt;
  </code></pre>
 </div>
+<div class="cell-output cell-output-stderr">
+<pre><code>* Owlready2 * Warning: ignoring cyclic subclass of/subproperty of, involving:
+  http://uri.interlex.org/tgbugs/uris/readable/atlas/Space
+</code></pre>
+</div>
 </div>
 </section>
 <section id="run-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="run-tvbo">Run TVBO</h2>
-<div id="7a0b0ef8" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>da <span class="op">=</span> result.integration.data</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> da.coords[<span class="st">'time'</span>].values</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>v <span class="op">=</span> da.values[:, <span class="dv">0</span>]</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>ax.plot(t, v)</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"Time (ms)"</span>)</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Voltage (mV)"</span>)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"NML2 Inputs: IaF Cell via TVBO"</span>)</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="213ab727" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>da <span class="op">=</span> result.integration.data</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> da.coords[<span class="st">'time'</span>].values</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>v <span class="op">=</span> da.values[:, <span class="dv">0</span>]</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>ax.plot(t, v)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"Time (ms)"</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Voltage (mV)"</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"NML2 Inputs: IaF Cell via TVBO"</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>pyNeuroML &gt;&gt;&gt; 16:49:43 - INFO - Loading LEMS file: tvbo_lems_sim.xml and running with jNeuroML
-pyNeuroML &gt;&gt;&gt; 16:49:43 - INFO - Executing: (java -Xmx400M  -Djava.awt.headless=true -jar  "/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.12/site-packages/pyneuroml/utils/./../lib/jNeuroML-0.14.0-jar-with-dependencies.jar"  tvbo_lems_sim.xml  -nogui -I '') in directory: /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tmp_z6s4wze
-pyNeuroML &gt;&gt;&gt; 16:49:44 - INFO - Command completed successfully!</code></pre>
+<pre><code>pyNeuroML &gt;&gt;&gt; 13:08:44 - INFO - Loading LEMS file: tvbo_lems_sim.xml and running with jNeuroML
+pyNeuroML &gt;&gt;&gt; 13:08:44 - INFO - Executing: (java -Xmx400M  -Djava.awt.headless=true -jar  "/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.12/site-packages/pyneuroml/utils/./../lib/jNeuroML-0.14.0-jar-with-dependencies.jar"  tvbo_lems_sim.xml  -nogui -I '') in directory: /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tmpxw2348xl
+pyNeuroML &gt;&gt;&gt; 13:08:44 - INFO - Command completed successfully!</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -432,7 +438,7 @@ pyNeuroML &gt;&gt;&gt; 16:49:44 - INFO - Command completed successfully!</code><
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

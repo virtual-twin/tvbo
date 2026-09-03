@@ -1,0 +1,106 @@
+# Enum: EcosystemEnum 
+
+
+
+
+_Package ecosystem or registry the software is distributed through._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_sw:enum/EcosystemEnum](https://w3id.org/tvbo/software/enum/EcosystemEnum)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| pypi | wd:Q2984888 | Python Package Index |
+| conda_forge | wd:Q105593788 | Conda-Forge community channel |
+| cran | wd:Q901584 | Comprehensive R Archive Network |
+| julia_registry | None | Julia General package registry |
+| npm | wd:Q7067518 | Node Package Manager registry |
+| bioconda | None | Bioinformatics Conda channel |
+| github | None | Distributed via GitHub releases |
+| maven | wd:Q6795527 | Maven Central Repository (Java) |
+| docker | wd:Q15206305 | Docker container registry / image distribution |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [ecosystem](../slots/ecosystem.qmd) | Package ecosystem(s) through which the software is distributed |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: EcosystemEnum
+description: Package ecosystem or registry the software is distributed through.
+from_schema: https://w3id.org/tvbo/software
+permissible_values:
+  pypi:
+    text: pypi
+    description: Python Package Index.
+    meaning: wd:Q2984888
+  conda_forge:
+    text: conda_forge
+    description: Conda-Forge community channel.
+    meaning: wd:Q105593788
+  cran:
+    text: cran
+    description: Comprehensive R Archive Network.
+    meaning: wd:Q901584
+  julia_registry:
+    text: julia_registry
+    description: Julia General package registry.
+  npm:
+    text: npm
+    description: Node Package Manager registry.
+    meaning: wd:Q7067518
+  bioconda:
+    text: bioconda
+    description: Bioinformatics Conda channel.
+  github:
+    text: github
+    description: Distributed via GitHub releases.
+  maven:
+    text: maven
+    description: Maven Central Repository (Java).
+    meaning: wd:Q6795527
+  docker:
+    text: docker
+    description: Docker container registry / image distribution.
+    meaning: wd:Q15206305
+
+```
+</details>
+
+</div>

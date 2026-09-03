@@ -1,0 +1,729 @@
+# Class: SoftwareRequirement 
+
+
+_An individual software requirement binding a package to a version constraint and a role within an environment._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:class/SoftwareRequirement](https://w3id.org/tvbo/software/class/SoftwareRequirement)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class SoftwareRequirement
+    click SoftwareRequirement href "./SoftwareRequirement.html"
+      SoftwareRequirement : dataLocation
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" String : dataLocation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareRequirement : description
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareRequirement : hash
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" String : hash
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareRequirement : license
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" String : license
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareRequirement : modules
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "*" String : modules
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareRequirement : name
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareRequirement : optional
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" Boolean : optional
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      SoftwareRequirement : package
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" SoftwarePackage : package
+        click SoftwarePackage href "./SoftwarePackage.html"
+    
+
+        
+      SoftwareRequirement : role
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" RequirementRole : role
+        click RequirementRole href "../../enums/RequirementRole.html"
+    
+
+        
+      SoftwareRequirement : source_url
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" String : source_url
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareRequirement : url
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" String : url
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareRequirement : version
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" String : version
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareRequirement : version_spec
+        
+          
+    
+        
+        
+        SoftwareRequirement --> "0..1" String : version_spec
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dataLocation](../slots/dataLocation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [package](../slots/package.qmd) | 0..1 <br/> [SoftwarePackage](../classes/SoftwarePackage.qmd) | Reference to the software package identity | direct |
+| [version_spec](../slots/version_spec.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Version or constraint specifier (e | direct |
+| [role](../slots/role.qmd) | 0..1 <br/> [RequirementRole](../enums/RequirementRole.qmd) |  | direct |
+| [optional](../slots/optional.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | direct |
+| [hash](../slots/hash.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Build or artifact hash for exact reproducibility | direct |
+| [source_url](../slots/source_url.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Canonical source or repository URL | direct |
+| [url](../slots/url.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | (Deprecated) Use source_url | direct |
+| [license](../slots/license.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [modules](../slots/modules.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | (Deprecated) Use environment | direct |
+| [version](../slots/version.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | (Deprecated) Use version_spec | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | [requirements](../slots/requirements.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| [Equation](../classes/Equation.qmd) | [engine](../slots/engine.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| [Function](../classes/Function.qmd) | [requirements](../slots/requirements.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| [LossFunction](../classes/LossFunction.qmd) | [requirements](../slots/requirements.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| [Callable](../classes/Callable.qmd) | [software](../slots/software.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| [ClassReference](../classes/ClassReference.qmd) | [software](../slots/software.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| [Continuation](../classes/Continuation.qmd) | [software](../slots/software.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | [requirements](../slots/requirements.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [software](../slots/software.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| [PDESolver](../classes/PDESolver.qmd) | [requirements](../slots/requirements.qmd) | range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+
+
+
+
+
+
+
+
+
+
+## Comments
+
+* Represents an individual requirement (package/module/library).
+* Use 'version_spec' instead of 'version' for semantic clarity.
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:SoftwareRequirement |
+| native | tvbo_sw:SoftwareRequirement |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: SoftwareRequirement
+description: An individual software requirement binding a package to a version constraint
+  and a role within an environment.
+comments:
+- Represents an individual requirement (package/module/library).
+- Use 'version_spec' instead of 'version' for semantic clarity.
+from_schema: https://w3id.org/tvbo/software
+slots:
+- name
+attributes:
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: dcterms:description
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  dataLocation:
+    name: dataLocation
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+  package:
+    name: package
+    description: Reference to the software package identity.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareRequirement
+    range: SoftwarePackage
+  version_spec:
+    name: version_spec
+    description: Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2').
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareRequirement
+    range: string
+  role:
+    name: role
+    from_schema: https://w3id.org/tvbo/software
+    ifabsent: runtime
+    domain_of:
+    - StudyDirectory
+    - StudyFile
+    - SoftwareRequirement
+    range: RequirementRole
+  optional:
+    name: optional
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - SoftwareRequirement
+    range: boolean
+  hash:
+    name: hash
+    description: Build or artifact hash for exact reproducibility.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareRequirement
+    - ReferenceFingerprint
+    range: string
+  source_url:
+    name: source_url
+    description: Canonical source or repository URL.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareRequirement
+    range: string
+  url:
+    name: url
+    description: (Deprecated) Use source_url.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareRequirement
+    range: string
+  license:
+    name: license
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: dcterms:license
+    domain_of:
+    - CommonCoordinateSpace
+    - SoftwarePackage
+    - SoftwareRequirement
+    - Provenance
+    range: string
+  modules:
+    name: modules
+    description: (Deprecated) Use environment.requirements list instead.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareRequirement
+    - WorkflowEngineConfig
+    range: string
+    multivalued: true
+  version:
+    name: version
+    description: (Deprecated) Use version_spec.
+    from_schema: https://w3id.org/tvbo/software
+    domain_of:
+    - ClinicalScale
+    - SoftwarePackage
+    - SimulationTool
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: SoftwareRequirement
+description: An individual software requirement binding a package to a version constraint
+  and a role within an environment.
+comments:
+- Represents an individual requirement (package/module/library).
+- Use 'version_spec' instead of 'version' for semantic clarity.
+from_schema: https://w3id.org/tvbo/software
+attributes:
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: dcterms:description
+    owner: SoftwareRequirement
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  dataLocation:
+    name: dataLocation
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareRequirement
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+  package:
+    name: package
+    description: Reference to the software package identity.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareRequirement
+    domain_of:
+    - SoftwareRequirement
+    range: SoftwarePackage
+  version_spec:
+    name: version_spec
+    description: Version or constraint specifier (e.g., '==2.7.3', '>=1.2,<2').
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareRequirement
+    domain_of:
+    - SoftwareRequirement
+    range: string
+  role:
+    name: role
+    from_schema: https://w3id.org/tvbo/software
+    ifabsent: runtime
+    owner: SoftwareRequirement
+    domain_of:
+    - StudyDirectory
+    - StudyFile
+    - SoftwareRequirement
+    range: RequirementRole
+  optional:
+    name: optional
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    ifabsent: 'False'
+    owner: SoftwareRequirement
+    domain_of:
+    - SoftwareRequirement
+    range: boolean
+  hash:
+    name: hash
+    description: Build or artifact hash for exact reproducibility.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareRequirement
+    domain_of:
+    - SoftwareRequirement
+    - ReferenceFingerprint
+    range: string
+  source_url:
+    name: source_url
+    description: Canonical source or repository URL.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareRequirement
+    domain_of:
+    - SoftwareRequirement
+    range: string
+  url:
+    name: url
+    description: (Deprecated) Use source_url.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareRequirement
+    domain_of:
+    - SoftwareRequirement
+    range: string
+  license:
+    name: license
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: dcterms:license
+    owner: SoftwareRequirement
+    domain_of:
+    - CommonCoordinateSpace
+    - SoftwarePackage
+    - SoftwareRequirement
+    - Provenance
+    range: string
+  modules:
+    name: modules
+    description: (Deprecated) Use environment.requirements list instead.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareRequirement
+    domain_of:
+    - SoftwareRequirement
+    - WorkflowEngineConfig
+    range: string
+    multivalued: true
+  version:
+    name: version
+    description: (Deprecated) Use version_spec.
+    from_schema: https://w3id.org/tvbo/software
+    owner: SoftwareRequirement
+    domain_of:
+    - ClinicalScale
+    - SoftwarePackage
+    - SimulationTool
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    range: string
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: SoftwareRequirement
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+
+```
+</details></div>

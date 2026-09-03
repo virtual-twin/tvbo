@@ -1,0 +1,21 @@
+# formats { #tvbo.cli.formats }
+
+`cli.formats`
+
+``tvbo formats`` — list every registered I/O format.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [formats](#tvbo.cli.formats.formats) | List every registered I/O format (key, extension, media type, importer). |
+
+### formats { #tvbo.cli.formats.formats }
+
+```python
+cli.formats.formats(
+    json=typer.Option(False, '--json', help='Emit machine-readable JSON.'),
+)
+```
+
+List every registered I/O format (key, extension, media type, importer).

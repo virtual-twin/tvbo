@@ -1,0 +1,102 @@
+# Slot: programming_language 
+
+
+_Implementation languages._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:programmingLanguage](http://schema.org/programmingLanguage)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ProgrammingLanguageEnum](../enums/ProgrammingLanguageEnum.qmd) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+| Slot URI | [schema:programmingLanguage](http://schema.org/programmingLanguage) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:programmingLanguage |
+| native | tvbo_sw:programming_language |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: programming_language
+description: Implementation languages.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+slot_uri: schema:programmingLanguage
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: ProgrammingLanguageEnum
+multivalued: true
+
+```
+</details></div>

@@ -1,0 +1,257 @@
+# Class: CodeSource 
+
+
+_Location of a recipe's callable code so the specification is decoupled from where the code lives. Either a local directory or a git repository; the resolved directory (optionally a ``subdir`` within it) is placed on the import path at load time so ``module:`` references resolve by bare name. ``path`` and ``git`` are mutually exclusive._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:CodeSource](https://w3id.org/tvbo/CodeSource)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class CodeSource
+    click CodeSource href "./CodeSource.html"
+      CodeSource : git
+        
+          
+    
+        
+        
+        CodeSource --> "0..1" String : git
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CodeSource : path
+        
+          
+    
+        
+        
+        CodeSource --> "0..1" String : path
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CodeSource : ref
+        
+          
+    
+        
+        
+        CodeSource --> "0..1" String : ref
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CodeSource : subdir
+        
+          
+    
+        
+        
+        CodeSource --> "0..1" String : subdir
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:CodeSource](https://w3id.org/tvbo/CodeSource) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [path](../slots/path.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Local directory holding the code, relative to the recipe YAML or absolute | direct |
+| [git](../slots/git.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Git repository URL to fetch the code from (shallow-cloned and cached under ``... | direct |
+| [ref](../slots/ref.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Git branch, tag, or commit to check out (``git`` sources only) | direct |
+| [subdir](../slots/subdir.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Subdirectory within the source to place on the import path (defaults to the s... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [code_source](../slots/code_source.qmd) | range | [CodeSource](../classes/CodeSource.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:CodeSource |
+| native | tvbo:CodeSource |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: CodeSource
+description: Location of a recipe's callable code so the specification is decoupled
+  from where the code lives. Either a local directory or a git repository; the resolved
+  directory (optionally a ``subdir`` within it) is placed on the import path at load
+  time so ``module:`` references resolve by bare name. ``path`` and ``git`` are mutually
+  exclusive.
+from_schema: https://w3id.org/tvbo
+attributes:
+  path:
+    name: path
+    description: Local directory holding the code, relative to the recipe YAML or
+      absolute. Mutually exclusive with ``git``.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  git:
+    name: git
+    description: Git repository URL to fetch the code from (shallow-cloned and cached
+      under ``~/.cache/tvbo/code_sources``). Mutually exclusive with ``path``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - CodeSource
+    range: string
+  ref:
+    name: ref
+    description: Git branch, tag, or commit to check out (``git`` sources only). Defaults
+      to the repository's default branch.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - CodeSource
+    range: string
+  subdir:
+    name: subdir
+    description: Subdirectory within the source to place on the import path (defaults
+      to the source root).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - CodeSource
+    range: string
+class_uri: tvbo:CodeSource
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: CodeSource
+description: Location of a recipe's callable code so the specification is decoupled
+  from where the code lives. Either a local directory or a git repository; the resolved
+  directory (optionally a ``subdir`` within it) is placed on the import path at load
+  time so ``module:`` references resolve by bare name. ``path`` and ``git`` are mutually
+  exclusive.
+from_schema: https://w3id.org/tvbo
+attributes:
+  path:
+    name: path
+    description: Local directory holding the code, relative to the recipe YAML or
+      absolute. Mutually exclusive with ``git``.
+    from_schema: https://w3id.org/tvbo
+    owner: CodeSource
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  git:
+    name: git
+    description: Git repository URL to fetch the code from (shallow-cloned and cached
+      under ``~/.cache/tvbo/code_sources``). Mutually exclusive with ``path``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: CodeSource
+    domain_of:
+    - CodeSource
+    range: string
+  ref:
+    name: ref
+    description: Git branch, tag, or commit to check out (``git`` sources only). Defaults
+      to the repository's default branch.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: CodeSource
+    domain_of:
+    - CodeSource
+    range: string
+  subdir:
+    name: subdir
+    description: Subdirectory within the source to place on the import path (defaults
+      to the source root).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: CodeSource
+    domain_of:
+    - CodeSource
+    range: string
+class_uri: tvbo:CodeSource
+
+```
+</details></div>

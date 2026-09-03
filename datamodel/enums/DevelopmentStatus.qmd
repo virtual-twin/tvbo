@@ -1,0 +1,92 @@
+# Enum: DevelopmentStatus 
+
+
+
+
+_Development status of the software. Based on repostatus.org categories._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_sw:enum/DevelopmentStatus](https://w3id.org/tvbo/software/enum/DevelopmentStatus)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| active | None | Actively developed with regular releases |
+| inactive | None | No longer actively developed; may still work |
+| concept | None | Minimal or no implementation; ideas / prototypes |
+| wip | None | Work in progress; not yet feature-complete |
+| suspended | None | Development paused; may resume in future |
+| unsupported | None | Released but no longer supported |
+| moved | None | Project has been moved to a different location |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [development_status](../slots/development_status.qmd) | Development status (repostatus |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: DevelopmentStatus
+description: Development status of the software. Based on repostatus.org categories.
+from_schema: https://w3id.org/tvbo/software
+permissible_values:
+  active:
+    text: active
+    description: Actively developed with regular releases.
+  inactive:
+    text: inactive
+    description: No longer actively developed; may still work.
+  concept:
+    text: concept
+    description: Minimal or no implementation; ideas / prototypes.
+  wip:
+    text: wip
+    description: Work in progress; not yet feature-complete.
+  suspended:
+    text: suspended
+    description: Development paused; may resume in future.
+  unsupported:
+    text: unsupported
+    description: Released but no longer supported.
+  moved:
+    text: moved
+    description: Project has been moved to a different location.
+
+```
+</details>
+
+</div>

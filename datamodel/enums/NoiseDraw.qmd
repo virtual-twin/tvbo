@@ -1,0 +1,80 @@
+# Enum: NoiseDraw 
+
+
+
+
+_How a stochastic run's noise realization is generated._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/NoiseDraw](https://w3id.org/tvbo/enum/NoiseDraw)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| blocked | None | Regenerate each block's noise from the key and the block index |
+| fused | None | Draw the whole [n_steps, n_noise_states, n_nodes] tensor once from the key |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [noise_draw](../slots/noise_draw.qmd) | How the base solve draws its noise realization, and therefore WHICH realizati... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: NoiseDraw
+description: How a stochastic run's noise realization is generated.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  blocked:
+    text: blocked
+    description: Regenerate each block's noise from the key and the block index. The
+      realization never depends on the total step count, so a run measured by folding
+      an observable in-carry and the same run materialized in full agree sample for
+      sample. Holds no O(n_steps) noise tensor, and regenerates rather than stores
+      on the backward pass. Keyed by Integrator.block_size.
+  fused:
+    text: fused
+    description: Draw the whole [n_steps, n_noise_states, n_nodes] tensor once from
+      the key. Fuses with the scan, but the realization is a function of the step
+      count, so the same recipe measured two ways gives two trajectories, and the
+      tensor costs as much memory as the trajectory it drives.
+
+```
+</details>
+
+</div>

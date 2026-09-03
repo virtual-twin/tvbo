@@ -1,0 +1,100 @@
+# Slot: sparse 
+
+
+_Whether the coupling uses sparse representations_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/sparse](https://w3id.org/tvbo/slot/sparse)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [Coupling](../classes/Coupling.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:sparse |
+| native | tvbo:sparse |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sparse
+description: Whether the coupling uses sparse representations
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: Coupling
+domain_of:
+- Coupling
+range: boolean
+
+```
+</details></div>

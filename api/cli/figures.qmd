@@ -1,0 +1,128 @@
+# figures { #tvbo.cli.figures }
+
+`cli.figures`
+
+``tvbo figure`` — render declarative figures from a Figure or Study YAML.
+
+A :class:`~tvbo.datamodel.Figure` is TVBO's backend-independent spec of a publication figure: a mosaic of panels whose layers bind experiment result containers to visual channels (see ``schema/figure.yaml``). This verb resolves such a spec and drives :mod:`tvbo.adapters.bsplot` to emit a self-contained ``plot.py`` and run it, mirroring how ``tvbo run`` drives the simulation adapters.
+
+The spec may be a standalone ``Figure`` (top-level ``panels:``) or a ``SimulationStudy`` carrying a ``figures:`` list — the latter closes the replication loop (a study is its experiments plus the figures that read them).
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [app](#tvbo.cli.figures.app) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [caption](#tvbo.cli.figures.caption) | Compose each figure's caption from its spec and write a ``<name>.caption.qmd`` partial. |
+| [compare](#tvbo.cli.figures.compare) | Compare each rendered figure against its published counterpart, by panel geometry. |
+| [figure_origins](#tvbo.cli.figures.figure_origins) | ``{figure name: study root}`` for every figure the spec pulled in with ``!include``. |
+| [figure_outputs](#tvbo.cli.figures.figure_outputs) | ``(name, image, script)`` for *figure* under *out_dir* — where the render writes, named once. |
+| [reference_image_for](#tvbo.cli.figures.reference_image_for) | The published image *figure* reproduces, resolved against *root*. |
+| [register_figure_code](#tvbo.cli.figures.register_figure_code) | Put a root's ``code/`` on ``sys.path``, so a figure rendering against it can import the modules its ``code_modules`` names. |
+| [render](#tvbo.cli.figures.render) | Render figures in *spec* via bsplot codegen (all of them, or the ``--name`` subset). |
+| [render_figures](#tvbo.cli.figures.render_figures) | Emit + run each figure's render script and return the written images. |
+
+### caption { #tvbo.cli.figures.caption }
+
+```python
+cli.figures.caption(
+    spec=typer.Argument(..., help='Path to a Figure or SimulationStudy YAML.'),
+    out=typer.Option(None, '-o', '--out', help="Directory for the .caption.qmd partials (default: the study's figures directory from the layout record)."),
+    name=typer.Option(None, '-n', '--name', help='Caption only the figure(s) with this name (comma-separated). Default: all.'),
+)
+```
+
+Compose each figure's caption from its spec and write a ``<name>.caption.qmd`` partial.
+
+The render-free sibling of ``figure render``: it emits only the composed captions (figure lead + per-panel structural descriptor + authored ``Panel.description``), so the prose can ``{{< include >}}`` a caption that regenerates from the spec without recomputing the figure.
+
+### compare { #tvbo.cli.figures.compare }
+
+```python
+cli.figures.compare(
+    spec=typer.Argument(..., help='Path to a Figure YAML or a SimulationStudy YAML with a figures: list.'),
+    reference=typer.Option(None, '-r', '--reference', help="Reference image, or a directory of them. Optional: by default each figure's declared `reference_image:` is used, resolved against the study root."),
+    figures_dir=typer.Option(None, '-f', '--figures', help="Directory holding the rendered figures (default: the study's figures directory from the layout record)."),
+    out=typer.Option(None, '-o', '--out', help="Directory for the side-by-side overlays and the markdown summary (default: figure-compare/ under the study's notes directory)."),
+    base_dir=typer.Option(None, '--base-dir', help="Study root. Defaults to the spec file's directory."),
+    name=typer.Option(None, '-n', '--name', help='Compare only the figure(s) with this name (comma-separated).'),
+)
+```
+
+Compare each rendered figure against its published counterpart, by panel geometry.
+
+Replication asks a figure to land on the original's layout — same aspect, same panel grid, panels the same relative size in the same places. This decomposes both images into panel boxes and reports the offsets, so "not well aligned" becomes a number per panel rather than an impression. Writes one overlay PNG per figure plus a markdown summary; the summary is what a report reads.
+
+### figure_origins { #tvbo.cli.figures.figure_origins }
+
+```python
+cli.figures.figure_origins(spec_path)
+```
+
+``{figure name: study root}`` for every figure the spec pulled in with ``!include``.
+
+A figure record included from another study names its ``code_modules``, its captured ``source`` and the ``path`` it draws relative to *that* study, and including it somewhere else must not change what those mean. So an included figure renders against the study its fragment lives in, and one written inline renders against the spec, which is what each already says. A fragment that belongs to no study — a spec kept beside the manuscript that includes it — is left out, so it renders against the including spec exactly as if it had been written there.
+
+### figure_outputs { #tvbo.cli.figures.figure_outputs }
+
+```python
+cli.figures.figure_outputs(figure, out_dir)
+```
+
+``(name, image, script)`` for *figure* under *out_dir* — where the render writes, named once.
+
+The renderer and every consumer that has to find a rendered figure afterwards ask this, so a figure's file name is derived in one place rather than re-spelled wherever it is looked up.
+
+### reference_image_for { #tvbo.cli.figures.reference_image_for }
+
+```python
+cli.figures.reference_image_for(figure, root)
+```
+
+The published image *figure* reproduces, resolved against *root*.
+
+Prefers the figure's declared `reference_image:`; otherwise falls back to a file named after the figure. Returns None when neither exists.
+
+### register_figure_code { #tvbo.cli.figures.register_figure_code }
+
+```python
+cli.figures.register_figure_code(base)
+```
+
+Put a root's ``code/`` on ``sys.path``, so a figure rendering against it can import the modules its ``code_modules`` names.
+
+Called for whichever root a figure actually renders against: its own, or — for a record ``!include``d from another study — that study's, which the including spec knows nothing about. Without it a figure resolves against the right root and still cannot find its panels.
+
+### render { #tvbo.cli.figures.render }
+
+```python
+cli.figures.render(
+    spec=typer.Argument(..., help='Path to a Figure YAML (top-level panels:) or a SimulationStudy YAML with a figures: list.'),
+    out=typer.Option(None, '-o', '--out', help="Directory for the rendered figures + plot scripts (default: the study's figures directory from the layout record)."),
+    base_dir=typer.Option(None, '--base-dir', help="Study root the result containers are resolved against. Defaults to the spec file's directory."),
+    name=typer.Option(None, '-n', '--name', help='Render only the figure(s) with this name (comma-separated for several). Default: render every figure in the spec. Iterating one panel? `tvbo figure render <Study>.yaml -n Fig3_<study>` re-renders just that figure.'),
+)
+```
+
+Render figures in *spec* via bsplot codegen (all of them, or the ``--name`` subset).
+
+Each figure's ``<name>.<format>`` image lands in ``<out-dir>`` and its self-contained, editable ``plot_<name>.py`` in ``<out-dir>/scripts/``, so the directory the report reads holds images only. ``<base-dir>`` is the study root each layer's ``used`` IRI resolves against; the containers are read from its results directory.
+
+### render_figures { #tvbo.cli.figures.render_figures }
+
+```python
+cli.figures.render_figures(figures, base_dir, out_dir, origins=None)
+```
+
+Emit + run each figure's render script and return the written images.
+
+The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the study root each layer's ``used`` IRI resolves against, whose results directory holds the containers; ``origins`` overrides it per figure, for a record ``!include``d from another study (see :func:`figure_origins`).
+
+Every figure is attempted before anything is raised, so one broken declaration reports itself alongside the others rather than hiding the thirteen behind it; the run still fails, naming all of them.
+
+The image lands directly in ``out_dir`` — the one place the report and every other consumer reads a figure from — while its self-contained, editable ``plot_<name>.py`` goes to ``out_dir/scripts/``. Both are regenerable and gitignored together; separating them just keeps a study with many figures from interleaving twice as many files in the directory people actually browse. The subdirectory is deliberately NOT called ``code``: in a study that name means the authored, tracked, importable code the recipe references by bare module name, which this is not.

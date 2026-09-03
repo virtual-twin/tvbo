@@ -1,0 +1,95 @@
+# Slot: coupling_terms 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/coupling_terms](https://w3id.org/tvbo/slot/coupling_terms)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Parameter](../classes/Parameter.qmd) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:coupling_terms |
+| native | tvbo:coupling_terms |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: coupling_terms
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Dynamics
+domain_of:
+- Dynamics
+range: Parameter
+multivalued: true
+inlined: true
+
+```
+</details></div>

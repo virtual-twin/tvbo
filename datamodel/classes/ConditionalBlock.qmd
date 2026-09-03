@@ -1,0 +1,181 @@
+# Class: ConditionalBlock 
+
+
+_A single condition and its corresponding equation segment._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:ConditionalBlock](https://w3id.org/tvbo/ConditionalBlock)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ConditionalBlock
+    click ConditionalBlock href "./ConditionalBlock.html"
+      ConditionalBlock : condition
+        
+          
+    
+        
+        
+        ConditionalBlock --> "0..1" String : condition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ConditionalBlock : expression
+        
+          
+    
+        
+        
+        ConditionalBlock --> "0..1" String : expression
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:ConditionalBlock](https://w3id.org/tvbo/ConditionalBlock) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [condition](../slots/condition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The condition for this block (e | direct |
+| [expression](../slots/expression.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The equation to apply when the condition is met | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Equation](../classes/Equation.qmd) | [conditionals](../slots/conditionals.qmd) | range | [ConditionalBlock](../classes/ConditionalBlock.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ConditionalBlock |
+| native | tvbo:ConditionalBlock |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ConditionalBlock
+description: A single condition and its corresponding equation segment.
+from_schema: https://w3id.org/tvbo
+attributes:
+  condition:
+    name: condition
+    description: The condition for this block (e.g., t > onset).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Session
+    - ConditionalBlock
+    - Event
+    range: string
+  expression:
+    name: expression
+    description: The equation to apply when the condition is met.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ConditionalBlock
+    - DifferentialOperator
+    - Assignment
+    range: string
+class_uri: tvbo:ConditionalBlock
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ConditionalBlock
+description: A single condition and its corresponding equation segment.
+from_schema: https://w3id.org/tvbo
+attributes:
+  condition:
+    name: condition
+    description: The condition for this block (e.g., t > onset).
+    from_schema: https://w3id.org/tvbo
+    owner: ConditionalBlock
+    domain_of:
+    - Session
+    - ConditionalBlock
+    - Event
+    range: string
+  expression:
+    name: expression
+    description: The equation to apply when the condition is met.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ConditionalBlock
+    domain_of:
+    - ConditionalBlock
+    - DifferentialOperator
+    - Assignment
+    range: string
+class_uri: tvbo:ConditionalBlock
+
+```
+</details></div>

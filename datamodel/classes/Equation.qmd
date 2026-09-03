@@ -1,0 +1,576 @@
+# Class: Equation 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Equation](https://w3id.org/tvbo/Equation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Equation
+    click Equation href "./Equation.html"
+      Equation : conditionals
+        
+          
+    
+        
+        
+        Equation --> "*" ConditionalBlock : conditionals
+        click ConditionalBlock href "./ConditionalBlock.html"
+    
+
+        
+      Equation : definition
+        
+          
+    
+        
+        
+        Equation --> "0..1" String : definition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Equation : description
+        
+          
+    
+        
+        
+        Equation --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Equation : engine
+        
+          
+    
+        
+        
+        Equation --> "0..1" SoftwareRequirement : engine
+        click SoftwareRequirement href "./SoftwareRequirement.html"
+    
+
+        
+      Equation : label
+        
+          
+    
+        
+        
+        Equation --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Equation : latex
+        
+          
+    
+        
+        
+        Equation --> "0..1" Boolean : latex
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Equation : lhs
+        
+          
+    
+        
+        
+        Equation --> "0..1" String : lhs
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Equation : parameters
+        
+          
+    
+        
+        
+        Equation --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Equation : pycode
+        
+          
+    
+        
+        
+        Equation --> "0..1" String : pycode
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Equation : rhs
+        
+          
+    
+        
+        
+        Equation --> "0..1" String : rhs
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Equation](https://w3id.org/tvbo/Equation) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [definition](../slots/definition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [lhs](../slots/lhs.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [rhs](../slots/rhs.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [conditionals](../slots/conditionals.qmd) | * <br/> [ConditionalBlock](../classes/ConditionalBlock.qmd) | Conditional logic for piecewise equations — the one place a piecewise definit... | direct |
+| [engine](../slots/engine.qmd) | 0..1 <br/> [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | Primary engine (must appear in environment | direct |
+| [pycode](../slots/pycode.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Python code for the equation | direct |
+| [latex](../slots/latex.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Stimulus](../classes/Stimulus.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Event](../classes/Event.qmd) | [condition](../slots/condition.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Event](../classes/Event.qmd) | [affect](../slots/affect.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Event](../classes/Event.qmd) | [affect_negative](../slots/affect_negative.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Event](../classes/Event.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Observation](../classes/Observation.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Analysis](../classes/Analysis.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [StateVariable](../classes/StateVariable.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [StateVariable](../classes/StateVariable.qmd) | [evict_equation](../slots/evict_equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Parameter](../classes/Parameter.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Function](../classes/Function.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Function](../classes/Function.qmd) | [output_equation](../slots/output_equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [LossFunction](../classes/LossFunction.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [LossFunction](../classes/LossFunction.qmd) | [output_equation](../slots/output_equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [FunctionCall](../classes/FunctionCall.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [DerivedParameter](../classes/DerivedParameter.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [DerivedVariable](../classes/DerivedVariable.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Noise](../classes/Noise.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [UpdateRule](../classes/UpdateRule.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [TuningObjective](../classes/TuningObjective.qmd) | [metric](../slots/metric.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Coupling](../classes/Coupling.qmd) | [coupling_function](../slots/coupling_function.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Coupling](../classes/Coupling.qmd) | [pre_expression](../slots/pre_expression.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [Coupling](../classes/Coupling.qmd) | [post_expression](../slots/post_expression.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [additional_equations](../slots/additional_equations.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [SpatialField](../classes/SpatialField.qmd) | [initial_expression](../slots/initial_expression.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) | [evict_equation](../slots/evict_equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [DifferentialOperator](../classes/DifferentialOperator.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [DifferentialOperator](../classes/DifferentialOperator.qmd) | [expression](../slots/expression.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [BoundaryCondition](../classes/BoundaryCondition.qmd) | [equation](../slots/equation.qmd) | range | [Equation](../classes/Equation.qmd) |
+| [PDE](../classes/PDE.qmd) | [sources](../slots/sources.qmd) | range | [Equation](../classes/Equation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Equation |
+| native | tvbo:Equation |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Equation
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- definition
+- parameters
+- description
+attributes:
+  lhs:
+    name: lhs
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - lefthandside
+    rank: 1000
+    domain_of:
+    - Equation
+    range: string
+  rhs:
+    name: rhs
+    annotations:
+      simple_dict_value:
+        tag: simple_dict_value
+        value: true
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - righthandside
+    rank: 1000
+    domain_of:
+    - Equation
+    range: string
+  conditionals:
+    name: conditionals
+    description: Conditional logic for piecewise equations — the one place a piecewise
+      definition is written, for a state variable, a derived variable or a derived
+      parameter alike. When present, the branches define the equation and `rhs` may
+      be omitted.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Equation
+    range: ConditionalBlock
+    multivalued: true
+    inlined: true
+  engine:
+    name: engine
+    description: Primary engine (must appear in environment.requirements; migration
+      target replacing deprecated 'software').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Equation
+    range: SoftwareRequirement
+    inlined: true
+  pycode:
+    name: pycode
+    description: Python code for the equation.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Equation
+    - Noise
+    range: string
+  latex:
+    name: latex
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Equation
+    range: boolean
+class_uri: tvbo:Equation
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Equation
+from_schema: https://w3id.org/tvbo
+attributes:
+  lhs:
+    name: lhs
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - lefthandside
+    rank: 1000
+    owner: Equation
+    domain_of:
+    - Equation
+    range: string
+  rhs:
+    name: rhs
+    annotations:
+      simple_dict_value:
+        tag: simple_dict_value
+        value: true
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - righthandside
+    rank: 1000
+    owner: Equation
+    domain_of:
+    - Equation
+    range: string
+  conditionals:
+    name: conditionals
+    description: Conditional logic for piecewise equations — the one place a piecewise
+      definition is written, for a state variable, a derived variable or a derived
+      parameter alike. When present, the branches define the equation and `rhs` may
+      be omitted.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Equation
+    domain_of:
+    - Equation
+    range: ConditionalBlock
+    multivalued: true
+    inlined: true
+  engine:
+    name: engine
+    description: Primary engine (must appear in environment.requirements; migration
+      target replacing deprecated 'software').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Equation
+    domain_of:
+    - Equation
+    range: SoftwareRequirement
+    inlined: true
+  pycode:
+    name: pycode
+    description: Python code for the equation.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Equation
+    domain_of:
+    - Equation
+    - Noise
+    range: string
+  latex:
+    name: latex
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Equation
+    domain_of:
+    - Equation
+    range: boolean
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Equation
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  definition:
+    name: definition
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: skos:definition
+    owner: Equation
+    domain_of:
+    - Equation
+    - StateVariable
+    - Parameter
+    - Function
+    - DifferentialOperator
+    range: string
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Equation
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Equation
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Equation
+
+```
+</details></div>

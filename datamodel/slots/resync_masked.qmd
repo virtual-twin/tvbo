@@ -1,0 +1,105 @@
+# Slot: resync_masked 
+
+
+_Recurrence rebuilding the state from a fixed-size ring in which only `L` rows are live, selected by mask `m`. Separate from `resync` because a ring sized for the longest window carries rows that are not yet part of it, and summing over them would fold padding into the result. Absent where a reducer has no ring to mask._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/resync_masked](https://w3id.org/tvbo/slot/resync_masked)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Reducer](../classes/Reducer.qmd) | A streaming reduction, authored as symbolic recurrences over its own state ra... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Assignment](../classes/Assignment.qmd) |
+| Domain Of | [Reducer](../classes/Reducer.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Reducer](../classes/Reducer.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:resync_masked |
+| native | tvbo:resync_masked |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: resync_masked
+description: Recurrence rebuilding the state from a fixed-size ring in which only
+  `L` rows are live, selected by mask `m`. Separate from `resync` because a ring sized
+  for the longest window carries rows that are not yet part of it, and summing over
+  them would fold padding into the result. Absent where a reducer has no ring to mask.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Reducer
+domain_of:
+- Reducer
+range: Assignment
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

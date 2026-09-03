@@ -1,0 +1,122 @@
+# Enum: ToolRole 
+
+
+
+
+_Primary function of the tool in a simulation workflow._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_sw:enum/ToolRole](https://w3id.org/tvbo/software/enum/ToolRole)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| simulator | wd:Q1569346 | Core numerical simulator |
+| framework | wd:Q271680 | Multi-paradigm simulation framework |
+| backend_runtime | None | Optimized execution backend for another simulator |
+| optimization_framework | wd:Q816286 | Parameter optimization / fitting tool |
+| specification_language | wd:Q2661442 | Model description language or data standard |
+| workflow_framework | None | Orchestration, model-building, or pipeline tool |
+| analysis_tool | biotools:operation_2945 | Post-processing, signal analysis, or statistics |
+| visualization_tool | biotools:operation_0337 | Visualization or graphical user interface |
+| model_repository | wd:Q7397 | Database or repository of published models |
+| continuation_tool | wd:Q858926 | Numerical continuation / bifurcation analysis |
+| inference_framework | wd:Q3508889 | Probabilistic / Bayesian inference toolkit for model parameters |
+| feature_extraction | wd:Q1392628 | Feature library or pipeline for derived signal descriptors |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [tool_role](../slots/tool_role.qmd) | Primary function(s) in a simulation workflow |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ToolRole
+description: Primary function of the tool in a simulation workflow.
+from_schema: https://w3id.org/tvbo/software
+permissible_values:
+  simulator:
+    text: simulator
+    description: Core numerical simulator.
+    meaning: wd:Q1569346
+  framework:
+    text: framework
+    description: Multi-paradigm simulation framework.
+    meaning: wd:Q271680
+  backend_runtime:
+    text: backend_runtime
+    description: Optimized execution backend for another simulator.
+  optimization_framework:
+    text: optimization_framework
+    description: Parameter optimization / fitting tool.
+    meaning: wd:Q816286
+  specification_language:
+    text: specification_language
+    description: Model description language or data standard.
+    meaning: wd:Q2661442
+  workflow_framework:
+    text: workflow_framework
+    description: Orchestration, model-building, or pipeline tool.
+  analysis_tool:
+    text: analysis_tool
+    description: Post-processing, signal analysis, or statistics.
+    meaning: biotools:operation_2945
+  visualization_tool:
+    text: visualization_tool
+    description: Visualization or graphical user interface.
+    meaning: biotools:operation_0337
+  model_repository:
+    text: model_repository
+    description: Database or repository of published models.
+    meaning: wd:Q7397
+  continuation_tool:
+    text: continuation_tool
+    description: Numerical continuation / bifurcation analysis.
+    meaning: wd:Q858926
+  inference_framework:
+    text: inference_framework
+    description: Probabilistic / Bayesian inference toolkit for model parameters.
+    meaning: wd:Q3508889
+  feature_extraction:
+    text: feature_extraction
+    description: Feature library or pipeline for derived signal descriptors.
+    meaning: wd:Q1392628
+
+```
+</details>
+
+</div>

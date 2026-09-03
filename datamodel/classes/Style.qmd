@@ -1,0 +1,248 @@
+# Class: Style 
+
+
+_Layer/panel styling, portable intent plus a namespaced backend passthrough. Reuses Argument for the passthrough (matplotlib implicit in the MVP)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Style](https://w3id.org/tvbo/class/Style)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Style
+    click Style href "./Style.html"
+      Style : color
+        
+          
+    
+        
+        
+        Style --> "0..1" String : color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Style : colormap
+        
+          
+    
+        
+        
+        Style --> "0..1" String : colormap
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Style : opacity
+        
+          
+    
+        
+        
+        Style --> "0..1" Float : opacity
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Style : opts
+        
+          
+    
+        
+        
+        Style --> "*" Argument : opts
+        click Argument href "./Argument.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [color](../slots/color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Semantic colour or palette name | direct |
+| [colormap](../slots/colormap.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Named colormap (routed through the cmap resolver) | direct |
+| [opacity](../slots/opacity.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) |  | direct |
+| [opts](../slots/opts.qmd) | * <br/> [Argument](../classes/Argument.qmd) | Raw backend passthrough (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Layer](../classes/Layer.qmd) | [style](../slots/style.qmd) | range | [Style](../classes/Style.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Style |
+| native | tvbo:Style |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Style
+description: Layer/panel styling, portable intent plus a namespaced backend passthrough.
+  Reuses Argument for the passthrough (matplotlib implicit in the MVP).
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  color:
+    name: color
+    description: Semantic colour or palette name.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  colormap:
+    name: colormap
+    description: Named colormap (routed through the cmap resolver).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Style
+    - ColorScale
+    range: string
+  opacity:
+    name: opacity
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Style
+    - Region
+    range: float
+  opts:
+    name: opts
+    description: Raw backend passthrough (e.g. linewidth, linestyle); matplotlib implicit
+      until a second backend lands.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Style
+    range: Argument
+    multivalued: true
+    inlined: true
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Style
+description: Layer/panel styling, portable intent plus a namespaced backend passthrough.
+  Reuses Argument for the passthrough (matplotlib implicit in the MVP).
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  color:
+    name: color
+    description: Semantic colour or palette name.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Style
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  colormap:
+    name: colormap
+    description: Named colormap (routed through the cmap resolver).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Style
+    domain_of:
+    - Style
+    - ColorScale
+    range: string
+  opacity:
+    name: opacity
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Style
+    domain_of:
+    - Style
+    - Region
+    range: float
+  opts:
+    name: opts
+    description: Raw backend passthrough (e.g. linewidth, linestyle); matplotlib implicit
+      until a second backend lands.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Style
+    domain_of:
+    - Panel
+    - Inset
+    - Style
+    range: Argument
+    multivalued: true
+    inlined: true
+
+```
+</details></div>

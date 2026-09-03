@@ -1,0 +1,100 @@
+# Slot: precision 
+
+
+_Floating point precision: 'float32' or 'float64'_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/precision](https://w3id.org/tvbo/slot/precision)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ExecutionConfig](../classes/ExecutionConfig.qmd) | Configuration for computational execution (parallelization, precision, hardwa... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(float64)` |
+| Owner | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:precision |
+| native | tvbo:precision |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: precision
+description: 'Floating point precision: ''float32'' or ''float64'''
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(float64)
+owner: ExecutionConfig
+domain_of:
+- ExecutionConfig
+range: string
+
+```
+</details></div>

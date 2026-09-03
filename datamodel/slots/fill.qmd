@@ -1,0 +1,99 @@
+# Slot: fill 
+
+
+_Fill the rectangle rather than outlining it. A filled region sits under the data._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/fill](https://w3id.org/tvbo/slot/fill)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Region](../classes/Region.qmd) | A rectangle drawn over a panel to ring the window a paper calls out — the par... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Region](../classes/Region.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Region](../classes/Region.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:fill |
+| native | tvbo:fill |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: fill
+description: Fill the rectangle rather than outlining it. A filled region sits under
+  the data.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Region
+domain_of:
+- Region
+range: boolean
+
+```
+</details></div>

@@ -1,0 +1,229 @@
+# network_graph { #tvbo.plot.network_graph }
+
+`plot.network_graph`
+
+Network graph plotting utilities.
+
+Three rendering backends:
+
+1. **networkx** — standard ``nx.draw_networkx_*`` rendering
+2. **bsplot**  — text-box nodes + curved edges via ``bsplot.graph``
+3. **brain**   — 3-D brain surface with sphere nodes + tube edges
+                  via ``bsplot.graph.plot_network_on_surface``
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [plot_graph_brain](#tvbo.plot.network_graph.plot_graph_brain) | Render a network on the cortical brain surface using ``bsplot``. |
+| [plot_graph_bsplot](#tvbo.plot.network_graph.plot_graph_bsplot) | Render a network graph with bsplot text-box nodes and curved edges. |
+| [plot_graph_networkx](#tvbo.plot.network_graph.plot_graph_networkx) | Render a network graph with standard NetworkX drawing. |
+
+### plot_graph_brain { #tvbo.plot.network_graph.plot_graph_brain }
+
+```python
+plot.network_graph.plot_graph_brain(
+    network,
+    *,
+    ax=None,
+    template='fsaverage',
+    density='164k',
+    hemi=('lh', 'rh'),
+    view='lateral',
+    surface_alpha=0.3,
+    threshold_percentile=90,
+    node_radius=1.5,
+    node_color='auto',
+    node_cmap='YlOrRd',
+    node_data_key='strength',
+    node_scale=None,
+    edge_radius=0.15,
+    edge_color='steelblue',
+    edge_cmap=None,
+    edge_data_key='weight',
+    edge_scale=None,
+    annot_dir='/Applications/freesurfer/7.4.1/subjects/fsaverage/label',
+    figsize=(6, 5),
+    **kwargs,
+)
+```
+
+Render a network on the cortical brain surface using ``bsplot``.
+
+Nodes are rendered as coloured spheres at parcel centroids; edges as coloured tubes between them.  Only **cortical** parcels that can be matched to the FreeSurfer ``aparc`` annotation are shown.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+network : Network
+    Network object with a parcellation atlas.
+ax : Axes, optional
+    If *None*, a new figure is created.
+template : str
+    Surface template (``"fsaverage"``).
+density : str
+    Surface mesh density (``"164k"``).
+hemi : str or tuple
+    ``"lh"``, ``"rh"``, or ``("lh", "rh")``.
+view : str
+    Camera view (``"lateral"``, ``"top"``, ``"front"``, etc.).
+surface_alpha : float
+    Brain surface transparency.
+threshold_percentile : float
+    Only render edges above this percentile weight.
+node_radius : float
+    Sphere radius for nodes.
+node_color : str
+    Uniform colour (or ``"auto"`` to use *node_cmap*).
+node_cmap : str
+    Colormap for node data.
+node_data_key : str
+    Node attribute for colour mapping (default ``"strength"``).
+node_scale : dict, optional
+    Radius scaling, e.g. ``{"strength": 2, "mode": "exp"}``.
+edge_radius : float
+    Tube radius for edges.
+edge_color : str
+    Uniform edge colour (used when *edge_cmap* is ``None``).
+edge_cmap : str, optional
+    Colormap for edge data.
+edge_data_key : str
+    Edge attribute for colour mapping.
+edge_scale : dict, optional
+    Tube radius scaling, e.g. ``{"weight": 8, "mode": "exp"}``.
+annot_dir : str
+    Path to FreeSurfer ``fsaverage/label/`` directory.
+figsize : tuple
+    Figure size if no *ax* is given.
+**kwargs
+    Forwarded to ``bsplot.graph.plot_network_on_surface``.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+fig : Figure ax : Axes mappables : dict
+    ``ScalarMappable`` objects (keys ``"nodes"`` / ``"edges"``).
+
+### plot_graph_bsplot { #tvbo.plot.network_graph.plot_graph_bsplot }
+
+```python
+plot.network_graph.plot_graph_bsplot(
+    G,
+    *,
+    ax=None,
+    node_cmap='viridis',
+    edge_cmap='viridis',
+    node_color_by='in-strength',
+    log_in_strength=True,
+    edge_color_by='type',
+    pos=None,
+    node_labels=True,
+    edge_labels=True,
+    fontsize=8,
+    edge_radius=0.1,
+    linewidth=1.5,
+    alpha=0.9,
+)
+```
+
+Render a network graph with bsplot text-box nodes and curved edges.
+
+Requires ``bsplot`` to be installed.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+G : networkx.MultiDiGraph
+    Graph (typically from ``Network.graph``).
+ax : Axes, optional
+    If *None*, a new figure is created and returned.
+node_cmap, edge_cmap : str or Colormap
+    Colormaps for nodes / edges.
+node_color_by : str
+    ``"in-strength"`` or ``"node"``.
+log_in_strength : bool
+    Apply ``log1p`` to in-strength.
+edge_color_by : str
+    Edge attribute used for colour classification (default ``"type"``).
+pos : dict
+    ``{node: (x, y)}``.  If *None*, spring layout is used.
+node_labels, edge_labels : bool
+    Toggle label rendering.
+fontsize : float
+    Label font size.
+edge_radius : float
+    Curvature radius for edges.
+linewidth : float
+    Edge line width.
+alpha : float
+    Node box transparency.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+Figure  (when *ax* is None) **or**  ScalarMappable  (when *ax* given).
+
+### plot_graph_networkx { #tvbo.plot.network_graph.plot_graph_networkx }
+
+```python
+plot.network_graph.plot_graph_networkx(
+    G,
+    *,
+    ax=None,
+    node_cmap='viridis',
+    edge_cmap='viridis',
+    node_color_by='in-strength',
+    node_size_by='in-strength',
+    node_size_scaling=100,
+    log_in_strength=True,
+    edge_color_by='weight',
+    pos=None,
+    node_labels=True,
+    edge_labels=True,
+    fontsize=8,
+    edge_kwargs=None,
+    node_kwargs=None,
+)
+```
+
+Render a network graph with standard NetworkX drawing.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+G : networkx.MultiDiGraph
+    Graph (typically from ``Network.graph``).
+ax : Axes, optional
+    If *None*, a new figure is created and returned.
+node_cmap, edge_cmap : str or Colormap
+    Colormaps for nodes / edges.
+node_color_by : str
+    ``"in-strength"`` or ``"node"`` (index-based).
+node_size_by : str or float
+    ``"in-strength"`` for proportional sizing, or a fixed float.
+node_size_scaling : float
+    Scaling factor for node circles.
+log_in_strength : bool
+    Apply ``log1p`` to node in-strength.
+edge_color_by : str
+    Edge attribute used for colour mapping.
+pos : dict
+    ``{node: (x, y)}``.  If *None*, spring layout is used.
+node_labels, edge_labels : bool
+    Toggle label rendering.
+fontsize : float
+    Label font size.
+edge_kwargs, node_kwargs : dict
+    Extra kwargs forwarded to ``nx.draw_networkx_edges`` /
+    ``nx.draw_networkx_nodes``.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+Figure  (when *ax* is None) **or**  ScalarMappable  (when *ax* given).

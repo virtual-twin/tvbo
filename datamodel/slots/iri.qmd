@@ -1,0 +1,123 @@
+# Slot: iri 
+
+
+_Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:identifier](http://purl.org/dc/terms/identifier)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DataRef](../classes/DataRef.qmd) | A pointer to one labelled array in a result container, dataset, or curated en... |  no  |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  yes  |
+| [Parcellation](../classes/Parcellation.qmd) |  |  no  |
+| [Tractogram](../classes/Tractogram.qmd) | Reference to tractography/diffusion MRI data used to derive structural connec... |  no  |
+| [ResultEntity](../classes/ResultEntity.qmd) | One persisted result container, described |  no  |
+| [Activity](../classes/Activity.qmd) | One thing that was done: a solve, a fit, an analysis, a render |  no  |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | Backend-agnostic graph generator specification |  no  |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+| [Function](../classes/Function.qmd) | A function with explicit input -> transformation -> output flow |  no  |
+| [FunctionCall](../classes/FunctionCall.qmd) | Invocation of a function in a pipeline |  no  |
+| [Coupling](../classes/Coupling.qmd) |  |  yes  |
+| [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd) | Cache-invalidation fingerprint for one ``aux_data`` reference |  no  |
+| [Reference](../classes/Reference.qmd) | A small typed pointer to another TVBO entity (Network, Mesh, Observation, …) |  no  |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [LossFunction](../classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) |
+| Domain Of | [DataRef](../classes/DataRef.qmd), [Theme](../classes/Theme.qmd), [Parcellation](../classes/Parcellation.qmd), [Tractogram](../classes/Tractogram.qmd), [ResultEntity](../classes/ResultEntity.qmd), [Activity](../classes/Activity.qmd), [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd), [GraphGenerator](../classes/GraphGenerator.qmd), [Reference](../classes/Reference.qmd), [Observation](../classes/Observation.qmd), [Dynamics](../classes/Dynamics.qmd), [Function](../classes/Function.qmd), [FunctionCall](../classes/FunctionCall.qmd), [Coupling](../classes/Coupling.qmd) |
+| Slot URI | [dcterms:identifier](http://purl.org/dc/terms/identifier) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:identifier |
+| native | tvbo:iri |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: iri
+description: Optional stable IRI (or compact URI) for this entity in an external ontology
+  or knowledge base. Used to load metadata from an external source; not required when
+  the entity is fully self-contained (equations, parameters, etc. defined in the file
+  itself).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: dcterms:identifier
+domain_of:
+- DataRef
+- Theme
+- Parcellation
+- Tractogram
+- ResultEntity
+- Activity
+- ReferenceFingerprint
+- GraphGenerator
+- Reference
+- Observation
+- Dynamics
+- Function
+- FunctionCall
+- Coupling
+range: uriorcurie
+
+```
+</details></div>

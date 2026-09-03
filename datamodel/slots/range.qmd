@@ -1,0 +1,98 @@
+# Slot: range 
+
+
+_Datatype of the parameter (e.g. integer, string, uriorcurie, float)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/range](https://w3id.org/tvbo/slot/range)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParameterSpec](../classes/ParameterSpec.qmd) | Declaration of a single generator/procedure parameter: its name, datatype and... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ParameterSpec](../classes/ParameterSpec.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ParameterSpec](../classes/ParameterSpec.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:range |
+| native | tvbo:range |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: range
+description: Datatype of the parameter (e.g. integer, string, uriorcurie, float).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ParameterSpec
+domain_of:
+- ParameterSpec
+range: string
+
+```
+</details></div>

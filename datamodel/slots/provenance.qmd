@@ -1,0 +1,105 @@
+# Slot: provenance 
+
+
+_W3C PROV-O aligned provenance for this entity — what it was derived from, which agent produced it, and when._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/provenance](https://w3id.org/tvbo/slot/provenance)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+| [Phenotype](../classes/Phenotype.qmd) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention) |  no  |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+| [ResultEntity](../classes/ResultEntity.qmd) | One persisted result container, described |  no  |
+| [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd) | Descriptor for a cached ``ExperimentResult``: the `` |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Provenance](../classes/Provenance.qmd) |
+| Domain Of | [Figure](../classes/Figure.qmd), [ResultEntity](../classes/ResultEntity.qmd), [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd), [Phenotype](../classes/Phenotype.qmd), [Network](../classes/Network.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:provenance |
+| native | tvbo:provenance |
+| close | prov:wasGeneratedBy |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: provenance
+description: W3C PROV-O aligned provenance for this entity — what it was derived from,
+  which agent produced it, and when.
+from_schema: https://w3id.org/tvbo
+close_mappings:
+- prov:wasGeneratedBy
+rank: 1000
+domain_of:
+- Figure
+- ResultEntity
+- ExperimentResultSidecar
+- Phenotype
+- Network
+- SimulationExperiment
+range: Provenance
+inlined: true
+
+```
+</details></div>

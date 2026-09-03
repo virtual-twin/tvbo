@@ -1,0 +1,352 @@
+# Class: ParameterSpec 
+
+
+_Declaration of a single generator/procedure parameter: its name, datatype and default.  Distinct from Parameter (which carries a concrete value) — a ParameterSpec describes the input contract._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:ParameterSpec](https://w3id.org/tvbo/ParameterSpec)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ParameterSpec
+    click ParameterSpec href "./ParameterSpec.html"
+      ParameterSpec : description
+        
+          
+    
+        
+        
+        ParameterSpec --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParameterSpec : ifabsent
+        
+          
+    
+        
+        
+        ParameterSpec --> "0..1" String : ifabsent
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParameterSpec : name
+        
+          
+    
+        
+        
+        ParameterSpec --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParameterSpec : range
+        
+          
+    
+        
+        
+        ParameterSpec --> "0..1" String : range
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParameterSpec : required
+        
+          
+    
+        
+        
+        ParameterSpec --> "0..1" Boolean : required
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:ParameterSpec](https://w3id.org/tvbo/ParameterSpec) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [range](../slots/range.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Datatype of the parameter (e | direct |
+| [required](../slots/required.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether the parameter must be supplied | direct |
+| [ifabsent](../slots/ifabsent.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Default value applied when the parameter is absent | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | [parameters](../slots/parameters.qmd) | range | [ParameterSpec](../classes/ParameterSpec.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ParameterSpec |
+| native | tvbo:ParameterSpec |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ParameterSpec
+description: 'Declaration of a single generator/procedure parameter: its name, datatype
+  and default.  Distinct from Parameter (which carries a concrete value) — a ParameterSpec
+  describes the input contract.'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+attributes:
+  range:
+    name: range
+    description: Datatype of the parameter (e.g. integer, string, uriorcurie, float).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ParameterSpec
+    range: string
+  required:
+    name: required
+    description: Whether the parameter must be supplied.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    domain_of:
+    - ParameterSpec
+    range: boolean
+  ifabsent:
+    name: ifabsent
+    description: Default value applied when the parameter is absent.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ParameterSpec
+    range: string
+class_uri: tvbo:ParameterSpec
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ParameterSpec
+description: 'Declaration of a single generator/procedure parameter: its name, datatype
+  and default.  Distinct from Parameter (which carries a concrete value) — a ParameterSpec
+  describes the input contract.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  range:
+    name: range
+    description: Datatype of the parameter (e.g. integer, string, uriorcurie, float).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ParameterSpec
+    domain_of:
+    - ParameterSpec
+    range: string
+  required:
+    name: required
+    description: Whether the parameter must be supplied.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    owner: ParameterSpec
+    domain_of:
+    - ParameterSpec
+    range: boolean
+  ifabsent:
+    name: ifabsent
+    description: Default value applied when the parameter is absent.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ParameterSpec
+    domain_of:
+    - ParameterSpec
+    range: string
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: ParameterSpec
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Event
+    - Tractogram
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - ParameterSpec
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - Study
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: ParameterSpec
+    domain_of:
+    - Dataset
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ParameterSpec
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - UpdateRule
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+class_uri: tvbo:ParameterSpec
+
+```
+</details></div>

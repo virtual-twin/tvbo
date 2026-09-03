@@ -1,0 +1,118 @@
+# connectome_build { #tvbo.data.connectome_build }
+
+`data.connectome_build`
+
+Build a structural connectome from a tractogram + parcellation via MRtrix3.
+
+A thin wrapper around MRtrix3's ``tck2connectome``. Given a streamline tractogram and an integer-labelled parcellation image that already live in the *same* space, it returns the edge-weight (streamline-count) and mean-tract-length matrices. The inputs are assumed to be co-registered — this module does not register them.
+
+Assembling the matrices into a :class:`tvbo.classes.network.Network` and writing the ``…_desc-SC_relmat.h5`` + YAML sidecar happens in the caller (``tvbo network build``); this module only shells out to MRtrix and reads back the CSVs, so it is the single place the ``tck2connectome`` invocation is defined.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [TCK2CONNECTOME](#tvbo.data.connectome_build.TCK2CONNECTOME) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [connectome_from_tractogram](#tvbo.data.connectome_build.connectome_from_tractogram) | Compute the ``(weights, lengths)`` matrices for a tractogram + parcellation. |
+| [ensure_mrtrix](#tvbo.data.connectome_build.ensure_mrtrix) | Raise a friendly ``RuntimeError`` when the MRtrix command is missing. |
+| [mrtrix_available](#tvbo.data.connectome_build.mrtrix_available) | Return True when the given MRtrix command is on ``PATH``. |
+| [run_tck2connectome](#tvbo.data.connectome_build.run_tck2connectome) | Run ``tck2connectome`` twice: edge weights (count) then mean tract lengths. |
+| [tck2connectome_commands](#tvbo.data.connectome_build.tck2connectome_commands) | Return the two ``tck2connectome`` argv lists (edge weights, then lengths). |
+
+### connectome_from_tractogram { #tvbo.data.connectome_build.connectome_from_tractogram }
+
+```python
+data.connectome_build.connectome_from_tractogram(
+    tractogram,
+    parcellation,
+    *,
+    symmetric=True,
+    zero_diagonal=True,
+    extra_args=None,
+    assignments_out=None,
+)
+```
+
+Compute the ``(weights, lengths)`` matrices for a tractogram + parcellation.
+
+Runs ``tck2connectome`` in a temporary directory and loads the CSVs it writes.
+Both inputs must already be co-registered in the same space.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+tractogram : Path
+    Streamline tractogram MRtrix can read (e.g. ``.tck``).
+parcellation : Path
+    Integer-labelled parcellation image (e.g. ``dseg.nii.gz``).
+assignments_out : Path, optional
+    When given, ``tck2connectome``'s ``-out_assignments`` is kept at this path.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+weights, lengths : np.ndarray
+    ``(N, N)`` streamline-count and mean-length matrices.
+
+### ensure_mrtrix { #tvbo.data.connectome_build.ensure_mrtrix }
+
+```python
+data.connectome_build.ensure_mrtrix(tool=TCK2CONNECTOME)
+```
+
+Raise a friendly ``RuntimeError`` when the MRtrix command is missing.
+
+### mrtrix_available { #tvbo.data.connectome_build.mrtrix_available }
+
+```python
+data.connectome_build.mrtrix_available(tool=TCK2CONNECTOME)
+```
+
+Return True when the given MRtrix command is on ``PATH``.
+
+### run_tck2connectome { #tvbo.data.connectome_build.run_tck2connectome }
+
+```python
+data.connectome_build.run_tck2connectome(
+    tractogram,
+    parcellation,
+    weights_csv,
+    lengths_csv,
+    assignments_csv=None,
+    *,
+    symmetric=True,
+    zero_diagonal=True,
+    force=True,
+    extra_args=None,
+)
+```
+
+Run ``tck2connectome`` twice: edge weights (count) then mean tract lengths.
+
+### tck2connectome_commands { #tvbo.data.connectome_build.tck2connectome_commands }
+
+```python
+data.connectome_build.tck2connectome_commands(
+    tractogram,
+    parcellation,
+    weights_csv,
+    lengths_csv,
+    assignments_csv=None,
+    *,
+    symmetric=True,
+    zero_diagonal=True,
+    force=True,
+    extra_args=None,
+)
+```
+
+Return the two ``tck2connectome`` argv lists (edge weights, then lengths).
+
+The first call counts streamlines between each node pair (edge weights); the second scales each streamline by its length and averages per edge to get mean tract lengths. Returned rather than run so callers can preview them (dry-run).

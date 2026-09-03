@@ -1,0 +1,685 @@
+# Class: Dataset 
+
+
+_A collection of subjects for a multi-subject study. Provides the subject/session structure needed for workflow rendering. Optionally backed by a BIDS directory layout._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:class/Dataset](https://w3id.org/tvbo/study/class/Dataset)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Dataset
+    click Dataset href "./Dataset.html"
+      Dataset <|-- DBSDataset
+        click DBSDataset href "./DBSDataset.html"
+      
+      Dataset : batch_mode
+        
+          
+    
+        
+        
+        Dataset --> "0..1" SubjectBatchMode : batch_mode
+        click SubjectBatchMode href "../../enums/SubjectBatchMode.html"
+    
+
+        
+      Dataset : batch_size
+        
+          
+    
+        
+        
+        Dataset --> "0..1" Integer : batch_size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Dataset : bids_root
+        
+          
+    
+        
+        
+        Dataset --> "0..1" String : bids_root
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dataset : bundle
+        
+          
+    
+        
+        
+        Dataset --> "0..1" Boolean : bundle
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Dataset : conditions
+        
+          
+    
+        
+        
+        Dataset --> "*" String : conditions
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dataset : dataset_id
+        
+          
+    
+        
+        
+        Dataset --> "1" String : dataset_id
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dataset : description
+        
+          
+    
+        
+        
+        Dataset --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dataset : label
+        
+          
+    
+        
+        
+        Dataset --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dataset : reference
+        
+          
+    
+        
+        
+        Dataset --> "0..1" String : reference
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dataset : subjects
+        
+          
+    
+        
+        
+        Dataset --> "*" Subject : subjects
+        click Subject href "./Subject.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **Dataset**
+    * [DBSDataset](../classes/DBSDataset.qmd)
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [dataset_id](../slots/dataset_id.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Unique identifier for the dataset | direct |
+| [subjects](../slots/subjects.qmd) | * <br/> [Subject](../classes/Subject.qmd) | Subjects in a dataset | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Human-readable dataset name | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [bids_root](../slots/bids_root.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to BIDS dataset root directory | direct |
+| [bundle](../slots/bundle.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | When true, emitting a self-contained kit copies this dataset's per-subject fi... | direct |
+| [batch_mode](../slots/batch_mode.qmd) | 0..1 <br/> [SubjectBatchMode](../enums/SubjectBatchMode.qmd) | How the per-subject fits are executed | direct |
+| [batch_size](../slots/batch_size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | On-device chunk width — how many subjects form one vectorised batch | direct |
+| [conditions](../slots/conditions.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Global condition labels applied across all subjects (e | direct |
+| [reference](../slots/reference.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | DOI or citation for this dataset | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [dataset](../slots/dataset.qmd) | range | [Dataset](../classes/Dataset.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:Dataset |
+| native | tvbo_study:Dataset |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Dataset
+description: A collection of subjects for a multi-subject study. Provides the subject/session
+  structure needed for workflow rendering. Optionally backed by a BIDS directory layout.
+from_schema: https://w3id.org/tvbo/study
+slots:
+- dataset_id
+- subjects
+attributes:
+  label:
+    name: label
+    description: Human-readable dataset name.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: rdfs:label
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: dcterms:description
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  bids_root:
+    name: bids_root
+    description: Path to BIDS dataset root directory. When set, subject networks and
+      empirical data paths are resolved relative to this root.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Dataset
+    range: string
+  bundle:
+    name: bundle
+    description: When true, emitting a self-contained kit copies this dataset's per-subject
+      files into the kit (``spec/<exp>/dataset/``) and rewrites ``bids_root`` to that
+      bundled copy, so the kit needs no external mount or ``$TVBO_BIDS_ROOT`` at run
+      time. The exact files are resolved from the dataset-sourced observation's BIDS
+      query (atlas, desc, …) — the same query that scopes the fan-out — so no CLI
+      selection is needed. Declares the packaging intent in metadata instead of a
+      ``--bundle-dataset`` flag; a subset is scoped via ``subjects``.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Dataset
+    range: boolean
+  batch_mode:
+    name: batch_mode
+    description: 'How the per-subject fits are executed. ``fan_out`` (default) runs
+      one per-subject job, each binding its own targets at run time. ``on_device``
+      evaluates the whole cohort together as one vectorised batch on a single device
+      — the subject axis mapped in parallel while the shared network is reused across
+      subjects. Backend-independent intent: the scientific spec is identical either
+      way; only the execution strategy differs (a backend realises the batch with
+      its own vectorised-map primitive).'
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    ifabsent: string(fan_out)
+    domain_of:
+    - Dataset
+    range: SubjectBatchMode
+  batch_size:
+    name: batch_size
+    description: On-device chunk width — how many subjects form one vectorised batch.
+      Absent = the whole cohort in one batch, bounded by the working-memory budget
+      (as for exploration ``n_parallel``). Ignored when ``batch_mode`` is ``fan_out``.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Dataset
+    - ExecutionConfig
+    range: integer
+  conditions:
+    name: conditions
+    description: Global condition labels applied across all subjects (e.g., ['rest',
+      'task-nback', 'task-motor']).
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Dataset
+    range: string
+    multivalued: true
+  reference:
+    name: reference
+    description: DOI or citation for this dataset.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    slot_uri: dcterms:references
+    domain_of:
+    - Dataset
+    - ClinicalScale
+    - ClinicalScore
+    - Tractogram
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Dataset
+description: A collection of subjects for a multi-subject study. Provides the subject/session
+  structure needed for workflow rendering. Optionally backed by a BIDS directory layout.
+from_schema: https://w3id.org/tvbo/study
+attributes:
+  label:
+    name: label
+    description: Human-readable dataset name.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: rdfs:label
+    owner: Dataset
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: dcterms:description
+    owner: Dataset
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  bids_root:
+    name: bids_root
+    description: Path to BIDS dataset root directory. When set, subject networks and
+      empirical data paths are resolved relative to this root.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Dataset
+    domain_of:
+    - Dataset
+    range: string
+  bundle:
+    name: bundle
+    description: When true, emitting a self-contained kit copies this dataset's per-subject
+      files into the kit (``spec/<exp>/dataset/``) and rewrites ``bids_root`` to that
+      bundled copy, so the kit needs no external mount or ``$TVBO_BIDS_ROOT`` at run
+      time. The exact files are resolved from the dataset-sourced observation's BIDS
+      query (atlas, desc, …) — the same query that scopes the fan-out — so no CLI
+      selection is needed. Declares the packaging intent in metadata instead of a
+      ``--bundle-dataset`` flag; a subset is scoped via ``subjects``.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Dataset
+    domain_of:
+    - Dataset
+    range: boolean
+  batch_mode:
+    name: batch_mode
+    description: 'How the per-subject fits are executed. ``fan_out`` (default) runs
+      one per-subject job, each binding its own targets at run time. ``on_device``
+      evaluates the whole cohort together as one vectorised batch on a single device
+      — the subject axis mapped in parallel while the shared network is reused across
+      subjects. Backend-independent intent: the scientific spec is identical either
+      way; only the execution strategy differs (a backend realises the batch with
+      its own vectorised-map primitive).'
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    ifabsent: string(fan_out)
+    owner: Dataset
+    domain_of:
+    - Dataset
+    range: SubjectBatchMode
+  batch_size:
+    name: batch_size
+    description: On-device chunk width — how many subjects form one vectorised batch.
+      Absent = the whole cohort in one batch, bounded by the working-memory budget
+      (as for exploration ``n_parallel``). Ignored when ``batch_mode`` is ``fan_out``.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Dataset
+    domain_of:
+    - Dataset
+    - ExecutionConfig
+    range: integer
+  conditions:
+    name: conditions
+    description: Global condition labels applied across all subjects (e.g., ['rest',
+      'task-nback', 'task-motor']).
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Dataset
+    domain_of:
+    - Dataset
+    range: string
+    multivalued: true
+  reference:
+    name: reference
+    description: DOI or citation for this dataset.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: Dataset
+    domain_of:
+    - Dataset
+    - ClinicalScale
+    - ClinicalScore
+    - Tractogram
+    range: string
+  dataset_id:
+    name: dataset_id
+    description: Unique identifier for the dataset.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: dcterms:identifier
+    identifier: true
+    owner: Dataset
+    domain_of:
+    - Dataset
+    - Phenotype
+    range: string
+    required: true
+  subjects:
+    name: subjects
+    description: Subjects in a dataset.
+    from_schema: https://w3id.org/tvbo/study
+    owner: Dataset
+    domain_of:
+    - Dataset
+    - Phenotype
+    range: Subject
+    multivalued: true
+    inlined: true
+
+```
+</details></div>

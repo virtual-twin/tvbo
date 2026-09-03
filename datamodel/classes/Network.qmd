@@ -1,0 +1,1364 @@
+# Class: Network 
+
+
+_Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Network](https://w3id.org/tvbo/Network)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Network
+    click Network href "./Network.html"
+      Network : bids
+        
+          
+    
+        
+        
+        Network --> "0..1" BidsEntities : bids
+        click BidsEntities href "./BidsEntities.html"
+    
+
+        
+      Network : bids_dir
+        
+          
+    
+        
+        
+        Network --> "0..1" String : bids_dir
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : coordinate_space
+        
+          
+    
+        
+        
+        Network --> "0..1" CommonCoordinateSpace : coordinate_space
+        click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+    
+
+        
+      Network : coupling
+        
+          
+    
+        
+        
+        Network --> "*" Coupling : coupling
+        click Coupling href "./Coupling.html"
+    
+
+        
+      Network : data_file
+        
+          
+    
+        
+        
+        Network --> "0..1" String : data_file
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : description
+        
+          
+    
+        
+        
+        Network --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : descriptor
+        
+          
+    
+        
+        
+        Network --> "0..1" String : descriptor
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : distance_unit
+        
+          
+    
+        
+        
+        Network --> "0..1" UnitEnum : distance_unit
+        click UnitEnum href "../../enums/UnitEnum.html"
+    
+
+        
+      Network : dynamics
+        
+          
+    
+        
+        
+        Network --> "*" Dynamics : dynamics
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      Network : edge_matrix_files
+        
+          
+    
+        
+        
+        Network --> "*" File : edge_matrix_files
+        click File href "./File.html"
+    
+
+        
+      Network : edge_template
+        
+          
+    
+        
+        
+        Network --> "0..1" Edge : edge_template
+        click Edge href "./Edge.html"
+    
+
+        
+      Network : edges
+        
+          
+    
+        
+        
+        Network --> "*" Edge : edges
+        click Edge href "./Edge.html"
+    
+
+        
+      Network : graph_generator
+        
+          
+    
+        
+        
+        Network --> "0..1" GraphGenerator : graph_generator
+        click GraphGenerator href "./GraphGenerator.html"
+    
+
+        
+      Network : graph_representation
+        
+          
+    
+        
+        
+        Network --> "0..1" GraphRepresentation : graph_representation
+        click GraphRepresentation href "../../enums/GraphRepresentation.html"
+    
+
+        
+      Network : integration
+        
+          
+    
+        
+        
+        Network --> "0..1" Integrator : integration
+        click Integrator href "./Integrator.html"
+    
+
+        
+      Network : label
+        
+          
+    
+        
+        
+        Network --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : mesh
+        
+          
+    
+        
+        
+        Network --> "0..1" Mesh : mesh
+        click Mesh href "./Mesh.html"
+    
+
+        
+      Network : node_mapping
+        
+          
+    
+        
+        
+        Network --> "0..1" String : node_mapping
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : node_template
+        
+          
+    
+        
+        
+        Network --> "0..1" Node : node_template
+        click Node href "./Node.html"
+    
+
+        
+      Network : nodes
+        
+          
+    
+        
+        
+        Network --> "*" Node : nodes
+        click Node href "./Node.html"
+    
+
+        
+      Network : number_of_nodes
+        
+          
+    
+        
+        
+        Network --> "0..1" Integer : number_of_nodes
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Network : observational_measures
+        
+          
+    
+        
+        
+        Network --> "*" String : observational_measures
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : parameters
+        
+          
+    
+        
+        
+        Network --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Network : parcellation
+        
+          
+    
+        
+        
+        Network --> "0..1" Parcellation : parcellation
+        click Parcellation href "./Parcellation.html"
+    
+
+        
+      Network : parent_network
+        
+          
+    
+        
+        
+        Network --> "0..1" String : parent_network
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : primary_weight
+        
+          
+    
+        
+        
+        Network --> "0..1" String : primary_weight
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : provenance
+        
+          
+    
+        
+        
+        Network --> "0..1" Provenance : provenance
+        click Provenance href "./Provenance.html"
+    
+
+        
+      Network : structural_measures
+        
+          
+    
+        
+        
+        Network --> "*" String : structural_measures
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Network : time_unit
+        
+          
+    
+        
+        
+        Network --> "0..1" UnitEnum : time_unit
+        click UnitEnum href "../../enums/UnitEnum.html"
+    
+
+        
+      Network : tractogram
+        
+          
+    
+        
+        
+        Network --> "0..1" Tractogram : tractogram
+        click Tractogram href "./Tractogram.html"
+    
+
+        
+      Network : transforms
+        
+          
+    
+        
+        
+        Network --> "*" Function : transforms
+        click Function href "./Function.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Network](https://w3id.org/tvbo/Network) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [provenance](../slots/provenance.qmd) | 0..1 <br/> [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance for this entity — what it was derived from, whi... | direct |
+| [time_unit](../slots/time_unit.qmd) | 0..1 <br/> [UnitEnum](../enums/UnitEnum.qmd) | Unit of every time-valued number in this scope — the step size, any period, a... | direct |
+| [integration](../slots/integration.qmd) | 0..1 <br/> [Integrator](../classes/Integrator.qmd) | Clock this network's nodes run on | direct |
+| [nodes](../slots/nodes.qmd) | * <br/> [Node](../classes/Node.qmd) | List of nodes with individual dynamics (optional, for heterogeneous networks) | direct |
+| [edges](../slots/edges.qmd) | * <br/> [Edge](../classes/Edge.qmd) | List of directed edges with coupling references (optional, for explicit edge ... | direct |
+| [primary_weight](../slots/primary_weight.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name of the edge group that should serve as the canonical weights matrix when... | direct |
+| [coupling](../slots/coupling.qmd) | * <br/> [Coupling](../classes/Coupling.qmd) | How activity travels along this network's connections — the one place a coupl... | direct |
+| [graph_representation](../slots/graph_representation.qmd) | 0..1 <br/> [GraphRepresentation](../enums/GraphRepresentation.qmd) | Representation used to evaluate coupling over this network's connectivity (``... | direct |
+| [dynamics](../slots/dynamics.qmd) | * <br/> [Dynamics](../classes/Dynamics.qmd) | Dictionary of dynamics models keyed by name | direct |
+| [node_template](../slots/node_template.qmd) | 0..1 <br/> [Node](../classes/Node.qmd) | Default Node attributes applied to every Node in this Network | direct |
+| [edge_template](../slots/edge_template.qmd) | 0..1 <br/> [Edge](../classes/Edge.qmd) | Default Edge attributes applied to every Edge in this Network | direct |
+| [number_of_nodes](../slots/number_of_nodes.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of nodes in the network (derived from nodes if not set) | direct |
+| [coordinate_space](../slots/coordinate_space.qmd) | 0..1 <br/> [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | Coordinate space for node positions (e | direct |
+| [parcellation](../slots/parcellation.qmd) | 0..1 <br/> [Parcellation](../classes/Parcellation.qmd) | Brain parcellation/atlas reference | direct |
+| [tractogram](../slots/tractogram.qmd) | 0..1 <br/> [Tractogram](../classes/Tractogram.qmd) | Reference to tractography data | direct |
+| [mesh](../slots/mesh.qmd) | 0..1 <br/> [Mesh](../classes/Mesh.qmd) | Optional triangle mesh geometry | direct |
+| [transforms](../slots/transforms.qmd) | * <br/> [Function](../classes/Function.qmd) | Ordered list of transforms applied to edge property matrices | direct |
+| [data_file](../slots/data_file.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to companion data file | direct |
+| [descriptor](../slots/descriptor.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Short alphanumeric identifier for the BIDS desc- filename entity (e | direct |
+| [bids_dir](../slots/bids_dir.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to BEP017-compliant BIDS directory for loading connectivity matrices | direct |
+| [bids](../slots/bids.qmd) | 0..1 <br/> [BidsEntities](../classes/BidsEntities.qmd) | BIDS filename entities for this dataset | direct |
+| [structural_measures](../slots/structural_measures.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BEP017 measure names for structural connectivity (e | direct |
+| [observational_measures](../slots/observational_measures.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BEP017 measure names for observational targets (e | direct |
+| [parent_network](../slots/parent_network.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path/URI to parent (coarser) Network | direct |
+| [node_mapping](../slots/node_mapping.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | HDF5 dataset path for node-to-parent mapping | direct |
+| [distance_unit](../slots/distance_unit.qmd) | 0..1 <br/> [UnitEnum](../enums/UnitEnum.qmd) | Unit for distances/lengths in the network | direct |
+| [edge_matrix_files](../slots/edge_matrix_files.qmd) | * <br/> [File](../classes/File.qmd) |  | direct |
+| [graph_generator](../slots/graph_generator.qmd) | 0..1 <br/> [GraphGenerator](../classes/GraphGenerator.qmd) | Graph generator specification | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Node](../classes/Node.qmd) | [subnetwork](../slots/subnetwork.qmd) | range | [Network](../classes/Network.qmd) |
+| [Coupling](../classes/Coupling.qmd) | [regional_connectivity](../slots/regional_connectivity.qmd) | range | [Network](../classes/Network.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [connectivity](../slots/connectivity.qmd) | range | [Network](../classes/Network.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [network](../slots/network.qmd) | range | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* Network
+* Connectome
+* Graph
+* Connectivity
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Network |
+| native | tvbo:Network |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Network
+description: Network specification with nodes, edges, and reusable coupling configurations.
+  Supports both explicit node/edge representation and matrix-based connectivity (Connectome
+  compatibility).
+from_schema: https://w3id.org/tvbo
+aliases:
+- Network
+- Connectome
+- Graph
+- Connectivity
+slots:
+- label
+- description
+- parameters
+- provenance
+- time_unit
+attributes:
+  integration:
+    name: integration
+    description: 'Clock this network''s nodes run on. A subnetwork declaring its own
+      is how a finer scale runs on a finer step than its parent: the fold reads both
+      and converts between their `time_unit`, since a factor of 1000 living only in
+      a modeller''s head is invisible in every backend''s output.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    - Optimization
+    - Inference
+    - SimulationExperiment
+    range: Integrator
+    inlined: true
+  nodes:
+    name: nodes
+    description: List of nodes with individual dynamics (optional, for heterogeneous
+      networks)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Event
+    - Network
+    range: Node
+    multivalued: true
+    inlined_as_list: true
+  edges:
+    name: edges
+    description: List of directed edges with coupling references (optional, for explicit
+      edge definition)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: Edge
+    multivalued: true
+    inlined_as_list: true
+  primary_weight:
+    name: primary_weight
+    description: Name of the edge group that should serve as the canonical weights
+      matrix when ``weights_matrix`` is queried. Lets a single Network sidecar bundle
+      several connectivity variants (e.g. band-specific NMF reweightings, distance-modulated
+      SC, shuffled controls) under different edge names while still presenting one
+      of them as the active weight to consumers (simulators, observation pipelines).
+      Defaults to ``weight`` / ``weights`` / ``sc`` lookup when not set.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: string
+  coupling:
+    name: coupling
+    description: How activity travels along this network's connections — the one place
+      a coupling function is declared, because a coupling acts over a connectivity
+      and has no meaning without one. Keyed by the role each plays in the network
+      ('excitatory', 'delayed', 'inhibitory'), so a network may carry several and
+      an edge names the one it uses. A network with a single coupling applies it to
+      every edge.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    - Edge
+    range: Coupling
+    multivalued: true
+    inlined: true
+  graph_representation:
+    name: graph_representation
+    description: Representation used to evaluate coupling over this network's connectivity
+      (``auto`` | ``dense`` | ``sparse``). ``auto`` lets the backend choose by connection
+      density. This names whether to exploit edge sparsity, not a concrete data structure,
+      so it is backend-independent; the delayed-vs-instantaneous graph kind is decided
+      separately from the couplings' conduction delays.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(auto)
+    domain_of:
+    - Network
+    range: GraphRepresentation
+  dynamics:
+    name: dynamics
+    description: Dictionary of dynamics models keyed by name. Nodes reference these
+      by name. For heterogeneous networks with per-node dynamics.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    multivalued: true
+    inlined: true
+  node_template:
+    name: node_template
+    description: Default Node attributes applied to every Node in this Network. Explicit
+      entries in `nodes:` override the template field-by-field (shallow replace, same
+      semantics as `dict.update`). Reserved per-Node slots (id, label, position, region)
+      come from the data backbone (Network.iri-loaded parcellation or procedural generator)
+      and are ignored if set on the template. Lets a homogeneous Network declare its
+      per-Node configuration once without enumerating regions.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: Node
+    required: false
+    inlined: true
+  edge_template:
+    name: edge_template
+    description: Default Edge attributes applied to every Edge in this Network. Explicit
+      entries in `edges:` override the template field-by-field. Reserved per-Edge
+      slots (source, target, weight, delay, distance) come from the data backbone
+      (loaded matrix or procedural generator) and are ignored if set on the template.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: Edge
+    required: false
+    inlined: true
+  number_of_nodes:
+    name: number_of_nodes
+    description: Number of nodes in the network (derived from nodes if not set)
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - number_of_nodes
+    - number_of_regions
+    rank: 1000
+    domain_of:
+    - Network
+    range: integer
+  coordinate_space:
+    name: coordinate_space
+    description: Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors
+      BrainAtlas.coordinateSpace so network node positions are unambiguous.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+    inlined: true
+  parcellation:
+    name: parcellation
+    description: Brain parcellation/atlas reference
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    - Mesh
+    range: Parcellation
+    inlined: true
+  tractogram:
+    name: tractogram
+    description: Reference to tractography data
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: Tractogram
+    inlined: true
+  mesh:
+    name: mesh
+    description: Optional triangle mesh geometry. When set, the Network carries triangle
+      faces (and optionally normals, curvature) alongside its node coordinates. Used
+      by surface-based observations (cortical wave detection, Helmholtz-Hodge decomposition,
+      spectrospatial mode analysis). Mesh face data lives in the same h5 companion
+      under a ``mesh/`` group.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Surface
+    - Network
+    - SpatialField
+    - FieldStateVariable
+    - PDE
+    range: Mesh
+    inlined: true
+  transforms:
+    name: transforms
+    description: Ordered list of transforms applied to edge property matrices. Each
+      entry's `name:` is the edge property it rewrites (e.g. 'weight', 'length'),
+      and that property is also the value under transform inside the entry's own equation,
+      which is written over the network's edge attributes. Supports equation-based
+      (symbolic) or callable-based (software) transforms. Multiple transforms on the
+      same target are applied sequentially, each seeing the previous one's output.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: Function
+    multivalued: true
+    inlined_as_list: true
+  data_file:
+    name: data_file
+    description: 'Path to companion data file. Supported extensions: .h5 (HDF5), .zarr/
+      (Zarr), .csv (legacy single-matrix). Null if no companion data needed.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    range: string
+  descriptor:
+    name: descriptor
+    description: Short alphanumeric identifier for the BIDS desc- filename entity
+      (e.g., SC, FC, EC, SCFC). Classifies the connectivity modality of the network's
+      edge measures.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: string
+  bids_dir:
+    name: bids_dir
+    description: Path to BEP017-compliant BIDS directory for loading connectivity
+      matrices
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: string
+  bids:
+    name: bids
+    description: BIDS filename entities for this dataset
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - StudyDirectory
+    - StudyFile
+    - Network
+    range: BidsEntities
+    inlined: true
+  structural_measures:
+    name: structural_measures
+    description: BEP017 measure names for structural connectivity (e.g., streamlineCount,
+      tractLength)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: string
+    multivalued: true
+  observational_measures:
+    name: observational_measures
+    description: BEP017 measure names for observational targets (e.g., BoldCorrelation)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: string
+    multivalued: true
+  parent_network:
+    name: parent_network
+    description: Path/URI to parent (coarser) Network. When set, this network is a
+      refinement where each node maps to exactly one parent node via node_mapping.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: string
+  node_mapping:
+    name: node_mapping
+    description: HDF5 dataset path for node-to-parent mapping. Int32 array of shape
+      (N,) where entry i is the parent node ID. Required when parent_network is set.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: string
+  distance_unit:
+    name: distance_unit
+    description: Unit for distances/lengths in the network
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(mm)
+    domain_of:
+    - Network
+    range: UnitEnum
+  edge_matrix_files:
+    name: edge_matrix_files
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: File
+    multivalued: true
+  graph_generator:
+    name: graph_generator
+    description: 'Graph generator specification.  When set, overrides explicit edges/nodes
+      for graph construction.  The type field is a free string; StandardGraphType
+      lists well-known types that get automatic code generation across backends.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Network
+    range: GraphGenerator
+    inlined: true
+class_uri: tvbo:Network
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Network
+description: Network specification with nodes, edges, and reusable coupling configurations.
+  Supports both explicit node/edge representation and matrix-based connectivity (Connectome
+  compatibility).
+from_schema: https://w3id.org/tvbo
+aliases:
+- Network
+- Connectome
+- Graph
+- Connectivity
+attributes:
+  integration:
+    name: integration
+    description: 'Clock this network''s nodes run on. A subnetwork declaring its own
+      is how a finer scale runs on a finer step than its parent: the fold reads both
+      and converts between their `time_unit`, since a factor of 1000 living only in
+      a modeller''s head is invisible in every backend''s output.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    - Optimization
+    - Inference
+    - SimulationExperiment
+    range: Integrator
+    inlined: true
+  nodes:
+    name: nodes
+    description: List of nodes with individual dynamics (optional, for heterogeneous
+      networks)
+    from_schema: https://w3id.org/tvbo
+    owner: Network
+    domain_of:
+    - Event
+    - Network
+    range: Node
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  edges:
+    name: edges
+    description: List of directed edges with coupling references (optional, for explicit
+      edge definition)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: Edge
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  primary_weight:
+    name: primary_weight
+    description: Name of the edge group that should serve as the canonical weights
+      matrix when ``weights_matrix`` is queried. Lets a single Network sidecar bundle
+      several connectivity variants (e.g. band-specific NMF reweightings, distance-modulated
+      SC, shuffled controls) under different edge names while still presenting one
+      of them as the active weight to consumers (simulators, observation pipelines).
+      Defaults to ``weight`` / ``weights`` / ``sc`` lookup when not set.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: string
+  coupling:
+    name: coupling
+    description: How activity travels along this network's connections — the one place
+      a coupling function is declared, because a coupling acts over a connectivity
+      and has no meaning without one. Keyed by the role each plays in the network
+      ('excitatory', 'delayed', 'inhibitory'), so a network may carry several and
+      an edge names the one it uses. A network with a single coupling applies it to
+      every edge.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    - Edge
+    range: Coupling
+    multivalued: true
+    inlined: true
+  graph_representation:
+    name: graph_representation
+    description: Representation used to evaluate coupling over this network's connectivity
+      (``auto`` | ``dense`` | ``sparse``). ``auto`` lets the backend choose by connection
+      density. This names whether to exploit edge sparsity, not a concrete data structure,
+      so it is backend-independent; the delayed-vs-instantaneous graph kind is decided
+      separately from the couplings' conduction delays.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(auto)
+    owner: Network
+    domain_of:
+    - Network
+    range: GraphRepresentation
+  dynamics:
+    name: dynamics
+    description: Dictionary of dynamics models keyed by name. Nodes reference these
+      by name. For heterogeneous networks with per-node dynamics.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    multivalued: true
+    inlined: true
+  node_template:
+    name: node_template
+    description: Default Node attributes applied to every Node in this Network. Explicit
+      entries in `nodes:` override the template field-by-field (shallow replace, same
+      semantics as `dict.update`). Reserved per-Node slots (id, label, position, region)
+      come from the data backbone (Network.iri-loaded parcellation or procedural generator)
+      and are ignored if set on the template. Lets a homogeneous Network declare its
+      per-Node configuration once without enumerating regions.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: Node
+    required: false
+    inlined: true
+  edge_template:
+    name: edge_template
+    description: Default Edge attributes applied to every Edge in this Network. Explicit
+      entries in `edges:` override the template field-by-field. Reserved per-Edge
+      slots (source, target, weight, delay, distance) come from the data backbone
+      (loaded matrix or procedural generator) and are ignored if set on the template.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: Edge
+    required: false
+    inlined: true
+  number_of_nodes:
+    name: number_of_nodes
+    description: Number of nodes in the network (derived from nodes if not set)
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - number_of_nodes
+    - number_of_regions
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: integer
+  coordinate_space:
+    name: coordinate_space
+    description: Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors
+      BrainAtlas.coordinateSpace so network node positions are unambiguous.
+    from_schema: https://w3id.org/tvbo
+    owner: Network
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+    inlined: true
+  parcellation:
+    name: parcellation
+    description: Brain parcellation/atlas reference
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    - Mesh
+    range: Parcellation
+    inlined: true
+  tractogram:
+    name: tractogram
+    description: Reference to tractography data
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: Tractogram
+    inlined: true
+  mesh:
+    name: mesh
+    description: Optional triangle mesh geometry. When set, the Network carries triangle
+      faces (and optionally normals, curvature) alongside its node coordinates. Used
+      by surface-based observations (cortical wave detection, Helmholtz-Hodge decomposition,
+      spectrospatial mode analysis). Mesh face data lives in the same h5 companion
+      under a ``mesh/`` group.
+    from_schema: https://w3id.org/tvbo
+    owner: Network
+    domain_of:
+    - Surface
+    - Network
+    - SpatialField
+    - FieldStateVariable
+    - PDE
+    range: Mesh
+    inlined: true
+  transforms:
+    name: transforms
+    description: Ordered list of transforms applied to edge property matrices. Each
+      entry's `name:` is the edge property it rewrites (e.g. 'weight', 'length'),
+      and that property is also the value under transform inside the entry's own equation,
+      which is written over the network's edge attributes. Supports equation-based
+      (symbolic) or callable-based (software) transforms. Multiple transforms on the
+      same target are applied sequentially, each seeing the previous one's output.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: Function
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  data_file:
+    name: data_file
+    description: 'Path to companion data file. Supported extensions: .h5 (HDF5), .zarr/
+      (Zarr), .csv (legacy single-matrix). Null if no companion data needed.'
+    from_schema: https://w3id.org/tvbo
+    owner: Network
+    domain_of:
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    range: string
+  descriptor:
+    name: descriptor
+    description: Short alphanumeric identifier for the BIDS desc- filename entity
+      (e.g., SC, FC, EC, SCFC). Classifies the connectivity modality of the network's
+      edge measures.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: string
+  bids_dir:
+    name: bids_dir
+    description: Path to BEP017-compliant BIDS directory for loading connectivity
+      matrices
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: string
+  bids:
+    name: bids
+    description: BIDS filename entities for this dataset
+    from_schema: https://w3id.org/tvbo
+    owner: Network
+    domain_of:
+    - StudyDirectory
+    - StudyFile
+    - Network
+    range: BidsEntities
+    inlined: true
+  structural_measures:
+    name: structural_measures
+    description: BEP017 measure names for structural connectivity (e.g., streamlineCount,
+      tractLength)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: string
+    multivalued: true
+  observational_measures:
+    name: observational_measures
+    description: BEP017 measure names for observational targets (e.g., BoldCorrelation)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: string
+    multivalued: true
+  parent_network:
+    name: parent_network
+    description: Path/URI to parent (coarser) Network. When set, this network is a
+      refinement where each node maps to exactly one parent node via node_mapping.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: string
+  node_mapping:
+    name: node_mapping
+    description: HDF5 dataset path for node-to-parent mapping. Int32 array of shape
+      (N,) where entry i is the parent node ID. Required when parent_network is set.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: string
+  distance_unit:
+    name: distance_unit
+    description: Unit for distances/lengths in the network
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(mm)
+    owner: Network
+    domain_of:
+    - Network
+    range: UnitEnum
+  edge_matrix_files:
+    name: edge_matrix_files
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: File
+    multivalued: true
+  graph_generator:
+    name: graph_generator
+    description: 'Graph generator specification.  When set, overrides explicit edges/nodes
+      for graph construction.  The type field is a free string; StandardGraphType
+      lists well-known types that get automatic code generation across backends.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    range: GraphGenerator
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Network
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Network
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  provenance:
+    name: provenance
+    description: W3C PROV-O aligned provenance for this entity — what it was derived
+      from, which agent produced it, and when.
+    from_schema: https://w3id.org/tvbo
+    close_mappings:
+    - prov:wasGeneratedBy
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Figure
+    - ResultEntity
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    - SimulationExperiment
+    range: Provenance
+    inlined: true
+  time_unit:
+    name: time_unit
+    description: 'Unit of every time-valued number in this scope — the step size,
+      any period, and the physical meaning of one model time-step. Declared at whichever
+      scope owns the clock (network, integrator, observation); `tvbo.utils.units.time_unit_of`
+      resolves a scope to its effective unit by walking outwards, and states the `ms`
+      fallback once, at the end of that walk. Deliberately carries no default: a defaulted
+      slot cannot be inherited through, so `ifabsent: ms` made an unset unit indistinguishable
+      from one someone wrote, and masked an explicitly declared `s` one scope out.
+      `time_scale` is accepted as a synonym.'
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - time_scale
+    rank: 1000
+    owner: Network
+    domain_of:
+    - Network
+    - Observation
+    - Integrator
+    range: UnitEnum
+class_uri: tvbo:Network
+
+```
+</details></div>

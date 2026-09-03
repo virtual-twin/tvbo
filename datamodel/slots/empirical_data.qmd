@@ -1,0 +1,101 @@
+# Slot: empirical_data 
+
+
+_Paths to empirical recordings for this session (e.g., BOLD time series, MEG/EEG). Relative to dataset root._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/empirical_data](https://w3id.org/tvbo/study/slot/empirical_data)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Session](../classes/Session.qmd) | A data collection session for a subject |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Session](../classes/Session.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Session](../classes/Session.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:empirical_data |
+| native | tvbo_study:empirical_data |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: empirical_data
+description: Paths to empirical recordings for this session (e.g., BOLD time series,
+  MEG/EEG). Relative to dataset root.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+owner: Session
+domain_of:
+- Session
+range: string
+multivalued: true
+
+```
+</details></div>

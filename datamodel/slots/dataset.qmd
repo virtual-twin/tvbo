@@ -1,0 +1,100 @@
+# Slot: dataset 
+
+
+_Multi-subject dataset for workflow rendering. When set, render_workflow() uses dataset.subjects/sessions to generate per-subject parallel jobs._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/dataset](https://w3id.org/tvbo/slot/dataset)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Dataset](../classes/Dataset.qmd) |
+| Domain Of | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:dataset |
+| native | tvbo:dataset |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: dataset
+description: Multi-subject dataset for workflow rendering. When set, render_workflow()
+  uses dataset.subjects/sessions to generate per-subject parallel jobs.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationExperiment
+domain_of:
+- SimulationExperiment
+range: Dataset
+inlined: true
+
+```
+</details></div>

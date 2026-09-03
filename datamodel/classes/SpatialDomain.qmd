@@ -1,0 +1,371 @@
+# Class: SpatialDomain 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:SpatialDomain](https://w3id.org/tvbo/SpatialDomain)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class SpatialDomain
+    click SpatialDomain href "./SpatialDomain.html"
+      SpatialDomain : coordinate_space
+        
+          
+    
+        
+        
+        SpatialDomain --> "0..1" CommonCoordinateSpace : coordinate_space
+        click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+    
+
+        
+      SpatialDomain : description
+        
+          
+    
+        
+        
+        SpatialDomain --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SpatialDomain : geometry
+        
+          
+    
+        
+        
+        SpatialDomain --> "0..1" String : geometry
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SpatialDomain : label
+        
+          
+    
+        
+        
+        SpatialDomain --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SpatialDomain : region
+        
+          
+    
+        
+        
+        SpatialDomain --> "0..1" String : region
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:SpatialDomain](https://w3id.org/tvbo/SpatialDomain) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [coordinate_space](../slots/coordinate_space.qmd) | 0..1 <br/> [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |  | direct |
+| [region](../slots/region.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional named region/ROI in the atlas/parcellation | direct |
+| [geometry](../slots/geometry.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional file for geometry/ROI mask (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [PDE](../classes/PDE.qmd) | [domain](../slots/domain.qmd) | range | [SpatialDomain](../classes/SpatialDomain.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:SpatialDomain |
+| native | tvbo:SpatialDomain |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: SpatialDomain
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+attributes:
+  coordinate_space:
+    name: coordinate_space
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  region:
+    name: region
+    description: Optional named region/ROI in the atlas/parcellation.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Node
+    - SpatialDomain
+    range: string
+  geometry:
+    name: geometry
+    description: Optional file for geometry/ROI mask (e.g., NIfTI, GIfTI).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Surface
+    - SpatialDomain
+    range: string
+class_uri: tvbo:SpatialDomain
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: SpatialDomain
+from_schema: https://w3id.org/tvbo
+attributes:
+  coordinate_space:
+    name: coordinate_space
+    from_schema: https://w3id.org/tvbo
+    owner: SpatialDomain
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  region:
+    name: region
+    description: Optional named region/ROI in the atlas/parcellation.
+    from_schema: https://w3id.org/tvbo
+    owner: SpatialDomain
+    domain_of:
+    - Node
+    - SpatialDomain
+    range: string
+  geometry:
+    name: geometry
+    description: Optional file for geometry/ROI mask (e.g., NIfTI, GIfTI).
+    from_schema: https://w3id.org/tvbo
+    owner: SpatialDomain
+    domain_of:
+    - Surface
+    - SpatialDomain
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: SpatialDomain
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: SpatialDomain
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:SpatialDomain
+
+```
+</details></div>

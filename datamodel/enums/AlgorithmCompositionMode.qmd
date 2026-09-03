@@ -1,0 +1,76 @@
+# Enum: AlgorithmCompositionMode 
+
+
+
+
+_How an included algorithm is composed with the outer algorithm. Determines whether the inner algorithm's update rules are merged into the same loop (combined) or run as a converging inner loop on each outer iteration (nested)._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/AlgorithmCompositionMode](https://w3id.org/tvbo/enum/AlgorithmCompositionMode)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| combined | None | The included algorithm's update rules are merged into the outer loop and appl... |
+| nested | None | The included algorithm runs as a full inner loop on EACH outer iteration, re-... |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: AlgorithmCompositionMode
+description: How an included algorithm is composed with the outer algorithm. Determines
+  whether the inner algorithm's update rules are merged into the same loop (combined)
+  or run as a converging inner loop on each outer iteration (nested).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  combined:
+    text: combined
+    description: The included algorithm's update rules are merged into the outer loop
+      and applied ONCE per outer iteration (1:1). Use when both algorithms update
+      at the same cadence on the same observations. This is the default.
+  nested:
+    text: nested
+    description: The included algorithm runs as a full inner loop on EACH outer iteration,
+      re-converging before the outer update rules are applied. Use when the inner
+      algorithm maintains an invariant the outer one would otherwise perturb — e.g.
+      FIC holding the E-I working point (mean S_e = 0.25) while EIB retunes per-edge
+      coupling. The outer update's validity depends on that invariant, so the inner
+      loop must re-settle it between every outer step.
+
+```
+</details>
+
+</div>

@@ -1,0 +1,258 @@
+# Class: ToolUnit 
+
+
+_One TVBO unit as a single tool writes it._
+
+_A tool's unit vocabulary is a fact about that tool, not about the unit — LEMS calls `Hz` a `per_time` quantity and writes it `per_s`, and no other backend need agree. Keyed by the `UnitEnum` value so a record states only the units its tool knows._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:class/ToolUnit](https://w3id.org/tvbo/software/class/ToolUnit)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ToolUnit
+    click ToolUnit href "./ToolUnit.html"
+      ToolUnit : dimension
+        
+          
+    
+        
+        
+        ToolUnit --> "0..1" String : dimension
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ToolUnit : symbol
+        
+          
+    
+        
+        
+        ToolUnit --> "0..1" String : symbol
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ToolUnit : unit
+        
+          
+    
+        
+        
+        ToolUnit --> "1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [unit](../slots/unit.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The `UnitEnum` value this entry translates | direct |
+| [dimension](../slots/dimension.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The tool's name for the physical dimension of this unit | direct |
+| [symbol](../slots/symbol.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The tool's spelling of the unit itself, appended to numeric values | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | [units](../slots/units.qmd) | range | [ToolUnit](../classes/ToolUnit.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:ToolUnit |
+| native | tvbo_sw:ToolUnit |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ToolUnit
+description: 'One TVBO unit as a single tool writes it.
+
+  A tool''s unit vocabulary is a fact about that tool, not about the unit — LEMS calls
+  `Hz` a `per_time` quantity and writes it `per_s`, and no other backend need agree.
+  Keyed by the `UnitEnum` value so a record states only the units its tool knows.'
+from_schema: https://w3id.org/tvbo/software
+attributes:
+  unit:
+    name: unit
+    annotations:
+      collection_key:
+        tag: collection_key
+        value: true
+    description: The `UnitEnum` value this entry translates.
+    from_schema: https://w3id.org/tvbo/software
+    key: true
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  dimension:
+    name: dimension
+    description: The tool's name for the physical dimension of this unit. Absent where
+      the tool has no dimension for it.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - ToolUnit
+    - CouplingInput
+    range: string
+  symbol:
+    name: symbol
+    description: The tool's spelling of the unit itself, appended to numeric values.
+      Absent where the tool writes the value bare.
+    from_schema: https://w3id.org/tvbo/software
+    domain_of:
+    - ToolUnit
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - DerivedParameter
+    - DerivedVariable
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ToolUnit
+description: 'One TVBO unit as a single tool writes it.
+
+  A tool''s unit vocabulary is a fact about that tool, not about the unit — LEMS calls
+  `Hz` a `per_time` quantity and writes it `per_s`, and no other backend need agree.
+  Keyed by the `UnitEnum` value so a record states only the units its tool knows.'
+from_schema: https://w3id.org/tvbo/software
+attributes:
+  unit:
+    name: unit
+    annotations:
+      collection_key:
+        tag: collection_key
+        value: true
+    description: The `UnitEnum` value this entry translates.
+    from_schema: https://w3id.org/tvbo/software
+    key: true
+    owner: ToolUnit
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+    required: true
+  dimension:
+    name: dimension
+    description: The tool's name for the physical dimension of this unit. Absent where
+      the tool has no dimension for it.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: ToolUnit
+    domain_of:
+    - ToolUnit
+    - CouplingInput
+    range: string
+  symbol:
+    name: symbol
+    description: The tool's spelling of the unit itself, appended to numeric values.
+      Absent where the tool writes the value bare.
+    from_schema: https://w3id.org/tvbo/software
+    owner: ToolUnit
+    domain_of:
+    - ToolUnit
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - DerivedParameter
+    - DerivedVariable
+    range: string
+
+```
+</details></div>

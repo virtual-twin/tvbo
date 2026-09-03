@@ -1,0 +1,202 @@
+# Class: Camera 
+
+
+_Where a 3-D panel is looked at from. Only a `line3d` panel or a surface reads it; every other kind ignores it. Stated as a class rather than three loose options because a viewpoint is one thing, and a figure that states two of its three numbers is under-specified in a way nothing else would catch._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Camera](https://w3id.org/tvbo/class/Camera)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Camera
+    click Camera href "./Camera.html"
+      Camera : azimuth
+        
+          
+    
+        
+        
+        Camera --> "0..1" Float : azimuth
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Camera : elevation
+        
+          
+    
+        
+        
+        Camera --> "0..1" Float : elevation
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Camera : zoom
+        
+          
+    
+        
+        
+        Camera --> "0..1" Float : zoom
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [elevation](../slots/elevation.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Angle above the horizontal plane, in degrees | direct |
+| [azimuth](../slots/azimuth.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Angle around the vertical axis, in degrees | direct |
+| [zoom](../slots/zoom.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Scale factor on the projected view; above 1 moves the camera in | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [camera](../slots/camera.qmd) | range | [Camera](../classes/Camera.qmd) |
+| [Inset](../classes/Inset.qmd) | [camera](../slots/camera.qmd) | range | [Camera](../classes/Camera.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Camera |
+| native | tvbo:Camera |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Camera
+description: Where a 3-D panel is looked at from. Only a `line3d` panel or a surface
+  reads it; every other kind ignores it. Stated as a class rather than three loose
+  options because a viewpoint is one thing, and a figure that states two of its three
+  numbers is under-specified in a way nothing else would catch.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  elevation:
+    name: elevation
+    description: Angle above the horizontal plane, in degrees.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Camera
+    range: float
+  azimuth:
+    name: azimuth
+    description: Angle around the vertical axis, in degrees.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Camera
+    range: float
+  zoom:
+    name: zoom
+    description: Scale factor on the projected view; above 1 moves the camera in.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Camera
+    range: float
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Camera
+description: Where a 3-D panel is looked at from. Only a `line3d` panel or a surface
+  reads it; every other kind ignores it. Stated as a class rather than three loose
+  options because a viewpoint is one thing, and a figure that states two of its three
+  numbers is under-specified in a way nothing else would catch.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  elevation:
+    name: elevation
+    description: Angle above the horizontal plane, in degrees.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Camera
+    domain_of:
+    - Camera
+    range: float
+  azimuth:
+    name: azimuth
+    description: Angle around the vertical axis, in degrees.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Camera
+    domain_of:
+    - Camera
+    range: float
+  zoom:
+    name: zoom
+    description: Scale factor on the projected view; above 1 moves the camera in.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Camera
+    domain_of:
+    - Camera
+    range: float
+
+```
+</details></div>

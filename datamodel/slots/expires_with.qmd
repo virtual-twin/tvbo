@@ -1,0 +1,77 @@
+# Slot: expires_with 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/expires_with](https://w3id.org/tvbo/study/slot/expires_with)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StudyDirectory](../classes/StudyDirectory.qmd) | One directory in a study layout |  no  |
+| [StudyFile](../classes/StudyFile.qmd) | One file a study layout accounts for |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [StudyDirectory](../classes/StudyDirectory.qmd), [StudyFile](../classes/StudyFile.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:expires_with |
+| native | tvbo_study:expires_with |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: expires_with
+domain_of:
+- StudyDirectory
+- StudyFile
+range: string
+
+```
+</details></div>

@@ -1,0 +1,95 @@
+# Slot: entities 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:slot/entities](http://uri.interlex.org/tgbugs/uris/readable/slot/entities)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationTerminology](../classes/ParcellationTerminology.qmd) | A schema for representing a parcellation terminology, which consists of parce... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+| Domain Of | [ParcellationTerminology](../classes/ParcellationTerminology.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ParcellationTerminology](../classes/ParcellationTerminology.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:entities |
+| native | atom:entities |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: entities
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+rank: 1000
+owner: ParcellationTerminology
+domain_of:
+- ParcellationTerminology
+range: ParcellationEntity
+multivalued: true
+inlined: true
+
+```
+</details></div>

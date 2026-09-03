@@ -1,0 +1,68 @@
+# Enum: SamplingAxis 
+
+
+
+
+_Dimension along which a distribution is sampled._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/SamplingAxis](https://w3id.org/tvbo/enum/SamplingAxis)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| space | None | Sample once per node (heterogeneous parameter or spatially varying IC) |
+| time | None | Resample every integration timestep (stochastic time-varying input) |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SamplingAxis
+description: Dimension along which a distribution is sampled.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  space:
+    text: space
+    description: Sample once per node (heterogeneous parameter or spatially varying
+      IC).
+  time:
+    text: time
+    description: Resample every integration timestep (stochastic time-varying input).
+
+```
+</details>
+
+</div>

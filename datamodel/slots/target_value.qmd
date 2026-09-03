@@ -1,0 +1,98 @@
+# Slot: target_value 
+
+
+_Target value for activity objectives_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target_value](https://w3id.org/tvbo/slot/target_value)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TuningObjective](../classes/TuningObjective.qmd) | Defines what the tuning algorithm optimizes for |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [TuningObjective](../classes/TuningObjective.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [TuningObjective](../classes/TuningObjective.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target_value |
+| native | tvbo:target_value |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_value
+description: Target value for activity objectives
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: TuningObjective
+domain_of:
+- TuningObjective
+range: float
+
+```
+</details></div>

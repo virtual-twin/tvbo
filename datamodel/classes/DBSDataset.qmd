@@ -1,0 +1,544 @@
+# Class: DBSDataset 
+
+
+_Collection of data related to a specific DBS study._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:class/DBSDataset](https://w3id.org/tvbo/dbs/class/DBSDataset)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DBSDataset
+    click DBSDataset href "./DBSDataset.html"
+      Dataset <|-- DBSDataset
+        click Dataset href "./Dataset.html"
+      
+      DBSDataset : batch_mode
+        
+          
+    
+        
+        
+        DBSDataset --> "0..1" SubjectBatchMode : batch_mode
+        click SubjectBatchMode href "../../enums/SubjectBatchMode.html"
+    
+
+        
+      DBSDataset : batch_size
+        
+          
+    
+        
+        
+        DBSDataset --> "0..1" Integer : batch_size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      DBSDataset : bids_root
+        
+          
+    
+        
+        
+        DBSDataset --> "0..1" String : bids_root
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSDataset : bundle
+        
+          
+    
+        
+        
+        DBSDataset --> "0..1" Boolean : bundle
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      DBSDataset : clinical_scores
+        
+          
+    
+        
+        
+        DBSDataset --> "*" ClinicalScore : clinical_scores
+        click ClinicalScore href "./ClinicalScore.html"
+    
+
+        
+      DBSDataset : conditions
+        
+          
+    
+        
+        
+        DBSDataset --> "*" String : conditions
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSDataset : coordinate_space
+        
+          
+    
+        
+        
+        DBSDataset --> "0..1" CommonCoordinateSpace : coordinate_space
+        click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+    
+
+        
+      DBSDataset : dataset_id
+        
+          
+    
+        
+        
+        DBSDataset --> "1" String : dataset_id
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSDataset : description
+        
+          
+    
+        
+        
+        DBSDataset --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSDataset : label
+        
+          
+    
+        
+        
+        DBSDataset --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSDataset : reference
+        
+          
+    
+        
+        
+        DBSDataset --> "0..1" String : reference
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSDataset : subjects
+        
+          
+    
+        
+        
+        DBSDataset --> "*" DBSSubject : subjects
+        click DBSSubject href "./DBSSubject.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [Dataset](../classes/Dataset.qmd)
+    * **DBSDataset**
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [clinical_scores](../slots/clinical_scores.qmd) | * <br/> [ClinicalScore](../classes/ClinicalScore.qmd) |  | direct |
+| [coordinate_space](../slots/coordinate_space.qmd) | 0..1 <br/> [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |  | direct |
+| [dataset_id](../slots/dataset_id.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Unique identifier for the dataset | [Dataset](../classes/Dataset.qmd) |
+| [subjects](../slots/subjects.qmd) | * <br/> [DBSSubject](../classes/DBSSubject.qmd) | Subjects in a dataset | [Dataset](../classes/Dataset.qmd) |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Human-readable dataset name | [Dataset](../classes/Dataset.qmd) |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Dataset](../classes/Dataset.qmd) |
+| [bids_root](../slots/bids_root.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to BIDS dataset root directory | [Dataset](../classes/Dataset.qmd) |
+| [bundle](../slots/bundle.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | When true, emitting a self-contained kit copies this dataset's per-subject fi... | [Dataset](../classes/Dataset.qmd) |
+| [batch_mode](../slots/batch_mode.qmd) | 0..1 <br/> [SubjectBatchMode](../enums/SubjectBatchMode.qmd) | How the per-subject fits are executed | [Dataset](../classes/Dataset.qmd) |
+| [batch_size](../slots/batch_size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | On-device chunk width — how many subjects form one vectorised batch | [Dataset](../classes/Dataset.qmd) |
+| [conditions](../slots/conditions.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Global condition labels applied across all subjects (e | [Dataset](../classes/Dataset.qmd) |
+| [reference](../slots/reference.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | DOI or citation for this dataset | [Dataset](../classes/Dataset.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:DBSDataset |
+| native | tvbo_dbs:DBSDataset |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DBSDataset
+description: Collection of data related to a specific DBS study.
+from_schema: https://w3id.org/tvbo/dbs
+is_a: Dataset
+slot_usage:
+  subjects:
+    name: subjects
+    range: DBSSubject
+attributes:
+  clinical_scores:
+    name: clinical_scores
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSDataset
+    range: ClinicalScore
+    multivalued: true
+  coordinate_space:
+    name: coordinate_space
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DBSDataset
+description: Collection of data related to a specific DBS study.
+from_schema: https://w3id.org/tvbo/dbs
+is_a: Dataset
+slot_usage:
+  subjects:
+    name: subjects
+    range: DBSSubject
+attributes:
+  clinical_scores:
+    name: clinical_scores
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSDataset
+    domain_of:
+    - DBSDataset
+    range: ClinicalScore
+    multivalued: true
+  coordinate_space:
+    name: coordinate_space
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSDataset
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  dataset_id:
+    name: dataset_id
+    description: Unique identifier for the dataset.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: dcterms:identifier
+    identifier: true
+    owner: DBSDataset
+    domain_of:
+    - Dataset
+    - Phenotype
+    range: string
+    required: true
+  subjects:
+    name: subjects
+    description: Subjects in a dataset.
+    from_schema: https://w3id.org/tvbo/study
+    owner: DBSDataset
+    domain_of:
+    - Dataset
+    - Phenotype
+    range: DBSSubject
+    multivalued: true
+    inlined: true
+  label:
+    name: label
+    description: Human-readable dataset name.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: rdfs:label
+    owner: DBSDataset
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: dcterms:description
+    owner: DBSDataset
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  bids_root:
+    name: bids_root
+    description: Path to BIDS dataset root directory. When set, subject networks and
+      empirical data paths are resolved relative to this root.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSDataset
+    domain_of:
+    - Dataset
+    range: string
+  bundle:
+    name: bundle
+    description: When true, emitting a self-contained kit copies this dataset's per-subject
+      files into the kit (``spec/<exp>/dataset/``) and rewrites ``bids_root`` to that
+      bundled copy, so the kit needs no external mount or ``$TVBO_BIDS_ROOT`` at run
+      time. The exact files are resolved from the dataset-sourced observation's BIDS
+      query (atlas, desc, …) — the same query that scopes the fan-out — so no CLI
+      selection is needed. Declares the packaging intent in metadata instead of a
+      ``--bundle-dataset`` flag; a subset is scoped via ``subjects``.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSDataset
+    domain_of:
+    - Dataset
+    range: boolean
+  batch_mode:
+    name: batch_mode
+    description: 'How the per-subject fits are executed. ``fan_out`` (default) runs
+      one per-subject job, each binding its own targets at run time. ``on_device``
+      evaluates the whole cohort together as one vectorised batch on a single device
+      — the subject axis mapped in parallel while the shared network is reused across
+      subjects. Backend-independent intent: the scientific spec is identical either
+      way; only the execution strategy differs (a backend realises the batch with
+      its own vectorised-map primitive).'
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    ifabsent: string(fan_out)
+    owner: DBSDataset
+    domain_of:
+    - Dataset
+    range: SubjectBatchMode
+  batch_size:
+    name: batch_size
+    description: On-device chunk width — how many subjects form one vectorised batch.
+      Absent = the whole cohort in one batch, bounded by the working-memory budget
+      (as for exploration ``n_parallel``). Ignored when ``batch_mode`` is ``fan_out``.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSDataset
+    domain_of:
+    - Dataset
+    - ExecutionConfig
+    range: integer
+  conditions:
+    name: conditions
+    description: Global condition labels applied across all subjects (e.g., ['rest',
+      'task-nback', 'task-motor']).
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: DBSDataset
+    domain_of:
+    - Dataset
+    range: string
+    multivalued: true
+  reference:
+    name: reference
+    description: DOI or citation for this dataset.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: DBSDataset
+    domain_of:
+    - Dataset
+    - ClinicalScale
+    - ClinicalScore
+    - Tractogram
+    range: string
+
+```
+</details></div>

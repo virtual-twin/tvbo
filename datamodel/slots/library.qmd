@@ -1,0 +1,98 @@
+# Slot: library 
+
+
+_Native library/module providing the callable._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/library](https://w3id.org/tvbo/slot/library)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Binding](../classes/Binding.qmd) | Per-backend construction binding for a GraphGenerator: how to build the graph... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Binding](../classes/Binding.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Binding](../classes/Binding.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:library |
+| native | tvbo:library |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: library
+description: Native library/module providing the callable.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Binding
+domain_of:
+- Binding
+range: string
+
+```
+</details></div>

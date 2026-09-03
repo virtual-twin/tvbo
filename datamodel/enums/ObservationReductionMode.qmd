@@ -1,0 +1,90 @@
+# Enum: ObservationReductionMode 
+
+
+
+
+_How an observation is evaluated over the trajectory (see Observation.reduce). Absent (the default) keeps the post-scan pipeline: the observation is computed from a materialised trajectory. `streaming` opts the observation into an incremental reducer that is folded into the integrator carry via prepare(reduce=...), so the trajectory is never held — byte-identical to the post-scan value (to f64 rounding), but with O(block) instead of O(n_time) peak memory. Required for whole-brain fits whose per-stage simulation is long enough that the full trajectory would not fit in memory (e.g. the Schirner 2023 BOLD/FC group fit)._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ObservationReductionMode](https://w3id.org/tvbo/enum/ObservationReductionMode)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| streaming | None | Fold this observation into the integrator carry as an (init, update, finalize... |
+| trials | None | Evaluate the pipeline across the trial ensemble rather than per solve: the (s... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [reduce](../slots/reduce.qmd) | Opt into streaming evaluation of this observation: fold it into the integrato... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ObservationReductionMode
+description: 'How an observation is evaluated over the trajectory (see Observation.reduce).
+  Absent (the default) keeps the post-scan pipeline: the observation is computed from
+  a materialised trajectory. `streaming` opts the observation into an incremental
+  reducer that is folded into the integrator carry via prepare(reduce=...), so the
+  trajectory is never held — byte-identical to the post-scan value (to f64 rounding),
+  but with O(block) instead of O(n_time) peak memory. Required for whole-brain fits
+  whose per-stage simulation is long enough that the full trajectory would not fit
+  in memory (e.g. the Schirner 2023 BOLD/FC group fit).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  streaming:
+    text: streaming
+    description: Fold this observation into the integrator carry as an (init, update,
+      finalize) reducer; never materialise the trajectory. Supported for the HRF-Volterra
+      BOLD pipeline (hemodynamic convolution, whose kernel / downsample stride / TR
+      stride / Volterra scaling the resolver lifts from the declared pipeline), cumulative
+      mean/std/variance aggregations, and a matrix co-moment FC (compute_fc as a running
+      covariance).
+  trials:
+    text: trials
+    description: 'Evaluate the pipeline across the trial ensemble rather than per
+      solve: the (single) source observation is computed per trial as usual, and after
+      the trial map this observation''s (single) pipeline stage runs host-side on
+      the trial-stacked source (n_trials, ...) — e.g. a pattern-entropy over an ensemble
+      of per-trial evoked patterns. Requires a trial-only exploration (n_trials without
+      parameter axes).'
+
+```
+</details>
+
+</div>

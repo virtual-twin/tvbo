@@ -1,0 +1,72 @@
+# Enum: RequirementRole 
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_sw:enum/RequirementRole](https://w3id.org/tvbo/software/enum/RequirementRole)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| engine | None | Primary simulation/processing engine |
+| runtime | None | General runtime dependency |
+| analysis | None | Post-processing / analysis tool |
+| dev | None | Development / build dependency |
+| optional | None | Optional or extra feature dependency |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: RequirementRole
+from_schema: https://w3id.org/tvbo/software
+permissible_values:
+  engine:
+    text: engine
+    description: Primary simulation/processing engine.
+  runtime:
+    text: runtime
+    description: General runtime dependency.
+  analysis:
+    text: analysis
+    description: Post-processing / analysis tool.
+  dev:
+    text: dev
+    description: Development / build dependency.
+  optional:
+    text: optional
+    description: Optional or extra feature dependency.
+
+```
+</details>
+
+</div>

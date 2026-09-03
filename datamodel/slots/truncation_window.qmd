@@ -1,0 +1,99 @@
+# Slot: truncation_window 
+
+
+_Truncated-BPTT window in milliseconds of simulated time: gradients flow back at most this far. Omit for full BPTT._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/truncation_window](https://w3id.org/tvbo/slot/truncation_window)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Differentiation](../classes/Differentiation.qmd) | Backend-neutral configuration for how gradients are propagated through the te... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Differentiation](../classes/Differentiation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Differentiation](../classes/Differentiation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:truncation_window |
+| native | tvbo:truncation_window |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: truncation_window
+description: 'Truncated-BPTT window in milliseconds of simulated time: gradients flow
+  back at most this far. Omit for full BPTT.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Differentiation
+domain_of:
+- Differentiation
+range: float
+
+```
+</details></div>

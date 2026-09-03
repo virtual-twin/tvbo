@@ -1,0 +1,5 @@
+# software 
+
+Schema for describing software tools, environments, and requirements in computational neuroscience. Aligned with schema.org/SoftwareApplication, CodeMeta v3, and DOAP vocabularies. Extends with neuroscience-specific controlled vocabularies for simulation scale, modeling paradigm, tool role, and interoperability.
+
+URI: https://w3id.org/tvbo/software

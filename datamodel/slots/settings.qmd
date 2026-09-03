@@ -1,0 +1,94 @@
+# Slot: settings 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/settings](https://w3id.org/tvbo/dbs/slot/settings)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DBSProtocol](../classes/DBSProtocol.qmd) | A protocol describing DBS therapy, potentially bilateral or multi-lead |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [StimulationSetting](../classes/StimulationSetting.qmd) |
+| Domain Of | [DBSProtocol](../classes/DBSProtocol.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DBSProtocol](../classes/DBSProtocol.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:settings |
+| native | tvbo_dbs:settings |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: settings
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: DBSProtocol
+domain_of:
+- DBSProtocol
+range: StimulationSetting
+multivalued: true
+
+```
+</details></div>

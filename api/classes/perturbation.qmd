@@ -1,0 +1,74 @@
+# perturbation { #tvbo.classes.perturbation }
+
+`classes.perturbation`
+
+Exogenous stimuli for simulation experiments.
+
+The public import location for :class:`Stimulus`, alongside the helpers that build one from an ontology class or from an audio file.
+
+There is no wrapper class: the stimulus's own methods live in :mod:`tvbo.behaviour.perturbation` and are attached to the generated class itself, so a stimulus carries them however it was built.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [class2metadata](#tvbo.classes.perturbation.class2metadata) | Build `Stimulus` metadata from an ontology stimulus class. |
+| [load_acoustic_stimulus_from_audiofile](#tvbo.classes.perturbation.load_acoustic_stimulus_from_audiofile) | Load an audio file as a callable stimulus time course. |
+
+### class2metadata { #tvbo.classes.perturbation.class2metadata }
+
+```python
+classes.perturbation.class2metadata(ontoclass)
+```
+
+Build `Stimulus` metadata from an ontology stimulus class.
+
+Reads the class's defining equation. The class name (identifier) and definition become the stimulus label and description, and every descendant `Parameter` is added with its default value and definition.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                                                                  | Default    |
+|-----------|--------|--------------------------------------------------------------------------------------------------------------|------------|
+| ontoclass |        | An owlready2 stimulus class whose `value`, `definition` and parameter descendants describe the perturbation. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                            |
+|--------|--------|------------------------------------------------------------------------|
+|        |        | A datamodel `Stimulus` populated with the equation and parameters read |
+|        |        | from the ontology class.                                               |
+
+### load_acoustic_stimulus_from_audiofile { #tvbo.classes.perturbation.load_acoustic_stimulus_from_audiofile }
+
+```python
+classes.perturbation.load_acoustic_stimulus_from_audiofile(
+    file_path,
+    sampling_rate=1000,
+    duration='full',
+)
+```
+
+Load an audio file as a callable stimulus time course.
+
+Loads the waveform, resamples it to `sampling_rate`, normalises it to the `[-1, 1]` range, optionally truncates it to `duration`, and fits a smoothing spline over time (in milliseconds).
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                                                                       | Default    |
+|---------------|--------|---------------------------------------------------------------------------------------------------|------------|
+| file_path     |        | Path to the audio file to read (any format `librosa` supports).                                   | _required_ |
+| sampling_rate |        | Target sampling rate in Hz used for resampling and for converting sample indices to milliseconds. | `1000`     |
+| duration      |        | `"full"` to keep the whole signal, or a length in milliseconds to truncate it to.                 | `'full'`   |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                           |
+|--------|--------|-----------------------------------------------------------------------|
+|        |        | A function of time (in milliseconds) that evaluates the interpolated, |
+|        |        | normalised audio amplitude and returns 0 outside the signal's span.   |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type        | Description                                            |
+|--------|-------------|--------------------------------------------------------|
+|        | ImportError | If the optional `librosa` dependency is not installed. |

@@ -1,0 +1,77 @@
+# Slot: show 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/show](https://w3id.org/tvbo/slot/show)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+| [Legend](../classes/Legend.qmd) | A panel's key: whether it is drawn, where it sits, and the three things a fig... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Colorbar](../classes/Colorbar.qmd), [Legend](../classes/Legend.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:show |
+| native | tvbo:show |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: show
+domain_of:
+- Colorbar
+- Legend
+range: string
+
+```
+</details></div>

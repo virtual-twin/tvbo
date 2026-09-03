@@ -1,0 +1,126 @@
+# dynamics { #tvbo.behaviour.dynamics }
+
+`behaviour.dynamics`
+
+The symbolic layer, on every :class:`Dynamics` however it was built.
+
+Attached to the generated classes by name (``DynamicsBehaviour`` -> ``Dynamics``), so a model loaded through LinkML, validated through Pydantic or resolved onto an edge answers the same symbolic questions as one constructed through :mod:`tvbo.classes.dynamics`.
+
+That reach is the point. Consumers used to ask whether the model in hand had a symbolic layer and fall back to parsing its metadata directly when it did not — three copies of one dispatch, and two parses of the same equation against namespaces built differently.
+
+The equations themselves live on a [`SymbolicSystem`](../parse/system.qmd), one per model, held under a private attribute: both generated forms accept one without a slot and neither serializes it (``tests/test_spec_model_contract.py``).
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [DynamicsBehaviour](#tvbo.behaviour.dynamics.DynamicsBehaviour) | Everything a model does, gathered where the generated class can inherit it. |
+
+### DynamicsBehaviour { #tvbo.behaviour.dynamics.DynamicsBehaviour }
+
+```python
+behaviour.dynamics.DynamicsBehaviour()
+```
+
+Everything a model does, gathered where the generated class can inherit it.
+
+The symbolic view is here; construction, code generation, simulation, plotting and reporting come from [`DynamicsRuntime`](dynamics_runtime.qmd). One class because ``hatch_build`` attaches behaviour by name — ``DynamicsBehaviour`` to ``Dynamics`` — and splitting the source by concern is what keeps that one name readable.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [keyed_parameters](#tvbo.behaviour.dynamics.DynamicsBehaviour.keyed_parameters) | Each parameter's symbol mapped to its value, keyed for the codegen view. |
+| [symbolic](#tvbo.behaviour.dynamics.DynamicsBehaviour.symbolic) | Full symbolic ODE system using proper SymPy conventions. |
+| [symbolic_system](#tvbo.behaviour.dynamics.DynamicsBehaviour.symbolic_system) | This model's [`SymbolicSystem`](../parse/system.qmd), built once and kept. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [check_units](#tvbo.behaviour.dynamics.DynamicsBehaviour.check_units) | Per-equation dimensional verdicts for this model. |
+| [get_equations](#tvbo.behaviour.dynamics.DynamicsBehaviour.get_equations) | Collect the model's equations as SymPy `Eq` objects. |
+| [get_symbolic_elements](#tvbo.behaviour.dynamics.DynamicsBehaviour.get_symbolic_elements) | The symbol table this model's expressions are parsed against. |
+| [in_dependency_order](#tvbo.behaviour.dynamics.DynamicsBehaviour.in_dependency_order) | *collection* ordered so each member follows what it reads. |
+| [symbol_map](#tvbo.behaviour.dynamics.DynamicsBehaviour.symbol_map) | Display-symbol overrides for report rendering: ``{identifier Symbol: LaTeX str}``. |
+
+##### check_units { #tvbo.behaviour.dynamics.DynamicsBehaviour.check_units }
+
+```python
+behaviour.dynamics.DynamicsBehaviour.check_units(
+    strictness='dimensional',
+    time_unit=None,
+)
+```
+
+Per-equation dimensional verdicts for this model.
+
+See [`tvbo.analysis.units.check_units`](../analysis/units.qmd#check_units). Each verdict is `consistent`, `inconsistent` or `underdetermined`; the third is a distinct answer, not a soft failure, because 24 of the 39 curated models declare no units and calling those wrong would pressure fake declarations into the published record.
+
+##### get_equations { #tvbo.behaviour.dynamics.DynamicsBehaviour.get_equations }
+
+```python
+behaviour.dynamics.DynamicsBehaviour.get_equations(
+    format='metadata',
+    evaluate=True,
+)
+```
+
+Collect the model's equations as SymPy `Eq` objects.
+
+The flat projection of [`SymbolicSystem.form`](../parse/system.qmd#form): derived parameters, functions, derived variables, state equations (as time derivatives, or plain maps for discrete systems), and output transformations.
+
+It rides on the layer rather than on the runtime `Dynamics` because the consumers that ask for it hold either flavour — a report's per-node model on a heterogeneous network is the generated one, and promoting it to a runtime model just to ask re-parsed every equation the layer already held.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                                                                                                                                      | Default      |
+|----------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| format   | str    | Shape of the result. `"dict"` groups equations by category; `"state-equations"` returns only state equations keyed by variable name; any other value (e.g. `"metadata"`) returns a single flat mapping of variable name to `Eq`. | `'metadata'` |
+| evaluate | bool   | If `True`, let SymPy evaluate/simplify parsed right-hand sides; if `False`, preserve authored term order.                                                                                                                        | `True`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                 |
+|--------|--------|-------------------------------------------------------------|
+|        |        | A mapping of equations whose structure depends on `format`. |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                           |
+|--------|------------|-----------------------------------------------------------------------|
+|        | ValueError | If an entry in `output` names neither a derived nor a state variable. |
+
+##### get_symbolic_elements { #tvbo.behaviour.dynamics.DynamicsBehaviour.get_symbolic_elements }
+
+```python
+behaviour.dynamics.DynamicsBehaviour.get_symbolic_elements(
+    include_time_symbol=True,
+    time_dependent=False,
+)
+```
+
+The symbol table this model's expressions are parsed against.
+
+See [`SymbolicSystem.scope`](../parse/system.qmd#scope). Returns a copy, so a caller may keep or adapt it.
+
+##### in_dependency_order { #tvbo.behaviour.dynamics.DynamicsBehaviour.in_dependency_order }
+
+```python
+behaviour.dynamics.DynamicsBehaviour.in_dependency_order(collection)
+```
+
+*collection* ordered so each member follows what it reads.
+
+What every backend emitting straight-line code iterates, in place of the collection itself. See [`SymbolicSystem.in_dependency_order`](../parse/system.qmd#in_dependency_order):
+the order is settled on the parsed equations, so rendering stays a query and a model does not have to be rewritten before it can be emitted.
+
+##### symbol_map { #tvbo.behaviour.dynamics.DynamicsBehaviour.symbol_map }
+
+```python
+behaviour.dynamics.DynamicsBehaviour.symbol_map()
+```
+
+Display-symbol overrides for report rendering: ``{identifier Symbol: LaTeX str}``.
+
+See [`SymbolicSystem.symbol_map`](../parse/system.qmd#symbol_map).

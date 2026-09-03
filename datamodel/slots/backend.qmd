@@ -1,0 +1,102 @@
+# Slot: backend 
+
+
+_Execution backend this experiment runs on when no backend is passed explicitly (e.g. 'tvboptim', 'tvb', 'jax', 'julia', 'brian2'). Declares the engine the experiment requires — a spiking point-neuron network sets 'brian2', a mean-field model leaves it unset. run(format=...) and ``tvbo run --backend`` override it; when unset the default backend (tvboptim) is used._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/backend](https://w3id.org/tvbo/slot/backend)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ExecutionConfig](../classes/ExecutionConfig.qmd) | Configuration for computational execution (parallelization, precision, hardwa... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:backend |
+| native | tvbo:backend |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: backend
+description: Execution backend this experiment runs on when no backend is passed explicitly
+  (e.g. 'tvboptim', 'tvb', 'jax', 'julia', 'brian2'). Declares the engine the experiment
+  requires — a spiking point-neuron network sets 'brian2', a mean-field model leaves
+  it unset. run(format=...) and ``tvbo run --backend`` override it; when unset the
+  default backend (tvboptim) is used.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ExecutionConfig
+domain_of:
+- ExecutionConfig
+range: string
+
+```
+</details></div>

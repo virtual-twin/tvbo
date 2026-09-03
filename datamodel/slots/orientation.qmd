@@ -1,0 +1,77 @@
+# Slot: orientation 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/orientation](https://w3id.org/tvbo/slot/orientation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+| [Rule](../classes/Rule.qmd) | A straight reference line drawn across a panel: the zero a signal is measured... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Colorbar](../classes/Colorbar.qmd), [Rule](../classes/Rule.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:orientation |
+| native | tvbo:orientation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: orientation
+domain_of:
+- Colorbar
+- Rule
+range: string
+
+```
+</details></div>

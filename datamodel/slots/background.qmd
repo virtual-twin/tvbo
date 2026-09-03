@@ -1,0 +1,99 @@
+# Slot: background 
+
+
+_The page the figure is printed on._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/background](https://w3id.org/tvbo/slot/background)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Palette](../classes/Palette.qmd) | A project's colours, named by role |  no  |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Palette](../classes/Palette.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Palette](../classes/Palette.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:background |
+| native | tvbo:background |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: background
+description: The page the figure is printed on.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Palette
+domain_of:
+- Palette
+range: string
+
+```
+</details></div>

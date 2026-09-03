@@ -1,0 +1,47 @@
+# replication { #tvbo.analysis.replication }
+
+`analysis.replication`
+
+The canonical replication-pairs contract.
+
+A replication study states its findings as *pairs*: a number the paper published beside the number this study reproduced. Every study emits them under one analysis name, in one schema, so a consumer joins on numbers and never parses prose or per-study naming.
+
+A study builds a list of row mappings and hands them to :func:`pairs_payload`, whose return value is the analysis container payload. :func:`conforms` reports what a written container is missing, so a migration can be measured rather than assumed.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [ANALYSIS_NAME](#tvbo.analysis.replication.ANALYSIS_NAME) | The analysis name every study declares; the container is ``ana-replicationpairs_result.h5``. |
+| [KIND_VOCABULARY](#tvbo.analysis.replication.KIND_VOCABULARY) | What the reproduced side is: a pipeline output, a closed-form evaluation, an input we |
+| [OPTIONAL_FIELDS](#tvbo.analysis.replication.OPTIONAL_FIELDS) | Fields a row should carry where the study can state them; absent ones serialize empty. |
+| [PROVENANCE_VOCABULARY](#tvbo.analysis.replication.PROVENANCE_VOCABULARY) | Where the published side came from, which bounds how far a deviation may be read. |
+| [REQUIRED_FIELDS](#tvbo.analysis.replication.REQUIRED_FIELDS) | Fields a row must carry. A consumer may rely on these being present in every study. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [conforms](#tvbo.analysis.replication.conforms) | What ``container`` lacks to satisfy the contract, empty where it conforms. |
+| [pairs_payload](#tvbo.analysis.replication.pairs_payload) | The container payload for one study's replication pairs. |
+
+### conforms { #tvbo.analysis.replication.conforms }
+
+```python
+analysis.replication.conforms(container)
+```
+
+What ``container`` lacks to satisfy the contract, empty where it conforms.
+
+Accepts anything key-addressable, so an open ``h5py.File`` may be passed directly.
+Fields are looked up both bare and under the ``observation__`` prefix the writer adds.
+
+### pairs_payload { #tvbo.analysis.replication.pairs_payload }
+
+```python
+analysis.replication.pairs_payload(rows)
+```
+
+The container payload for one study's replication pairs.
+
+Emits one parallel array per field, ordered as ``rows`` is, with ``deviation`` and ``abs_deviation`` computed here so no study can compute them differently. Raises ``ValueError`` on a missing required field or a term outside its vocabulary.

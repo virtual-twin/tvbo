@@ -1,0 +1,105 @@
+# Slot: query 
+
+
+_BIDS entity filter that selects one per-subject file under the experiment's ``dataset.bids_root`` when ``source`` is dataset-sourced (``dataset.subject.<measure>``). The active subject fills the ``sub-`` entity at resolution time; the remaining entities (e.g. ``desc: FCavg, atlas: Schaefer1000, suffix: relmat``) disambiguate among the subject's several networks/measurements. The same filter enumerates the cohort for the per-subject workflow fan-out, so one declaration drives both discovery and resolution._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/query](https://w3id.org/tvbo/slot/query)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [BidsEntities](../classes/BidsEntities.qmd) |
+| Domain Of | [Observation](../classes/Observation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Observation](../classes/Observation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:query |
+| native | tvbo:query |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: query
+description: 'BIDS entity filter that selects one per-subject file under the experiment''s
+  ``dataset.bids_root`` when ``source`` is dataset-sourced (``dataset.subject.<measure>``).
+  The active subject fills the ``sub-`` entity at resolution time; the remaining entities
+  (e.g. ``desc: FCavg, atlas: Schaefer1000, suffix: relmat``) disambiguate among the
+  subject''s several networks/measurements. The same filter enumerates the cohort
+  for the per-subject workflow fan-out, so one declaration drives both discovery and
+  resolution.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Observation
+domain_of:
+- Observation
+range: BidsEntities
+inlined: true
+
+```
+</details></div>

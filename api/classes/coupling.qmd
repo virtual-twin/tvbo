@@ -1,0 +1,73 @@
+# coupling { #tvbo.classes.coupling }
+
+`classes.coupling`
+
+Coupling functions.
+
+The public import location for :class:`Coupling`, alongside the helpers that read a coupling function out of the database or the ontology.
+
+There is no wrapper class: the coupling's own methods live in :mod:`tvbo.behaviour.coupling` and are attached to the generated class itself, so a coupling carries them however it was built.
+
+```{seealso}
+- [Coupling](![wiki]/Coupling/index.html)
+```
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [coupling_class2metadata](#tvbo.classes.coupling.coupling_class2metadata) | Populate coupling metadata from an ontology class. |
+| [get_global_coupling_functions](#tvbo.classes.coupling.get_global_coupling_functions) | Return all coupling function classes defined in the ontology. |
+| [get_parameters](#tvbo.classes.coupling.get_parameters) | Extract parameter metadata from a coupling function ontology class. |
+
+### coupling_class2metadata { #tvbo.classes.coupling.coupling_class2metadata }
+
+```python
+classes.coupling.coupling_class2metadata(ontoclass, metadata, overwrite=False)
+```
+
+Populate coupling metadata from an ontology class.
+
+If overwrite is False (default), only fill missing fields.
+If overwrite is True, always set name and pre/post expressions.
+Parameters are added if missing; existing parameter value/description are only filled if missing regardless of overwrite.
+
+Members are built in *metadata*'s own generated form — see :func:`peer_module`.
+
+### get_global_coupling_functions { #tvbo.classes.coupling.get_global_coupling_functions }
+
+```python
+classes.coupling.get_global_coupling_functions()
+```
+
+Return all coupling function classes defined in the ontology.
+
+Loads the ontology on demand and collects the subclasses of its `Coupling` class.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                     |
+|--------|--------|-------------------------------------------------|
+|        |        | A list of the ontology's `Coupling` subclasses. |
+
+### get_parameters { #tvbo.classes.coupling.get_parameters }
+
+```python
+classes.coupling.get_parameters(CF)
+```
+
+Extract parameter metadata from a coupling function ontology class.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                                                                                        | Default    |
+|--------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| CF     |        | A coupling function name or an owlready2 ontology class. If a string is given, it is first resolved to the corresponding ontology class via the ontology registry. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                         |
+|--------|--------|---------------------------------------------------------------------|
+|        |        | A mapping from each ontology parameter to a dict of its properties: |
+|        |        | `domain` (with `lo`, `hi`, and `step`), `value`, `definition`,      |
+|        |        | `label`, and `name`.                                                |

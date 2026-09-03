@@ -1,0 +1,79 @@
+# Slot: rel_tol 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/rel_tol](https://w3id.org/tvbo/slot/rel_tol)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [InitialState](../classes/InitialState.qmd) | How to obtain the starting equilibrium or periodic orbit for continuation |  no  |
+| [Solver](../classes/Solver.qmd) | Lightweight specification of a numerical ODE solver / integrator |  no  |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+| [PDESolver](../classes/PDESolver.qmd) | Numerical solver for a PDE: the time-integration algorithm, tolerances and st... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [InitialState](../classes/InitialState.qmd), [Solver](../classes/Solver.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:rel_tol |
+| native | tvbo:rel_tol |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: rel_tol
+domain_of:
+- InitialState
+- Solver
+range: string
+
+```
+</details></div>

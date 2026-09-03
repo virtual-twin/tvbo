@@ -1,0 +1,87 @@
+# Enum: AxisReductionStatistic 
+
+
+
+
+_Statistic used to collapse an exploration/sweep axis into a single reduced value in the result container (see ExplorationAxis.reduce). Applied across the named grid dimension of every observation that carries it._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/AxisReductionStatistic](https://w3id.org/tvbo/enum/AxisReductionStatistic)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| mean | None | Arithmetic mean across the axis |
+| sum | None | Sum across the axis |
+| std | None | Standard deviation across the axis |
+| sem | None | Standard error of the mean: std across the axis divided by sqrt(n) |
+| median | None | Median across the axis |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [statistic](../slots/statistic.qmd) | Statistic used to collapse the axis (mean, sum, std, sem, median) |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: AxisReductionStatistic
+description: Statistic used to collapse an exploration/sweep axis into a single reduced
+  value in the result container (see ExplorationAxis.reduce). Applied across the named
+  grid dimension of every observation that carries it.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  mean:
+    text: mean
+    description: Arithmetic mean across the axis.
+  sum:
+    text: sum
+    description: Sum across the axis.
+  std:
+    text: std
+    description: Standard deviation across the axis.
+  sem:
+    text: sem
+    description: 'Standard error of the mean: std across the axis divided by sqrt(n).'
+  median:
+    text: median
+    description: Median across the axis.
+
+```
+</details>
+
+</div>

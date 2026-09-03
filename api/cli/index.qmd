@@ -1,0 +1,13 @@
+# cli { #tvbo.cli }
+
+`cli`
+
+TVB-O command-line interface.
+
+The CLI is Typer-based, registry-driven and transport-aware. This module assembles the top-level :class:`typer.Typer` ``app`` from per-verb sub-modules.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [app](#tvbo.cli.app) |  |

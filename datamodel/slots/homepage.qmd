@@ -1,0 +1,101 @@
+# Slot: homepage 
+
+
+_Project homepage URL._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:url](http://schema.org/url)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SoftwarePackage](../classes/SoftwarePackage.qmd) | Identity and metadata for a software package, aligned with schema |  no  |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) |
+| Domain Of | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| Slot URI | [schema:url](http://schema.org/url) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:url |
+| native | tvbo_sw:homepage |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: homepage
+description: Project homepage URL.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+slot_uri: schema:url
+owner: SoftwarePackage
+domain_of:
+- SoftwarePackage
+range: uri
+
+```
+</details></div>

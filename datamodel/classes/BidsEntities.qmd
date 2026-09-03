@@ -1,0 +1,428 @@
+# Class: BidsEntities 
+
+
+_BIDS filename entities (BEP017-aligned) for provenance and data discovery. Reusable on Network, BrainAtlas, Tractogram, or any dataset with BIDS-conformant naming._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:BidsEntities](https://w3id.org/tvbo/BidsEntities)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class BidsEntities
+    click BidsEntities href "./BidsEntities.html"
+      BidsEntities : acquisition
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : acquisition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BidsEntities : atlas
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : atlas
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BidsEntities : cohort
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : cohort
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BidsEntities : desc
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : desc
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BidsEntities : hemi
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : hemi
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BidsEntities : reconstruction
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : reconstruction
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BidsEntities : scale
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : scale
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BidsEntities : segmentation
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : segmentation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BidsEntities : suffix
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : suffix
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BidsEntities : template
+        
+          
+    
+        
+        
+        BidsEntities --> "0..1" String : template
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:BidsEntities](https://w3id.org/tvbo/BidsEntities) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [template](../slots/template.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS tpl- entity (e | direct |
+| [cohort](../slots/cohort.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS cohort- entity (e | direct |
+| [reconstruction](../slots/reconstruction.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS rec- entity (e | direct |
+| [segmentation](../slots/segmentation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS seg- entity (e | direct |
+| [scale](../slots/scale.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS scale- entity (BEP017, e | direct |
+| [atlas](../slots/atlas.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS atlas- entity (e | direct |
+| [acquisition](../slots/acquisition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS acq- entity (e | direct |
+| [hemi](../slots/hemi.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS hemi- entity (L or R) for hemisphere-specific surface/volume data | direct |
+| [desc](../slots/desc.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS desc- entity (e | direct |
+| [suffix](../slots/suffix.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS suffix (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [bids](../slots/bids.qmd) | range | [BidsEntities](../classes/BidsEntities.qmd) |
+| [Observation](../classes/Observation.qmd) | [query](../slots/query.qmd) | range | [BidsEntities](../classes/BidsEntities.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:BidsEntities |
+| native | tvbo:BidsEntities |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: BidsEntities
+description: BIDS filename entities (BEP017-aligned) for provenance and data discovery.
+  Reusable on Network, BrainAtlas, Tractogram, or any dataset with BIDS-conformant
+  naming.
+from_schema: https://w3id.org/tvbo
+attributes:
+  template:
+    name: template
+    description: BIDS tpl- entity (e.g., FSLMNI152, MNI152NLin2009cAsym)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - StudyFile
+    - LayoutTemplateVariant
+    - Surface
+    - BidsEntities
+    range: string
+  cohort:
+    name: cohort
+    description: BIDS cohort- entity (e.g., HCPYA, PPMI85)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Phenotype
+    - BidsEntities
+    range: string
+  reconstruction:
+    name: reconstruction
+    description: BIDS rec- entity (e.g., dTOR)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BidsEntities
+    range: string
+  segmentation:
+    name: segmentation
+    description: BIDS seg- entity (e.g., ordered, ranked, 17Networks)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BidsEntities
+    range: string
+  scale:
+    name: scale
+    description: BIDS scale- entity (BEP017, e.g., 1000)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ClinicalScore
+    - SimulationTool
+    - BidsEntities
+    range: string
+  atlas:
+    name: atlas
+    description: BIDS atlas- entity (e.g., Schaefer2018, HCPMMP1)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Surface
+    - Volume
+    - Parcellation
+    - BidsEntities
+    range: string
+  acquisition:
+    name: acquisition
+    description: BIDS acq- entity (e.g., EEGstandard1005, MEGBrainstorm)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Tractogram
+    - BidsEntities
+    range: string
+  hemi:
+    name: hemi
+    description: BIDS hemi- entity (L or R) for hemisphere-specific surface/volume
+      data
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Surface
+    - BidsEntities
+    range: string
+  desc:
+    name: desc
+    description: BIDS desc- entity (e.g., FCavg, SC), for disambiguating derived data
+      variants
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BidsEntities
+    range: string
+  suffix:
+    name: suffix
+    description: BIDS suffix (e.g., relmat), the trailing name component before the
+      extension
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BidsEntities
+    range: string
+class_uri: tvbo:BidsEntities
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: BidsEntities
+description: BIDS filename entities (BEP017-aligned) for provenance and data discovery.
+  Reusable on Network, BrainAtlas, Tractogram, or any dataset with BIDS-conformant
+  naming.
+from_schema: https://w3id.org/tvbo
+attributes:
+  template:
+    name: template
+    description: BIDS tpl- entity (e.g., FSLMNI152, MNI152NLin2009cAsym)
+    from_schema: https://w3id.org/tvbo
+    owner: BidsEntities
+    domain_of:
+    - StudyFile
+    - LayoutTemplateVariant
+    - Surface
+    - BidsEntities
+    range: string
+  cohort:
+    name: cohort
+    description: BIDS cohort- entity (e.g., HCPYA, PPMI85)
+    from_schema: https://w3id.org/tvbo
+    owner: BidsEntities
+    domain_of:
+    - Phenotype
+    - BidsEntities
+    range: string
+  reconstruction:
+    name: reconstruction
+    description: BIDS rec- entity (e.g., dTOR)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BidsEntities
+    domain_of:
+    - BidsEntities
+    range: string
+  segmentation:
+    name: segmentation
+    description: BIDS seg- entity (e.g., ordered, ranked, 17Networks)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BidsEntities
+    domain_of:
+    - BidsEntities
+    range: string
+  scale:
+    name: scale
+    description: BIDS scale- entity (BEP017, e.g., 1000)
+    from_schema: https://w3id.org/tvbo
+    owner: BidsEntities
+    domain_of:
+    - ClinicalScore
+    - SimulationTool
+    - BidsEntities
+    range: string
+  atlas:
+    name: atlas
+    description: BIDS atlas- entity (e.g., Schaefer2018, HCPMMP1)
+    from_schema: https://w3id.org/tvbo
+    owner: BidsEntities
+    domain_of:
+    - Surface
+    - Volume
+    - Parcellation
+    - BidsEntities
+    range: string
+  acquisition:
+    name: acquisition
+    description: BIDS acq- entity (e.g., EEGstandard1005, MEGBrainstorm)
+    from_schema: https://w3id.org/tvbo
+    owner: BidsEntities
+    domain_of:
+    - Tractogram
+    - BidsEntities
+    range: string
+  hemi:
+    name: hemi
+    description: BIDS hemi- entity (L or R) for hemisphere-specific surface/volume
+      data
+    from_schema: https://w3id.org/tvbo
+    owner: BidsEntities
+    domain_of:
+    - Surface
+    - BidsEntities
+    range: string
+  desc:
+    name: desc
+    description: BIDS desc- entity (e.g., FCavg, SC), for disambiguating derived data
+      variants
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BidsEntities
+    domain_of:
+    - BidsEntities
+    range: string
+  suffix:
+    name: suffix
+    description: BIDS suffix (e.g., relmat), the trailing name component before the
+      extension
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BidsEntities
+    domain_of:
+    - BidsEntities
+    range: string
+class_uri: tvbo:BidsEntities
+
+```
+</details></div>

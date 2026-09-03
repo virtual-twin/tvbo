@@ -1,0 +1,1092 @@
+# Class: Exploration 
+
+
+_Parameter space exploration (grid search, sweep)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Exploration](https://w3id.org/tvbo/Exploration)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Exploration
+    click Exploration href "./Exploration.html"
+      Exploration : algorithms
+        
+          
+    
+        
+        
+        Exploration --> "*" String : algorithms
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : average
+        
+          
+    
+        
+        
+        Exploration --> "0..1" String : average
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : block_size
+        
+          
+    
+        
+        
+        Exploration --> "0..1" Integer : block_size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Exploration : description
+        
+          
+    
+        
+        
+        Exploration --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : execution
+        
+          
+    
+        
+        
+        Exploration --> "0..1" ExecutionConfig : execution
+        click ExecutionConfig href "./ExecutionConfig.html"
+    
+
+        
+      Exploration : label
+        
+          
+    
+        
+        
+        Exploration --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : mode
+        
+          
+    
+        
+        
+        Exploration --> "0..1" String : mode
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : n_parallel
+        
+          
+    
+        
+        
+        Exploration --> "0..1" String : n_parallel
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : n_trials
+        
+          
+    
+        
+        
+        Exploration --> "0..1" Integer : n_trials
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Exploration : name
+        
+          
+    
+        
+        
+        Exploration --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : objectives
+        
+          
+    
+        
+        
+        Exploration --> "*" String : objectives
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : observable
+        
+          
+    
+        
+        
+        Exploration --> "0..1" FunctionCall : observable
+        click FunctionCall href "./FunctionCall.html"
+    
+
+        
+      Exploration : parallel_batch_size
+        
+          
+    
+        
+        
+        Exploration --> "0..1" Integer : parallel_batch_size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Exploration : parallel_mode
+        
+          
+    
+        
+        
+        Exploration --> "0..1" ParallelMode : parallel_mode
+        click ParallelMode href "../../enums/ParallelMode.html"
+    
+
+        
+      Exploration : parameters
+        
+          
+    
+        
+        
+        Exploration --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Exploration : record
+        
+          
+    
+        
+        
+        Exploration --> "*" String : record
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : space
+        
+          
+    
+        
+        
+        Exploration --> "*" ExplorationAxis : space
+        click ExplorationAxis href "./ExplorationAxis.html"
+    
+
+        
+      Exploration : strategy
+        
+          
+    
+        
+        
+        Exploration --> "0..1" String : strategy
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Exploration : sweep_direction
+        
+          
+    
+        
+        
+        Exploration --> "0..1" SweepDirection : sweep_direction
+        click SweepDirection href "../../enums/SweepDirection.html"
+    
+
+        
+      Exploration : sweep_seeding
+        
+          
+    
+        
+        
+        Exploration --> "0..1" SweepSeeding : sweep_seeding
+        click SweepSeeding href "../../enums/SweepSeeding.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Exploration](https://w3id.org/tvbo/Exploration) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [execution](../slots/execution.qmd) | 0..1 <br/> [ExecutionConfig](../classes/ExecutionConfig.qmd) | Per-exploration execution configuration (overrides experiment-level defaults) | direct |
+| [space](../slots/space.qmd) | * <br/> [ExplorationAxis](../classes/ExplorationAxis.qmd) | Exploration axes spanning the search space, keyed by the dotted parameter ref... | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) | Hyper-parameters of the exploration itself (e | direct |
+| [algorithms](../slots/algorithms.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Names of the experiment's algorithms (keys in `experiment | direct |
+| [mode](../slots/mode.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Combination mode: 'product' (full grid), 'zip' (paired) | direct |
+| [strategy](../slots/strategy.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Search strategy over the decision space (the `space` axes) | direct |
+| [objectives](../slots/objectives.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Names of observations minimised by an adaptive `strategy` (e | direct |
+| [observable](../slots/observable.qmd) | 0..1 <br/> [FunctionCall](../classes/FunctionCall.qmd) | Observable to compute at each point | direct |
+| [record](../slots/record.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Names of observations to compute and record at EACH grid point, stacked over ... | direct |
+| [n_parallel](../slots/n_parallel.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Grid batch size for parameter exploration — how many sweep cells the backend ... | direct |
+| [block_size](../slots/block_size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Streaming-fold granularity: how many integration steps form one block that is... | direct |
+| [n_trials](../slots/n_trials.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of independent trials per grid point | direct |
+| [average](../slots/average.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Averaging mode across trials | direct |
+| [parallel_mode](../slots/parallel_mode.qmd) | 0..1 <br/> [ParallelMode](../enums/ParallelMode.qmd) | How trial-axis parallelism is realised at codegen time | direct |
+| [parallel_batch_size](../slots/parallel_batch_size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Chunk size for ``lax_map`` and chunked-``vmap`` modes | direct |
+| [sweep_seeding](../slots/sweep_seeding.qmd) | 0..1 <br/> [SweepSeeding](../enums/SweepSeeding.qmd) | How each sweep point's initial state is obtained | direct |
+| [sweep_direction](../slots/sweep_direction.qmd) | 0..1 <br/> [SweepDirection](../enums/SweepDirection.qmd) | Order in which a branch-following axis (sweep_seeding: from_previous) is trav... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Optimization](../classes/Optimization.qmd) | [depends_on](../slots/depends_on.qmd) | any_of[range] | [Exploration](../classes/Exploration.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [explorations](../slots/explorations.qmd) | range | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Exploration |
+| native | tvbo:Exploration |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Exploration
+description: Parameter space exploration (grid search, sweep).
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- label
+- description
+attributes:
+  execution:
+    name: execution
+    description: Per-exploration execution configuration (overrides experiment-level
+      defaults). Useful for setting random_seed, n_workers for parallel grid search.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  space:
+    name: space
+    description: Exploration axes spanning the search space, keyed by the dotted parameter
+      reference each axis sweeps (e.g. "ReducedWongWang.w" or "FastLinearCoupling.G").
+      Insertion order is preserved and defines the grid axis order. Each axis references
+      an existing Parameter and supplies the Range to sweep; no new Parameter is created
+      here.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Exploration
+    range: ExplorationAxis
+    multivalued: true
+    inlined: true
+  parameters:
+    name: parameters
+    description: Hyper-parameters of the exploration itself (e.g. tolerances, sampler
+      settings, grid-refinement controls), keyed by name. Distinct from `space`, which
+      defines what is being swept.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  algorithms:
+    name: algorithms
+    description: 'Names of the experiment''s algorithms (keys in `experiment.algorithms`)
+      to run AT EACH exploration point, in order, BEFORE computing the observable.
+      Explicitly wires algorithms into the exploration so per-point tuning / constraints
+      are applied at every sweep point — e.g. FIC re-tuning J_i at each E/I ratio.
+      With this set, the sweep evaluates the full algorithm→observation pipeline per
+      point (executed sequentially), not a bare simulation. Empty/absent = bare simulation
+      per point. This is the declarative replacement for any Python per-point driver:
+      the composition is derived entirely from YAML metadata.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Exploration
+    - SimulationExperiment
+    range: string
+    multivalued: true
+  mode:
+    name: mode
+    description: 'Combination mode: ''product'' (full grid), ''zip'' (paired)'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(product)
+    domain_of:
+    - StimulationSetting
+    - Exploration
+    - AlgorithmInclude
+    - Differentiation
+    range: string
+  strategy:
+    name: strategy
+    description: Search strategy over the decision space (the `space` axes). 'grid'
+      (default) exhaustively evaluates the Cartesian/zip grid of axis points — today's
+      behaviour. 'nsga2' runs an adaptive multi-objective genetic search (pymoo NSGA-II)
+      that returns the non-dominated Pareto front over `objectives`; axes then supply
+      only decision-variable bounds (domain lo/hi), and per-strategy hyper-parameters
+      (population_size, num_generations, seed, reference_point) live in `parameters`.
+      Extensible later to 'random' / 'sobol' / 'cmaes'. Forward-compatible with the
+      planned unified `Search.strategy`.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(grid)
+    domain_of:
+    - Exploration
+    range: string
+  objectives:
+    name: objectives
+    description: 'Names of observations minimised by an adaptive `strategy` (e.g.
+      ''nsga2''). Each entry references an existing observation already framed lower-is-better
+      (e.g. `one_minus_fc`, `psd_mae`). Count sets the semantics: 0 → pure sweep (use
+      `record`), 1 → single-objective, ≥2 → multi-objective / Pareto. Ignored when
+      strategy is ''grid''. Forward-compatible with `Search.objectives`.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Exploration
+    range: string
+    multivalued: true
+  observable:
+    name: observable
+    description: 'Observable to compute at each point. Use function: obs_name for
+      simple observation, or function: func_name + arguments for FunctionCall.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Exploration
+    range: FunctionCall
+    inlined: true
+  record:
+    name: record
+    description: Names of observations to compute and record at EACH grid point, stacked
+      over the sweep into one array per name. Entries may be derived observations
+      (e.g. `loss`) or `analysis` diagnostics (e.g. `ad_gradient`, `fd_gradient`,
+      `lyapunov`) — this is how a sweep of the diagnostics themselves is declared,
+      replacing any per-point Python driver. Complementary to `observable` (a single
+      scalar reduction); when both are absent the full observation Bunch is recorded.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Node
+    - Observation
+    - StateVariable
+    - DerivedVariable
+    - Exploration
+    range: string
+    multivalued: true
+  n_parallel:
+    name: n_parallel
+    description: 'Grid batch size for parameter exploration — how many sweep cells
+      the backend evaluates as one vectorised chunk. ``auto`` (the default) vectorises
+      the grid, bounded by a cell-count cap (``min(grid_size, 64)``, env ``TVBO_NVMAP_AUTO_CAP``)
+      and a working-memory budget (env ``TVBO_NVMAP_MEM_BUDGET_GB``, default 2 GB)
+      estimated from the per-cell output and live state: fast on every backend, and
+      the memory budget keeps a large-per-cell grid (e.g. a whole-brain delay network)
+      from inflating peak memory. Vectorising still holds ``n_vmap`` cells at once,
+      so auto uses more working memory than a sequential run — the budget bounds it.
+      An integer fixes the chunk size and bypasses both bounds (``1`` = fully sequential,
+      minimal memory; a larger value trades memory for fewer, wider batches). Backends
+      translate this into their own execution primitive (e.g. tvboptim''s vmap chunk
+      width) without exposing any backend-specific names in the schema.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(auto)
+    domain_of:
+    - Exploration
+    any_of:
+    - range: integer
+    - range: string
+  block_size:
+    name: block_size
+    description: 'Streaming-fold granularity: how many integration steps form one
+      block that is folded into a streaming reducer''s carry in a single batched update
+      (tvboptim''s per-block fold; see the solver''s block_size). Unset uses the backend
+      default. A smaller block bounds the per-fold working memory of a heavy streaming
+      reduction — e.g. a permutation-surrogate wave detector whose per-downsampled-frame
+      cost is large — at the price of more blocks. It trades against n_parallel, which
+      batches grid cells over the same device memory: the peak is ~ n_parallel × (block_size
+      / downsample_period) × per-frame. Must be a whole number of the observation''s
+      downsample period. Backend-neutral; a backend without block streaming ignores
+      it.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Exploration
+    - Integrator
+    range: integer
+  n_trials:
+    name: n_trials
+    description: Number of independent trials per grid point. Each trial uses a different
+      noise seed. Used for averaging stochastic simulations (e.g., VEP = average of
+      20 trials).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    domain_of:
+    - Exploration
+    range: integer
+  average:
+    name: average
+    description: Averaging mode across trials. 'trials' = average over n_trials independent
+      runs (evoked potential paradigm). None = return all trials.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Exploration
+    range: string
+  parallel_mode:
+    name: parallel_mode
+    description: How trial-axis parallelism is realised at codegen time. ``vmap``
+      batches all trials in parallel (fast, peak memory ~n_trials × per-trial working
+      set). ``lax_map`` runs them sequentially via ``jax.lax.map`` (slower, peak memory
+      bounded by one trial). ``pmap`` shards across devices for multi-GPU. ``auto``
+      (default) picks ``vmap`` when the estimated batched memory fits, ``lax_map``
+      otherwise.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Exploration
+    range: ParallelMode
+  parallel_batch_size:
+    name: parallel_batch_size
+    description: Chunk size for ``lax_map`` and chunked-``vmap`` modes. ``1`` = strictly
+      sequential (minimum memory). Larger values amortise compile overhead across
+      trials at the cost of memory. Ignored when parallel_mode is ``vmap`` (which
+      always uses the full n_trials axis).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Exploration
+    range: integer
+  sweep_seeding:
+    name: sweep_seeding
+    description: How each sweep point's initial state is obtained. 'independent' (default)
+      cold-starts every point from the model's initial values, so points are order-independent
+      and may run in parallel (see parallel_mode). 'from_previous' seeds each point
+      from the final state of the preceding point, so the trajectory follows the solution
+      branch as the swept parameter changes quasi-statically; this forces sequential
+      execution (a scan, not a vmap) and, with sweep_direction, exposes hysteresis
+      / multistability. It is forward-integration branch following, not numerical
+      continuation (cf. the Continuation class).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(independent)
+    domain_of:
+    - Exploration
+    range: SweepSeeding
+  sweep_direction:
+    name: sweep_direction
+    description: 'Order in which a branch-following axis (sweep_seeding: from_previous)
+      is traversed: ''up'' increases the parameter once, ''down'' decreases it once,
+      ''bidirectional'' increases then decreases over the same values and records
+      both branches — a hysteresis loop where they differ. Ignored when sweep_seeding
+      is ''independent''. Applies to a single swept axis.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(up)
+    domain_of:
+    - Exploration
+    range: SweepDirection
+class_uri: tvbo:Exploration
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Exploration
+description: Parameter space exploration (grid search, sweep).
+from_schema: https://w3id.org/tvbo
+attributes:
+  execution:
+    name: execution
+    description: Per-exploration execution configuration (overrides experiment-level
+      defaults). Useful for setting random_seed, n_workers for parallel grid search.
+    from_schema: https://w3id.org/tvbo
+    owner: Exploration
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  space:
+    name: space
+    description: Exploration axes spanning the search space, keyed by the dotted parameter
+      reference each axis sweeps (e.g. "ReducedWongWang.w" or "FastLinearCoupling.G").
+      Insertion order is preserved and defines the grid axis order. Each axis references
+      an existing Parameter and supplies the Range to sweep; no new Parameter is created
+      here.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: ExplorationAxis
+    multivalued: true
+    inlined: true
+  parameters:
+    name: parameters
+    description: Hyper-parameters of the exploration itself (e.g. tolerances, sampler
+      settings, grid-refinement controls), keyed by name. Distinct from `space`, which
+      defines what is being swept.
+    from_schema: https://w3id.org/tvbo
+    owner: Exploration
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  algorithms:
+    name: algorithms
+    description: 'Names of the experiment''s algorithms (keys in `experiment.algorithms`)
+      to run AT EACH exploration point, in order, BEFORE computing the observable.
+      Explicitly wires algorithms into the exploration so per-point tuning / constraints
+      are applied at every sweep point — e.g. FIC re-tuning J_i at each E/I ratio.
+      With this set, the sweep evaluates the full algorithm→observation pipeline per
+      point (executed sequentially), not a bare simulation. Empty/absent = bare simulation
+      per point. This is the declarative replacement for any Python per-point driver:
+      the composition is derived entirely from YAML metadata.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Exploration
+    domain_of:
+    - Exploration
+    - SimulationExperiment
+    range: string
+    multivalued: true
+  mode:
+    name: mode
+    description: 'Combination mode: ''product'' (full grid), ''zip'' (paired)'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(product)
+    owner: Exploration
+    domain_of:
+    - StimulationSetting
+    - Exploration
+    - AlgorithmInclude
+    - Differentiation
+    range: string
+  strategy:
+    name: strategy
+    description: Search strategy over the decision space (the `space` axes). 'grid'
+      (default) exhaustively evaluates the Cartesian/zip grid of axis points — today's
+      behaviour. 'nsga2' runs an adaptive multi-objective genetic search (pymoo NSGA-II)
+      that returns the non-dominated Pareto front over `objectives`; axes then supply
+      only decision-variable bounds (domain lo/hi), and per-strategy hyper-parameters
+      (population_size, num_generations, seed, reference_point) live in `parameters`.
+      Extensible later to 'random' / 'sobol' / 'cmaes'. Forward-compatible with the
+      planned unified `Search.strategy`.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(grid)
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: string
+  objectives:
+    name: objectives
+    description: 'Names of observations minimised by an adaptive `strategy` (e.g.
+      ''nsga2''). Each entry references an existing observation already framed lower-is-better
+      (e.g. `one_minus_fc`, `psd_mae`). Count sets the semantics: 0 → pure sweep (use
+      `record`), 1 → single-objective, ≥2 → multi-objective / Pareto. Ignored when
+      strategy is ''grid''. Forward-compatible with `Search.objectives`.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: string
+    multivalued: true
+  observable:
+    name: observable
+    description: 'Observable to compute at each point. Use function: obs_name for
+      simple observation, or function: func_name + arguments for FunctionCall.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: FunctionCall
+    inlined: true
+  record:
+    name: record
+    description: Names of observations to compute and record at EACH grid point, stacked
+      over the sweep into one array per name. Entries may be derived observations
+      (e.g. `loss`) or `analysis` diagnostics (e.g. `ad_gradient`, `fd_gradient`,
+      `lyapunov`) — this is how a sweep of the diagnostics themselves is declared,
+      replacing any per-point Python driver. Complementary to `observable` (a single
+      scalar reduction); when both are absent the full observation Bunch is recorded.
+    from_schema: https://w3id.org/tvbo
+    owner: Exploration
+    domain_of:
+    - Node
+    - Observation
+    - StateVariable
+    - DerivedVariable
+    - Exploration
+    range: string
+    multivalued: true
+  n_parallel:
+    name: n_parallel
+    description: 'Grid batch size for parameter exploration — how many sweep cells
+      the backend evaluates as one vectorised chunk. ``auto`` (the default) vectorises
+      the grid, bounded by a cell-count cap (``min(grid_size, 64)``, env ``TVBO_NVMAP_AUTO_CAP``)
+      and a working-memory budget (env ``TVBO_NVMAP_MEM_BUDGET_GB``, default 2 GB)
+      estimated from the per-cell output and live state: fast on every backend, and
+      the memory budget keeps a large-per-cell grid (e.g. a whole-brain delay network)
+      from inflating peak memory. Vectorising still holds ``n_vmap`` cells at once,
+      so auto uses more working memory than a sequential run — the budget bounds it.
+      An integer fixes the chunk size and bypasses both bounds (``1`` = fully sequential,
+      minimal memory; a larger value trades memory for fewer, wider batches). Backends
+      translate this into their own execution primitive (e.g. tvboptim''s vmap chunk
+      width) without exposing any backend-specific names in the schema.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(auto)
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: string
+    any_of:
+    - range: integer
+    - range: string
+  block_size:
+    name: block_size
+    description: 'Streaming-fold granularity: how many integration steps form one
+      block that is folded into a streaming reducer''s carry in a single batched update
+      (tvboptim''s per-block fold; see the solver''s block_size). Unset uses the backend
+      default. A smaller block bounds the per-fold working memory of a heavy streaming
+      reduction — e.g. a permutation-surrogate wave detector whose per-downsampled-frame
+      cost is large — at the price of more blocks. It trades against n_parallel, which
+      batches grid cells over the same device memory: the peak is ~ n_parallel × (block_size
+      / downsample_period) × per-frame. Must be a whole number of the observation''s
+      downsample period. Backend-neutral; a backend without block streaming ignores
+      it.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Exploration
+    domain_of:
+    - Exploration
+    - Integrator
+    range: integer
+  n_trials:
+    name: n_trials
+    description: Number of independent trials per grid point. Each trial uses a different
+      noise seed. Used for averaging stochastic simulations (e.g., VEP = average of
+      20 trials).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: integer
+  average:
+    name: average
+    description: Averaging mode across trials. 'trials' = average over n_trials independent
+      runs (evoked potential paradigm). None = return all trials.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: string
+  parallel_mode:
+    name: parallel_mode
+    description: How trial-axis parallelism is realised at codegen time. ``vmap``
+      batches all trials in parallel (fast, peak memory ~n_trials × per-trial working
+      set). ``lax_map`` runs them sequentially via ``jax.lax.map`` (slower, peak memory
+      bounded by one trial). ``pmap`` shards across devices for multi-GPU. ``auto``
+      (default) picks ``vmap`` when the estimated batched memory fits, ``lax_map``
+      otherwise.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: ParallelMode
+  parallel_batch_size:
+    name: parallel_batch_size
+    description: Chunk size for ``lax_map`` and chunked-``vmap`` modes. ``1`` = strictly
+      sequential (minimum memory). Larger values amortise compile overhead across
+      trials at the cost of memory. Ignored when parallel_mode is ``vmap`` (which
+      always uses the full n_trials axis).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: integer
+  sweep_seeding:
+    name: sweep_seeding
+    description: How each sweep point's initial state is obtained. 'independent' (default)
+      cold-starts every point from the model's initial values, so points are order-independent
+      and may run in parallel (see parallel_mode). 'from_previous' seeds each point
+      from the final state of the preceding point, so the trajectory follows the solution
+      branch as the swept parameter changes quasi-statically; this forces sequential
+      execution (a scan, not a vmap) and, with sweep_direction, exposes hysteresis
+      / multistability. It is forward-integration branch following, not numerical
+      continuation (cf. the Continuation class).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(independent)
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: SweepSeeding
+  sweep_direction:
+    name: sweep_direction
+    description: 'Order in which a branch-following axis (sweep_seeding: from_previous)
+      is traversed: ''up'' increases the parameter once, ''down'' decreases it once,
+      ''bidirectional'' increases then decreases over the same values and records
+      both branches — a hysteresis loop where they differ. Ignored when sweep_seeding
+      is ''independent''. Applies to a single swept axis.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(up)
+    owner: Exploration
+    domain_of:
+    - Exploration
+    range: SweepDirection
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Exploration
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Exploration
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Exploration
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Exploration
+
+```
+</details></div>

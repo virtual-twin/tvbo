@@ -1,0 +1,77 @@
+# Slot: z 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/z](https://w3id.org/tvbo/slot/z)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coordinate](../classes/Coordinate.qmd) | A 3D coordinate with X, Y, Z values |  no  |
+| [Encoding](../classes/Encoding.qmd) | Map visual channels to container dims/coords/vars, by NAME (keyed, never posi... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Coordinate](../classes/Coordinate.qmd), [Encoding](../classes/Encoding.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:z |
+| native | tvbo:z |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: z
+domain_of:
+- Coordinate
+- Encoding
+range: string
+
+```
+</details></div>

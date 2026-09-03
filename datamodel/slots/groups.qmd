@@ -1,0 +1,94 @@
+# Slot: groups 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/groups](https://w3id.org/tvbo/slot/groups)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Sample](../classes/Sample.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Sample](../classes/Sample.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Sample](../classes/Sample.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:groups |
+| native | tvbo:groups |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: groups
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Sample
+domain_of:
+- Sample
+range: string
+multivalued: true
+
+```
+</details></div>

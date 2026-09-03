@@ -1,0 +1,100 @@
+# Slot: log_scale 
+
+
+_Whether to use logarithmic spacing._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/log_scale](https://w3id.org/tvbo/slot/log_scale)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Range](../classes/Range.qmd) | Specifies a range for array generation, parameter bounds, or grid exploration |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Range](../classes/Range.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [Range](../classes/Range.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:log_scale |
+| native | tvbo:log_scale |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: log_scale
+description: Whether to use logarithmic spacing.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: Range
+domain_of:
+- Range
+range: boolean
+
+```
+</details></div>

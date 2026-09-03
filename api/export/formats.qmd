@@ -1,0 +1,9 @@
+# formats { #tvbo.export.formats }
+
+`export.formats`
+
+Built-in export-format registrations.
+
+Importing this module populates :mod:`tvbo.export.registry` with every backend that ships with TVBO. Third-party packages can register their own formats the same way (preferably in their own module's import-time code).
+
+Each renderer is a thin closure ``(experiment, **kwargs) -> str``. Heavy adapter imports happen *inside* the closure so that simply listing formats does not pull in optional dependencies (Mako templates, NeuroML, …).

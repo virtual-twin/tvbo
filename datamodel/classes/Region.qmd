@@ -1,0 +1,253 @@
+# Class: Region 
+
+
+_A rectangle drawn over a panel to ring the window a paper calls out — the parameter band a regime lives in, the interval a statistic was taken over. Declared rather than drawn by a custom callable, so the window a figure highlights is part of the spec that can be read back._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Region](https://w3id.org/tvbo/class/Region)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Region
+    click Region href "./Region.html"
+      Region : bounds
+        
+          
+    
+        
+        
+        Region --> "1..*" Float : bounds
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Region : color
+        
+          
+    
+        
+        
+        Region --> "0..1" String : color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Region : fill
+        
+          
+    
+        
+        
+        Region --> "0..1" Boolean : fill
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Region : opacity
+        
+          
+    
+        
+        
+        Region --> "0..1" Float : opacity
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [bounds](../slots/bounds.qmd) | 1..* <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | [x0, x1, y0, y1] in data coordinates | direct |
+| [color](../slots/color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The outline's colour, as a palette role, a hue, or any colour the backend rea... | direct |
+| [fill](../slots/fill.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Fill the rectangle rather than outlining it | direct |
+| [opacity](../slots/opacity.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Opacity of the fill, 0-1 | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [regions](../slots/regions.qmd) | range | [Region](../classes/Region.qmd) |
+| [Inset](../classes/Inset.qmd) | [regions](../slots/regions.qmd) | range | [Region](../classes/Region.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Region |
+| native | tvbo:Region |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Region
+description: A rectangle drawn over a panel to ring the window a paper calls out —
+  the parameter band a regime lives in, the interval a statistic was taken over. Declared
+  rather than drawn by a custom callable, so the window a figure highlights is part
+  of the spec that can be read back.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  bounds:
+    name: bounds
+    description: '[x0, x1, y0, y1] in data coordinates.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Inset
+    - Region
+    - UpdateRule
+    range: float
+    required: true
+    multivalued: true
+  color:
+    name: color
+    description: The outline's colour, as a palette role, a hue, or any colour the
+      backend reads.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  fill:
+    name: fill
+    description: Fill the rectangle rather than outlining it. A filled region sits
+      under the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Region
+    range: boolean
+  opacity:
+    name: opacity
+    description: Opacity of the fill, 0-1. Ignored when `fill` is unset.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Style
+    - Region
+    range: float
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Region
+description: A rectangle drawn over a panel to ring the window a paper calls out —
+  the parameter band a regime lives in, the interval a statistic was taken over. Declared
+  rather than drawn by a custom callable, so the window a figure highlights is part
+  of the spec that can be read back.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  bounds:
+    name: bounds
+    description: '[x0, x1, y0, y1] in data coordinates.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Region
+    domain_of:
+    - Inset
+    - Region
+    - UpdateRule
+    range: float
+    required: true
+    multivalued: true
+  color:
+    name: color
+    description: The outline's colour, as a palette role, a hue, or any colour the
+      backend reads.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Region
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  fill:
+    name: fill
+    description: Fill the rectangle rather than outlining it. A filled region sits
+      under the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Region
+    domain_of:
+    - Region
+    range: boolean
+  opacity:
+    name: opacity
+    description: Opacity of the fill, 0-1. Ignored when `fill` is unset.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Region
+    domain_of:
+    - Style
+    - Region
+    range: float
+
+```
+</details></div>

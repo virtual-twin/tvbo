@@ -1,0 +1,81 @@
+# Slot: size 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/size](https://w3id.org/tvbo/slot/size)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Annotation](../classes/Annotation.qmd) | A positioned text label on a panel, in axes-fraction coordinates |  no  |
+| [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd) | Cache-invalidation fingerprint for one ``aux_data`` reference |  no  |
+| [Node](../classes/Node.qmd) | A node in a network with its own dynamics and properties |  no  |
+| [Sample](../classes/Sample.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Annotation](../classes/Annotation.qmd), [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd), [Node](../classes/Node.qmd), [Sample](../classes/Sample.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:size |
+| native | tvbo:size |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: size
+domain_of:
+- Annotation
+- ReferenceFingerprint
+- Node
+- Sample
+range: string
+
+```
+</details></div>

@@ -1,0 +1,225 @@
+# matrix_io { #tvbo.data.matrix_io }
+
+`data.matrix_io`
+
+Low-level matrix read/write for HDF5 groups and Zarr groups.
+
+Supports dense, CSR, and COO formats. Both HDF5 (h5py.Group) and Zarr (zarr.Group) implement the same array-store interface, so a single pair of read/write functions handles both backends.
+
+See §12.1 of the tvbo HDF5 format proposal v0.7.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [ArrayInfo](#tvbo.data.matrix_io.ArrayInfo) | What a companion says about one array without reading its values. |
+| [LazyArrayStore](#tvbo.data.matrix_io.LazyArrayStore) | A companion binary file (HDF5 / Zarr / CSV), read one array at a time. |
+
+### ArrayInfo { #tvbo.data.matrix_io.ArrayInfo }
+
+```python
+data.matrix_io.ArrayInfo(path, shape, dtype, format, nbytes)
+```
+
+What a companion says about one array without reading its values.
+
+### LazyArrayStore { #tvbo.data.matrix_io.LazyArrayStore }
+
+```python
+data.matrix_io.LazyArrayStore(companion_path, meta_dict)
+```
+
+A companion binary file (HDF5 / Zarr / CSV), read one array at a time.
+
+Holds the path and the sidecar's edge declarations and nothing else at construction. Names, shapes, dtypes and formats come from the sidecar and the file's header; a value is read the first time it is asked for by name, and only that value. So ``"weight" in store`` costs a header read on a companion that also carries a leadfield and a mesh, and ``store["weight"]`` reads the weight matrix and leaves the rest on disk.
+
+A read returns the array in the format it is stored in — a csr companion yields a csr matrix. Every read routes through :func:`_read_values`, the seam an I/O-counting test measures.
+
+Use as a context manager to hold the file open across many reads; outside one, each read opens and closes the file, which is correct and safe and wrong under iteration.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description                                                                 | Default    |
+|----------------|--------|-----------------------------------------------------------------------------|------------|
+| companion_path | Path   | Path to the companion binary file (.h5, .zarr, .csv).                       | _required_ |
+| meta_dict      | dict   | Raw sidecar dict (from ``yaml_loader.load_as_dict``) for edge declarations. | _required_ |
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [arrays](#tvbo.data.matrix_io.LazyArrayStore.arrays) | Edge matrices as a read-per-key mapping. |
+| [edge_params](#tvbo.data.matrix_io.LazyArrayStore.edge_params) | Edge parameters as a read-per-key mapping, keyed like :attr:`arrays`. |
+| [names](#tvbo.data.matrix_io.LazyArrayStore.names) | The edge matrices this companion carries, without reading a value. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [dataset_keys](#tvbo.data.matrix_io.LazyArrayStore.dataset_keys) | Dataset paths under ``prefix`` (e.g. ``"nodes"``), empty when it holds none. |
+| [edge_params_of](#tvbo.data.matrix_io.LazyArrayStore.edge_params_of) | The edge-parameter matrices stored beside one edge matrix. |
+| [info](#tvbo.data.matrix_io.LazyArrayStore.info) | Shape, dtype and format of one array, from the file's header alone. |
+| [read_dataset](#tvbo.data.matrix_io.LazyArrayStore.read_dataset) | Read an arbitrary dataset by path (e.g. ``"nodes/parent_index"``). |
+
+##### dataset_keys { #tvbo.data.matrix_io.LazyArrayStore.dataset_keys }
+
+```python
+data.matrix_io.LazyArrayStore.dataset_keys(prefix='')
+```
+
+Dataset paths under ``prefix`` (e.g. ``"nodes"``), empty when it holds none.
+
+Lets a caller carry datasets across a re-save without modelling each one, which is what keeps a companion's per-node arrays alive through ``save_network``.
+
+##### edge_params_of { #tvbo.data.matrix_io.LazyArrayStore.edge_params_of }
+
+```python
+data.matrix_io.LazyArrayStore.edge_params_of(key)
+```
+
+The edge-parameter matrices stored beside one edge matrix.
+
+##### info { #tvbo.data.matrix_io.LazyArrayStore.info }
+
+```python
+data.matrix_io.LazyArrayStore.info(key)
+```
+
+Shape, dtype and format of one array, from the file's header alone.
+
+``key`` is an edge name (``"weight"``) or any dataset path (``"nodes/coordinates"``, ``"mesh/vertices"``). Raises ``KeyError`` when the file holds neither.
+
+##### read_dataset { #tvbo.data.matrix_io.LazyArrayStore.read_dataset }
+
+```python
+data.matrix_io.LazyArrayStore.read_dataset(key)
+```
+
+Read an arbitrary dataset by path (e.g. ``"nodes/parent_index"``).
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [auto_format](#tvbo.data.matrix_io.auto_format) | Select optimal storage format based on empirical analysis (§11). |
+| [edge_name](#tvbo.data.matrix_io.edge_name) | An edge's matrix name, from either spelling the sidecars use. |
+| [read_edge](#tvbo.data.matrix_io.read_edge) | One template edge's matrix and its edge-parameter matrices, from an open store. |
+| [read_matrix](#tvbo.data.matrix_io.read_matrix) | Read a matrix from an HDF5/Zarr group, in the format it is stored in. |
+| [resolve_staged_path](#tvbo.data.matrix_io.resolve_staged_path) | Resolve an artifact path against a packed kit's staging directory. |
+| [template_edges](#tvbo.data.matrix_io.template_edges) | Template edges = entries without source/target (matrix measures). |
+| [write_matrix](#tvbo.data.matrix_io.write_matrix) | Write a matrix to an HDF5/Zarr group in the specified format. |
+
+### auto_format { #tvbo.data.matrix_io.auto_format }
+
+```python
+data.matrix_io.auto_format(matrix)
+```
+
+Select optimal storage format based on empirical analysis (§11).
+
+Rules (data-driven from tvbo corpus measurements):
+- N < 500 or fill > 30%: dense + gzip wins
+- Otherwise: CSR
+
+Handles both dense arrays and scipy sparse matrices without densifying the input.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+matrix : array-like or scipy.sparse matrix
+    Matrix to analyze.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str
+    "dense" or "csr"
+
+### edge_name { #tvbo.data.matrix_io.edge_name }
+
+```python
+data.matrix_io.edge_name(e)
+```
+
+An edge's matrix name, from either spelling the sidecars use.
+
+### read_edge { #tvbo.data.matrix_io.read_edge }
+
+```python
+data.matrix_io.read_edge(store, name)
+```
+
+One template edge's matrix and its edge-parameter matrices, from an open store.
+
+Works identically for ``h5py.File`` and ``zarr.Group`` — both support ``"path" in store`` and ``store["path"]``. Raises ``KeyError`` when the store holds no such edge, so a miss is a miss and not an empty result a caller has to test for.
+
+### read_matrix { #tvbo.data.matrix_io.read_matrix }
+
+```python
+data.matrix_io.read_matrix(grp)
+```
+
+Read a matrix from an HDF5/Zarr group, in the format it is stored in.
+
+A csr or coo group comes back as the scipy sparse matrix it describes; a dense group as an ndarray. Densifying is the caller's decision — a 32k-vertex surface stored sparse is 8.4 GB dense, and a reader that made that decision on its own would make it for the consumer that cannot afford it.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+grp : h5py.Group or zarr.Group
+    Source group containing format/shape attrs and data datasets.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+np.ndarray or scipy.sparse matrix
+
+### resolve_staged_path { #tvbo.data.matrix_io.resolve_staged_path }
+
+```python
+data.matrix_io.resolve_staged_path(path)
+```
+
+Resolve an artifact path against a packed kit's staging directory.
+
+A frozen backend script carries the absolute path its author read. A packed kit copies every artifact that script loads — sourced/produced observer constants and sourced model or coupling parameters alike — into its own ``constants/`` directory, keyed by basename.
+When the author's path is absent, as it is on any other machine, the file is looked up under ``$TVBO_CONSTANTS_DIR`` and then the run directory's ``constants/``.
+
+An existing path is returned untouched, so a run on the authoring machine never consults the staging directory and cannot pick up a same-named file by accident.
+
+### template_edges { #tvbo.data.matrix_io.template_edges }
+
+```python
+data.matrix_io.template_edges(edges)
+```
+
+Template edges = entries without source/target (matrix measures).
+
+Works with both dicts (from ``yaml_loader.load_as_dict``) and LinkML ``Edge`` objects (from ``Network.edges``).
+
+### write_matrix { #tvbo.data.matrix_io.write_matrix }
+
+```python
+data.matrix_io.write_matrix(grp, matrix, fmt='dense', dtype=None)
+```
+
+Write a matrix to an HDF5/Zarr group in the specified format.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+grp : h5py.Group or zarr.Group
+    Target group.
+matrix : array-like
+    Matrix data to write.
+fmt : str
+    Storage format: "dense", "csr", or "coo".
+dtype : str or numpy.dtype, optional
+    Store at this precision instead of the matrix's own. Index arrays of the sparse formats are unaffected — they keep the width scipy chose, which is int64 exactly when the matrix is too large for int32 to address.
+
+The shape is read off ``.shape`` directly, never via ``np.asarray`` — a scipy sparse matrix survives that call as a 0-d object array, which would record an empty shape.

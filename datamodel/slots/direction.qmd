@@ -1,0 +1,101 @@
+# Slot: direction 
+
+
+_Exceedance direction: ``greater_equal`` (fraction of permutations whose statistic ≥ the observed) or ``less_equal`` (one-sided negative test)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/direction](https://w3id.org/tvbo/slot/direction)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surrogate](../classes/Surrogate.qmd) | A permutation-significance test: re-evaluate a named statistic under n_perm f... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surrogate](../classes/Surrogate.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(greater_equal)` |
+| Owner | [Surrogate](../classes/Surrogate.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:direction |
+| native | tvbo:direction |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: direction
+description: 'Exceedance direction: ``greater_equal`` (fraction of permutations whose
+  statistic ≥ the observed) or ``less_equal`` (one-sided negative test).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(greater_equal)
+owner: Surrogate
+domain_of:
+- Surrogate
+range: string
+
+```
+</details></div>

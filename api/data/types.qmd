@@ -1,0 +1,1466 @@
+# types { #tvbo.data.types }
+
+`data.types`
+
+Runtime data types for TVBO simulations.
+
+Provides `TimeSeries`, a JAX-pytree-aware, xarray-backed time-series container with domain-specific analysis and visualization helpers, and `SimulationState`, the bundled simulation state (initial conditions, network, noise, parameters, stimulus, and monitor settings) handed to the integration backends.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [logger](#tvbo.data.types.logger) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [AlgorithmResult](#tvbo.data.types.AlgorithmResult) | Result of an iterative algorithm (FIC, EIB, etc.). |
+| [ExperimentResult](#tvbo.data.types.ExperimentResult) | Result from a complete experiment run. |
+| [ExplorationResult](#tvbo.data.types.ExplorationResult) | Result of parameter exploration (grid search). |
+| [InferenceResult](#tvbo.data.types.InferenceResult) | Result of Bayesian inference (MCMC posterior over parameters). |
+| [ObservationResult](#tvbo.data.types.ObservationResult) | Result from an observation pipeline with named outputs. |
+| [OptimizationResult](#tvbo.data.types.OptimizationResult) | Result of gradient-based optimization. |
+| [SimulationResult](#tvbo.data.types.SimulationResult) | Output from a single simulation run with its computed observations. |
+| [SimulationState](#tvbo.data.types.SimulationState) | Bundled state passed to the integration backends for one simulation. |
+| [TimeSeries](#tvbo.data.types.TimeSeries) | Time-series dataType with JAX pytree support, domain-specific analysis, and visualization methods. |
+
+### AlgorithmResult { #tvbo.data.types.AlgorithmResult }
+
+```python
+data.types.AlgorithmResult(
+    name=None,
+    state=None,
+    history=None,
+    pre_tuning=None,
+    post_tuning=None,
+    post_tuning_observations=None,
+    n_iterations=None,
+    hyperparameters=None,
+    state_names=None,
+    **kwargs,
+)
+```
+
+Result of an iterative algorithm (FIC, EIB, etc.).
+
+Provides structured access to algorithm outputs with consistent naming regardless of which algorithm was run.
+
+
+
+#### Attributes: {.doc-section .doc-section-attributes}
+
+name : str
+    Algorithm name
+state : Bunch
+    Final state with tuned parameters
+history : Bunch
+    Per-iteration tracking: parameters, observations, metrics
+pre_tuning : SimulationResult
+    Simulation BEFORE algorithm (for comparison)
+post_tuning : SimulationResult
+    Simulation AFTER algorithm with attached observations
+n_iterations : int
+    Number of iterations run
+hyperparameters : Bunch
+    Algorithm hyperparameters used (eta, window_size, etc.)
+convergence : Bunch
+    Convergence metrics (final values, deltas, etc.)
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [get](#tvbo.data.types.AlgorithmResult.get) | Dict-like get for backward compat with Bunch-based code. |
+
+##### get { #tvbo.data.types.AlgorithmResult.get }
+
+```python
+data.types.AlgorithmResult.get(key, default=None)
+```
+
+Dict-like get for backward compat with Bunch-based code.
+
+### ExperimentResult { #tvbo.data.types.ExperimentResult }
+
+```python
+data.types.ExperimentResult(
+    integration=None,
+    explorations=None,
+    algorithms=None,
+    optimizations=None,
+    continuations=None,
+    inferences=None,
+    data_sources=None,
+    name=None,
+    source=None,
+    **kwargs,
+)
+```
+
+Result from a complete experiment run.
+
+Mirrors the SimulationExperiment schema structure: integration, algorithms, optimizations, explorations, continuations. Accepts both new-style explicit fields and old-style ``results=Bunch`` constructor for backward compatibility.
+
+
+
+#### Attributes: {.doc-section .doc-section-attributes}
+
+integration : SimulationResult or None
+    Primary simulation output with its observations and transient.
+algorithms : dict
+    Algorithm results keyed by name.
+optimizations : dict
+    Optimization results keyed by name.
+explorations : dict
+    Exploration results keyed by name.
+continuations : dict
+    Bifurcation/continuation results keyed by name.
+data_sources : dict
+    External/empirical data (not from simulations).
+name : str or None
+    Experiment name.
+source : SimulationExperiment or None
+    Back-reference to input specification.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [export](#tvbo.data.types.ExperimentResult.export) | Export results and metadata to a BIDS-compatible directory. |
+| [from_timeseries](#tvbo.data.types.ExperimentResult.from_timeseries) | Create an ExperimentResult from a TVBO TimeSeries. |
+| [from_tvb](#tvbo.data.types.ExperimentResult.from_tvb) | Create an ExperimentResult from a TVB simulator and its run output. |
+| [plot](#tvbo.data.types.ExperimentResult.plot) | Dispatch plot to the most relevant sub-result. |
+| [save](#tvbo.data.types.ExperimentResult.save) | Persist the run as one keyed HDF5 result plus a YAML provenance sidecar. |
+
+##### export { #tvbo.data.types.ExperimentResult.export }
+
+```python
+data.types.ExperimentResult.export(
+    output_dir,
+    subject='01',
+    session=None,
+    description='tvbsim',
+)
+```
+
+Export results and metadata to a BIDS-compatible directory.
+
+Writes experiment specification as YAML and simulation data as netCDF/HDF5, following BEP034 directory conventions::
+
+    output_dir/
+    ├── dataset_description.json
+    ├── sub-{subject}/
+    │   ├── sub-{subject}_desc-{desc}_experiment.yaml
+    │   └── ts/
+    │       ├── sub-{subject}_desc-{desc}_ts-sim_State.nc
+    │       ├── sub-{subject}_desc-{desc}_ts-sim_State.json
+    │       └── sub-{subject}_desc-{desc}_ts-{obs}_BOLD.nc  (per observation)
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+output_dir : str or Path
+    Root output directory (created if it doesn't exist).
+subject : str
+    BIDS subject label (default ``"01"``).
+session : str or None
+    BIDS session label (optional).
+description : str
+    BIDS ``desc-`` entity (default ``"tvbsim"``).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+pathlib.Path
+    Path to the output directory.
+
+##### from_timeseries { #tvbo.data.types.ExperimentResult.from_timeseries }
+
+```python
+data.types.ExperimentResult.from_timeseries(
+    ts,
+    source=None,
+    name=None,
+    **extras,
+)
+```
+
+Create an ExperimentResult from a TVBO TimeSeries.
+
+Converts a raw TimeSeries (as returned by JAX, PyRates, NetworkDynamics, etc.) into the standard ExperimentResult wrapper.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+ts : TimeSeries
+    Simulation output with ``.data``, ``.time``, ``.labels_dimensions``.
+source : SimulationExperiment, optional
+    Back-reference to the experiment that produced this result.
+name : str, optional
+    Experiment label.
+**extras
+    Additional attributes to store (e.g. ``sol``, ``graph``).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+ExperimentResult
+
+##### from_tvb { #tvbo.data.types.ExperimentResult.from_tvb }
+
+```python
+data.types.ExperimentResult.from_tvb(simulator, result=None, transient_time=0.0)
+```
+
+Create an ExperimentResult from a TVB simulator and its run output.
+
+Wraps TVB simulation output into the standard TVBO result structure:
+
+- ``result.integration`` — primary monitor as SimulationResult (xr.DataArray)
+- ``result.integration.observations['MonitorName']`` — one TimeSeries per
+  additional monitor, keyed by the TVB monitor class name
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+simulator : tvb.simulator.simulator.Simulator
+    A configured TVB simulator.
+result : list of (time_array, data_array) tuples, optional
+    Output of ``simulator.run()``. If *None*, the simulator is
+    run using its ``simulation_length``.
+transient_time : float
+    Length of the leading settle inside the run, in the simulator's time unit. TVB
+    integrates it as part of one simulation; it is marked here so the result cuts it at
+    t=0 exactly as every other backend does.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+ExperimentResult
+
+##### plot { #tvbo.data.types.ExperimentResult.plot }
+
+```python
+data.types.ExperimentResult.plot(**kwargs)
+```
+
+Dispatch plot to the most relevant sub-result.
+
+##### save { #tvbo.data.types.ExperimentResult.save }
+
+```python
+data.types.ExperimentResult.save(out_dir, compress=True, record_only=True)
+```
+
+Persist the run as one keyed HDF5 result plus a YAML provenance sidecar.
+
+Writes ``<prefix>_result.h5`` — a single xarray ``Dataset`` where every output is a data-variable and the sweep parameters are shared coordinates (a full run is gridded; a sharded run keeps the flat, self-describing ``point`` dim that reassembles by value) — and ``<prefix>_result.yaml``, the frozen experiment spec. ``<prefix>`` is the experiment's BIDS-style key-value name (``ses-<id>_desc-<label>``). The **same** artifact is produced by a local run and by the HPC gather pass, so they are interchangeable. Returns the written paths.
+
+The sidecar carries the frozen spec plus a connectome companion (``<stem>_network.h5``), so the result reloads without its original data sources. Writing it is not guarded: it is half of what this method promises, and a swallowed failure returned an ``.h5`` with no ``.yaml``, which the caller met much later as an unrelated error.
+
+An on-device cohort run fans here into one per-subject result (see :meth:`_save_per_subject`), mirroring the per-subject workflow fan-out.
+
+### ExplorationResult { #tvbo.data.types.ExplorationResult }
+
+```python
+data.types.ExplorationResult(
+    name=None,
+    grid=None,
+    results=None,
+    axes=None,
+    observable=None,
+    dt=None,
+    transient_time=0.0,
+    output_names=None,
+    observations=None,
+    cell_coords=None,
+    is_shard=None,
+    axis_points=None,
+    **kwargs,
+)
+```
+
+Result of parameter exploration (grid search).
+
+A thin wrapper around tvboptim exploration outputs that provides:
+- Access to labelled results (flat or grid-shaped)
+- Axis information for parameter values
+- Utility methods for finding optimal points and slicing
+- Time series plotting for parameter sweeps (when observable returns time series)
+
+Designed to work with tvboptim's Space and ParallelResult directly, while also supporting other exploration backends.
+
+Supports two result types:
+- **Scalar results**: Each grid point produces a scalar (e.g., loss function).
+  Stored flat, reshaped via ``as_grid()``, with ``optimal`` point tracking.
+- **Time series results**: Each grid point produces a time series (e.g., model
+  output). Stored as ``(n_grid, n_time, ...)``, with ``plot()`` support.
+
+
+
+#### Attributes: {.doc-section .doc-section-attributes}
+
+name : str
+    Exploration name
+grid : Space
+    Parameter grid specification (tvboptim Space object)
+results : xr.DataArray
+    Observable values at each grid point (flat for scalars, multi-dim for time
+    series), carrying named dims: the leading run axis (the swept parameter,
+    ``trial``, or ``point``) followed by the intrinsic dims (time, variable,
+    node, mode). The payload stays JAX-native — only the labels are
+    materialised — and the shape is unchanged from what the backend emitted, so
+    it is addressed by key rather than by position. ``as_grid()`` reshapes the
+    flat run axis into one dim per exploration axis.
+axes : list
+    List of axis info (Bunch with name, lo, hi, n, values)
+observable : str
+    Name of observable computed
+optimal : Bunch
+    Best point found (parameters, value, index) — only for scalar results
+shape : tuple
+    Grid shape derived from axes
+is_timeseries : bool
+    True if results contain time series per grid point
+dt : float
+    Time step for time series results (optional)
+transient_time : float
+    Length of the settle at the head of each cell's recorded trajectory. A sweep records the window it integrated, so ``results`` spans the settle too — the analogue of ``SimulationResult.full`` — and this puts its time axis on the measurement clock, where the settle carries non-positive timestamps. ``results.sel(time=slice(dt, None))`` is the measured window that ``SimulationResult.data`` reports.
+output_names : list[str]
+    Names of output variables (e.g., ['v_pyr']) for time series results
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [as_grid](#tvbo.data.types.ExplorationResult.as_grid) | Reshape the flat results into a grid **labeled by parameter name**. |
+| [plot](#tvbo.data.types.ExplorationResult.plot) | Plot exploration results. |
+| [slice](#tvbo.data.types.ExplorationResult.slice) | Get a slice of results with some parameters fixed. |
+
+##### as_grid { #tvbo.data.types.ExplorationResult.as_grid }
+
+```python
+data.types.ExplorationResult.as_grid()
+```
+
+Reshape the flat results into a grid **labeled by parameter name**.
+
+Returns an ``xr.DataArray`` with one dimension per exploration axis — named by the swept parameter, coordinates set to the swept values — so grid results are addressed by name (``g.sel(**{"ReducedWongWang.w": 0.5})``) and are **independent of axis order**. The data stays a JAX array (the DataArray is a registered JAX pytree); only the coordinate labels are materialised. A time-series observable keeps its intrinsic dims (time, variable, node, mode) after the grid dims. ``None`` when empty; otherwise always labelled — a payload that cannot be reshaped into the grid is returned with the dim names it already carries (see :meth:`_label_payload`) rather than as a bare array, so no consumer is handed positional data. A set ``cell_coords`` selects the keyed path below, which every sweep takes because every sweep sets it;
+:func:`_stacked_to_dataarray` then decides the shape from whether the cells fill the Cartesian product. A full product is placed into the rectangular grid BY VALUE, so ``sel`` by parameter works as usual. A subset — an HPC array task's slice, or a branch restart — gets a single ``point`` dim carrying each axis's value, so it reassembles across shards by parameter value.
+
+Do not read a set ``cell_coords`` as "this is a shard". ``_is_partial_shard`` answers that separate question, for provenance rather than labelling, and prefers the producer's declared ``is_shard``.
+
+##### plot { #tvbo.data.types.ExplorationResult.plot }
+
+```python
+data.types.ExplorationResult.plot(
+    figsize=None,
+    sharex=True,
+    ax=None,
+    overlay=False,
+    **kwargs,
+)
+```
+
+Plot exploration results.
+
+For time series results: subplots for each parameter value by default, or a single overlaid axis when ``overlay=True``.
+For scalar results: line plot (1D) or filled-contour heatmap (2D), drawn into ``ax`` if given.
+
+##### slice { #tvbo.data.types.ExplorationResult.slice }
+
+```python
+data.types.ExplorationResult.slice(**fixed_params)
+```
+
+Get a slice of results with some parameters fixed.
+
+Example: result.slice(G=0.5) returns 1D slice at G=0.5
+
+### InferenceResult { #tvbo.data.types.InferenceResult }
+
+```python
+data.types.InferenceResult(
+    name=None,
+    posterior=None,
+    diagnostics=None,
+    **kwargs,
+)
+```
+
+Result of Bayesian inference (MCMC posterior over parameters).
+
+
+
+#### Attributes: {.doc-section .doc-section-attributes}
+
+name : str
+    Inference name (the ``inferences:`` key).
+posterior : dict
+    Posterior samples keyed by parameter dotted-name (the ``priors`` keys),
+    each an array of length ``num_samples`` (× ``num_chains``).
+diagnostics : dict
+    Sampler diagnostics (per-parameter ``mean``/``std``/``r_hat``/``n_eff`` etc.,
+    as returned by ``numpyro.diagnostics.summary``).
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [mean](#tvbo.data.types.InferenceResult.mean) | Posterior mean per parameter. |
+| [std](#tvbo.data.types.InferenceResult.std) | Posterior standard deviation per parameter. |
+
+##### mean { #tvbo.data.types.InferenceResult.mean }
+
+```python
+data.types.InferenceResult.mean()
+```
+
+Posterior mean per parameter.
+
+##### std { #tvbo.data.types.InferenceResult.std }
+
+```python
+data.types.InferenceResult.std()
+```
+
+Posterior standard deviation per parameter.
+
+### ObservationResult { #tvbo.data.types.ObservationResult }
+
+```python
+data.types.ObservationResult()
+```
+
+Result from an observation pipeline with named outputs.
+
+Exposes pipeline outputs as attributes (e.g., result.psd, result.frequencies) while maintaining NativeSolution-like interface (.data, .time, .dt).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [data](#tvbo.data.types.ObservationResult.data) | Primary data output (alias for ys). |
+| [time](#tvbo.data.types.ObservationResult.time) | Time array (alias for ts). |
+
+### OptimizationResult { #tvbo.data.types.OptimizationResult }
+
+```python
+data.types.OptimizationResult(
+    name=None,
+    state=None,
+    history=None,
+    simulation=None,
+    n_steps=None,
+    hyperparameters=None,
+    **kwargs,
+)
+```
+
+Result of gradient-based optimization.
+
+Provides structured access to optimization outputs including loss trajectory, parameter evolution, and final simulation.
+
+
+
+#### Attributes: {.doc-section .doc-section-attributes}
+
+name : str
+    Optimization/loss function name
+state : Bunch
+    Final optimized state (alias: fitted_params)
+history : Bunch
+    Per-step tracking: loss values, states, gradients
+simulation : SimulationResult
+    Post-optimization simulation with attached observations
+loss_trajectory : jnp.ndarray
+    Loss values at each step (convenience accessor)
+n_steps : int
+    Number of optimization steps
+final_loss : float
+    Final loss value
+hyperparameters : Bunch
+    Optimizer settings (learning_rate, algorithm, etc.)
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [plot](#tvbo.data.types.OptimizationResult.plot) | Plot optimization results. |
+
+##### plot { #tvbo.data.types.OptimizationResult.plot }
+
+```python
+data.types.OptimizationResult.plot(
+    type='summary',
+    ax=None,
+    figsize=None,
+    **kwargs,
+)
+```
+
+Plot optimization results.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+type : str
+    ``'summary'`` (default) – loss curve + parameter trajectories.
+    ``'loss'`` – loss curve only.
+    ``'parameters'`` – free-parameter evolution over steps.
+    ``'state'`` – final fitted parameter values (bar charts).
+ax : matplotlib.axes.Axes, optional
+    Target axes (single-panel plots only, i.e. *type='loss'*).
+figsize : tuple, optional
+**kwargs
+    Forwarded to matplotlib plot calls.
+
+### SimulationResult { #tvbo.data.types.SimulationResult }
+
+```python
+data.types.SimulationResult(
+    data=None,
+    observations=None,
+    transient=None,
+    *,
+    result=None,
+    state_names=None,
+    nodes=None,
+    observation_dims=None,
+    observation_times=None,
+    units=None,
+    n_transient=0,
+    **kwargs,
+)
+```
+
+Output from a single simulation run with its computed observations.
+
+Stores simulation data as an ``xr.DataArray`` with named dimensions (time, variable, node[, mode][, trial]). Observations are bound to the simulation that produced them.
+
+Accepts both new-style (``data=xr.DataArray``) and legacy (``result=NativeSolution, state_names=[...]``) constructor signatures for backward compatibility with generated template code.
+
+
+
+#### Attributes: {.doc-section .doc-section-attributes}
+
+data : xr.DataArray or None
+    Simulation data with named dims and coords.
+observations : dict
+    Computed observations from this simulation (BOLD, FC, etc.).
+transient : SimulationResult or None
+    The run's own settling window, as a view on the same buffer — never a second run.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [coords](#tvbo.data.types.SimulationResult.coords) | Coordinates of the data array. |
+| [dims](#tvbo.data.types.SimulationResult.dims) | Dimension names of the data array. |
+| [full](#tvbo.data.types.SimulationResult.full) | The whole integrated window, settle included, on the measurement clock (t <= 0 is the settle). |
+| [state_names](#tvbo.data.types.SimulationResult.state_names) | State variable names from data coordinates. |
+| [time](#tvbo.data.types.SimulationResult.time) | Time values as numpy array (backward compatible). |
+| [transient](#tvbo.data.types.SimulationResult.transient) | This run's settling window, or None when none was declared. |
+| [units](#tvbo.data.types.SimulationResult.units) | Unit mapping {variable_name: unit_string} for state/derived variables. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [animate](#tvbo.data.types.SimulationResult.animate) | Animate simulation results. |
+| [isel](#tvbo.data.types.SimulationResult.isel) | Integer-based selection returning a new SimulationResult. |
+| [plot](#tvbo.data.types.SimulationResult.plot) | Plot simulation results. |
+| [sel](#tvbo.data.types.SimulationResult.sel) | Label-based selection returning a new SimulationResult. |
+| [to_timeseries](#tvbo.data.types.SimulationResult.to_timeseries) | Convert to a full TimeSeries object for plotting and analysis. |
+
+##### animate { #tvbo.data.types.SimulationResult.animate }
+
+```python
+data.types.SimulationResult.animate(type=None, **kwargs)
+```
+
+Animate simulation results.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+type : str or list of str, optional
+    Single panel type:
+        'network' — nodes colored by state on graph layout.
+        'phase' — trailing trajectory in phase space.
+        'timeseries' — evolving time-series traces.
+        'pendulum' — dual-panel: pendulum bob + timeseries.
+        A state variable name — selects that variable, then animates.
+    List of panel types for custom multi-panel layout:
+        e.g. ``['pendulum_bob', 'timeseries']``,
+        ``['phase', 'timeseries']``
+    If None, auto-selects based on available metadata.
+**kwargs
+    Forwarded to the animation function.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.animation.FuncAnimation
+
+##### isel { #tvbo.data.types.SimulationResult.isel }
+
+```python
+data.types.SimulationResult.isel(**kw)
+```
+
+Integer-based selection returning a new SimulationResult.
+
+##### plot { #tvbo.data.types.SimulationResult.plot }
+
+```python
+data.types.SimulationResult.plot(ax=None, type='timeseries', **kwargs)
+```
+
+Plot simulation results.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+ax : matplotlib.axes.Axes, optional
+    Axes to plot on (single-panel plots only).
+type : str
+    Plot type: 'timeseries' (default), 'phase'/'state-space',
+    'vector_field', 'eeg', 'power_spectrum', 'raster'.
+**kwargs
+    Forwarded to the underlying plot function in ``tvbo.plot``.
+
+##### sel { #tvbo.data.types.SimulationResult.sel }
+
+```python
+data.types.SimulationResult.sel(**kw)
+```
+
+Label-based selection returning a new SimulationResult.
+
+##### to_timeseries { #tvbo.data.types.SimulationResult.to_timeseries }
+
+```python
+data.types.SimulationResult.to_timeseries()
+```
+
+Convert to a full TimeSeries object for plotting and analysis.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+TimeSeries
+    4D time series (Time, State Variable, Space, Mode)
+
+### SimulationState { #tvbo.data.types.SimulationState }
+
+```python
+data.types.SimulationState(
+    initial_conditions,
+    network,
+    dt,
+    noise,
+    parameters,
+    stimulus,
+    monitor_parameters,
+    nt,
+)
+```
+
+Bundled state passed to the integration backends for one simulation.
+
+Groups everything a backend needs to advance a run: the initial conditions, the `Network`, the integration step, the noise configuration, model parameters, stimulus, monitor settings, and the number of time steps.
+Registered as a JAX pytree so it can flow through `jit`/`vmap`; `nt` is kept static while the remaining fields are dynamic children.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name               | Type       | Description                                              | Default    |
+|--------------------|------------|----------------------------------------------------------|------------|
+| initial_conditions | TimeSeries | Initial state as a `TimeSeries` (history buffer).        | _required_ |
+| network            | Network    | The `Network` (connectivity and coupling) to simulate.   | _required_ |
+| dt                 |            | Integration time step.                                   | _required_ |
+| noise              |            | Noise configuration, including per-state-variable sigma. | _required_ |
+| parameters         |            | Model parameter pytree.                                  | _required_ |
+| stimulus           |            | Stimulus specification applied during integration.       | _required_ |
+| monitor_parameters |            | Settings controlling recorded outputs.                   | _required_ |
+| nt                 |            | Number of integration steps to run.                      | _required_ |
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [n_state_variables](#tvbo.data.types.SimulationState.n_state_variables) | Number of state variables inferred from the initial conditions. |
+| [state_variable_names](#tvbo.data.types.SimulationState.state_variable_names) | State-variable names, falling back to positional indices as strings. |
+| [state_variables](#tvbo.data.types.SimulationState.state_variables) | Ergonomic proxy: state.state_variables.V.noise.sigma = 0.02. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [convert_dtype](#tvbo.data.types.SimulationState.convert_dtype) | Convert the dtype of the parameter pytree. |
+| [get_state_variable_index](#tvbo.data.types.SimulationState.get_state_variable_index) | Resolve a state variable to its integer index. |
+| [set_sigma_for](#tvbo.data.types.SimulationState.set_sigma_for) | Set the noise sigma for one state variable (or all at once). |
+| [set_sigma_many](#tvbo.data.types.SimulationState.set_sigma_many) | Set multiple sigma values using a dict: { 'V': 0.02, 'W': 0.0 }. |
+| [tree_flatten](#tvbo.data.types.SimulationState.tree_flatten) | Flatten into JAX pytree (children, aux_data). |
+| [tree_unflatten](#tvbo.data.types.SimulationState.tree_unflatten) | Reconstruct a `SimulationState` from JAX pytree children and aux_data. |
+
+##### convert_dtype { #tvbo.data.types.SimulationState.convert_dtype }
+
+```python
+data.types.SimulationState.convert_dtype(target_dtype=jnp.float32)
+```
+
+Convert the dtype of the parameter pytree.
+
+Useful for converting between 32 and 64 bit types.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+pytree : pytree
+    The parameter tree whose dtype needs to be converted.
+target_dtype : jnp.dtype, optional
+    The target dtype to convert to. Defaults to jnp.float32.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+converted_pytree : pytree
+    The parameter tree with converted dtype.
+
+
+
+###### Notes: {.doc-section .doc-section-notes}
+
+This method recursively traverses the pytree structure and converts all leaf nodes to the specified target dtype.
+It preserves the overall structure of the pytree while changing the dtype of its elements.
+
+##### get_state_variable_index { #tvbo.data.types.SimulationState.get_state_variable_index }
+
+```python
+data.types.SimulationState.get_state_variable_index(name_or_index)
+```
+
+Resolve a state variable to its integer index.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                                                                                 | Default    |
+|---------------|--------|-------------------------------------------------------------------------------------------------------------|------------|
+| name_or_index |        | A state-variable name or an integer index. Integers are returned unchanged; unknown names fall back to `0`. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                              |
+|--------|--------|------------------------------------------|
+|        | int    | The integer index of the state variable. |
+
+##### set_sigma_for { #tvbo.data.types.SimulationState.set_sigma_for }
+
+```python
+data.types.SimulationState.set_sigma_for(name_or_index, value)
+```
+
+Set the noise sigma for one state variable (or all at once).
+
+Rebuilds `noise.sigma_vec` rather than mutating it in place, so it is safe to call before `jit`/`vmap`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                                                                              | Default    |
+|---------------|--------|----------------------------------------------------------------------------------------------------------|------------|
+| name_or_index |        | The state variable to target, by name or index.                                                          | _required_ |
+| value         |        | A scalar sigma for the selected variable, or a list/tuple giving sigma for every state variable at once. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                       |
+|--------|--------|-----------------------------------|
+|        |        | `self`, to allow method chaining. |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                           |
+|--------|------------|-----------------------------------------------------------------------|
+|        | ValueError | If a list/tuple `value` does not match the number of state variables. |
+
+##### set_sigma_many { #tvbo.data.types.SimulationState.set_sigma_many }
+
+```python
+data.types.SimulationState.set_sigma_many(mapping)
+```
+
+Set multiple sigma values using a dict: { 'V': 0.02, 'W': 0.0 }.
+
+##### tree_flatten { #tvbo.data.types.SimulationState.tree_flatten }
+
+```python
+data.types.SimulationState.tree_flatten()
+```
+
+Flatten into JAX pytree (children, aux_data).
+
+`nt` is kept as static aux_data so it stays concrete in shape/length contexts under jit/vmap.
+
+##### tree_unflatten { #tvbo.data.types.SimulationState.tree_unflatten }
+
+```python
+data.types.SimulationState.tree_unflatten(aux_data, children)
+```
+
+Reconstruct a `SimulationState` from JAX pytree children and aux_data.
+
+### TimeSeries { #tvbo.data.types.TimeSeries }
+
+```python
+data.types.TimeSeries(
+    time,
+    data,
+    network=None,
+    title='TimeSeries',
+    sample_period=None,
+    labels_dimensions=None,
+    units=None,
+)
+```
+
+Time-series dataType with JAX pytree support, domain-specific analysis, and visualization methods.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [ndim](#tvbo.data.types.TimeSeries.ndim) | Number of dimensions of the underlying data array. |
+| [sample_period_ms](#tvbo.data.types.TimeSeries.sample_period_ms) | :returns sample_period is ms |
+| [sample_rate](#tvbo.data.types.TimeSeries.sample_rate) | :returns samples per second [Hz] |
+| [shape](#tvbo.data.types.TimeSeries.shape) | Shape of the underlying data array. |
+| [space_labels](#tvbo.data.types.TimeSeries.space_labels) | Labels for the spatial (region) axis as a NumPy array. |
+| [time_unit](#tvbo.data.types.TimeSeries.time_unit) | Unit of the sample period (e.g. `"ms"`). |
+| [variables_labels](#tvbo.data.types.TimeSeries.variables_labels) | Labels for the state-variable axis as a NumPy array. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [animate](#tvbo.data.types.TimeSeries.animate) | Animate timeseries on a graph layout. |
+| [calculate_frequency](#tvbo.data.types.TimeSeries.calculate_frequency) | Calculate the dominant frequency of the time series data using FFT. |
+| [check_identity](#tvbo.data.types.TimeSeries.check_identity) | Test whether this series' data matches another array or time series. |
+| [compute_dt](#tvbo.data.types.TimeSeries.compute_dt) | Recompute `sample_period` from the mean spacing of the time axis. |
+| [compute_normalised_average_power](#tvbo.data.types.TimeSeries.compute_normalised_average_power) | Compute normalized average power spectrum using FFT. |
+| [convert_units](#tvbo.data.types.TimeSeries.convert_units) | Convert units for a specific dimension and return a new TimeSeries. |
+| [copy](#tvbo.data.types.TimeSeries.copy) | Return a deep copy of the current instance. |
+| [cut_transient](#tvbo.data.types.TimeSeries.cut_transient) | Drop the initial transient before a given time. |
+| [duplicate](#tvbo.data.types.TimeSeries.duplicate) | Fast shallow-copy-based duplication with attribute update. |
+| [exclude_region](#tvbo.data.types.TimeSeries.exclude_region) | Return a copy with one region removed. |
+| [get_dt](#tvbo.data.types.TimeSeries.get_dt) | Return the sampling interval. |
+| [get_region](#tvbo.data.types.TimeSeries.get_region) | Extract a single region by label. |
+| [get_region_index](#tvbo.data.types.TimeSeries.get_region_index) | Return the spatial-axis index of a region given its label. |
+| [get_state](#tvbo.data.types.TimeSeries.get_state) | Extract one or more state variables by label. |
+| [get_state_variable](#tvbo.data.types.TimeSeries.get_state_variable) | Evaluate a state variable or a symbolic expression of state variables. |
+| [get_subspace_by_index](#tvbo.data.types.TimeSeries.get_subspace_by_index) | Extract a spatial subset by region index. |
+| [get_subspace_by_labels](#tvbo.data.types.TimeSeries.get_subspace_by_labels) | Extract a spatial subset by region label. |
+| [plot](#tvbo.data.types.TimeSeries.plot) | Plot the time series, or a state-space trajectory of its variables. |
+| [plot_eeg](#tvbo.data.types.TimeSeries.plot_eeg) | Plot each region as a separate channel stacked vertically on a single axes (EEG-like representation). |
+| [plot_power_spectrum](#tvbo.data.types.TimeSeries.plot_power_spectrum) | Plot the power spectrum with normalized average power computed via FFT. |
+| [subset](#tvbo.data.types.TimeSeries.subset) | Restrict the time series to a `[start, end]` time window. |
+| [summary_info](#tvbo.data.types.TimeSeries.summary_info) | Gather scientifically interesting summary information from an instance of this datatype. |
+| [tree_flatten](#tvbo.data.types.TimeSeries.tree_flatten) | Flatten into JAX pytree (children, aux_data). |
+| [tree_unflatten](#tvbo.data.types.TimeSeries.tree_unflatten) | Reconstruct a `TimeSeries` from JAX pytree children and aux_data. |
+
+##### animate { #tvbo.data.types.TimeSeries.animate }
+
+```python
+data.types.TimeSeries.animate(
+    state=0,
+    format='dots',
+    interval=50,
+    cmap='viridis',
+    node_size=120,
+    figsize=(10, 4),
+)
+```
+
+Animate timeseries on a graph layout.
+
+Each node is a dot positioned by the graph layout; its color reflects the timeseries value of the selected state variable over time.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+state : int or str
+    State variable index or name to animate.
+format : str
+    Animation format.  Currently only ``'dots'`` is supported.
+interval : int
+    Milliseconds between frames.
+cmap : str
+    Matplotlib colormap name.
+node_size : int
+    Scatter point size.
+figsize : tuple
+    Figure size ``(width, height)``.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.animation.FuncAnimation
+    The animation object (render with ``HTML(ani.to_jshtml())``
+    in Jupyter, or ``ani.save(...)``).
+
+##### calculate_frequency { #tvbo.data.types.TimeSeries.calculate_frequency }
+
+```python
+data.types.TimeSeries.calculate_frequency(state_variable=None, region=0, mode=0)
+```
+
+Calculate the dominant frequency of the time series data using FFT.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description               |
+|--------|--------|---------------------------|
+| float  | float  | Dominant frequency in Hz. |
+
+##### check_identity { #tvbo.data.types.TimeSeries.check_identity }
+
+```python
+data.types.TimeSeries.check_identity(other, select_state_variable=None)
+```
+
+Test whether this series' data matches another array or time series.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name                  | Type   | Description                                                                              | Default    |
+|-----------------------|--------|------------------------------------------------------------------------------------------|------------|
+| other                 |        | A NumPy array or another `TimeSeries` to compare against.                                | _required_ |
+| select_state_variable |        | Optional state-variable label (or expression) to compare instead of the full data array. | `None`     |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                          |
+|--------|--------|----------------------------------------------------------------------|
+|        |        | `True` if the flattened values are element-wise close (`atol=1e-8`), |
+|        |        | else `False`.                                                        |
+
+##### compute_dt { #tvbo.data.types.TimeSeries.compute_dt }
+
+```python
+data.types.TimeSeries.compute_dt()
+```
+
+Recompute `sample_period` from the mean spacing of the time axis.
+
+Prints a warning and updates `sample_period` in place when it disagrees with the mean of `diff(time)`.
+
+##### compute_normalised_average_power { #tvbo.data.types.TimeSeries.compute_normalised_average_power }
+
+```python
+data.types.TimeSeries.compute_normalised_average_power(VOI=None)
+```
+
+Compute normalized average power spectrum using FFT.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+VOI : str, optional
+    Variable of interest to analyze. Required if multiple state variables exist.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+frequency : ndarray
+    Frequency values in Hz
+power : ndarray
+    Normalized average power values
+
+##### convert_units { #tvbo.data.types.TimeSeries.convert_units }
+
+```python
+data.types.TimeSeries.convert_units(dimension, target_unit)
+```
+
+Convert units for a specific dimension and return a new TimeSeries.
+
+
+
+###### Parameters: {.doc-section .doc-section-parameters}
+
+dimension : str
+    Dimension to convert ('time', 'state', 'region', 'mode')
+target_unit : str
+    Target unit to convert to
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+TimeSeries
+    New TimeSeries with converted values
+
+##### copy { #tvbo.data.types.TimeSeries.copy }
+
+```python
+data.types.TimeSeries.copy()
+```
+
+Return a deep copy of the current instance.
+
+##### cut_transient { #tvbo.data.types.TimeSeries.cut_transient }
+
+```python
+data.types.TimeSeries.cut_transient(start_time)
+```
+
+Drop the initial transient before a given time.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                             | Default    |
+|------------|--------|---------------------------------------------------------|------------|
+| start_time |        | Time value; all samples strictly before it are removed. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                 |
+|--------|--------|-------------------------------------------------------------|
+|        |        | A new `TimeSeries` starting at the first sample at or after |
+|        |        | `start_time`.                                               |
+
+##### duplicate { #tvbo.data.types.TimeSeries.duplicate }
+
+```python
+data.types.TimeSeries.duplicate(**kwargs)
+```
+
+Fast shallow-copy-based duplication with attribute update.
+
+##### exclude_region { #tvbo.data.types.TimeSeries.exclude_region }
+
+```python
+data.types.TimeSeries.exclude_region(region)
+```
+
+Return a copy with one region removed.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                       | Default    |
+|--------|--------|---------------------------------------------------------------------------------------------------|------------|
+| region |        | The region to drop, given either as an integer index along the spatial axis or as a region label. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                      |
+|--------|--------|--------------------------------------------------|
+|        |        | A new `TimeSeries` without the specified region. |
+
+##### get_dt { #tvbo.data.types.TimeSeries.get_dt }
+
+```python
+data.types.TimeSeries.get_dt()
+```
+
+Return the sampling interval.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                        |
+|--------|--------|--------------------------------------------------------------------|
+|        |        | The stored `dt` when available, otherwise the mean spacing between |
+|        |        | successive time points.                                            |
+
+##### get_region { #tvbo.data.types.TimeSeries.get_region }
+
+```python
+data.types.TimeSeries.get_region(region_label)
+```
+
+Extract a single region by label.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type   | Description                      | Default    |
+|--------------|--------|----------------------------------|------------|
+| region_label |        | The label of the region to keep. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                             |
+|--------|--------|---------------------------------------------------------|
+|        |        | A new `TimeSeries` containing only the selected region. |
+
+##### get_region_index { #tvbo.data.types.TimeSeries.get_region_index }
+
+```python
+data.types.TimeSeries.get_region_index(region_label)
+```
+
+Return the spatial-axis index of a region given its label.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type   | Description                  | Default    |
+|--------------|--------|------------------------------|------------|
+| region_label |        | The region label to look up. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                   |
+|--------|--------|---------------------------------------------------------------|
+|        |        | The integer index of the region within the `"Region"` labels. |
+
+##### get_state { #tvbo.data.types.TimeSeries.get_state }
+
+```python
+data.types.TimeSeries.get_state(sv_label)
+```
+
+Extract one or more state variables by label.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                               | Default    |
+|----------|--------|-------------------------------------------------------------------------------------------|------------|
+| sv_label |        | A single state-variable label, or a list/tuple/array of labels to select several at once. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                           |
+|--------|--------|-----------------------------------------------------------------------|
+|        |        | A new `TimeSeries` restricted to the selected state variable(s), with |
+|        |        | its state-variable labels updated accordingly.                        |
+
+##### get_state_variable { #tvbo.data.types.TimeSeries.get_state_variable }
+
+```python
+data.types.TimeSeries.get_state_variable(sv_label)
+```
+
+Evaluate a state variable or a symbolic expression of state variables.
+
+When `sv_label` is a list/tuple/array it behaves like `get_state`. When it is a string it is parsed as a symbolic expression whose free symbols are matched against existing state variables, allowing derived quantities such as `"E - I"` to be computed.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                     | Default    |
+|----------|--------|-----------------------------------------------------------------------------------------------------------------|------------|
+| sv_label |        | A state-variable label, a collection of labels, or a symbolic expression string combining state-variable names. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                |
+|--------|--------|------------------------------------------------------------|
+|        |        | A new `TimeSeries` holding the evaluated state variable or |
+|        |        | expression, labelled with `sv_label`.                      |
+
+##### get_subspace_by_index { #tvbo.data.types.TimeSeries.get_subspace_by_index }
+
+```python
+data.types.TimeSeries.get_subspace_by_index(list_of_index, **kwargs)
+```
+
+Extract a spatial subset by region index.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                            | Default    |
+|---------------|--------|--------------------------------------------------------|------------|
+| list_of_index |        | Indices along the spatial (region) axis to keep.       | _required_ |
+| **kwargs      |        | Additional keyword arguments forwarded to `duplicate`. | `{}`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                       |
+|--------|--------|-------------------------------------------------------------------|
+|        |        | A new `TimeSeries` containing only the selected regions, with its |
+|        |        | spatial labels updated accordingly.                               |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                     |
+|--------|------------|-------------------------------------------------|
+|        | IndexError | If any index is outside the valid region range. |
+
+##### get_subspace_by_labels { #tvbo.data.types.TimeSeries.get_subspace_by_labels }
+
+```python
+data.types.TimeSeries.get_subspace_by_labels(list_of_labels)
+```
+
+Extract a spatial subset by region label.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description            | Default    |
+|----------------|--------|------------------------|------------|
+| list_of_labels |        | Region labels to keep. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                       |
+|--------|--------|-------------------------------------------------------------------|
+|        |        | A new `TimeSeries` containing only the regions matching the given |
+|        |        | labels.                                                           |
+
+##### plot { #tvbo.data.types.TimeSeries.plot }
+
+```python
+data.types.TimeSeries.plot(
+    ax=None,
+    axis_labels=False,
+    legend=True,
+    title=None,
+    **kwargs,
+)
+```
+
+Plot the time series, or a state-space trajectory of its variables.
+
+By default each state variable is drawn against time. Passing `type="statespace"` (or an equivalent alias such as `"phase"` or `"trajectory"`) instead plots one state variable against another for a chosen region and mode.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                                                                                           | Default   |
+|-------------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| ax          |        | Existing Matplotlib axes to draw on. When omitted, a new figure and axes are created and the figure is returned.                                      | `None`    |
+| axis_labels |        | Whether to label the x-axis with the time unit.                                                                                                       | `False`   |
+| legend      |        | Whether to draw a legend (ignored for single-variable plots).                                                                                         | `True`    |
+| title       |        | Optional axes title.                                                                                                                                  | `None`    |
+| **kwargs    |        | Additional options forwarded to Matplotlib's `plot`, plus recognised keys such as `type`, `region`, `mode`, `state_variables`, `labels`, and `label`. | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                         |
+|--------|--------|---------------------------------------------------------------------|
+|        |        | The created Matplotlib figure when `ax` was not supplied, otherwise |
+|        |        | `None`.                                                             |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                               |
+|--------|------------|-----------------------------------------------------------------------------------------------------------|
+|        | ValueError | If a state-space plot is requested with fewer than two state variables, or the data shape is unsupported. |
+
+##### plot_eeg { #tvbo.data.types.TimeSeries.plot_eeg }
+
+```python
+data.types.TimeSeries.plot_eeg(
+    VOI=None,
+    mode=0,
+    spacing=None,
+    normalize=False,
+    channel_labels=True,
+    ax=None,
+    linewidth=0.5,
+    **kwargs,
+)
+```
+
+Plot each region as a separate channel stacked vertically on a single axes (EEG-like representation).
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+VOI : str | None
+    Variable of interest to plot. If None and multiple variables exist,
+    the first one is used.
+mode : int
+    Mode index to select.
+spacing : float | None
+    Vertical spacing between channels. If None, computed from data (median std).
+normalize : bool
+    If True, z-score each channel before plotting.
+channel_labels : bool
+    If True, add region labels at the channel offsets on the y-axis.
+ax : matplotlib.axes.Axes | None
+    Axes to plot on. If None, a new figure and axes are created.
+color : str
+    Line color for all channels.
+linewidth : float
+    Line width for plotted channels.
+**kwargs : dict
+    Additional kwargs forwarded to matplotlib plot.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.figure.Figure | None
+    Returns a figure if it creates one; otherwise None.
+
+##### plot_power_spectrum { #tvbo.data.types.TimeSeries.plot_power_spectrum }
+
+```python
+data.types.TimeSeries.plot_power_spectrum(
+    VOI=None,
+    ROI='mean',
+    mode=0,
+    bands=None,
+    colors=None,
+    ax=None,
+    label='simulation',
+    **kwargs,
+)
+```
+
+Plot the power spectrum with normalized average power computed via FFT.
+
+Parameters:
+- VOI: Variable of Interest, typically selecting subsets of data.
+- ROI: Region of Interest ("mean" or index).
+- mode: Mode index for selecting data.
+- bands: Dictionary of frequency bands to highlight.
+- colors: Custom colors for frequency bands.
+- ax: Matplotlib Axes object to plot on.
+- label: Label for the plot.
+- kwargs: Additional plotting arguments.
+
+Returns:
+- Matplotlib figure if ax is None, otherwise None.
+
+##### subset { #tvbo.data.types.TimeSeries.subset }
+
+```python
+data.types.TimeSeries.subset(start, end)
+```
+
+Restrict the time series to a `[start, end]` time window.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                           | Default    |
+|--------|--------|---------------------------------------|------------|
+| start  |        | Start time of the window (inclusive). | _required_ |
+| end    |        | End time of the window (inclusive).   | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                 |
+|--------|--------|-------------------------------------------------------------|
+|        |        | A new `TimeSeries` covering only samples within the window. |
+
+##### summary_info { #tvbo.data.types.TimeSeries.summary_info }
+
+```python
+data.types.TimeSeries.summary_info()
+```
+
+Gather scientifically interesting summary information from an instance of this datatype.
+
+##### tree_flatten { #tvbo.data.types.TimeSeries.tree_flatten }
+
+```python
+data.types.TimeSeries.tree_flatten()
+```
+
+Flatten into JAX pytree (children, aux_data).
+
+`sample_period` is a child (not aux) because it may hold a JAX tracer such as `state.dt` inside `jit`.
+
+##### tree_unflatten { #tvbo.data.types.TimeSeries.tree_unflatten }
+
+```python
+data.types.TimeSeries.tree_unflatten(aux_data, children)
+```
+
+Reconstruct a `TimeSeries` from JAX pytree children and aux_data.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [reassemble_experiment_results](#tvbo.data.types.reassemble_experiment_results) | Gather an HPC run's shard outputs into one keyed ``ExperimentResult`` artifact. |
+| [reassemble_shards](#tvbo.data.types.reassemble_shards) | Concatenate sharded exploration outputs into the full sweep result. |
+
+### reassemble_experiment_results { #tvbo.data.types.reassemble_experiment_results }
+
+```python
+data.types.reassemble_experiment_results(
+    shards_root,
+    out_dir,
+    pattern='**/*_result.h5',
+    point_dim='point',
+    stem='result',
+    sidecar=None,
+    compress=True,
+)
+```
+
+Gather an HPC run's shard outputs into one keyed ``ExperimentResult`` artifact.
+
+Follows the same on-disk shape as a :class:`~tvbo.classes.network.Network`:
+one HDF5 file (``<stem>.h5``) holding the data, plus a YAML sidecar (``<stem>.yaml``) carrying the frozen, fully-overridden experiment spec — so the result is self-describing, provenance-complete and reproducible without any extra flags, and identical to what a local run writes.
+
+Each array task wrote a shard as the same ``<prefix>_result.h5`` Dataset with a flat, self-describing ``point`` dimension (see :meth:`ExperimentResult.save`).
+This concatenates them along ``point`` and pivots by parameter value into the full rectangular grid, giving one standard xarray ``Dataset`` that opens with a plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader. ``axis_points__*`` variables — one sweep-wide axis table, required identical in every shard — are carried past the concat and re-attached to the grid, so the gathered artifact stays as self-describing as a local run's.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                                                                                                                 | Default            |
+|-------------|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------|
+| shards_root |        | directory holding the shard ``.h5`` files (scanned recursively).                                                                                                            | _required_         |
+| out_dir     |        | where the ``<stem>.h5`` (+ ``<stem>.yaml``) is written.                                                                                                                     | _required_         |
+| pattern     |        | glob for shard files.                                                                                                                                                       | `'**/*_result.h5'` |
+| point_dim   |        | the flat cell dimension the shards wrote.                                                                                                                                   | `'point'`          |
+| stem        |        | basename of the result artifact (default ``result``).                                                                                                                       | `'result'`         |
+| sidecar     |        | path to the frozen spec YAML to copy as ``<stem>.yaml`` (typically the kit's ``spec/<name>.yaml``). Omit to skip the sidecar.                                               | `None`             |
+| compress    | bool   | whether the reassembled artifact is written compressed. A gathered sweep is the archival copy of a run that will not be repeated, so it is worth the write time by default. | `True`             |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                        |
+|--------|--------|--------------------------------------------------------------------|
+|        |        | List of written paths (``<stem>.h5`` first, then ``<stem>.yaml``). |
+
+### reassemble_shards { #tvbo.data.types.reassemble_shards }
+
+```python
+data.types.reassemble_shards(
+    source,
+    pattern='*__results.nc',
+    to_grid=False,
+    point_dim='point',
+)
+```
+
+Concatenate sharded exploration outputs into the full sweep result.
+
+Each HPC array task writes its slice of the sweep as a flat ``point``-dim ``DataArray`` whose per-cell parameter values are coordinates (see :meth:`ExperimentResult.save`). This is the analysis-pass side of the two-stage HPC pattern: it reads every shard file, concatenates them along ``point``, and — with ``to_grid=True`` — pivots ``point`` into one dimension per swept parameter, giving the full rectangular grid addressed by value (order-independent, so it is robust to how tasks were sharded).
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                       | Default           |
+|-----------|--------|-------------------------------------------------------------------|-------------------|
+| source    |        | a directory to scan with *pattern*, or an explicit list of paths. | _required_        |
+| pattern   |        | glob for shard files when *source* is a directory.                | `'*__results.nc'` |
+| to_grid   |        | pivot the flat ``point`` dim into one dim per parameter.          | `False`           |
+| point_dim |        | name of the flat cell dimension written by the shards.            | `'point'`         |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        |        | The concatenated ``DataArray`` (flat ``point`` dim), or the gridded one |
+|        |        | when ``to_grid`` is set.                                                |

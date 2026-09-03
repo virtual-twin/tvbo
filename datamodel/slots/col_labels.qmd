@@ -1,0 +1,101 @@
+# Slot: col_labels 
+
+
+_One heading per column, written just above the cells rather than at the panel's own top, so it keeps reading as belonging to its column._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/col_labels](https://w3id.org/tvbo/slot/col_labels)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Grid](../classes/Grid.qmd) | How a `grid` panel tiles its cells, and what the strips around them are label... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Grid](../classes/Grid.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Grid](../classes/Grid.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:col_labels |
+| native | tvbo:col_labels |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: col_labels
+description: One heading per column, written just above the cells rather than at the
+  panel's own top, so it keeps reading as belonging to its column.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Grid
+domain_of:
+- Grid
+range: string
+multivalued: true
+
+```
+</details></div>

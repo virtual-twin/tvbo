@@ -1,0 +1,108 @@
+# Slot: subject_id 
+
+
+_BIDS-compatible subject identifier (without 'sub-' prefix). Examples: '01', 'ctrl03', 'patient17'._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:identifier](http://purl.org/dc/terms/identifier)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Subject](../classes/Subject.qmd) | A participant in a study |  no  |
+| [DBSSubject](../classes/DBSSubject.qmd) | Human or animal subject receiving DBS |  no  |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Subject](../classes/Subject.qmd), [TimeSeries](../classes/TimeSeries.qmd) |
+| Slot URI | [dcterms:identifier](http://purl.org/dc/terms/identifier) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Identifier | Yes |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:identifier |
+| native | tvbo_study:subject_id |
+| exact | schema:identifier |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: subject_id
+description: 'BIDS-compatible subject identifier (without ''sub-'' prefix). Examples:
+  ''01'', ''ctrl03'', ''patient17''.'
+from_schema: https://w3id.org/tvbo/study
+exact_mappings:
+- schema:identifier
+slot_uri: dcterms:identifier
+identifier: true
+domain_of:
+- Subject
+- TimeSeries
+range: string
+required: true
+
+```
+</details></div>

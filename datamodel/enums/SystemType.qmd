@@ -1,0 +1,67 @@
+# Enum: SystemType 
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/SystemType](https://w3id.org/tvbo/enum/SystemType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| continuous | None | Continuous-time dynamics (e |
+| discrete | None | Discrete-time dynamics (e |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [system_type](../slots/system_type.qmd) |  |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SystemType
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  continuous:
+    text: continuous
+    description: Continuous-time dynamics (e.g., ODE/SDE).
+  discrete:
+    text: discrete
+    description: Discrete-time dynamics (e.g., maps, iterated updates).
+
+```
+</details>
+
+</div>

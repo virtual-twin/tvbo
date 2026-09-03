@@ -1,0 +1,98 @@
+# Slot: n_regions 
+
+
+_Total number of regions_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/n_regions](https://w3id.org/tvbo/slot/n_regions)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [RegionMapping](../classes/RegionMapping.qmd) | Maps vertices to parent regions for hierarchical/aggregated coupling |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [RegionMapping](../classes/RegionMapping.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [RegionMapping](../classes/RegionMapping.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:n_regions |
+| native | tvbo:n_regions |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: n_regions
+description: Total number of regions
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: RegionMapping
+domain_of:
+- RegionMapping
+range: integer
+
+```
+</details></div>

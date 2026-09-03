@@ -1,0 +1,109 @@
+# noise { #tvbo.classes.noise }
+
+`classes.noise`
+
+Runtime `Noise` wrapper, and the public import location for `Integrator`.
+
+`Noise` is still a subclass: it registers itself as a JAX pytree, which is a decorator on the class being defined and so cannot come from a mixin. `Integrator` has no wrapper — its behaviour lives in :mod:`tvbo.behaviour.integrator`, attached to the generated class, and is re-exported here so the import path is unchanged.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [Integrator](#tvbo.classes.noise.Integrator) | The generated class itself. Its behaviour lives in :mod:`tvbo.behaviour.integrator` and |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Noise](#tvbo.classes.noise.Noise) | Datamodel Noise with property-based conveniences and no runtime caches. |
+
+### Noise { #tvbo.classes.noise.Noise }
+
+```python
+classes.noise.Noise(**kwargs)
+```
+
+Datamodel Noise with property-based conveniences and no runtime caches.
+
+- Inherits all serializable fields from tvbo_datamodel.Noise directly.
+- Provides computed properties for sigma and nsig based on parameters.
+- No mutation of parameters and no cached fields; safe for serialization.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [nsig](#tvbo.classes.noise.Noise.nsig) | The noise dispersion `nsig`, derived from `sigma` as $0.5\\,\\sigma^2$ if needed. |
+| [parameters_dict](#tvbo.classes.noise.Noise.parameters_dict) | The noise parameters normalized to a dict-like view (empty dict if unset). |
+| [sigma](#tvbo.classes.noise.Noise.sigma) | The noise standard deviation `sigma`, derived from `nsig` as $\\sqrt{2\\,nsig}$ if needed. |
+| [symbolic](#tvbo.classes.noise.Noise.symbolic) | The symbolic noise term $\\sqrt{dt}\\,\\sigma\\,\\xi$ for gaussian/white noise. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [execute](#tvbo.classes.noise.Noise.execute) | Render, execute, and instantiate the noise backend object. |
+| [render_code](#tvbo.classes.noise.Noise.render_code) | Render the noise as source code for the requested backend. |
+| [tree_flatten](#tvbo.classes.noise.Noise.tree_flatten) | Flatten into JAX pytree (children, aux). |
+| [tree_unflatten](#tvbo.classes.noise.Noise.tree_unflatten) | Reconstruct a `Noise` instance from JAX pytree aux_data and children. |
+
+##### execute { #tvbo.classes.noise.Noise.execute }
+
+```python
+classes.noise.Noise.execute(format='tvb')
+```
+
+Render, execute, and instantiate the noise backend object.
+
+The rendered code is executed to obtain the `Noise` class, which is stored on `self.tvb` and returned.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                       | Default   |
+|--------|--------|---------------------------------------------------|-----------|
+| format |        | Target backend passed through to code generation. | `'tvb'`   |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                        |
+|--------|--------|------------------------------------|
+|        |        | The executed backend noise object. |
+
+##### render_code { #tvbo.classes.noise.Noise.render_code }
+
+```python
+classes.noise.Noise.render_code(format='tvb')
+```
+
+Render the noise as source code for the requested backend.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                               | Default   |
+|--------|--------|-----------------------------------------------------------------------------------------------------------|-----------|
+| format |        | Target backend; `"tvb"` selects the TVB template, while `"autodiff"` or `"jax"` selects the JAX template. | `'tvb'`   |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                           |
+|--------|--------|---------------------------------------|
+|        |        | The rendered source code as a string. |
+
+##### tree_flatten { #tvbo.classes.noise.Noise.tree_flatten }
+
+```python
+classes.noise.Noise.tree_flatten()
+```
+
+Flatten into JAX pytree (children, aux).
+
+A present `sigma_vec` is exposed as the single array child so it can participate in `vmap` batching; the reconstruction kwargs go in aux.
+
+##### tree_unflatten { #tvbo.classes.noise.Noise.tree_unflatten }
+
+```python
+classes.noise.Noise.tree_unflatten(aux_data, children)
+```
+
+Reconstruct a `Noise` instance from JAX pytree aux_data and children.

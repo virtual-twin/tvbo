@@ -1,0 +1,381 @@
+# Class: File 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:File](https://w3id.org/tvbo/File)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class File
+    click File href "./File.html"
+      File : description
+        
+          
+    
+        
+        
+        File --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      File : extension
+        
+          
+    
+        
+        
+        File --> "0..1" String : extension
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      File : name
+        
+          
+    
+        
+        
+        File --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      File : path
+        
+          
+    
+        
+        
+        File --> "0..1" String : path
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      File : type
+        
+          
+    
+        
+        
+        File --> "0..1" String : type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:File](https://w3id.org/tvbo/File) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [type](../slots/type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [path](../slots/path.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [extension](../slots/extension.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [edge_matrix_files](../slots/edge_matrix_files.qmd) | range | [File](../classes/File.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:File |
+| native | tvbo:File |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: File
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+attributes:
+  type:
+    name: type
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  path:
+    name: path
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  extension:
+    name: extension
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - File
+    range: string
+class_uri: tvbo:File
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: File
+from_schema: https://w3id.org/tvbo
+attributes:
+  type:
+    name: type
+    from_schema: https://w3id.org/tvbo
+    owner: File
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  path:
+    name: path
+    from_schema: https://w3id.org/tvbo
+    owner: File
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  extension:
+    name: extension
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: File
+    domain_of:
+    - File
+    range: string
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: File
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: File
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:File
+
+```
+</details></div>

@@ -1,0 +1,93 @@
+# Slot: coordinateSpace 
+
+
+_Common coordinate space (e.g. FSLMNI152, MNI152NLin2009cAsym). Reference by name; the CommonCoordinateSpace must be defined in tvbo/database/coordinate_spaces/ (or future equivalent location)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:slot/coordinateSpace](http://uri.interlex.org/tgbugs/uris/readable/slot/coordinateSpace)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coordinate](../classes/Coordinate.qmd) | A 3D coordinate with X, Y, Z values |  no  |
+| [BrainAtlas](../classes/BrainAtlas.qmd) | A schema for representing a version of a brain atlas |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+| Domain Of | [Coordinate](../classes/Coordinate.qmd), [BrainAtlas](../classes/BrainAtlas.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:coordinateSpace |
+| native | atom:coordinateSpace |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: coordinateSpace
+description: Common coordinate space (e.g. FSLMNI152, MNI152NLin2009cAsym). Reference
+  by name; the CommonCoordinateSpace must be defined in tvbo/database/coordinate_spaces/
+  (or future equivalent location).
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+domain_of:
+- Coordinate
+- BrainAtlas
+range: CommonCoordinateSpace
+
+```
+</details></div>

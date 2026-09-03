@@ -1,0 +1,103 @@
+# Slot: correlated_over 
+
+
+_Which axis `covariance` indexes — `node` (equivalently `region`) for spatially correlated drive, or `state` for correlation between the noise on different state variables. Required whenever `covariance` is set: a covariance without a named axis does not identify a process. A multi-mode model carries its modes inside the state axis, so a modal covariance is declared over `state`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/correlated_over](https://w3id.org/tvbo/slot/correlated_over)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [DimensionType](../enums/DimensionType.qmd) |
+| Domain Of | [Noise](../classes/Noise.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Noise](../classes/Noise.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:correlated_over |
+| native | tvbo:correlated_over |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: correlated_over
+description: 'Which axis `covariance` indexes — `node` (equivalently `region`) for
+  spatially correlated drive, or `state` for correlation between the noise on different
+  state variables. Required whenever `covariance` is set: a covariance without a named
+  axis does not identify a process. A multi-mode model carries its modes inside the
+  state axis, so a modal covariance is declared over `state`.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Noise
+domain_of:
+- Noise
+range: DimensionType
+required: false
+
+```
+</details></div>

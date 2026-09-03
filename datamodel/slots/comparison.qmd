@@ -1,0 +1,100 @@
+# Slot: comparison 
+
+
+_Comparison a `stochastic_mask` applies between `of` and the draw._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/comparison](https://w3id.org/tvbo/slot/comparison)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | A single named step (or output) in a Procedure: one typed operation producing... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ComparisonOperator](../enums/ComparisonOperator.qmd) |
+| Domain Of | [ProcedureStep](../classes/ProcedureStep.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(le)` |
+| Owner | [ProcedureStep](../classes/ProcedureStep.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:comparison |
+| native | tvbo:comparison |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: comparison
+description: Comparison a `stochastic_mask` applies between `of` and the draw.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(le)
+owner: ProcedureStep
+domain_of:
+- ProcedureStep
+range: ComparisonOperator
+
+```
+</details></div>

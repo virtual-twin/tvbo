@@ -1,0 +1,88 @@
+# Enum: ParallelMode 
+
+
+
+
+_How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput: vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map`` (memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits and lax_map otherwise._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ParallelMode](https://w3id.org/tvbo/enum/ParallelMode)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| auto | None | Pick vmap when memory permits, lax_map otherwise |
+| vmap | None | Parallel batched execution (jax |
+| lax_map | None | Sequential execution via jax |
+| pmap | None | Parallel execution across the local devices of a single node (jax |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [parallel_mode](../slots/parallel_mode.qmd) | How trial-axis parallelism is realised at codegen time |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ParallelMode
+description: 'How a trial / grid-point axis is realised at JAX codegen time. The choice
+  trades peak memory against throughput: vmap batches in parallel (fast, n_trials
+  × working-set memory), lax_map runs sequentially via ``jax.lax.map`` (memory bounded
+  by one trial), pmap shards across devices, auto picks vmap when the estimated batched
+  memory fits and lax_map otherwise.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  auto:
+    text: auto
+    description: Pick vmap when memory permits, lax_map otherwise.
+  vmap:
+    text: vmap
+    description: Parallel batched execution (jax.vmap). Fast; high peak memory.
+  lax_map:
+    text: lax_map
+    description: Sequential execution via jax.lax.map. Slower; bounded memory.
+  pmap:
+    text: pmap
+    description: Parallel execution across the local devices of a single node (jax.pmap
+      over the several GPUs/TPUs visible to that task). Intra-task only — it never
+      spans nodes; inter-node parallelism is scheduler fan-out (DistributionConfig.chunk),
+      not pmap. On a one-GPU (or CPU) task this degenerates to vmap.
+
+```
+</details>
+
+</div>

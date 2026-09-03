@@ -1,0 +1,96 @@
+# Slot: versionIdentifier 
+
+
+_Enter the version identifier of this brain atlas or coordinate space version._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:hasVersion](http://purl.org/dc/terms/hasVersion)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BrainAtlas](../classes/BrainAtlas.qmd) | A schema for representing a version of a brain atlas |  no  |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+| [ParcellationTerminology](../classes/ParcellationTerminology.qmd) | A schema for representing a parcellation terminology, which consists of parce... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [BrainAtlas](../classes/BrainAtlas.qmd), [ParcellationEntity](../classes/ParcellationEntity.qmd), [ParcellationTerminology](../classes/ParcellationTerminology.qmd) |
+| Slot URI | [dcterms:hasVersion](http://purl.org/dc/terms/hasVersion) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:hasVersion |
+| native | atom:versionIdentifier |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: versionIdentifier
+description: Enter the version identifier of this brain atlas or coordinate space
+  version.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: dcterms:hasVersion
+domain_of:
+- BrainAtlas
+- ParcellationEntity
+- ParcellationTerminology
+range: string
+
+```
+</details></div>

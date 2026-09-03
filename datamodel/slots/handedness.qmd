@@ -1,0 +1,92 @@
+# Slot: handedness 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/handedness](https://w3id.org/tvbo/dbs/slot/handedness)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DBSSubject](../classes/DBSSubject.qmd) | Human or animal subject receiving DBS |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [DBSSubject](../classes/DBSSubject.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DBSSubject](../classes/DBSSubject.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:handedness |
+| native | tvbo_dbs:handedness |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: handedness
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: DBSSubject
+domain_of:
+- DBSSubject
+range: string
+
+```
+</details></div>

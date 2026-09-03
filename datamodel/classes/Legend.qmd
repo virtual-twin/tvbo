@@ -1,0 +1,463 @@
+# Class: Legend 
+
+
+_A panel's key: whether it is drawn, where it sits, and the three things a figure actually asks of one beyond that. An object rather than a bare position because `frame` had nowhere to live — the renderer drew every key frameless whatever the theme said, so a theme asking for a boxed legend never got one._
+
+__
+
+_The shorthands are the same slot: `legend: true` is `{show: true}` and `legend: upper right` is `{loc: upper right}`, expanded on load, so a panel that starts with a corner and later needs two columns keeps the word it had._
+
+__
+
+_Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cell of the mosaic and sharing no axes with anything._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Legend](https://w3id.org/tvbo/class/Legend)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Legend
+    click Legend href "./Legend.html"
+      Legend : colors
+        
+          
+    
+        
+        
+        Legend --> "*" String : colors
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Legend : columns
+        
+          
+    
+        
+        
+        Legend --> "0..1" Integer : columns
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Legend : frame
+        
+          
+    
+        
+        
+        Legend --> "0..1" Boolean : frame
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Legend : handle_length
+        
+          
+    
+        
+        
+        Legend --> "0..1" Float : handle_length
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Legend : labels
+        
+          
+    
+        
+        
+        Legend --> "*" String : labels
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Legend : linestyles
+        
+          
+    
+        
+        
+        Legend --> "*" String : linestyles
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Legend : loc
+        
+          
+    
+        
+        
+        Legend --> "0..1" LegendLoc : loc
+        click LegendLoc href "../../enums/LegendLoc.html"
+    
+
+        
+      Legend : markers
+        
+          
+    
+        
+        
+        Legend --> "*" String : markers
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Legend : show
+        
+          
+    
+        
+        
+        Legend --> "0..1" Boolean : show
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Legend : title
+        
+          
+    
+        
+        
+        Legend --> "0..1" String : title
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [show](../slots/show.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether to draw the key | direct |
+| [loc](../slots/loc.qmd) | 0..1 <br/> [LegendLoc](../enums/LegendLoc.qmd) | Which corner the key sits in | direct |
+| [frame](../slots/frame.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether the key is boxed | direct |
+| [columns](../slots/columns.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | How many columns the entries are laid out in | direct |
+| [title](../slots/title.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | A heading above the entries, for the case where the labels alone do not say w... | direct |
+| [labels](../slots/labels.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The entries of a STANDALONE `kind: legend` panel, named outright | direct |
+| [colors](../slots/colors.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | One colour per entry of a standalone legend, as a palette role, a hue or any ... | direct |
+| [linestyles](../slots/linestyles.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | One dash pattern per entry of a standalone legend | direct |
+| [markers](../slots/markers.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | One marker per entry of a standalone legend, for a key whose entries are scat... | direct |
+| [handle_length](../slots/handle_length.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Length of each entry's sample line | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [legend](../slots/legend.qmd) | range | [Legend](../classes/Legend.qmd) |
+| [Panel](../classes/Panel.qmd) | [legend](../slots/legend.qmd) | any_of[range] | [Legend](../classes/Legend.qmd) |
+| [Inset](../classes/Inset.qmd) | [legend](../slots/legend.qmd) | range | [Legend](../classes/Legend.qmd) |
+| [Inset](../classes/Inset.qmd) | [legend](../slots/legend.qmd) | any_of[range] | [Legend](../classes/Legend.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Legend |
+| native | tvbo:Legend |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Legend
+description: 'A panel''s key: whether it is drawn, where it sits, and the three things
+  a figure actually asks of one beyond that. An object rather than a bare position
+  because `frame` had nowhere to live — the renderer drew every key frameless whatever
+  the theme said, so a theme asking for a boxed legend never got one.
+
+
+  The shorthands are the same slot: `legend: true` is `{show: true}` and `legend:
+  upper right` is `{loc: upper right}`, expanded on load, so a panel that starts with
+  a corner and later needs two columns keeps the word it had.
+
+
+  Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cell
+  of the mosaic and sharing no axes with anything.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  show:
+    name: show
+    description: 'Whether to draw the key. Unset means yes: declaring the slot at
+      all is the request, and `show: false` is how a shared theme''s legend is switched
+      off for one panel without deleting what it says.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Colorbar
+    - Legend
+    range: boolean
+  loc:
+    name: loc
+    description: Which corner the key sits in. Unset lets the backend choose.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Annotation
+    - Legend
+    range: LegendLoc
+  frame:
+    name: frame
+    description: Whether the key is boxed. Unset takes the theme's `legend_frame`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Layer
+    - Legend
+    range: boolean
+  columns:
+    name: columns
+    description: How many columns the entries are laid out in. A wide panel with six
+      short labels reads better as one row than as a six-deep column over the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Legend
+    range: integer
+  title:
+    name: title
+    description: A heading above the entries, for the case where the labels alone
+      do not say what varies between them.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Legend
+    - Study
+    range: string
+  labels:
+    name: labels
+    description: 'The entries of a STANDALONE `kind: legend` panel, named outright.
+      A panel-attached key takes its entries from the marks it belongs to instead.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Graph
+    - Legend
+    range: string
+    multivalued: true
+  colors:
+    name: colors
+    description: One colour per entry of a standalone legend, as a palette role, a
+      hue or any colour the backend reads.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Legend
+    range: string
+    multivalued: true
+  linestyles:
+    name: linestyles
+    description: One dash pattern per entry of a standalone legend.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Legend
+    range: string
+    multivalued: true
+  markers:
+    name: markers
+    description: One marker per entry of a standalone legend, for a key whose entries
+      are scatter marks.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Legend
+    range: string
+    multivalued: true
+  handle_length:
+    name: handle_length
+    description: Length of each entry's sample line.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Legend
+    range: float
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Legend
+description: 'A panel''s key: whether it is drawn, where it sits, and the three things
+  a figure actually asks of one beyond that. An object rather than a bare position
+  because `frame` had nowhere to live — the renderer drew every key frameless whatever
+  the theme said, so a theme asking for a boxed legend never got one.
+
+
+  The shorthands are the same slot: `legend: true` is `{show: true}` and `legend:
+  upper right` is `{loc: upper right}`, expanded on load, so a panel that starts with
+  a corner and later needs two columns keeps the word it had.
+
+
+  Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cell
+  of the mosaic and sharing no axes with anything.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  show:
+    name: show
+    description: 'Whether to draw the key. Unset means yes: declaring the slot at
+      all is the request, and `show: false` is how a shared theme''s legend is switched
+      off for one panel without deleting what it says.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Legend
+    domain_of:
+    - Colorbar
+    - Legend
+    range: boolean
+  loc:
+    name: loc
+    description: Which corner the key sits in. Unset lets the backend choose.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Legend
+    domain_of:
+    - Annotation
+    - Legend
+    range: LegendLoc
+  frame:
+    name: frame
+    description: Whether the key is boxed. Unset takes the theme's `legend_frame`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Legend
+    domain_of:
+    - Panel
+    - Inset
+    - Layer
+    - Legend
+    range: boolean
+  columns:
+    name: columns
+    description: How many columns the entries are laid out in. A wide panel with six
+      short labels reads better as one row than as a six-deep column over the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Legend
+    domain_of:
+    - Legend
+    range: integer
+  title:
+    name: title
+    description: A heading above the entries, for the case where the labels alone
+      do not say what varies between them.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Legend
+    domain_of:
+    - Panel
+    - Inset
+    - Legend
+    - Study
+    range: string
+  labels:
+    name: labels
+    description: 'The entries of a STANDALONE `kind: legend` panel, named outright.
+      A panel-attached key takes its entries from the marks it belongs to instead.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Legend
+    domain_of:
+    - Graph
+    - Legend
+    range: string
+    multivalued: true
+  colors:
+    name: colors
+    description: One colour per entry of a standalone legend, as a palette role, a
+      hue or any colour the backend reads.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Legend
+    domain_of:
+    - Legend
+    range: string
+    multivalued: true
+  linestyles:
+    name: linestyles
+    description: One dash pattern per entry of a standalone legend.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Legend
+    domain_of:
+    - Legend
+    range: string
+    multivalued: true
+  markers:
+    name: markers
+    description: One marker per entry of a standalone legend, for a key whose entries
+      are scatter marks.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Legend
+    domain_of:
+    - Legend
+    range: string
+    multivalued: true
+  handle_length:
+    name: handle_length
+    description: Length of each entry's sample line.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Legend
+    domain_of:
+    - Legend
+    range: float
+
+```
+</details></div>

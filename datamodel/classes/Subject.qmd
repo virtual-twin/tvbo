@@ -1,0 +1,477 @@
+# Class: Subject 
+
+
+_A participant in a study. Each subject typically has their own brain network (connectome) and empirical recordings. Corresponds to a BIDS 'sub-' entity._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:class/Subject](https://w3id.org/tvbo/study/class/Subject)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Subject
+    click Subject href "./Subject.html"
+      Subject <|-- DBSSubject
+        click DBSSubject href "./DBSSubject.html"
+      
+      Subject : age
+        
+          
+    
+        
+        
+        Subject --> "0..1" Float : age
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Subject : group
+        
+          
+    
+        
+        
+        Subject --> "0..1" String : group
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Subject : label
+        
+          
+    
+        
+        
+        Subject --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Subject : metadata
+        
+          
+    
+        
+        
+        Subject --> "0..1" String : metadata
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Subject : network
+        
+          
+    
+        
+        
+        Subject --> "0..1" String : network
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Subject : sessions
+        
+          
+    
+        
+        
+        Subject --> "*" Session : sessions
+        click Session href "./Session.html"
+    
+
+        
+      Subject : sex
+        
+          
+    
+        
+        
+        Subject --> "0..1" SexEnum : sex
+        click SexEnum href "../../enums/SexEnum.html"
+    
+
+        
+      Subject : subject_id
+        
+          
+    
+        
+        
+        Subject --> "1" String : subject_id
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **Subject**
+    * [DBSSubject](../classes/DBSSubject.qmd)
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [subject_id](../slots/subject_id.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS-compatible subject identifier (without 'sub-' prefix) | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Human-readable label for the subject | direct |
+| [group](../slots/group.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Group assignment (e | direct |
+| [age](../slots/age.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Age at time of study (years) | direct |
+| [sex](../slots/sex.qmd) | 0..1 <br/> [SexEnum](../enums/SexEnum.qmd) | Biological sex | direct |
+| [sessions](../slots/sessions.qmd) | * <br/> [Session](../classes/Session.qmd) | Data collection sessions for this subject | direct |
+| [network](../slots/network.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to subject-specific connectome (when not session-dependent) | direct |
+| [metadata](../slots/metadata.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Additional subject metadata as key-value pairs or path to a sidecar JSON file | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Dataset](../classes/Dataset.qmd) | [subjects](../slots/subjects.qmd) | range | [Subject](../classes/Subject.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:Subject |
+| native | tvbo_study:Subject |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Subject
+description: A participant in a study. Each subject typically has their own brain
+  network (connectome) and empirical recordings. Corresponds to a BIDS 'sub-' entity.
+from_schema: https://w3id.org/tvbo/study
+slots:
+- subject_id
+attributes:
+  label:
+    name: label
+    description: Human-readable label for the subject.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: rdfs:label
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  group:
+    name: group
+    description: Group assignment (e.g., 'control', 'patient', 'healthy'). Maps to
+      participants.tsv 'group' column in BIDS.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Subject
+    range: string
+  age:
+    name: age
+    description: Age at time of study (years).
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Subject
+    range: float
+  sex:
+    name: sex
+    description: Biological sex.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Subject
+    range: SexEnum
+  sessions:
+    name: sessions
+    description: Data collection sessions for this subject. Each session can have
+      its own network, empirical data, and conditions.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Subject
+    range: Session
+    multivalued: true
+    inlined: true
+  network:
+    name: network
+    description: Path to subject-specific connectome (when not session-dependent).
+      Relative to dataset root or BIDS derivatives. For session-specific networks,
+      use Session.network instead.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Subject
+    - Session
+    - Panel
+    - Inset
+    - SimulationExperiment
+    range: string
+  metadata:
+    name: metadata
+    description: Additional subject metadata as key-value pairs or path to a sidecar
+      JSON file.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - Subject
+    - ExperimentResultSidecar
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Subject
+description: A participant in a study. Each subject typically has their own brain
+  network (connectome) and empirical recordings. Corresponds to a BIDS 'sub-' entity.
+from_schema: https://w3id.org/tvbo/study
+attributes:
+  label:
+    name: label
+    description: Human-readable label for the subject.
+    from_schema: https://w3id.org/tvbo/study
+    slot_uri: rdfs:label
+    owner: Subject
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  group:
+    name: group
+    description: Group assignment (e.g., 'control', 'patient', 'healthy'). Maps to
+      participants.tsv 'group' column in BIDS.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Subject
+    domain_of:
+    - Subject
+    range: string
+  age:
+    name: age
+    description: Age at time of study (years).
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Subject
+    domain_of:
+    - Subject
+    range: float
+  sex:
+    name: sex
+    description: Biological sex.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Subject
+    domain_of:
+    - Subject
+    range: SexEnum
+  sessions:
+    name: sessions
+    description: Data collection sessions for this subject. Each session can have
+      its own network, empirical data, and conditions.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Subject
+    domain_of:
+    - Subject
+    range: Session
+    multivalued: true
+    inlined: true
+  network:
+    name: network
+    description: Path to subject-specific connectome (when not session-dependent).
+      Relative to dataset root or BIDS derivatives. For session-specific networks,
+      use Session.network instead.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Subject
+    domain_of:
+    - Subject
+    - Session
+    - Panel
+    - Inset
+    - SimulationExperiment
+    range: string
+  metadata:
+    name: metadata
+    description: Additional subject metadata as key-value pairs or path to a sidecar
+      JSON file.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: Subject
+    domain_of:
+    - Subject
+    - ExperimentResultSidecar
+    range: string
+  subject_id:
+    name: subject_id
+    description: 'BIDS-compatible subject identifier (without ''sub-'' prefix). Examples:
+      ''01'', ''ctrl03'', ''patient17''.'
+    from_schema: https://w3id.org/tvbo/study
+    exact_mappings:
+    - schema:identifier
+    slot_uri: dcterms:identifier
+    identifier: true
+    owner: Subject
+    domain_of:
+    - Subject
+    - TimeSeries
+    range: string
+    required: true
+
+```
+</details></div>

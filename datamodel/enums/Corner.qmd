@@ -1,0 +1,83 @@
+# Enum: Corner 
+
+
+
+
+_A named corner for placing a panel number inside its axes — the four corners bsplot's add_panel_number anchors to. An enum so a typo is a validation error, not a silent fallback to the default corner._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/Corner](https://w3id.org/tvbo/enum/Corner)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| upper left | None | Top-left inside the axes (the bsplot default) |
+| upper right | None | Top-right (many journals; Taher Fig 5) |
+| lower left | None | Bottom-left |
+| lower right | None | Bottom-right |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [panel_number_loc](../slots/panel_number_loc.qmd) | Which corner the panel letter sits in |
+| [number_loc](../slots/number_loc.qmd) | Per-panel override of the figure's panel_number_loc — e |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: Corner
+description: A named corner for placing a panel number inside its axes — the four
+  corners bsplot's add_panel_number anchors to. An enum so a typo is a validation
+  error, not a silent fallback to the default corner.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  upper left:
+    text: upper left
+    description: Top-left inside the axes (the bsplot default).
+  upper right:
+    text: upper right
+    description: Top-right (many journals; Taher Fig 5).
+  lower left:
+    text: lower left
+    description: Bottom-left.
+  lower right:
+    text: lower right
+    description: Bottom-right.
+
+```
+</details>
+
+</div>

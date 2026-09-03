@@ -1,0 +1,173 @@
+# palette { #tvbo.plot.palette }
+
+`plot.palette`
+
+Named colour roles for figures, so a project's colours live in one file.
+
+A style sheet carries only what matplotlib has an rcParam for. That covers the cycler and the ink, and stops short of the roles a figure actually reasons in: the one colour that means *this is the point*, the neutral that everything unlabelled is drawn in, the hairline grey behind it. Those live here, in the ``theme`` a figure declares (``theme: {iri: tvbo:theme/default}``, or a document of its own), so changing a project's colours is one edit and every panel follows. A colour is never a style layer: ``Figure.style`` carries the looks TVB-O does not own, and the theme is applied over all of them.
+
+The cycler is ``[base] + palette``: a plot that names no colour comes out in the neutral, and only a panel that means to separate conditions reaches into the hues. ``highlight`` is deliberately outside the cycle, because a colour that is handed to the second line of every plot cannot also mean emphasis.
+
+Continuous scales live here too, under ``colormaps``, so the two kinds of colour move together and a figure never names a colormap of its own: anything categorical takes a hue from ``palette``, anything ordinal or continuous takes a colormap role, and an ordinal scale drawn as discrete swatches samples one with :func:`ramp` rather than picking hues that imply no order.
+
+TVB-O's own colours are :data:`PATH`, the curated ``tvbo:theme/default`` shipped in ``tvbo/database/themes/``, and it is what :data:`DEFAULT` reads and what a project's file falls back to role by role. It is a ``Theme`` in the figure spec (``schema/figure.yaml``), so it validates like any other TVB-O document and so a consumer outside Python — the documentation site's stylesheet, the manuscript's figures — reads those hexes rather than keeping a copy that drifts.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [DEFAULT](#tvbo.plot.palette.DEFAULT) | TVB-O's own colours: the base every figure resolves a role against, whether or not it declared a theme. |
+| [DEFAULT_GEOMETRY](#tvbo.plot.palette.DEFAULT_GEOMETRY) | The geometry the curated theme fixes, the same base for the other half of the look. Read here rather than in the adapter, because the file it comes from is this module's. |
+| [FIELDS](#tvbo.plot.palette.FIELDS) |  |
+| [GEOMETRY](#tvbo.plot.palette.GEOMETRY) | The Theme slots that are not colours. Named here so a theme file can be read for its colours without its geometry being reported as a typo; ``tests/test_plot_palette.py`` pins the tuple to the schema so the two cannot drift. |
+| [GUARANTEED_COLORMAPS](#tvbo.plot.palette.GUARANTEED_COLORMAPS) |  |
+| [PATH](#tvbo.plot.palette.PATH) |  |
+| [ROLES](#tvbo.plot.palette.ROLES) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [as_color](#tvbo.plot.palette.as_color) | *value* as a colour: a palette role or hue if it names one, otherwise itself. |
+| [as_colormap](#tvbo.plot.palette.as_colormap) | *value* as a colormap name: a palette key if it names one, otherwise itself. |
+| [background](#tvbo.plot.palette.background) | The page the figure is printed on. |
+| [base](#tvbo.plot.palette.base) | Standard lines, bars and markers, wherever the colour carries no meaning. |
+| [color](#tvbo.plot.palette.color) | One colour by role name, or by ``palette.<index>`` for a hue. |
+| [colormap](#tvbo.plot.palette.colormap) | The colormap this project gives *role* — the one continuous scale a panel is allowed to use. |
+| [current](#tvbo.plot.palette.current) | The palette in force, as a plain dict. |
+| [cycle](#tvbo.plot.palette.cycle) | What ``axes.prop_cycle`` is set to: the neutral first, then the hues. |
+| [highlight](#tvbo.plot.palette.highlight) | The single emphasis colour, kept out of the cycle so it never lands on a panel by accident. |
+| [ink](#tvbo.plot.palette.ink) | Text, spines and ticks: the near-black everything is read against. |
+| [load](#tvbo.plot.palette.load) | Read and validate a palette, from a YAML path or a mapping already in hand. |
+| [muted](#tvbo.plot.palette.muted) | Hairlines and de-emphasised strokes: present, and not competing. |
+| [palette](#tvbo.plot.palette.palette) | The categorical hues, cycled to *n* entries when a panel needs a fixed number of them. |
+| [ramp](#tvbo.plot.palette.ramp) | *n* colours sampled across a colormap, for an ordinal scale drawn as discrete swatches. |
+| [use](#tvbo.plot.palette.use) | Make *source* the current palette and put its colours into the rcParams that carry them. |
+
+### as_color { #tvbo.plot.palette.as_color }
+
+```python
+plot.palette.as_color(value)
+```
+
+*value* as a colour: a palette role or hue if it names one, otherwise itself.
+
+The one place a declared colour is turned into a drawn one. A role (``highlight``) or a hue (``palette.2``) resolves against the palette in force; a hex, a backend colour name, a sequence, or ``None`` passes through untouched, so a spec written before the palette existed keeps drawing exactly as it did. Resolution happens here rather than at generation time so an emitted script that swaps its palette recolours with it.
+
+### as_colormap { #tvbo.plot.palette.as_colormap }
+
+```python
+plot.palette.as_colormap(value, default='sequential')
+```
+
+*value* as a colormap name: a palette key if it names one, otherwise itself.
+
+A key the project declared (``diverging``, or its own ``meg``) resolves to whatever that key holds; anything else is left for the backend's own registry, so ``cividis`` and ``parula`` are untouched. ``None`` takes *default*, which is how an undeclared mark ends up on the project's scale instead of the backend's.
+
+### background { #tvbo.plot.palette.background }
+
+```python
+plot.palette.background()
+```
+
+The page the figure is printed on.
+
+### base { #tvbo.plot.palette.base }
+
+```python
+plot.palette.base()
+```
+
+Standard lines, bars and markers, wherever the colour carries no meaning.
+
+### color { #tvbo.plot.palette.color }
+
+```python
+plot.palette.color(name)
+```
+
+One colour by role name, or by ``palette.<index>`` for a hue.
+
+### colormap { #tvbo.plot.palette.colormap }
+
+```python
+plot.palette.colormap(role='sequential')
+```
+
+The colormap this project gives *role* — the one continuous scale a panel is allowed to use.
+
+### current { #tvbo.plot.palette.current }
+
+```python
+plot.palette.current()
+```
+
+The palette in force, as a plain dict.
+
+### cycle { #tvbo.plot.palette.cycle }
+
+```python
+plot.palette.cycle()
+```
+
+What ``axes.prop_cycle`` is set to: the neutral first, then the hues.
+
+### highlight { #tvbo.plot.palette.highlight }
+
+```python
+plot.palette.highlight()
+```
+
+The single emphasis colour, kept out of the cycle so it never lands on a panel by accident.
+
+### ink { #tvbo.plot.palette.ink }
+
+```python
+plot.palette.ink()
+```
+
+Text, spines and ticks: the near-black everything is read against.
+
+### load { #tvbo.plot.palette.load }
+
+```python
+plot.palette.load(source)
+```
+
+Read and validate a palette, from a YAML path or a mapping already in hand.
+
+A file is read through TVBO's own loader, so a palette takes ``!include`` and merge keys like every other TVBO document and may name its class in the usual envelope.
+
+### muted { #tvbo.plot.palette.muted }
+
+```python
+plot.palette.muted()
+```
+
+Hairlines and de-emphasised strokes: present, and not competing.
+
+### palette { #tvbo.plot.palette.palette }
+
+```python
+plot.palette.palette(n=None)
+```
+
+The categorical hues, cycled to *n* entries when a panel needs a fixed number of them.
+
+### ramp { #tvbo.plot.palette.ramp }
+
+```python
+plot.palette.ramp(n, role='sequential', lo=0.15, hi=0.75)
+```
+
+*n* colours sampled across a colormap, for an ordinal scale drawn as discrete swatches.
+
+A ladder of rungs or a set of ordered bins is not categorical: hues from the palette would say the classes are unrelated, when the whole point is that they are ordered. The ends are trimmed by default, because a scale that runs into the colormap's near-black and near-white loses its extremes against the page.
+
+### use { #tvbo.plot.palette.use }
+
+```python
+plot.palette.use(source)
+```
+
+Make *source* the current palette and put its colours into the rcParams that carry them.

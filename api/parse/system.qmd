@@ -1,0 +1,167 @@
+# system { #tvbo.parse.system }
+
+`parse.system`
+
+The symbolic layer between a model's metadata and everything rendered from it.
+
+[`SymbolicSystem`](#tvbo.parse.system.SymbolicSystem) parses a model's equations once and holds them, together with the symbol tables they were parsed against. Every consumer — code generation, the analysis views, the report — is a projection of it, so an equation is parsed once no matter how many of them ask.
+
+It is a service object rather than a set of methods on `Dynamics` because a scope and the equations parsed against it have to agree, and that agreement is what the cache is keyed on. Owning both here makes the one invalidation point visible instead of leaving it as an attribute convention spread across a model class.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [SymbolicSystem](#tvbo.parse.system.SymbolicSystem) | A model's equations in SymPy form, parsed against a symbol table built from its names. |
+
+### SymbolicSystem { #tvbo.parse.system.SymbolicSystem }
+
+```python
+parse.system.SymbolicSystem(model)
+```
+
+A model's equations in SymPy form, parsed against a symbol table built from its names.
+
+Built for a model by [`Dynamics.symbolic_system`](../behaviour/dynamics.qmd#symbolic_system), which keeps one per model; construct it directly only to work against a model that does not.
+
+Before this layer existed each caller re-derived from metadata: loading `ZerlautAdaptationSecondOrder` parsed its 27 equations 264 times, and every `render_code` and `generate_report` parsed all 27 again because nothing was kept.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [form](#tvbo.parse.system.SymbolicSystem.form) | The model's equations, parsed once per (notation, evaluate) and remembered. |
+| [in_dependency_order](#tvbo.parse.system.SymbolicSystem.in_dependency_order) | *collection*'s members in the order a straight-line backend must print them. |
+| [keyed_parameters](#tvbo.parse.system.SymbolicSystem.keyed_parameters) | Each declared parameter's symbol mapped to its value, for substitution. |
+| [scope](#tvbo.parse.system.SymbolicSystem.scope) | Build a unified local_dict for parsing model expressions. |
+| [symbol_map](#tvbo.parse.system.SymbolicSystem.symbol_map) | Display-symbol overrides for report rendering: ``{identifier Symbol: LaTeX str}``. |
+| [view](#tvbo.parse.system.SymbolicSystem.view) | Full symbolic ODE system using proper SymPy conventions. |
+
+##### form { #tvbo.parse.system.SymbolicSystem.form }
+
+```python
+parse.system.SymbolicSystem.form(notation='symbol', evaluate=True)
+```
+
+The model's equations, parsed once per (notation, evaluate) and remembered.
+
+Both public views — [`get_equations`](../behaviour/dynamics.qmd#get_equations) and [`view`](#tvbo.parse.system.SymbolicSystem.view) — are projections of this, as is the function-body table the inliner consumes.
+
+The cache is discarded whole whenever [`_inputs`](#tvbo.parse.system.SymbolicSystem) changes, which is what makes it safe on a mutable model. Rendering is a query — no path from `render_code` writes to the model — so no consumer can invalidate it mid-use.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                   | Default    |
+|----------|--------|-----------------------------------------------------------------------------------------------|------------|
+| notation | str    | `"symbol"` binds variables to `Symbol(name)`; `"function"` binds them to `Function(name)(t)`. | `'symbol'` |
+| evaluate | bool   | Let SymPy evaluate right-hand sides, or preserve authored term order.                         | `True`     |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                 |
+|--------|--------|-----------------------------------------------------------------------------|
+|        |        | `{group: {name: Eq}}` over the five groups, each keyed by the variable it   |
+|        |        | defines so no consumer has to recover a name from an `Eq`'s left-hand side. |
+
+##### in_dependency_order { #tvbo.parse.system.SymbolicSystem.in_dependency_order }
+
+```python
+parse.system.SymbolicSystem.in_dependency_order(collection)
+```
+
+*collection*'s members in the order a straight-line backend must print them.
+
+The model's own mapping, re-keyed into the order [`form`](#tvbo.parse.system.SymbolicSystem.form) settled on — so a backend that needs each quantity defined before it is used reads that order from the one place that decides it, rather than from whatever order the collection happens to be in.
+
+The order spans BOTH views, because a backend chooses which one it renders and the two do not always agree about what an equation reads. `a: z - z + k` reads `z` as written and only `k` once evaluated, so an order settled on the evaluated view alone prints `a` before `z` — an unbound name in every backend that preserves the authored form, tvboptim's dfun among them. Ranking against the union means no caller has to declare which view it is about to print.
+
+A member neither view holds — one declared with no equation — prints no statement, and keeps its declared position at the front alongside the members nothing constrains.
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                         |
+|--------|------------|-----------------------------------------------------------------------------------------------------|
+|        | ValueError | If *collection* is one whose order is a layout rather than a compilation detail — see `_ORDERABLE`. |
+
+##### keyed_parameters { #tvbo.parse.system.SymbolicSystem.keyed_parameters }
+
+```python
+parse.system.SymbolicSystem.keyed_parameters(time_dependent=False)
+```
+
+Each declared parameter's symbol mapped to its value, for substitution.
+
+Keyed through the scope rather than by minting `Symbol(name)`, because the analysis view carries assumptions and a rebuilt key would print identically, compare unequal, and make `subs` replace nothing. *time_dependent* selects which view's symbols the map is keyed by, and must match the equations it will be substituted into.
+
+##### scope { #tvbo.parse.system.SymbolicSystem.scope }
+
+```python
+parse.system.SymbolicSystem.scope(
+    include_time_symbol=True,
+    time_dependent=False,
+)
+```
+
+Build a unified local_dict for parsing model expressions.
+
+Includes symbols for parameters, coupling terms, derived parameters, derived variables, output transforms, state variables, event names, function names, and (optionally) the time symbol 't'.
+
+Every declared name must appear here so it shadows SymPy's own global namespace:
+`Q` is SymPy's assumptions object, `S` its sympify shortcut, `O` big-O, `N` numeric evaluation and `I` the imaginary unit, so a model that names a quantity after any of them would otherwise fail to parse.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name                | Type   | Description                                                                                                                                                                                                                                                                                                                                                  | Default   |
+|---------------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| include_time_symbol | bool   | Bind `t` to `Symbol("t")`.                                                                                                                                                                                                                                                                                                                                   | `True`    |
+| time_dependent      | bool   | Bind state and derived variables to `Function(name)(t)` rather than `Symbol(name)`, so `Derivative(x(t), t)` stays unevaluated and the result reads as a system of ODEs. This is the only difference between the two symbolic views of a model — everything downstream of the scope is shared, which is why it is a parameter here and not a second builder. | `False`   |
+
+###### Returns: {.doc-section .doc-section-returns}
+
+dict
+    Mapping of names to SymPy objects suitable for parse_eq(local_dict=...).
+    A copy, so a caller may keep or adapt it; the model's own is cached.
+
+##### symbol_map { #tvbo.parse.system.SymbolicSystem.symbol_map }
+
+```python
+parse.system.SymbolicSystem.symbol_map()
+```
+
+Display-symbol overrides for report rendering: ``{identifier Symbol: LaTeX str}``.
+
+For each element that declares a ``symbol`` (e.g. ``w_+`` for the identifier ``w_plus``, or ``S^{(E)}`` for ``S_e``), map its identifier Symbol to the LaTeX of that override, so ``sympy.latex(expr, symbol_names=model.symbol_map())`` renders the source's own notation. Elements without an override are omitted (they render from their identifier). Fully sympy-native: the override is itself rendered through ``sympy.latex(Symbol(...))``, inheriting Greek/sub/superscript handling.
+
+Keyed by the canonical collection keys (the identifiers used in the equations), over the same element collections as [`scope`](#tvbo.parse.system.SymbolicSystem.scope).
+
+##### view { #tvbo.parse.system.SymbolicSystem.view }
+
+```python
+parse.system.SymbolicSystem.view()
+```
+
+Full symbolic ODE system using proper SymPy conventions.
+
+State variables are represented as ``Function(name)(t)`` so that ``Derivative(theta(t), t)`` stays unevaluated.  Derived variables and derived parameters are included as algebraic equations.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+dict
+    ``{'state': [...], 'derived': [...], 'parameters': {...}}``
+    where each list contains ``sympy.Eq`` objects and parameters
+    maps ``Symbol → value``. That map is keyed by the scope's own
+    symbols: rebuilt keys look identical, compare unequal, and make
+    substituting it into these equations silently replace nothing.
+
+
+
+###### Example: {.doc-section .doc-section-example}
+
+>>> model.symbolic['state']
+[Eq(Derivative(theta(t), t), I + omega)]
+>>> model.symbolic['derived']
+[Eq(signal(t), sin(theta(t)))]
+>>> model.symbolic['units']
+{omega: 'per_ms', I: None}

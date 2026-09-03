@@ -1,0 +1,100 @@
+# Slot: panel_number_format 
+
+
+_Python format string applied to each panel letter: '{}' -> 'a', '({})' -> '(a)', '{}.' -> 'a.'. Defaults to '{}'. Match the target journal's convention._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/panel_number_format](https://w3id.org/tvbo/slot/panel_number_format)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:panel_number_format |
+| native | tvbo:panel_number_format |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: panel_number_format
+description: 'Python format string applied to each panel letter: ''{}'' -> ''a'',
+  ''({})'' -> ''(a)'', ''{}.'' -> ''a.''. Defaults to ''{}''. Match the target journal''s
+  convention.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: string
+
+```
+</details></div>

@@ -1,0 +1,87 @@
+# Slot: distribution 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/distribution](https://w3id.org/tvbo/slot/distribution)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | A single named step (or output) in a Procedure: one typed operation producing... |  no  |
+| [StateVariable](../classes/StateVariable.qmd) |  |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+| [Prior](../classes/Prior.qmd) | Prior belief over one inferred parameter |  no  |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ProcedureStep](../classes/ProcedureStep.qmd), [StateVariable](../classes/StateVariable.qmd), [Parameter](../classes/Parameter.qmd), [Noise](../classes/Noise.qmd), [Prior](../classes/Prior.qmd), [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:distribution |
+| native | tvbo:distribution |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: distribution
+domain_of:
+- ProcedureStep
+- StateVariable
+- Parameter
+- Noise
+- Prior
+- Coupling
+range: string
+
+```
+</details></div>

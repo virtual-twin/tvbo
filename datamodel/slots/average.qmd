@@ -1,0 +1,99 @@
+# Slot: average 
+
+
+_Averaging mode across trials. 'trials' = average over n_trials independent runs (evoked potential paradigm). None = return all trials._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/average](https://w3id.org/tvbo/slot/average)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:average |
+| native | tvbo:average |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: average
+description: Averaging mode across trials. 'trials' = average over n_trials independent
+  runs (evoked potential paradigm). None = return all trials.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Exploration
+domain_of:
+- Exploration
+range: string
+
+```
+</details></div>

@@ -1,0 +1,34 @@
+# config { #tvbo.cli.config }
+
+`cli.config`
+
+``tvbo config`` — view CLI configuration (full impl in C2).
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [app](#tvbo.cli.config.app) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [path](#tvbo.cli.config.path) | Print the resolved path to the user config file (`$XDG_CONFIG_HOME/tvbo/config.toml`). |
+| [show](#tvbo.cli.config.show) | Print the contents of the user config file, or a `# (no config)` notice if absent. |
+
+### path { #tvbo.cli.config.path }
+
+```python
+cli.config.path()
+```
+
+Print the resolved path to the user config file (`$XDG_CONFIG_HOME/tvbo/config.toml`).
+
+### show { #tvbo.cli.config.show }
+
+```python
+cli.config.show()
+```
+
+Print the contents of the user config file, or a `# (no config)` notice if absent.

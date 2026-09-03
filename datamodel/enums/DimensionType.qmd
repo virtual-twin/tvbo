@@ -1,0 +1,98 @@
+# Enum: DimensionType 
+
+
+
+
+_Dimensions along which operations can be applied_
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/DimensionType](https://w3id.org/tvbo/enum/DimensionType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| time | None | Temporal dimension |
+| state | None | State variable dimension |
+| node | None | Network node dimension (general graph term) |
+| region | None | Spatial/regional dimension (alias for node in brain networks) |
+| mode | None | Mode dimension (e |
+| sample | None | Sample/trial/realization dimension |
+| batch | None | Batch dimension (for parallel processing) |
+| frequency | None | Frequency dimension (spectral analysis) |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [apply_on_dimension](../slots/apply_on_dimension.qmd) | Which dimension to apply the transformation on |
+| [correlated_over](../slots/correlated_over.qmd) | Which axis `covariance` indexes — `node` (equivalently `region`) for spatiall... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: DimensionType
+description: Dimensions along which operations can be applied
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  time:
+    text: time
+    description: Temporal dimension
+  state:
+    text: state
+    description: State variable dimension
+  node:
+    text: node
+    description: Network node dimension (general graph term)
+  region:
+    text: region
+    description: Spatial/regional dimension (alias for node in brain networks)
+  mode:
+    text: mode
+    description: Mode dimension (e.g., coupling modes)
+  sample:
+    text: sample
+    description: Sample/trial/realization dimension
+  batch:
+    text: batch
+    description: Batch dimension (for parallel processing)
+  frequency:
+    text: frequency
+    description: Frequency dimension (spectral analysis)
+
+```
+</details>
+
+</div>

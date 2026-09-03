@@ -1,0 +1,80 @@
+# Slot: aggregate 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/aggregate](https://w3id.org/tvbo/slot/aggregate)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [Function](../classes/Function.qmd) | A function with explicit input -> transformation -> output flow |  no  |
+| [LossFunction](../classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |  no  |
+| [FunctionCall](../classes/FunctionCall.qmd) | Invocation of a function in a pipeline |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Function](../classes/Function.qmd), [LossFunction](../classes/LossFunction.qmd), [FunctionCall](../classes/FunctionCall.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:aggregate |
+| native | tvbo:aggregate |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: aggregate
+domain_of:
+- Function
+- LossFunction
+- FunctionCall
+range: string
+
+```
+</details></div>

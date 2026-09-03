@@ -1,0 +1,103 @@
+# Slot: measure 
+
+
+_WHICH array to select out of `source`. The address space is the source's own: a per-node measure name for a Network (aligning with Network.structural_measures / observational_measures), a dataset key for an HDF5/Zarr store, a recorded measure for an experiment result. Omit when the source resolves to a single array._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/measure](https://w3id.org/tvbo/slot/measure)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Parameter](../classes/Parameter.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Parameter](../classes/Parameter.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:measure |
+| native | tvbo:measure |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: measure
+description: 'WHICH array to select out of `source`. The address space is the source''s
+  own: a per-node measure name for a Network (aligning with Network.structural_measures
+  / observational_measures), a dataset key for an HDF5/Zarr store, a recorded measure
+  for an experiment result. Omit when the source resolves to a single array.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Parameter
+domain_of:
+- Parameter
+range: string
+required: false
+
+```
+</details></div>

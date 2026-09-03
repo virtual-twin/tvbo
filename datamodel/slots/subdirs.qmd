@@ -1,0 +1,77 @@
+# Slot: subdirs 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/subdirs](https://w3id.org/tvbo/study/slot/subdirs)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StudyLayout](../classes/StudyLayout.qmd) | Directory layout of a study dataset, and the single ground truth for it |  no  |
+| [StudyDirectory](../classes/StudyDirectory.qmd) | One directory in a study layout |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [StudyLayout](../classes/StudyLayout.qmd), [StudyDirectory](../classes/StudyDirectory.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:subdirs |
+| native | tvbo_study:subdirs |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: subdirs
+domain_of:
+- StudyLayout
+- StudyDirectory
+range: string
+
+```
+</details></div>

@@ -1,0 +1,98 @@
+# Slot: task_name 
+
+
+_BIDS task name for the simulation (e.g., 'rest', 'simulation')._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/task_name](https://w3id.org/tvbo/slot/task_name)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [TimeSeries](../classes/TimeSeries.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [TimeSeries](../classes/TimeSeries.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:task_name |
+| native | tvbo:task_name |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: task_name
+description: BIDS task name for the simulation (e.g., 'rest', 'simulation').
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: TimeSeries
+domain_of:
+- TimeSeries
+range: string
+
+```
+</details></div>

@@ -1,0 +1,122 @@
+# Enum: ProgrammingLanguageEnum 
+
+
+
+
+_Programming languages relevant to computational neuroscience tools. Mapped to Wikidata identifiers._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_sw:enum/ProgrammingLanguageEnum](https://w3id.org/tvbo/software/enum/ProgrammingLanguageEnum)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| Python | wd:Q28865 |  |
+| C | wd:Q15777 |  |
+| C++ | wd:Q2407 |  |
+| Java | wd:Q251 |  |
+| Julia | wd:Q4010477 |  |
+| MATLAB | wd:Q182017 |  |
+| R | wd:Q206904 |  |
+| Fortran | wd:Q83303 |  |
+| Haskell | wd:Q34010 |  |
+| Rust | wd:Q575650 |  |
+| JavaScript | wd:Q2005 |  |
+| XML | wd:Q2115 |  |
+| HOC | wd:Q5765633 | NEURON's high-level interpreted language |
+| C# | wd:Q2370 |  |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [programming_language](../slots/programming_language.qmd) | Implementation languages |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ProgrammingLanguageEnum
+description: Programming languages relevant to computational neuroscience tools. Mapped
+  to Wikidata identifiers.
+from_schema: https://w3id.org/tvbo/software
+permissible_values:
+  Python:
+    text: Python
+    meaning: wd:Q28865
+  C:
+    text: C
+    meaning: wd:Q15777
+  C++:
+    text: C++
+    meaning: wd:Q2407
+  Java:
+    text: Java
+    meaning: wd:Q251
+  Julia:
+    text: Julia
+    meaning: wd:Q4010477
+  MATLAB:
+    text: MATLAB
+    meaning: wd:Q182017
+  R:
+    text: R
+    meaning: wd:Q206904
+  Fortran:
+    text: Fortran
+    meaning: wd:Q83303
+  Haskell:
+    text: Haskell
+    meaning: wd:Q34010
+  Rust:
+    text: Rust
+    meaning: wd:Q575650
+  JavaScript:
+    text: JavaScript
+    meaning: wd:Q2005
+  XML:
+    text: XML
+    meaning: wd:Q2115
+  HOC:
+    text: HOC
+    description: NEURON's high-level interpreted language.
+    meaning: wd:Q5765633
+  C#:
+    text: C#
+    meaning: wd:Q2370
+
+```
+</details>
+
+</div>

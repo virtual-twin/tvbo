@@ -1,0 +1,94 @@
+# Slot: hasParent 
+
+
+_Add all anatomical parent structures for this entity as defined within the corresponding brain atlas._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:atlas/hasParent](http://uri.interlex.org/tgbugs/uris/readable/atlas/hasParent)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+| Domain Of | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+| Slot URI | [atom:atlas/hasParent](http://uri.interlex.org/tgbugs/uris/readable/atlas/hasParent) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:atlas/hasParent |
+| native | atom:hasParent |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: hasParent
+description: Add all anatomical parent structures for this entity as defined within
+  the corresponding brain atlas.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: atom:atlas/hasParent
+domain_of:
+- ParcellationEntity
+range: ParcellationEntity
+multivalued: true
+
+```
+</details></div>

@@ -1,0 +1,85 @@
+# study_manifest { #tvbo.data.study_manifest }
+
+`data.study_manifest`
+
+The results manifest and the ``tvbo verify`` checks.
+
+A study that nests ``studies`` is a study-of-studies: it aggregates the studies a paper reports and owns the paper's own demonstration content. Two capabilities belong to that shape, though any :class:`~tvbo.classes.study.SimulationStudy` may use them:
+
+* a **results manifest** (``results:``): the named numbers the prose cites, each bound to a
+  computed value (``used:`` a DataRef) or an authored constant (``value:`` + ``source:``).
+  :func:`emit_manifest` resolves them into ``manuscript_results.yml`` — the file the document reads through Quarto ``metadata-files`` as ``{{< meta results.<key> >}}`` — so no reported figure is transcribed by hand.
+* the **completeness / staleness / coverage** checks :func:`verify` runs, so an edited-but-not-
+  rerun spec, an orphan figure, or a dead manifest key fails the build rather than silently printing a wrong number.
+
+The number resolution is shared: a manifest emit and a ``verify`` coverage pass resolve the same bindings the same way, so the two cannot disagree about whether a key is live.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [MANIFEST_NAME](#tvbo.data.study_manifest.MANIFEST_NAME) | Name the layout record gives the manifest, so the emitter and the record cannot disagree about it. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [emit_manifest](#tvbo.data.study_manifest.emit_manifest) | Write *inv*'s resolved results to ``manuscript_results.yml`` at *out_path*. |
+| [resolve_binding](#tvbo.data.study_manifest.resolve_binding) | Resolve one ``ResultBinding`` to ``(rendered_string, provenance)``. |
+| [resolve_results](#tvbo.data.study_manifest.resolve_results) | Resolve every ``ResultBinding`` on *inv*. |
+| [verify](#tvbo.data.study_manifest.verify) | Check a study-of-studies is buildable, returning a list of problems (empty = OK). |
+
+### emit_manifest { #tvbo.data.study_manifest.emit_manifest }
+
+```python
+data.study_manifest.emit_manifest(inv, results_root, out_path)
+```
+
+Write *inv*'s resolved results to ``manuscript_results.yml`` at *out_path*.
+
+The file carries a flat ``results:`` mapping the document reads as ``{{< meta results.* >}}`` and a ``results_provenance:`` block recording, per key, whether the number was computed (and from which container) or authored (and from which source). Returns the written path and the list of unresolved-key problems; the caller hard-fails on a non-empty list.
+
+### resolve_binding { #tvbo.data.study_manifest.resolve_binding }
+
+```python
+data.study_manifest.resolve_binding(binding, results_root, *, inv=None)
+```
+
+Resolve one ``ResultBinding`` to ``(rendered_string, provenance)``.
+
+Three mutually exclusive forms: ``used:`` reads a scalar out of a result container and formats it; ``count:`` tallies a collection on a nested study or on this one (no run);
+``value:`` (+ ``source:``) passes an authored literal through untouched. Raises ``ValueError`` for a malformed binding (zero or more than one form set), and lets a resolution failure (missing container, dead reference, non-scalar, unknown study) propagate to the caller, which turns it into a build-failing problem keyed by ``binding.key``.
+
+### resolve_results { #tvbo.data.study_manifest.resolve_results }
+
+```python
+data.study_manifest.resolve_results(inv, results_root)
+```
+
+Resolve every ``ResultBinding`` on *inv*.
+
+Returns ``(results, provenance, problems)``: ``results`` maps each key to its rendered string (what the prose reads), ``provenance`` records how each was obtained, and ``problems`` names the keys that could not be resolved (missing container, dead ref, duplicate key) — the caller decides whether an unresolved key fails the build.
+
+### verify { #tvbo.data.study_manifest.verify }
+
+```python
+data.study_manifest.verify(
+    inv,
+    base,
+    *,
+    results_root=None,
+    manuscript_keys=None,
+    manifest_path=None,
+    captions_dir=None,
+)
+```
+
+Check a study-of-studies is buildable, returning a list of problems (empty = OK).
+
+Structural checks run in both modes: every member recipe exists, every declared figure carries a cross-reference id, and every committed ``<figure>.caption.qmd`` still matches the caption its spec composes (a stale caption fails here, not silently in the rendered PDF).
+What differs is how the numbers are checked:
+
+* **offline** (``manifest_path`` is None) — resolve every ``results:`` binding against its
+  run container and check analysis staleness. The full gate, run where the containers live.
+* **build** (``manifest_path`` given) — the run containers are generated artifacts that are
+  never committed, so instead of resolving them this reads the committed manifest: the declared bindings and the prose's cited keys must both match its keys exactly. A binding added without regenerating the manifest, or a citation with no number, fails here without a single container present.

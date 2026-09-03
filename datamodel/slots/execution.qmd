@@ -1,0 +1,87 @@
+# Slot: execution 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/execution](https://w3id.org/tvbo/slot/execution)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+| [Inference](../classes/Inference.qmd) | Bayesian inference of model parameters from an observation, via MCMC |  no  |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Analysis](../classes/Analysis.qmd), [Optimization](../classes/Optimization.qmd), [Exploration](../classes/Exploration.qmd), [Inference](../classes/Inference.qmd), [Algorithm](../classes/Algorithm.qmd), [Continuation](../classes/Continuation.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:execution |
+| native | tvbo:execution |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: execution
+domain_of:
+- Analysis
+- Optimization
+- Exploration
+- Inference
+- Algorithm
+- Continuation
+- SimulationExperiment
+range: string
+
+```
+</details></div>

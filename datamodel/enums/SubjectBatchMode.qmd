@@ -1,0 +1,72 @@
+# Enum: SubjectBatchMode 
+
+
+
+
+_How a multi-subject dataset's per-subject fits are executed._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_study:enum/SubjectBatchMode](https://w3id.org/tvbo/study/enum/SubjectBatchMode)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| fan_out | None | One per-subject job; each binds its own targets at run time |
+| on_device | None | The whole cohort evaluated together as one vectorised on-device batch |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [batch_mode](../slots/batch_mode.qmd) | How the per-subject fits are executed |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SubjectBatchMode
+description: How a multi-subject dataset's per-subject fits are executed.
+from_schema: https://w3id.org/tvbo/study
+permissible_values:
+  fan_out:
+    text: fan_out
+    description: One per-subject job; each binds its own targets at run time.
+  on_device:
+    text: on_device
+    description: The whole cohort evaluated together as one vectorised on-device batch.
+
+```
+</details>
+
+</div>

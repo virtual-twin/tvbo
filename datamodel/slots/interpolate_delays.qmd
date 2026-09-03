@@ -1,0 +1,105 @@
+# Slot: interpolate_delays 
+
+
+_For delayed coupling: read delayed states by linear interpolation between the two bracketing history time-steps instead of snapping each delay to the nearest integer step. Removes sub-step quantisation error and makes the coupling differentiable w.r.t. the continuous delay — hence w.r.t. conduction speed v (delay = tract_length / v) — so v can be gradient-optimised. Default false preserves exact nearest-step behaviour (tvboptim roll strategy)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/interpolate_delays](https://w3id.org/tvbo/slot/interpolate_delays)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [Coupling](../classes/Coupling.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:interpolate_delays |
+| native | tvbo:interpolate_delays |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: interpolate_delays
+description: 'For delayed coupling: read delayed states by linear interpolation between
+  the two bracketing history time-steps instead of snapping each delay to the nearest
+  integer step. Removes sub-step quantisation error and makes the coupling differentiable
+  w.r.t. the continuous delay — hence w.r.t. conduction speed v (delay = tract_length
+  / v) — so v can be gradient-optimised. Default false preserves exact nearest-step
+  behaviour (tvboptim roll strategy).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: Coupling
+domain_of:
+- Coupling
+range: boolean
+
+```
+</details></div>

@@ -1,0 +1,105 @@
+# Slot: accelerator 
+
+
+_Hardware accelerator the run targets. 'auto' (default) lets JAX detect the machine — GPU/TPU when present, else CPU; 'cpu', 'gpu', or 'tpu' pin the JAX platform explicitly. tvbo maps this to JAX_PLATFORMS before JAX initialises (an existing JAX_PLATFORMS in the environment still wins); tvboptim then spreads work across that platform's devices via n_pmap/n_vmap. In a workflow kit, 'gpu' also makes the experiment's rule request a SLURM gres unless one is set._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/accelerator](https://w3id.org/tvbo/slot/accelerator)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ExecutionConfig](../classes/ExecutionConfig.qmd) | Configuration for computational execution (parallelization, precision, hardwa... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(auto)` |
+| Owner | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:accelerator |
+| native | tvbo:accelerator |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: accelerator
+description: Hardware accelerator the run targets. 'auto' (default) lets JAX detect
+  the machine — GPU/TPU when present, else CPU; 'cpu', 'gpu', or 'tpu' pin the JAX
+  platform explicitly. tvbo maps this to JAX_PLATFORMS before JAX initialises (an
+  existing JAX_PLATFORMS in the environment still wins); tvboptim then spreads work
+  across that platform's devices via n_pmap/n_vmap. In a workflow kit, 'gpu' also
+  makes the experiment's rule request a SLURM gres unless one is set.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(auto)
+owner: ExecutionConfig
+domain_of:
+- ExecutionConfig
+range: string
+
+```
+</details></div>

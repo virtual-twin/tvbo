@@ -1,0 +1,50 @@
+# observations { #tvbo.templates.tvboptim.observations }
+
+`templates.tvboptim.observations`
+
+TVB-compatible observation monitors for generated tvboptim code.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [TVBBold](#tvbo.templates.tvboptim.observations.TVBBold) | FirstOrderVolterra BOLD monitor with TVB stock-buffer semantics. |
+| [TVBGlobalAverage](#tvbo.templates.tvboptim.observations.TVBGlobalAverage) | Spatial mean over nodes at each sampling period, with TVB monitor window indexing. |
+| [TVBTemporalAverage](#tvbo.templates.tvboptim.observations.TVBTemporalAverage) | Temporal average with TVB monitor window indexing. |
+
+### TVBBold { #tvbo.templates.tvboptim.observations.TVBBold }
+
+```python
+templates.tvboptim.observations.TVBBold(
+    k_1=5.6,
+    V_0=0.02,
+    period=1000.0,
+    downsample_period=4.0,
+    hrf_length=20000.0,
+    tau_s=0.8,
+    tau_f=0.4,
+    scaling=1.0 / 3.0,
+    voi=None,
+    history=None,
+)
+```
+
+FirstOrderVolterra BOLD monitor with TVB stock-buffer semantics.
+
+### TVBGlobalAverage { #tvbo.templates.tvboptim.observations.TVBGlobalAverage }
+
+```python
+templates.tvboptim.observations.TVBGlobalAverage(voi=None, period=4.0)
+```
+
+Spatial mean over nodes at each sampling period, with TVB monitor window indexing.
+
+TVB's ``GlobalAverage`` samples on the same grid as ``SubSample`` and then averages the node axis, keeping it at width one so the output stays a ``(time, variable, node, mode)`` series rather than collapsing to a per-variable trace.
+
+### TVBTemporalAverage { #tvbo.templates.tvboptim.observations.TVBTemporalAverage }
+
+```python
+templates.tvboptim.observations.TVBTemporalAverage(voi=None, period=4.0)
+```
+
+Temporal average with TVB monitor window indexing.

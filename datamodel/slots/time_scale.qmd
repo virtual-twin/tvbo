@@ -1,0 +1,109 @@
+# Slot: time_scale 
+
+
+_Time unit for the integration / simulation. Determines the physical time meaning of one model time-step. `time_unit` is accepted as a synonym (the spelling `Network` uses for its own time unit)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/time_scale](https://w3id.org/tvbo/slot/time_scale)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [UnitEnum](../enums/UnitEnum.qmd) |
+| Domain Of | [Observation](../classes/Observation.qmd), [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `ms` |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* time_unit
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:time_scale |
+| native | tvbo:time_scale |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: time_scale
+description: Time unit for the integration / simulation. Determines the physical time
+  meaning of one model time-step. `time_unit` is accepted as a synonym (the spelling
+  `Network` uses for its own time unit).
+from_schema: https://w3id.org/tvbo
+aliases:
+- time_unit
+rank: 1000
+ifabsent: ms
+domain_of:
+- Observation
+- Integrator
+range: UnitEnum
+
+```
+</details></div>

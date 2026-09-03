@@ -1,0 +1,102 @@
+# Slot: keys 
+
+
+_Named keys for multi-dimensional coupling. When dimension > 1, provides symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in equations as variable names._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/keys](https://w3id.org/tvbo/slot/keys)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [CouplingInput](../classes/CouplingInput.qmd) | Specification of a coupling input channel for multi-coupling dynamics |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [CouplingInput](../classes/CouplingInput.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [CouplingInput](../classes/CouplingInput.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:keys |
+| native | tvbo:keys |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: keys
+description: 'Named keys for multi-dimensional coupling. When dimension > 1, provides
+  symbolic names for each index (e.g., keys: [lre, ffi] for dimension: 2). Used in
+  equations as variable names.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: CouplingInput
+domain_of:
+- CouplingInput
+range: string
+multivalued: true
+
+```
+</details></div>

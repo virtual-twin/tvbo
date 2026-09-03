@@ -1,0 +1,107 @@
+# Slot: noise_draw 
+
+
+_How the base solve draws its noise realization, and therefore WHICH realization it is: `fused` draws the whole [n_steps, ...] tensor in one call, `blocked` regenerates each block of `block_size` steps from (key, block_index). Those are different draws from the same seed, so the grain is a declared property of the integration rather than something inferred from how the run is consumed. An observable declared `reduce: streaming` folds block by block whatever this says, because a reduction has no trajectory to fold otherwise; declare `blocked` to put the whole run on that same grain._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/noise_draw](https://w3id.org/tvbo/slot/noise_draw)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [NoiseDraw](../enums/NoiseDraw.qmd) |
+| Domain Of | [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(fused)` |
+| Owner | [Integrator](../classes/Integrator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:noise_draw |
+| native | tvbo:noise_draw |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: noise_draw
+description: 'How the base solve draws its noise realization, and therefore WHICH
+  realization it is: `fused` draws the whole [n_steps, ...] tensor in one call, `blocked`
+  regenerates each block of `block_size` steps from (key, block_index). Those are
+  different draws from the same seed, so the grain is a declared property of the integration
+  rather than something inferred from how the run is consumed. An observable declared
+  `reduce: streaming` folds block by block whatever this says, because a reduction
+  has no trajectory to fold otherwise; declare `blocked` to put the whole run on that
+  same grain.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(fused)
+owner: Integrator
+domain_of:
+- Integrator
+range: NoiseDraw
+
+```
+</details></div>

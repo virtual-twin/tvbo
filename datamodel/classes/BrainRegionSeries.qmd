@@ -1,0 +1,149 @@
+# Class: BrainRegionSeries 
+
+
+_A series whose values represent latitude_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:BrainRegionSeries](https://w3id.org/tvbo/BrainRegionSeries)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class BrainRegionSeries
+    click BrainRegionSeries href "./BrainRegionSeries.html"
+      BrainRegionSeries : values
+        
+          
+    
+        
+        
+        BrainRegionSeries --> "*" String : values
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:BrainRegionSeries](https://w3id.org/tvbo/BrainRegionSeries) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [values](../slots/values.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Matrix](../classes/Matrix.qmd) | [x](../slots/x.qmd) | range | [BrainRegionSeries](../classes/BrainRegionSeries.qmd) |
+| [Matrix](../classes/Matrix.qmd) | [y](../slots/y.qmd) | range | [BrainRegionSeries](../classes/BrainRegionSeries.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:BrainRegionSeries |
+| native | tvbo:BrainRegionSeries |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: BrainRegionSeries
+description: A series whose values represent latitude
+from_schema: https://w3id.org/tvbo
+attributes:
+  values:
+    name: values
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Matrix
+    - BrainRegionSeries
+    - SpatialField
+    range: string
+    multivalued: true
+class_uri: tvbo:BrainRegionSeries
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: BrainRegionSeries
+description: A series whose values represent latitude
+from_schema: https://w3id.org/tvbo
+attributes:
+  values:
+    name: values
+    from_schema: https://w3id.org/tvbo
+    owner: BrainRegionSeries
+    domain_of:
+    - Matrix
+    - BrainRegionSeries
+    - SpatialField
+    range: string
+    multivalued: true
+class_uri: tvbo:BrainRegionSeries
+
+```
+</details></div>

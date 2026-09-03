@@ -1,0 +1,300 @@
+# Class: Partition 
+
+
+_A grouped streaming reduction over a node partition (e.g. per-hemisphere cortical wave metrics): the per-timestep observer body is evaluated ONCE for a single group and vmapped over the partition axis, and the per-group outputs are folded to per-group scalar metrics. General in its group-vmap (``gather`` + ``over``); the metric roles (``waves`` / ``directed`` / ``correlation``) name the per-group derived variables the wave finalize reduces to proportion-of-waves, proportion-directed and the median flow–instrength correlation (rho)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Partition](https://w3id.org/tvbo/Partition)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Partition
+    click Partition href "./Partition.html"
+      Partition : correlation
+        
+          
+    
+        
+        
+        Partition --> "1" String : correlation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Partition : directed
+        
+          
+    
+        
+        
+        Partition --> "1" String : directed
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Partition : gather
+        
+          
+    
+        
+        
+        Partition --> "1" String : gather
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Partition : over
+        
+          
+    
+        
+        
+        Partition --> "*" String : over
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Partition : waves
+        
+          
+    
+        
+        
+        Partition --> "1" String : waves
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Partition](https://w3id.org/tvbo/Partition) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [gather](../slots/gather.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Observer parameter ``(n_groups, n)`` of node indices selecting each group's n... | direct |
+| [over](../slots/over.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Operator parameters carrying a leading group axis, sliced per group under the... | direct |
+| [waves](../slots/waves.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Per-group boolean derived variable: a wave is present this timestep | direct |
+| [directed](../slots/directed.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Per-group boolean derived variable: the flow is significantly directed this t... | direct |
+| [correlation](../slots/correlation.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Per-group float derived variable whose masked median over wave-present timest... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | [partition](../slots/partition.qmd) | range | [Partition](../classes/Partition.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Partition |
+| native | tvbo:Partition |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Partition
+description: 'A grouped streaming reduction over a node partition (e.g. per-hemisphere
+  cortical wave metrics): the per-timestep observer body is evaluated ONCE for a single
+  group and vmapped over the partition axis, and the per-group outputs are folded
+  to per-group scalar metrics. General in its group-vmap (``gather`` + ``over``);
+  the metric roles (``waves`` / ``directed`` / ``correlation``) name the per-group
+  derived variables the wave finalize reduces to proportion-of-waves, proportion-directed
+  and the median flow–instrength correlation (rho).'
+from_schema: https://w3id.org/tvbo
+attributes:
+  gather:
+    name: gather
+    description: Observer parameter ``(n_groups, n)`` of node indices selecting each
+      group's nodes out of the whole-source signal; its leading axis is the group
+      count.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Partition
+    range: string
+    required: true
+  over:
+    name: over
+    description: Operator parameters carrying a leading group axis, sliced per group
+      under the vmap (the per-group meshes' fixed operators). Parameters not listed
+      are shared.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Animation
+    - Aggregation
+    - Partition
+    range: string
+    multivalued: true
+  waves:
+    name: waves
+    description: 'Per-group boolean derived variable: a wave is present this timestep.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Partition
+    range: string
+    required: true
+  directed:
+    name: directed
+    description: 'Per-group boolean derived variable: the flow is significantly directed
+      this timestep (proportion_directed = directed-and-wave timesteps / wave timesteps).'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - GraphGenerator
+    - Edge
+    - Partition
+    range: string
+    required: true
+  correlation:
+    name: correlation
+    description: Per-group float derived variable whose masked median over wave-present
+      timesteps is the reported rho.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Distribution
+    - Partition
+    range: string
+    required: true
+class_uri: tvbo:Partition
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Partition
+description: 'A grouped streaming reduction over a node partition (e.g. per-hemisphere
+  cortical wave metrics): the per-timestep observer body is evaluated ONCE for a single
+  group and vmapped over the partition axis, and the per-group outputs are folded
+  to per-group scalar metrics. General in its group-vmap (``gather`` + ``over``);
+  the metric roles (``waves`` / ``directed`` / ``correlation``) name the per-group
+  derived variables the wave finalize reduces to proportion-of-waves, proportion-directed
+  and the median flow–instrength correlation (rho).'
+from_schema: https://w3id.org/tvbo
+attributes:
+  gather:
+    name: gather
+    description: Observer parameter ``(n_groups, n)`` of node indices selecting each
+      group's nodes out of the whole-source signal; its leading axis is the group
+      count.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Partition
+    domain_of:
+    - Partition
+    range: string
+    required: true
+  over:
+    name: over
+    description: Operator parameters carrying a leading group axis, sliced per group
+      under the vmap (the per-group meshes' fixed operators). Parameters not listed
+      are shared.
+    from_schema: https://w3id.org/tvbo
+    owner: Partition
+    domain_of:
+    - Animation
+    - Aggregation
+    - Partition
+    range: string
+    multivalued: true
+  waves:
+    name: waves
+    description: 'Per-group boolean derived variable: a wave is present this timestep.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Partition
+    domain_of:
+    - Partition
+    range: string
+    required: true
+  directed:
+    name: directed
+    description: 'Per-group boolean derived variable: the flow is significantly directed
+      this timestep (proportion_directed = directed-and-wave timesteps / wave timesteps).'
+    from_schema: https://w3id.org/tvbo
+    owner: Partition
+    domain_of:
+    - GraphGenerator
+    - Edge
+    - Partition
+    range: string
+    required: true
+  correlation:
+    name: correlation
+    description: Per-group float derived variable whose masked median over wave-present
+      timesteps is the reported rho.
+    from_schema: https://w3id.org/tvbo
+    owner: Partition
+    domain_of:
+    - Distribution
+    - Partition
+    range: string
+    required: true
+class_uri: tvbo:Partition
+
+```
+</details></div>

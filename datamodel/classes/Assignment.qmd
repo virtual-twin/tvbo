@@ -1,0 +1,194 @@
+# Class: Assignment 
+
+
+_One step of a sequential recurrence: the expression assigned to a target name. Sequential rather than simultaneous — a later step's expression sees the value the steps above it assigned — which is what lets a reducer's update be authored as ordinary arithmetic instead of with `new_*` temporaries. Authored terse as a `[target, expression]` pair and lifted to this form on load._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Assignment](https://w3id.org/tvbo/Assignment)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Assignment
+    click Assignment href "./Assignment.html"
+      Assignment : expression
+        
+          
+    
+        
+        
+        Assignment --> "1" String : expression
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Assignment : target
+        
+          
+    
+        
+        
+        Assignment --> "1" String : target
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Assignment](https://w3id.org/tvbo/Assignment) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [target](../slots/target.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The state name this step assigns to | direct |
+| [expression](../slots/expression.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Symbolic right-hand side, parsed and printed per backend | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Reducer](../classes/Reducer.qmd) | [add](../slots/add.qmd) | range | [Assignment](../classes/Assignment.qmd) |
+| [Reducer](../classes/Reducer.qmd) | [evict](../slots/evict.qmd) | range | [Assignment](../classes/Assignment.qmd) |
+| [Reducer](../classes/Reducer.qmd) | [resync](../slots/resync.qmd) | range | [Assignment](../classes/Assignment.qmd) |
+| [Reducer](../classes/Reducer.qmd) | [resync_masked](../slots/resync_masked.qmd) | range | [Assignment](../classes/Assignment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Assignment |
+| native | tvbo:Assignment |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Assignment
+description: 'One step of a sequential recurrence: the expression assigned to a target
+  name. Sequential rather than simultaneous — a later step''s expression sees the
+  value the steps above it assigned — which is what lets a reducer''s update be authored
+  as ordinary arithmetic instead of with `new_*` temporaries. Authored terse as a
+  `[target, expression]` pair and lifted to this form on load.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  target:
+    name: target
+    description: The state name this step assigns to.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Edge
+    - Analysis
+    - Assignment
+    range: string
+    required: true
+  expression:
+    name: expression
+    description: Symbolic right-hand side, parsed and printed per backend.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ConditionalBlock
+    - DifferentialOperator
+    - Assignment
+    range: string
+    required: true
+class_uri: tvbo:Assignment
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Assignment
+description: 'One step of a sequential recurrence: the expression assigned to a target
+  name. Sequential rather than simultaneous — a later step''s expression sees the
+  value the steps above it assigned — which is what lets a reducer''s update be authored
+  as ordinary arithmetic instead of with `new_*` temporaries. Authored terse as a
+  `[target, expression]` pair and lifted to this form on load.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  target:
+    name: target
+    description: The state name this step assigns to.
+    from_schema: https://w3id.org/tvbo
+    owner: Assignment
+    domain_of:
+    - Edge
+    - Analysis
+    - Assignment
+    range: string
+    required: true
+  expression:
+    name: expression
+    description: Symbolic right-hand side, parsed and printed per backend.
+    from_schema: https://w3id.org/tvbo
+    owner: Assignment
+    domain_of:
+    - ConditionalBlock
+    - DifferentialOperator
+    - Assignment
+    range: string
+    required: true
+class_uri: tvbo:Assignment
+
+```
+</details></div>

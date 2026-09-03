@@ -1,0 +1,456 @@
+# Class: StudyLayout 
+
+
+_Directory layout of a study dataset, and the single ground truth for it. Everything that creates, resolves, ignores, validates or documents a study's directories reads this record instead of restating the tree, so the layout cannot drift between the scaffolder, the path resolvers, the ignore files, the validator and the docs. The vocabulary deliberately mirrors the BIDS ``rules/directories.yaml`` (``name``, ``level``, ``opaque``, ``subdirs``) so a layout can be diffed against the standard._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:class/StudyLayout](https://w3id.org/tvbo/study/class/StudyLayout)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class StudyLayout
+    click StudyLayout href "./StudyLayout.html"
+      StudyLayout : bids_version
+        
+          
+    
+        
+        
+        StudyLayout --> "0..1" String : bids_version
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyLayout : dataset_type
+        
+          
+    
+        
+        
+        StudyLayout --> "0..1" BidsDatasetType : dataset_type
+        click BidsDatasetType href "../../enums/BidsDatasetType.html"
+    
+
+        
+      StudyLayout : description
+        
+          
+    
+        
+        
+        StudyLayout --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyLayout : files
+        
+          
+    
+        
+        
+        StudyLayout --> "*" StudyFile : files
+        click StudyFile href "./StudyFile.html"
+    
+
+        
+      StudyLayout : name
+        
+          
+    
+        
+        
+        StudyLayout --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyLayout : subdirs
+        
+          
+    
+        
+        
+        StudyLayout --> "*" StudyDirectory : subdirs
+        click StudyDirectory href "./StudyDirectory.html"
+    
+
+        
+      StudyLayout : templates
+        
+          
+    
+        
+        
+        StudyLayout --> "*" StudyTemplate : templates
+        click StudyTemplate href "./StudyTemplate.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dataset_type](../slots/dataset_type.qmd) | 0..1 <br/> [BidsDatasetType](../enums/BidsDatasetType.qmd) | BIDS ``DatasetType`` this layout realises, written into the dataset's ``datas... | direct |
+| [bids_version](../slots/bids_version.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BIDS version the layout was written against | direct |
+| [subdirs](../slots/subdirs.qmd) | * <br/> [StudyDirectory](../classes/StudyDirectory.qmd) | Directories under the dataset root, in the order a reader should meet them | direct |
+| [files](../slots/files.qmd) | * <br/> [StudyFile](../classes/StudyFile.qmd) | Files at the dataset root | direct |
+| [templates](../slots/templates.qmd) | * <br/> [StudyTemplate](../classes/StudyTemplate.qmd) | The kinds of study this record covers, keyed by the name ``tvbo study init --... | direct |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:StudyLayout |
+| native | tvbo_study:StudyLayout |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: StudyLayout
+description: Directory layout of a study dataset, and the single ground truth for
+  it. Everything that creates, resolves, ignores, validates or documents a study's
+  directories reads this record instead of restating the tree, so the layout cannot
+  drift between the scaffolder, the path resolvers, the ignore files, the validator
+  and the docs. The vocabulary deliberately mirrors the BIDS ``rules/directories.yaml``
+  (``name``, ``level``, ``opaque``, ``subdirs``) so a layout can be diffed against
+  the standard.
+from_schema: https://w3id.org/tvbo/study
+slots:
+- name
+- description
+attributes:
+  dataset_type:
+    name: dataset_type
+    description: BIDS ``DatasetType`` this layout realises, written into the dataset's
+      ``dataset_description.json``.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    ifabsent: string(study)
+    domain_of:
+    - StudyLayout
+    range: BidsDatasetType
+  bids_version:
+    name: bids_version
+    description: BIDS version the layout was written against.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - StudyLayout
+    range: string
+  subdirs:
+    name: subdirs
+    description: Directories under the dataset root, in the order a reader should
+      meet them.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - StudyLayout
+    - StudyDirectory
+    range: StudyDirectory
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  files:
+    name: files
+    description: Files at the dataset root.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - StudyLayout
+    - StudyDirectory
+    range: StudyFile
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  templates:
+    name: templates
+    description: The kinds of study this record covers, keyed by the name ``tvbo study
+      init --template`` takes. An entry's ``in_templates`` names one of these, so
+      a template that nothing declares is a typo rather than a silently empty variant.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    domain_of:
+    - StudyLayout
+    range: StudyTemplate
+    multivalued: true
+    inlined: true
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: StudyLayout
+description: Directory layout of a study dataset, and the single ground truth for
+  it. Everything that creates, resolves, ignores, validates or documents a study's
+  directories reads this record instead of restating the tree, so the layout cannot
+  drift between the scaffolder, the path resolvers, the ignore files, the validator
+  and the docs. The vocabulary deliberately mirrors the BIDS ``rules/directories.yaml``
+  (``name``, ``level``, ``opaque``, ``subdirs``) so a layout can be diffed against
+  the standard.
+from_schema: https://w3id.org/tvbo/study
+attributes:
+  dataset_type:
+    name: dataset_type
+    description: BIDS ``DatasetType`` this layout realises, written into the dataset's
+      ``dataset_description.json``.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    ifabsent: string(study)
+    owner: StudyLayout
+    domain_of:
+    - StudyLayout
+    range: BidsDatasetType
+  bids_version:
+    name: bids_version
+    description: BIDS version the layout was written against.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: StudyLayout
+    domain_of:
+    - StudyLayout
+    range: string
+  subdirs:
+    name: subdirs
+    description: Directories under the dataset root, in the order a reader should
+      meet them.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: StudyLayout
+    domain_of:
+    - StudyLayout
+    - StudyDirectory
+    range: StudyDirectory
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  files:
+    name: files
+    description: Files at the dataset root.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: StudyLayout
+    domain_of:
+    - StudyLayout
+    - StudyDirectory
+    range: StudyFile
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  templates:
+    name: templates
+    description: The kinds of study this record covers, keyed by the name ``tvbo study
+      init --template`` takes. An entry's ``in_templates`` names one of these, so
+      a template that nothing declares is a typo rather than a silently empty variant.
+    from_schema: https://w3id.org/tvbo/study
+    rank: 1000
+    owner: StudyLayout
+    domain_of:
+    - StudyLayout
+    range: StudyTemplate
+    multivalued: true
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: StudyLayout
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: StudyLayout
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+
+```
+</details></div>

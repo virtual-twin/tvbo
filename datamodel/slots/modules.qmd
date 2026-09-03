@@ -1,0 +1,77 @@
+# Slot: modules 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/modules](https://w3id.org/tvbo/slot/modules)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | An individual software requirement binding a package to a version constraint ... |  no  |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SoftwareRequirement](../classes/SoftwareRequirement.qmd), [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:modules |
+| native | tvbo:modules |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: modules
+domain_of:
+- SoftwareRequirement
+- WorkflowEngineConfig
+range: string
+
+```
+</details></div>

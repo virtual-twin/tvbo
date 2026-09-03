@@ -1,0 +1,90 @@
+# Slot: environment 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/environment](https://w3id.org/tvbo/slot/environment)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  yes  |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [PDESolver](../classes/PDESolver.qmd) | Numerical solver for a PDE: the time-integration algorithm, tolerances and st... |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+| Domain Of | [Provenance](../classes/Provenance.qmd), [Observation](../classes/Observation.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd), [PDESolver](../classes/PDESolver.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:environment |
+| native | tvbo:environment |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: environment
+from_schema: https://w3id.org/tvbo
+rank: 1000
+domain_of:
+- Provenance
+- Observation
+- SimulationExperiment
+- PDESolver
+range: SoftwareEnvironment
+
+```
+</details></div>

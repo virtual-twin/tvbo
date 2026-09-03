@@ -1,0 +1,101 @@
+# Slot: markers 
+
+
+_One marker per entry of a standalone legend, for a key whose entries are scatter marks._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/markers](https://w3id.org/tvbo/slot/markers)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Legend](../classes/Legend.qmd) | A panel's key: whether it is drawn, where it sits, and the three things a fig... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Legend](../classes/Legend.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Legend](../classes/Legend.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:markers |
+| native | tvbo:markers |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: markers
+description: One marker per entry of a standalone legend, for a key whose entries
+  are scatter marks.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Legend
+domain_of:
+- Legend
+range: string
+multivalued: true
+
+```
+</details></div>

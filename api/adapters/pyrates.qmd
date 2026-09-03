@@ -1,0 +1,72 @@
+# pyrates { #tvbo.adapters.pyrates }
+
+`adapters.pyrates`
+
+PyRates backend adapter for SimulationExperiment.
+
+This module handles all PyRates-specific logic for running simulations, converting between TVBO and PyRates data formats, and computing outputs.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [PYRATES_SOLVERS](#tvbo.adapters.pyrates.PYRATES_SOLVERS) |  |
+| [TVBO_TO_PYRATES_SOLVER](#tvbo.adapters.pyrates.TVBO_TO_PYRATES_SOLVER) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [PyRatesAdapter](#tvbo.adapters.pyrates.PyRatesAdapter) | Adapter for running SimulationExperiment via PyRates backend. |
+
+### PyRatesAdapter { #tvbo.adapters.pyrates.PyRatesAdapter }
+
+```python
+adapters.pyrates.PyRatesAdapter(experiment)
+```
+
+Adapter for running SimulationExperiment via PyRates backend.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [run](#tvbo.adapters.pyrates.PyRatesAdapter.run) | Run simulation and explorations using PyRates backend. |
+
+##### run { #tvbo.adapters.pyrates.PyRatesAdapter.run }
+
+```python
+adapters.pyrates.PyRatesAdapter.run(
+    solver=None,
+    inputs=None,
+    outputs=None,
+    matrix_edge_threshold=100,
+    **kwargs,
+)
+```
+
+Run simulation and explorations using PyRates backend.
+
+Handles both integration and grid-search explorations in a single call, sharing YAML export / circuit load across both.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+solver : str, optional
+    ODE solver: "euler", "heun", "scipy". Defaults to mapped integration.method.
+inputs : dict, optional
+    External inputs as {node/op/var: array} or will be auto-generated.
+outputs : list[str], optional
+    Variables to monitor. If None, monitors all state variables.
+matrix_edge_threshold : int, optional
+    For networks with N > threshold nodes, use add_edges_from_matrix instead
+    of YAML edges for efficiency. Default is 100.
+**kwargs
+    Additional kwargs passed to circuit.run() / grid_search().
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+ExperimentResult

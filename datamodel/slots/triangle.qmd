@@ -1,0 +1,100 @@
+# Slot: triangle 
+
+
+_Fill only this triangle of a square matrix, masking the other half so a sibling layer fills it. Two layers then compose one matrix image whose halves are the quantities being compared._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/triangle](https://w3id.org/tvbo/slot/triangle)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Layer](../classes/Layer.qmd) | One mark bound to one data reference, with its encoding |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Triangle](../enums/Triangle.qmd) |
+| Domain Of | [Layer](../classes/Layer.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Layer](../classes/Layer.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:triangle |
+| native | tvbo:triangle |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: triangle
+description: Fill only this triangle of a square matrix, masking the other half so
+  a sibling layer fills it. Two layers then compose one matrix image whose halves
+  are the quantities being compared.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Layer
+domain_of:
+- Layer
+range: Triangle
+
+```
+</details></div>

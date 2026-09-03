@@ -1,0 +1,141 @@
+# Enum: ModelParadigm 
+
+
+
+
+_Computational paradigm or modeling approach supported by the tool._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_sw:enum/ModelParadigm](https://w3id.org/tvbo/software/enum/ModelParadigm)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| neural_mass | wd:Q7003015 | Phenomenological population-rate / neural-mass models |
+| mean_field | wd:Q1368960 | Mean-field reductions of spiking networks |
+| spiking | wd:Q7579783 | Spiking neuron models (LIF, AdEx, Izhikevich, etc |
+| conductance_based | wd:Q72484 | Conductance-based / Hodgkin-Huxley-type models |
+| compartmental | wd:Q5155691 | Multi-compartment morphologically detailed models |
+| rate_based | wd:Q3685405 | Firing-rate models |
+| phase_oscillator | wd:Q634884 | Phase-reduced or Kuramoto-type oscillator models |
+| reaction_diffusion | wd:Q851270 | Stochastic or deterministic reaction-diffusion |
+| plasticity | wd:Q747830 | Synaptic plasticity (STDP, homeostatic, etc |
+| generic | None | General-purpose, not specific to neuroscience |
+| multiscale | wd:Q1948412 | Bridging multiple spatial/temporal scales |
+| dynamic_mean_field | None | Dynamic mean-field approximation (e |
+| neural_field | wd:Q7003015 | Continuous neural field equations (Amari, Wilson-Cowan field) |
+| data_standard | wd:Q317623 | Data format or exchange standard |
+| model_description | None | Declarative model specification language |
+| bifurcation_analysis | wd:Q858926 | Dynamical systems bifurcation / continuation analysis |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [model_paradigm](../slots/model_paradigm.qmd) | Computational paradigms supported |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ModelParadigm
+description: Computational paradigm or modeling approach supported by the tool.
+from_schema: https://w3id.org/tvbo/software
+permissible_values:
+  neural_mass:
+    text: neural_mass
+    description: Phenomenological population-rate / neural-mass models.
+    meaning: wd:Q7003015
+  mean_field:
+    text: mean_field
+    description: Mean-field reductions of spiking networks.
+    meaning: wd:Q1368960
+  spiking:
+    text: spiking
+    description: Spiking neuron models (LIF, AdEx, Izhikevich, etc.).
+    meaning: wd:Q7579783
+  conductance_based:
+    text: conductance_based
+    description: Conductance-based / Hodgkin-Huxley-type models.
+    meaning: wd:Q72484
+  compartmental:
+    text: compartmental
+    description: Multi-compartment morphologically detailed models.
+    meaning: wd:Q5155691
+  rate_based:
+    text: rate_based
+    description: Firing-rate models.
+    meaning: wd:Q3685405
+  phase_oscillator:
+    text: phase_oscillator
+    description: Phase-reduced or Kuramoto-type oscillator models.
+    meaning: wd:Q634884
+  reaction_diffusion:
+    text: reaction_diffusion
+    description: Stochastic or deterministic reaction-diffusion.
+    meaning: wd:Q851270
+  plasticity:
+    text: plasticity
+    description: Synaptic plasticity (STDP, homeostatic, etc.).
+    meaning: wd:Q747830
+  generic:
+    text: generic
+    description: General-purpose, not specific to neuroscience.
+  multiscale:
+    text: multiscale
+    description: Bridging multiple spatial/temporal scales.
+    meaning: wd:Q1948412
+  dynamic_mean_field:
+    text: dynamic_mean_field
+    description: Dynamic mean-field approximation (e.g., Deco et al.).
+  neural_field:
+    text: neural_field
+    description: Continuous neural field equations (Amari, Wilson-Cowan field).
+    meaning: wd:Q7003015
+  data_standard:
+    text: data_standard
+    description: Data format or exchange standard.
+    meaning: wd:Q317623
+  model_description:
+    text: model_description
+    description: Declarative model specification language.
+  bifurcation_analysis:
+    text: bifurcation_analysis
+    description: Dynamical systems bifurcation / continuation analysis.
+    meaning: wd:Q858926
+
+```
+</details>
+
+</div>

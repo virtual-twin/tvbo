@@ -1,0 +1,101 @@
+# Slot: recipe 
+
+
+_Path to the member's study recipe YAML, relative to this owning study's recipe, or an IRI resolving to one._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/recipe](https://w3id.org/tvbo/slot/recipe)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StudyMember](../classes/StudyMember.qmd) | One member of a study-of-studies: a reference to a study recipe on disk (or b... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [StudyMember](../classes/StudyMember.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [StudyMember](../classes/StudyMember.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:recipe |
+| native | tvbo:recipe |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: recipe
+description: Path to the member's study recipe YAML, relative to this owning study's
+  recipe, or an IRI resolving to one.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: StudyMember
+domain_of:
+- StudyMember
+range: string
+required: true
+
+```
+</details></div>

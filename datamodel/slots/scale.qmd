@@ -1,0 +1,79 @@
+# Slot: scale 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/scale](https://w3id.org/tvbo/slot/scale)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ClinicalScore](../classes/ClinicalScore.qmd) | Metadata about a clinical score or scale |  no  |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+| [BidsEntities](../classes/BidsEntities.qmd) | BIDS filename entities (BEP017-aligned) for provenance and data discovery |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ClinicalScore](../classes/ClinicalScore.qmd), [SimulationTool](../classes/SimulationTool.qmd), [BidsEntities](../classes/BidsEntities.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:scale |
+| native | tvbo:scale |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: scale
+domain_of:
+- ClinicalScore
+- SimulationTool
+- BidsEntities
+range: string
+
+```
+</details></div>

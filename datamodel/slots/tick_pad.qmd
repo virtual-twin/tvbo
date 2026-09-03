@@ -1,0 +1,98 @@
+# Slot: tick_pad 
+
+
+_Distance from a tick mark to its label, in points._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/tick_pad](https://w3id.org/tvbo/slot/tick_pad)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Theme](../classes/Theme.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Theme](../classes/Theme.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:tick_pad |
+| native | tvbo:tick_pad |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: tick_pad
+description: Distance from a tick mark to its label, in points.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Theme
+domain_of:
+- Theme
+range: float
+
+```
+</details></div>

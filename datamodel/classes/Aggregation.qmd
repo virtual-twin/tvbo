@@ -1,0 +1,198 @@
+# Class: Aggregation 
+
+
+_Specifies how to aggregate values across a dimension. Used for loss functions to define per-element loss with reduction._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Aggregation](https://w3id.org/tvbo/Aggregation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Aggregation
+    click Aggregation href "./Aggregation.html"
+      Aggregation : over
+        
+          
+    
+        
+        
+        Aggregation --> "0..1" DimensionType : over
+        click DimensionType href "../../enums/DimensionType.html"
+    
+
+        
+      Aggregation : type
+        
+          
+    
+        
+        
+        Aggregation --> "0..1" ReductionType : type
+        click ReductionType href "../../enums/ReductionType.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Aggregation](https://w3id.org/tvbo/Aggregation) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [over](../slots/over.qmd) | 0..1 <br/> [DimensionType](../enums/DimensionType.qmd) | Dimension to aggregate over (e | direct |
+| [type](../slots/type.qmd) | 0..1 <br/> [ReductionType](../enums/ReductionType.qmd) | Aggregation operation (mean, sum, max, min, none) | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Analysis](../classes/Analysis.qmd) | [aggregate](../slots/aggregate.qmd) | range | [Aggregation](../classes/Aggregation.qmd) |
+| [Function](../classes/Function.qmd) | [aggregate](../slots/aggregate.qmd) | range | [Aggregation](../classes/Aggregation.qmd) |
+| [LossFunction](../classes/LossFunction.qmd) | [aggregate](../slots/aggregate.qmd) | range | [Aggregation](../classes/Aggregation.qmd) |
+| [FunctionCall](../classes/FunctionCall.qmd) | [aggregate](../slots/aggregate.qmd) | range | [Aggregation](../classes/Aggregation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Aggregation |
+| native | tvbo:Aggregation |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Aggregation
+description: Specifies how to aggregate values across a dimension. Used for loss functions
+  to define per-element loss with reduction.
+from_schema: https://w3id.org/tvbo
+attributes:
+  over:
+    name: over
+    description: Dimension to aggregate over (e.g., node, time, state)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Animation
+    - Aggregation
+    - Partition
+    range: DimensionType
+  type:
+    name: type
+    description: Aggregation operation (mean, sum, max, min, none)
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(mean)
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: ReductionType
+class_uri: tvbo:Aggregation
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Aggregation
+description: Specifies how to aggregate values across a dimension. Used for loss functions
+  to define per-element loss with reduction.
+from_schema: https://w3id.org/tvbo
+attributes:
+  over:
+    name: over
+    description: Dimension to aggregate over (e.g., node, time, state)
+    from_schema: https://w3id.org/tvbo
+    owner: Aggregation
+    domain_of:
+    - Animation
+    - Aggregation
+    - Partition
+    range: DimensionType
+  type:
+    name: type
+    description: Aggregation operation (mean, sum, max, min, none)
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(mean)
+    owner: Aggregation
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: ReductionType
+class_uri: tvbo:Aggregation
+
+```
+</details></div>

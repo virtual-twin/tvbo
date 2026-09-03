@@ -1,0 +1,86 @@
+# Slot: shape 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/shape](https://w3id.org/tvbo/slot/shape)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Matrix](../classes/Matrix.qmd) | Adjacency matrix of a network |  no  |
+| [CachedArray](../classes/CachedArray.qmd) | One numeric array inside a cached-result `` |  no  |
+| [NamedArray](../classes/NamedArray.qmd) | A named numeric array |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [FreeParameter](../classes/FreeParameter.qmd) | One degree of freedom in an OptimizationStage |  no  |
+| [NDArray](../classes/NDArray.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Matrix](../classes/Matrix.qmd), [CachedArray](../classes/CachedArray.qmd), [NamedArray](../classes/NamedArray.qmd), [Parameter](../classes/Parameter.qmd), [FreeParameter](../classes/FreeParameter.qmd), [NDArray](../classes/NDArray.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:shape |
+| native | tvbo:shape |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: shape
+domain_of:
+- Matrix
+- CachedArray
+- NamedArray
+- Parameter
+- FreeParameter
+- NDArray
+range: string
+
+```
+</details></div>

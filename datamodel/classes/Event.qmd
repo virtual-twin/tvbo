@@ -1,0 +1,1174 @@
+# Class: Event 
+
+
+_A discrete or continuous event that modifies the system during simulation. Generalizes Stimulus: can represent external inputs (stimulus type), threshold-triggered state changes (continuous/discrete type), or time-scheduled interventions (preset_time type). Attaches to components (nodes/edges) or to the experiment level._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Event](https://w3id.org/tvbo/Event)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Event
+    click Event href "./Event.html"
+      Event : affect
+        
+          
+    
+        
+        
+        Event --> "0..1" Equation : affect
+        click Equation href "./Equation.html"
+    
+
+        
+      Event : affect_negative
+        
+          
+    
+        
+        
+        Event --> "0..1" Equation : affect_negative
+        click Equation href "./Equation.html"
+    
+
+        
+      Event : affect_parameters
+        
+          
+    
+        
+        
+        Event --> "*" String : affect_parameters
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : affect_states
+        
+          
+    
+        
+        
+        Event --> "*" String : affect_states
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : condition
+        
+          
+    
+        
+        
+        Event --> "0..1" Equation : condition
+        click Equation href "./Equation.html"
+    
+
+        
+      Event : condition_parameters
+        
+          
+    
+        
+        
+        Event --> "*" String : condition_parameters
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : condition_states
+        
+          
+    
+        
+        
+        Event --> "*" String : condition_states
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : dataLocation
+        
+          
+    
+        
+        
+        Event --> "0..1" String : dataLocation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : description
+        
+          
+    
+        
+        
+        Event --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : duration
+        
+          
+    
+        
+        
+        Event --> "0..1" Float : duration
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Event : equation
+        
+          
+    
+        
+        
+        Event --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      Event : event_type
+        
+          
+    
+        
+        
+        Event --> "0..1" EventType : event_type
+        click EventType href "../../enums/EventType.html"
+    
+
+        
+      Event : interpolation
+        
+          
+    
+        
+        
+        Event --> "0..1" String : interpolation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : label
+        
+          
+    
+        
+        
+        Event --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : name
+        
+          
+    
+        
+        
+        Event --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : nodes
+        
+          
+    
+        
+        
+        Event --> "*" Integer : nodes
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Event : parameters
+        
+          
+    
+        
+        
+        Event --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Event : sampling_rate
+        
+          
+    
+        
+        
+        Event --> "0..1" Float : sampling_rate
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Event : target_component
+        
+          
+    
+        
+        
+        Event --> "0..1" String : target_component
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : target_regions
+        
+          
+    
+        
+        
+        Event --> "*" String : target_regions
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : target_variable
+        
+          
+    
+        
+        
+        Event --> "0..1" String : target_variable
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Event : trigger_times
+        
+          
+    
+        
+        
+        Event --> "*" Float : trigger_times
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Event : weight_distribution
+        
+          
+    
+        
+        
+        Event --> "0..1" Distribution : weight_distribution
+        click Distribution href "./Distribution.html"
+    
+
+        
+      Event : weight_parameter
+        
+          
+    
+        
+        
+        Event --> "0..1" Parameter : weight_parameter
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Event : weights
+        
+          
+    
+        
+        
+        Event --> "*" Float : weights
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Event](https://w3id.org/tvbo/Event) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [event_type](../slots/event_type.qmd) | 0..1 <br/> [EventType](../enums/EventType.qmd) | Type of event trigger mechanism | direct |
+| [condition](../slots/condition.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Condition function | direct |
+| [condition_states](../slots/condition_states.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | State variable symbols accessible in the condition function | direct |
+| [condition_parameters](../slots/condition_parameters.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Parameter symbols accessible in the condition function | direct |
+| [affect](../slots/affect.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Affect function: what happens when the event triggers | direct |
+| [affect_states](../slots/affect_states.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | State variable symbols modifiable in the affect function | direct |
+| [affect_parameters](../slots/affect_parameters.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Parameter symbols modifiable in the affect function | direct |
+| [affect_negative](../slots/affect_negative.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Affect on downcrossing (continuous events only) | direct |
+| [trigger_times](../slots/trigger_times.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Predetermined trigger times for preset_time events | direct |
+| [target_component](../slots/target_component.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Component to attach this event to | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Stimulus equation for stimulus-type events | direct |
+| [nodes](../slots/nodes.qmd) | * <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Network nodes a stimulus-type event is applied to (node ids / indices) | direct |
+| [weights](../slots/weights.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Per-node stimulus weighting, aligned with `nodes` | direct |
+| [weight_distribution](../slots/weight_distribution.qmd) | 0..1 <br/> [Distribution](../classes/Distribution.qmd) | Distribution to sample per-region stimulus weights from, as an alternative to... | direct |
+| [weight_parameter](../slots/weight_parameter.qmd) | 0..1 <br/> [Parameter](../classes/Parameter.qmd) | Per-node stimulus weighting supplied as a Parameter, so a DERIVED weighting c... | direct |
+| [target_variable](../slots/target_variable.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | State variable that a stimulus-type event drives — the variable its signal is... | direct |
+| [target_regions](../slots/target_regions.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Regions a stimulus-type event targets: 'all' (broadcast to every node) or exp... | direct |
+| [duration](../slots/duration.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Duration of stimulus-type events | direct |
+| [dataLocation](../slots/dataLocation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to a data file ( | direct |
+| [sampling_rate](../slots/sampling_rate.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Sample rate of the `dataLocation` waveform in samples per millisecond (e | direct |
+| [interpolation](../slots/interpolation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Interpolation for a data-driven stimulus: 'linear' or 'cubic' | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Node](../classes/Node.qmd) | [events](../slots/events.qmd) | range | [Event](../classes/Event.qmd) |
+| [Edge](../classes/Edge.qmd) | [events](../slots/events.qmd) | range | [Event](../classes/Event.qmd) |
+| [Dynamics](../classes/Dynamics.qmd) | [events](../slots/events.qmd) | range | [Event](../classes/Event.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [events](../slots/events.qmd) | range | [Event](../classes/Event.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Event |
+| native | tvbo:Event |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Event
+description: 'A discrete or continuous event that modifies the system during simulation.
+  Generalizes Stimulus: can represent external inputs (stimulus type), threshold-triggered
+  state changes (continuous/discrete type), or time-scheduled interventions (preset_time
+  type). Attaches to components (nodes/edges) or to the experiment level.'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- label
+- description
+- parameters
+attributes:
+  event_type:
+    name: event_type
+    description: Type of event trigger mechanism.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: stimulus
+    domain_of:
+    - Event
+    range: EventType
+  condition:
+    name: condition
+    description: 'Condition function. For continuous events: triggers when expression
+      crosses zero. For discrete events: triggers when expression evaluates to true.
+      Not used for preset_time or stimulus types.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Session
+    - ConditionalBlock
+    - Event
+    range: Equation
+    inlined: true
+  condition_states:
+    name: condition_states
+    description: State variable symbols accessible in the condition function. For
+      edges, can include source/destination vertex outputs.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  condition_parameters:
+    name: condition_parameters
+    description: Parameter symbols accessible in the condition function.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  affect:
+    name: affect
+    description: 'Affect function: what happens when the event triggers. Can modify
+      state variables and/or parameters. For stimulus type, this is the stimulus equation.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: Equation
+    inlined: true
+  affect_states:
+    name: affect_states
+    description: State variable symbols modifiable in the affect function.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  affect_parameters:
+    name: affect_parameters
+    description: Parameter symbols modifiable in the affect function.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  affect_negative:
+    name: affect_negative
+    description: Affect on downcrossing (continuous events only). If not specified,
+      uses the same affect for both crossings.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: Equation
+    inlined: true
+  trigger_times:
+    name: trigger_times
+    description: Predetermined trigger times for preset_time events. The solver will
+      step exactly to these times.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: float
+    multivalued: true
+  target_component:
+    name: target_component
+    description: Component to attach this event to. Can be a node label, edge label,
+      or 'all_edges'/'all_vertices' for broadcast. If not specified, event is experiment-level.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: string
+  equation:
+    name: equation
+    description: Stimulus equation for stimulus-type events. Legacy compatibility
+      with Stimulus class.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  nodes:
+    name: nodes
+    description: Network nodes a stimulus-type event is applied to (node ids / indices).
+      Pairs with `weights`. (Formerly `regions`.)
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - regions
+    rank: 1000
+    domain_of:
+    - Event
+    - Network
+    range: integer
+    multivalued: true
+  weights:
+    name: weights
+    description: Per-node stimulus weighting, aligned with `nodes`. (Formerly `weighting`.)
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - weighting
+    rank: 1000
+    domain_of:
+    - Event
+    range: float
+    multivalued: true
+  weight_distribution:
+    name: weight_distribution
+    description: Distribution to sample per-region stimulus weights from, as an alternative
+      to the explicit `weighting` array (e.g. Uniform(-1, 1) per node). When set,
+      the codegen samples one weight per target region using the distribution's seed.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: Distribution
+    inlined: true
+  weight_parameter:
+    name: weight_parameter
+    description: 'Per-node stimulus weighting supplied as a Parameter, so a DERIVED
+      weighting carries its provenance instead of being inlined as a list of numbers.
+      Use it when the weighting is measured or computed rather than hand-listed: `source:`
+      + `measure:` names the stored array, `producer:` names the call that builds
+      it (an ROI mask projected through a basis, a retinotopic map, a measured stimulation
+      field). This is the same provenance triple every other external array uses,
+      so a spatial stimulus pattern is described by where it came from rather than
+      by a literal a reader cannot check. Resolved at load time into the per-node
+      `weights`, aligned with `nodes` exactly as a literal weighting is; mutually
+      exclusive with `weight_distribution`, and a literal `weights` wins over both.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: Parameter
+    inlined: true
+  target_variable:
+    name: target_variable
+    description: State variable that a stimulus-type event drives — the variable its
+      signal is injected into (e.g. 'y_0' for Jansen-Rit, or a named 'stimulus' input
+      exposed to coupling). If absent, the stimulus adds to the model's default external-input
+      variable.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    - TuningObjective
+    range: string
+  target_regions:
+    name: target_regions
+    description: 'Regions a stimulus-type event targets: ''all'' (broadcast to every
+      node) or explicit region labels / indices. More expressive than the integer-only
+      `regions` slot; when both are absent the event applies to all regions.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  duration:
+    name: duration
+    description: Duration of stimulus-type events.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Stimulus
+    - Event
+    - InitialState
+    - Integrator
+    range: float
+  dataLocation:
+    name: dataLocation
+    description: Path to a data file (.npy) holding the stimulus waveform of a *data-driven*
+      stimulus event — the samples are interpolated at simulation time instead of
+      evaluating `equation`. 1-D arrays are a single time-series broadcast to the
+      targeted `nodes`; the event's `name` is still the symbol injected into the dynamics.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+  sampling_rate:
+    name: sampling_rate
+    description: Sample rate of the `dataLocation` waveform in samples per millisecond
+      (e.g. 1.0 = 1 kHz). Sample i is placed at time i / sampling_rate ms.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(1.0)
+    domain_of:
+    - Event
+    - TimeSeries
+    range: float
+  interpolation:
+    name: interpolation
+    description: 'Interpolation for a data-driven stimulus: ''linear'' or ''cubic''.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(linear)
+    domain_of:
+    - Event
+    range: string
+class_uri: tvbo:Event
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Event
+description: 'A discrete or continuous event that modifies the system during simulation.
+  Generalizes Stimulus: can represent external inputs (stimulus type), threshold-triggered
+  state changes (continuous/discrete type), or time-scheduled interventions (preset_time
+  type). Attaches to components (nodes/edges) or to the experiment level.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  event_type:
+    name: event_type
+    description: Type of event trigger mechanism.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: stimulus
+    owner: Event
+    domain_of:
+    - Event
+    range: EventType
+  condition:
+    name: condition
+    description: 'Condition function. For continuous events: triggers when expression
+      crosses zero. For discrete events: triggers when expression evaluates to true.
+      Not used for preset_time or stimulus types.'
+    from_schema: https://w3id.org/tvbo
+    owner: Event
+    domain_of:
+    - Session
+    - ConditionalBlock
+    - Event
+    range: Equation
+    inlined: true
+  condition_states:
+    name: condition_states
+    description: State variable symbols accessible in the condition function. For
+      edges, can include source/destination vertex outputs.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  condition_parameters:
+    name: condition_parameters
+    description: Parameter symbols accessible in the condition function.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  affect:
+    name: affect
+    description: 'Affect function: what happens when the event triggers. Can modify
+      state variables and/or parameters. For stimulus type, this is the stimulus equation.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: Equation
+    inlined: true
+  affect_states:
+    name: affect_states
+    description: State variable symbols modifiable in the affect function.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  affect_parameters:
+    name: affect_parameters
+    description: Parameter symbols modifiable in the affect function.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  affect_negative:
+    name: affect_negative
+    description: Affect on downcrossing (continuous events only). If not specified,
+      uses the same affect for both crossings.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: Equation
+    inlined: true
+  trigger_times:
+    name: trigger_times
+    description: Predetermined trigger times for preset_time events. The solver will
+      step exactly to these times.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: float
+    multivalued: true
+  target_component:
+    name: target_component
+    description: Component to attach this event to. Can be a node label, edge label,
+      or 'all_edges'/'all_vertices' for broadcast. If not specified, event is experiment-level.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: string
+  equation:
+    name: equation
+    description: Stimulus equation for stimulus-type events. Legacy compatibility
+      with Stimulus class.
+    from_schema: https://w3id.org/tvbo
+    owner: Event
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  nodes:
+    name: nodes
+    description: Network nodes a stimulus-type event is applied to (node ids / indices).
+      Pairs with `weights`. (Formerly `regions`.)
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - regions
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    - Network
+    range: integer
+    multivalued: true
+  weights:
+    name: weights
+    description: Per-node stimulus weighting, aligned with `nodes`. (Formerly `weighting`.)
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - weighting
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: float
+    multivalued: true
+  weight_distribution:
+    name: weight_distribution
+    description: Distribution to sample per-region stimulus weights from, as an alternative
+      to the explicit `weighting` array (e.g. Uniform(-1, 1) per node). When set,
+      the codegen samples one weight per target region using the distribution's seed.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: Distribution
+    inlined: true
+  weight_parameter:
+    name: weight_parameter
+    description: 'Per-node stimulus weighting supplied as a Parameter, so a DERIVED
+      weighting carries its provenance instead of being inlined as a list of numbers.
+      Use it when the weighting is measured or computed rather than hand-listed: `source:`
+      + `measure:` names the stored array, `producer:` names the call that builds
+      it (an ROI mask projected through a basis, a retinotopic map, a measured stimulation
+      field). This is the same provenance triple every other external array uses,
+      so a spatial stimulus pattern is described by where it came from rather than
+      by a literal a reader cannot check. Resolved at load time into the per-node
+      `weights`, aligned with `nodes` exactly as a literal weighting is; mutually
+      exclusive with `weight_distribution`, and a literal `weights` wins over both.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: Parameter
+    inlined: true
+  target_variable:
+    name: target_variable
+    description: State variable that a stimulus-type event drives — the variable its
+      signal is injected into (e.g. 'y_0' for Jansen-Rit, or a named 'stimulus' input
+      exposed to coupling). If absent, the stimulus adds to the model's default external-input
+      variable.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    - TuningObjective
+    range: string
+  target_regions:
+    name: target_regions
+    description: 'Regions a stimulus-type event targets: ''all'' (broadcast to every
+      node) or explicit region labels / indices. More expressive than the integer-only
+      `regions` slot; when both are absent the event applies to all regions.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Event
+    range: string
+    multivalued: true
+  duration:
+    name: duration
+    description: Duration of stimulus-type events.
+    from_schema: https://w3id.org/tvbo
+    owner: Event
+    domain_of:
+    - Stimulus
+    - Event
+    - InitialState
+    - Integrator
+    range: float
+  dataLocation:
+    name: dataLocation
+    description: Path to a data file (.npy) holding the stimulus waveform of a *data-driven*
+      stimulus event — the samples are interpolated at simulation time instead of
+      evaluating `equation`. 1-D arrays are a single time-series broadcast to the
+      targeted `nodes`; the event's `name` is still the symbol injected into the dynamics.
+    from_schema: https://w3id.org/tvbo
+    owner: Event
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+  sampling_rate:
+    name: sampling_rate
+    description: Sample rate of the `dataLocation` waveform in samples per millisecond
+      (e.g. 1.0 = 1 kHz). Sample i is placed at time i / sampling_rate ms.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(1.0)
+    owner: Event
+    domain_of:
+    - Event
+    - TimeSeries
+    range: float
+  interpolation:
+    name: interpolation
+    description: 'Interpolation for a data-driven stimulus: ''linear'' or ''cubic''.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(linear)
+    owner: Event
+    domain_of:
+    - Event
+    range: string
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Event
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Event
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Event
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Event
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+class_uri: tvbo:Event
+
+```
+</details></div>

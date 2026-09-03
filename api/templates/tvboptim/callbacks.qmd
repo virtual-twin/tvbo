@@ -1,0 +1,292 @@
+# callbacks { #tvbo.templates.tvboptim.callbacks }
+
+`templates.tvboptim.callbacks`
+
+Runtime callbacks for generated tvboptim scripts.
+
+Imported by the generated experiment/optimization scripts (which always run with tvboptim available), so this module may depend on tvboptim. It routes optimizer progress through the central ``tvbo.run`` logger (see :mod:`tvbo.log`), so one switch — ``TVBO_LOG_LEVEL`` / ``tvbo.set_log_level`` / the CLI ``--quiet`` — governs it exactly as it governs the rest of a run.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [AUTO_NVMAP_CAP](#tvbo.templates.tvboptim.callbacks.AUTO_NVMAP_CAP) |  |
+| [AUTO_NVMAP_MEM_BUDGET_GB](#tvbo.templates.tvboptim.callbacks.AUTO_NVMAP_MEM_BUDGET_GB) |  |
+| [logger](#tvbo.templates.tvboptim.callbacks.logger) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [LoggingProgressCallback](#tvbo.templates.tvboptim.callbacks.LoggingProgressCallback) | Log optimization progress at INFO every ``every`` steps. |
+
+### LoggingProgressCallback { #tvbo.templates.tvboptim.callbacks.LoggingProgressCallback }
+
+```python
+templates.tvboptim.callbacks.LoggingProgressCallback(every=1, total=None)
+```
+
+Log optimization progress at INFO every ``every`` steps.
+
+A logging-native, drop-in replacement for tvboptim's print-based :class:`~tvboptim.optim.callbacks.DefaultPrintCallback`. When *total* is given the line reads ``step i/total``. Never signals a stop.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type        | Description                                                    | Default   |
+|--------|-------------|----------------------------------------------------------------|-----------|
+| every  | int         | Emit one line every ``every`` steps (tvboptim gates the call). | `1`       |
+| total  | int \| None | Total step count, shown as ``i/total`` when known.             | `None`    |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [do](#tvbo.templates.tvboptim.callbacks.LoggingProgressCallback.do) | Log the step's loss and continue; returns the unchanged state so the optimiser is untouched. |
+
+##### do { #tvbo.templates.tvboptim.callbacks.LoggingProgressCallback.do }
+
+```python
+templates.tvboptim.callbacks.LoggingProgressCallback.do(
+    i,
+    diff_state,
+    static_state,
+    fitting_data,
+    aux_data,
+    loss_value,
+    grads,
+)
+```
+
+Log the step's loss and continue; returns the unchanged state so the optimiser is untouched.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [auto_nvmap_budget_bytes](#tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes) | Batch working-memory budget for ``n_parallel: auto``, in bytes. |
+| [auto_nvmap_cap](#tvbo.templates.tvboptim.callbacks.auto_nvmap_cap) | Cell-count cap for ``n_parallel: auto``, overridable via ``TVBO_NVMAP_AUTO_CAP``. |
+| [estimate_per_cell_bytes](#tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes) | Best-effort per-cell peak working-memory estimate for ``n_parallel: auto``. |
+| [nvmap_hard_cap](#tvbo.templates.tvboptim.callbacks.nvmap_hard_cap) | Hard ceiling on the resolved vmap width, from ``TVBO_NVMAP_MAX`` (unset → no cap). |
+| [point_indices](#tvbo.templates.tvboptim.callbacks.point_indices) | Index of each cell's ARRAY-VALUED axis point among *points*, matched by value. |
+| [progress_ticker](#tvbo.templates.tvboptim.callbacks.progress_ticker) | Wrap a scanned/vmapped per-item function so it streams ``label i/total`` progress. |
+| [resolve_cohort_batch_size](#tvbo.templates.tvboptim.callbacks.resolve_cohort_batch_size) | Resolve ``dataset.batch_size`` to a subject count per on-device batch. |
+| [resolve_exploration_n_pmap](#tvbo.templates.tvboptim.callbacks.resolve_exploration_n_pmap) | Number of pmap replicas to fan an exploration grid across. |
+| [resolve_exploration_n_vmap](#tvbo.templates.tvboptim.callbacks.resolve_exploration_n_vmap) | Resolve ``Exploration.n_parallel`` to a vmap chunk width for a grid run. |
+| [resolve_n_vmap](#tvbo.templates.tvboptim.callbacks.resolve_n_vmap) | Resolve an ``Exploration.n_parallel`` spec to a concrete vmap chunk width. |
+| [shared_ram_device_count](#tvbo.templates.tvboptim.callbacks.shared_ram_device_count) | Number of devices whose per-cell batches share one physical RAM pool. |
+| [stack_grid_cells](#tvbo.templates.tvboptim.callbacks.stack_grid_cells) | The grid's cells as ONE pytree of ``(N, ...)`` arrays, without a per-cell gather. |
+| [usable_cpu_count](#tvbo.templates.tvboptim.callbacks.usable_cpu_count) | Cores this process may actually run on, which is not always the machine's core count. |
+
+### auto_nvmap_budget_bytes { #tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes }
+
+```python
+templates.tvboptim.callbacks.auto_nvmap_budget_bytes()
+```
+
+Batch working-memory budget for ``n_parallel: auto``, in bytes.
+
+Overridable via ``TVBO_NVMAP_MEM_BUDGET_GB`` (default :data:`AUTO_NVMAP_MEM_BUDGET_GB`).
+Bounds the live batch (``shared_ram_devices × n_vmap × per-cell-bytes``) so auto-vectorisation cannot blow up peak memory on a large-per-cell model.
+
+### auto_nvmap_cap { #tvbo.templates.tvboptim.callbacks.auto_nvmap_cap }
+
+```python
+templates.tvboptim.callbacks.auto_nvmap_cap()
+```
+
+Cell-count cap for ``n_parallel: auto``, overridable via ``TVBO_NVMAP_AUTO_CAP``.
+
+Read at call time so the environment variable takes effect per run. Falls back to :data:`AUTO_NVMAP_CAP` if the variable is unset or not a positive integer.
+
+### estimate_per_cell_bytes { #tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes }
+
+```python
+templates.tvboptim.callbacks.estimate_per_cell_bytes(observable_fn, state)
+```
+
+Best-effort per-cell peak working-memory estimate for ``n_parallel: auto``.
+
+Compiles the single-cell observable ahead-of-time and reads XLA's memory analysis (``temp + output + argument``), so the estimate includes the transient buffers the observable allocates and then reduces away — e.g. a BOLD trajectory and its FFT convolution behind a scalar loss. Summing only the output (as ``eval_shape`` would) under-counts such reduction observables, so a vmapped batch of them silently OOMs.
+Falls back to an output+input shape sum, then ``None``, so the caller degrades to the count-only cap.
+
+### nvmap_hard_cap { #tvbo.templates.tvboptim.callbacks.nvmap_hard_cap }
+
+```python
+templates.tvboptim.callbacks.nvmap_hard_cap()
+```
+
+Hard ceiling on the resolved vmap width, from ``TVBO_NVMAP_MAX`` (unset → no cap).
+
+Unlike the auto-mode budget this also caps an *explicit* ``n_parallel``, so a failed cell can be retried with a smaller on-device batch (the workflow escalation exports a shrinking value per attempt) or an operator can pin a smaller GPU — both without re-emitting the kit. Read at call time so the retry's value takes effect.
+``0``/negative/unset all mean "no cap" (the escalation's attempt-1 sentinel), so a bare ``0`` is honoured silently rather than warned about.
+
+### point_indices { #tvbo.templates.tvboptim.callbacks.point_indices }
+
+```python
+templates.tvboptim.callbacks.point_indices(cell_values, points)
+```
+
+Index of each cell's ARRAY-VALUED axis point among *points*, matched by value.
+
+An exploration axis whose points are whole arrays (a swept connectome, a per-node control vector) cannot carry those arrays as a coordinate: an xarray coordinate is a 1-D index of scalars, so codegen declares ``arange(n)`` and the axis's grid dimension is the point index.
+The per-cell dataframe column, though, carries the whole array — so the two are in different currencies and the container cannot pair them. Only the generated script holds the materialised points, which is why the conversion belongs here.
+
+Matched by nearest flattened L1 distance rather than by equality, because a point that has round-tripped through a device or a file need not compare equal to the one the axis declared.
+The distance is accumulated one point at a time: a 379-node connectome carries 143k elements per point, and differencing every cell against every point at once is hundreds of megabytes of temporary for an argmin.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                       | Default    |
+|-------------|--------|-------------------------------------------------------------------|------------|
+| cell_values |        | One entry per grid cell, each an array of the axis's point shape. | _required_ |
+| points      |        | The axis's declared points, leading axis = point.                 | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                |
+|--------|--------|--------------------------------------------|
+|        |        | ``np.ndarray`` of int, one index per cell. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                               |
+|--------|------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | a cell's point has a different width from the declared ones, so it names a different quantity and the nearest match would be meaningless. |
+
+### progress_ticker { #tvbo.templates.tvboptim.callbacks.progress_ticker }
+
+```python
+templates.tvboptim.callbacks.progress_ticker(
+    total,
+    *,
+    every=None,
+    label='batch',
+)
+```
+
+Wrap a scanned/vmapped per-item function so it streams ``label i/total`` progress.
+
+The exploration / sweep grid runs as one JIT-compiled ``jax.lax.map``, so it prints ``STEP 2 > <exploration>`` and then nothing until it returns — the cluster "empty log" problem. This fires a JAX-native ``jax.debug.callback`` (no JIT break, vmap-safe) once per ``lax.map`` batch — a no-arg callback has no batched input to vectorise, so it runs once per scan step — ticking a host-side counter and logging through the central ``tvbo.run`` logger. The ``jax_tqdm`` pattern, reduced to the logging we already route.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type        | Description                                                              | Default    |
+|--------|-------------|--------------------------------------------------------------------------|------------|
+| total  | int         | Number of batches (``ceil(n_cells / n_vmap)``) for the ``i/total`` line. | _required_ |
+| every  | int \| None | Log cadence in batches; defaults to ~25 evenly-spaced updates.           | `None`     |
+| label  | str         | Noun for the line, e.g. ``"grid batch"``.                                | `'batch'`  |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                       |
+|--------|--------|-----------------------------------------------------------------------------------|
+|        |        | ``wrap(fn) -> fn`` — the identity when INFO is disabled, so there is zero runtime |
+|        |        | overhead under ``--quiet`` or a coarse ``TVBO_LOG_LEVEL``.                        |
+
+### resolve_cohort_batch_size { #tvbo.templates.tvboptim.callbacks.resolve_cohort_batch_size }
+
+```python
+templates.tvboptim.callbacks.resolve_cohort_batch_size(
+    spec,
+    n_subjects,
+    fit_fn=None,
+    example_args=None,
+)
+```
+
+Resolve ``dataset.batch_size`` to a subject count per on-device batch.
+
+An explicit integer passes straight through (clamped to ``[1, n_subjects]``) — the caller opted in, so no memory bound applies. ``None`` requests automatic sizing: the whole cohort in one batch unless one lane's estimated peak memory (:func:`estimate_per_cell_bytes`, compiling *fit_fn* on *example_args*) times the shared-RAM device count would exceed :func:`auto_nvmap_budget_bytes`, in which case the batch is narrowed to fit. Without an estimate it degrades to the whole cohort, i.e. the un-chunked vmap. Unlike :func:`resolve_n_vmap`, no fixed count cap applies: a cohort's batch is bounded by memory, not an exploration-grid cap.
+
+### resolve_exploration_n_pmap { #tvbo.templates.tvboptim.callbacks.resolve_exploration_n_pmap }
+
+```python
+templates.tvboptim.callbacks.resolve_exploration_n_pmap(grid_n, n_vmap)
+```
+
+Number of pmap replicas to fan an exploration grid across.
+
+CPU replicas are bounded by the host's usable cores: ``xla_force_host_platform_device_count`` slices one machine into logical devices, so replicas beyond its cores contend for the same silicon instead of adding compute — eight replicas each running their own scan loop across two cores are far slower than two. Below that bound the slices do buy parallelism, since one cell's integration rarely saturates a large node. Real accelerators keep their full count, each having its own hardware — the mirror of :func:`shared_ram_device_count`, which reads the same slicing for memory.
+
+Bounded again by the work itself: at *n_vmap* cells per chunk a grid of *grid_n* needs ``ceil(grid_n / n_vmap)`` chunks, and replicas past that only pad the batch with cells nobody asked for.
+
+Clamping only ever lowers the replica count, so the ``n_parallel: auto`` memory budget (resolved against :func:`shared_ram_device_count`) stays an upper bound on the live batch.
+
+### resolve_exploration_n_vmap { #tvbo.templates.tvboptim.callbacks.resolve_exploration_n_vmap }
+
+```python
+templates.tvboptim.callbacks.resolve_exploration_n_vmap(
+    spec,
+    grid_n,
+    observable_fn,
+    state,
+)
+```
+
+Resolve ``Exploration.n_parallel`` to a vmap chunk width for a grid run.
+
+Composition both exploration templates call: for ``"auto"`` it estimates per-cell memory (:func:`estimate_per_cell_bytes`) and counts shared-RAM devices (:func:`shared_ram_device_count`) to bound the batch; an explicit integer skips the estimate (and its compile) and passes straight through :func:`resolve_n_vmap`.
+
+### resolve_n_vmap { #tvbo.templates.tvboptim.callbacks.resolve_n_vmap }
+
+```python
+templates.tvboptim.callbacks.resolve_n_vmap(
+    spec,
+    grid_n,
+    per_cell_bytes=None,
+    n_pmap=1,
+)
+```
+
+Resolve an ``Exploration.n_parallel`` spec to a concrete vmap chunk width.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description                                                                                                                                                                                                                                                                                     | Default    |
+|----------------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| spec           |        | An integer chunk size (``1`` = fully sequential), or the string ``"auto"`` to vectorise up to the count cap and memory budget.                                                                                                                                                                  | _required_ |
+| grid_n         |        | Number of cells in the exploration grid.                                                                                                                                                                                                                                                        | _required_ |
+| per_cell_bytes |        | Optional per-cell working-memory estimate (see :func:`estimate_per_cell_bytes`). When given, ``"auto"`` additionally caps ``n_vmap`` so the concurrently-held batch fits the budget.                                                                                                            | `None`     |
+| n_pmap         |        | Number of devices whose batches share one RAM pool (see :func:`shared_ram_device_count`). The live batch is ``n_pmap × n_vmap`` cells in that shared RAM, so the budget bounds ``n_pmap × n_vmap × per_cell`` — not ``n_vmap`` alone (else forced host devices multiply the footprint past it). | `1`        |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                     |
+|--------|--------|---------------------------------------------------------------------------------|
+|        |        | Positive integer vmap chunk width. An explicit integer bypasses the auto memory |
+|        |        | budget (the caller opted in), but a ``TVBO_NVMAP_MAX`` env cap, when set, still |
+|        |        | applies to it — the workflow retry lowers it to shrink a failed cell's batch.   |
+
+### shared_ram_device_count { #tvbo.templates.tvboptim.callbacks.shared_ram_device_count }
+
+```python
+templates.tvboptim.callbacks.shared_ram_device_count()
+```
+
+Number of devices whose per-cell batches share one physical RAM pool.
+
+CPU host-replication (``xla_force_host_platform_device_count``) fans one host's RAM across N logical devices, so a pmapped batch holds ``N × n_vmap`` cells in the *same* RAM. Real GPU/TPU devices each have independent memory (only ``n_vmap`` cells apiece), so returns 1 there. Scales the ``n_parallel: auto`` memory budget (see :func:`resolve_exploration_n_vmap`). Returns 1 if JAX or the device list is unavailable.
+
+### stack_grid_cells { #tvbo.templates.tvboptim.callbacks.stack_grid_cells }
+
+```python
+templates.tvboptim.callbacks.stack_grid_cells(execution_result)
+```
+
+The grid's cells as ONE pytree of ``(N, ...)`` arrays, without a per-cell gather.
+
+``ParallelExecution`` already returns its cells stacked on device as ``(n_pmap, per_device, ...)``, so the stacked form is a reshape of the leading two axes and a trim of the pmap padding -- one op per leaf. Iterating the result instead costs an XLA slice and a device-to-host round trip per cell, and then builds a ``stack`` whose operand count IS the grid size, which XLA has to trace and fuse. Both are linear in cells with a large constant, and on a grid of tens of thousands they stop being the tail of the run and become the run: on the 37500-cell Jansen & Rit parameter sweep the cells integrate in about a minute and the collection took eight. tvboptim took the same reshape into ``ParallelResult.to_dataframe`` for the same reason.
+
+The flat order is the one ``ParallelResult.__getitem__`` defines -- cell ``i`` is ``[i // per_device, i % per_device]`` -- which is exactly what reshaping ``(n_pmap, per_device)`` into one axis yields, so the cells stay in grid order.
+
+A sequential run has no such stacking: its cells arrive as a Python list and are stacked here, which is the only shape available and is cheap, because the path exists for grids small enough or observables host-bound enough not to vectorise.
+
+### usable_cpu_count { #tvbo.templates.tvboptim.callbacks.usable_cpu_count }
+
+```python
+templates.tvboptim.callbacks.usable_cpu_count()
+```
+
+Cores this process may actually run on, which is not always the machine's core count.
+
+A container or Slurm cpuset gives the process a subset of the host's CPUs, and sizing work by the host count there oversubscribes the allocation. Prefers the affinity-aware counts and degrades to :func:`os.cpu_count`, then 1.

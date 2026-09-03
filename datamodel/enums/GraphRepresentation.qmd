@@ -1,0 +1,92 @@
+# Enum: GraphRepresentation 
+
+
+
+
+_How a Network's connectivity is represented when evaluating coupling. This is a backend-independent performance contract, not a numerical one: both representations compute the same coupling, but a sparse representation sums over the existing edges (cost scales with the number of edges) while a dense representation operates on the full adjacency (cost scales with nodes-squared). A backend maps the choice onto its own primitives (edge gather / segment-sum vs matrix product). Orthogonal to whether the coupling reads *delayed* states — that is decided per coupling by its conduction delay — so the two dimensions together yield the four backend graph kinds: dense/sparse × instantaneous/delayed._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/GraphRepresentation](https://w3id.org/tvbo/enum/GraphRepresentation)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| auto | None | Select by connection density: use the sparse representation when the adjacenc... |
+| dense | None | Force the dense-adjacency representation |
+| sparse | None | Force the edge-list (sparse) representation |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [graph_representation](../slots/graph_representation.qmd) | Representation used to evaluate coupling over this network's connectivity (``... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: GraphRepresentation
+description: 'How a Network''s connectivity is represented when evaluating coupling.
+  This is a backend-independent performance contract, not a numerical one: both representations
+  compute the same coupling, but a sparse representation sums over the existing edges
+  (cost scales with the number of edges) while a dense representation operates on
+  the full adjacency (cost scales with nodes-squared). A backend maps the choice onto
+  its own primitives (edge gather / segment-sum vs matrix product). Orthogonal to
+  whether the coupling reads *delayed* states — that is decided per coupling by its
+  conduction delay — so the two dimensions together yield the four backend graph kinds:
+  dense/sparse × instantaneous/delayed.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  auto:
+    text: auto
+    description: 'Select by connection density: use the sparse representation when
+      the adjacency is sparse enough that edge-wise evaluation is cheaper than the
+      dense product, dense otherwise. Default. Lets the backend apply its own crossover
+      without the recipe hard-coding a data structure.'
+  dense:
+    text: dense
+    description: Force the dense-adjacency representation. Preferred for densely connected
+      or small networks, where dense linear algebra's constant-factor efficiency outweighs
+      its nodes-squared scaling.
+  sparse:
+    text: sparse
+    description: Force the edge-list (sparse) representation. Preferred for large,
+      sparsely connected networks (structural connectomes, power grids) where coupling
+      cost then scales with the number of edges rather than nodes-squared.
+
+```
+</details>
+
+</div>

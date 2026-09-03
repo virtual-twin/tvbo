@@ -1,0 +1,101 @@
+# Slot: target_parameter 
+
+
+_The parameter to update (e.g., J_i, wLRE)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target_parameter](https://w3id.org/tvbo/slot/target_parameter)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [UpdateRule](../classes/UpdateRule.qmd) | Defines how a parameter is updated based on observables |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Parameter](../classes/Parameter.qmd) |
+| Domain Of | [UpdateRule](../classes/UpdateRule.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [UpdateRule](../classes/UpdateRule.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target_parameter |
+| native | tvbo:target_parameter |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_parameter
+description: The parameter to update (e.g., J_i, wLRE)
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: UpdateRule
+domain_of:
+- UpdateRule
+range: Parameter
+required: true
+inlined: true
+
+```
+</details></div>

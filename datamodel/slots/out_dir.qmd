@@ -1,0 +1,99 @@
+# Slot: out_dir 
+
+
+_Output directory template. ``{study}`` and ``{experiment}`` are substituted with the study and experiment keys at emit time. Unset means the kit's own ``derivatives/tvbo``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/out_dir](https://w3id.org/tvbo/slot/out_dir)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:out_dir |
+| native | tvbo:out_dir |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: out_dir
+description: Output directory template. ``{study}`` and ``{experiment}`` are substituted
+  with the study and experiment keys at emit time. Unset means the kit's own ``derivatives/tvbo``.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowConfig
+domain_of:
+- WorkflowConfig
+range: string
+
+```
+</details></div>

@@ -1,0 +1,77 @@
+# Slot: outputs 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/outputs](https://w3id.org/tvbo/slot/outputs)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  no  |
+| [ResultEntity](../classes/ResultEntity.qmd) | One persisted result container, described |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Provenance](../classes/Provenance.qmd), [ResultEntity](../classes/ResultEntity.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:outputs |
+| native | tvbo:outputs |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: outputs
+domain_of:
+- Provenance
+- ResultEntity
+range: string
+
+```
+</details></div>

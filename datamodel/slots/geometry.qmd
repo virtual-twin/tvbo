@@ -1,0 +1,77 @@
+# Slot: geometry 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/geometry](https://w3id.org/tvbo/slot/geometry)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [SpatialDomain](../classes/SpatialDomain.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surface](../classes/Surface.qmd), [SpatialDomain](../classes/SpatialDomain.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:geometry |
+| native | tvbo:geometry |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: geometry
+domain_of:
+- Surface
+- SpatialDomain
+range: string
+
+```
+</details></div>

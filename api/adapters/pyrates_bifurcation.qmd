@@ -1,0 +1,81 @@
+# pyrates_bifurcation { #tvbo.adapters.pyrates_bifurcation }
+
+`adapters.pyrates_bifurcation`
+
+PyRates/PyCoBi bifurcation analysis backend adapter for SimulationExperiment.
+
+Uses PyRates to generate Fortran code for AUTO-07p, and PyCoBi as the Python interface to run parameter continuations and detect bifurcations.
+
+Reuses the same ``Continuation`` schema as the BifurcationKit.jl backend, so ``exp.run("pyrates-bifurcation")`` and ``exp.run("bifurcationkit.jl")`` accept the same YAML specification.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [PYRATES_REPL](#tvbo.adapters.pyrates_bifurcation.PYRATES_REPL) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [PyRatesBifurcationAdapter](#tvbo.adapters.pyrates_bifurcation.PyRatesBifurcationAdapter) | Adapter for running bifurcation analysis via PyRates + PyCoBi (AUTO-07p). |
+
+### PyRatesBifurcationAdapter { #tvbo.adapters.pyrates_bifurcation.PyRatesBifurcationAdapter }
+
+```python
+adapters.pyrates_bifurcation.PyRatesBifurcationAdapter(experiment)
+```
+
+Adapter for running bifurcation analysis via PyRates + PyCoBi (AUTO-07p).
+
+Like ``BifurcationKitAdapter``, it renders one ``(Dynamics, Continuation)`` pair at a time and takes that pair's resolution from [`ContinuationAdapter`](#tvbo.adapters.base.ContinuationAdapter).
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [render_code](#tvbo.adapters.pyrates_bifurcation.PyRatesBifurcationAdapter.render_code) | Render Python code for the PyRates/PyCoBi bifurcation workflow. |
+| [run](#tvbo.adapters.pyrates_bifurcation.PyRatesBifurcationAdapter.run) | Run bifurcation analysis for each continuation in the experiment. |
+
+##### render_code { #tvbo.adapters.pyrates_bifurcation.PyRatesBifurcationAdapter.render_code }
+
+```python
+adapters.pyrates_bifurcation.PyRatesBifurcationAdapter.render_code(
+    model=None,
+    continuation=None,
+    **kwargs,
+)
+```
+
+Render Python code for the PyRates/PyCoBi bifurcation workflow.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+model : Dynamics, optional
+    The dynamics model. Defaults to ``experiment.dynamics``.
+continuation : Continuation, optional
+    The continuation spec. Defaults to first in experiment.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+str
+    Executable Python code string.
+
+##### run { #tvbo.adapters.pyrates_bifurcation.PyRatesBifurcationAdapter.run }
+
+```python
+adapters.pyrates_bifurcation.PyRatesBifurcationAdapter.run(**kwargs)
+```
+
+Run bifurcation analysis for each continuation in the experiment.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+BifurcationResult or dict[str, BifurcationResult]
+    Single result if one continuation, dict if multiple.

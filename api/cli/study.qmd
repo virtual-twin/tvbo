@@ -1,0 +1,60 @@
+# study { #tvbo.cli.study }
+
+`cli.study`
+
+``tvbo study`` — scaffold and inspect a study dataset.
+
+Two subcommands, both reading the one layout record (``schema/study_layout.yaml``, see :mod:`tvbo.utils.study_layout`):
+
+* ``tvbo study init <Name>`` creates a BIDS study dataset: the directories, the two ignore files derived from the record, ``dataset_description.json`` for the study and its derivative, and a seed for every file the record gives a template. ``-t <variant>`` adds the entries that variant declares, and swaps in any seed it names in place of the general one, so a replication gets a report about reproducing a paper and every other study does not.
+* ``tvbo study layout`` prints the tree or either ignore file, and ``--sync`` rewrites the layout region of a document in place so no document retypes the tree.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [SLIM_ROLES](#tvbo.cli.study.SLIM_ROLES) | What ``--slim`` writes, at the study root only: the one specification a run is given, the rules that keep the run's products out of version control, and the file that makes the directory identifiable as a study. |
+| [TEMPLATE_DIR](#tvbo.cli.study.TEMPLATE_DIR) | Seeds for the files the record gives a ``template``. |
+| [app](#tvbo.cli.study.app) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [init](#tvbo.cli.study.init) | Scaffold a BIDS study dataset from the layout record. |
+| [show_layout](#tvbo.cli.study.show_layout) | Print part of the layout record, or splice the tree into a document. |
+
+### init { #tvbo.cli.study.init }
+
+```python
+cli.study.init(
+    name=typer.Argument(..., help="Study name; also the dataset name and the entry recipe's stem."),
+    parent=typer.Option(Path(), '--in', '-C', help='Directory to create the study in.'),
+    template=typer.Option([], '--template', '-t', help='Study kind to include, one the layout record declares. Repeatable; omit for the general study.'),
+    force=typer.Option(False, '--force', help='Overwrite files that already exist.'),
+    slim=typer.Option(False, '--slim/--full', help='`--slim` writes the entry recipe, a `.gitignore` and `dataset_description.json`, and stops. The result is a runnable study, NOT a complete BIDS dataset: `tvbo validate study` will report the documentation a study of record needs and a demonstration does not. For a docs page, a notebook, or anything driven from the Python API. `--full` (default) scaffolds the whole BIDS study dataset.'),
+)
+```
+
+Scaffold a BIDS study dataset from the layout record.
+
+Every directory, both ignore files and every ``dataset_description.json`` are derived from the record, so a study's shape is never typed out a second time. An empty directory gets a ``.gitkeep`` only when it is tracked; an untracked one is left for the run to create.
+
+``--template`` selects a study kind the record declares. A kind both adds entries of its own and may supersede the seed of one every study has, since the same file needs different starting text once the kind is known: with no template the study reports its own results, ``-t replication`` adds the scorecard and the copyright-safe figure split a reproduction needs, and ``-t collection`` gives a study that nests other studies the document and the results manifest in place of a single report. A name the record does not declare is rejected rather than quietly selecting nothing.
+
+``--slim`` writes only what a human authors (:data:`SLIM_ROLES`), for a study that demonstrates something rather than being archived.
+
+### show_layout { #tvbo.cli.study.show_layout }
+
+```python
+cli.study.show_layout(
+    what=typer.Argument('tree', help='tree | gitignore | bidsignore'),
+    study=typer.Option('<Study>', '--study', '-s', help='Study name to interpolate into the layout.'),
+    template=typer.Option([], '--template', '-t', help='Layout variant to include. Repeatable.'),
+    sync=typer.Option([], '--sync', help="Rewrite each file's marker-delimited layout region in place instead of printing."),
+)
+```
+
+Print part of the layout record, or splice the tree into a document.
+
+``--sync`` is how documentation stops restating the layout: a file carrying the layout markers gets the current tree written into them, so a tree in prose can no longer fall behind the record.

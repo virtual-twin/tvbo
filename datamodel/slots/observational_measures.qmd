@@ -1,0 +1,100 @@
+# Slot: observational_measures 
+
+
+_BEP017 measure names for observational targets (e.g., BoldCorrelation)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/observational_measures](https://w3id.org/tvbo/slot/observational_measures)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:observational_measures |
+| native | tvbo:observational_measures |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: observational_measures
+description: BEP017 measure names for observational targets (e.g., BoldCorrelation)
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Network
+domain_of:
+- Network
+range: string
+multivalued: true
+
+```
+</details></div>

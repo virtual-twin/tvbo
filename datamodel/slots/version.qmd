@@ -1,0 +1,83 @@
+# Slot: version 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/version](https://w3id.org/tvbo/software/slot/version)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ClinicalScale](../classes/ClinicalScale.qmd) | A clinical assessment inventory or structured scale composed of multiple scor... |  no  |
+| [SoftwarePackage](../classes/SoftwarePackage.qmd) | Identity and metadata for a software package, aligned with schema |  no  |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+| [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | An individual software requirement binding a package to a version constraint ... |  no  |
+| [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | A reproducible software environment aggregating one or more SoftwareRequireme... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ClinicalScale](../classes/ClinicalScale.qmd), [SoftwarePackage](../classes/SoftwarePackage.qmd), [SimulationTool](../classes/SimulationTool.qmd), [SoftwareRequirement](../classes/SoftwareRequirement.qmd), [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:version |
+| native | tvbo_sw:version |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: version
+domain_of:
+- ClinicalScale
+- SoftwarePackage
+- SimulationTool
+- SoftwareRequirement
+- SoftwareEnvironment
+range: string
+
+```
+</details></div>

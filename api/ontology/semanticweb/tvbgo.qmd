@@ -1,0 +1,255 @@
+# tvbgo { #tvbo.ontology.semanticweb.tvbgo }
+
+`ontology.semanticweb.tvbgo`
+
+TVB-GO Module.
+
+This module provides utilities for working with TVB and the Gene Ontology.
+
+.. moduleauthor:: Leon K. Martin
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [KEYWORD_DIR](#tvbo.ontology.semanticweb.tvbgo.KEYWORD_DIR) |  |
+| [ROOT_DIR](#tvbo.ontology.semanticweb.tvbgo.ROOT_DIR) |  |
+| [TVBGO_DIR](#tvbo.ontology.semanticweb.tvbgo.TVBGO_DIR) |  |
+| [df_clust](#tvbo.ontology.semanticweb.tvbgo.df_clust) |  |
+| [df_tvbgo](#tvbo.ontology.semanticweb.tvbgo.df_tvbgo) |  |
+| [go](#tvbo.ontology.semanticweb.tvbgo.go) |  |
+| [go2kw](#tvbo.ontology.semanticweb.tvbgo.go2kw) |  |
+| [kw2tvbo](#tvbo.ontology.semanticweb.tvbgo.kw2tvbo) |  |
+| [kw_clust](#tvbo.ontology.semanticweb.tvbgo.kw_clust) |  |
+| [logger](#tvbo.ontology.semanticweb.tvbgo.logger) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [add_node](#tvbo.ontology.semanticweb.tvbgo.add_node) | Add a node to a given graph. |
+| [bel2label](#tvbo.ontology.semanticweb.tvbgo.bel2label) | Build a `namespace:name` string label for a PyBEL node. |
+| [get_annotated_parameters](#tvbo.ontology.semanticweb.tvbgo.get_annotated_parameters) | Retrieve parameters that have been annotated. |
+| [get_go](#tvbo.ontology.semanticweb.tvbgo.get_go) | Retrieve the Gene Ontology DAG (Directed Acyclic Graph) from the online repository. |
+| [get_term](#tvbo.ontology.semanticweb.tvbgo.get_term) | This function retrieves the definition of a given Gene Ontology term, using EMBL-EBI's QuickGO browser. |
+| [go_term2id](#tvbo.ontology.semanticweb.tvbgo.go_term2id) | Convert a Gene Ontology term to its corresponding ID. |
+| [graph_from_table](#tvbo.ontology.semanticweb.tvbgo.graph_from_table) | Generate a graph based on a given table. |
+| [rename2clust](#tvbo.ontology.semanticweb.tvbgo.rename2clust) | Rename a keyword based on predefined clusters. |
+| [retrieve_go_id](#tvbo.ontology.semanticweb.tvbgo.retrieve_go_id) | Search for a Gene Ontology term and retrieve its ID. |
+| [rmv_extrachars](#tvbo.ontology.semanticweb.tvbgo.rmv_extrachars) | Remove special characters from a term. |
+
+### add_node { #tvbo.ontology.semanticweb.tvbgo.add_node }
+
+```python
+ontology.semanticweb.tvbgo.add_node(n, g, type=None, **kwargs)
+```
+
+Add a node to a given graph.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+n : node
+    The node to be added.
+g : NetworkX graph
+    The graph to which the node will be added.
+type : str, optional
+    Type of the node.
+**kwargs
+    Additional keyword arguments.
+
+### bel2label { #tvbo.ontology.semanticweb.tvbgo.bel2label }
+
+```python
+ontology.semanticweb.tvbgo.bel2label(node)
+```
+
+Build a `namespace:name` string label for a PyBEL node.
+
+Composite nodes are flattened into a single ` AND `-joined label:
+`ComplexAbundance` and `CompositeAbundance` join their members, while a `Reaction` joins its reactants followed by its products. Any other node is labelled directly from its own entity namespace and name.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                     | Default    |
+|--------|--------|-------------------------------------------------------------------------------------------------|------------|
+| node   |        | A PyBEL DSL node whose entity (or members/reactants/products) carries a `namespace` and `name`. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                         |
+|--------|--------|---------------------------------------------------------------------|
+|        |        | The node label, e.g. `"HGNC:GRIN1"`, with member entities joined by |
+|        |        | `" AND "` for complex, composite, and reaction nodes.               |
+
+### get_annotated_parameters { #tvbo.ontology.semanticweb.tvbgo.get_annotated_parameters }
+
+```python
+ontology.semanticweb.tvbgo.get_annotated_parameters()
+```
+
+Retrieve parameters that have been annotated.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+list
+    List of annotated parameters.
+
+### get_go { #tvbo.ontology.semanticweb.tvbgo.get_go }
+
+```python
+ontology.semanticweb.tvbgo.get_go()
+```
+
+Retrieve the Gene Ontology DAG (Directed Acyclic Graph) from the online repository.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+go : GODag object
+    The Gene Ontology DAG.
+
+### get_term { #tvbo.ontology.semanticweb.tvbgo.get_term }
+
+```python
+ontology.semanticweb.tvbgo.get_term(go_id)
+```
+
+This function retrieves the definition of a given Gene Ontology term, using EMBL-EBI's QuickGO browser.
+
+Input: go_id - a valid Gene Ontology ID, e.g. GO:0048527.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+go_id : str
+    A valid Gene Ontology ID, e.g., GO:0048527.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    Term information.
+
+
+
+#### Raises: {.doc-section .doc-section-raises}
+
+ValueError
+    If information from QuickGO is not retrievable.
+
+### go_term2id { #tvbo.ontology.semanticweb.tvbgo.go_term2id }
+
+```python
+ontology.semanticweb.tvbgo.go_term2id(term)
+```
+
+Convert a Gene Ontology term to its corresponding ID.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+term : str
+    The Gene Ontology term to convert.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str or None
+    The corresponding GO ID or None if not found.
+
+### graph_from_table { #tvbo.ontology.semanticweb.tvbgo.graph_from_table }
+
+```python
+ontology.semanticweb.tvbgo.graph_from_table(df_tvbgo=df_tvbgo)
+```
+
+Generate a graph based on a given table.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+df_tvbgo : DataFrame, optional
+    Data table used to generate the graph. Defaults to the module-level df_tvbgo.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+NetworkX graph
+    Generated graph.
+
+### rename2clust { #tvbo.ontology.semanticweb.tvbgo.rename2clust }
+
+```python
+ontology.semanticweb.tvbgo.rename2clust(kw)
+```
+
+Rename a keyword based on predefined clusters.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+kw : str
+    Keyword to rename.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str
+    Renamed keyword.
+
+### retrieve_go_id { #tvbo.ontology.semanticweb.tvbgo.retrieve_go_id }
+
+```python
+ontology.semanticweb.tvbgo.retrieve_go_id(term)
+```
+
+Search for a Gene Ontology term and retrieve its ID.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+term : str
+    The Gene Ontology term to search.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str or None
+    The corresponding GO ID or None if not found.
+
+### rmv_extrachars { #tvbo.ontology.semanticweb.tvbgo.rmv_extrachars }
+
+```python
+ontology.semanticweb.tvbgo.rmv_extrachars(term)
+```
+
+Remove special characters from a term.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+term : str
+    The term from which special characters should be removed.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str
+    Term without special characters.

@@ -1,0 +1,326 @@
+# study_layout { #tvbo.utils.study_layout }
+
+`utils.study_layout`
+
+Read the study-layout record and answer questions about it.
+
+``schema/study_layout.yaml`` is the single ground truth for where a study dataset keeps its specification, its inputs, its results, its figures and its provenance. It is a LinkML instance of :class:`StudyLayout`, authored beside the schema that types it, and materialized into the package tree at ``tvbo/rules/study_layout.yaml`` by ``hatch_build.py`` so a wheel-installed tvbo resolves it too.
+
+Everything that needs to know the layout comes through this module: the scaffolder that creates a study, the resolvers that turn a role into a path, the writers that generate ``.gitignore`` and ``.bidsignore``, the validator that checks a study against the record, and the documentation that renders the tree. Nothing restates the layout, so it cannot drift.
+
+A resolver asks for a *role*, never for a literal path::
+
+    from tvbo.utils.study_layout import study_path
+    out = study_path("results", root=study_root)   # <root>/derivatives/tvbo
+
+Moving or renaming a directory is then a one-line edit to the record.
+
+One record covers every kind of study: an entry carrying ``in_templates`` belongs only to the named ``tvbo study init --template`` kinds and one carrying ``not_in_templates`` to every kind but those, so ``templates=("replication",)`` selects the replication layout out of the same tree the general one comes from. The kinds themselves are declared in the record's ``templates:``, which is what :func:`check_templates` matches a requested name against.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [ANY_TEMPLATE](#tvbo.utils.study_layout.ANY_TEMPLATE) | Pass as ``templates`` to select every entry the record declares, whatever template names it. |
+| [RECORD_PATH](#tvbo.utils.study_layout.RECORD_PATH) | The materialized record. Authored at ``schema/study_layout.yaml``; see the module docstring. |
+| [SOURCE_NAME](#tvbo.utils.study_layout.SOURCE_NAME) | Where a person edits the layout, named in every file this module generates. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [bidsignore_lines](#tvbo.utils.study_layout.bidsignore_lines) | The ``.bidsignore`` body, derived from each entry's standing with BIDS. |
+| [check_templates](#tvbo.utils.study_layout.check_templates) | *templates*, or raise naming the kinds the record does declare. |
+| [exceptions_block](#tvbo.utils.study_layout.exceptions_block) | Every entry BIDS does not yet know, and the proposal each waits on. |
+| [file_relpath](#tvbo.utils.study_layout.file_relpath) | Relative path of the file carrying ``role`` in ``parent``, ``{study}`` interpolated. |
+| [gitignore_lines](#tvbo.utils.study_layout.gitignore_lines) | The ``.gitignore`` body, derived from each entry's ``tracked`` field. |
+| [ignore_files_block](#tvbo.utils.study_layout.ignore_files_block) | Both generated ignore files, as a study gets them. |
+| [interpolate](#tvbo.utils.study_layout.interpolate) | Substitute the study's own name into a layout entry that is named after it. |
+| [is_network_companion](#tvbo.utils.study_layout.is_network_companion) | Whether *path* is the connectome companion a run writes beside its result, rather than a result itself. |
+| [is_tracked](#tvbo.utils.study_layout.is_tracked) | True when version control keeps this directory's contents. |
+| [iter_files](#tvbo.utils.study_layout.iter_files) | Every file the layout accounts for as ``(relative_posix_path, file)``. |
+| [layout_block](#tvbo.utils.study_layout.layout_block) | The layout as a marker-delimited markdown block, for a document to carry rather than retype. |
+| [load_layout](#tvbo.utils.study_layout.load_layout) | Return the layout record, parsed and cached. |
+| [markers](#tvbo.utils.study_layout.markers) | The comment pair delimiting the generated region named ``name``. |
+| [outermost_study_root](#tvbo.utils.study_layout.outermost_study_root) | The outermost study dataset *inside* belongs to — the holder of a study-of-studies, not the member. |
+| [relpath](#tvbo.utils.study_layout.relpath) | Relative path of the directory carrying ``role``, e.g. ``results`` to ``derivatives/tvbo``. |
+| [result_names_block](#tvbo.utils.study_layout.result_names_block) | The result filename grammar, rendered from the patterns filenames are built with. |
+| [sibling_study_root](#tvbo.utils.study_layout.sibling_study_root) | The root of the study called *name*, resolved from a path inside the tree that holds it. |
+| [spec_suffixes_block](#tvbo.utils.study_layout.spec_suffixes_block) | The suffix vocabulary, rendered from the suffix-to-class map itself. |
+| [splice_layout](#tvbo.utils.study_layout.splice_layout) | Replace the marker-delimited layout region of ``text``, or append it under a heading. |
+| [study_names](#tvbo.utils.study_layout.study_names) | Every name a study answers to: its directory, the stem of each entry recipe in it, and the ``citekey`` each recipe declares. |
+| [study_path](#tvbo.utils.study_layout.study_path) | Path of the directory carrying ``role``, absolute under ``root`` when given. |
+| [study_root](#tvbo.utils.study_layout.study_root) | The study dataset ``inside`` belongs to — the nearest ancestor declaring itself one. |
+| [sync_layout](#tvbo.utils.study_layout.sync_layout) | Rewrite every generated region ``dest`` carries. Returns True when the file changed. |
+| [template_for](#tvbo.utils.study_layout.template_for) | The seed *entry* starts from under *templates*, or ``None`` when it has no seed. |
+| [template_names](#tvbo.utils.study_layout.template_names) | The study kinds the record declares, in the order it names them. |
+| [templates_of](#tvbo.utils.study_layout.templates_of) | The templates a generated ignore file was written for, read back from its header. |
+| [tree](#tvbo.utils.study_layout.tree) | The layout as an indented tree, for documentation to render rather than restate. |
+| [walk](#tvbo.utils.study_layout.walk) | Every directory as ``(relative_posix_path, directory)``, outermost first. |
+
+### bidsignore_lines { #tvbo.utils.study_layout.bidsignore_lines }
+
+```python
+utils.study_layout.bidsignore_lines(layout=None, templates=(), study=None)
+```
+
+The ``.bidsignore`` body, derived from each entry's standing with BIDS.
+
+Only what a released validator does not know is listed: an entry outside the BIDS vocabulary, and one a BEP proposes but has not landed. A hidden directory is skipped by convention and a nested dataset is validated as its own type, so neither needs a line.
+Each entry's ``expires_with`` says what would retire it, which is what keeps the surface from becoming permanent by default.
+
+### check_templates { #tvbo.utils.study_layout.check_templates }
+
+```python
+utils.study_layout.check_templates(templates, layout=None)
+```
+
+*templates*, or raise naming the kinds the record does declare.
+
+A template name is matched, never registered: an undeclared one selects no entry, so without this a typo scaffolds the general study and reports success.
+
+### exceptions_block { #tvbo.utils.study_layout.exceptions_block }
+
+```python
+utils.study_layout.exceptions_block(layout=None, study='<Study>', templates=())
+```
+
+Every entry BIDS does not yet know, and the proposal each waits on.
+
+Exactly the entries :func:`bidsignore_lines` exempts, so this table explains that file rather than paraphrasing it, and an entry a BEP sanctions leaves both by one change of status. A nested derivative dataset and a dot-prefixed build root are absent because neither is an exception: BIDS sanctions the first and skips the second by convention.
+
+### file_relpath { #tvbo.utils.study_layout.file_relpath }
+
+```python
+utils.study_layout.file_relpath(role, study=None, layout=None, parent='')
+```
+
+Relative path of the file carrying ``role`` in ``parent``, ``{study}`` interpolated.
+
+A file role is unique per directory rather than per layout: a README belongs to the dataset root and another to ``sourcedata/``, so the directory is part of the question. ``parent`` defaults to the dataset root.
+
+### gitignore_lines { #tvbo.utils.study_layout.gitignore_lines }
+
+```python
+utils.study_layout.gitignore_lines(layout=None, templates=(), study=None)
+```
+
+The ``.gitignore`` body, derived from each entry's ``tracked`` field.
+
+A directory under an already-ignored parent is skipped, so each rule is stated once. A ``declared_files`` directory ignores its *contents* and re-includes each declared file, because a negation cannot re-include from an excluded directory.
+
+### ignore_files_block { #tvbo.utils.study_layout.ignore_files_block }
+
+```python
+utils.study_layout.ignore_files_block(
+    layout=None,
+    study='<Study>',
+    templates=(),
+)
+```
+
+Both generated ignore files, as a study gets them.
+
+Rendered by the same functions that write them, so a page cannot show a gate looser than the one a scaffolded study enforces.
+
+### interpolate { #tvbo.utils.study_layout.interpolate }
+
+```python
+utils.study_layout.interpolate(name, study)
+```
+
+Substitute the study's own name into a layout entry that is named after it.
+
+### is_network_companion { #tvbo.utils.study_layout.is_network_companion }
+
+```python
+utils.study_layout.is_network_companion(path)
+```
+
+Whether *path* is the connectome companion a run writes beside its result, rather than a result itself.
+
+The companion is named by its trailing ``_network`` entity, so that is what this tests. Matching the bare substring instead — which three call sites did — hides every container whose own name happens to contain the word: an analysis called ``network_scaling`` writes ``ana-networkscaling_result.h5``, and a figure binding it silently found no container at all.
+
+### is_tracked { #tvbo.utils.study_layout.is_tracked }
+
+```python
+utils.study_layout.is_tracked(rel, layout=None, templates=())
+```
+
+True when version control keeps this directory's contents.
+
+An ignored ancestor decides for its descendants: ``.tvbo/kits`` carries the default ``tracked: all`` and is still untracked, because ``.tvbo`` is. Callers that create placeholder files ask this rather than reading ``tracked`` directly.
+
+### iter_files { #tvbo.utils.study_layout.iter_files }
+
+```python
+utils.study_layout.iter_files(layout=None, templates=())
+```
+
+Every file the layout accounts for as ``(relative_posix_path, file)``.
+
+### layout_block { #tvbo.utils.study_layout.layout_block }
+
+```python
+utils.study_layout.layout_block(layout=None, study='<Study>', templates=())
+```
+
+The layout as a marker-delimited markdown block, for a document to carry rather than retype.
+
+Every entry's own ``description`` travels with it, so the tree and its explanation come from the one record and a document showing the layout cannot fall behind it.
+
+### load_layout { #tvbo.utils.study_layout.load_layout }
+
+```python
+utils.study_layout.load_layout(path=None)
+```
+
+Return the layout record, parsed and cached.
+
+### markers { #tvbo.utils.study_layout.markers }
+
+```python
+utils.study_layout.markers(name)
+```
+
+The comment pair delimiting the generated region named ``name``.
+
+### outermost_study_root { #tvbo.utils.study_layout.outermost_study_root }
+
+```python
+utils.study_layout.outermost_study_root(inside, layout=None)
+```
+
+The outermost study dataset *inside* belongs to — the holder of a study-of-studies, not the member.
+
+:func:`study_root` answers "which study is this file in", which is what a member's own paths resolve against. This answers "which tree is it part of", which is what a reference from one member to another has to be resolved within: searching wider than the shared root is how a binding silently finds a same-named study in an unrelated checkout.
+
+### relpath { #tvbo.utils.study_layout.relpath }
+
+```python
+utils.study_layout.relpath(role, layout=None)
+```
+
+Relative path of the directory carrying ``role``, e.g. ``results`` to ``derivatives/tvbo``.
+
+### result_names_block { #tvbo.utils.study_layout.result_names_block }
+
+```python
+utils.study_layout.result_names_block()
+```
+
+The result filename grammar, rendered from the patterns filenames are built with.
+
+### sibling_study_root { #tvbo.utils.study_layout.sibling_study_root }
+
+```python
+utils.study_layout.sibling_study_root(name, inside)
+```
+
+The root of the study called *name*, resolved from a path inside the tree that holds it.
+
+A cross-study reference (``tvbo:exp/<study>/exp-N``) names a study rather than a directory, so the name has to be matched against the tree the referring study is itself part of. The search is bounded by :func:`outermost_study_root` and matches on :func:`study_names`, which is the same rule `study_manifest._owning_results_root` applies to a prose binding — the difference is only that this one has no loaded tree to walk and reads the filesystem instead.
+
+Returns ``None`` when *inside* is not part of a study dataset at all: there is then no tree for the name to be resolved within and none for it to contradict, so the caller reads its own results exactly as it did before study segments meant anything.
+
+Raises on no match within a real tree, and on an ambiguous one. Both are cases where continuing would bind the reference to *a* container rather than to the one it names, and a figure drawn from the wrong study's run is the failure this whole path exists to prevent.
+
+The answer is memoised per referring study rather than per path: every file in one study resolves a name identically, so the recursive scan runs once for a study that asks a hundred times, and two studies can no longer read each other's answer the way caching the raw path allowed. ``sibling_study_root.cache_clear()`` drops it, which a caller needs only when the tree itself changes under a live process.
+
+### spec_suffixes_block { #tvbo.utils.study_layout.spec_suffixes_block }
+
+```python
+utils.study_layout.spec_suffixes_block()
+```
+
+The suffix vocabulary, rendered from the suffix-to-class map itself.
+
+### splice_layout { #tvbo.utils.study_layout.splice_layout }
+
+```python
+utils.study_layout.splice_layout(text, block)
+```
+
+Replace the marker-delimited layout region of ``text``, or append it under a heading.
+
+### study_names { #tvbo.utils.study_layout.study_names }
+
+```python
+utils.study_layout.study_names(root, layout=None)
+```
+
+Every name a study answers to: its directory, the stem of each entry recipe in it, and the ``citekey`` each recipe declares.
+
+A reference names a study the way its author knows it, which is the recipe stem (`Jansen1995.yaml`) far more often than anything else, and the directory usually agrees. The declared ``citekey`` is accepted too, because it is the only one of the three the study states about itself rather than inheriting from where it happens to sit: `tvbo-manuscript.yaml` in `tvbo-manuscript/` declares `citekey: tvbo_manuscript`, and its own results are named by that.
+
+### study_path { #tvbo.utils.study_layout.study_path }
+
+```python
+utils.study_layout.study_path(role, root=None, layout=None)
+```
+
+Path of the directory carrying ``role``, absolute under ``root`` when given.
+
+### study_root { #tvbo.utils.study_layout.study_root }
+
+```python
+utils.study_layout.study_root(inside, layout=None)
+```
+
+The study dataset ``inside`` belongs to — the nearest ancestor declaring itself one.
+
+A BIDS dataset is identified by its own ``dataset_description.json``, so that file is what the walk looks for; a helper handed a figure path can then resolve any other role without its caller passing a root it already implies. Raises rather than guessing, because a wrong root silently writes into the wrong study.
+
+### sync_layout { #tvbo.utils.study_layout.sync_layout }
+
+```python
+utils.study_layout.sync_layout(dest, layout=None, study='<Study>', templates=())
+```
+
+Rewrite every generated region ``dest`` carries. Returns True when the file changed.
+
+The layout tree is appended when absent; the three reference tables are only refreshed where a document already asks for them.
+
+### template_for { #tvbo.utils.study_layout.template_for }
+
+```python
+utils.study_layout.template_for(entry, templates=())
+```
+
+The seed *entry* starts from under *templates*, or ``None`` when it has no seed.
+
+A variant may supersede the default: the same file can need different starting text once the variant says what kind of study this is, and a variant that states only the difference keeps one record entry per file. Requested templates are consulted in the order the caller gave them, so the first one naming a seed wins and the choice does not depend on how the record happens to be ordered.
+
+### template_names { #tvbo.utils.study_layout.template_names }
+
+```python
+utils.study_layout.template_names(layout=None)
+```
+
+The study kinds the record declares, in the order it names them.
+
+### templates_of { #tvbo.utils.study_layout.templates_of }
+
+```python
+utils.study_layout.templates_of(text)
+```
+
+The templates a generated ignore file was written for, read back from its header.
+
+Found anywhere in the file, not only on the first line: a project may keep its own rules above the generated ones, and then the header that says what kind of study this is sits in the middle of the file rather than at the top. Keyed on the same :data:`SOURCE_NAME` :func:`_generated_header` writes, so the reader cannot look for a string the writer no longer emits.
+
+### tree { #tvbo.utils.study_layout.tree }
+
+```python
+utils.study_layout.tree(layout=None, study='<Study>', templates=())
+```
+
+The layout as an indented tree, for documentation to render rather than restate.
+
+### walk { #tvbo.utils.study_layout.walk }
+
+```python
+utils.study_layout.walk(layout=None, templates=())
+```
+
+Every directory as ``(relative_posix_path, directory)``, outermost first.

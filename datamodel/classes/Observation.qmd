@@ -1,0 +1,1606 @@
+# Class: Observation 
+
+
+_Unified class for all observation/measurement specifications. Covers monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a sequence of Functions with input -> output flow._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Observation](https://w3id.org/tvbo/Observation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Observation
+    click Observation href "./Observation.html"
+      Observation : acronym
+        
+          
+    
+        
+        
+        Observation --> "0..1" String : acronym
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Observation : aggregation
+        
+          
+    
+        
+        
+        Observation --> "0..1" AggregationType : aggregation
+        click AggregationType href "../../enums/AggregationType.html"
+    
+
+        
+      Observation : analysis
+        
+          
+    
+        
+        
+        Observation --> "0..1" Analysis : analysis
+        click Analysis href "./Analysis.html"
+    
+
+        
+      Observation : aux_data
+        
+          
+    
+        
+        
+        Observation --> "*" Reference : aux_data
+        click Reference href "./Reference.html"
+    
+
+        
+      Observation : class_reference
+        
+          
+    
+        
+        
+        Observation --> "0..1" ClassReference : class_reference
+        click ClassReference href "./ClassReference.html"
+    
+
+        
+      Observation : data_source
+        
+          
+    
+        
+        
+        Observation --> "0..1" DataSource : data_source
+        click DataSource href "./DataSource.html"
+    
+
+        
+      Observation : description
+        
+          
+    
+        
+        
+        Observation --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Observation : dims
+        
+          
+    
+        
+        
+        Observation --> "*" String : dims
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Observation : downsample_period
+        
+          
+    
+        
+        
+        Observation --> "0..1" Float : downsample_period
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Observation : dynamics
+        
+          
+    
+        
+        
+        Observation --> "0..1" Dynamics : dynamics
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      Observation : environment
+        
+          
+    
+        
+        
+        Observation --> "0..1" SoftwareEnvironment : environment
+        click SoftwareEnvironment href "./SoftwareEnvironment.html"
+    
+
+        
+      Observation : equation
+        
+          
+    
+        
+        
+        Observation --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      Observation : functions
+        
+          
+    
+        
+        
+        Observation --> "*" Function : functions
+        click Function href "./Function.html"
+    
+
+        
+      Observation : histogram
+        
+          
+    
+        
+        
+        Observation --> "0..1" Range : histogram
+        click Range href "./Range.html"
+    
+
+        
+      Observation : imaging_modality
+        
+          
+    
+        
+        
+        Observation --> "0..1" ImagingModality : imaging_modality
+        click ImagingModality href "../../enums/ImagingModality.html"
+    
+
+        
+      Observation : iri
+        
+          
+    
+        
+        
+        Observation --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Observation : label
+        
+          
+    
+        
+        
+        Observation --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Observation : min_coverage
+        
+          
+    
+        
+        
+        Observation --> "0..1" Float : min_coverage
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Observation : name
+        
+          
+    
+        
+        
+        Observation --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Observation : parameters
+        
+          
+    
+        
+        
+        Observation --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Observation : partition
+        
+          
+    
+        
+        
+        Observation --> "0..1" Partition : partition
+        click Partition href "./Partition.html"
+    
+
+        
+      Observation : period
+        
+          
+    
+        
+        
+        Observation --> "0..1" Float : period
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Observation : pipeline
+        
+          
+    
+        
+        
+        Observation --> "*" FunctionCall : pipeline
+        click FunctionCall href "./FunctionCall.html"
+    
+
+        
+      Observation : query
+        
+          
+    
+        
+        
+        Observation --> "0..1" BidsEntities : query
+        click BidsEntities href "./BidsEntities.html"
+    
+
+        
+      Observation : reconcile
+        
+          
+    
+        
+        
+        Observation --> "0..1" NodeReconciliation : reconcile
+        click NodeReconciliation href "../../enums/NodeReconciliation.html"
+    
+
+        
+      Observation : record
+        
+          
+    
+        
+        
+        Observation --> "0..1" Boolean : record
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Observation : reduce
+        
+          
+    
+        
+        
+        Observation --> "0..1" ObservationReductionMode : reduce
+        click ObservationReductionMode href "../../enums/ObservationReductionMode.html"
+    
+
+        
+      Observation : references
+        
+          
+    
+        
+        
+        Observation --> "*" String : references
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Observation : source
+        
+          
+    
+        
+        
+        Observation --> "*" String : source
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Observation : tail_duration
+        
+          
+    
+        
+        
+        Observation --> "0..1" Float : tail_duration
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Observation : tail_samples
+        
+          
+    
+        
+        
+        Observation --> "0..1" Integer : tail_samples
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Observation : time_unit
+        
+          
+    
+        
+        
+        Observation --> "0..1" UnitEnum : time_unit
+        click UnitEnum href "../../enums/UnitEnum.html"
+    
+
+        
+      Observation : unit
+        
+          
+    
+        
+        
+        Observation --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Observation : voi
+        
+          
+    
+        
+        
+        Observation --> "0..1" Integer : voi
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Observation : window_size
+        
+          
+    
+        
+        
+        Observation --> "0..1" Integer : window_size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Observation](https://w3id.org/tvbo/Observation) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [acronym](../slots/acronym.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [environment](../slots/environment.qmd) | 0..1 <br/> [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |  | direct |
+| [time_unit](../slots/time_unit.qmd) | 0..1 <br/> [UnitEnum](../enums/UnitEnum.qmd) | Unit of every time-valued number in this scope — the step size, any period, a... | direct |
+| [record](../slots/record.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether to include this element in simulation output files | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[UnitEnum](../enums/UnitEnum.qmd) | Physical unit of measurement | direct |
+| [references](../slots/references.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [functions](../slots/functions.qmd) | * <br/> [Function](../classes/Function.qmd) |  | direct |
+| [source](../slots/source.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[StateVariable](../classes/StateVariable.qmd)&nbsp;or&nbsp;<br />[Observation](../classes/Observation.qmd) | Ordered list of inputs this observation derives from | direct |
+| [aux_data](../slots/aux_data.qmd) | * <br/> [Reference](../classes/Reference.qmd) | Ordered list of auxiliary inputs the observation pipeline consumes | direct |
+| [dims](../slots/dims.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Axis names of this observation's output, outermost first, e | direct |
+| [period](../slots/period.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Sampling period for monitors (ms) | direct |
+| [downsample_period](../slots/downsample_period.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Intermediate downsampling period (ms) | direct |
+| [voi](../slots/voi.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Variable of interest index (which state variable to monitor) | direct |
+| [imaging_modality](../slots/imaging_modality.qmd) | 0..1 <br/> [ImagingModality](../enums/ImagingModality.qmd) | Type of imaging modality (BOLD, EEG, MEG, etc | direct |
+| [data_source](../slots/data_source.qmd) | 0..1 <br/> [DataSource](../classes/DataSource.qmd) | Load data from external source (file, database, API) | direct |
+| [query](../slots/query.qmd) | 0..1 <br/> [BidsEntities](../classes/BidsEntities.qmd) | BIDS entity filter that selects one per-subject file under the experiment's `... | direct |
+| [reconcile](../slots/reconcile.qmd) | 0..1 <br/> [NodeReconciliation](../enums/NodeReconciliation.qmd) | How a dataset-sourced target's nodes are aligned to the model network before ... | direct |
+| [min_coverage](../slots/min_coverage.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Minimum fraction of the model network's nodes that a ``by_label`` reconciliat... | direct |
+| [tail_samples](../slots/tail_samples.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of samples from the end to use | direct |
+| [tail_duration](../slots/tail_duration.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Length of the trailing window as a duration, in the same time unit as the int... | direct |
+| [aggregation](../slots/aggregation.qmd) | 0..1 <br/> [AggregationType](../enums/AggregationType.qmd) | How to aggregate over time | direct |
+| [histogram](../slots/histogram.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) | Bin spec (`lo`, `hi`, `n`) for a streaming order-statistic aggregation (`aggr... | direct |
+| [window_size](../slots/window_size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of samples for windowed aggregation | direct |
+| [partition](../slots/partition.qmd) | 0..1 <br/> [Partition](../classes/Partition.qmd) | Marks a grouped streaming reduction over a node partition (e | direct |
+| [pipeline](../slots/pipeline.qmd) | * <br/> [FunctionCall](../classes/FunctionCall.qmd) | Ordered sequence of Functions | direct |
+| [dynamics](../slots/dynamics.qmd) | 0..1 <br/> [Dynamics](../classes/Dynamics.qmd) | Auxiliary state system co-integrated with the model to compute this observati... | direct |
+| [reduce](../slots/reduce.qmd) | 0..1 <br/> [ObservationReductionMode](../enums/ObservationReductionMode.qmd) | Opt into streaming evaluation of this observation: fold it into the integrato... | direct |
+| [class_reference](../slots/class_reference.qmd) | 0..1 <br/> [ClassReference](../classes/ClassReference.qmd) | Direct class reference (alternative to pipeline) | direct |
+| [analysis](../slots/analysis.qmd) | 0..1 <br/> [Analysis](../classes/Analysis.qmd) | Marks this observation as an analysis observable that operates on the solve/l... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | [source](../slots/source.qmd) | any_of[range] | [Observation](../classes/Observation.qmd) |
+| [UpdateRule](../classes/UpdateRule.qmd) | [requires](../slots/requires.qmd) | range | [Observation](../classes/Observation.qmd) |
+| [TuningObjective](../classes/TuningObjective.qmd) | [target_data](../slots/target_data.qmd) | range | [Observation](../classes/Observation.qmd) |
+| [Algorithm](../classes/Algorithm.qmd) | [observations](../slots/observations.qmd) | range | [Observation](../classes/Observation.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [observations](../slots/observations.qmd) | range | [Observation](../classes/Observation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Observation |
+| native | tvbo:Observation |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Observation
+description: Unified class for all observation/measurement specifications. Covers
+  monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a
+  sequence of Functions with input -> output flow.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- acronym
+- label
+- description
+- iri
+- equation
+- parameters
+- environment
+- time_unit
+- record
+- unit
+- references
+attributes:
+  functions:
+    name: functions
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: Function
+    multivalued: true
+    inlined: true
+  source:
+    name: source
+    description: Ordered list of inputs this observation derives from. Each entry
+      is either a StateVariable reference (raw observation of an integrated trajectory,
+      e.g. ``S_e``) or an Observation reference (derived observation, e.g. ``bold``).
+      Codegen checks each source name against ``experiment.observations``; names matching
+      an existing observation flag the parent as derived.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    multivalued: true
+    inlined: false
+    any_of:
+    - range: StateVariable
+    - range: Observation
+  aux_data:
+    name: aux_data
+    description: 'Ordered list of auxiliary inputs the observation pipeline consumes.
+      Examples: a Surface mesh''s faces array, an empirical FC matrix on a reference
+      Network, or another Observation''s output. Resolved load-time eagerly; rendered
+      code is self-contained.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: Reference
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  dims:
+    name: dims
+    description: 'Axis names of this observation''s output, outermost first, e.g.
+      ``[node]`` for a per-region value or ``[time, node]`` for a trajectory. Declare
+      it when the shape cannot be derived: a standard reduction states its own axes
+      and needs nothing here, but a ``pipeline`` of user functions has an output shape
+      only its author knows. Without it the container falls back to positional names
+      built from the CONTAINER VARIABLE, not from the observation — ``integration__target_peak_frequencies_d0``,
+      not ``target_peak_frequencies_d0`` — because inferring an axis from a length
+      is how a four-sample trace in a four-node network comes to be labelled by region.
+      A declaration that does not match the value it describes is refused by name
+      rather than ignored.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    - Analysis
+    range: string
+    multivalued: true
+  period:
+    name: period
+    description: 'Sampling period for monitors (ms). For BOLD: TR in ms.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: float
+  downsample_period:
+    name: downsample_period
+    description: 'Intermediate downsampling period (ms). For BOLD: typically matches
+      dt.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: float
+  voi:
+    name: voi
+    description: 'Variable of interest index (which state variable to monitor). Default:
+      0.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: integer
+  imaging_modality:
+    name: imaging_modality
+    description: Type of imaging modality (BOLD, EEG, MEG, etc.)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: ImagingModality
+  data_source:
+    name: data_source
+    description: Load data from external source (file, database, API). When specified,
+      this observation represents empirical/external data rather than simulated data.
+      Enables unified treatment of all data.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Parcellation
+    - Tractogram
+    - Observation
+    range: DataSource
+    inlined: true
+  query:
+    name: query
+    description: 'BIDS entity filter that selects one per-subject file under the experiment''s
+      ``dataset.bids_root`` when ``source`` is dataset-sourced (``dataset.subject.<measure>``).
+      The active subject fills the ``sub-`` entity at resolution time; the remaining
+      entities (e.g. ``desc: FCavg, atlas: Schaefer1000, suffix: relmat``) disambiguate
+      among the subject''s several networks/measurements. The same filter enumerates
+      the cohort for the per-subject workflow fan-out, so one declaration drives both
+      discovery and resolution.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: BidsEntities
+    inlined: true
+  reconcile:
+    name: reconcile
+    description: 'How a dataset-sourced target''s nodes are aligned to the model network
+      before comparison. ``by_label`` selects the shared node labels on both sides
+      by name (keyed ``.sel``), never by position, so a differing node count or order
+      cannot silently misalign the comparison. Matching is alias-aware: a target label
+      matches a model node when it equals that node''s ``label`` or any of its ``alternateName``
+      entries, so a differing nomenclature reconciles without relabelling either side.
+      ``none`` disables reconciliation (identical node sets).'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: by_label
+    domain_of:
+    - DataRef
+    - Observation
+    range: NodeReconciliation
+  min_coverage:
+    name: min_coverage
+    description: Minimum fraction of the model network's nodes that a ``by_label``
+      reconciliation must cover, else resolution raises. The realised coverage is
+      always logged. Absent (``null``) means require full coverage (``1.0``) for a
+      dataset-sourced target — silently fitting on a partial node subset must be an
+      explicit opt-in (e.g. ``0.95`` to tolerate a few genuinely-missing empirical
+      parcels), never the default.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: float
+    minimum_value: 0.0
+    maximum_value: 1.0
+  tail_samples:
+    name: tail_samples
+    description: 'Number of samples from the end to use. Takes the last N samples
+      before aggregation. E.g., tail_samples: 500 means use data[-500:]. Prefer `tail_duration`
+      when the window means a duration — a sample count silently rescales when the
+      step size changes.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: integer
+  tail_duration:
+    name: tail_duration
+    description: Length of the trailing window as a duration, in the same time unit
+      as the integration step. Converted to a sample count against this observation's
+      own sample period (its `period`/`downsample_period`, else the integration `step_size`),
+      so the window stays the same length of simulated time at any step. Mutually
+      exclusive with `tail_samples`.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: float
+  aggregation:
+    name: aggregation
+    description: How to aggregate over time
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    - Coupling
+    range: AggregationType
+  histogram:
+    name: histogram
+    description: 'Bin spec (`lo`, `hi`, `n`) for a streaming order-statistic aggregation
+      (`aggregation: median`). Should span the expected value range of the reduced
+      per-step quantity; the quantile is linearly interpolated within the crossing
+      bin. Only used by the streaming-median reduction path.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: Range
+    inlined: true
+  window_size:
+    name: window_size
+    description: Number of samples for windowed aggregation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: integer
+  partition:
+    name: partition
+    description: 'Marks a grouped streaming reduction over a node partition (e.g.
+      per-hemisphere cortical wave metrics): the observer `dynamics` body is vmapped
+      over the partition axis and folded to per-group scalar metrics. Requires `period`
+      (the downsample) and an observer whose derived variables produce the per-group
+      outputs named by the Partition. See Partition.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    - WorkflowEngineConfig
+    range: Partition
+    inlined: true
+  pipeline:
+    name: pipeline
+    description: Ordered sequence of Functions. Each step has a unique `name` (used
+      to key step outputs) and transforms input -> output. List form preserves execution
+      order.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: FunctionCall
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  dynamics:
+    name: dynamics
+    description: 'Auxiliary state system co-integrated with the model to compute this
+      observation online, so the full trajectory need never be held. Its state variables
+      advance in step with the model, and the observation''s value is the derived
+      variable this Dynamics marks ``record: true`` — read at the final step for a
+      reduction (e.g. effective frequency) or, when ``period`` is set, emitted at
+      that period as a time series for a monitor (e.g. a Balloon-Windkessel hemodynamic
+      forward model, which then costs O(nodes) instead of O(time x nodes)). A backend
+      that implements this folds the observer into its own integration, so a batched
+      parameter sweep carries only the accumulator and not a per-cell trajectory;
+      ``tvboptim`` does. An alternative to the post-scan ``pipeline`` / ``class_reference``
+      for observations expressible as a time recurrence. Its ``parameters`` are the
+      observer''s named constants, bound by name in every recurrence expression exactly
+      as a model Dynamics'' parameters are — scalar or array-valued (``value`` a nested
+      list, ``shape`` declaring its extent), so a fixed operator the reduction consumes
+      (a mesh gradient, a template matrix) is declared as data on the observer rather
+      than hidden inside a backend callable. Its expressions name the observed signal
+      ``x``, bound to whatever this observation''s ``source`` names — the same device
+      a curated coupling''s ``pre_expression`` uses with ``x_j`` — so an observation
+      model is curated once and pointed at any model''s state variable. An observer
+      that declares its own ``x`` (state, parameter or derived variable) means that
+      ``x`` and gets no binding.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    inlined: true
+  reduce:
+    name: reduce
+    description: 'Opt into streaming evaluation of this observation: fold it into
+      the integrator carry as an (init, update, finalize) reducer via prepare(reduce=...)
+      instead of computing it post-scan from a materialised trajectory. Byte-identical
+      to the pipeline value (to f64 rounding) but with O(block) instead of O(n_time)
+      peak memory, so a fit whose per-stage simulation is too long to hold the trajectory
+      (e.g. the Schirner 2023 group fit) can still evaluate it. Supported for the
+      HRF-Volterra BOLD pipeline (the resolver lifts the HRF kernel, downsample stride,
+      TR stride and Volterra k_1/V_0 from the declared pipeline), for cumulative mean/std/variance
+      aggregations, and for a matrix co-moment FC (compute_fc as a running covariance
+      emitted at finalize, never a trajectory). Byte-identical holds noise-off; with
+      a per-block noise draw the realization shifts with block size (ergodically vanishing).
+      Absent (the default) keeps the post-scan pipeline unchanged — no other observation
+      or experiment is affected.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    - ExplorationAxis
+    range: ObservationReductionMode
+  class_reference:
+    name: class_reference
+    description: 'Direct class reference (alternative to pipeline). Use for external
+      library classes like tvboptim.Bold, custom monitors, or any callable class.
+      The class is instantiated with constructor_args and called with call_args. Example:
+      {name: Bold, module: tvboptim.observations.tvb_monitors.bold, constructor_args:
+      [{name: period, value: 1000.0}]}'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Observation
+    range: ClassReference
+    inlined: true
+  analysis:
+    name: analysis
+    description: Marks this observation as an analysis observable that operates on
+      the solve/loss rather than a result-data pipeline (autodiff gradient, finite-difference
+      gradient, or Lyapunov spectrum).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DataRef
+    - Observation
+    range: Analysis
+    inlined: true
+class_uri: tvbo:Observation
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Observation
+description: Unified class for all observation/measurement specifications. Covers
+  monitors (BOLD, EEG), tuning observables, and derived quantities. Pipeline is a
+  sequence of Functions with input -> output flow.
+from_schema: https://w3id.org/tvbo
+attributes:
+  functions:
+    name: functions
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: Function
+    multivalued: true
+    inlined: true
+  source:
+    name: source
+    description: Ordered list of inputs this observation derives from. Each entry
+      is either a StateVariable reference (raw observation of an integrated trajectory,
+      e.g. ``S_e``) or an Observation reference (derived observation, e.g. ``bold``).
+      Codegen checks each source name against ``experiment.observations``; names matching
+      an existing observation flag the parent as derived.
+    from_schema: https://w3id.org/tvbo
+    owner: Observation
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: string
+    multivalued: true
+    inlined: false
+    any_of:
+    - range: StateVariable
+    - range: Observation
+  aux_data:
+    name: aux_data
+    description: 'Ordered list of auxiliary inputs the observation pipeline consumes.
+      Examples: a Surface mesh''s faces array, an empirical FC matrix on a reference
+      Network, or another Observation''s output. Resolved load-time eagerly; rendered
+      code is self-contained.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: Reference
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  dims:
+    name: dims
+    description: 'Axis names of this observation''s output, outermost first, e.g.
+      ``[node]`` for a per-region value or ``[time, node]`` for a trajectory. Declare
+      it when the shape cannot be derived: a standard reduction states its own axes
+      and needs nothing here, but a ``pipeline`` of user functions has an output shape
+      only its author knows. Without it the container falls back to positional names
+      built from the CONTAINER VARIABLE, not from the observation — ``integration__target_peak_frequencies_d0``,
+      not ``target_peak_frequencies_d0`` — because inferring an axis from a length
+      is how a four-sample trace in a four-node network comes to be labelled by region.
+      A declaration that does not match the value it describes is refused by name
+      rather than ignored.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    - Analysis
+    range: string
+    multivalued: true
+  period:
+    name: period
+    description: 'Sampling period for monitors (ms). For BOLD: TR in ms.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: float
+  downsample_period:
+    name: downsample_period
+    description: 'Intermediate downsampling period (ms). For BOLD: typically matches
+      dt.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: float
+  voi:
+    name: voi
+    description: 'Variable of interest index (which state variable to monitor). Default:
+      0.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: integer
+  imaging_modality:
+    name: imaging_modality
+    description: Type of imaging modality (BOLD, EEG, MEG, etc.)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: ImagingModality
+  data_source:
+    name: data_source
+    description: Load data from external source (file, database, API). When specified,
+      this observation represents empirical/external data rather than simulated data.
+      Enables unified treatment of all data.
+    from_schema: https://w3id.org/tvbo
+    owner: Observation
+    domain_of:
+    - Parcellation
+    - Tractogram
+    - Observation
+    range: DataSource
+    inlined: true
+  query:
+    name: query
+    description: 'BIDS entity filter that selects one per-subject file under the experiment''s
+      ``dataset.bids_root`` when ``source`` is dataset-sourced (``dataset.subject.<measure>``).
+      The active subject fills the ``sub-`` entity at resolution time; the remaining
+      entities (e.g. ``desc: FCavg, atlas: Schaefer1000, suffix: relmat``) disambiguate
+      among the subject''s several networks/measurements. The same filter enumerates
+      the cohort for the per-subject workflow fan-out, so one declaration drives both
+      discovery and resolution.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: BidsEntities
+    inlined: true
+  reconcile:
+    name: reconcile
+    description: 'How a dataset-sourced target''s nodes are aligned to the model network
+      before comparison. ``by_label`` selects the shared node labels on both sides
+      by name (keyed ``.sel``), never by position, so a differing node count or order
+      cannot silently misalign the comparison. Matching is alias-aware: a target label
+      matches a model node when it equals that node''s ``label`` or any of its ``alternateName``
+      entries, so a differing nomenclature reconciles without relabelling either side.
+      ``none`` disables reconciliation (identical node sets).'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: by_label
+    owner: Observation
+    domain_of:
+    - DataRef
+    - Observation
+    range: NodeReconciliation
+  min_coverage:
+    name: min_coverage
+    description: Minimum fraction of the model network's nodes that a ``by_label``
+      reconciliation must cover, else resolution raises. The realised coverage is
+      always logged. Absent (``null``) means require full coverage (``1.0``) for a
+      dataset-sourced target — silently fitting on a partial node subset must be an
+      explicit opt-in (e.g. ``0.95`` to tolerate a few genuinely-missing empirical
+      parcels), never the default.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: float
+    minimum_value: 0.0
+    maximum_value: 1.0
+  tail_samples:
+    name: tail_samples
+    description: 'Number of samples from the end to use. Takes the last N samples
+      before aggregation. E.g., tail_samples: 500 means use data[-500:]. Prefer `tail_duration`
+      when the window means a duration — a sample count silently rescales when the
+      step size changes.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: integer
+  tail_duration:
+    name: tail_duration
+    description: Length of the trailing window as a duration, in the same time unit
+      as the integration step. Converted to a sample count against this observation's
+      own sample period (its `period`/`downsample_period`, else the integration `step_size`),
+      so the window stays the same length of simulated time at any step. Mutually
+      exclusive with `tail_samples`.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: float
+  aggregation:
+    name: aggregation
+    description: How to aggregate over time
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    - Coupling
+    range: AggregationType
+  histogram:
+    name: histogram
+    description: 'Bin spec (`lo`, `hi`, `n`) for a streaming order-statistic aggregation
+      (`aggregation: median`). Should span the expected value range of the reduced
+      per-step quantity; the quantile is linearly interpolated within the crossing
+      bin. Only used by the streaming-median reduction path.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: Range
+    inlined: true
+  window_size:
+    name: window_size
+    description: Number of samples for windowed aggregation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: integer
+  partition:
+    name: partition
+    description: 'Marks a grouped streaming reduction over a node partition (e.g.
+      per-hemisphere cortical wave metrics): the observer `dynamics` body is vmapped
+      over the partition axis and folded to per-group scalar metrics. Requires `period`
+      (the downsample) and an observer whose derived variables produce the per-group
+      outputs named by the Partition. See Partition.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    - WorkflowEngineConfig
+    range: Partition
+    inlined: true
+  pipeline:
+    name: pipeline
+    description: Ordered sequence of Functions. Each step has a unique `name` (used
+      to key step outputs) and transforms input -> output. List form preserves execution
+      order.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: FunctionCall
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  dynamics:
+    name: dynamics
+    description: 'Auxiliary state system co-integrated with the model to compute this
+      observation online, so the full trajectory need never be held. Its state variables
+      advance in step with the model, and the observation''s value is the derived
+      variable this Dynamics marks ``record: true`` — read at the final step for a
+      reduction (e.g. effective frequency) or, when ``period`` is set, emitted at
+      that period as a time series for a monitor (e.g. a Balloon-Windkessel hemodynamic
+      forward model, which then costs O(nodes) instead of O(time x nodes)). A backend
+      that implements this folds the observer into its own integration, so a batched
+      parameter sweep carries only the accumulator and not a per-cell trajectory;
+      ``tvboptim`` does. An alternative to the post-scan ``pipeline`` / ``class_reference``
+      for observations expressible as a time recurrence. Its ``parameters`` are the
+      observer''s named constants, bound by name in every recurrence expression exactly
+      as a model Dynamics'' parameters are — scalar or array-valued (``value`` a nested
+      list, ``shape`` declaring its extent), so a fixed operator the reduction consumes
+      (a mesh gradient, a template matrix) is declared as data on the observer rather
+      than hidden inside a backend callable. Its expressions name the observed signal
+      ``x``, bound to whatever this observation''s ``source`` names — the same device
+      a curated coupling''s ``pre_expression`` uses with ``x_j`` — so an observation
+      model is curated once and pointed at any model''s state variable. An observer
+      that declares its own ``x`` (state, parameter or derived variable) means that
+      ``x`` and gets no binding.'
+    from_schema: https://w3id.org/tvbo
+    owner: Observation
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    inlined: true
+  reduce:
+    name: reduce
+    description: 'Opt into streaming evaluation of this observation: fold it into
+      the integrator carry as an (init, update, finalize) reducer via prepare(reduce=...)
+      instead of computing it post-scan from a materialised trajectory. Byte-identical
+      to the pipeline value (to f64 rounding) but with O(block) instead of O(n_time)
+      peak memory, so a fit whose per-stage simulation is too long to hold the trajectory
+      (e.g. the Schirner 2023 group fit) can still evaluate it. Supported for the
+      HRF-Volterra BOLD pipeline (the resolver lifts the HRF kernel, downsample stride,
+      TR stride and Volterra k_1/V_0 from the declared pipeline), for cumulative mean/std/variance
+      aggregations, and for a matrix co-moment FC (compute_fc as a running covariance
+      emitted at finalize, never a trajectory). Byte-identical holds noise-off; with
+      a per-block noise draw the realization shifts with block size (ergodically vanishing).
+      Absent (the default) keeps the post-scan pipeline unchanged — no other observation
+      or experiment is affected.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    - ExplorationAxis
+    range: ObservationReductionMode
+  class_reference:
+    name: class_reference
+    description: 'Direct class reference (alternative to pipeline). Use for external
+      library classes like tvboptim.Bold, custom monitors, or any callable class.
+      The class is instantiated with constructor_args and called with call_args. Example:
+      {name: Bold, module: tvboptim.observations.tvb_monitors.bold, constructor_args:
+      [{name: period, value: 1000.0}]}'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Observation
+    range: ClassReference
+    inlined: true
+  analysis:
+    name: analysis
+    description: Marks this observation as an analysis observable that operates on
+      the solve/loss rather than a result-data pipeline (autodiff gradient, finite-difference
+      gradient, or Lyapunov spectrum).
+    from_schema: https://w3id.org/tvbo
+    owner: Observation
+    domain_of:
+    - DataRef
+    - Observation
+    range: Analysis
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Observation
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  acronym:
+    name: acronym
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: skos:notation
+    owner: Observation
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - Observation
+    - Function
+    - FunctionCall
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Observation
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Observation
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Observation
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:Equation
+    owner: Observation
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  environment:
+    name: environment
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Provenance
+    - Observation
+    - SimulationExperiment
+    - PDESolver
+    range: SoftwareEnvironment
+  time_unit:
+    name: time_unit
+    description: 'Unit of every time-valued number in this scope — the step size,
+      any period, and the physical meaning of one model time-step. Declared at whichever
+      scope owns the clock (network, integrator, observation); `tvbo.utils.units.time_unit_of`
+      resolves a scope to its effective unit by walking outwards, and states the `ms`
+      fallback once, at the end of that walk. Deliberately carries no default: a defaulted
+      slot cannot be inherited through, so `ifabsent: ms` made an unset unit indistinguishable
+      from one someone wrote, and masked an explicitly declared `s` one scope out.
+      `time_scale` is accepted as a synonym.'
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - time_scale
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Network
+    - Observation
+    - Integrator
+    range: UnitEnum
+  record:
+    name: record
+    description: Whether to include this element in simulation output files. Applicable
+      to state variables (default true), derived variables (default false), and network
+      nodes (default true). On an observation it forces (true) or suppresses (false)
+      persistence in the result; left unset, a terminal observation (one not consumed
+      by another observation or a loss) is recorded and an intermediate one is not.
+      Set false to suppress recording.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Observation
+    domain_of:
+    - Node
+    - Observation
+    - StateVariable
+    - DerivedVariable
+    - Exploration
+    range: boolean
+  unit:
+    name: unit
+    description: 'Physical unit of measurement. `UnitEnum` is the curated vocabulary
+      — each of its values is vendored from QUDT (`ontology/tvb-o-units.ttl`) and
+      can be reasoned about dimensionally. The range is deliberately open beyond it:
+      a unit nobody has curated yet is recorded as written and reported `uncurated`,
+      because a closed range forces the author to either misdeclare the quantity or
+      leave it undeclared, and both lose more than an unrecognised string does. An
+      uncurated unit carries no dimensional claim, so a check involving it reports
+      `underdetermined` rather than guessing. Promote one with `tvbo units add <unit>`,
+      which pulls its QUDT record into the vendored module — so every unit TVBO *reasons*
+      about stays authoritative, and only what it *records* is open.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: qudt:unit
+    owner: Observation
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+    any_of:
+    - range: UnitEnum
+    - range: string
+  references:
+    name: references
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: Observation
+    domain_of:
+    - Provenance
+    - Observation
+    - Dynamics
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+    multivalued: true
+class_uri: tvbo:Observation
+
+```
+</details></div>

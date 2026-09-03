@@ -1,0 +1,99 @@
+# Slot: nev 
+
+
+_Number of eigenvalues to compute. Must be >= number of state variables for reliable Hopf detection._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/nev](https://w3id.org/tvbo/slot/nev)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Continuation](../classes/Continuation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Continuation](../classes/Continuation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:nev |
+| native | tvbo:nev |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: nev
+description: Number of eigenvalues to compute. Must be >= number of state variables
+  for reliable Hopf detection.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Continuation
+domain_of:
+- Continuation
+range: integer
+
+```
+</details></div>

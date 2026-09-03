@@ -1,0 +1,101 @@
+# Slot: clip 
+
+
+_[x, y, width, height] in CSS pixels to crop the capture to a region of the page; unset captures the whole viewport._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/clip](https://w3id.org/tvbo/slot/clip)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [RenderSpec](../classes/RenderSpec.qmd) | A headless-browser capture recipe turning an `image` panel's HTML/URL `source... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [RenderSpec](../classes/RenderSpec.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [RenderSpec](../classes/RenderSpec.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:clip |
+| native | tvbo:clip |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: clip
+description: '[x, y, width, height] in CSS pixels to crop the capture to a region
+  of the page; unset captures the whole viewport.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: RenderSpec
+domain_of:
+- RenderSpec
+range: float
+multivalued: true
+
+```
+</details></div>

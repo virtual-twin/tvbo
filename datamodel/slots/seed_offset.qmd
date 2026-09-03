@@ -1,0 +1,104 @@
+# Slot: seed_offset 
+
+
+_Sub-stream this step draws from, offset from the generator's seed. Two seeded steps must use different offsets to be independent. Stated here rather than inferred from step order so it is a property of the generator that every backend derives identically (numpy re-seeds, jax folds the offset into the key) — and so inserting or reordering steps cannot silently change an existing generator's output._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/seed_offset](https://w3id.org/tvbo/slot/seed_offset)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | A single named step (or output) in a Procedure: one typed operation producing... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [ProcedureStep](../classes/ProcedureStep.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `int(0)` |
+| Owner | [ProcedureStep](../classes/ProcedureStep.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:seed_offset |
+| native | tvbo:seed_offset |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: seed_offset
+description: Sub-stream this step draws from, offset from the generator's seed. Two
+  seeded steps must use different offsets to be independent. Stated here rather than
+  inferred from step order so it is a property of the generator that every backend
+  derives identically (numpy re-seeds, jax folds the offset into the key) — and so
+  inserting or reordering steps cannot silently change an existing generator's output.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: int(0)
+owner: ProcedureStep
+domain_of:
+- ProcedureStep
+range: integer
+
+```
+</details></div>

@@ -1,0 +1,79 @@
+# Slot: workflow 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/workflow](https://w3id.org/tvbo/slot/workflow)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DistributionConfig](../classes/DistributionConfig.qmd) | Policy for mapping a parameter sweep's exploration axes onto the two parallel... |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [DistributionConfig](../classes/DistributionConfig.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd), [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:workflow |
+| native | tvbo:workflow |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: workflow
+domain_of:
+- DistributionConfig
+- SimulationExperiment
+- SimulationStudy
+range: string
+
+```
+</details></div>

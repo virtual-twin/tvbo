@@ -1,0 +1,99 @@
+# Slot: task_iri 
+
+
+_Cognitive Atlas (``cogat:``) IRI of the assessment instrument / task that produced this measure (e.g. ``cogat:trm_4a3fd79d09cba`` for PMAT24)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/task_iri](https://w3id.org/tvbo/slot/task_iri)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [MeasureSpec](../classes/MeasureSpec.qmd) | Metadata for one phenotype measure |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [MeasureSpec](../classes/MeasureSpec.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [MeasureSpec](../classes/MeasureSpec.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:task_iri |
+| native | tvbo:task_iri |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: task_iri
+description: Cognitive Atlas (``cogat:``) IRI of the assessment instrument / task
+  that produced this measure (e.g. ``cogat:trm_4a3fd79d09cba`` for PMAT24).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: MeasureSpec
+domain_of:
+- MeasureSpec
+range: string
+
+```
+</details></div>

@@ -1,0 +1,106 @@
+# Slot: batch_mode 
+
+
+_How the per-subject fits are executed. ``fan_out`` (default) runs one per-subject job, each binding its own targets at run time. ``on_device`` evaluates the whole cohort together as one vectorised batch on a single device — the subject axis mapped in parallel while the shared network is reused across subjects. Backend-independent intent: the scientific spec is identical either way; only the execution strategy differs (a backend realises the batch with its own vectorised-map primitive)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/batch_mode](https://w3id.org/tvbo/study/slot/batch_mode)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dataset](../classes/Dataset.qmd) | A collection of subjects for a multi-subject study |  no  |
+| [DBSDataset](../classes/DBSDataset.qmd) | Collection of data related to a specific DBS study |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SubjectBatchMode](../enums/SubjectBatchMode.qmd) |
+| Domain Of | [Dataset](../classes/Dataset.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(fan_out)` |
+| Owner | [Dataset](../classes/Dataset.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:batch_mode |
+| native | tvbo_study:batch_mode |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: batch_mode
+description: 'How the per-subject fits are executed. ``fan_out`` (default) runs one
+  per-subject job, each binding its own targets at run time. ``on_device`` evaluates
+  the whole cohort together as one vectorised batch on a single device — the subject
+  axis mapped in parallel while the shared network is reused across subjects. Backend-independent
+  intent: the scientific spec is identical either way; only the execution strategy
+  differs (a backend realises the batch with its own vectorised-map primitive).'
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+ifabsent: string(fan_out)
+owner: Dataset
+domain_of:
+- Dataset
+range: SubjectBatchMode
+
+```
+</details></div>

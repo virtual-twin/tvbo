@@ -1,0 +1,77 @@
+# Slot: boundary_conditions 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/boundary_conditions](https://w3id.org/tvbo/slot/boundary_conditions)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+| [PDE](../classes/PDE.qmd) | Partial differential equation problem definition |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [FieldStateVariable](../classes/FieldStateVariable.qmd), [PDE](../classes/PDE.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:boundary_conditions |
+| native | tvbo:boundary_conditions |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: boundary_conditions
+domain_of:
+- FieldStateVariable
+- PDE
+range: string
+
+```
+</details></div>

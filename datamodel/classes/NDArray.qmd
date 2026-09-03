@@ -1,0 +1,448 @@
+# Class: NDArray 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:NDArray](https://w3id.org/tvbo/NDArray)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class NDArray
+    click NDArray href "./NDArray.html"
+      NDArray : dataLocation
+        
+          
+    
+        
+        
+        NDArray --> "0..1" String : dataLocation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      NDArray : description
+        
+          
+    
+        
+        
+        NDArray --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      NDArray : dtype
+        
+          
+    
+        
+        
+        NDArray --> "0..1" String : dtype
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      NDArray : label
+        
+          
+    
+        
+        
+        NDArray --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      NDArray : shape
+        
+          
+    
+        
+        
+        NDArray --> "*" Integer : shape
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      NDArray : unit
+        
+          
+    
+        
+        
+        NDArray --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:NDArray](https://w3id.org/tvbo/NDArray) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [shape](../slots/shape.qmd) | * <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+| [dtype](../slots/dtype.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dataLocation](../slots/dataLocation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SpatialField](../classes/SpatialField.qmd) | [values](../slots/values.qmd) | range | [NDArray](../classes/NDArray.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:NDArray |
+| native | tvbo:NDArray |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: NDArray
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+attributes:
+  shape:
+    name: shape
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Parameter
+    - FreeParameter
+    - NDArray
+    range: integer
+    multivalued: true
+  dtype:
+    name: dtype
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Edge
+    - NDArray
+    range: string
+  dataLocation:
+    name: dataLocation
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+  unit:
+    name: unit
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+class_uri: tvbo:NDArray
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: NDArray
+from_schema: https://w3id.org/tvbo
+attributes:
+  shape:
+    name: shape
+    from_schema: https://w3id.org/tvbo
+    owner: NDArray
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Parameter
+    - FreeParameter
+    - NDArray
+    range: integer
+    multivalued: true
+  dtype:
+    name: dtype
+    from_schema: https://w3id.org/tvbo
+    owner: NDArray
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Edge
+    - NDArray
+    range: string
+  dataLocation:
+    name: dataLocation
+    from_schema: https://w3id.org/tvbo
+    owner: NDArray
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+  unit:
+    name: unit
+    from_schema: https://w3id.org/tvbo
+    owner: NDArray
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: NDArray
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: NDArray
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:NDArray
+
+```
+</details></div>

@@ -1,0 +1,705 @@
+# Class: Inference 
+
+
+_Bayesian inference of model parameters from an observation, via MCMC. A standalone, first-class concept (NOT an Optimization): it produces a POSTERIOR, not a point estimate, using priors + a likelihood + a sampler instead of a loss + optimizer. It runs the SAME differentiable forward model, wrapped in a probabilistic model (sample priors -> forward -> likelihood)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Inference](https://w3id.org/tvbo/Inference)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Inference
+    click Inference href "./Inference.html"
+      Inference : depends_on
+        
+          
+    
+        
+        
+        Inference --> "0..1" Algorithm : depends_on
+        click Algorithm href "./Algorithm.html"
+    
+
+        
+      Inference : description
+        
+          
+    
+        
+        
+        Inference --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inference : execution
+        
+          
+    
+        
+        
+        Inference --> "0..1" ExecutionConfig : execution
+        click ExecutionConfig href "./ExecutionConfig.html"
+    
+
+        
+      Inference : integration
+        
+          
+    
+        
+        
+        Inference --> "0..1" Integrator : integration
+        click Integrator href "./Integrator.html"
+    
+
+        
+      Inference : label
+        
+          
+    
+        
+        
+        Inference --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inference : likelihood
+        
+          
+    
+        
+        
+        Inference --> "1" Likelihood : likelihood
+        click Likelihood href "./Likelihood.html"
+    
+
+        
+      Inference : name
+        
+          
+    
+        
+        
+        Inference --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inference : num_chains
+        
+          
+    
+        
+        
+        Inference --> "0..1" Integer : num_chains
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Inference : num_samples
+        
+          
+    
+        
+        
+        Inference --> "0..1" Integer : num_samples
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Inference : num_warmup
+        
+          
+    
+        
+        
+        Inference --> "0..1" Integer : num_warmup
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Inference : priors
+        
+          
+    
+        
+        
+        Inference --> "*" Prior : priors
+        click Prior href "./Prior.html"
+    
+
+        
+      Inference : sampler
+        
+          
+    
+        
+        
+        Inference --> "0..1" String : sampler
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inference : seed
+        
+          
+    
+        
+        
+        Inference --> "0..1" Integer : seed
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Inference](https://w3id.org/tvbo/Inference) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [priors](../slots/priors.qmd) | * <br/> [Prior](../classes/Prior.qmd) | Priors over the inferred parameters, keyed by each parameter's dotted name (e | direct |
+| [likelihood](../slots/likelihood.qmd) | 1 <br/> [Likelihood](../classes/Likelihood.qmd) | Observation model p(data | sim(theta)) | direct |
+| [sampler](../slots/sampler.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | MCMC sampler ('nuts') | direct |
+| [num_samples](../slots/num_samples.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Posterior samples to draw | direct |
+| [num_warmup](../slots/num_warmup.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Warmup/adaptation steps before sampling | direct |
+| [num_chains](../slots/num_chains.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Independent MCMC chains | direct |
+| [seed](../slots/seed.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | PRNG seed for reproducible sampling | direct |
+| [execution](../slots/execution.qmd) | 0..1 <br/> [ExecutionConfig](../classes/ExecutionConfig.qmd) | Per-inference execution config (overrides experiment defaults) | direct |
+| [integration](../slots/integration.qmd) | 0..1 <br/> [Integrator](../classes/Integrator.qmd) | Forward-model integration settings (overrides experiment defaults) | direct |
+| [depends_on](../slots/depends_on.qmd) | 0..1 <br/> [Algorithm](../classes/Algorithm.qmd) | Optional algorithm whose result state seeds the inference | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [inferences](../slots/inferences.qmd) | range | [Inference](../classes/Inference.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Inference |
+| native | tvbo:Inference |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Inference
+description: 'Bayesian inference of model parameters from an observation, via MCMC.
+  A standalone, first-class concept (NOT an Optimization): it produces a POSTERIOR,
+  not a point estimate, using priors + a likelihood + a sampler instead of a loss
+  + optimizer. It runs the SAME differentiable forward model, wrapped in a probabilistic
+  model (sample priors -> forward -> likelihood).'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- label
+- description
+attributes:
+  priors:
+    name: priors
+    description: Priors over the inferred parameters, keyed by each parameter's dotted
+      name (e.g. "Generic2dOscillator.eta" or "PulseInput.amplitude"). The KEYS are
+      the inferred parameters — there is no separate free-parameter list.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Inference
+    range: Prior
+    multivalued: true
+    inlined: true
+  likelihood:
+    name: likelihood
+    description: Observation model p(data | sim(theta)).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Inference
+    range: Likelihood
+    required: true
+    inlined: true
+  sampler:
+    name: sampler
+    description: MCMC sampler ('nuts'). Each backend maps its own way.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(nuts)
+    domain_of:
+    - Inference
+    range: string
+  num_samples:
+    name: num_samples
+    description: Posterior samples to draw.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1000)
+    domain_of:
+    - Inference
+    range: integer
+  num_warmup:
+    name: num_warmup
+    description: Warmup/adaptation steps before sampling.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1000)
+    domain_of:
+    - Inference
+    range: integer
+  num_chains:
+    name: num_chains
+    description: Independent MCMC chains.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    domain_of:
+    - Inference
+    range: integer
+  seed:
+    name: seed
+    description: PRNG seed for reproducible sampling.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(0)
+    domain_of:
+    - GraphGenerator
+    - Distribution
+    - Noise
+    - Inference
+    range: integer
+  execution:
+    name: execution
+    description: Per-inference execution config (overrides experiment defaults).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  integration:
+    name: integration
+    description: Forward-model integration settings (overrides experiment defaults).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Network
+    - Optimization
+    - Inference
+    - SimulationExperiment
+    range: Integrator
+    inlined: true
+  depends_on:
+    name: depends_on
+    description: Optional algorithm whose result state seeds the inference.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Optimization
+    - Inference
+    - Algorithm
+    range: Algorithm
+    inlined: false
+class_uri: tvbo:Inference
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Inference
+description: 'Bayesian inference of model parameters from an observation, via MCMC.
+  A standalone, first-class concept (NOT an Optimization): it produces a POSTERIOR,
+  not a point estimate, using priors + a likelihood + a sampler instead of a loss
+  + optimizer. It runs the SAME differentiable forward model, wrapped in a probabilistic
+  model (sample priors -> forward -> likelihood).'
+from_schema: https://w3id.org/tvbo
+attributes:
+  priors:
+    name: priors
+    description: Priors over the inferred parameters, keyed by each parameter's dotted
+      name (e.g. "Generic2dOscillator.eta" or "PulseInput.amplitude"). The KEYS are
+      the inferred parameters — there is no separate free-parameter list.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Inference
+    domain_of:
+    - Inference
+    range: Prior
+    multivalued: true
+    inlined: true
+  likelihood:
+    name: likelihood
+    description: Observation model p(data | sim(theta)).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Inference
+    domain_of:
+    - Inference
+    range: Likelihood
+    required: true
+    inlined: true
+  sampler:
+    name: sampler
+    description: MCMC sampler ('nuts'). Each backend maps its own way.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(nuts)
+    owner: Inference
+    domain_of:
+    - Inference
+    range: string
+  num_samples:
+    name: num_samples
+    description: Posterior samples to draw.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1000)
+    owner: Inference
+    domain_of:
+    - Inference
+    range: integer
+  num_warmup:
+    name: num_warmup
+    description: Warmup/adaptation steps before sampling.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1000)
+    owner: Inference
+    domain_of:
+    - Inference
+    range: integer
+  num_chains:
+    name: num_chains
+    description: Independent MCMC chains.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    owner: Inference
+    domain_of:
+    - Inference
+    range: integer
+  seed:
+    name: seed
+    description: PRNG seed for reproducible sampling.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(0)
+    owner: Inference
+    domain_of:
+    - GraphGenerator
+    - Distribution
+    - Noise
+    - Inference
+    range: integer
+  execution:
+    name: execution
+    description: Per-inference execution config (overrides experiment defaults).
+    from_schema: https://w3id.org/tvbo
+    owner: Inference
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  integration:
+    name: integration
+    description: Forward-model integration settings (overrides experiment defaults).
+    from_schema: https://w3id.org/tvbo
+    owner: Inference
+    domain_of:
+    - Network
+    - Optimization
+    - Inference
+    - SimulationExperiment
+    range: Integrator
+    inlined: true
+  depends_on:
+    name: depends_on
+    description: Optional algorithm whose result state seeds the inference.
+    from_schema: https://w3id.org/tvbo
+    owner: Inference
+    domain_of:
+    - Optimization
+    - Inference
+    - Algorithm
+    range: Algorithm
+    inlined: false
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Inference
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Inference
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Inference
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Inference
+
+```
+</details></div>

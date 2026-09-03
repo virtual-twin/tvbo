@@ -1,0 +1,98 @@
+# Slot: build_hash 
+
+
+_Deterministic hash of the resolved dependency set._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/build_hash](https://w3id.org/tvbo/software/slot/build_hash)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | A reproducible software environment aggregating one or more SoftwareRequireme... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:build_hash |
+| native | tvbo_sw:build_hash |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: build_hash
+description: Deterministic hash of the resolved dependency set.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+owner: SoftwareEnvironment
+domain_of:
+- SoftwareEnvironment
+range: string
+
+```
+</details></div>

@@ -1,0 +1,101 @@
+# Slot: source 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:source](http://purl.org/dc/terms/source)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  yes  |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [CouplingInput](../classes/CouplingInput.qmd) | Specification of a coupling input channel for multi-coupling dynamics |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [Likelihood](../classes/Likelihood.qmd) | Observation model for Bayesian inference: p(data | sim(theta)) |  no  |
+| [ResultBinding](../classes/ResultBinding.qmd) | One entry in a study's results manifest: a manuscript key bound to the value ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Panel](../classes/Panel.qmd), [Edge](../classes/Edge.qmd), [Observation](../classes/Observation.qmd), [Dynamics](../classes/Dynamics.qmd), [Parameter](../classes/Parameter.qmd), [CouplingInput](../classes/CouplingInput.qmd), [Likelihood](../classes/Likelihood.qmd), [ResultBinding](../classes/ResultBinding.qmd) |
+| Slot URI | [dcterms:source](http://purl.org/dc/terms/source) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:source |
+| native | tvbo:source |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: source
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: dcterms:source
+domain_of:
+- Panel
+- Edge
+- Observation
+- Dynamics
+- Parameter
+- CouplingInput
+- Likelihood
+- ResultBinding
+range: string
+
+```
+</details></div>

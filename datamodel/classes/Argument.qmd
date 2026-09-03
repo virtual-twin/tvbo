@@ -1,0 +1,481 @@
+# Class: Argument 
+
+
+_A function argument with explicit value specification. A value is either ``value`` (a literal / array / local reference) or ``used`` (a labelled array sourced from another experiment or dataset); the two are mutually exclusive. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key). A bare scalar is the value, as it is for a Parameter: ``sel: {variable: phi}`` and ``opts: {xlabel: "time (s)"}`` mean ``{value: …}``, which is how both are written throughout the docs._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Argument](https://w3id.org/tvbo/Argument)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Argument
+    click Argument href "./Argument.html"
+      Argument : description
+        
+          
+    
+        
+        
+        Argument --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Argument : name
+        
+          
+    
+        
+        
+        Argument --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Argument : unit
+        
+          
+    
+        
+        
+        Argument --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Argument : used
+        
+          
+    
+        
+        
+        Argument --> "0..1" DataRef : used
+        click DataRef href "./DataRef.html"
+    
+
+        
+      Argument : value
+        
+          
+    
+        
+        
+        Argument --> "0..1" ScalarValue : value
+        click ScalarValue href "./ScalarValue.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Argument](https://w3id.org/tvbo/Argument) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [value](../slots/value.qmd) | 0..1 <br/> [ScalarValue](../classes/ScalarValue.qmd) | Argument value | direct |
+| [used](../slots/used.qmd) | 0..1 <br/> [DataRef](../classes/DataRef.qmd) | A labelled array sourced from another experiment's result, a dataset, or a cu... | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [DataRef](../classes/DataRef.qmd) | [sel](../slots/sel.qmd) | range | [Argument](../classes/Argument.qmd) |
+| [Panel](../classes/Panel.qmd) | [opts](../slots/opts.qmd) | range | [Argument](../classes/Argument.qmd) |
+| [Inset](../classes/Inset.qmd) | [opts](../slots/opts.qmd) | range | [Argument](../classes/Argument.qmd) |
+| [Style](../classes/Style.qmd) | [opts](../slots/opts.qmd) | range | [Argument](../classes/Argument.qmd) |
+| [Analysis](../classes/Analysis.qmd) | [arguments](../slots/arguments.qmd) | range | [Argument](../classes/Argument.qmd) |
+| [Function](../classes/Function.qmd) | [arguments](../slots/arguments.qmd) | range | [Argument](../classes/Argument.qmd) |
+| [LossFunction](../classes/LossFunction.qmd) | [arguments](../slots/arguments.qmd) | range | [Argument](../classes/Argument.qmd) |
+| [FunctionCall](../classes/FunctionCall.qmd) | [arguments](../slots/arguments.qmd) | range | [Argument](../classes/Argument.qmd) |
+| [ClassReference](../classes/ClassReference.qmd) | [constructor_args](../slots/constructor_args.qmd) | range | [Argument](../classes/Argument.qmd) |
+| [ClassReference](../classes/ClassReference.qmd) | [call_args](../slots/call_args.qmd) | range | [Argument](../classes/Argument.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Argument |
+| native | tvbo:Argument |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Argument
+description: 'A function argument with explicit value specification. A value is either
+  ``value`` (a literal / array / local reference) or ``used`` (a labelled array sourced
+  from another experiment or dataset); the two are mutually exclusive. Value can be:
+  literal (number/string), reference to input (input.key), or cross-observation reference
+  (observation_name.output_key). A bare scalar is the value, as it is for a Parameter:
+  ``sel: {variable: phi}`` and ``opts: {xlabel: "time (s)"}`` mean ``{value: …}``,
+  which is how both are written throughout the docs.'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+slot_usage:
+  value:
+    name: value
+    annotations:
+      simple_dict_value:
+        tag: simple_dict_value
+        value: true
+attributes:
+  value:
+    name: value
+    description: "Argument value. Can be: - Literal: 1.0, \"string\", boolean, etc.\
+      \ - Array (nested list): an array-valued constant such as a\n  per-node target\
+      \ vector consumed by the function.\n- Input reference: \"input.frequencies\"\
+      \ (from source_observation outputs) - Cross-observation: \"target_frequencies.peak_freqs\"\
+      \ (from another observation)"
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: ScalarValue
+    any_of:
+    - range: ScalarValue
+  used:
+    name: used
+    description: A labelled array sourced from another experiment's result, a dataset,
+      or a curated entity — the cross-container form of a value (WHERE + WHICH + SLICE,
+      PROV ``prov:used``). Mutually exclusive with ``value``; an in-study ``experiment``
+      reference also registers the workflow dependency so the source runs first. Resolved
+      lazily, never inlined into generated code.
+    from_schema: https://w3id.org/tvbo
+    slot_uri: prov:used
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: DataRef
+    inlined: true
+  unit:
+    name: unit
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+class_uri: tvbo:Argument
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Argument
+description: 'A function argument with explicit value specification. A value is either
+  ``value`` (a literal / array / local reference) or ``used`` (a labelled array sourced
+  from another experiment or dataset); the two are mutually exclusive. Value can be:
+  literal (number/string), reference to input (input.key), or cross-observation reference
+  (observation_name.output_key). A bare scalar is the value, as it is for a Parameter:
+  ``sel: {variable: phi}`` and ``opts: {xlabel: "time (s)"}`` mean ``{value: …}``,
+  which is how both are written throughout the docs.'
+from_schema: https://w3id.org/tvbo
+slot_usage:
+  value:
+    name: value
+    annotations:
+      simple_dict_value:
+        tag: simple_dict_value
+        value: true
+attributes:
+  value:
+    name: value
+    annotations:
+      simple_dict_value:
+        tag: simple_dict_value
+        value: true
+    description: "Argument value. Can be: - Literal: 1.0, \"string\", boolean, etc.\
+      \ - Array (nested list): an array-valued constant such as a\n  per-node target\
+      \ vector consumed by the function.\n- Input reference: \"input.frequencies\"\
+      \ (from source_observation outputs) - Cross-observation: \"target_frequencies.peak_freqs\"\
+      \ (from another observation)"
+    from_schema: https://w3id.org/tvbo
+    owner: Argument
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: ScalarValue
+    any_of:
+    - range: ScalarValue
+  used:
+    name: used
+    description: A labelled array sourced from another experiment's result, a dataset,
+      or a curated entity — the cross-container form of a value (WHERE + WHICH + SLICE,
+      PROV ``prov:used``). Mutually exclusive with ``value``; an in-study ``experiment``
+      reference also registers the workflow dependency so the source runs first. Resolved
+      lazily, never inlined into generated code.
+    from_schema: https://w3id.org/tvbo
+    slot_uri: prov:used
+    owner: Argument
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: DataRef
+    inlined: true
+  unit:
+    name: unit
+    from_schema: https://w3id.org/tvbo
+    owner: Argument
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Argument
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Argument
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Argument
+
+```
+</details></div>

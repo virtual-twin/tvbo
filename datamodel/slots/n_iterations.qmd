@@ -1,0 +1,77 @@
+# Slot: n_iterations 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/n_iterations](https://w3id.org/tvbo/slot/n_iterations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [AlgorithmStage](../classes/AlgorithmStage.qmd) | One stage of a multi-stage tuning schedule |  no  |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [AlgorithmStage](../classes/AlgorithmStage.qmd), [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:n_iterations |
+| native | tvbo:n_iterations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: n_iterations
+domain_of:
+- AlgorithmStage
+- Algorithm
+range: string
+
+```
+</details></div>

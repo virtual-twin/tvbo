@@ -1,0 +1,100 @@
+# Slot: interpolation 
+
+
+_Interpolation for a data-driven stimulus: 'linear' or 'cubic'._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/interpolation](https://w3id.org/tvbo/slot/interpolation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Event](../classes/Event.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(linear)` |
+| Owner | [Event](../classes/Event.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:interpolation |
+| native | tvbo:interpolation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: interpolation
+description: 'Interpolation for a data-driven stimulus: ''linear'' or ''cubic''.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(linear)
+owner: Event
+domain_of:
+- Event
+range: string
+
+```
+</details></div>

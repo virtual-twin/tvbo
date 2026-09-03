@@ -1,0 +1,108 @@
+# Slot: time_unit 
+
+
+_Unit of every time-valued number in this scope — the step size, any period, and the physical meaning of one model time-step. Declared at whichever scope owns the clock (network, integrator, observation); `tvbo.utils.units.time_unit_of` resolves a scope to its effective unit by walking outwards, and states the `ms` fallback once, at the end of that walk. Deliberately carries no default: a defaulted slot cannot be inherited through, so `ifabsent: ms` made an unset unit indistinguishable from one someone wrote, and masked an explicitly declared `s` one scope out. `time_scale` is accepted as a synonym._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/time_unit](https://w3id.org/tvbo/slot/time_unit)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [UnitEnum](../enums/UnitEnum.qmd) |
+| Domain Of | [Network](../classes/Network.qmd), [Observation](../classes/Observation.qmd), [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+## Aliases
+
+
+* time_scale
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:time_unit |
+| native | tvbo:time_unit |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: time_unit
+description: 'Unit of every time-valued number in this scope — the step size, any
+  period, and the physical meaning of one model time-step. Declared at whichever scope
+  owns the clock (network, integrator, observation); `tvbo.utils.units.time_unit_of`
+  resolves a scope to its effective unit by walking outwards, and states the `ms`
+  fallback once, at the end of that walk. Deliberately carries no default: a defaulted
+  slot cannot be inherited through, so `ifabsent: ms` made an unset unit indistinguishable
+  from one someone wrote, and masked an explicitly declared `s` one scope out. `time_scale`
+  is accepted as a synonym.'
+from_schema: https://w3id.org/tvbo
+aliases:
+- time_scale
+rank: 1000
+domain_of:
+- Network
+- Observation
+- Integrator
+range: UnitEnum
+
+```
+</details></div>

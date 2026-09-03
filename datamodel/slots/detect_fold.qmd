@@ -1,0 +1,98 @@
+# Slot: detect_fold 
+
+
+_Enable fold (limit point) detection._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/detect_fold](https://w3id.org/tvbo/slot/detect_fold)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Continuation](../classes/Continuation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Continuation](../classes/Continuation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:detect_fold |
+| native | tvbo:detect_fold |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: detect_fold
+description: Enable fold (limit point) detection.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Continuation
+domain_of:
+- Continuation
+range: boolean
+
+```
+</details></div>

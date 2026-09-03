@@ -1,0 +1,39 @@
+# analysis { #tvbo.plot.analysis }
+
+`plot.analysis`
+
+Plotting helpers for analysing simulation output.
+
+This module provides Matplotlib-based plotting utilities for visualising derived signal analyses, such as power spectra with shaded canonical EEG frequency bands.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [plot_power_spectrum](#tvbo.plot.analysis.plot_power_spectrum) | Plot a log-log power spectrum with shaded canonical EEG frequency bands. |
+
+### plot_power_spectrum { #tvbo.plot.analysis.plot_power_spectrum }
+
+```python
+plot.analysis.plot_power_spectrum(
+    frequency,
+    power,
+    bands=None,
+    colors=None,
+    ax=None,
+    label='simulation',
+)
+```
+
+Plot a log-log power spectrum with shaded canonical EEG frequency bands.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type         | Description                                                 | Default        |
+|-----------|--------------|-------------------------------------------------------------|----------------|
+| frequency | np.ndarray   | 1-D array of frequencies (Hz).                              | _required_     |
+| power     | np.ndarray   | 1-D array of spectral powers, aligned with *frequency*.     | _required_     |
+| bands     | dict \| None | Optional override of the band dict (defaults to δ/θ/α/β/γ). | `None`         |
+| colors    | Any          | Optional override of the per-band background colors.        | `None`         |
+| ax        | Any          | Existing `matplotlib.axes.Axes` to draw into; required.     | `None`         |
+| label     | str          | Legend label for the spectrum trace.                        | `'simulation'` |

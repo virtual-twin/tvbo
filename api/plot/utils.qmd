@@ -1,0 +1,165 @@
+# utils { #tvbo.plot.utils }
+
+`plot.utils`
+
+Plotting helpers for TVB-O figures.
+
+Provides the entry point that puts TVB-O's look in force, the TVB brand color palette derived from the TVB logo SVG, colormap and color-conversion utilities, and a multi-view brain surface renderer.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [ROOT](#tvbo.plot.utils.ROOT) |  |
+| [formatted_hex_colors](#tvbo.plot.utils.formatted_hex_colors) |  |
+| [tvb_colors](#tvbo.plot.utils.tvb_colors) |  |
+| [tvb_colors_simple](#tvbo.plot.utils.tvb_colors_simple) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [extract_svg_colors](#tvbo.plot.utils.extract_svg_colors) | Extracts colors from an SVG file and returns them as a list of hex codes. |
+| [get_cmap](#tvbo.plot.utils.get_cmap) | Get a ListedColormap from given colors (defaults to ``tvb_colors_simple``). |
+| [get_continuous_cmap](#tvbo.plot.utils.get_continuous_cmap) | Get a continuous LinearSegmentedColormap from a list of hex codes. |
+| [get_logo](#tvbo.plot.utils.get_logo) | Retrieve the TVB-O logo as a NumPy image array. |
+| [hex2rgba](#tvbo.plot.utils.hex2rgba) | Convert a hex color code to RGBA. |
+| [hex_to_sortable_hsv](#tvbo.plot.utils.hex_to_sortable_hsv) | Convert a hex color to a sortable HSV tuple. |
+| [multiview](#tvbo.plot.utils.multiview) | Display multiple views of brain regions. |
+| [use_tvbo_style](#tvbo.plot.utils.use_tvbo_style) | Put TVB-O's own look in force: bsplot's registered sheet for the geometry, the curated theme for the colours. |
+
+### extract_svg_colors { #tvbo.plot.utils.extract_svg_colors }
+
+```python
+plot.utils.extract_svg_colors(svg_path)
+```
+
+Extracts colors from an SVG file and returns them as a list of hex codes.
+
+### get_cmap { #tvbo.plot.utils.get_cmap }
+
+```python
+plot.utils.get_cmap(colors=None)
+```
+
+Get a ListedColormap from given colors (defaults to ``tvb_colors_simple``).
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+colors : list, optional
+    List of colors.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+ListedColormap
+
+### get_continuous_cmap { #tvbo.plot.utils.get_continuous_cmap }
+
+```python
+plot.utils.get_continuous_cmap(hex_list, float_list=None)
+```
+
+Get a continuous LinearSegmentedColormap from a list of hex codes.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+hex_list : list
+    List of hex code strings.
+float_list : list, optional
+    List of floats between 0 and 1 of the same length as hex_list.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+LinearSegmentedColormap
+
+### get_logo { #tvbo.plot.utils.get_logo }
+
+```python
+plot.utils.get_logo()
+```
+
+Retrieve the TVB-O logo as a NumPy image array.
+
+### hex2rgba { #tvbo.plot.utils.hex2rgba }
+
+```python
+plot.utils.hex2rgba(hex, alpha=1, max=1)
+```
+
+Convert a hex color code to RGBA.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                               | Default    |
+|--------|--------|-------------------------------------------|------------|
+| hex    | str    | Hexadecimal color code.                   | _required_ |
+| alpha  | int    | Alpha value for the color. Defaults to 1. | `1`        |
+| max    | int    | Scaling factor. Defaults to 1.            | `1`        |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description   |
+|--------|--------|---------------|
+|        | tuple  | RGBA tuple.   |
+
+### hex_to_sortable_hsv { #tvbo.plot.utils.hex_to_sortable_hsv }
+
+```python
+plot.utils.hex_to_sortable_hsv(hex_color)
+```
+
+Convert a hex color to a sortable HSV tuple.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                  | Default    |
+|-----------|--------|----------------------------------------------|------------|
+| hex_color |        | Hexadecimal color string (e.g. `"#2E9795"`). | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                         |
+|--------|--------|---------------------------------------------------------------------|
+|        |        | The `(hue, saturation, value)` components as a tuple, suitable as a |
+|        |        | sort key for ordering colors by hue.                                |
+
+### multiview { #tvbo.plot.utils.multiview }
+
+```python
+plot.utils.multiview(data, cortex, suptitle='', figsize=(15, 10), **kwds)
+```
+
+Display multiple views of brain regions.
+
+Adapted from https://github.com/the-virtual-brain/tvb-root/blob/master/tvb_documentation/tutorials/utils.py
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+data : ndarray
+    Data for the regions.
+cortex : Cortex
+    Brain cortex information.
+suptitle : str, optional
+    Super title for the plots.
+figsize : tuple, optional
+    Figure size.
+
+### use_tvbo_style { #tvbo.plot.utils.use_tvbo_style }
+
+```python
+plot.utils.use_tvbo_style()
+```
+
+Put TVB-O's own look in force: bsplot's registered sheet for the geometry, the curated theme for the colours.
+
+The same two layers a declared figure gets, in the same order, so a built-in plot and a rendered `Figure` beside it cannot disagree about what TVB-O looks like. There is no sheet of our own any more — one carrying its own colour cycle is exactly what the palette exists to prevent.

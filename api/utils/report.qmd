@@ -1,0 +1,1381 @@
+# report { #tvbo.utils.report }
+
+`utils.report`
+
+Report Module.
+
+This module provides utilities for generating reports related to model parameters and configurations.
+
+.. moduleauthor:: Leon K. Martin
+
+
+
+## Functions: {.doc-section .doc-section-functions}
+
+
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [DIVERGENCE_CLASSES](#tvbo.utils.report.DIVERGENCE_CLASSES) |  |
+| [EQUATION_GROUPS](#tvbo.utils.report.EQUATION_GROUPS) | Display group → the key :meth:`Dynamics.get_equations` files it under. |
+| [TIERS](#tvbo.utils.report.TIERS) | How central a target is to the paper's claims — independent of whether it was met. |
+| [VERDICTS](#tvbo.utils.report.VERDICTS) | The four outcomes a replication target can have. |
+| [figures_in_paper_order](#tvbo.utils.report.figures_in_paper_order) | Alias: the same ordering, under the name a replication report reads better with, where the numbers are the paper's own. |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Equations](#tvbo.utils.report.Equations) | Numbering and cross-reference labels for one rendered report. |
+| [MarkdownTable](#tvbo.utils.report.MarkdownTable) | One parsed markdown table, tagged with the heading it appeared under. |
+| [Observations](#tvbo.utils.report.Observations) | What a study records: the grid, the settings it shares, and its long-form notes. |
+| [Scorecard](#tvbo.utils.report.Scorecard) | A replication's targets, read from the `targets.md` written before anything ran. |
+
+### Equations { #tvbo.utils.report.Equations }
+
+```python
+utils.report.Equations(style='semantic', format='markdown', prefix='')
+```
+
+Numbering and cross-reference labels for one rendered report.
+
+A report that prints ``$$...$$`` and nothing else cannot be referred to: Jansen1995 numbers 19 equations and its prose says "Eq. 3" and "Eqs. 15-17", and our render had no way to point at any of them. This assigns each equation a display number and, where the target format supports one, an anchor.
+
+``style`` is the caller's choice, per the ``equations=`` argument:
+
+- ``semantic`` — anchor from the model and the variable (``#eq-jansenrit-y3``), so a
+  reference survives an experiment being added or reordered ahead of it.
+- ``sequential`` — anchor is the number (``#eq-4``); reads naturally in raw markdown
+  but silently repoints every reference when an equation is inserted before it.
+- ``none`` — no numbering at all.
+
+``format`` picks the syntax: ``qmd`` emits Quarto's ``{#eq-...}``, everything else emits ``\\tag{n}`` inside the math, which MathJax and pandoc-to-LaTeX both honour.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [block](#tvbo.utils.report.Equations.block) | Render one display equation, numbered and anchored per this report's style. |
+| [ref](#tvbo.utils.report.Equations.ref) | A cross-reference to an equation already rendered, or "" if it was not. |
+| [unique_anchor](#tvbo.utils.report.Equations.unique_anchor) | *anchor*, suffixed if this report already used it. |
+
+##### block { #tvbo.utils.report.Equations.block }
+
+```python
+utils.report.Equations.block(expression, model=None, key=None)
+```
+
+Render one display equation, numbered and anchored per this report's style.
+
+##### ref { #tvbo.utils.report.Equations.ref }
+
+```python
+utils.report.Equations.ref(model, key)
+```
+
+A cross-reference to an equation already rendered, or "" if it was not.
+
+##### unique_anchor { #tvbo.utils.report.Equations.unique_anchor }
+
+```python
+utils.report.Equations.unique_anchor(anchor)
+```
+
+*anchor*, suffixed if this report already used it.
+
+A variant may share its base model's name — Pang2023's haemodynamic wave model is declared under the same name as the wave model it extends — and both redefine the same state variable. Emitting the anchor twice makes every reference to it ambiguous, and Quarto resolves the duplicate silently. Tables register here too, so one report has one namespace: Mongillo2008 declares four distinct ``Ext_E`` input models and would otherwise emit ``#tbl-delta-ext-e`` four times.
+
+### MarkdownTable { #tvbo.utils.report.MarkdownTable }
+
+```python
+utils.report.MarkdownTable()
+```
+
+One parsed markdown table, tagged with the heading it appeared under.
+
+### Observations { #tvbo.utils.report.Observations }
+
+```python
+utils.report.Observations()
+```
+
+What a study records: the grid, the settings it shares, and its long-form notes.
+
+### Scorecard { #tvbo.utils.report.Scorecard }
+
+```python
+utils.report.Scorecard(source, verdicts=None, tiers=TIERS)
+```
+
+A replication's targets, read from the `targets.md` written before anything ran.
+
+Owns the vocabulary, the tally, the reason register and the figure join, so a report can state a verdict only where the targets file supports one — the tally, the per-figure callout and the shortfall prose all come from this single reading of that file.
+
+The file's shape is fixed by the replicating-studies skill: one or more tables carrying a `Status` column, plus a register table carrying a `Why it falls short` column keyed by `ID`.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [count](#tvbo.utils.report.Scorecard.count) | How many targets carry any of *verdicts*. |
+| [figure_callout](#tvbo.utils.report.Scorecard.figure_callout) | A figure's verdict, assembled from the outcome of every target it carries. |
+| [for_figure](#tvbo.utils.report.Scorecard.for_figure) | Every target a figure carries, joined on the targets table's own figure column. |
+| [headline](#tvbo.utils.report.Scorecard.headline) | The target's headline: its name, shortened only where the short form still names it alone. |
+| [of](#tvbo.utils.report.Scorecard.of) | Every target with one of *verdicts*, in target-number order. |
+| [reason](#tvbo.utils.report.Scorecard.reason) | The recorded reason for a row's outcome, or a note that none was given. |
+| [shortfall_prose](#tvbo.utils.report.Scorecard.shortfall_prose) | The shortfall, as one paragraph per outcome — never one undifferentiated list. |
+| [tally_table](#tvbo.utils.report.Scorecard.tally_table) | Targets counted by tier against outcome — each target in exactly one cell. |
+| [target_table](#tvbo.utils.report.Scorecard.target_table) | One row per target, with its outcome spelled out. |
+| [verdict](#tvbo.utils.report.Scorecard.verdict) | A row's outcome, spelled the way the reader sees it. |
+
+##### count { #tvbo.utils.report.Scorecard.count }
+
+```python
+utils.report.Scorecard.count(*verdicts)
+```
+
+How many targets carry any of *verdicts*.
+
+##### figure_callout { #tvbo.utils.report.Scorecard.figure_callout }
+
+```python
+utils.report.Scorecard.figure_callout(figure, scored_in='@sec-scorecard')
+```
+
+A figure's verdict, assembled from the outcome of every target it carries.
+
+Red is reserved for a target that was attempted and missed. A declared scope decision is not a failure of the figure, and an unobtainable input is a gap in the data — both are yellow, and a figure whose targets all met is green.
+
+##### for_figure { #tvbo.utils.report.Scorecard.for_figure }
+
+```python
+utils.report.Scorecard.for_figure(figure, column='Fig(s)')
+```
+
+Every target a figure carries, joined on the targets table's own figure column.
+
+##### headline { #tvbo.utils.report.Scorecard.headline }
+
+```python
+utils.report.Scorecard.headline(row)
+```
+
+The target's headline: its name, shortened only where the short form still names it alone.
+
+A headline is how a target is referred to in prose, so two targets may not share one. `Group frequency spectra, heterogeneous Abeta` and `Group frequency spectra, homogeneous mean Abeta` differ only after the comma, and shortening both to `Group frequency spectra` would put the same name on the two halves of a controlled comparison.
+
+##### of { #tvbo.utils.report.Scorecard.of }
+
+```python
+utils.report.Scorecard.of(*verdicts)
+```
+
+Every target with one of *verdicts*, in target-number order.
+
+##### reason { #tvbo.utils.report.Scorecard.reason }
+
+```python
+utils.report.Scorecard.reason(row)
+```
+
+The recorded reason for a row's outcome, or a note that none was given.
+
+##### shortfall_prose { #tvbo.utils.report.Scorecard.shortfall_prose }
+
+```python
+utils.report.Scorecard.shortfall_prose()
+```
+
+The shortfall, as one paragraph per outcome — never one undifferentiated list.
+
+Separate paragraphs are what stop a scope decision reading as a failure. The default wording states what each outcome means before naming its targets; reword it in the report if a study needs to, but keep the three groups apart.
+
+##### tally_table { #tvbo.utils.report.Scorecard.tally_table }
+
+```python
+utils.report.Scorecard.tally_table(tier_column='Scope')
+```
+
+Targets counted by tier against outcome — each target in exactly one cell.
+
+##### target_table { #tvbo.utils.report.Scorecard.target_table }
+
+```python
+utils.report.Scorecard.target_table(
+    columns=('ID', 'Target', 'Fig(s)', 'Scope', 'Fidelity', 'Status'),
+)
+```
+
+One row per target, with its outcome spelled out.
+
+##### verdict { #tvbo.utils.report.Scorecard.verdict }
+
+```python
+utils.report.Scorecard.verdict(row)
+```
+
+A row's outcome, spelled the way the reader sees it.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [analysis_dataset](#tvbo.utils.report.analysis_dataset) | A declared analysis's own container, or None when the analysis has not been run. |
+| [analysis_output](#tvbo.utils.report.analysis_output) | One named output of a declared analysis, matched by tvbo's own output resolution. |
+| [analysis_scalar](#tvbo.utils.report.analysis_scalar) | One scalar out of a declared analysis, or None when it has not been run. |
+| [captioned](#tvbo.utils.report.captioned) | A table with its caption and cross-reference anchor attached. |
+| [coupling_of](#tvbo.utils.report.coupling_of) | The distinct couplings these experiments use, in declared order. |
+| [coupling_prose](#tvbo.utils.report.coupling_prose) | Each distinct coupling a family uses, rendered by the coupling's own report. |
+| [crossref_div](#tvbo.utils.report.crossref_div) | Wrap *content* as a Quarto cross-referenceable float with a COMPUTED caption. |
+| [derivative_latex](#tvbo.utils.report.derivative_latex) | ``base`` under ``order`` time derivatives, dotted where dots exist. |
+| [derived_unit_text](#tvbo.utils.report.derived_unit_text) | A propagation-derived unit in parentheses, or nothing. |
+| [derived_units](#tvbo.utils.report.derived_units) | Units the dimensional check *forced*, keyed by quantity name, as LaTeX. |
+| [display_symbol](#tvbo.utils.report.display_symbol) | Inline-LaTeX symbol for a report row, preferring an explicit ``symbol`` override. |
+| [distribution_text](#tvbo.utils.report.distribution_text) | One-line summary of a sampling distribution (name, domain, axis, seed). |
+| [divergence_register](#tvbo.utils.report.divergence_register) | Parse a study's ``methods-vs-code.md`` into per-class counts and rows. |
+| [embed_path](#tvbo.utils.report.embed_path) | ``path`` as a markdown image target, relative to where the render is running. |
+| [equation_latex](#tvbo.utils.report.equation_latex) | One SymPy equation as LaTeX, with the derivative written the report's way. |
+| [equation_name](#tvbo.utils.report.equation_name) | The name an equation defines: ``x`` for ``Eq(Derivative(x, t), …)``, ``Sigm`` for ``Eq(Sigm(v), …)``. |
+| [event_table](#tvbo.utils.report.event_table) | Markdown table of a model's events (spike conditions, stimuli, resets). |
+| [experiment_facts](#tvbo.utils.report.experiment_facts) | Ordered ``{column: cell}`` of everything an experiment can differ from its siblings in. |
+| [experiment_models](#tvbo.utils.report.experiment_models) | Every distinct model an experiment integrates — one, or one per component. |
+| [experiment_table](#tvbo.utils.report.experiment_table) | One table comparing a family's experiments, carrying only what actually varies. |
+| [experiment_title](#tvbo.utils.report.experiment_title) | An experiment's heading text, without the id the heading already carries. |
+| [figure_caption](#tvbo.utils.report.figure_caption) | A figure's public-facing caption — its own ``description:`` in the recipe. |
+| [figure_label](#tvbo.utils.report.figure_label) | The paper's own label for a figure, parsed from the name the recipe declares. |
+| [figure_targets](#tvbo.utils.report.figure_targets) | The declared targets a figure carries, joined on the targets table's own figure column. |
+| [figure_title](#tvbo.utils.report.figure_title) | A figure's heading: the paper's number, or its own name where it has none. |
+| [figures_ordered](#tvbo.utils.report.figures_ordered) | The study's figures in reading order: numbered ones first, then extended data and supplement, then those carrying no number. |
+| [find_figure](#tvbo.utils.report.find_figure) | The declared figure of that name, across one or more loaded studies. |
+| [flag_text](#tvbo.utils.report.flag_text) | Flags cell: boolean flags + shape / dataset / reported optimum. |
+| [fmt](#tvbo.utils.report.fmt) | A computed number for prose, or *missing* when it could not be computed. |
+| [format_number](#tvbo.utils.report.format_number) | APA-style numeric formatting for report-table cells. |
+| [get_citation](#tvbo.utils.report.get_citation) | Retrieve a BibTeX entry by its citation key and render it as an APA-style plain text citation. |
+| [is_internal](#tvbo.utils.report.is_internal) | True in the INTERNAL build — the one allowed to open the paper's © figures. |
+| [may_show_original](#tvbo.utils.report.may_show_original) | Whether this build is permitted to embed the paper's published figure. |
+| [md_table](#tvbo.utils.report.md_table) | Render a GitHub-markdown table, omitting columns with no data. |
+| [metadata_text](#tvbo.utils.report.metadata_text) | Domain / Sampling cell: bounds + enforcement + distribution. |
+| [model_delta](#tvbo.utils.report.model_delta) | Names of what *model* adds or changes relative to *baseline*. |
+| [model_equation_groups](#tvbo.utils.report.model_equation_groups) | Every equation a model states, grouped for display and already parsed. |
+| [model_equations](#tvbo.utils.report.model_equations) | ``(name, latex)`` for a model's equations of one kind, from its symbolic form. |
+| [model_equations_latex](#tvbo.utils.report.model_equations_latex) | A model's equations of one kind, each as LaTeX (names dropped). |
+| [model_families](#tvbo.utils.report.model_families) | The experiments' models, grouped into families, each printed once. |
+| [model_functions](#tvbo.utils.report.model_functions) | ``(name, latex)`` for a model's named functions, written ``f(args) = rhs``. |
+| [model_report](#tvbo.utils.report.model_report) | Generate a report for the model. |
+| [name_items](#tvbo.utils.report.name_items) | Yield ``(name, obj)`` pairs from a name-keyed dict, list, or ``None``. |
+| [observation_table](#tvbo.utils.report.observation_table) | Everything the study records, as one table plus the prose the table cannot hold. |
+| [open_result](#tvbo.utils.report.open_result) | The result container of an experiment, or None when it has not been run. |
+| [p_text](#tvbo.utils.report.p_text) | A p value as its own clause, so a tiny one reads as a bound rather than as `p = 0.000`. |
+| [param_table](#tvbo.utils.report.param_table) | Markdown table for any parameter-like collection, empty columns dropped. |
+| [parameter_report](#tvbo.utils.report.parameter_report) | Generate a report of parameter settings. |
+| [parameter_table](#tvbo.utils.report.parameter_table) | Markdown model Parameters table (empty columns dropped) from a name->obj map. |
+| [pipeline_text](#tvbo.utils.report.pipeline_text) | A pipeline as arrow-separated step names. |
+| [present](#tvbo.utils.report.present) | True when a value carries information (not ``None`` / empty / ``''``). |
+| [range_text](#tvbo.utils.report.range_text) | One-line summary of an explored range / domain (values, ``[lo, hi]``, step, n). |
+| [read_md_tables](#tvbo.utils.report.read_md_tables) | Read the GitHub-markdown tables out of a document — the inverse of `md_table`. |
+| [recipe_param](#tvbo.utils.report.recipe_param) | A declared parameter's value, read from the recipe rather than typed into prose. |
+| [render_citation](#tvbo.utils.report.render_citation) | Render an ontology citation instance as formatted text. |
+| [report_figure](#tvbo.utils.report.report_figure) | The image a report embeds for one figure. |
+| [result_sidecar](#tvbo.utils.report.result_sidecar) | The YAML sidecar `tvbo run` wrote beside a result, or an empty dict. |
+| [save_latex](#tvbo.utils.report.save_latex) | Save a LaTeX report to a file. |
+| [sci](#tvbo.utils.report.sci) | A computed number in scientific notation, or *missing*. |
+| [section_slug](#tvbo.utils.report.section_slug) | An ASCII anchor for a generated heading, so no renderer has to derive one. |
+| [settings_sentence](#tvbo.utils.report.settings_sentence) | The factual half of an experiment's paragraph, composed from what it declares. |
+| [show_report_figure](#tvbo.utils.report.show_report_figure) | `report_figure`, displayed in the current cell. |
+| [sidecar_value](#tvbo.utils.report.sidecar_value) | A value dug out of a sidecar by key path, unwrapping a ``{value: ...}`` leaf. |
+| [slot](#tvbo.utils.report.slot) | Safe attribute access on a report object (``getattr`` with a default). |
+| [spelled](#tvbo.utils.report.spelled) | A small computed count as a word, so a sentence can open with it. |
+| [state_variable_table](#tvbo.utils.report.state_variable_table) | Markdown State-Variables table (empty columns dropped) from a name->obj map. |
+| [study_sweeps](#tvbo.utils.report.study_sweeps) | Every parameter any of these experiments sweeps, mapped to its range. |
+| [sweep_axes](#tvbo.utils.report.sweep_axes) | ``{axis name: range text}`` for every parameter an experiment explores. |
+| [symbol_table](#tvbo.utils.report.symbol_table) | One dense glossary of every symbol in a model: state, parameters, derived, coupling. |
+| [table_or_prose](#tvbo.utils.report.table_or_prose) | Render a grid as a table, or as a sentence when it is too small to earn a float. |
+| [time_order](#tvbo.utils.report.time_order) | How many times *derivative* differentiates with respect to time. |
+| [time_text](#tvbo.utils.report.time_text) | A time with the integrator's own unit, never an assumed one. |
+| [to_pdf](#tvbo.utils.report.to_pdf) | Convert Markdown text to a PDF file via pandoc. |
+| [unit_latex](#tvbo.utils.report.unit_latex) | A propagated unit expression as inline LaTeX, named where it has a name. |
+| [unit_text](#tvbo.utils.report.unit_text) | Render a unit as inline LaTeX, or the empty marker when absent. |
+| [unit_verdict_table](#tvbo.utils.report.unit_verdict_table) | Markdown table of each equation's dimensional standing. |
+| [unit_verdicts](#tvbo.utils.report.unit_verdicts) | Every equation's dimensional verdict, for the tables above. |
+| [unrendered_equations](#tvbo.utils.report.unrendered_equations) | Display equations written by hand in a report body, as ``(line, equation)``. |
+| [value_of](#tvbo.utils.report.value_of) | The `.value` of a recipe object, or the object itself when it is already a scalar. |
+| [variant_parameter_table](#tvbo.utils.report.variant_parameter_table) | One table of every parameter the family's variants change, not one table each. |
+| [variant_sentence](#tvbo.utils.report.variant_sentence) | The lead-in to a variant's delta: who uses it, and what it changes. |
+
+### analysis_dataset { #tvbo.utils.report.analysis_dataset }
+
+```python
+utils.report.analysis_dataset(out_dir, name)
+```
+
+A declared analysis's own container, or None when the analysis has not been run.
+
+The report reads the same container the figures do, so a number in the prose and the number in the panel are the same number — never two computations of one quantity.
+
+### analysis_output { #tvbo.utils.report.analysis_output }
+
+```python
+utils.report.analysis_output(out_dir, name, variable)
+```
+
+One named output of a declared analysis, matched by tvbo's own output resolution.
+
+### analysis_scalar { #tvbo.utils.report.analysis_scalar }
+
+```python
+utils.report.analysis_scalar(out_dir, name, variable)
+```
+
+One scalar out of a declared analysis, or None when it has not been run.
+
+### captioned { #tvbo.utils.report.captioned }
+
+```python
+utils.report.captioned(table, caption, anchor, format='markdown', anchors=None)
+```
+
+A table with its caption and cross-reference anchor attached.
+
+An uncaptioned table is a wall of numbers, and in LaTeX it still steps the table counter — which is why a Methods section that emitted thirty anonymous tables pushed the first captioned table in Results out to "Table 34". Captioning them removes the need for the counter reset rather than working around it.
+
+Pass ``anchors`` (the report's :class:`Equations`) so tables share the equations' anchor namespace and a repeated model name cannot mint the same ``#tbl-`` twice.
+
+Input that is not a table — what `table_or_prose` and `md_table` return for a grid with no float left in it — takes the caption as a lead-in sentence instead of a numbered label below, since numbering a float the reader cannot see would announce a table LaTeX never typeset. The caption still has to be *said*: the observations one carries every sampling setting the rows agree on, lifted out of the grid, so dropping it took those settings out of the report entirely.
+
+### coupling_of { #tvbo.utils.report.coupling_of }
+
+```python
+utils.report.coupling_of(experiments)
+```
+
+The distinct couplings these experiments use, in declared order.
+
+### coupling_prose { #tvbo.utils.report.coupling_prose }
+
+```python
+utils.report.coupling_prose(experiments, equations=None)
+```
+
+Each distinct coupling a family uses, rendered by the coupling's own report.
+
+``Coupling.report`` already writes this block — equation, pre/post decomposition and incoming states — so the study report calls it rather than carrying a second rendering of the same object that could drift from it. Its parameter table is suppressed: :func:`symbol_table` lists those symbols with the model's, where they are captioned and numbered, and most of them are the model's own.
+
+Pass the report's *equations* so the coupling equation is numbered into the same sequence as the state equations. Without it the coupling is the one display equation on the page a reader cannot cite — eleven of them across ten studies, and in every case the equation that joins the nodes into a network.
+
+### crossref_div { #tvbo.utils.report.crossref_div }
+
+```python
+utils.report.crossref_div(identifier, content, caption)
+```
+
+Wrap *content* as a Quarto cross-referenceable float with a COMPUTED caption.
+
+Quarto's `tbl-cap`/`fig-cap` cell options take a literal string, so a caption holding a computed value has to use the cross-reference div instead: the div's last paragraph is the caption, and it is ordinary markdown. This is what gives a printed table a real "Table N" number and a `@tbl-…` target rather than leaving it captionless in the flow.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                                                                                    | Default    |
+|------------|--------|--------------------------------------------------------------------------------------------------------------------------------|------------|
+| identifier | str    | Reference id, e.g. ``"tbl-scorecard"``. Must carry a float prefix (``tbl-``, ``fig-``, ``lst-``) or Quarto will not number it. | _required_ |
+| content    | str    | The table or figure markdown.                                                                                                  | _required_ |
+| caption    | str    | One sentence saying what the reader is looking at.                                                                             | _required_ |
+
+### derivative_latex { #tvbo.utils.report.derivative_latex }
+
+```python
+utils.report.derivative_latex(base, order)
+```
+
+``base`` under ``order`` time derivatives, dotted where dots exist.
+
+### derived_unit_text { #tvbo.utils.report.derived_unit_text }
+
+```python
+utils.report.derived_unit_text(derived, name)
+```
+
+A propagation-derived unit in parentheses, or nothing.
+
+Parenthesised because it is not a claim the model makes: additive homogeneity forces it from the quantities beside it. Printing it bare would put a unit nobody wrote into the published record.
+
+### derived_units { #tvbo.utils.report.derived_units }
+
+```python
+utils.report.derived_units(verdicts)
+```
+
+Units the dimensional check *forced*, keyed by quantity name, as LaTeX.
+
+A quantity beside declared ones in a sum is not free: additive homogeneity fixes it exactly. That is worth showing — it is the difference between a model whose units are unstated and one whose units are unstatable — but it has to be shown as *derived*, never merged into what the model declares.
+
+### display_symbol { #tvbo.utils.report.display_symbol }
+
+```python
+utils.report.display_symbol(obj, name)
+```
+
+Inline-LaTeX symbol for a report row, preferring an explicit ``symbol`` override.
+
+When a parameter / variable carries a ``symbol`` slot (e.g. ``w_+`` for an identifier ``w_plus``, or ``S^{(E)}`` for ``S_e``), render *that* symbol so the report matches the source's own notation; otherwise fall back to the element's name. Fully sympy-native — the override string is itself rendered via ``sympy.latex(Symbol(...))``, so it inherits Greek/subscript/superscript handling.
+
+### distribution_text { #tvbo.utils.report.distribution_text }
+
+```python
+utils.report.distribution_text(distribution)
+```
+
+One-line summary of a sampling distribution (name, domain, axis, seed).
+
+### divergence_register { #tvbo.utils.report.divergence_register }
+
+```python
+utils.report.divergence_register(source)
+```
+
+Parse a study's ``methods-vs-code.md`` into per-class counts and rows.
+
+The register is a skill-mandated artifact of any replication whose study ships code, and its counts are quoted in the report's prose. Parsing it here means the report can never disagree with the register it cites — the drift the register itself documents.
+
+Rows are recognised by an id cell that STARTS with ``<class><n>``, ignoring emphasis markers and any annotation after it — ``| **A4** *(cross-impl)* |`` is one row of class A. A row is *scored* when the table it sits in ends in a materiality column — headed ``Material`` or ``Changes a number?``, the two spellings the corpus uses — and it counts as material when that final cell opens with "yes" in any case or emphasis. Scoring is tracked per ROW rather than per class, because a register that continues one class into a second table would otherwise count those rows in the total and drop them from the material tally, understating its own headline; ``scored`` says how many rows were eligible, so a caption can state what it actually counted. A class with no scored row at all reports ``material`` as ``None`` rather than zero.
+
+An id annotated ``(ours)`` marks a fault or standing gap in the *replication* rather than a divergence in the published study, and the two are counted apart: ``paper`` and ``paper_material`` are what a claim about the published work may quote, ``ours`` and ``ours_material`` what the replication owes its reader, and ``total`` remains every row. Summing them into one number is the specific mistake this split exists to prevent -- a portfolio headline that reads "divergences found in published studies" must not be inflated by the replicators' own bugs.
+
+The tolerance is load-bearing. A pattern that demands a bare id matches nothing on a register that bolds its ids, and the zeros it returns read as "no divergences found".
+
+### embed_path { #tvbo.utils.report.embed_path }
+
+```python
+utils.report.embed_path(path)
+```
+
+``path`` as a markdown image target, relative to where the render is running.
+
+LaTeX resolves an image reference against its own working directory and prefixes a bare path with ``./``, so an absolute path arrives as ``./Users/…`` and the build fails on an image that is plainly there. Relative is the only form that works, and the render's own directory is what it can be relative to — which is why this is a separate step from :func:`report_figure`, whose answer has to be a real path a caller can open.
+
+### equation_latex { #tvbo.utils.report.equation_latex }
+
+```python
+utils.report.equation_latex(
+    eq,
+    derivative_notation='dot',
+    symbol_names=None,
+    mul_symbol=None,
+)
+```
+
+One SymPy equation as LaTeX, with the derivative written the report's way.
+
+Takes an already-parsed ``Eq`` — never a source string. Re-parsing an authored right-hand side needs a symbol vocabulary assembled by hand, and every symbol the assembler forgets (an event's name, a coupling term) turns into a silent fall-back to raw Python in the middle of the Methods section. ``Dynamics.get_equations()`` has already done that resolution against the model's own scope, so this only prints.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name                | Type   | Description                                                        | Default    |
+|---------------------|--------|--------------------------------------------------------------------|------------|
+| eq                  |        | A SymPy ``Eq``; a derivative left-hand side gets dot notation.     | _required_ |
+| derivative_notation |        | ``"dot"`` for ``\\dot{x}``, anything else for ``dx/dt``.           | `'dot'`    |
+| symbol_names        |        | ``{Symbol: latex}`` display overrides (``Dynamics.symbol_map()``). | `None`     |
+| mul_symbol          |        | Passed through to ``sympy.latex``.                                 | `None`     |
+
+### equation_name { #tvbo.utils.report.equation_name }
+
+```python
+utils.report.equation_name(eq)
+```
+
+The name an equation defines: ``x`` for ``Eq(Derivative(x, t), …)``, ``Sigm`` for ``Eq(Sigm(v), …)``.
+
+### event_table { #tvbo.utils.report.event_table }
+
+```python
+utils.report.event_table(events, derivative_notation='dot')
+```
+
+Markdown table of a model's events (spike conditions, stimuli, resets).
+
+An event is part of the model's definition — a stimulus protocol is not decoration — so it belongs in the report beside the state equations. Its condition and effect are rendered symbolically like every other equation.
+
+A continuous event may declare ``affect_negative``, a separate effect for the downcrossing; it gets its own column, which drops out for the usual case where one effect serves both crossings.
+
+### experiment_facts { #tvbo.utils.report.experiment_facts }
+
+```python
+utils.report.experiment_facts(experiment, shared_parameters=())
+```
+
+Ordered ``{column: cell}`` of everything an experiment can differ from its siblings in.
+
+Spans the model parameters the family shares, the network, the integrator and the sweep — because the differences that matter are rarely all of one kind: Jansen1995's seven experiments differ in node count, delay and duration and in **not one** model parameter, so a parameters-only comparison would come out blank.
+
+Only parameters *every* member of the family defines are included. A parameter a variant introduces has no counterpart in the base and would leave a hole in the column, which is the one thing a merged table must not do; the variant's own delta describes it instead.
+
+### experiment_models { #tvbo.utils.report.experiment_models }
+
+```python
+utils.report.experiment_models(experiment)
+```
+
+Every distinct model an experiment integrates — one, or one per component.
+
+``SimulationExperiment.dynamics`` carries the single model of a homogeneous network.
+A heterogeneous one leaves it unset and declares a model per node (Deco2014's spiking populations, Mongillo2008's pre/post pair) **and per edge** — the synapses a projection attaches — either inline or by name into the network's own catalogue. Both are the system the experiment integrates: a report reading only the nodes renders a spiking model without a single synaptic equation, which for Deco2014 dropped the NMDA saturating-gate system (Eqs. 3-4) its Methods prose promises. A component can also be referenced by name from another component's parameters (a ``poissonFiringSynapse`` names the synapse it drives in ``synapse``/``spikeTarget``), so string parameter values that resolve in the catalogue are followed transitively, each name visited once so a reference cycle terminates.
+
+### experiment_table { #tvbo.utils.report.experiment_table }
+
+```python
+utils.report.experiment_table(
+    experiments,
+    shared_parameters=(),
+    orient='auto',
+    caption_only_varying=True,
+)
+```
+
+One table comparing a family's experiments, carrying only what actually varies.
+
+Every quantity constant across the experiments is dropped: it is stated once in the symbol table or the settings sentence, and repeating it down a column says nothing.
+
+Orientation is chosen to keep the table narrow, because columns are the axis that cannot be paged: whichever of the two axes is shorter becomes the columns, ties going to experiments-as-rows (the conventional study-design layout). Pass ``orient`` as ``"rows"`` or ``"columns"`` — meaning where the *experiments* go — to pin it, so a study's Methods keeps its shape when a seventh experiment lands.
+
+### experiment_title { #tvbo.utils.report.experiment_title }
+
+```python
+utils.report.experiment_title(experiment)
+```
+
+An experiment's heading text, without the id the heading already carries.
+
+Recipes commonly open a label with the experiment's own number, so the heading came out as "Experiment 30: Exp 30 — FIC+EIB tuning". Six of Schirner2023's ten read that way. Stripping the prefix also drops the dash the recipe used to attach it.
+
+### figure_caption { #tvbo.utils.report.figure_caption }
+
+```python
+utils.report.figure_caption(figure, *studies)
+```
+
+A figure's public-facing caption — its own ``description:`` in the recipe.
+
+Single source of truth: the caption cannot drift from the figure it describes, and it is never the paper's caption (that would be plagiarism) nor the internal A/B framing. Accepts a figure or its name (with the studies to look it up in — a study may span more than one spec). Returns "" for an unknown name, so a caption is missing rather than a crash.
+
+### figure_label { #tvbo.utils.report.figure_label }
+
+```python
+utils.report.figure_label(figure)
+```
+
+The paper's own label for a figure, parsed from the name the recipe declares.
+
+Returns ``("Fig", 4)``, ``("EDF", 10)`` or ``("Supp", 3)``, and ``("New", 0)`` for a figure the paper has no counterpart for. Case and zero padding are ignored, so ``fig03_transfer`` and ``Pang2023_Fig3_x`` both read as figure 3, and an ``S`` between the marker and the number makes it supplementary. Sorting on it puts the main-text figures in order, the extended data and supplement after them and our own last, so a report never hardcodes a figure list.
+
+### figure_targets { #tvbo.utils.report.figure_targets }
+
+```python
+utils.report.figure_targets(figure, rows, column='Fig(s)')
+```
+
+The declared targets a figure carries, joined on the targets table's own figure column.
+
+Lets a per-figure status callout be *derived* from the scorecard rather than asserted beside it, so the two cannot disagree.
+
+### figure_title { #tvbo.utils.report.figure_title }
+
+```python
+utils.report.figure_title(figure)
+```
+
+A figure's heading: the paper's number, or its own name where it has none.
+
+A replication answers questions the paper left open, and those answers are figures with no published counterpart. Titling one with a number would present it as the paper's, so an unnumbered figure is headed by its declared ``label:``, or failing that by its own name — visibly ours, which is the whole point of the distinction.
+
+### figures_ordered { #tvbo.utils.report.figures_ordered }
+
+```python
+utils.report.figures_ordered(figures)
+```
+
+The study's figures in reading order: numbered ones first, then extended data and supplement, then those carrying no number.
+
+### find_figure { #tvbo.utils.report.find_figure }
+
+```python
+utils.report.find_figure(name, *studies)
+```
+
+The declared figure of that name, across one or more loaded studies.
+
+### flag_text { #tvbo.utils.report.flag_text }
+
+```python
+utils.report.flag_text(obj, flags=None)
+```
+
+Flags cell: boolean flags + shape / dataset / reported optimum.
+
+``flags`` is a list of ``(attr, label)`` pairs; it defaults to the standard parameter flags (``free``, ``heterogeneous``). A purely symbolic shape such as ``(n_nodes,)`` is skipped: it names the broadcast dimension rather than a concrete size, so it carries no information for a reader and would otherwise keep an empty Flags column alive. A concrete shape like ``(84, 84)`` is kept.
+
+### fmt { #tvbo.utils.report.fmt }
+
+```python
+utils.report.fmt(x, digits=2, missing=_MISSING)
+```
+
+A computed number for prose, or *missing* when it could not be computed.
+
+A report reads containers that may not exist yet, and a half-run study must render rather than crash: an absent number shows as a dash, which is visibly not a result.
+
+### format_number { #tvbo.utils.report.format_number }
+
+```python
+utils.report.format_number(value, decimals=4)
+```
+
+APA-style numeric formatting for report-table cells.
+
+Rounds to at most ``decimals`` decimal places and strips trailing zeros, so raw floats render publication-clean — ``0.8333333333`` → ``0.8333``, ``314.1592653589793`` → ``314.1593``, ``40000.0`` → ``40000``, ``0.0`` → ``0`` — while very large or very small magnitudes fall back to scientific notation (``1e-06``). Non-numeric values (strings, symbolic expressions, arrays) and booleans pass through unchanged.
+
+### get_citation { #tvbo.utils.report.get_citation }
+
+```python
+utils.report.get_citation(citation_key)
+```
+
+Retrieve a BibTeX entry by its citation key and render it as an APA-style plain text citation.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type   | Description                   | Default    |
+|--------------|--------|-------------------------------|------------|
+| citation_key | str    | The citation key to retrieve. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                            |
+|--------|--------|------------------------------------------------------------------------|
+| str    | str    | The citation formatted in APA style, or an error message if not found. |
+
+### is_internal { #tvbo.utils.report.is_internal }
+
+```python
+utils.report.is_internal()
+```
+
+True in the INTERNAL build — the one allowed to open the paper's © figures.
+
+Quarto exposes the *input filename* as ``QUARTO_DOCUMENT_FILE``, which is why the public/internal split is two entry files rather than two formats in one file.
+
+### may_show_original { #tvbo.utils.report.may_show_original }
+
+```python
+utils.report.may_show_original(cleared=False)
+```
+
+Whether this build is permitted to embed the paper's published figure.
+
+Two grounds, and only two. The **INTERNAL build** is local and git-ignored, so the original never leaves the machine. **Documented copyright clearance** from the publisher and the authors permits it anywhere, including the shareable PDF — that is a real case, not a hypothetical, and a study that has obtained clearance says so by passing ``cleared=True``.
+
+No study in this repository currently has clearance, so in practice the internal build is the only route. Default to ``False``: clearance is something a study proves it has, never something the code assumes.
+
+### md_table { #tvbo.utils.report.md_table }
+
+```python
+utils.report.md_table(
+    headers,
+    rows,
+    aligns=None,
+    empty='',
+    col_cap=44,
+    col_floor=9,
+)
+```
+
+Render a GitHub-markdown table, omitting columns with no data.
+
+A column is dropped when every one of its data cells is empty (blank, ``None``, or one of the placeholder markers). Kept columns render their empty cells as ``empty`` (blank by default — no ``—`` placeholder). This keeps auto-generated report tables narrow: a parameter set with no ``default``/``domain``/``flags`` values shows only the columns that carry information.
+
+Once the drop leaves fewer than two columns there is no table left to render, and what survives is written as a list of its values: a one-column float spends a number and a caption restating the heading above it. Collapsing a grid that still *has* columns is a different call — it needs the caller's subject and keying to read as a sentence — and is opt-in through [`table_or_prose`](#tvbo.utils.report.table_or_prose). [`read_md_tables`](#tvbo.utils.report.read_md_tables) is this function's inverse for everything it renders as a table.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type                        | Description                                                                                                  | Default    |
+|-----------|-----------------------------|--------------------------------------------------------------------------------------------------------------|------------|
+| headers   | Sequence\[str\]             | Column titles.                                                                                               | _required_ |
+| rows      | Sequence\[Sequence\[Any\]\] | One sequence of cell values per row.                                                                         | _required_ |
+| aligns    | Sequence\[str\] \| None     | Per-column alignment, ``'l'``/``'r'``/``'c'``; defaults to left.                                             | `None`     |
+| empty     | str                         | Placeholder rendered for an empty cell in a kept column.                                                     | `''`       |
+| col_cap   | int                         | Width above which a column stops earning more of the page.                                                   | `44`       |
+| col_floor | int                         | Width below which a column stops giving it up, so a short column keeps enough room to typeset its own cells. | `9`        |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                                                                           |
+|--------|--------|---------------------------------------------------------------------------------------------------------------------------------------|
+|        | str    | The markdown table — header, rule, and body rows — or the surviving column's values as a list when fewer than two columns carry data. |
+
+### metadata_text { #tvbo.utils.report.metadata_text }
+
+```python
+utils.report.metadata_text(obj)
+```
+
+Domain / Sampling cell: bounds + enforcement + distribution.
+
+### model_delta { #tvbo.utils.report.model_delta }
+
+```python
+utils.report.model_delta(model, baseline)
+```
+
+Names of what *model* adds or changes relative to *baseline*.
+
+Compares two related models (e.g. a controlled variant against its uncontrolled base) and returns the subsets that are new or redefined, so a report can render only the **delta** instead of repeating every shared state variable, parameter, derived variable and coupling input.
+
+Returns a :class:`~types.SimpleNamespace` with:
+
+- ``eq_svars`` — state variables whose *equation* is new or changed (shown
+  in *State Equations*).
+- ``new_svars`` — state variables absent from the baseline (shown in the
+  *State Variables* table; a merely re-tuned equation is not a new variable).
+- ``dvars`` — derived variables that are new or redefined.
+- ``params`` — parameters that are new or whose value/equation changed.
+- ``coupling_inputs`` — coupling inputs absent from the baseline.
+- ``base_label`` — a human label for the baseline, for the "relative to" note.
+
+### model_equation_groups { #tvbo.utils.report.model_equation_groups }
+
+```python
+utils.report.model_equation_groups(model, delta=None)
+```
+
+Every equation a model states, grouped for display and already parsed.
+
+One call to :meth:`Dynamics.get_equations`, which resolves each equation against the model's own scope and folds conditional branches into a ``Piecewise``. A template that rebuilds any of these groups from ``equation.rhs`` instead re-parses without that scope — the mistake :func:`equation_latex` exists to prevent — and drops outright every equation written purely as branches, whose ``rhs`` is ``None``.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                                                                                 | Default    |
+|--------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| model  |        | The `Dynamics` to read.                                                                                                                                     | _required_ |
+| delta  |        | Optional `model_delta` result; state and derived variables are narrowed to the ones it reports as changed, so a derived model shows only its own additions. | `None`     |
+
+### model_equations { #tvbo.utils.report.model_equations }
+
+```python
+utils.report.model_equations(
+    model,
+    kind='state',
+    derivative_notation='dot',
+    mul_symbol=None,
+)
+```
+
+``(name, latex)`` for a model's equations of one kind, from its symbolic form.
+
+``kind`` selects ``state`` (state variables) or ``derived`` (derived variables). The equations come from :meth:`Dynamics.get_equations`, so the report shows the same expressions the backend integrates. The *name* comes back with the LaTeX because a numbered report has to anchor each equation on the variable it defines, and because a variant prints only the subset its delta names.
+
+### model_equations_latex { #tvbo.utils.report.model_equations_latex }
+
+```python
+utils.report.model_equations_latex(
+    model,
+    kind='state',
+    derivative_notation='dot',
+    mul_symbol=None,
+)
+```
+
+A model's equations of one kind, each as LaTeX (names dropped).
+
+### model_families { #tvbo.utils.report.model_families }
+
+```python
+utils.report.model_families(experiments)
+```
+
+The experiments' models, grouped into families, each printed once.
+
+A **family** is one system: its first model is written out in full, and every later model in it contributes only its :func:`model_delta`, the way Jansen1995 §3.3 adds a flash stimulus by printing Eq. 18 alone instead of reprinting the six-equation column.
+Two models share a family when they span the same state variables, which also settles the case a delta cannot: a model that introduces the *entire* state is not a variant but a second system — Pang2023's mass model against its wave field, Koller2024's Jansen–Rit against its Kuramoto — and starts a family of its own, printed in full.
+
+Membership is tested by **subset-or-superset** of the family's first model, not by equality and not by mere overlap. Equality splits Jansen1995's delayed column off from the column it extends (it only adds ``z0``/``z1``); bare overlap goes wrong the other way and merges genuinely unrelated systems that happen to share auxiliary state — Pang2023's wave field and its BEI mass model both carry the four Balloon–Windkessel haemodynamic variables, and overlap presented the mass model, which the paper never even published, as a *variant* of the wave field.
+
+Returns one namespace per family, in the order the experiments declare them, with ``label``, ``base`` and ``variants`` (each a namespace of ``model``, ``experiments`` and, for a variant, its ``delta`` against the base), plus the family's own ``experiments`` and ``shared_parameters`` — the parameter names every member defines, which are the only ones an experiment table can compare without leaving holes.
+
+### model_functions { #tvbo.utils.report.model_functions }
+
+```python
+utils.report.model_functions(model, derivative_notation='dot', mul_symbol=None)
+```
+
+``(name, latex)`` for a model's named functions, written ``f(args) = rhs``.
+
+Unlike the state equations these are not in ``get_equations()``, so the authored right-hand side is parsed against the model's own vocabulary — assembled from the model rather than by hand, so a symbol the assembler would have forgotten cannot fall back to raw Python in the middle of the Methods.
+
+### model_report { #tvbo.utils.report.model_report }
+
+```python
+utils.report.model_report()
+```
+
+Generate a report for the model.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+None
+
+### name_items { #tvbo.utils.report.name_items }
+
+```python
+utils.report.name_items(collection)
+```
+
+Yield ``(name, obj)`` pairs from a name-keyed dict, list, or ``None``.
+
+### observation_table { #tvbo.utils.report.observation_table }
+
+```python
+utils.report.observation_table(experiments)
+```
+
+Everything the study records, as one table plus the prose the table cannot hold.
+
+Primary and derived observations share a column set — a derived one names source observations where a primary one names a state expression — so they merge into one table rather than two half-empty ones. Identical observations collapse onto a single row listing the experiments that declare them, which is where the real duplication sits: a ten-experiment study usually records the same two things ten times.
+
+Three things keep the grid dense, measured across the studies that have the widest ones (Deco2014's 29 observations, Schirner2023's 34):
+
+- **Shared settings are lifted out.** A sampling setting every observation agrees on
+  is stated once instead of per row. The one that matters is ``time_unit``: a study declares its clock once, so the same value repeated on every one of those 63 rows said nothing that the line above the table could not.
+- **Sampling and pipeline are one column.** Each was under half full and they are
+  complementary: both answer *how the raw state becomes the reported quantity*.
+  Apart they left a 34 %-empty grid; merged, ``Reduction`` fills 66–91 %.
+- **Descriptions become prose.** They are paragraphs — the Balloon–Windkessel note
+  runs to four lines — in a column filled by 12 % of Schirner2023's rows. As a cell they widen the table for everyone; below it they read as text.
+
+### open_result { #tvbo.utils.report.open_result }
+
+```python
+utils.report.open_result(out_dir, experiment=None)
+```
+
+The result container of an experiment, or None when it has not been run.
+
+### p_text { #tvbo.utils.report.p_text }
+
+```python
+utils.report.p_text(p, floor=0.001)
+```
+
+A p value as its own clause, so a tiny one reads as a bound rather than as `p = 0.000`.
+
+Written the way a results sentence wants it, operator included, because `p = < .001` is what happens when the operator is fixed in the sentence and the bound arrives from the number.
+
+### param_table { #tvbo.utils.report.param_table }
+
+```python
+utils.report.param_table(
+    collection,
+    name_header='Parameter',
+    symbolic=True,
+    flags=None,
+    derived=None,
+)
+```
+
+Markdown table for any parameter-like collection, empty columns dropped.
+
+Renders the full column set (name, value, default, unit, domain/sampling, flags, description) and lets :func:`md_table` drop every column that is empty across all rows, so each collection shows only the columns that carry data.
+One builder serves model parameters, coupling terms, and the stimulation, integration, noise, and hyperparameter tables, instead of a hand-written table per section.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                                                                                                                                                | Default       |
+|-------------|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| collection  |        | A name->obj map or a list of parameter-like objects.                                                                                                                                                       | _required_    |
+| name_header |        | Title of the first (name) column, e.g. ``Term``.                                                                                                                                                           | `'Parameter'` |
+| symbolic    |        | Render the name as inline-LaTeX ``$symbol$`` when true, else plain.                                                                                                                                        | `True`        |
+| flags       |        | ``(attr, label)`` pairs for :func:`flag_text`; defaults to the standard parameter flags.                                                                                                                   | `None`        |
+| derived     |        | ``name -> unit`` the dimensional check *forced* rather than read, from :func:`derived_units`. Such a unit renders parenthesised, so a reader can tell what the model states from what its equations imply. | `None`        |
+
+### parameter_report { #tvbo.utils.report.parameter_report }
+
+```python
+utils.report.parameter_report(
+    param_setting,
+    decimals=3,
+    format='latex',
+    **kwargs,
+)
+```
+
+Generate a report of parameter settings.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+param_setting : object
+    Parameter setting object.
+decimals : int, optional
+    Number of decimal places for formatting. Default is 3.
+format : str, optional
+    Format for the report: 'latex', 'pandas', or 'markdown'. Default is 'latex'.
+**kwargs :
+    Additional keyword arguments.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+pandas.DataFrame or str
+    Report table if format is 'pandas', LaTeX string if format is 'latex', or markdown string if format is 'markdown'.
+
+
+
+#### Raises: {.doc-section .doc-section-raises}
+
+ValueError
+    If the provided format is not recognized.
+
+### parameter_table { #tvbo.utils.report.parameter_table }
+
+```python
+utils.report.parameter_table(params, derived=None)
+```
+
+Markdown model Parameters table (empty columns dropped) from a name->obj map.
+
+### pipeline_text { #tvbo.utils.report.pipeline_text }
+
+```python
+utils.report.pipeline_text(pipeline)
+```
+
+A pipeline as arrow-separated step names.
+
+A step is named by what the recipe *calls* it, not by the library function it happens to dispatch to. Reading ``callable`` first printed Deco2014's five-step BOLD pipeline as ``? → ? → fftconvolve → ? → ?`` — every step declares a ``name`` and only the convolution also names an implementation, so the one step that resolved showed a scipy entry point where the reader wanted "convolve".
+
+### present { #tvbo.utils.report.present }
+
+```python
+utils.report.present(value)
+```
+
+True when a value carries information (not ``None`` / empty / ``''``).
+
+### range_text { #tvbo.utils.report.range_text }
+
+```python
+utils.report.range_text(range_obj)
+```
+
+One-line summary of an explored range / domain (values, ``[lo, hi]``, step, n).
+
+### read_md_tables { #tvbo.utils.report.read_md_tables }
+
+```python
+utils.report.read_md_tables(source)
+```
+
+Read the GitHub-markdown tables out of a document — the inverse of `md_table`.
+
+Lets a report *compute* from a hand-maintained analysis file (a replication's `targets.md`, a divergence register) instead of restating its contents in prose, so the two can never disagree.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                             | Default    |
+|--------|--------|---------------------------------------------------------|------------|
+| source |        | A path to a markdown file, or the markdown text itself. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                  | Description                                                               |
+|--------|-----------------------|---------------------------------------------------------------------------|
+|        | list\[MarkdownTable\] | One `MarkdownTable` per table found, each row a `{header: cell}` dict and |
+|        | list\[MarkdownTable\] | each table tagged with the nearest preceding heading.                     |
+
+### recipe_param { #tvbo.utils.report.recipe_param }
+
+```python
+utils.report.recipe_param(experiment, name, group='dynamics')
+```
+
+A declared parameter's value, read from the recipe rather than typed into prose.
+
+*group* selects where to look: ``"dynamics"`` for the model's parameters, or the name of a
+single event/coupling whose parameters to read. Returns None when the name is not declared, so a renamed parameter shows as a dash instead of silently reporting a stale literal.
+
+### render_citation { #tvbo.utils.report.render_citation }
+
+```python
+utils.report.render_citation(citation, style='apa')
+```
+
+Render an ontology citation instance as formatted text.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                    | Default    |
+|----------|--------|--------------------------------------------------------------------------------|------------|
+| citation | Any    | An owlready2 instance with author, year, title, journal, volume, pages, label. | _required_ |
+| style    | str    | 'bibtex' or 'apa'.                                                             | `'apa'`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description             |
+|--------|--------|-------------------------|
+| str    | str    | The formatted citation. |
+
+### report_figure { #tvbo.utils.report.report_figure }
+
+```python
+utils.report.report_figure(
+    ours,
+    theirs=None,
+    stage=None,
+    credit='the authors',
+    label='',
+    missing='',
+    width=6.7,
+    dpi=300,
+    cleared=False,
+)
+```
+
+The image a report embeds for one figure.
+
+This is the A/B helper every replication report used to carry its own copy of. Pass ``theirs=None`` — what the PUBLIC build does — and the copyrighted original is never opened, let alone embedded, and our figure is embedded where the run rendered it. Pass it in the INTERNAL build and the two are composed left-right at a common height, into ``stage``.
+
+Only the composite is staged, and that is the whole point of the directory: it is the one artifact that embeds someone else's figure, so it lives apart from the study's own and is never published. Our figure needs no copy — the layout already renders it inside the report's own project directory.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                                                                                                                                                                                                                     | Default         |
+|---------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| ours    |        | Our rendered figure. A missing file returns None rather than a blank slot.                                                                                                                                                      | _required_      |
+| theirs  |        | The published original — one path, or several stacked vertically when the paper splits one quantity across scans. None embeds ours alone.                                                                                       | `None`          |
+| stage   |        | Where to compose the A/B. Defaults to the layout's own place for it, which sits under the original-study directory whose figure it embeds, so a composite is covered by the rule that keeps the original out of the repository. | `None`          |
+| credit  | str    | Attribution over the original, e.g. ``"Pang et al. 2023 (c)"``.                                                                                                                                                                 | `'the authors'` |
+| label   | str    | Qualifier after "TVBO replication", e.g. the parcellation or backend.                                                                                                                                                           | `''`            |
+| missing | str    | Drawn in the original's pane when it cannot be found, so the A/B still shows which side is absent instead of silently rendering as a single panel.                                                                              | `''`            |
+| width   | float  | Composite width in inches — the report's text-block width.                                                                                                                                                                      | `6.7`           |
+| dpi     | int    | Raster resolution of the composite.                                                                                                                                                                                             | `300`           |
+| cleared | bool   | True only when the study holds documented copyright clearance for the published figure. Without it, composing an original outside the INTERNAL build raises rather than shipping it.                                            | `False`         |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type         | Description                                                              |
+|--------|--------------|--------------------------------------------------------------------------|
+|        | Path \| None | The staged path to embed, or None when our figure has not been rendered. |
+
+### result_sidecar { #tvbo.utils.report.result_sidecar }
+
+```python
+utils.report.result_sidecar(out_dir, experiment)
+```
+
+The YAML sidecar `tvbo run` wrote beside a result, or an empty dict.
+
+### save_latex { #tvbo.utils.report.save_latex }
+
+```python
+utils.report.save_latex(conf, fpath)
+```
+
+Save a LaTeX report to a file.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+conf : object
+    Configuration object.
+fpath : str
+    File path to save the LaTeX report.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+None
+
+### sci { #tvbo.utils.report.sci }
+
+```python
+utils.report.sci(x, digits=2, missing=_MISSING)
+```
+
+A computed number in scientific notation, or *missing*.
+
+### section_slug { #tvbo.utils.report.section_slug }
+
+```python
+utils.report.section_slug(text)
+```
+
+An ASCII anchor for a generated heading, so no renderer has to derive one.
+
+Left to itself Quarto builds a heading's identifier from the heading *text*, which here is recipe-authored and may hold anything: Cortes2013 labels an experiment with ``I₀``, and the derived Typst label ``<…-in-i₀-…>`` failed the compile outright with "unclosed label". Emitting our own slug keeps the identifier alphanumeric whatever the label says, and makes it stable — it no longer changes when someone edits the wording.
+
+### settings_sentence { #tvbo.utils.report.settings_sentence }
+
+```python
+utils.report.settings_sentence(experiment)
+```
+
+The factual half of an experiment's paragraph, composed from what it declares.
+
+Solver, step, duration, transient, network size and swept range are stated here so a recipe's authored ``description:`` never has to restate them — the numbers a description repeats are the numbers that go stale when the recipe changes. What the description says about *why* an experiment exists is left untouched.
+
+### show_report_figure { #tvbo.utils.report.show_report_figure }
+
+```python
+utils.report.show_report_figure(ours, theirs=None, **kwargs)
+```
+
+`report_figure`, displayed in the current cell.
+
+For reports that emit figures from a plain python cell. Prefer embedding the path `report_figure` returns as markdown — that gets a figure number, a caption and a cross-reference target; this exists so a report with many inline call sites can share the one implementation without restructuring every cell.
+
+### sidecar_value { #tvbo.utils.report.sidecar_value }
+
+```python
+utils.report.sidecar_value(meta, *path)
+```
+
+A value dug out of a sidecar by key path, unwrapping a ``{value: ...}`` leaf.
+
+### slot { #tvbo.utils.report.slot }
+
+```python
+utils.report.slot(obj, name, default=None)
+```
+
+Safe attribute access on a report object (``getattr`` with a default).
+
+### spelled { #tvbo.utils.report.spelled }
+
+```python
+utils.report.spelled(n)
+```
+
+A small computed count as a word, so a sentence can open with it.
+
+Reports compute their own counts, and a computed count often lands where prose wants a word rather than a numeral. Anything past twelve stays a numeral, which is where the convention itself gives up.
+
+### state_variable_table { #tvbo.utils.report.state_variable_table }
+
+```python
+utils.report.state_variable_table(svars)
+```
+
+Markdown State-Variables table (empty columns dropped) from a name->obj map.
+
+### study_sweeps { #tvbo.utils.report.study_sweeps }
+
+```python
+utils.report.study_sweeps(experiments)
+```
+
+Every parameter any of these experiments sweeps, mapped to its range.
+
+A parameter one experiment sweeps is not well described by the single value another happens to hold it at, so the symbol table shows the range instead.
+
+### sweep_axes { #tvbo.utils.report.sweep_axes }
+
+```python
+utils.report.sweep_axes(experiment)
+```
+
+``{axis name: range text}`` for every parameter an experiment explores.
+
+Axis names are scoped (``network.G``, ``execution.random_seed``); a bare name is a model parameter, which is what lets a swept parameter show its *range* in the symbol and experiment tables instead of a single value it never actually holds.
+
+Reads ``space``, which is what an exploration sweeps. ``parameters`` is the exploration's own hyper-parameters — tolerances, sampler settings — and reading those returned nothing for every curated recipe, so no report ever showed a range; where an exploration did declare one, its domain would have been printed as if it were swept.
+
+``explorations`` is keyed by name, so iterate the values: iterating the mapping walks the keys, and a string has no slots, which is the other half of why this was empty.
+
+### symbol_table { #tvbo.utils.report.symbol_table }
+
+```python
+utils.report.symbol_table(model, swept=None, couplings=())
+```
+
+One dense glossary of every symbol in a model: state, parameters, derived, coupling.
+
+``Symbol | Kind | Meaning | Value | Unit``, where every row fills every cell — a state variable contributes the value it starts at, a parameter its value (or the range a sweep gives it), a derived parameter its defining expression. Replaces the three separate tables (state variables, parameters, derived parameters), whose column sets do not overlap and which therefore cannot be merged without leaving most of the grid empty. Derived *variables* are deliberately absent: they are equations and appear as equations, so listing them here would print each one twice.
+
+A coupling's parameters land here too, rather than in a table of their own after the coupling block: they are symbols of the same system, and a coupling usually restates the model's. Jansen1995's sigmoid coupling declares $e_0$, $r$ and $v_0$ at exactly the model's values — a separate table repeated three rows the reader had already read. A coupling parameter that genuinely differs, or that the model does not declare, keeps its row and is marked as the coupling's.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                                                                                                        | Default    |
+|-----------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| model     |        | The ``Dynamics`` to describe.                                                                                                                      | _required_ |
+| swept     |        | Optional ``{parameter name: range text}``, so a parameter an experiment sweeps shows the range it takes rather than a single value it never holds. | `None`     |
+| couplings |        | Couplings whose parameters belong to the same system.                                                                                              | `()`       |
+
+### table_or_prose { #tvbo.utils.report.table_or_prose }
+
+```python
+utils.report.table_or_prose(headers, rows, aligns=None, min_cells=3, **kwargs)
+```
+
+Render a grid as a table, or as a sentence when it is too small to earn a float.
+
+A numbered, captioned table announces to the reader that something has to be looked up, and journals cap how many a paper may carry; a table holding two numbers spends that budget on nothing. The threshold is `min_cells` values outside the key column, and at least two rows — so a single declared event stops being a one-row float, and two experiments differing only in duration become a clause. Anything larger stays a table.
+
+Opt-in, because a multi-column sentence reads correctly only where the first column names a subject. A parameter block, a state-variable list or a scorecard has no such subject and stays a table however few rows it has — call `md_table` for those, which still declines to render a grid down to a single column.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type                        | Description                                                    | Default    |
+|-----------|-----------------------------|----------------------------------------------------------------|------------|
+| headers   | Sequence\[str\]             | Column titles; the first names the subject of each clause.     | _required_ |
+| rows      | Sequence\[Sequence\[Any\]\] | One sequence of cell values per row.                           | _required_ |
+| aligns    | Sequence\[str\] \| None     | Per-column alignment; ignored on the prose path.               | `None`     |
+| min_cells | int                         | Values outside the first column below which the grid is prose. | `3`        |
+| **kwargs  |                             | Forwarded to `md_table` when the grid stays a table.           | `{}`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                              |
+|--------|--------|--------------------------------------------------------------------------|
+|        | str    | A markdown table, or a sentence when the grid falls under the threshold. |
+
+### time_order { #tvbo.utils.report.time_order }
+
+```python
+utils.report.time_order(derivative)
+```
+
+How many times *derivative* differentiates with respect to time.
+
+By name: ``Symbol("t")`` and ``Symbol("t", real=True)`` are different objects that print identically, so an identity test reads order 0 for a first derivative taken in a scope that carries assumptions — and prints ``\frac{d^0}{d t^0}``.
+
+### time_text { #tvbo.utils.report.time_text }
+
+```python
+utils.report.time_text(value, unit=None, decimals=4)
+```
+
+A time with the integrator's own unit, never an assumed one.
+
+The integration block used to print a hardcoded ``ms``, so Jansen1995 — whose rate constants are per second and whose recipe declares 2.0 — reported a 2 ms run of a model that integrates for 2 s, with a 0.5 ms transient in place of 0.5 s.
+
+### to_pdf { #tvbo.utils.report.to_pdf }
+
+```python
+utils.report.to_pdf(render, outputfile)
+```
+
+Convert Markdown text to a PDF file via pandoc.
+
+Uses `pypandoc` with the `xelatex` PDF engine and a 3.5 cm page margin to render the given Markdown source and write the result to disk.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                | Default    |
+|------------|--------|--------------------------------------------|------------|
+| render     |        | Markdown-formatted source text to convert. | _required_ |
+| outputfile |        | Path where the generated PDF is written.   | _required_ |
+
+### unit_latex { #tvbo.utils.report.unit_latex }
+
+```python
+utils.report.unit_latex(unit)
+```
+
+A propagated unit expression as inline LaTeX, named where it has a name.
+
+Propagation yields `kilogram*meter**2/(1000*ampere*second**3)`; that is `mV`, and reads far better said that way. Only where no curated unit matches does the base-unit product itself get typeset. Upright roman either way — a unit is not a variable, and italic `mV` reads as `m` times `V`.
+
+### unit_text { #tvbo.utils.report.unit_text }
+
+```python
+utils.report.unit_text(unit)
+```
+
+Render a unit as inline LaTeX, or the empty marker when absent.
+
+### unit_verdict_table { #tvbo.utils.report.unit_verdict_table }
+
+```python
+utils.report.unit_verdict_table(verdicts)
+```
+
+Markdown table of each equation's dimensional standing.
+
+Three-valued, because two of the three answers are not failures.
+`underdetermined` says the model does not declare enough to check, which is the honest answer for the 24 of 39 curated models that declare no units at all; reporting those as inconsistent would pressure invented declarations into the published record.
+
+### unit_verdicts { #tvbo.utils.report.unit_verdicts }
+
+```python
+utils.report.unit_verdicts(model, strictness='dimensional')
+```
+
+Every equation's dimensional verdict, for the tables above.
+
+Resolved once per report: the check inlines every model function each time it runs, and both the verdict table and the derived-unit marking read it.
+
+### unrendered_equations { #tvbo.utils.report.unrendered_equations }
+
+```python
+utils.report.unrendered_equations(source)
+```
+
+Display equations written by hand in a report body, as ``(line, equation)``.
+
+An equation belongs in a report only if the code runs it, and it gets there by being rendered from the recipe — never typed. A typed one can drift from what executes, and the reader has no way to tell which they are looking at. Pang2023 carried the paper's PDE, hand-set, above a section explaining that TVBO does not integrate that PDE.
+
+Executable cells are stripped first, so equations that :meth:`SimulationStudy.report` emits are not flagged: the check is for ``$$…$$`` typed into the prose.
+
+Assert this is empty in the report's own harness cell, so a hand-written equation fails the render rather than reaching a reader::
+
+    bad = report.unrendered_equations("report.qmd")
+    assert not bad, f"hand-written equations: {bad}"
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                   | Default    |
+|--------|--------|-----------------------------------------------|------------|
+| source |        | Path to a ``.qmd``/``.md`` file, or its text. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                   |
+|--------|--------|-------------------------------------------------------------------------------|
+|        |        | ``(line number, equation source)`` for each hand-written display equation, in |
+|        |        | document order. Empty when the report renders all of its mathematics.         |
+
+### value_of { #tvbo.utils.report.value_of }
+
+```python
+utils.report.value_of(obj)
+```
+
+The `.value` of a recipe object, or the object itself when it is already a scalar.
+
+### variant_parameter_table { #tvbo.utils.report.variant_parameter_table }
+
+```python
+utils.report.variant_parameter_table(family)
+```
+
+One table of every parameter the family's variants change, not one table each.
+
+A study that varies a model across many experiments produces many two-row deltas — Mongillo2008 emitted twenty-one of them — and a page of two-row tables is not a readable Methods section. Collapsing them keeps the same information in one grid, and the *Variant* column carries what the separate captions used to.
+
+With only one variant that column has one value, repeated down the page to say what the sentence introducing the variant said a line earlier. It is left blank so :func:`md_table` drops it, which is also what stops a long model label from taking a third of the table's width.
+
+### variant_sentence { #tvbo.utils.report.variant_sentence }
+
+```python
+utils.report.variant_sentence(variant, equations, baseline)
+```
+
+The lead-in to a variant's delta: who uses it, and what it changes.
+
+Replaces reprinting a near-identical system. Where the equations it redefines were themselves numbered, they are named by cross-reference, so the reader is pointed at the equation above rather than asked to diff two blocks by eye.

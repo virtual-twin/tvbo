@@ -1,0 +1,1471 @@
+# Class: Figure 
+
+
+_A publication figure, a mosaic of panels rendered from result containers. Reuses name (identifier) and description (caption)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:ImageObject](http://schema.org/ImageObject)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Figure
+    click Figure href "./Figure.html"
+      Figure : animation
+        
+          
+    
+        
+        
+        Figure --> "0..1" Animation : animation
+        click Animation href "./Animation.html"
+    
+
+        
+      Figure : auto_format
+        
+          
+    
+        
+        
+        Figure --> "0..1" Boolean : auto_format
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Figure : code_modules
+        
+          
+    
+        
+        
+        Figure --> "*" String : code_modules
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : description
+        
+          
+    
+        
+        
+        Figure --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : dpi
+        
+          
+    
+        
+        
+        Figure --> "0..1" Integer : dpi
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Figure : font_size
+        
+          
+    
+        
+        
+        Figure --> "0..1" Float : font_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Figure : format
+        
+          
+    
+        
+        
+        Figure --> "0..1" String : format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : height
+        
+          
+    
+        
+        
+        Figure --> "0..1" Float : height
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Figure : height_ratios
+        
+          
+    
+        
+        
+        Figure --> "*" Float : height_ratios
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Figure : label
+        
+          
+    
+        
+        
+        Figure --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : layout
+        
+          
+    
+        
+        
+        Figure --> "0..1" String : layout
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : layout_engine
+        
+          
+    
+        
+        
+        Figure --> "0..1" LayoutEngine : layout_engine
+        click LayoutEngine href "../../enums/LayoutEngine.html"
+    
+
+        
+      Figure : name
+        
+          
+    
+        
+        
+        Figure --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : pad
+        
+          
+    
+        
+        
+        Figure --> "0..1" Float : pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Figure : panel_number_format
+        
+          
+    
+        
+        
+        Figure --> "0..1" String : panel_number_format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : panel_number_loc
+        
+          
+    
+        
+        
+        Figure --> "0..1" Corner : panel_number_loc
+        click Corner href "../../enums/Corner.html"
+    
+
+        
+      Figure : panel_number_offset
+        
+          
+    
+        
+        
+        Figure --> "*" Float : panel_number_offset
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Figure : panel_number_size
+        
+          
+    
+        
+        
+        Figure --> "0..1" Float : panel_number_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Figure : panel_numbers
+        
+          
+    
+        
+        
+        Figure --> "0..1" Boolean : panel_numbers
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Figure : panels
+        
+          
+    
+        
+        
+        Figure --> "*" Panel : panels
+        click Panel href "./Panel.html"
+    
+
+        
+      Figure : part
+        
+          
+    
+        
+        
+        Figure --> "0..1" ReportPart : part
+        click ReportPart href "../../enums/ReportPart.html"
+    
+
+        
+      Figure : provenance
+        
+          
+    
+        
+        
+        Figure --> "0..1" Provenance : provenance
+        click Provenance href "./Provenance.html"
+    
+
+        
+      Figure : reference_image
+        
+          
+    
+        
+        
+        Figure --> "0..1" String : reference_image
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : share_x
+        
+          
+    
+        
+        
+        Figure --> "*" String : share_x
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : share_y
+        
+          
+    
+        
+        
+        Figure --> "*" String : share_y
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : spine_offset
+        
+          
+    
+        
+        
+        Figure --> "0..1" Float : spine_offset
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Figure : spines
+        
+          
+    
+        
+        
+        Figure --> "0..1" String : spines
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : style
+        
+          
+    
+        
+        
+        Figure --> "*" String : style
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Figure : theme
+        
+          
+    
+        
+        
+        Figure --> "0..1" Theme : theme
+        click Theme href "./Theme.html"
+    
+
+        
+      Figure : trim_margins
+        
+          
+    
+        
+        
+        Figure --> "0..1" Boolean : trim_margins
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Figure : width
+        
+          
+    
+        
+        
+        Figure --> "0..1" Float : width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Figure : width_ratios
+        
+          
+    
+        
+        
+        Figure --> "*" Float : width_ratios
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Figure : workflow_overrides
+        
+          
+    
+        
+        
+        Figure --> "0..1" WorkflowConfig : workflow_overrides
+        click WorkflowConfig href "./WorkflowConfig.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [schema:ImageObject](http://schema.org/ImageObject) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [provenance](../slots/provenance.qmd) | 0..1 <br/> [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance for this entity — what it was derived from, whi... | direct |
+| [part](../slots/part.qmd) | 0..1 <br/> [ReportPart](../enums/ReportPart.qmd) | Which part of a generated report this belongs in — the main Methods or the su... | direct |
+| [layout](../slots/layout.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | bsplot mosaic string; letters = panel keys, slash (or newline) = new row, rep... | direct |
+| [theme](../slots/theme.qmd) | 0..1 <br/> [Theme](../classes/Theme.qmd) | The look this figure declares: its colours and the geometry a style sheet use... | direct |
+| [style](../slots/style.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Style layers underneath the theme, applied left to right: a registered bsplot... | direct |
+| [format](../slots/format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Output format (pdf/svg/png) | direct |
+| [reference_image](../slots/reference_image.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The published figure this one reproduces, as a path relative to the study roo... | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The heading this figure carries in a report | direct |
+| [width](../slots/width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Figure width in mm (physical print size) | direct |
+| [height](../slots/height.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Figure height in mm (physical print size) | direct |
+| [dpi](../slots/dpi.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Raster resolution (dots per inch); scales pixel output only, not the physical... | direct |
+| [trim_margins](../slots/trim_margins.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Trim surrounding whitespace from the saved figure (default true) | direct |
+| [pad](../slots/pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Whitespace left around the content when trimming, in inches | direct |
+| [font_size](../slots/font_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Base font size in points (physical: 1 pt = 1/72 inch) | direct |
+| [auto_format](../slots/auto_format.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Apply bsplot's format_fig (tick/label normalisation + panel numbers) | direct |
+| [panel_numbers](../slots/panel_numbers.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Draw automatic panel letters (a, b,  | direct |
+| [panel_number_format](../slots/panel_number_format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Python format string applied to each panel letter: '{}' -> 'a', '({})' -> '(a... | direct |
+| [panel_number_loc](../slots/panel_number_loc.qmd) | 0..1 <br/> [Corner](../enums/Corner.qmd) | Which corner the panel letter sits in | direct |
+| [panel_number_offset](../slots/panel_number_offset.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | [dx, dy] shift of every panel letter from its corner, in axes fractions | direct |
+| [panel_number_size](../slots/panel_number_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Panel-letter size in points | direct |
+| [height_ratios](../slots/height_ratios.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Relative heights of the mosaic rows, e | direct |
+| [width_ratios](../slots/width_ratios.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Relative widths of the mosaic columns | direct |
+| [spines](../slots/spines.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Axes spine style: 'box' (all 4 spines, closed boxes — e | direct |
+| [layout_engine](../slots/layout_engine.qmd) | 0..1 <br/> [LayoutEngine](../enums/LayoutEngine.qmd) | Which layout engine positions the panels | direct |
+| [spine_offset](../slots/spine_offset.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | How far the left and bottom spines sit outside the data area, in axes fractio... | direct |
+| [workflow_overrides](../slots/workflow_overrides.qmd) | 0..1 <br/> [WorkflowConfig](../classes/WorkflowConfig.qmd) | Per-figure HPC/workflow resource refinement (reuses WorkflowConfig, same patt... | direct |
+| [code_modules](../slots/code_modules.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Importable module names whose import registers this figure's custom panels / ... | direct |
+| [share_x](../slots/share_x.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Panel groups that share one x scale, each entry a comma-separated list of mos... | direct |
+| [share_y](../slots/share_y.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Panel groups that share one y scale, each entry a comma-separated list of mos... | direct |
+| [animation](../slots/animation.qmd) | 0..1 <br/> [Animation](../classes/Animation.qmd) | Turns the figure into a movie over one dimension of its data instead of a sti... | direct |
+| [panels](../slots/panels.qmd) | * <br/> [Panel](../classes/Panel.qmd) | Panels keyed by their mosaic label | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [figures](../slots/figures.qmd) | range | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:ImageObject |
+| native | tvbo:Figure |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Figure
+description: A publication figure, a mosaic of panels rendered from result containers.
+  Reuses name (identifier) and description (caption).
+from_schema: https://w3id.org/tvbo/figure
+slots:
+- name
+- description
+- provenance
+- part
+attributes:
+  layout:
+    name: layout
+    description: bsplot mosaic string; letters = panel keys, slash (or newline) =
+      new row, repeated letters span cells, dot = empty. e.g. aab/ccb.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: string
+  theme:
+    name: theme
+    description: 'The look this figure declares: its colours and the geometry a style
+      sheet used to own. Whatever it states beats every layer in `style`, always —
+      declared beats layered, so a figure''s look can be read off its own spec instead
+      of reconstructed from the sheets underneath it. Start from the curated one with
+      `theme: {iri: tvbo:theme/default}` and state only the differences.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: Theme
+    inlined: true
+  style:
+    name: style
+    description: 'Style layers underneath the theme, applied left to right: a registered
+      bsplot style name (`tvbo`, `nature`) or a path to an .mplstyle. This is where
+      a look TVB-O has no field for goes — another project''s house style, a journal''s
+      sheet, the rcParams of a paper being reproduced. Anything `theme` states wins
+      over all of it. The name ''tvbo-palette'' is an alias for `theme: {iri: tvbo:theme/default}`,
+      kept because it reads well in a list.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    - Layer
+    range: string
+    multivalued: true
+  format:
+    name: format
+    description: Output format (pdf/svg/png). Unset defers to the renderer default.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  reference_image:
+    name: reference_image
+    description: The published figure this one reproduces, as a path relative to the
+      study root (e.g. original_study/img/fig_04.png). Names the A/B target for `tvbo
+      figure compare`, which measures panel geometry against it; it is never a data
+      source, and never rendered into a panel.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: string
+  label:
+    name: label
+    description: The heading this figure carries in a report. Unset, a report reads
+      the paper's own number out of the name (Fig4, EDF10). A replication that answers
+      a question the paper left open produces figures with no published counterpart,
+      and those need a title of their own rather than a number that would read as
+      the paper's.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  width:
+    name: width
+    description: Figure width in mm (physical print size). Font size is in points
+      and independent of this, so a smaller figure makes text relatively larger.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    - Colorbar
+    - Rule
+    - RenderSpec
+    range: float
+  height:
+    name: height
+    description: Figure height in mm (physical print size).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    - RenderSpec
+    range: float
+  dpi:
+    name: dpi
+    description: Raster resolution (dots per inch); scales pixel output only, not
+      the physical size or the font size.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: integer
+  trim_margins:
+    name: trim_margins
+    description: Trim surrounding whitespace from the saved figure (default true).
+      Trimming re-crops to the drawn content, so the saved aspect can differ from
+      width/height; set false to preserve the declared width×height proportions exactly,
+      e.g. to match an original figure. Renders as bbox_inches='tight' on a matplotlib
+      backend.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: boolean
+  pad:
+    name: pad
+    description: Whitespace left around the content when trimming, in inches. Defaults
+      to the backend's own margin (0.1 in for matplotlib), which is visible padding
+      at journal column widths; 0 crops flush to the drawn content. Ignored when trim_margins
+      is false, where the declared canvas fixes the margins instead.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    - Colorbar
+    range: float
+  font_size:
+    name: font_size
+    description: 'Base font size in points (physical: 1 pt = 1/72 inch). The real
+      text size, unchanged by figure size or dpi; set it (or the width) so labels
+      are legible at print size.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: float
+  auto_format:
+    name: auto_format
+    description: Apply bsplot's format_fig (tick/label normalisation + panel numbers).
+      Set false to keep full manual control, e.g. when a study's own .mplstyle already
+      defines the look.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: boolean
+  panel_numbers:
+    name: panel_numbers
+    description: Draw automatic panel letters (a, b, ...). Independent of auto_format
+      so a study can keep its own tick styling and still get numbered panels.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: boolean
+  panel_number_format:
+    name: panel_number_format
+    description: 'Python format string applied to each panel letter: ''{}'' -> ''a'',
+      ''({})'' -> ''(a)'', ''{}.'' -> ''a.''. Defaults to ''{}''. Match the target
+      journal''s convention.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: string
+  panel_number_loc:
+    name: panel_number_loc
+    description: Which corner the panel letter sits in. Unset keeps bsplot's own default
+      placement; many journals (and Taher Fig 5) use 'upper right'.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: Corner
+  panel_number_offset:
+    name: panel_number_offset
+    description: '[dx, dy] shift of every panel letter from its corner, in axes fractions.
+      The default sits it on the axes corner, where a top y-tick label can reach it;
+      a small negative dx clears the tick labels.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: float
+    multivalued: true
+  panel_number_size:
+    name: panel_number_size
+    description: Panel-letter size in points. Unset scales it above the body font_size,
+      the convention most journals follow — a letter set at the body size reads as
+      a tick label rather than as the panel's name.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: float
+  height_ratios:
+    name: height_ratios
+    description: Relative heights of the mosaic rows, e.g. [1.15, 1, 1, 1] to make
+      the top panel taller. Length = number of rows.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: float
+    multivalued: true
+  width_ratios:
+    name: width_ratios
+    description: Relative widths of the mosaic columns.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: float
+    multivalued: true
+  spines:
+    name: spines
+    description: 'Axes spine style: ''box'' (all 4 spines, closed boxes — e.g. Taher)
+      or ''open'' (left+bottom only). Unset defers to the active style. Pair ''box''
+      with auto_format: false — bsplot''s format_fig otherwise detaches and trims
+      spines (the open ''nature'' look).'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: string
+  layout_engine:
+    name: layout_engine
+    description: Which layout engine positions the panels. Unset lets the backend
+      pick; name one to stop a dense mosaic being laid out by whatever the engine
+      falls back to when its solver gives up, and 'none' to keep the gridspec's own
+      positions when panels place their content at absolute geometry.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: LayoutEngine
+  spine_offset:
+    name: spine_offset
+    description: How far the left and bottom spines sit outside the data area, in
+      axes fractions. 0 makes them meet at the corner; the default detaches them slightly
+      (bsplot's house look). Journals differ on this, so a replication states which
+      one the paper uses.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: float
+  workflow_overrides:
+    name: workflow_overrides
+    description: Per-figure HPC/workflow resource refinement (reuses WorkflowConfig,
+      same pattern as SimulationExperiment.workflow_overrides); lets a heavy render
+      request its own resources when figures are emitted as workflow jobs. The figure's
+      Layer.used edges become the render rule's input dependencies.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: WorkflowConfig
+    inlined: true
+  code_modules:
+    name: code_modules
+    description: Importable module names whose import registers this figure's custom
+      panels / transforms (via bsplot.register_panel / register_transform). The emitted
+      plot.py imports them, so a study ships its bespoke figure code in its code_source
+      instead of in core tvbo. The modules must be importable when the figure renders
+      (loading the study puts its code/ dir on the path).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: string
+    multivalued: true
+  share_x:
+    name: share_x
+    description: 'Panel groups that share one x scale, each entry a comma-separated
+      list of mosaic keys (''c,g,h''). Every panel in a group ends on the union of
+      the group''s limits. Declare it whenever a panel''s tick labels are hidden as
+      another panel''s: hiding them alone asserts a shared scale the axes do not actually
+      have, and a reader then compares two panels drawn at different ranges.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: string
+    multivalued: true
+  share_y:
+    name: share_y
+    description: Panel groups that share one y scale, each entry a comma-separated
+      list of mosaic keys ('c,g,h'). Same rule as share_x.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: string
+    multivalued: true
+  animation:
+    name: animation
+    description: Turns the figure into a movie over one dimension of its data instead
+      of a still. Every other field keeps its meaning — the mosaic, the panels, the
+      sizing and the styling are the frame; the animation only says which dimension
+      advances and how fast. Declaring it is what makes a figure whose subject is
+      a *process* show the process rather than a snapshot of it, without a second,
+      hand-written plotting path.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: Animation
+    inlined: true
+  panels:
+    name: panels
+    description: Panels keyed by their mosaic label.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Figure
+    range: Panel
+    multivalued: true
+    inlined: true
+class_uri: schema:ImageObject
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Figure
+description: A publication figure, a mosaic of panels rendered from result containers.
+  Reuses name (identifier) and description (caption).
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  layout:
+    name: layout
+    description: bsplot mosaic string; letters = panel keys, slash (or newline) =
+      new row, repeated letters span cells, dot = empty. e.g. aab/ccb.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: string
+  theme:
+    name: theme
+    description: 'The look this figure declares: its colours and the geometry a style
+      sheet used to own. Whatever it states beats every layer in `style`, always —
+      declared beats layered, so a figure''s look can be read off its own spec instead
+      of reconstructed from the sheets underneath it. Start from the curated one with
+      `theme: {iri: tvbo:theme/default}` and state only the differences.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: Theme
+    inlined: true
+  style:
+    name: style
+    description: 'Style layers underneath the theme, applied left to right: a registered
+      bsplot style name (`tvbo`, `nature`) or a path to an .mplstyle. This is where
+      a look TVB-O has no field for goes — another project''s house style, a journal''s
+      sheet, the rcParams of a paper being reproduced. Anything `theme` states wins
+      over all of it. The name ''tvbo-palette'' is an alias for `theme: {iri: tvbo:theme/default}`,
+      kept because it reads well in a list.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    - Layer
+    range: string
+    multivalued: true
+  format:
+    name: format
+    description: Output format (pdf/svg/png). Unset defers to the renderer default.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  reference_image:
+    name: reference_image
+    description: The published figure this one reproduces, as a path relative to the
+      study root (e.g. original_study/img/fig_04.png). Names the A/B target for `tvbo
+      figure compare`, which measures panel geometry against it; it is never a data
+      source, and never rendered into a panel.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: string
+  label:
+    name: label
+    description: The heading this figure carries in a report. Unset, a report reads
+      the paper's own number out of the name (Fig4, EDF10). A replication that answers
+      a question the paper left open produces figures with no published counterpart,
+      and those need a title of their own rather than a number that would read as
+      the paper's.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Figure
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  width:
+    name: width
+    description: Figure width in mm (physical print size). Font size is in points
+      and independent of this, so a smaller figure makes text relatively larger.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    - Colorbar
+    - Rule
+    - RenderSpec
+    range: float
+  height:
+    name: height
+    description: Figure height in mm (physical print size).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    - RenderSpec
+    range: float
+  dpi:
+    name: dpi
+    description: Raster resolution (dots per inch); scales pixel output only, not
+      the physical size or the font size.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: integer
+  trim_margins:
+    name: trim_margins
+    description: Trim surrounding whitespace from the saved figure (default true).
+      Trimming re-crops to the drawn content, so the saved aspect can differ from
+      width/height; set false to preserve the declared width×height proportions exactly,
+      e.g. to match an original figure. Renders as bbox_inches='tight' on a matplotlib
+      backend.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: boolean
+  pad:
+    name: pad
+    description: Whitespace left around the content when trimming, in inches. Defaults
+      to the backend's own margin (0.1 in for matplotlib), which is visible padding
+      at journal column widths; 0 crops flush to the drawn content. Ignored when trim_margins
+      is false, where the declared canvas fixes the margins instead.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    - Colorbar
+    range: float
+  font_size:
+    name: font_size
+    description: 'Base font size in points (physical: 1 pt = 1/72 inch). The real
+      text size, unchanged by figure size or dpi; set it (or the width) so labels
+      are legible at print size.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: float
+  auto_format:
+    name: auto_format
+    description: Apply bsplot's format_fig (tick/label normalisation + panel numbers).
+      Set false to keep full manual control, e.g. when a study's own .mplstyle already
+      defines the look.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: boolean
+  panel_numbers:
+    name: panel_numbers
+    description: Draw automatic panel letters (a, b, ...). Independent of auto_format
+      so a study can keep its own tick styling and still get numbered panels.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: boolean
+  panel_number_format:
+    name: panel_number_format
+    description: 'Python format string applied to each panel letter: ''{}'' -> ''a'',
+      ''({})'' -> ''(a)'', ''{}.'' -> ''a.''. Defaults to ''{}''. Match the target
+      journal''s convention.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: string
+  panel_number_loc:
+    name: panel_number_loc
+    description: Which corner the panel letter sits in. Unset keeps bsplot's own default
+      placement; many journals (and Taher Fig 5) use 'upper right'.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: Corner
+  panel_number_offset:
+    name: panel_number_offset
+    description: '[dx, dy] shift of every panel letter from its corner, in axes fractions.
+      The default sits it on the axes corner, where a top y-tick label can reach it;
+      a small negative dx clears the tick labels.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: float
+    multivalued: true
+  panel_number_size:
+    name: panel_number_size
+    description: Panel-letter size in points. Unset scales it above the body font_size,
+      the convention most journals follow — a letter set at the body size reads as
+      a tick label rather than as the panel's name.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: float
+  height_ratios:
+    name: height_ratios
+    description: Relative heights of the mosaic rows, e.g. [1.15, 1, 1, 1] to make
+      the top panel taller. Length = number of rows.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: float
+    multivalued: true
+  width_ratios:
+    name: width_ratios
+    description: Relative widths of the mosaic columns.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: float
+    multivalued: true
+  spines:
+    name: spines
+    description: 'Axes spine style: ''box'' (all 4 spines, closed boxes — e.g. Taher)
+      or ''open'' (left+bottom only). Unset defers to the active style. Pair ''box''
+      with auto_format: false — bsplot''s format_fig otherwise detaches and trims
+      spines (the open ''nature'' look).'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: string
+  layout_engine:
+    name: layout_engine
+    description: Which layout engine positions the panels. Unset lets the backend
+      pick; name one to stop a dense mosaic being laid out by whatever the engine
+      falls back to when its solver gives up, and 'none' to keep the gridspec's own
+      positions when panels place their content at absolute geometry.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: LayoutEngine
+  spine_offset:
+    name: spine_offset
+    description: How far the left and bottom spines sit outside the data area, in
+      axes fractions. 0 makes them meet at the corner; the default detaches them slightly
+      (bsplot's house look). Journals differ on this, so a replication states which
+      one the paper uses.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: float
+  workflow_overrides:
+    name: workflow_overrides
+    description: Per-figure HPC/workflow resource refinement (reuses WorkflowConfig,
+      same pattern as SimulationExperiment.workflow_overrides); lets a heavy render
+      request its own resources when figures are emitted as workflow jobs. The figure's
+      Layer.used edges become the render rule's input dependencies.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: WorkflowConfig
+    inlined: true
+  code_modules:
+    name: code_modules
+    description: Importable module names whose import registers this figure's custom
+      panels / transforms (via bsplot.register_panel / register_transform). The emitted
+      plot.py imports them, so a study ships its bespoke figure code in its code_source
+      instead of in core tvbo. The modules must be importable when the figure renders
+      (loading the study puts its code/ dir on the path).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: string
+    multivalued: true
+  share_x:
+    name: share_x
+    description: 'Panel groups that share one x scale, each entry a comma-separated
+      list of mosaic keys (''c,g,h''). Every panel in a group ends on the union of
+      the group''s limits. Declare it whenever a panel''s tick labels are hidden as
+      another panel''s: hiding them alone asserts a shared scale the axes do not actually
+      have, and a reader then compares two panels drawn at different ranges.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: string
+    multivalued: true
+  share_y:
+    name: share_y
+    description: Panel groups that share one y scale, each entry a comma-separated
+      list of mosaic keys ('c,g,h'). Same rule as share_x.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: string
+    multivalued: true
+  animation:
+    name: animation
+    description: Turns the figure into a movie over one dimension of its data instead
+      of a still. Every other field keeps its meaning — the mosaic, the panels, the
+      sizing and the styling are the frame; the animation only says which dimension
+      advances and how fast. Declaring it is what makes a figure whose subject is
+      a *process* show the process rather than a snapshot of it, without a second,
+      hand-written plotting path.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: Animation
+    inlined: true
+  panels:
+    name: panels
+    description: Panels keyed by their mosaic label.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    range: Panel
+    multivalued: true
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Figure
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Figure
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  provenance:
+    name: provenance
+    description: W3C PROV-O aligned provenance for this entity — what it was derived
+      from, which agent produced it, and when.
+    from_schema: https://w3id.org/tvbo
+    close_mappings:
+    - prov:wasGeneratedBy
+    rank: 1000
+    owner: Figure
+    domain_of:
+    - Figure
+    - ResultEntity
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    - SimulationExperiment
+    range: Provenance
+    inlined: true
+  part:
+    name: part
+    description: 'Which part of a generated report this belongs in — the main Methods
+      or the supplementary material. Placement only: every experiment runs and every
+      figure renders regardless, so demoting one never changes what is computed. It
+      answers a different question from a replication''s target tier (how central
+      a claim is) and from the source paper''s own Fig/EDF numbering (where *they*
+      printed it), because our document may carry a headline result''s parameter dump
+      in the SI, or relegate a figure the paper printed up front. Defaults to ``main``,
+      so a recipe that says nothing keeps everything in the Methods.'
+    from_schema: https://w3id.org/tvbo/common
+    ifabsent: ReportPart(main)
+    owner: Figure
+    domain_of:
+    - Figure
+    - SimulationExperiment
+    range: ReportPart
+class_uri: schema:ImageObject
+
+```
+</details></div>

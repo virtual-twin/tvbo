@@ -1,0 +1,99 @@
+# Slot: rng 
+
+
+_Random-seed policy across shards. ``deterministic`` (the default when unset) derives each task's seed from its shard index so the fan-out is reproducible._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/rng](https://w3id.org/tvbo/slot/rng)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:rng |
+| native | tvbo:rng |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: rng
+description: Random-seed policy across shards. ``deterministic`` (the default when
+  unset) derives each task's seed from its shard index so the fan-out is reproducible.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowConfig
+domain_of:
+- WorkflowConfig
+range: string
+
+```
+</details></div>

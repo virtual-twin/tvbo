@@ -1,0 +1,81 @@
+# Slot: digitalIdentifier 
+
+
+_Add the digital identifier of this brain atlas or coordinate space version._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:identifier](http://purl.org/dc/terms/identifier)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Slot URI | [dcterms:identifier](http://purl.org/dc/terms/identifier) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:identifier |
+| native | atom:digitalIdentifier |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: digitalIdentifier
+description: Add the digital identifier of this brain atlas or coordinate space version.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: dcterms:identifier
+range: string
+multivalued: true
+
+```
+</details></div>

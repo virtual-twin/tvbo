@@ -1,0 +1,99 @@
+# Slot: fraction 
+
+
+_Width of the bar as a fraction of the panel. The default is slim on purpose: matplotlib's own steals about a fifth of a small panel._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/fraction](https://w3id.org/tvbo/slot/fraction)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Colorbar](../classes/Colorbar.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Colorbar](../classes/Colorbar.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:fraction |
+| native | tvbo:fraction |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: fraction
+description: 'Width of the bar as a fraction of the panel. The default is slim on
+  purpose: matplotlib''s own steals about a fifth of a small panel.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Colorbar
+domain_of:
+- Colorbar
+range: float
+
+```
+</details></div>

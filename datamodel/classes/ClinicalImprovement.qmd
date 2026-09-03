@@ -1,0 +1,311 @@
+# Class: ClinicalImprovement 
+
+
+_Relative improvement on a defined clinical score._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:class/ClinicalImprovement](https://w3id.org/tvbo/dbs/class/ClinicalImprovement)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ClinicalImprovement
+    click ClinicalImprovement href "./ClinicalImprovement.html"
+      ClinicalImprovement : absolute_value
+        
+          
+    
+        
+        
+        ClinicalImprovement --> "0..1" Float : absolute_value
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      ClinicalImprovement : baseline_value
+        
+          
+    
+        
+        
+        ClinicalImprovement --> "0..1" Float : baseline_value
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      ClinicalImprovement : evaluator
+        
+          
+    
+        
+        
+        ClinicalImprovement --> "0..1" String : evaluator
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ClinicalImprovement : percent_change
+        
+          
+    
+        
+        
+        ClinicalImprovement --> "0..1" Float : percent_change
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      ClinicalImprovement : score
+        
+          
+    
+        
+        
+        ClinicalImprovement --> "0..1" ClinicalScore : score
+        click ClinicalScore href "./ClinicalScore.html"
+    
+
+        
+      ClinicalImprovement : time_post_surgery
+        
+          
+    
+        
+        
+        ClinicalImprovement --> "0..1" Float : time_post_surgery
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      ClinicalImprovement : timepoint
+        
+          
+    
+        
+        
+        ClinicalImprovement --> "0..1" String : timepoint
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [score](../slots/score.qmd) | 0..1 <br/> [ClinicalScore](../classes/ClinicalScore.qmd) |  | direct |
+| [baseline_value](../slots/baseline_value.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Preoperative baseline value of the score | direct |
+| [absolute_value](../slots/absolute_value.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Absolute value of the score at the time of assessment | direct |
+| [percent_change](../slots/percent_change.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Percent change compared to preoperative baseline (positive = improvement) | direct |
+| [time_post_surgery](../slots/time_post_surgery.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Timepoint of assessment in days or months after implantation | direct |
+| [evaluator](../slots/evaluator.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Who performed the rating (e | direct |
+| [timepoint](../slots/timepoint.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Timepoint of assessment (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [DBSProtocol](../classes/DBSProtocol.qmd) | [clinical_improvement](../slots/clinical_improvement.qmd) | range | [ClinicalImprovement](../classes/ClinicalImprovement.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:ClinicalImprovement |
+| native | tvbo_dbs:ClinicalImprovement |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ClinicalImprovement
+description: Relative improvement on a defined clinical score.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  score:
+    name: score
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - ClinicalImprovement
+    range: ClinicalScore
+  baseline_value:
+    name: baseline_value
+    description: Preoperative baseline value of the score
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - ClinicalImprovement
+    range: float
+  absolute_value:
+    name: absolute_value
+    description: Absolute value of the score at the time of assessment
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - ClinicalImprovement
+    range: float
+  percent_change:
+    name: percent_change
+    description: Percent change compared to preoperative baseline (positive = improvement)
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - ClinicalImprovement
+    range: float
+  time_post_surgery:
+    name: time_post_surgery
+    description: Timepoint of assessment in days or months after implantation
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - ClinicalImprovement
+    range: float
+  evaluator:
+    name: evaluator
+    description: Who performed the rating (e.g., rater initials, clinician ID, or
+      system)
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - ClinicalImprovement
+    range: string
+  timepoint:
+    name: timepoint
+    description: Timepoint of assessment (e.g., "1 month post-op", "6 months post-op")
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - ClinicalImprovement
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ClinicalImprovement
+description: Relative improvement on a defined clinical score.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  score:
+    name: score
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: ClinicalImprovement
+    domain_of:
+    - ClinicalImprovement
+    range: ClinicalScore
+  baseline_value:
+    name: baseline_value
+    description: Preoperative baseline value of the score
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: ClinicalImprovement
+    domain_of:
+    - ClinicalImprovement
+    range: float
+  absolute_value:
+    name: absolute_value
+    description: Absolute value of the score at the time of assessment
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: ClinicalImprovement
+    domain_of:
+    - ClinicalImprovement
+    range: float
+  percent_change:
+    name: percent_change
+    description: Percent change compared to preoperative baseline (positive = improvement)
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: ClinicalImprovement
+    domain_of:
+    - ClinicalImprovement
+    range: float
+  time_post_surgery:
+    name: time_post_surgery
+    description: Timepoint of assessment in days or months after implantation
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: ClinicalImprovement
+    domain_of:
+    - ClinicalImprovement
+    range: float
+  evaluator:
+    name: evaluator
+    description: Who performed the rating (e.g., rater initials, clinician ID, or
+      system)
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: ClinicalImprovement
+    domain_of:
+    - ClinicalImprovement
+    range: string
+  timepoint:
+    name: timepoint
+    description: Timepoint of assessment (e.g., "1 month post-op", "6 months post-op")
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: ClinicalImprovement
+    domain_of:
+    - ClinicalImprovement
+    range: string
+
+```
+</details></div>

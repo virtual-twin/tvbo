@@ -1,0 +1,100 @@
+# Slot: electrode_id 
+
+
+_Unique identifier for this electrode_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:identifier](http://purl.org/dc/terms/identifier)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Electrode](../classes/Electrode.qmd) | Implanted DBS electrode and contact geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Electrode](../classes/Electrode.qmd) |
+| Slot URI | [dcterms:identifier](http://purl.org/dc/terms/identifier) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Electrode](../classes/Electrode.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:identifier |
+| native | tvbo_dbs:electrode_id |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: electrode_id
+description: Unique identifier for this electrode
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+slot_uri: dcterms:identifier
+owner: Electrode
+domain_of:
+- Electrode
+range: string
+
+```
+</details></div>

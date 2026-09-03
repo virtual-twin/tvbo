@@ -1,0 +1,1227 @@
+# Class: Dynamics 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Dynamics](https://w3id.org/tvbo/Dynamics)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Dynamics
+    click Dynamics href "./Dynamics.html"
+      Dynamics : autonomous
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" Boolean : autonomous
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Dynamics : compile
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" Boolean : compile
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Dynamics : coupling_inputs
+        
+          
+    
+        
+        
+        Dynamics --> "*" CouplingInput : coupling_inputs
+        click CouplingInput href "./CouplingInput.html"
+    
+
+        
+      Dynamics : cse
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" Boolean : cse
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Dynamics : dataLocation
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" String : dataLocation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dynamics : derived_from_model
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" Dynamics : derived_from_model
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      Dynamics : derived_parameters
+        
+          
+    
+        
+        
+        Dynamics --> "*" DerivedParameter : derived_parameters
+        click DerivedParameter href "./DerivedParameter.html"
+    
+
+        
+      Dynamics : derived_variables
+        
+          
+    
+        
+        
+        Dynamics --> "*" DerivedVariable : derived_variables
+        click DerivedVariable href "./DerivedVariable.html"
+    
+
+        
+      Dynamics : description
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dynamics : events
+        
+          
+    
+        
+        
+        Dynamics --> "*" Event : events
+        click Event href "./Event.html"
+    
+
+        
+      Dynamics : functions
+        
+          
+    
+        
+        
+        Dynamics --> "*" Function : functions
+        click Function href "./Function.html"
+    
+
+        
+      Dynamics : has_reference
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" String : has_reference
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dynamics : iri
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Dynamics : label
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dynamics : local_coupling_term
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" Parameter : local_coupling_term
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Dynamics : model_type
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" ModelType : model_type
+        click ModelType href "../../enums/ModelType.html"
+    
+
+        
+      Dynamics : modes
+        
+          
+    
+        
+        
+        Dynamics --> "*" Dynamics : modes
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      Dynamics : modified
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" Boolean : modified
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Dynamics : name
+        
+          
+    
+        
+        
+        Dynamics --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dynamics : number_of_modes
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" Integer : number_of_modes
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Dynamics : observed
+        
+          
+    
+        
+        
+        Dynamics --> "*" DerivedVariable : observed
+        click DerivedVariable href "./DerivedVariable.html"
+    
+
+        
+      Dynamics : output
+        
+          
+    
+        
+        
+        Dynamics --> "*" String : output
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dynamics : parameters
+        
+          
+    
+        
+        
+        Dynamics --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Dynamics : references
+        
+          
+    
+        
+        
+        Dynamics --> "*" String : references
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dynamics : source
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" String : source
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Dynamics : state_variables
+        
+          
+    
+        
+        
+        Dynamics --> "*" StateVariable : state_variables
+        click StateVariable href "./StateVariable.html"
+    
+
+        
+      Dynamics : stimulus
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" Stimulus : stimulus
+        click Stimulus href "./Stimulus.html"
+    
+
+        
+      Dynamics : system_type
+        
+          
+    
+        
+        
+        Dynamics --> "0..1" SystemType : system_type
+        click SystemType href "../../enums/SystemType.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Dynamics](https://w3id.org/tvbo/Dynamics) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [has_reference](../slots/has_reference.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [source](../slots/source.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [references](../slots/references.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dataLocation](../slots/dataLocation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add the location of the data file containing the parcellation terminology | direct |
+| [derived_parameters](../slots/derived_parameters.qmd) | * <br/> [DerivedParameter](../classes/DerivedParameter.qmd) |  | direct |
+| [derived_variables](../slots/derived_variables.qmd) | * <br/> [DerivedVariable](../classes/DerivedVariable.qmd) |  | direct |
+| [coupling_inputs](../slots/coupling_inputs.qmd) | * <br/> [CouplingInput](../classes/CouplingInput.qmd) |  | direct |
+| [state_variables](../slots/state_variables.qmd) | * <br/> [StateVariable](../classes/StateVariable.qmd) |  | direct |
+| [modified](../slots/modified.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | direct |
+| [output](../slots/output.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Output variable names to include in simulation results | direct |
+| [derived_from_model](../slots/derived_from_model.qmd) | 0..1 <br/> [Dynamics](../classes/Dynamics.qmd) |  | direct |
+| [number_of_modes](../slots/number_of_modes.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+| [local_coupling_term](../slots/local_coupling_term.qmd) | 0..1 <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [functions](../slots/functions.qmd) | * <br/> [Function](../classes/Function.qmd) |  | direct |
+| [stimulus](../slots/stimulus.qmd) | 0..1 <br/> [Stimulus](../classes/Stimulus.qmd) |  | direct |
+| [modes](../slots/modes.qmd) | * <br/> [Dynamics](../classes/Dynamics.qmd) |  | direct |
+| [model_type](../slots/model_type.qmd) | 0..1 <br/> [ModelType](../enums/ModelType.qmd) | Coarse classification of this model (mean_field, neural_mass, phase_oscillato... | direct |
+| [system_type](../slots/system_type.qmd) | 0..1 <br/> [SystemType](../enums/SystemType.qmd) |  | direct |
+| [autonomous](../slots/autonomous.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether the system is autonomous (equations do not depend explicitly on time ... | direct |
+| [observed](../slots/observed.qmd) | * <br/> [DerivedVariable](../classes/DerivedVariable.qmd) | Observable functions computed from states, inputs, and parameters after simul... | direct |
+| [events](../slots/events.qmd) | * <br/> [Event](../classes/Event.qmd) | Discrete state transitions intrinsic to the dynamical system, such as thresho... | direct |
+| [cse](../slots/cse.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Code-generation hint (opt-in, backend-independent): eliminate common subexpre... | direct |
+| [compile](../slots/compile.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Code-generation hint (opt-in, backend-independent): request that the generate... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [dynamics](../slots/dynamics.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+| [Node](../classes/Node.qmd) | [dynamics](../slots/dynamics.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+| [Edge](../classes/Edge.qmd) | [dynamics](../slots/dynamics.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+| [Observation](../classes/Observation.qmd) | [dynamics](../slots/dynamics.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+| [Dynamics](../classes/Dynamics.qmd) | [derived_from_model](../slots/derived_from_model.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+| [Dynamics](../classes/Dynamics.qmd) | [modes](../slots/modes.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+| [Continuation](../classes/Continuation.qmd) | [dynamics](../slots/dynamics.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [model](../slots/model.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [dynamics](../slots/dynamics.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [model](../slots/model.qmd) | range | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* NeuralMassModel
+
+
+## Comments
+
+* Successor class replacing deprecated NeuralMassModel.
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Dynamics |
+| native | tvbo:Dynamics |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Dynamics
+comments:
+- Successor class replacing deprecated NeuralMassModel.
+from_schema: https://w3id.org/tvbo
+aliases:
+- NeuralMassModel
+slots:
+- has_reference
+- name
+- label
+- iri
+- parameters
+- description
+- source
+- references
+- dataLocation
+slot_usage:
+  name:
+    name: name
+    ifabsent: Dynamics
+  system_type:
+    name: system_type
+    ifabsent: continuous
+attributes:
+  derived_parameters:
+    name: derived_parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    - PDE
+    range: DerivedParameter
+    multivalued: true
+    inlined: true
+  derived_variables:
+    name: derived_variables
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    - PDE
+    range: DerivedVariable
+    multivalued: true
+    inlined: true
+  coupling_inputs:
+    name: coupling_inputs
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    range: CouplingInput
+    multivalued: true
+    inlined: true
+  state_variables:
+    name: state_variables
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    - PDE
+    range: StateVariable
+    multivalued: true
+    inlined: true
+  modified:
+    name: modified
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    range: boolean
+  output:
+    name: output
+    description: Output variable names to include in simulation results. References
+      to state_variables or derived_variables by name.
+    deprecated: 'Use ''record: true'' on the derived variable (or ''record'' on the
+      state variable) instead. The ''output'' list is retained for backward compatibility.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DataRef
+    - Procedure
+    - Dynamics
+    - Function
+    - FunctionCall
+    range: string
+    multivalued: true
+  derived_from_model:
+    name: derived_from_model
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    range: Dynamics
+  number_of_modes:
+    name: number_of_modes
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    domain_of:
+    - Dynamics
+    range: integer
+  local_coupling_term:
+    name: local_coupling_term
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    range: Parameter
+  functions:
+    name: functions
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: Function
+    multivalued: true
+    inlined: true
+  stimulus:
+    name: stimulus
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    range: Stimulus
+    inlined: true
+  modes:
+    name: modes
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - components
+    rank: 1000
+    domain_of:
+    - Dynamics
+    range: Dynamics
+    multivalued: true
+    inlined: true
+  model_type:
+    name: model_type
+    description: Coarse classification of this model (mean_field, neural_mass, phase_oscillator,
+      phenomenological, spiking, generic, field). Used for filtering in Dynamics.list_db(model_type=...).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    range: ModelType
+  system_type:
+    name: system_type
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    range: SystemType
+  autonomous:
+    name: autonomous
+    description: Whether the system is autonomous (equations do not depend explicitly
+      on time t). Non-autonomous systems have explicit time dependence, e.g. f*cos(omega*t).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'true'
+    domain_of:
+    - Dynamics
+    range: boolean
+  observed:
+    name: observed
+    description: 'Observable functions computed from states, inputs, and parameters
+      after simulation. Unlike derived_variables (which are intermediate algebraic
+      expressions used within the ODE), observed variables are post-hoc quantities
+      recoverable from the solution. Maps to obsf/obssym in ND.jl EdgeModel/VertexModel.
+      Example: absolute force magnitude computed from force components.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dynamics
+    - Coupling
+    range: DerivedVariable
+    multivalued: true
+    inlined: true
+  events:
+    name: events
+    description: Discrete state transitions intrinsic to the dynamical system, such
+      as threshold-triggered resets in spiking neuron models. Unlike experiment-level
+      events (stimulation, perturbation), these define the model's own discontinuous
+      behavior.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Node
+    - Edge
+    - Dynamics
+    - SimulationExperiment
+    range: Event
+    multivalued: true
+    inlined: true
+  cse:
+    name: cse
+    description: 'Code-generation hint (opt-in, backend-independent): eliminate common
+      subexpressions. When true, the generator evaluates each repeated subexpression
+      — including repeated calls to model-defined functions — once and reuses the
+      result instead of re-emitting it at every occurrence. Purely a performance hint:
+      results are numerically identical. A backend whose compiler already performs
+      this elimination may honour it as a no-op. Off by default (expressions are emitted
+      in flat form).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Dynamics
+    range: boolean
+  compile:
+    name: compile
+    description: 'Code-generation hint (opt-in, backend-independent): request that
+      the generated dynamics be compiled to machine code rather than interpreted,
+      where the target backend supports it. Purely a performance hint with no effect
+      on results; a backend that is inherently compiled (or cannot compile) honours
+      it as a no-op. Off by default. Independent of, and composable with, ``cse``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Dynamics
+    range: boolean
+class_uri: tvbo:Dynamics
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Dynamics
+comments:
+- Successor class replacing deprecated NeuralMassModel.
+from_schema: https://w3id.org/tvbo
+aliases:
+- NeuralMassModel
+slot_usage:
+  name:
+    name: name
+    ifabsent: Dynamics
+  system_type:
+    name: system_type
+    ifabsent: continuous
+attributes:
+  derived_parameters:
+    name: derived_parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    - PDE
+    range: DerivedParameter
+    multivalued: true
+    inlined: true
+  derived_variables:
+    name: derived_variables
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    - PDE
+    range: DerivedVariable
+    multivalued: true
+    inlined: true
+  coupling_inputs:
+    name: coupling_inputs
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: CouplingInput
+    multivalued: true
+    inlined: true
+  state_variables:
+    name: state_variables
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    - PDE
+    range: StateVariable
+    multivalued: true
+    inlined: true
+  modified:
+    name: modified
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: boolean
+  output:
+    name: output
+    description: Output variable names to include in simulation results. References
+      to state_variables or derived_variables by name.
+    deprecated: 'Use ''record: true'' on the derived variable (or ''record'' on the
+      state variable) instead. The ''output'' list is retained for backward compatibility.'
+    from_schema: https://w3id.org/tvbo
+    owner: Dynamics
+    domain_of:
+    - DataRef
+    - Procedure
+    - Dynamics
+    - Function
+    - FunctionCall
+    range: string
+    multivalued: true
+  derived_from_model:
+    name: derived_from_model
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: Dynamics
+  number_of_modes:
+    name: number_of_modes
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: integer
+  local_coupling_term:
+    name: local_coupling_term
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: Parameter
+  functions:
+    name: functions
+    from_schema: https://w3id.org/tvbo
+    owner: Dynamics
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: Function
+    multivalued: true
+    inlined: true
+  stimulus:
+    name: stimulus
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: Stimulus
+    inlined: true
+  modes:
+    name: modes
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - components
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: Dynamics
+    multivalued: true
+    inlined: true
+  model_type:
+    name: model_type
+    description: Coarse classification of this model (mean_field, neural_mass, phase_oscillator,
+      phenomenological, spiking, generic, field). Used for filtering in Dynamics.list_db(model_type=...).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: ModelType
+  system_type:
+    name: system_type
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: continuous
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: SystemType
+  autonomous:
+    name: autonomous
+    description: Whether the system is autonomous (equations do not depend explicitly
+      on time t). Non-autonomous systems have explicit time dependence, e.g. f*cos(omega*t).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'true'
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: boolean
+  observed:
+    name: observed
+    description: 'Observable functions computed from states, inputs, and parameters
+      after simulation. Unlike derived_variables (which are intermediate algebraic
+      expressions used within the ODE), observed variables are post-hoc quantities
+      recoverable from the solution. Maps to obsf/obssym in ND.jl EdgeModel/VertexModel.
+      Example: absolute force magnitude computed from force components.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    - Coupling
+    range: DerivedVariable
+    multivalued: true
+    inlined: true
+  events:
+    name: events
+    description: Discrete state transitions intrinsic to the dynamical system, such
+      as threshold-triggered resets in spiking neuron models. Unlike experiment-level
+      events (stimulation, perturbation), these define the model's own discontinuous
+      behavior.
+    from_schema: https://w3id.org/tvbo
+    owner: Dynamics
+    domain_of:
+    - Node
+    - Edge
+    - Dynamics
+    - SimulationExperiment
+    range: Event
+    multivalued: true
+    inlined: true
+  cse:
+    name: cse
+    description: 'Code-generation hint (opt-in, backend-independent): eliminate common
+      subexpressions. When true, the generator evaluates each repeated subexpression
+      — including repeated calls to model-defined functions — once and reuses the
+      result instead of re-emitting it at every occurrence. Purely a performance hint:
+      results are numerically identical. A backend whose compiler already performs
+      this elimination may honour it as a no-op. Off by default (expressions are emitted
+      in flat form).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: boolean
+  compile:
+    name: compile
+    description: 'Code-generation hint (opt-in, backend-independent): request that
+      the generated dynamics be compiled to machine code rather than interpreted,
+      where the target backend supports it. Purely a performance hint with no effect
+      on results; a backend that is inherently compiled (or cannot compile) honours
+      it as a no-op. Off by default. Independent of, and composable with, ``cse``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: boolean
+  has_reference:
+    name: has_reference
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: Dynamics
+    domain_of:
+    - Dynamics
+    range: string
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    ifabsent: Dynamics
+    identifier: true
+    owner: Dynamics
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Dynamics
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Dynamics
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Dynamics
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Dynamics
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  source:
+    name: source
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:source
+    owner: Dynamics
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: string
+  references:
+    name: references
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: Dynamics
+    domain_of:
+    - Provenance
+    - Observation
+    - Dynamics
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+    multivalued: true
+  dataLocation:
+    name: dataLocation
+    description: Add the location of the data file containing the parcellation terminology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    owner: Dynamics
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+class_uri: tvbo:Dynamics
+
+```
+</details></div>

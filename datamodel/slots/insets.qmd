@@ -1,0 +1,105 @@
+# Slot: insets 
+
+
+_Sub-axes drawn inside this panel after its own body — the zoom windows, corner thumbnails and small key maps papers place over a plot. Declaring them keeps a panel that needs one from becoming a custom callable, which would take its whole interior out of the grammar._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/insets](https://w3id.org/tvbo/slot/insets)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Inset](../classes/Inset.qmd) |
+| Domain Of | [Panel](../classes/Panel.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Panel](../classes/Panel.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:insets |
+| native | tvbo:insets |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: insets
+description: Sub-axes drawn inside this panel after its own body — the zoom windows,
+  corner thumbnails and small key maps papers place over a plot. Declaring them keeps
+  a panel that needs one from becoming a custom callable, which would take its whole
+  interior out of the grammar.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Panel
+domain_of:
+- Panel
+range: Inset
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

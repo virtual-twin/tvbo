@@ -1,0 +1,157 @@
+# yaml_loader { #tvbo.utils.yaml_loader }
+
+`utils.yaml_loader`
+
+YAML loader wrapper used by every ``Network.from_file`` / ``SimulationExperiment.from_file`` / ``SimulationStudy.from_file`` entry point in TVBO.
+
+Extends :class:`linkml_runtime.utils.yamlutils.DupCheckYamlLoader` (the default LinkML loader, which already disallows duplicate keys) with two generally-useful YAML idioms:
+
+* **Merge keys** (``<<: *anchor``) — standard YAML 1.1 semantics. Lets
+  an inline override reuse another block with one slot changed:
+
+  .. code-block:: yaml
+
+      kuramoto_10hz: &kuramoto_10hz
+        name: Kuramoto
+        parameters: {omega: 0.0628}
+
+      kuramoto_20hz:
+        <<: *kuramoto_10hz
+        parameters: {omega: 0.1257}
+
+* **`!include`** — substitute the value at a directive's position with
+  the contents of another YAML file. Paths are resolved relative to the directory of the file containing the directive; absolute paths are
+  accepted as-is. Anchors in the included document are scoped to that document only (each include uses a fresh loader instance), so
+  fragments are readable in isolation.
+
+  .. code-block:: yaml
+
+      experiments:
+        - !include _experiments/exp1.yaml
+        - !include _experiments/exp2.yaml
+
+  The two idioms **compose**: an ``!include`` may appear as the value of a merge key, so a fragment file can be merged into a mapping alongside the
+  mapping's own entries and alongside other anchors. Without this a shared fragment could only ever *replace* a whole slot, which forces every
+  consumer of a partial fragment (a haemodynamic cascade shared by two models) to copy it instead:
+
+  .. code-block:: yaml
+
+      state_variables:
+        <<: !include _balloon_states.yaml
+        phi: {...}
+
+      parameters:
+        <<: [*model_params, !include _balloon_parameters.yaml]
+
+Both idioms are pure data-format machinery; they don't introduce any TVBO-specific semantics into user YAMLs. The wrapper is transparent — any LinkML class can still load through ``yaml_loader.load`` and get back the same datamodel instance it would have produced before.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [ENVELOPE_KEYS](#tvbo.utils.yaml_loader.ENVELOPE_KEYS) | Keys that annotate a serialized FILE's class and schema version rather than the object's slots. TVBO writes them itself — every one of the 121 network sidecars in the |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [IncludedMapping](#tvbo.utils.yaml_loader.IncludedMapping) | A mapping spliced in by ``!include``, remembering the file it came from. |
+
+### IncludedMapping { #tvbo.utils.yaml_loader.IncludedMapping }
+
+```python
+utils.yaml_loader.IncludedMapping(mapping, source)
+```
+
+A mapping spliced in by ``!include``, remembering the file it came from.
+
+A fragment's relative paths mean what they say *in the fragment*: a figure record naming ``code_modules`` and a captured page states them relative to the study it belongs to, and that must not change because a second spec includes it. A plain dict loses that the moment it is spliced, so the whole fragment silently re-resolves against whoever included it. This is a dict in every other respect, so nothing downstream needs to know it exists.
+
+``include_origin`` is the directory, which is what a relative path inside the fragment resolves against; ``include_source`` is the file itself, which a spliced-in object needs when it is a specification in its own right — a nested ``SimulationStudy`` records it as its ``_source_file`` and so keeps its own results root and code directory.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [declared_class](#tvbo.utils.yaml_loader.declared_class) | The class a document names in its own ``tvbo_class`` envelope, or ``None``. |
+| [include_origin](#tvbo.utils.yaml_loader.include_origin) | The directory an ``!include``d value came from, or None for anything loaded in place. |
+| [include_source](#tvbo.utils.yaml_loader.include_source) | The file an ``!include``d value came from, or None for anything loaded in place. |
+| [load](#tvbo.utils.yaml_loader.load) | Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.load``. |
+| [load_as_dict](#tvbo.utils.yaml_loader.load_as_dict) | Drop-in replacement for ``yaml_loader.load_as_dict``. |
+| [loads](#tvbo.utils.yaml_loader.loads) | Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.loads``. |
+| [resolve_edge_var_aliases](#tvbo.utils.yaml_loader.resolve_edge_var_aliases) | Fold the ``source_variable`` / ``target_variable`` slot aliases onto the canonical ``source_var`` / ``target_var`` on inline edge dicts, in place. |
+| [strip_envelope](#tvbo.utils.yaml_loader.strip_envelope) | Drop :data:`ENVELOPE_KEYS` from a document root bound for a class constructor. |
+
+### declared_class { #tvbo.utils.yaml_loader.declared_class }
+
+```python
+utils.yaml_loader.declared_class(source)
+```
+
+The class a document names in its own ``tvbo_class`` envelope, or ``None``.
+
+Accepts the parsed mapping or the raw YAML text, because a caller deciding WHICH class to parse as has not parsed yet — and a document that says what it is should never lose that argument to a guess about its shape. Only a root-level key counts, and the CURIE prefix is stripped, so ``tvbo:SimulationStudy`` answers ``SimulationStudy``.
+
+### include_origin { #tvbo.utils.yaml_loader.include_origin }
+
+```python
+utils.yaml_loader.include_origin(value)
+```
+
+The directory an ``!include``d value came from, or None for anything loaded in place.
+
+### include_source { #tvbo.utils.yaml_loader.include_source }
+
+```python
+utils.yaml_loader.include_source(value)
+```
+
+The file an ``!include``d value came from, or None for anything loaded in place.
+
+### load { #tvbo.utils.yaml_loader.load }
+
+```python
+utils.yaml_loader.load(source, target_class, **kwargs)
+```
+
+Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.load``.
+
+Accepts the same arguments as the LinkML loader. Expands TVBO YAML extensions (``<<:`` merge keys, ``!include``) before delegating to LinkML's constructor-class machinery. Relative ``!include`` paths are resolved against the directory of ``source`` when ``source`` is a path; otherwise against the current working directory.
+
+### load_as_dict { #tvbo.utils.yaml_loader.load_as_dict }
+
+```python
+utils.yaml_loader.load_as_dict(source, **kwargs)
+```
+
+Drop-in replacement for ``yaml_loader.load_as_dict``.
+
+Returns a plain Python ``dict`` (or ``list`` of dicts) after applying the TVBO YAML extensions. Useful for callers that need to inspect or mutate the parsed structure before handing it to LinkML.
+
+### loads { #tvbo.utils.yaml_loader.loads }
+
+```python
+utils.yaml_loader.loads(source, target_class, **kwargs)
+```
+
+Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.loads``.
+
+### resolve_edge_var_aliases { #tvbo.utils.yaml_loader.resolve_edge_var_aliases }
+
+```python
+utils.yaml_loader.resolve_edge_var_aliases(edges)
+```
+
+Fold the ``source_variable`` / ``target_variable`` slot aliases onto the canonical ``source_var`` / ``target_var`` on inline edge dicts, in place.
+
+``edges`` may be a single edge dict, a list of them, or ``None``; non-dict entries are left untouched.
+
+### strip_envelope { #tvbo.utils.yaml_loader.strip_envelope }
+
+```python
+utils.yaml_loader.strip_envelope(data)
+```
+
+Drop :data:`ENVELOPE_KEYS` from a document root bound for a class constructor.
+
+A file may name its own class and schema version (``tvbo_class: tvbo:SimulationStudy``) so tooling can dispatch on it without being told. Those keys are slots of no class, so they must not survive into the target's ``__init__``.

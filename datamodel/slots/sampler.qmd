@@ -1,0 +1,100 @@
+# Slot: sampler 
+
+
+_MCMC sampler ('nuts'). Each backend maps its own way._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/sampler](https://w3id.org/tvbo/slot/sampler)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Inference](../classes/Inference.qmd) | Bayesian inference of model parameters from an observation, via MCMC |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Inference](../classes/Inference.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(nuts)` |
+| Owner | [Inference](../classes/Inference.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:sampler |
+| native | tvbo:sampler |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sampler
+description: MCMC sampler ('nuts'). Each backend maps its own way.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(nuts)
+owner: Inference
+domain_of:
+- Inference
+range: string
+
+```
+</details></div>

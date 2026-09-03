@@ -1,0 +1,98 @@
+# Slot: learning_rate_schedule 
+
+
+_Learning rate schedule: 'constant', 'linear', 'exponential'_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/learning_rate_schedule](https://w3id.org/tvbo/slot/learning_rate_schedule)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Algorithm](../classes/Algorithm.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:learning_rate_schedule |
+| native | tvbo:learning_rate_schedule |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: learning_rate_schedule
+description: 'Learning rate schedule: ''constant'', ''linear'', ''exponential'''
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Algorithm
+domain_of:
+- Algorithm
+range: string
+
+```
+</details></div>

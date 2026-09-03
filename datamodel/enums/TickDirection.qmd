@@ -1,0 +1,76 @@
+# Enum: TickDirection 
+
+
+
+
+_Which side of the axes a tick mark is drawn on._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/TickDirection](https://w3id.org/tvbo/enum/TickDirection)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| out | None | Outward, away from the data |
+| in | None | Inward, over the data |
+| inout | None | Crossing the spine in both directions |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [tick_direction](../slots/tick_direction.qmd) | Whether tick marks point out of the axes, into them, or both |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: TickDirection
+description: Which side of the axes a tick mark is drawn on.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  out:
+    text: out
+    description: Outward, away from the data. The convention in most journals.
+  in:
+    text: in
+    description: Inward, over the data. Saves the margin a dense mosaic needs.
+  inout:
+    text: inout
+    description: Crossing the spine in both directions.
+
+```
+</details>
+
+</div>

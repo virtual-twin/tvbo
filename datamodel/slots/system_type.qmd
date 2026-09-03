@@ -1,0 +1,92 @@
+# Slot: system_type 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/system_type](https://w3id.org/tvbo/slot/system_type)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  yes  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SystemType](../enums/SystemType.qmd) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:system_type |
+| native | tvbo:system_type |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: system_type
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Dynamics
+domain_of:
+- Dynamics
+range: SystemType
+
+```
+</details></div>

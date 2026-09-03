@@ -1,0 +1,105 @@
+# Slot: inputs 
+
+
+_Per-input fingerprints for cache invalidation. Each entry records the IRI + dotted-field path of an ``aux_data`` reference plus the (mtime, size, sha256) of the underlying file at the time the artifact was produced. A downstream cache hit requires every fingerprint to match the current file state._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/inputs](https://w3id.org/tvbo/slot/inputs)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd) |
+| Domain Of | [Provenance](../classes/Provenance.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Provenance](../classes/Provenance.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:inputs |
+| native | tvbo:inputs |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: inputs
+description: Per-input fingerprints for cache invalidation. Each entry records the
+  IRI + dotted-field path of an ``aux_data`` reference plus the (mtime, size, sha256)
+  of the underlying file at the time the artifact was produced. A downstream cache
+  hit requires every fingerprint to match the current file state.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Provenance
+domain_of:
+- Provenance
+range: ReferenceFingerprint
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

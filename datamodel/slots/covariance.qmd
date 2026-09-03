@@ -1,0 +1,114 @@
+# Slot: covariance 
+
+
+_Covariance of the unit-intensity noise increment across the axis named by `correlated_over` — the second-order structure of the driving process, stated as mathematics rather than as a factorisation. Must be square in that axis, symmetric and positive semi-definite; its diagonal carries per-element variances and need NOT be unity, so unequal variances and cross-element correlation are expressed together. The realised increment is the declared sigma times a draw from this covariance, so `parameters: {sigma: ...}` continues to mean what it means for uncorrelated noise. Absent (the default) means the increment is independent across that axis. Being a `Parameter`, it carries the full provenance triple: a literal `value:`, existing bytes via `source:`+`measure:`, or — the usual case for a derived operator — `producer:`, whose FunctionCall records how the structure was obtained (projecting a spatially white field into a modal basis, spreading independent per-region drives through a connectome). The generative account therefore lives in the provenance, and the matrix itself stays a statement about the process. How a backend samples it (Cholesky, eigendecomposition, whitening) is a backend concern and is never stated here._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/covariance](https://w3id.org/tvbo/slot/covariance)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Parameter](../classes/Parameter.qmd) |
+| Domain Of | [Noise](../classes/Noise.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Noise](../classes/Noise.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:covariance |
+| native | tvbo:covariance |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: covariance
+description: 'Covariance of the unit-intensity noise increment across the axis named
+  by `correlated_over` — the second-order structure of the driving process, stated
+  as mathematics rather than as a factorisation. Must be square in that axis, symmetric
+  and positive semi-definite; its diagonal carries per-element variances and need
+  NOT be unity, so unequal variances and cross-element correlation are expressed together.
+  The realised increment is the declared sigma times a draw from this covariance,
+  so `parameters: {sigma: ...}` continues to mean what it means for uncorrelated noise.
+  Absent (the default) means the increment is independent across that axis. Being
+  a `Parameter`, it carries the full provenance triple: a literal `value:`, existing
+  bytes via `source:`+`measure:`, or — the usual case for a derived operator — `producer:`,
+  whose FunctionCall records how the structure was obtained (projecting a spatially
+  white field into a modal basis, spreading independent per-region drives through
+  a connectome). The generative account therefore lives in the provenance, and the
+  matrix itself stays a statement about the process. How a backend samples it (Cholesky,
+  eigendecomposition, whitening) is a backend concern and is never stated here.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Noise
+domain_of:
+- Noise
+range: Parameter
+required: false
+inlined: true
+
+```
+</details></div>

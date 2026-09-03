@@ -1,0 +1,102 @@
+# Slot: n_trials 
+
+
+_Number of independent trials per grid point. Each trial uses a different noise seed. Used for averaging stochastic simulations (e.g., VEP = average of 20 trials)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/n_trials](https://w3id.org/tvbo/slot/n_trials)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `integer(1)` |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:n_trials |
+| native | tvbo:n_trials |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: n_trials
+description: Number of independent trials per grid point. Each trial uses a different
+  noise seed. Used for averaging stochastic simulations (e.g., VEP = average of 20
+  trials).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: integer(1)
+owner: Exploration
+domain_of:
+- Exploration
+range: integer
+
+```
+</details></div>

@@ -1,0 +1,100 @@
+# Slot: bids_root 
+
+
+_Path to BIDS dataset root directory. When set, subject networks and empirical data paths are resolved relative to this root._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/bids_root](https://w3id.org/tvbo/study/slot/bids_root)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dataset](../classes/Dataset.qmd) | A collection of subjects for a multi-subject study |  no  |
+| [DBSDataset](../classes/DBSDataset.qmd) | Collection of data related to a specific DBS study |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Dataset](../classes/Dataset.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Dataset](../classes/Dataset.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:bids_root |
+| native | tvbo_study:bids_root |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: bids_root
+description: Path to BIDS dataset root directory. When set, subject networks and empirical
+  data paths are resolved relative to this root.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+owner: Dataset
+domain_of:
+- Dataset
+range: string
+
+```
+</details></div>

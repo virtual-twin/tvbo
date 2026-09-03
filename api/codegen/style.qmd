@@ -1,0 +1,80 @@
+# style { #tvbo.codegen.style }
+
+`codegen.style`
+
+House style for generated source, one formatter per output language.
+
+Generated code is read, reviewed and attached to papers, so it is held to the same bar as the rest of tvbo. Every backend declares the language it emits (:attr:`~tvbo.export.registry.ExportFormat.language`) and :func:`tvbo.export.registry.render` routes the assembled source through the matching formatter here — once, centrally, rather than each renderer remembering to do it.
+
+The gate is deliberately a *parse* gate, not only a cosmetic one. Source that a formatter cannot parse is source tvbo would have handed the user as a runnable program, and it fails at import with a worse message than the one raised here. So ``python`` and ``xml`` raise :class:`GeneratedSourceError` rather than passing the text through: an emitter that produces unparseable output has a bug, and silence is what let one live in the JAX templates.
+
+Languages divide by how much a formatter can safely change:
+
+``python``
+    Reformatted with ``black``. Its output is canonical, so equality with it is a
+    testable contract (see ``tests/test_codegen_style_contract.py``).
+``xml``, ``yaml``
+    Checked for well-formedness, then normalised only. Pretty-printing is *not*
+    applied: ``ElementTree`` drops comments, and re-emitting YAML rewrites quoting
+    and key order. Both would change content to fix whitespace.
+``julia``, ``c``
+    Normalised only. Their real formatters (JuliaFormatter.jl, clang-format) are
+    not dependencies of tvbo and would make codegen require a foreign toolchain.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [LANGUAGES](#tvbo.codegen.style.LANGUAGES) | Languages with a formatter. A format whose ``language`` is empty is left alone. |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [GeneratedSourceError](#tvbo.codegen.style.GeneratedSourceError) | Raised when generated source does not parse as the language it claims to be. |
+
+### GeneratedSourceError { #tvbo.codegen.style.GeneratedSourceError }
+
+```python
+codegen.style.GeneratedSourceError()
+```
+
+Raised when generated source does not parse as the language it claims to be.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [format_source](#tvbo.codegen.style.format_source) | Return *code* formatted as *language*. |
+| [normalize](#tvbo.codegen.style.normalize) | Apply the language-independent house rules to *code*. |
+
+### format_source { #tvbo.codegen.style.format_source }
+
+```python
+codegen.style.format_source(code, language)
+```
+
+Return *code* formatted as *language*.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type        | Description                                                            | Default    |
+|----------|-------------|------------------------------------------------------------------------|------------|
+| code     | str         | Assembled source as rendered by a backend's templates.                 | _required_ |
+| language | str \| None | One of :data:`LANGUAGES`, or empty/``None`` to leave *code* untouched. | _required_ |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type                 | Description                          |
+|--------|----------------------|--------------------------------------|
+|        | GeneratedSourceError | *code* does not parse as *language*. |
+
+### normalize { #tvbo.codegen.style.normalize }
+
+```python
+codegen.style.normalize(code)
+```
+
+Apply the language-independent house rules to *code*.
+
+Converts line endings to ``\\n``, strips trailing whitespace from every line, collapses runs of blank lines to at most two, drops leading blank lines, and ends the text with exactly one newline.

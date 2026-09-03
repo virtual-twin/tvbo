@@ -1,0 +1,98 @@
+# Slot: node_size 
+
+
+_Marker size for the regions._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/node_size](https://w3id.org/tvbo/slot/node_size)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Graph](../classes/Graph.qmd) | A node-link panel's graph and how it is drawn: the connectome the model actua... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Graph](../classes/Graph.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Graph](../classes/Graph.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:node_size |
+| native | tvbo:node_size |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: node_size
+description: Marker size for the regions.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Graph
+domain_of:
+- Graph
+range: float
+
+```
+</details></div>

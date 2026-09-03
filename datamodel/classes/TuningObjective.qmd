@@ -1,0 +1,450 @@
+# Class: TuningObjective 
+
+
+_Defines what the tuning algorithm optimizes for. Can be an activity target (FIC) or a connectivity target (EIB)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:TuningObjective](https://w3id.org/tvbo/TuningObjective)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class TuningObjective
+    click TuningObjective href "./TuningObjective.html"
+      TuningObjective : description
+        
+          
+    
+        
+        
+        TuningObjective --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TuningObjective : label
+        
+          
+    
+        
+        
+        TuningObjective --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      TuningObjective : metric
+        
+          
+    
+        
+        
+        TuningObjective --> "0..1" Equation : metric
+        click Equation href "./Equation.html"
+    
+
+        
+      TuningObjective : target_data
+        
+          
+    
+        
+        
+        TuningObjective --> "0..1" Observation : target_data
+        click Observation href "./Observation.html"
+    
+
+        
+      TuningObjective : target_value
+        
+          
+    
+        
+        
+        TuningObjective --> "0..1" Float : target_value
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      TuningObjective : target_variable
+        
+          
+    
+        
+        
+        TuningObjective --> "0..1" StateVariable : target_variable
+        click StateVariable href "./StateVariable.html"
+    
+
+        
+      TuningObjective : type
+        
+          
+    
+        
+        
+        TuningObjective --> "0..1" String : type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:TuningObjective](https://w3id.org/tvbo/TuningObjective) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [type](../slots/type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Type of objective: 'activity_target', 'fc_matching', 'custom' | direct |
+| [target_variable](../slots/target_variable.qmd) | 0..1 <br/> [StateVariable](../classes/StateVariable.qmd) | State variable for activity targets (e | direct |
+| [target_value](../slots/target_value.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Target value for activity objectives | direct |
+| [target_data](../slots/target_data.qmd) | 0..1 <br/> [Observation](../classes/Observation.qmd) | Reference to empirical data observation for matching objectives | direct |
+| [metric](../slots/metric.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Metric equation for matching (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | [objective](../slots/objective.qmd) | range | [TuningObjective](../classes/TuningObjective.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:TuningObjective |
+| native | tvbo:TuningObjective |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: TuningObjective
+description: Defines what the tuning algorithm optimizes for. Can be an activity target
+  (FIC) or a connectivity target (EIB).
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+attributes:
+  type:
+    name: type
+    description: 'Type of objective: ''activity_target'', ''fc_matching'', ''custom'''
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  target_variable:
+    name: target_variable
+    description: State variable for activity targets (e.g., S_e)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Event
+    - TuningObjective
+    range: StateVariable
+    inlined: false
+  target_value:
+    name: target_value
+    description: Target value for activity objectives
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TuningObjective
+    range: float
+  target_data:
+    name: target_data
+    description: Reference to empirical data observation for matching objectives
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TuningObjective
+    range: Observation
+    inlined: false
+  metric:
+    name: metric
+    description: Metric equation for matching (e.g., correlation, rmse)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - TuningObjective
+    range: Equation
+    inlined: true
+class_uri: tvbo:TuningObjective
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: TuningObjective
+description: Defines what the tuning algorithm optimizes for. Can be an activity target
+  (FIC) or a connectivity target (EIB).
+from_schema: https://w3id.org/tvbo
+attributes:
+  type:
+    name: type
+    description: 'Type of objective: ''activity_target'', ''fc_matching'', ''custom'''
+    from_schema: https://w3id.org/tvbo
+    owner: TuningObjective
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  target_variable:
+    name: target_variable
+    description: State variable for activity targets (e.g., S_e)
+    from_schema: https://w3id.org/tvbo
+    owner: TuningObjective
+    domain_of:
+    - Event
+    - TuningObjective
+    range: StateVariable
+    inlined: false
+  target_value:
+    name: target_value
+    description: Target value for activity objectives
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TuningObjective
+    domain_of:
+    - TuningObjective
+    range: float
+  target_data:
+    name: target_data
+    description: Reference to empirical data observation for matching objectives
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TuningObjective
+    domain_of:
+    - TuningObjective
+    range: Observation
+    inlined: false
+  metric:
+    name: metric
+    description: Metric equation for matching (e.g., correlation, rmse)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: TuningObjective
+    domain_of:
+    - TuningObjective
+    range: Equation
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: TuningObjective
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: TuningObjective
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:TuningObjective
+
+```
+</details></div>

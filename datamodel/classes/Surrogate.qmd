@@ -1,0 +1,298 @@
+# Class: Surrogate 
+
+
+_A permutation-significance test: re-evaluate a named statistic under n_perm fixed permutations of a field and report the per-element exceedance p-value. General (any permutation null — spatial nulls, FC significance, wave detection, …). Codegen emits ``(vmap(lambda p: stat(field[p]))(perms) <cmp> stat(field)).mean(axis over perms)``; the wrapped statistic is an ordinary symbolic derived variable, so only the permutation fold is structural._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Surrogate](https://w3id.org/tvbo/Surrogate)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Surrogate
+    click Surrogate href "./Surrogate.html"
+      Surrogate : direction
+        
+          
+    
+        
+        
+        Surrogate --> "0..1" String : direction
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surrogate : family_wise
+        
+          
+    
+        
+        
+        Surrogate --> "0..1" Boolean : family_wise
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Surrogate : permutations
+        
+          
+    
+        
+        
+        Surrogate --> "1" String : permutations
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surrogate : permute
+        
+          
+    
+        
+        
+        Surrogate --> "1" String : permute
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Surrogate : statistic
+        
+          
+    
+        
+        
+        Surrogate --> "1" String : statistic
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Surrogate](https://w3id.org/tvbo/Surrogate) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [statistic](../slots/statistic.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name of the derived variable to re-evaluate under permutation | direct |
+| [permute](../slots/permute.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The symbol whose entries are permuted (the observation source, or a parameter... | direct |
+| [permutations](../slots/permutations.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name of the observer parameter holding the fixed ``(n_perm, n)`` permutation-... | direct |
+| [direction](../slots/direction.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Exceedance direction: ``greater_equal`` (fraction of permutations whose stati... | direct |
+| [family_wise](../slots/family_wise.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Apply a Westfall–Young family-wise (max-T) correction: collapse the permuted ... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [DerivedVariable](../classes/DerivedVariable.qmd) | [surrogate](../slots/surrogate.qmd) | range | [Surrogate](../classes/Surrogate.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Surrogate |
+| native | tvbo:Surrogate |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Surrogate
+description: 'A permutation-significance test: re-evaluate a named statistic under
+  n_perm fixed permutations of a field and report the per-element exceedance p-value.
+  General (any permutation null — spatial nulls, FC significance, wave detection,
+  …). Codegen emits ``(vmap(lambda p: stat(field[p]))(perms) <cmp> stat(field)).mean(axis
+  over perms)``; the wrapped statistic is an ordinary symbolic derived variable, so
+  only the permutation fold is structural.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  statistic:
+    name: statistic
+    description: Name of the derived variable to re-evaluate under permutation.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - AxisReduction
+    - Surrogate
+    range: string
+    required: true
+  permute:
+    name: permute
+    description: The symbol whose entries are permuted (the observation source, or
+      a parameter such as an in-strength vector).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Surrogate
+    range: string
+    required: true
+  permutations:
+    name: permutations
+    description: Name of the observer parameter holding the fixed ``(n_perm, n)``
+      permutation- index array (a produced/sourced constant, reused across the window
+      and grid).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Surrogate
+    range: string
+    required: true
+  direction:
+    name: direction
+    description: 'Exceedance direction: ``greater_equal`` (fraction of permutations
+      whose statistic ≥ the observed) or ``less_equal`` (one-sided negative test).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(greater_equal)
+    domain_of:
+    - Surrogate
+    range: string
+  family_wise:
+    name: family_wise
+    description: 'Apply a Westfall–Young family-wise (max-T) correction: collapse
+      the permuted statistic to its extremum over the element axes, forming one family-wise
+      null per permutation that every observed element is tested against. The extremum
+      follows ``direction`` (``greater_equal`` → maximum, ``less_equal`` → minimum).
+      Absent → the symmetric per-element test.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Surrogate
+    range: boolean
+class_uri: tvbo:Surrogate
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Surrogate
+description: 'A permutation-significance test: re-evaluate a named statistic under
+  n_perm fixed permutations of a field and report the per-element exceedance p-value.
+  General (any permutation null — spatial nulls, FC significance, wave detection,
+  …). Codegen emits ``(vmap(lambda p: stat(field[p]))(perms) <cmp> stat(field)).mean(axis
+  over perms)``; the wrapped statistic is an ordinary symbolic derived variable, so
+  only the permutation fold is structural.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  statistic:
+    name: statistic
+    description: Name of the derived variable to re-evaluate under permutation.
+    from_schema: https://w3id.org/tvbo
+    owner: Surrogate
+    domain_of:
+    - AxisReduction
+    - Surrogate
+    range: string
+    required: true
+  permute:
+    name: permute
+    description: The symbol whose entries are permuted (the observation source, or
+      a parameter such as an in-strength vector).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Surrogate
+    domain_of:
+    - Surrogate
+    range: string
+    required: true
+  permutations:
+    name: permutations
+    description: Name of the observer parameter holding the fixed ``(n_perm, n)``
+      permutation- index array (a produced/sourced constant, reused across the window
+      and grid).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Surrogate
+    domain_of:
+    - Surrogate
+    range: string
+    required: true
+  direction:
+    name: direction
+    description: 'Exceedance direction: ``greater_equal`` (fraction of permutations
+      whose statistic ≥ the observed) or ``less_equal`` (one-sided negative test).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(greater_equal)
+    owner: Surrogate
+    domain_of:
+    - Surrogate
+    range: string
+  family_wise:
+    name: family_wise
+    description: 'Apply a Westfall–Young family-wise (max-T) correction: collapse
+      the permuted statistic to its extremum over the element axes, forming one family-wise
+      null per permutation that every observed element is tested against. The extremum
+      follows ``direction`` (``greater_equal`` → maximum, ``less_equal`` → minimum).
+      Absent → the symmetric per-element test.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Surrogate
+    domain_of:
+    - Surrogate
+    range: boolean
+class_uri: tvbo:Surrogate
+
+```
+</details></div>

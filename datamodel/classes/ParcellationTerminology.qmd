@@ -1,0 +1,307 @@
+# Class: ParcellationTerminology 
+
+
+_A schema for representing a parcellation terminology, which consists of parcellation entities._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:parcellationTerminology](http://uri.interlex.org/tgbugs/uris/readable/parcellationTerminology)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ParcellationTerminology
+    click ParcellationTerminology href "./ParcellationTerminology.html"
+      ParcellationTerminology : dataLocation
+        
+          
+    
+        
+        
+        ParcellationTerminology --> "0..1" String : dataLocation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParcellationTerminology : entities
+        
+          
+    
+        
+        
+        ParcellationTerminology --> "*" ParcellationEntity : entities
+        click ParcellationEntity href "./ParcellationEntity.html"
+    
+
+        
+      ParcellationTerminology : label
+        
+          
+    
+        
+        
+        ParcellationTerminology --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParcellationTerminology : ontologyIdentifier
+        
+          
+    
+        
+        
+        ParcellationTerminology --> "*" String : ontologyIdentifier
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParcellationTerminology : versionIdentifier
+        
+          
+    
+        
+        
+        ParcellationTerminology --> "0..1" String : versionIdentifier
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [atom:parcellationTerminology](http://uri.interlex.org/tgbugs/uris/readable/parcellationTerminology) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dataLocation](../slots/dataLocation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add the location of the data file containing the parcellation terminology | direct |
+| [ontologyIdentifier](../slots/ontologyIdentifier.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Enter the internationalized resource identifier (IRI) to the related ontologi... | direct |
+| [versionIdentifier](../slots/versionIdentifier.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Enter the version identifier of this brain atlas or coordinate space version | direct |
+| [entities](../slots/entities.qmd) | * <br/> [ParcellationEntity](../classes/ParcellationEntity.qmd) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [BrainAtlas](../classes/BrainAtlas.qmd) | [terminology](../slots/terminology.qmd) | range | [ParcellationTerminology](../classes/ParcellationTerminology.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:parcellationTerminology |
+| native | atom:ParcellationTerminology |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ParcellationTerminology
+description: A schema for representing a parcellation terminology, which consists
+  of parcellation entities.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slots:
+- label
+- dataLocation
+- ontologyIdentifier
+- versionIdentifier
+attributes:
+  entities:
+    name: entities
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - ParcellationTerminology
+    range: ParcellationEntity
+    multivalued: true
+    inlined: true
+class_uri: atom:parcellationTerminology
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ParcellationTerminology
+description: A schema for representing a parcellation terminology, which consists
+  of parcellation entities.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+attributes:
+  entities:
+    name: entities
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: ParcellationTerminology
+    domain_of:
+    - ParcellationTerminology
+    range: ParcellationEntity
+    multivalued: true
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: ParcellationTerminology
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  dataLocation:
+    name: dataLocation
+    description: Add the location of the data file containing the parcellation terminology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    owner: ParcellationTerminology
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+  ontologyIdentifier:
+    name: ontologyIdentifier
+    description: Enter the internationalized resource identifier (IRI) to the related
+      ontological terms.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: atom:atlas/hasIlxId
+    owner: ParcellationTerminology
+    domain_of:
+    - ParcellationEntity
+    - ParcellationTerminology
+    range: string
+    multivalued: true
+  versionIdentifier:
+    name: versionIdentifier
+    description: Enter the version identifier of this brain atlas or coordinate space
+      version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: dcterms:hasVersion
+    owner: ParcellationTerminology
+    domain_of:
+    - BrainAtlas
+    - ParcellationEntity
+    - ParcellationTerminology
+    range: string
+class_uri: atom:parcellationTerminology
+
+```
+</details></div>

@@ -1,0 +1,99 @@
+# Slot: number_loc 
+
+
+_Per-panel override of the figure's panel_number_loc — e.g. wide top panels upper-right, grid panels upper-left._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/number_loc](https://w3id.org/tvbo/slot/number_loc)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Corner](../enums/Corner.qmd) |
+| Domain Of | [Panel](../classes/Panel.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Panel](../classes/Panel.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:number_loc |
+| native | tvbo:number_loc |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: number_loc
+description: Per-panel override of the figure's panel_number_loc — e.g. wide top panels
+  upper-right, grid panels upper-left.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Panel
+domain_of:
+- Panel
+range: Corner
+
+```
+</details></div>

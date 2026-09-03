@@ -1,0 +1,99 @@
+# Slot: target_range 
+
+
+_Target interval for a `minmax_rescale` step (e.g. lo -1, hi 1)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target_range](https://w3id.org/tvbo/slot/target_range)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | A single named step (or output) in a Procedure: one typed operation producing... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Range](../classes/Range.qmd) |
+| Domain Of | [ProcedureStep](../classes/ProcedureStep.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ProcedureStep](../classes/ProcedureStep.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target_range |
+| native | tvbo:target_range |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_range
+description: Target interval for a `minmax_rescale` step (e.g. lo -1, hi 1).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ProcedureStep
+domain_of:
+- ProcedureStep
+range: Range
+inlined: true
+
+```
+</details></div>

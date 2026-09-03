@@ -1,0 +1,78 @@
+# Slot: hyperparameters 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/hyperparameters](https://w3id.org/tvbo/slot/hyperparameters)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [OptimizationStage](../classes/OptimizationStage.qmd) | A single stage in a multi-stage optimization workflow |  no  |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [OptimizationStage](../classes/OptimizationStage.qmd), [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:hyperparameters |
+| native | tvbo:hyperparameters |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: hyperparameters
+domain_of:
+- OptimizationStage
+- Algorithm
+range: string
+
+```
+</details></div>

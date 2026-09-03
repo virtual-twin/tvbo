@@ -1,0 +1,98 @@
+# Slot: environment_type 
+
+
+_Category: conda, venv, docker, etc._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/environment_type](https://w3id.org/tvbo/software/slot/environment_type)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | A reproducible software environment aggregating one or more SoftwareRequireme... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [EnvironmentType](../enums/EnvironmentType.qmd) |
+| Domain Of | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:environment_type |
+| native | tvbo_sw:environment_type |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: environment_type
+description: 'Category: conda, venv, docker, etc.'
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+owner: SoftwareEnvironment
+domain_of:
+- SoftwareEnvironment
+range: EnvironmentType
+
+```
+</details></div>

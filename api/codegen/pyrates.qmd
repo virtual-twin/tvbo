@@ -1,0 +1,251 @@
+# pyrates { #tvbo.codegen.pyrates }
+
+`codegen.pyrates`
+
+PyRates Integration Module.
+
+Provides modular conversion between TVBO Dynamics/Network models and PyRates YAML format.
+
+PyRates uses a YAML-based template system with:
+- OperatorTemplate: Contains equations and variables (dynamics)
+- NodeTemplate: Contains one or more operators (node)
+- EdgeTemplate: Defines edge operators (coupling)
+- CircuitTemplate: Contains nodes and edges (network)
+
+TVBO Templates (modular):
+- tvbo-pyrates-model.yaml.mako: OperatorTemplate only (dynamics)
+- tvbo-pyrates-network.yaml.mako: NodeTemplate + CircuitTemplate (topology)
+- tvbo-pyrates-experiment.yaml.mako: Complete runnable YAML (model + network)
+
+
+
+## Example: {.doc-section .doc-section-example}
+
+>>> from tvbo import Dynamics
+>>> model = Dynamics("JansenRitModel")
+>>>
+>>> # Export model only (OperatorTemplate)
+>>> operator_yaml = to_pyrates_model_yaml(model)
+>>>
+>>> # Export network only (Node + Circuit)
+>>> network_yaml = to_pyrates_network_yaml(model)
+>>>
+>>> # Export complete experiment (ready to run)
+>>> experiment_yaml = model.to_yaml(format="pyrates")
+>>> model.to_yaml(format="pyrates", filepath="mymodel.yaml")
+>>>
+>>> # Load a PyRates model
+>>> model = Dynamics.from_pyrates("mymodel.yaml")
+>>>
+>>> # Export a Network (circuit) to PyRates
+>>> from tvbo.classes.network import Network
+>>> network = Network(connectome)
+>>> network.to_yaml(format="pyrates", filepath="circuit.yaml")
+
+
+
+## References: {.doc-section .doc-section-references}
+
+- PyRates documentation: https://pyrates.readthedocs.io/
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [PYRATES_REPL](#tvbo.codegen.pyrates.PYRATES_REPL) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [from_pyrates_yaml](#tvbo.codegen.pyrates.from_pyrates_yaml) | Load a PyRates YAML file and return dict for Dynamics constructor. |
+| [from_pyrates_yaml_all](#tvbo.codegen.pyrates.from_pyrates_yaml_all) | Load a PyRates YAML file and return dict of all Dynamics. |
+| [network_to_pyrates_yaml_string](#tvbo.codegen.pyrates.network_to_pyrates_yaml_string) | Export a TVBO Network to complete PyRates experiment YAML. |
+| [operator_template](#tvbo.codegen.pyrates.operator_template) | Resolve a Dynamics model into the fields of a PyRates ``OperatorTemplate``. |
+| [to_pyrates_model_yaml](#tvbo.codegen.pyrates.to_pyrates_model_yaml) | Export a Dynamics model to PyRates OperatorTemplate YAML (model only). |
+| [to_pyrates_network_yaml](#tvbo.codegen.pyrates.to_pyrates_network_yaml) | Export to PyRates NodeTemplate + CircuitTemplate YAML (network topology only). |
+| [to_pyrates_yaml_string](#tvbo.codegen.pyrates.to_pyrates_yaml_string) | Export to complete PyRates experiment YAML (model + network, ready to run). |
+
+### from_pyrates_yaml { #tvbo.codegen.pyrates.from_pyrates_yaml }
+
+```python
+codegen.pyrates.from_pyrates_yaml(filepath, operator_key=None)
+```
+
+Load a PyRates YAML file and return dict for Dynamics constructor.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+filepath : str
+    Path to PyRates YAML file.
+operator_key : str, optional
+    Name of the specific OperatorTemplate to load (without _op suffix).
+    If None, loads the first OperatorTemplate found.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict
+    Dictionary suitable for Dynamics(**dict) constructor.
+
+
+
+#### Raises: {.doc-section .doc-section-raises}
+
+ValueError
+    If operator_key is specified but not found in the file.
+
+### from_pyrates_yaml_all { #tvbo.codegen.pyrates.from_pyrates_yaml_all }
+
+```python
+codegen.pyrates.from_pyrates_yaml_all(filepath)
+```
+
+Load a PyRates YAML file and return dict of all Dynamics.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+filepath : str
+    Path to PyRates YAML file.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict[str, dict]
+    Dictionary mapping operator names to Dynamics-compatible dicts.
+    Keys are the clean names (without _op suffix).
+
+### network_to_pyrates_yaml_string { #tvbo.codegen.pyrates.network_to_pyrates_yaml_string }
+
+```python
+codegen.pyrates.network_to_pyrates_yaml_string(network, filepath=None)
+```
+
+Export a TVBO Network to complete PyRates experiment YAML.
+
+Alias for to_pyrates_yaml_string(network=network, filepath=filepath).
+
+### operator_template { #tvbo.codegen.pyrates.operator_template }
+
+```python
+codegen.pyrates.operator_template(model, op_name=None)
+```
+
+Resolve a Dynamics model into the fields of a PyRates ``OperatorTemplate``.
+
+Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined (PyRates YAML has no user functions), and unsupported constructs are rewritten by :func:`_pyrates_compatible`.
+
+Equations are sympified against :func:`_renamed_scope`, keyed by the renamed spelling because renaming has already been applied to the equation strings.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type        | Description                                              | Default    |
+|---------|-------------|----------------------------------------------------------|------------|
+| model   |             | The :class:`~tvbo.classes.dynamics.Dynamics` to convert. | _required_ |
+| op_name | str \| None | Operator name; defaults to ``<model name>_op``.          | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                       |
+|--------|--------|-------------------------------------------------------------------|
+| dict   | dict   | ``op_name``, ``description``, ``equations`` (list of strings) and |
+|        | dict   | ``variables`` (name → PyRates spec).                              |
+
+### to_pyrates_model_yaml { #tvbo.codegen.pyrates.to_pyrates_model_yaml }
+
+```python
+codegen.pyrates.to_pyrates_model_yaml(dynamics, filepath=None)
+```
+
+Export a Dynamics model to PyRates OperatorTemplate YAML (model only).
+
+This generates ONLY the OperatorTemplate (dynamics/equations).
+Use to_pyrates_network_yaml for topology, or to_pyrates_yaml_string for complete.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+dynamics : Dynamics
+    TVBO Dynamics model to export.
+filepath : str, optional
+    Path to write the YAML file. If None, returns the YAML string.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str
+    YAML string (or filepath if written to file).
+
+### to_pyrates_network_yaml { #tvbo.codegen.pyrates.to_pyrates_network_yaml }
+
+```python
+codegen.pyrates.to_pyrates_network_yaml(
+    dynamics=None,
+    network=None,
+    filepath=None,
+)
+```
+
+Export to PyRates NodeTemplate + CircuitTemplate YAML (network topology only).
+
+This generates ONLY the network structure (nodes, edges, circuit).
+Operators are referenced but not defined.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+dynamics : Dynamics, optional
+    TVBO Dynamics model for single-node circuit.
+network : Network, optional
+    TVBO Network for multi-node circuit.
+filepath : str, optional
+    Path to write the YAML file. If None, returns the YAML string.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str
+    YAML string (or filepath if written to file).
+
+### to_pyrates_yaml_string { #tvbo.codegen.pyrates.to_pyrates_yaml_string }
+
+```python
+codegen.pyrates.to_pyrates_yaml_string(
+    dynamics=None,
+    network=None,
+    filepath=None,
+)
+```
+
+Export to complete PyRates experiment YAML (model + network, ready to run).
+
+This generates a self-contained YAML with OperatorTemplate, NodeTemplate, and CircuitTemplate - everything needed to run with PyRates.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+dynamics : Dynamics or dict[str, Dynamics], optional
+    TVBO Dynamics model for single-node experiment, or a dictionary
+    of dynamics models keyed by name for heterogeneous networks.
+network : Network, optional
+    TVBO Network for multi-node experiment.
+filepath : str, optional
+    Path to write the YAML file. If None, returns the YAML string.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+str
+    YAML string (or filepath if written to file).

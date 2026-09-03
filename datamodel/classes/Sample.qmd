@@ -1,0 +1,170 @@
+# Class: Sample 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Sample](https://w3id.org/tvbo/Sample)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Sample
+    click Sample href "./Sample.html"
+      Sample : groups
+        
+          
+    
+        
+        
+        Sample --> "*" String : groups
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Sample : size
+        
+          
+    
+        
+        
+        Sample --> "0..1" Integer : size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Sample](https://w3id.org/tvbo/Sample) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [groups](../slots/groups.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [size](../slots/size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [sample](../slots/sample.qmd) | range | [Sample](../classes/Sample.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Sample |
+| native | tvbo:Sample |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Sample
+from_schema: https://w3id.org/tvbo
+attributes:
+  groups:
+    name: groups
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Sample
+    range: string
+    multivalued: true
+  size:
+    name: size
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Annotation
+    - ReferenceFingerprint
+    - Node
+    - Sample
+    range: integer
+class_uri: tvbo:Sample
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Sample
+from_schema: https://w3id.org/tvbo
+attributes:
+  groups:
+    name: groups
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Sample
+    domain_of:
+    - Sample
+    range: string
+    multivalued: true
+  size:
+    name: size
+    from_schema: https://w3id.org/tvbo
+    owner: Sample
+    domain_of:
+    - Annotation
+    - ReferenceFingerprint
+    - Node
+    - Sample
+    range: integer
+class_uri: tvbo:Sample
+
+```
+</details></div>

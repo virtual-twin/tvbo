@@ -1,0 +1,104 @@
+# Enum: ModelType 
+
+
+
+
+_Coarse classification of a Dynamics model by its mathematical/biological origin. Used for filtering and display in list_db()._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ModelType](https://w3id.org/tvbo/enum/ModelType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| mean_field | None | Mathematically derived mean-field models obtained by exact reduction of spiki... |
+| neural_mass | None | Phenomenological population-rate / neural-mass models that describe synaptic ... |
+| phase_oscillator | None | Phase-reduced or Kuramoto-type oscillator models |
+| phenomenological | None | Empirical / phenomenological models that capture macroscopic dynamics without... |
+| spiking | None | Single-neuron or conductance-based spiking models (HH, AdEx, LIF, Izhikevich,... |
+| generic | None | Generic / normal-form dynamical systems not specific to neural modelling (e |
+| field | None | Spatially distributed neural-field models described by integro- differential ... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [model_type](../slots/model_type.qmd) | Coarse classification of this model (mean_field, neural_mass, phase_oscillato... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ModelType
+description: Coarse classification of a Dynamics model by its mathematical/biological
+  origin. Used for filtering and display in list_db().
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  mean_field:
+    text: mean_field
+    description: 'Mathematically derived mean-field models obtained by exact reduction
+      of spiking networks (Ott-Antonsen ansatz, Lorentzian heterogeneity, etc.). Examples:
+      MontbrioPazoRoxin, CoombesByrne, ReducedWongWang, ZerlautAdaptationFirstOrder.'
+  neural_mass:
+    text: neural_mass
+    description: 'Phenomenological population-rate / neural-mass models that describe
+      synaptic and firing-rate dynamics without an explicit derivation from single-neuron
+      statistics. Examples: JansenRit, WilsonCowan, LarterBreakspear, TsodyksMarkram.'
+  phase_oscillator:
+    text: phase_oscillator
+    description: 'Phase-reduced or Kuramoto-type oscillator models. Examples: Kuramoto,
+      SupHopf.'
+  phenomenological:
+    text: phenomenological
+    description: 'Empirical / phenomenological models that capture macroscopic dynamics
+      without direct biophysical derivation. Examples: Epileptor2D, Epileptor5D.'
+  spiking:
+    text: spiking
+    description: Single-neuron or conductance-based spiking models (HH, AdEx, LIF,
+      Izhikevich, etc.). These can be used as nodes in a network alongside mean-field
+      models.
+  generic:
+    text: generic
+    description: Generic / normal-form dynamical systems not specific to neural modelling
+      (e.g. Generic2dOscillator, GenericLinear).
+  field:
+    text: field
+    description: Spatially distributed neural-field models described by integro- differential
+      or PDE formulations.
+
+```
+</details>
+
+</div>

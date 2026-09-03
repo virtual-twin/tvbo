@@ -1,0 +1,102 @@
+# Slot: incoming_states 
+
+
+_References to state variables from connected (source) nodes. Auto-populated from state_variables with coupling_variable=true when omitted. Used by name in pre_expression._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/incoming_states](https://w3id.org/tvbo/slot/incoming_states)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [StateVariable](../classes/StateVariable.qmd) |
+| Domain Of | [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Coupling](../classes/Coupling.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:incoming_states |
+| native | tvbo:incoming_states |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: incoming_states
+description: References to state variables from connected (source) nodes. Auto-populated
+  from state_variables with coupling_variable=true when omitted. Used by name in pre_expression.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Coupling
+domain_of:
+- Coupling
+range: StateVariable
+multivalued: true
+inlined: false
+
+```
+</details></div>

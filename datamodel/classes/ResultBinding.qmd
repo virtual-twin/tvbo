@@ -1,0 +1,478 @@
+# Class: ResultBinding 
+
+
+_One entry in a study's results manifest: a manuscript key bound to the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN — ``used:`` a DataRef reading a scalar out of a nested study's or this study's own analysis/experiment, formatted through ``format`` — COMPUTED FROM THE SPEC — ``count:`` a structural tally of a collection (e.g. the figures a nested study regenerates), needing no run — or AUTHORED — a literal ``value`` quoted from prior work and attributed by ``source``. So a number printed in prose is computed or an authored constant marked as such, never transcribed by hand._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:ResultBinding](https://w3id.org/tvbo/ResultBinding)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ResultBinding
+    click ResultBinding href "./ResultBinding.html"
+      ResultBinding : count
+        
+          
+    
+        
+        
+        ResultBinding --> "0..1" String : count
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ResultBinding : description
+        
+          
+    
+        
+        
+        ResultBinding --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ResultBinding : format
+        
+          
+    
+        
+        
+        ResultBinding --> "0..1" String : format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ResultBinding : key
+        
+          
+    
+        
+        
+        ResultBinding --> "1" String : key
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ResultBinding : source
+        
+          
+    
+        
+        
+        ResultBinding --> "0..1" String : source
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ResultBinding : used
+        
+          
+    
+        
+        
+        ResultBinding --> "0..1" DataRef : used
+        click DataRef href "./DataRef.html"
+    
+
+        
+      ResultBinding : value
+        
+          
+    
+        
+        
+        ResultBinding --> "0..1" String : value
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:ResultBinding](https://w3id.org/tvbo/ResultBinding) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [key](../slots/key.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The manuscript token this number is cited by (e | direct |
+| [used](../slots/used.qmd) | 0..1 <br/> [DataRef](../classes/DataRef.qmd) | Bind the key to a computed scalar in a result container (same reference form ... | direct |
+| [count](../slots/count.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | A structural tally computed from the specification, not a run: ``<study> | direct |
+| [format](../slots/format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Python format string applied to the referenced value, e | direct |
+| [value](../slots/value.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | A literal value, for a constant quoted from prior work rather than computed h... | direct |
+| [source](../slots/source.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Citation key attributing an authored ``value`` to its origin, so the manifest... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [results](../slots/results.qmd) | range | [ResultBinding](../classes/ResultBinding.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ResultBinding |
+| native | tvbo:ResultBinding |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ResultBinding
+description: 'One entry in a study''s results manifest: a manuscript key bound to
+  the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN — ``used:``
+  a DataRef reading a scalar out of a nested study''s or this study''s own analysis/experiment,
+  formatted through ``format`` — COMPUTED FROM THE SPEC — ``count:`` a structural
+  tally of a collection (e.g. the figures a nested study regenerates), needing no
+  run — or AUTHORED — a literal ``value`` quoted from prior work and attributed by
+  ``source``. So a number printed in prose is computed or an authored constant marked
+  as such, never transcribed by hand.'
+from_schema: https://w3id.org/tvbo
+slots:
+- description
+attributes:
+  key:
+    name: key
+    annotations:
+      collection_key:
+        tag: collection_key
+        value: true
+    description: The manuscript token this number is cited by (e.g. ``n_errors_found``),
+      addressed in prose as ``{{< meta results.<key> >}}``. Unique within the manifest.
+    from_schema: https://w3id.org/tvbo
+    key: true
+    domain_of:
+    - DataSource
+    - SimulationStudy
+    - ResultBinding
+    range: string
+  used:
+    name: used
+    description: Bind the key to a computed scalar in a result container (same reference
+      form a figure Layer uses, and the same PROV edge). Mutually exclusive with ``value``
+      and ``count``.
+    from_schema: https://w3id.org/tvbo
+    slot_uri: prov:used
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: DataRef
+    inlined: true
+  count:
+    name: count
+    description: 'A structural tally computed from the specification, not a run: ``<study>.<collection>``
+      counts a collection on a nested study named by its citekey or label (e.g. ``Jansen1995.figures``),
+      resolved at any depth, or a bare ``<collection>`` counts one on the study holding
+      the binding (e.g. ``studies``). Mutually exclusive with ``used`` and ``value``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ResultBinding
+    range: string
+  format:
+    name: format
+    description: Python format string applied to the referenced value, e.g. '{:.2f}'
+      or '{:d}'. Applies to a ``used:`` binding.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  value:
+    name: value
+    description: A literal value, for a constant quoted from prior work rather than
+      computed here. Mutually exclusive with ``used:``; pair with ``source``.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: string
+  source:
+    name: source
+    description: Citation key attributing an authored ``value`` to its origin, so
+      the manifest records which numbers are external constants and which the run
+      computed.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: string
+class_uri: tvbo:ResultBinding
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ResultBinding
+description: 'One entry in a study''s results manifest: a manuscript key bound to
+  the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN — ``used:``
+  a DataRef reading a scalar out of a nested study''s or this study''s own analysis/experiment,
+  formatted through ``format`` — COMPUTED FROM THE SPEC — ``count:`` a structural
+  tally of a collection (e.g. the figures a nested study regenerates), needing no
+  run — or AUTHORED — a literal ``value`` quoted from prior work and attributed by
+  ``source``. So a number printed in prose is computed or an authored constant marked
+  as such, never transcribed by hand.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  key:
+    name: key
+    annotations:
+      collection_key:
+        tag: collection_key
+        value: true
+    description: The manuscript token this number is cited by (e.g. ``n_errors_found``),
+      addressed in prose as ``{{< meta results.<key> >}}``. Unique within the manifest.
+    from_schema: https://w3id.org/tvbo
+    key: true
+    owner: ResultBinding
+    domain_of:
+    - DataSource
+    - SimulationStudy
+    - ResultBinding
+    range: string
+    required: true
+  used:
+    name: used
+    description: Bind the key to a computed scalar in a result container (same reference
+      form a figure Layer uses, and the same PROV edge). Mutually exclusive with ``value``
+      and ``count``.
+    from_schema: https://w3id.org/tvbo
+    slot_uri: prov:used
+    owner: ResultBinding
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: DataRef
+    inlined: true
+  count:
+    name: count
+    description: 'A structural tally computed from the specification, not a run: ``<study>.<collection>``
+      counts a collection on a nested study named by its citekey or label (e.g. ``Jansen1995.figures``),
+      resolved at any depth, or a bare ``<collection>`` counts one on the study holding
+      the binding (e.g. ``studies``). Mutually exclusive with ``used`` and ``value``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ResultBinding
+    domain_of:
+    - ResultBinding
+    range: string
+  format:
+    name: format
+    description: Python format string applied to the referenced value, e.g. '{:.2f}'
+      or '{:d}'. Applies to a ``used:`` binding.
+    from_schema: https://w3id.org/tvbo
+    owner: ResultBinding
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  value:
+    name: value
+    description: A literal value, for a constant quoted from prior work rather than
+      computed here. Mutually exclusive with ``used:``; pair with ``source``.
+    from_schema: https://w3id.org/tvbo
+    owner: ResultBinding
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: string
+  source:
+    name: source
+    description: Citation key attributing an authored ``value`` to its origin, so
+      the manifest records which numbers are external constants and which the run
+      computed.
+    from_schema: https://w3id.org/tvbo
+    owner: ResultBinding
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: ResultBinding
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:ResultBinding
+
+```
+</details></div>

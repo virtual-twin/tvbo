@@ -1,0 +1,77 @@
+# Slot: hemisphere 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/hemisphere](https://w3id.org/tvbo/dbs/slot/hemisphere)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+| [Electrode](../classes/Electrode.qmd) | Implanted DBS electrode and contact geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ParcellationEntity](../classes/ParcellationEntity.qmd), [Electrode](../classes/Electrode.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:hemisphere |
+| native | tvbo_dbs:hemisphere |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: hemisphere
+domain_of:
+- ParcellationEntity
+- Electrode
+range: string
+
+```
+</details></div>

@@ -1,0 +1,92 @@
+# Slot: modified 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/modified](https://w3id.org/tvbo/slot/modified)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:modified |
+| native | tvbo:modified |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: modified
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Dynamics
+domain_of:
+- Dynamics
+range: boolean
+
+```
+</details></div>

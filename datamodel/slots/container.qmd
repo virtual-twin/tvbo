@@ -1,0 +1,77 @@
+# Slot: container 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/container](https://w3id.org/tvbo/slot/container)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ResultEntity](../classes/ResultEntity.qmd) | One persisted result container, described |  no  |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ResultEntity](../classes/ResultEntity.qmd), [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:container |
+| native | tvbo:container |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: container
+domain_of:
+- ResultEntity
+- WorkflowConfig
+range: string
+
+```
+</details></div>

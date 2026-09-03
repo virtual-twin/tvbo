@@ -1,0 +1,104 @@
+# Slot: equation_order 
+
+
+_Order of the time derivative on the LHS. Default 1 means dx/dt = rhs (first-order ODE). Order 2 means d²x/dt² = rhs (second-order ODE), etc. Higher-order ODEs are automatically lowered to coupled first-order systems by backends like ModelingToolkit.jl via mtkcompile._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/equation_order](https://w3id.org/tvbo/slot/equation_order)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StateVariable](../classes/StateVariable.qmd) |  |  no  |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [StateVariable](../classes/StateVariable.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `int(1)` |
+| Owner | [StateVariable](../classes/StateVariable.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:equation_order |
+| native | tvbo:equation_order |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: equation_order
+description: Order of the time derivative on the LHS. Default 1 means dx/dt = rhs
+  (first-order ODE). Order 2 means d²x/dt² = rhs (second-order ODE), etc. Higher-order
+  ODEs are automatically lowered to coupled first-order systems by backends like ModelingToolkit.jl
+  via mtkcompile.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: int(1)
+owner: StateVariable
+domain_of:
+- StateVariable
+range: integer
+
+```
+</details></div>

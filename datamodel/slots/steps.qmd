@@ -1,0 +1,77 @@
+# Slot: steps 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/steps](https://w3id.org/tvbo/slot/steps)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Procedure](../classes/Procedure.qmd) | Symbolic procedure: an ordered list of steps producing named outputs |  no  |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Procedure](../classes/Procedure.qmd), [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:steps |
+| native | tvbo:steps |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: steps
+domain_of:
+- Procedure
+- Integrator
+range: string
+
+```
+</details></div>

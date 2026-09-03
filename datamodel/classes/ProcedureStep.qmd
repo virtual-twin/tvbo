@@ -1,0 +1,661 @@
+# Class: ProcedureStep 
+
+
+_A single named step (or output) in a Procedure: one typed operation producing one named intermediate._
+
+_`type` selects the operation and therefore which of the fields below apply; it defaults to `equation`, the general case, so a Procedure written purely as equations needs no type annotations. The remaining fields carry each operation's options as *metadata* rather than as call syntax, which is what lets a step lower directly to a backend-native primitive: expression parsing cannot represent keyword arguments at all, so any option written as one would be unresolvable._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:ProcedureStep](https://w3id.org/tvbo/ProcedureStep)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ProcedureStep
+    click ProcedureStep href "./ProcedureStep.html"
+      ProcedureStep : axis
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" Integer : axis
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      ProcedureStep : comparison
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" ComparisonOperator : comparison
+        click ComparisonOperator href "../../enums/ComparisonOperator.html"
+    
+
+        
+      ProcedureStep : description
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ProcedureStep : diagonal
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" ScalarValue : diagonal
+        click ScalarValue href "./ScalarValue.html"
+    
+
+        
+      ProcedureStep : distribution
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" Distribution : distribution
+        click Distribution href "./Distribution.html"
+    
+
+        
+      ProcedureStep : equation
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      ProcedureStep : name
+        
+          
+    
+        
+        
+        ProcedureStep --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ProcedureStep : of
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" String : of
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ProcedureStep : seed_offset
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" Integer : seed_offset
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      ProcedureStep : target_range
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" Range : target_range
+        click Range href "./Range.html"
+    
+
+        
+      ProcedureStep : type
+        
+          
+    
+        
+        
+        ProcedureStep --> "0..1" ProcedureStepType : type
+        click ProcedureStepType href "../../enums/ProcedureStepType.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:ProcedureStep](https://w3id.org/tvbo/ProcedureStep) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [type](../slots/type.qmd) | 0..1 <br/> [ProcedureStepType](../enums/ProcedureStepType.qmd) | Which operation this step performs | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | The equation defining this step/output | direct |
+| [of](../slots/of.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name of the input this step consumes — the positions for `pairwise_distance` ... | direct |
+| [axis](../slots/axis.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Array axis a `normalize` step reduces over (0 = columns) | direct |
+| [diagonal](../slots/diagonal.qmd) | 0..1 <br/> [ScalarValue](../classes/ScalarValue.qmd) | Value written onto the diagonal of a `pairwise_distance` result, e | direct |
+| [distribution](../slots/distribution.qmd) | 0..1 <br/> [Distribution](../classes/Distribution.qmd) | Distribution sampled by a `sample` / `stochastic_mask` step, or whose density... | direct |
+| [comparison](../slots/comparison.qmd) | 0..1 <br/> [ComparisonOperator](../enums/ComparisonOperator.qmd) | Comparison a `stochastic_mask` applies between `of` and the draw | direct |
+| [seed_offset](../slots/seed_offset.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Sub-stream this step draws from, offset from the generator's seed | direct |
+| [target_range](../slots/target_range.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) | Target interval for a `minmax_rescale` step (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Procedure](../classes/Procedure.qmd) | [steps](../slots/steps.qmd) | range | [ProcedureStep](../classes/ProcedureStep.qmd) |
+| [Procedure](../classes/Procedure.qmd) | [output](../slots/output.qmd) | range | [ProcedureStep](../classes/ProcedureStep.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ProcedureStep |
+| native | tvbo:ProcedureStep |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ProcedureStep
+description: 'A single named step (or output) in a Procedure: one typed operation
+  producing one named intermediate.
+
+  `type` selects the operation and therefore which of the fields below apply; it defaults
+  to `equation`, the general case, so a Procedure written purely as equations needs
+  no type annotations. The remaining fields carry each operation''s options as *metadata*
+  rather than as call syntax, which is what lets a step lower directly to a backend-native
+  primitive: expression parsing cannot represent keyword arguments at all, so any
+  option written as one would be unresolvable.'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+attributes:
+  type:
+    name: type
+    description: Which operation this step performs. Defaults to `equation`.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(equation)
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: ProcedureStepType
+  equation:
+    name: equation
+    description: The equation defining this step/output. Used by `equation` steps
+      (and by every output expression).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  of:
+    name: of
+    description: Name of the input this step consumes — the positions for `pairwise_distance`
+      / `distribution_pdf`, the matrix for `normalize`, the compared quantity for
+      `stochastic_mask`, and for `sample` (which consumes no array) the Distribution-valued
+      generator parameter to draw from. It names either a previously defined step
+      or a generator parameter; steps are ordered, so a referenced step must already
+      be defined.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ProcedureStep
+    range: string
+  axis:
+    name: axis
+    description: Array axis a `normalize` step reduces over (0 = columns).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ProcedureStep
+    - Distribution
+    range: integer
+  diagonal:
+    name: diagonal
+    description: Value written onto the diagonal of a `pairwise_distance` result,
+      e.g. infinity to suppress self-connections. Omitted leaves the true zero self-distance
+      in place.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ProcedureStep
+    range: ScalarValue
+  distribution:
+    name: distribution
+    description: Distribution sampled by a `sample` / `stochastic_mask` step, or whose
+      density a `distribution_pdf` step evaluates. Reuses the Distribution class,
+      so a generator's randomness is declared exactly like any other sampled quantity
+      in TVBO. On a `sample` step it is the family the generator defaults to, which
+      the parameter named by `of` overrides when one is supplied.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    range: Distribution
+    inlined: true
+  comparison:
+    name: comparison
+    description: Comparison a `stochastic_mask` applies between `of` and the draw.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(le)
+    domain_of:
+    - ProcedureStep
+    range: ComparisonOperator
+  seed_offset:
+    name: seed_offset
+    description: Sub-stream this step draws from, offset from the generator's seed.
+      Two seeded steps must use different offsets to be independent. Stated here rather
+      than inferred from step order so it is a property of the generator that every
+      backend derives identically (numpy re-seeds, jax folds the offset into the key)
+      — and so inserting or reordering steps cannot silently change an existing generator's
+      output.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: int(0)
+    domain_of:
+    - ProcedureStep
+    range: integer
+  target_range:
+    name: target_range
+    description: Target interval for a `minmax_rescale` step (e.g. lo -1, hi 1).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ProcedureStep
+    range: Range
+    inlined: true
+class_uri: tvbo:ProcedureStep
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ProcedureStep
+description: 'A single named step (or output) in a Procedure: one typed operation
+  producing one named intermediate.
+
+  `type` selects the operation and therefore which of the fields below apply; it defaults
+  to `equation`, the general case, so a Procedure written purely as equations needs
+  no type annotations. The remaining fields carry each operation''s options as *metadata*
+  rather than as call syntax, which is what lets a step lower directly to a backend-native
+  primitive: expression parsing cannot represent keyword arguments at all, so any
+  option written as one would be unresolvable.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  type:
+    name: type
+    description: Which operation this step performs. Defaults to `equation`.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(equation)
+    owner: ProcedureStep
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: ProcedureStepType
+  equation:
+    name: equation
+    description: The equation defining this step/output. Used by `equation` steps
+      (and by every output expression).
+    from_schema: https://w3id.org/tvbo
+    owner: ProcedureStep
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  of:
+    name: of
+    description: Name of the input this step consumes — the positions for `pairwise_distance`
+      / `distribution_pdf`, the matrix for `normalize`, the compared quantity for
+      `stochastic_mask`, and for `sample` (which consumes no array) the Distribution-valued
+      generator parameter to draw from. It names either a previously defined step
+      or a generator parameter; steps are ordered, so a referenced step must already
+      be defined.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ProcedureStep
+    domain_of:
+    - ProcedureStep
+    range: string
+  axis:
+    name: axis
+    description: Array axis a `normalize` step reduces over (0 = columns).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ProcedureStep
+    domain_of:
+    - ProcedureStep
+    - Distribution
+    range: integer
+  diagonal:
+    name: diagonal
+    description: Value written onto the diagonal of a `pairwise_distance` result,
+      e.g. infinity to suppress self-connections. Omitted leaves the true zero self-distance
+      in place.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ProcedureStep
+    domain_of:
+    - ProcedureStep
+    range: ScalarValue
+  distribution:
+    name: distribution
+    description: Distribution sampled by a `sample` / `stochastic_mask` step, or whose
+      density a `distribution_pdf` step evaluates. Reuses the Distribution class,
+      so a generator's randomness is declared exactly like any other sampled quantity
+      in TVBO. On a `sample` step it is the family the generator defaults to, which
+      the parameter named by `of` overrides when one is supplied.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ProcedureStep
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    range: Distribution
+    inlined: true
+  comparison:
+    name: comparison
+    description: Comparison a `stochastic_mask` applies between `of` and the draw.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(le)
+    owner: ProcedureStep
+    domain_of:
+    - ProcedureStep
+    range: ComparisonOperator
+  seed_offset:
+    name: seed_offset
+    description: Sub-stream this step draws from, offset from the generator's seed.
+      Two seeded steps must use different offsets to be independent. Stated here rather
+      than inferred from step order so it is a property of the generator that every
+      backend derives identically (numpy re-seeds, jax folds the offset into the key)
+      — and so inserting or reordering steps cannot silently change an existing generator's
+      output.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: int(0)
+    owner: ProcedureStep
+    domain_of:
+    - ProcedureStep
+    range: integer
+  target_range:
+    name: target_range
+    description: Target interval for a `minmax_rescale` step (e.g. lo -1, hi 1).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ProcedureStep
+    domain_of:
+    - ProcedureStep
+    range: Range
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: ProcedureStep
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: ProcedureStep
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:ProcedureStep
+
+```
+</details></div>

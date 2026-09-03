@@ -1,0 +1,86 @@
+# Slot: used 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/used](https://w3id.org/tvbo/slot/used)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Layer](../classes/Layer.qmd) | One mark bound to one data reference, with its encoding |  no  |
+| [Annotation](../classes/Annotation.qmd) | A positioned text label on a panel, in axes-fraction coordinates |  no  |
+| [Activity](../classes/Activity.qmd) | One thing that was done: a solve, a fit, an analysis, a render |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [Argument](../classes/Argument.qmd) | A function argument with explicit value specification |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [ResultBinding](../classes/ResultBinding.qmd) | One entry in a study's results manifest: a manuscript key bound to the value ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Layer](../classes/Layer.qmd), [Annotation](../classes/Annotation.qmd), [Activity](../classes/Activity.qmd), [Parameter](../classes/Parameter.qmd), [Argument](../classes/Argument.qmd), [ResultBinding](../classes/ResultBinding.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:used |
+| native | tvbo:used |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: used
+domain_of:
+- Layer
+- Annotation
+- Activity
+- Parameter
+- Argument
+- ResultBinding
+range: string
+
+```
+</details></div>

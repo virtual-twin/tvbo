@@ -1,0 +1,99 @@
+# Slot: originalLookupLabel 
+
+
+_Add the original label of this entity as defined in the parcellation terminology._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:slot/originalLookupLabel](http://uri.interlex.org/tgbugs/uris/readable/slot/originalLookupLabel)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:originalLookupLabel |
+| native | atom:originalLookupLabel |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: originalLookupLabel
+description: Add the original label of this entity as defined in the parcellation
+  terminology.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+rank: 1000
+owner: ParcellationEntity
+domain_of:
+- ParcellationEntity
+range: integer
+
+```
+</details></div>

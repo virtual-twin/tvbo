@@ -1,0 +1,1276 @@
+# utils { #tvbo.templates.tvboptim.utils }
+
+`templates.tvboptim.utils`
+
+TVB-Optim Template Utilities.
+
+Reusable Python functions for tvboptim Mako templates.
+Import these in template blocks to avoid code duplication.
+
+## Usage in templates {.doc-section .doc-section-usage-in-templates}
+
+<%
+from tvbo.templates.tvboptim.utils import (
+    safe_name, as_list, is_network_observation,
+    parse_loss_function, get_observation_refs
+)
+%>
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [OBSERVER_INPUT](#tvbo.templates.tvboptim.utils.OBSERVER_INPUT) |  |
+| [SOURCE_ARG_NAMES](#tvbo.templates.tvboptim.utils.SOURCE_ARG_NAMES) | Names by which a pipeline step's first argument refers to the series it is handed rather than to a constant. |
+| [safe_name](#tvbo.templates.tvboptim.utils.safe_name) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [active_stimulus_events](#tvbo.templates.tvboptim.utils.active_stimulus_events) | Return the events this experiment integrates as time-domain external inputs. |
+| [adapt_class_reference_for_tvboptim](#tvbo.templates.tvboptim.utils.adapt_class_reference_for_tvboptim) | Translate schema class references to native tvboptim monitor classes. |
+| [assert_measured_window_is_stable](#tvbo.templates.tvboptim.utils.assert_measured_window_is_stable) | Require the measured window an observation subtracts to be the one every scan it sees actually runs. |
+| [axis_keypath](#tvbo.templates.tvboptim.utils.axis_keypath) | Grid keypath an exploration axis binds on — ``<sub-object>.<leaf>``. |
+| [collect_network_edge_arrays](#tvbo.templates.tvboptim.utils.collect_network_edge_arrays) | Embed connectome matrices referenced by observations as ``{label: nested list}``. |
+| [collect_network_node_arrays](#tvbo.templates.tvboptim.utils.collect_network_node_arrays) | Embed per-node vectors referenced by observations as ``{measure: nested list}``. |
+| [data_source_arrays](#tvbo.templates.tvboptim.utils.data_source_arrays) | Every array an observation declares through ``data_source``, keyed by the name a pipeline argument uses to reach it (``data_source.<key>``). |
+| [derived_equation_sample_period](#tvbo.templates.tvboptim.utils.derived_equation_sample_period) | Sample period to bind as ``dt`` inside a derived observation's ``equation``. |
+| [dist_expr](#tvbo.templates.tvboptim.utils.dist_expr) | Render a Distribution as a numpyro ``dist.*`` constructor string. |
+| [edge_const](#tvbo.templates.tvboptim.utils.edge_const) | Module-constant identifier holding the embedded matrix for ``label``. |
+| [emission_period_steps](#tvbo.templates.tvboptim.utils.emission_period_steps) | Integration steps between two consecutive samples a reduction folds into, or ``None`` when it folds every step. |
+| [emission_times](#tvbo.templates.tvboptim.utils.emission_times) | The measurement-clock timestamp of each of ``n_samples`` output samples, or ``None`` for a reduction with no time axis. |
+| [format_bounds_array](#tvbo.templates.tvboptim.utils.format_bounds_array) | Render a list of SymPy bound values as a code-level list literal. |
+| [format_channel_index](#tvbo.templates.tvboptim.utils.format_channel_index) | Render axis-1 channel indices as the narrowest correct index expression. |
+| [functions_by_name](#tvbo.templates.tvboptim.utils.functions_by_name) | The experiment's functions keyed by name, whichever form the slot holds. |
+| [get_all_hyperparams](#tvbo.templates.tvboptim.utils.get_all_hyperparams) | Get all hyperparameters including from COMBINED included algorithms. |
+| [get_all_observations_from_algo](#tvbo.templates.tvboptim.utils.get_all_observations_from_algo) | Get all observation names including from COMBINED included algorithms. |
+| [get_attr](#tvbo.templates.tvboptim.utils.get_attr) | Safe attribute access. |
+| [get_domain_bounds](#tvbo.templates.tvboptim.utils.get_domain_bounds) | Lookup domain bounds from model.parameters or coupling.parameters. |
+| [get_include_info](#tvbo.templates.tvboptim.utils.get_include_info) | Extract algorithm name and argument overrides from AlgorithmInclude. |
+| [get_mode_layout](#tvbo.templates.tvboptim.utils.get_mode_layout) | Compute the folded scalar-state layout for a (possibly multi-mode) model. |
+| [get_node_param_overrides](#tvbo.templates.tvboptim.utils.get_node_param_overrides) | Scan network.nodes for per-node parameter overrides. |
+| [get_node_state_overrides](#tvbo.templates.tvboptim.utils.get_node_state_overrides) | Scan network.nodes for per-node initial state overrides. |
+| [get_noise_covariance](#tvbo.templates.tvboptim.utils.get_noise_covariance) | The noise covariance a model declares, ready for the solver template to emit. |
+| [get_observation_dependencies](#tvbo.templates.tvboptim.utils.get_observation_dependencies) | Observations that ``obs_name`` derives from — its ``source`` entries that are themselves observations (edges in the observation dependency graph). |
+| [get_observation_refs](#tvbo.templates.tvboptim.utils.get_observation_refs) | Categorize observations into network vs simulation-derived. |
+| [get_output_channels](#tvbo.templates.tvboptim.utils.get_output_channels) | Resolve the ``sv.record``-honoring output channels for the presented result. |
+| [get_param_info](#tvbo.templates.tvboptim.utils.get_param_info) | Extract parameter names, defaults, and shapes from a parameters collection. |
+| [get_recorded_variable_names](#tvbo.templates.tvboptim.utils.get_recorded_variable_names) | Compute the variable layout recorded by tvboptim's solver. |
+| [get_state_bounds](#tvbo.templates.tvboptim.utils.get_state_bounds) | Extract state variable bounds as SymPy expressions. |
+| [graph_selection](#tvbo.templates.tvboptim.utils.graph_selection) | Pick the tvboptim graph type for a (possibly delayed) network. |
+| [has_host_pipeline](#tvbo.templates.tvboptim.utils.has_host_pipeline) | True when any of *observations* reaches a host callable in its pipeline. |
+| [initial_conditions_axis_sv](#tvbo.templates.tvboptim.utils.initial_conditions_axis_sv) | State variable swept by an ``initial_conditions.``-scoped axis, else None. |
+| [is_data_driven_event](#tvbo.templates.tvboptim.utils.is_data_driven_event) | True when an event's signal is read from a file and interpolated, rather than evaluated from an equation. |
+| [is_external_observation](#tvbo.templates.tvboptim.utils.is_external_observation) | Check if observation is external (has data_source or network.observations source). |
+| [is_network_observation](#tvbo.templates.tvboptim.utils.is_network_observation) | Check if observation is bound from data rather than the simulation state. |
+| [iter_parameter_values](#tvbo.templates.tvboptim.utils.iter_parameter_values) | Yield ``(name, value)`` pairs from schema Parameter collections. |
+| [jax_platform](#tvbo.templates.tvboptim.utils.jax_platform) | Map an ``ExecutionConfig.accelerator`` to the JAX platform name it pins. |
+| [kernel_support_steps](#tvbo.templates.tvboptim.utils.kernel_support_steps) | Integration steps the kernel's own support spans — what a 'valid' convolution eats off the front. |
+| [materialise_lazy_params](#tvbo.templates.tvboptim.utils.materialise_lazy_params) | Resolve every sourced/produced parameter to a content-addressed artifact. |
+| [network_axis_leaf](#tvbo.templates.tvboptim.utils.network_axis_leaf) | Graph leaf swept by a ``network.``-scoped exploration axis, else None. |
+| [network_leaf_is_matrix](#tvbo.templates.tvboptim.utils.network_leaf_is_matrix) | Whether a ``network.``-scoped graph leaf holds a per-edge matrix rather than a scalar. |
+| [node_const](#tvbo.templates.tvboptim.utils.node_const) | Module-constant identifier holding the embedded per-node vector for ``label``. |
+| [node_label](#tvbo.templates.tvboptim.utils.node_label) | Canonical per-node vector name for a ``network.<measure>`` reference, else None. |
+| [noise_axis_param](#tvbo.templates.tvboptim.utils.noise_axis_param) | Noise parameter swept by a ``noise.``-scoped exploration axis, else None. |
+| [normalize_coupling_aliases](#tvbo.templates.tvboptim.utils.normalize_coupling_aliases) | Collapse duplicate keys that point to the same coupling object. |
+| [normalize_n_parallel](#tvbo.templates.tvboptim.utils.normalize_n_parallel) | Normalise an ``Exploration.n_parallel`` to an int chunk size or ``"auto"``. |
+| [obs_has_all_args](#tvbo.templates.tvboptim.utils.obs_has_all_args) | Check if observation has all required arguments satisfied. |
+| [observation_dims](#tvbo.templates.tvboptim.utils.observation_dims) | Every observation's declared axis names, keyed by observation name. |
+| [parameter_keypath](#tvbo.templates.tvboptim.utils.parameter_keypath) | State keypath a raw dotted parameter reference binds on — ``<sub-object>.<leaf>``. |
+| [parameter_value](#tvbo.templates.tvboptim.utils.parameter_value) | Return a named Parameter value from a schema collection. |
+| [parse_exploration](#tvbo.templates.tvboptim.utils.parse_exploration) | Parse exploration specification from YAML. |
+| [parse_free_param](#tvbo.templates.tvboptim.utils.parse_free_param) | Parse a free_parameter entry. |
+| [parse_list_elements](#tvbo.templates.tvboptim.utils.parse_list_elements) | Split a ``[a, b, c]`` list-literal string into top-level element strings, respecting nested brackets/parens (so ``[f(x, y), g(z)]`` yields two elements). |
+| [parse_loss_arguments](#tvbo.templates.tvboptim.utils.parse_loss_arguments) | Parse loss function call arguments. |
+| [parse_loss_function](#tvbo.templates.tvboptim.utils.parse_loss_function) | Parse optimization loss function specification. |
+| [pipeline_argument](#tvbo.templates.tvboptim.utils.pipeline_argument) | Return the named pipeline argument object (arguments are keyed by name). |
+| [pipeline_equation_parameters](#tvbo.templates.tvboptim.utils.pipeline_equation_parameters) | Collect equation parameters from all observation pipeline steps. |
+| [pipeline_stage_is_host](#tvbo.templates.tvboptim.utils.pipeline_stage_is_host) | True when an observation pipeline stage calls code that cannot trace under ``jit``. |
+| [reduction_dims](#tvbo.templates.tvboptim.utils.reduction_dims) | The axis names a reduction's output carries. |
+| [render_adiabatic_signal](#tvbo.templates.tvboptim.utils.render_adiabatic_signal) | Render an envelope-signal expression over recorded variables as an ``observe`` body. |
+| [render_analysis_observations](#tvbo.templates.tvboptim.utils.render_analysis_observations) | Render the body of the generated ``compute_analysis_observations()`` function. |
+| [render_inference](#tvbo.templates.tvboptim.utils.render_inference) | Render the body of one Bayesian inference (numpyro NUTS/MCMC), 8-space indented. |
+| [render_jax_default](#tvbo.templates.tvboptim.utils.render_jax_default) | Render a parameter default as a JAX-ready source literal. |
+| [render_recorded_observable](#tvbo.templates.tvboptim.utils.render_recorded_observable) | Render the body of an exploration ``observable_fn`` that records a `record:` list. |
+| [resolve_config_access](#tvbo.templates.tvboptim.utils.resolve_config_access) | State-config path for a `<scope>.<param>` reference, or None for an empty one. |
+| [resolve_coupling_input_map](#tvbo.templates.tvboptim.utils.resolve_coupling_input_map) | Map coupling-input names to coupling functions for the tvboptim network dict. |
+| [resolve_coupling_spec](#tvbo.templates.tvboptim.utils.resolve_coupling_spec) | Resolve every derived field a tvboptim coupling class needs from a Coupling. |
+| [resolve_model_output_indices](#tvbo.templates.tvboptim.utils.resolve_model_output_indices) | Resolve ``model.output`` entries to channel indices in the recorded ordering. |
+| [resolve_optimizer_mode](#tvbo.templates.tvboptim.utils.resolve_optimizer_mode) | Map the backend-neutral ``integration.differentiation.mode`` onto the native optimizer differentiation mode. |
+| [resolve_reduction](#tvbo.templates.tvboptim.utils.resolve_reduction) | Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction. |
+| [resolve_solver_kwargs](#tvbo.templates.tvboptim.utils.resolve_solver_kwargs) | Map the backend-neutral ``integration.differentiation`` strategy onto native-solver kwargs, returned as a ready-to-emit string (e.g. ``"grad_horizon=100, block_size=50"``). |
+| [resolve_step_expression](#tvbo.templates.tvboptim.utils.resolve_step_expression) | A pipeline step's declared equation, bound to the locals the monitor emits around it. |
+| [resolve_tail_samples](#tvbo.templates.tvboptim.utils.resolve_tail_samples) | Trailing-window length of ``obs`` in samples, from ``tail_samples`` or ``tail_duration``. |
+| [state_only_derived_var_names](#tvbo.templates.tvboptim.utils.state_only_derived_var_names) | Derived-variable names that are provably functions of the state alone. |
+| [state_only_recorded_aux](#tvbo.templates.tvboptim.utils.state_only_recorded_aux) | Recorded derived variables that are provably functions of the state alone. |
+| [streaming_block_size](#tvbo.templates.tvboptim.utils.streaming_block_size) | The solver block a set of streamed reductions folds on, and the one place that decides it. |
+| [streaming_post_eval_plan](#tvbo.templates.tvboptim.utils.streaming_post_eval_plan) | Plan a streaming post-tuning evaluation for a fitting experiment. |
+| [time_argument_ms](#tvbo.templates.tvboptim.utils.time_argument_ms) | Resolve a time-valued schema argument to milliseconds. |
+| [to_numeric](#tvbo.templates.tvboptim.utils.to_numeric) | Convert string to numeric if possible. |
+| [toposort_observations](#tvbo.templates.tvboptim.utils.toposort_observations) | Dependency-order observations so any that lists another as a ``source`` is emitted AFTER that source — the same dependency-graph principle used for derived variables/parameters (see ``tvbo.classes.equation``). Independent observations keep their input order (stable / deterministic). Lives in the tvboptim adapter so the mako templates only call it rather than redefining the sort inline. |
+| [weight_transform_codegen](#tvbo.templates.tvboptim.utils.weight_transform_codegen) | Render `transforms:` targeting weight to JAX for inlining in the generated script. |
+
+### active_stimulus_events { #tvbo.templates.tvboptim.utils.active_stimulus_events }
+
+```python
+templates.tvboptim.utils.active_stimulus_events(experiment)
+```
+
+Return the events this experiment integrates as time-domain external inputs.
+
+Selects stimulus/continuous/discrete events from ``experiment.events``, excluding any event that a ``fisher`` analysis observation names as its ``target``: that event is metadata for the linear-response computation (stimulated variable, node mask, swept amplitude) and is never integrated in time, so it must not emit an ExternalInput class.
+Raises ``ValueError`` when an active event's name cannot spell the ``<name>Input`` class the stimulus template emits for it, which would otherwise land as a syntax error in the generated module rather than as a message about the recipe.
+
+### adapt_class_reference_for_tvboptim { #tvbo.templates.tvboptim.utils.adapt_class_reference_for_tvboptim }
+
+```python
+templates.tvboptim.utils.adapt_class_reference_for_tvboptim(class_info, obs, dt)
+```
+
+Translate schema class references to native tvboptim monitor classes.
+
+Database observation metadata may point at TVB monitor classes because the same schema object is used by the TVB backend. The tvboptim backend should consume the equivalent tvboptim monitor API when one exists.
+
+### assert_measured_window_is_stable { #tvbo.templates.tvboptim.utils.assert_measured_window_is_stable }
+
+```python
+templates.tvboptim.utils.assert_measured_window_is_stable(experiment, name)
+```
+
+Require the measured window an observation subtracts to be the one every scan it sees actually runs.
+
+A monitor is handed a window and tells settle from measurement by subtracting the recipe's measured step count from that window's own length. The subtraction is sound because every scan the monitor sees runs either the declared window (settle prepended, so the excess IS the settle) or a shorter tuning window (so the excess is zero and nothing is cut). An ``optimization.integration`` override breaks exactly that: it re-prepares with its own ``duration`` and ``step_size``, so a longer or finer-stepped tuning scan carries an excess that is not settle, and the monitor cuts real measurement off the front of it without saying so.
+
+Refused rather than accommodated, because the alternative reads of the excess are not distinguishable from inside the monitor -- shape is the only signal it has -- and a silent cut of the front of a fitting window is the kind of error that shows up as a fit that will not converge. No recipe in the tree sets the override today, so this closes a footgun rather than a live break.
+
+### axis_keypath { #tvbo.templates.tvboptim.utils.axis_keypath }
+
+```python
+templates.tvboptim.utils.axis_keypath(ax)
+```
+
+Grid keypath an exploration axis binds on — ``<sub-object>.<leaf>``.
+
+ONE definition of WHERE an axis writes, so the grid binding, the warm-start / adiabatic sweep and the branch-analysis restart cannot disagree. A coupling axis lands on its coupling instance, a ``network.`` axis on the delay graph, a ``noise.`` axis on the noise parameters, an ``initial_conditions.`` or seed axis on the dummy dynamics slot its wrapper reads per cell, an ``<event>.`` axis on that external input, and everything else on the dynamics. Disagreement here is silent rather than loud: routing ``noise.sigma`` to ``dynamics.sigma`` sweeps a same-named model parameter, or nothing at all, and the run still completes.
+
+Reads the scope FLAGS the axis classifier already resolved, never the declared text — :func:`parameter_keypath` is the counterpart that classifies a reference still held as a raw dotted string. The two must answer alike for the same axis.
+
+### collect_network_edge_arrays { #tvbo.templates.tvboptim.utils.collect_network_edge_arrays }
+
+```python
+templates.tvboptim.utils.collect_network_edge_arrays(experiment)
+```
+
+Embed connectome matrices referenced by observations as ``{label: nested list}``.
+
+Scans every observation's ``source`` and every pipeline-step argument for a fully-qualified ``network.weight(s)``/``length(s)`` shortcut or explicit ``network.edges.<label>`` reference, resolving each to a dense matrix via ``Network.matrix()``. Covers derived and non-derived observations alike so the emitted constant serves both the observation-module source path and the experiment-module derived resolver. Raises if a referenced matrix is absent.
+
+### collect_network_node_arrays { #tvbo.templates.tvboptim.utils.collect_network_node_arrays }
+
+```python
+templates.tvboptim.utils.collect_network_node_arrays(experiment)
+```
+
+Embed per-node vectors referenced by observations as ``{measure: nested list}``.
+
+Scans every observation's ``source``, its pipeline-step arguments, AND its observer (``dynamics``) parameters for a ``network.positions`` / ``network.instrength`` reference, resolving each once against the network:
+``positions`` → ``Network.node_positions()``; ``instrength`` → the weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention, ``koller2024_networks.instrength_normalize``). Raises if a referenced vector cannot be built.
+
+### data_source_arrays { #tvbo.templates.tvboptim.utils.data_source_arrays }
+
+```python
+templates.tvboptim.utils.data_source_arrays(experiment)
+```
+
+Every array an observation declares through ``data_source``, keyed by the name a pipeline argument uses to reach it (``data_source.<key>``).
+
+A ``data_source`` naming a Network YAML is a projection: an EEG/MEG gain, a sensor array, any matrix that links the simulated nodes to something else. Each entry records the path and the edge to read, never the numbers -- the generated module loads them once at run time, so the array is a traced constant inside the observable instead of a file the pipeline opens per cell. Paths stay as declared and are resolved against the spec directory at run time, which is what lets the same module run from the study and from an emitted kit whose ``spec/`` holds the frozen companion.
+
+Returns ``{key: {"path": str, "edge": str, "observation": str}}``. Keyed by edge label, so two observations projecting through the same gain share one bound array; two naming the same edge of *different* networks are a name collision the pipeline reference ``data_source.<key>`` cannot resolve, and raise here rather than binding whichever came last. The collection is read through :func:`tvbo.utils.keyed_items`, since an assigned ``observations`` slot is a ``JsonObj`` whose plain iteration yields its keys, not its members.
+
+### derived_equation_sample_period { #tvbo.templates.tvboptim.utils.derived_equation_sample_period }
+
+```python
+templates.tvboptim.utils.derived_equation_sample_period(
+    dobs,
+    all_observations,
+    step_size,
+)
+```
+
+Sample period to bind as ``dt`` inside a derived observation's ``equation``.
+
+A sample-indexed aggregation (``first_passage``) returns an index, so any equation turning it into a time has to multiply by the spacing of those samples. Binding that spacing here is what keeps the step size out of the recipe: ``Min(t_A, t_B) * dt`` stays correct when the experiment's ``step_size`` changes, where a literal silently rescales the result.
+
+The spacing is the integration ``step_size`` when no source declares a recording ``period``, or that period when every source declares the same one. Sources that disagree return None, leaving ``dt`` unbound so the render fails on the unknown symbol rather than picking one source's clock for all of them.
+
+Substituted as a render-time constant, which is what the emitted module does with the step everywhere else (the solver call carries a literal ``dt=``, not a runtime argument), so the equation cannot drift from the step the rest of the module integrates at.
+
+### dist_expr { #tvbo.templates.tvboptim.utils.dist_expr }
+
+```python
+templates.tvboptim.utils.dist_expr(dist_obj)
+```
+
+Render a Distribution as a numpyro ``dist.*`` constructor string.
+
+``Normal`` -> ``dist.Normal(mean, std)``; ``Uniform`` -> ``dist.Uniform(lo, hi)`` (from ``parameters`` or ``domain``). Reuses the standard Distribution vocabulary (name + parameters/domain) as both prior and likelihood-noise family.
+
+### edge_const { #tvbo.templates.tvboptim.utils.edge_const }
+
+```python
+templates.tvboptim.utils.edge_const(label)
+```
+
+Module-constant identifier holding the embedded matrix for ``label``.
+
+### emission_period_steps { #tvbo.templates.tvboptim.utils.emission_period_steps }
+
+```python
+templates.tvboptim.utils.emission_period_steps(red)
+```
+
+Integration steps between two consecutive samples a reduction folds into, or ``None`` when it folds every step.
+
+One reduction, one answer, because two things need it and they must not drift: a reducer that writes into a sample-indexed buffer needs a block size a slot boundary never falls inside, and the values it reports need timestamps. The period differs by kind -- ``ds_steps * tr_stride`` for a convolution (BOLD), ``ds_steps`` for a plain stride, ``period_steps`` for a monitor observer or a ``wave`` detector.
+
+This is emphatically NOT the question "does the output carry a time axis". A ``wave`` reduction decimates on a period and then collapses those samples into per-group scalars: it needs the block alignment and it has no time axis. Gating this on :func:`reduction_dims` conflated the two and silently dropped a wave observation's block back to the 1000-step default, which is how the whole-trajectory vmap it exists to avoid comes back. :func:`emission_times` is where the time-axis question belongs.
+
+### emission_times { #tvbo.templates.tvboptim.utils.emission_times }
+
+```python
+templates.tvboptim.utils.emission_times(red, n_samples, dt)
+```
+
+The measurement-clock timestamp of each of ``n_samples`` output samples, or ``None`` for a reduction with no time axis.
+
+A sample covers the period that ENDS at its timestamp -- sample m spans ``(m*period, (m+1)*period]`` and is stamped at the last step of it, established by perturbation on the pipeline monitor (a delta at measured step 250 is the last that moves sample 0; step 251 is the first that moves sample 1). Anchored to measurement, so the first sample lands one whole period after t = 0 whatever settle preceded the window.
+
+Having a period is not the same as reporting one sample per period: a ``wave`` detector decimates on a period and then folds those samples away, so it is asked of :data:`_REDUCTION_DIMS` and not of the period.
+
+### format_bounds_array { #tvbo.templates.tvboptim.utils.format_bounds_array }
+
+```python
+templates.tvboptim.utils.format_bounds_array(bounds, format='jax')
+```
+
+Render a list of SymPy bound values as a code-level list literal.
+
+Uses the appropriate TVBO code printer so infinity is rendered correctly for any backend (``jnp.inf``, ``np.inf``, ``Inf``, …).
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                             | Default    |
+|--------|--------|---------------------------------------------------------|------------|
+| bounds | list   | list of sympy expressions (Float / oo / -oo)            | _required_ |
+| format | str    | target backend (``'jax'``, ``'numpy'``, ``'julia'``, …) | `'jax'`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                  |
+|--------|--------|--------------------------------------------------------------|
+|        | str    | String like ``[-10.0, -jnp.inf]`` ready for code generation. |
+
+### format_channel_index { #tvbo.templates.tvboptim.utils.format_channel_index }
+
+```python
+templates.tvboptim.utils.format_channel_index(indices, n_channels)
+```
+
+Render axis-1 channel indices as the narrowest correct index expression.
+
+A single channel yields a scalar index (dropping the variable dimension);
+a contiguous run yields a slice, so the common all-auxiliaries case emits the same ``n_states:`` slice as before; anything else yields an explicit index list, which preserves the declared output order under advanced indexing. An empty selection yields ``:`` (all channels) rather than raising.
+
+### functions_by_name { #tvbo.templates.tvboptim.utils.functions_by_name }
+
+```python
+templates.tvboptim.utils.functions_by_name(experiment)
+```
+
+The experiment's functions keyed by name, whichever form the slot holds.
+
+### get_all_hyperparams { #tvbo.templates.tvboptim.utils.get_all_hyperparams }
+
+```python
+templates.tvboptim.utils.get_all_hyperparams(algo, algorithms_dict)
+```
+
+Get all hyperparameters including from COMBINED included algorithms.
+
+Nested includes are skipped — their hyperparameters are passed directly to the inner algorithm's run_<inner>() call, not exposed on the outer signature.
+
+### get_all_observations_from_algo { #tvbo.templates.tvboptim.utils.get_all_observations_from_algo }
+
+```python
+templates.tvboptim.utils.get_all_observations_from_algo(algo, algorithms_dict)
+```
+
+Get all observation names including from COMBINED included algorithms.
+
+Nested includes are skipped — their observations are computed inside the inner algorithm's own loop, not the outer one.
+
+### get_attr { #tvbo.templates.tvboptim.utils.get_attr }
+
+```python
+templates.tvboptim.utils.get_attr(obj, name, default=None)
+```
+
+Safe attribute access.
+
+### get_domain_bounds { #tvbo.templates.tvboptim.utils.get_domain_bounds }
+
+```python
+templates.tvboptim.utils.get_domain_bounds(param_name, model, all_couplings)
+```
+
+Lookup domain bounds from model.parameters or coupling.parameters.
+
+Returns (lo, hi) tuple, where None means unbounded.
+
+### get_include_info { #tvbo.templates.tvboptim.utils.get_include_info }
+
+```python
+templates.tvboptim.utils.get_include_info(inc)
+```
+
+Extract algorithm name and argument overrides from AlgorithmInclude.
+
+Returns (algo_name, {param_name: value}) tuple.
+
+### get_mode_layout { #tvbo.templates.tvboptim.utils.get_mode_layout }
+
+```python
+templates.tvboptim.utils.get_mode_layout(model)
+```
+
+Compute the folded scalar-state layout for a (possibly multi-mode) model.
+
+tvboptim's solver carries a 2-D state ``(n_states, n_nodes)`` and its coupling contracts the node axis with a plain matmul, so it has no place for a third per-node mode axis. A model with ``number_of_modes > 1`` (the Stefanescu-Jirsa ReducedSet models) folds that mode axis into the state axis: each state variable ``v`` occupies ``n_modes`` contiguous scalar slots ``v__mode0 .. v__mode{M-1}``. The dfun reconstructs the ``(n_nodes, n_modes)`` mode-vector for each variable from its slots, evaluates the mode-aware equations (``mode_dot``/``mode_sum``), and scatters the per-mode derivatives back into those slots; per-mode coupling falls out of the existing 2-D matmul because each ``(var, mode)`` slot couples to the same slot across nodes.
+
+For a single-mode model this is the identity (one slot per variable), so the generated code is byte-for-byte unchanged.
+
+Returns ``(n_modes, slot_names, var_slots)`` where ``slot_names`` is the flat solver state ordering (grouped by variable, then mode) and ``var_slots`` maps each variable name to the slot indices of its modes.
+
+### get_node_param_overrides { #tvbo.templates.tvboptim.utils.get_node_param_overrides }
+
+```python
+templates.tvboptim.utils.get_node_param_overrides(
+    network,
+    n_nodes,
+    dyn_param_defaults,
+)
+```
+
+Scan network.nodes for per-node parameter overrides.
+
+When nodes define parameters that differ from the dynamics defaults, build per-node arrays. Only parameters that differ on at least one node are returned.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name               | Type               | Description                                        | Default    |
+|--------------------|--------------------|----------------------------------------------------|------------|
+| network            | Any                | Network object with .nodes list                    | _required_ |
+| n_nodes            | int                | number of nodes                                    | _required_ |
+| dyn_param_defaults | dict\[str, float\] | dict of param_name -> scalar default from dynamics | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                       | Description                                                    |
+|--------|----------------------------|----------------------------------------------------------------|
+|        | dict\[str, list\[float\]\] | dict of param_name -> list of per-node values (length n_nodes) |
+
+### get_node_state_overrides { #tvbo.templates.tvboptim.utils.get_node_state_overrides }
+
+```python
+templates.tvboptim.utils.get_node_state_overrides(
+    network,
+    n_nodes,
+    state_names,
+    default_initial_state,
+)
+```
+
+Scan network.nodes for per-node initial state overrides.
+
+When nodes define ``state: {theta: {value: 0.8}}`` in the YAML, build per-node arrays for state variables that differ across nodes.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name                  | Type          | Description                              | Default    |
+|-----------------------|---------------|------------------------------------------|------------|
+| network               | Any           | Network object with .nodes list          | _required_ |
+| n_nodes               | int           | number of nodes                          | _required_ |
+| state_names           | list\[str\]   | ordered list of state variable names     | _required_ |
+| default_initial_state | list\[float\] | default initial value per state variable | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                       | Description                                                 |
+|--------|----------------------------|-------------------------------------------------------------|
+|        | dict\[str, list\[float\]\] | dict of sv_name -> list of per-node values (length n_nodes) |
+
+### get_noise_covariance { #tvbo.templates.tvboptim.utils.get_noise_covariance }
+
+```python
+templates.tvboptim.utils.get_noise_covariance(model, experiment=None)
+```
+
+The noise covariance a model declares, ready for the solver template to emit.
+
+Mirrors the provenance rule every other array-valued quantity follows: a literal binds inline, while a sourced or produced matrix (the usual case — a projection operator, a connectome-derived structure) is materialised codegen-time to a content-addressed artifact and emitted as a lazy ``(file, key)`` the generated module reads at run time, so a large operator never enters the generated source.
+
+Every noisy state variable must agree: one Wiener increment is drawn per step for all of them, so two different covariances cannot both be imposed on it.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                                                                                                                                                                   | Default    |
+|------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| model      | Any    | Dynamics instance with ``.state_variables``.                                                                                                                                                                  | _required_ |
+| experiment | Any    | The declaring experiment, used to ground a relative source path and to resolve a producer's arguments. Without it a lazy covariance stays deferred, so calling this as a cheap predicate has no side effects. | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                     | Description                                                                       |
+|--------|--------------------------|-----------------------------------------------------------------------------------|
+|        | dict\[str, Any\] \| None | ``{"axis": str, "value": [[...]] \| None, "lazy": (path, key) \| None}``, or None |
+|        | dict\[str, Any\] \| None | when no covariance is declared.                                                   |
+
+### get_observation_dependencies { #tvbo.templates.tvboptim.utils.get_observation_dependencies }
+
+```python
+templates.tvboptim.utils.get_observation_dependencies(
+    obs_name,
+    derived_obs_dict,
+    all_observations,
+)
+```
+
+Observations that ``obs_name`` derives from — its ``source`` entries that are themselves observations (edges in the observation dependency graph).
+
+``all_observations`` is the full observation collection (its membership test filters sources down to observation references, ignoring result/state sources).
+
+### get_observation_refs { #tvbo.templates.tvboptim.utils.get_observation_refs }
+
+```python
+templates.tvboptim.utils.get_observation_refs(observations_dict)
+```
+
+Categorize observations into network vs simulation-derived.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                             | Description                                                  |
+|--------|----------------------------------|--------------------------------------------------------------|
+|        | tuple\[set\[str\], list\[str\]\] | (network_observation_names, observation_names_with_all_args) |
+
+### get_output_channels { #tvbo.templates.tvboptim.utils.get_output_channels }
+
+```python
+templates.tvboptim.utils.get_output_channels(model, experiment=None)
+```
+
+Resolve the ``sv.record``-honoring output channels for the presented result.
+
+tvboptim's solver records ALL states (``VARIABLES_OF_INTEREST`` = states + recorded aux) because the full trajectory is needed for observations and the algorithm warmup. The user-facing ``SimulationResult`` should instead present only ``record=True`` state channels (+ recorded auxiliaries), matching the tvb backend's ``variables_of_interest``.
+
+Returns ``(output_indices, output_names, is_subset)`` — the indices/names of the kept channels within the full recorded ordering (:func:`get_recorded_variable_names`), and whether that is a strict subset. For the common all-``record`` model this is the identity (``is_subset`` False), so the template emits the result unsliced.
+Modes are honored: each ``v__mode{m}`` slot inherits ``v``'s record flag.
+
+### get_param_info { #tvbo.templates.tvboptim.utils.get_param_info }
+
+```python
+templates.tvboptim.utils.get_param_info(parameters)
+```
+
+Extract parameter names, defaults, and shapes from a parameters collection.
+
+Works for both model.parameters and coupling.parameters.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                    | Default    |
+|------------|--------|--------------------------------|------------|
+| parameters | dict   | dict-like of Parameter objects | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                       | Description                                                                                                                                                                                                                                |
+|--------|------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| tuple  | tuple\[list\[str\], dict\[str, float\], dict\[str, str\]\] | (param_names, param_defaults, param_shapes) - param_names: list of parameter names - param_defaults: dict of name -> scalar value (for DEFAULT_PARAMS) - param_shapes: dict of name -> shape string (only for params with shape attribute) |
+
+### get_recorded_variable_names { #tvbo.templates.tvboptim.utils.get_recorded_variable_names }
+
+```python
+templates.tvboptim.utils.get_recorded_variable_names(model, experiment=None)
+```
+
+Compute the variable layout recorded by tvboptim's solver.
+
+The generated dynamics class declares ``VARIABLES_OF_INTEREST = state_names + recorded_aux`` where ``recorded_aux`` is the union of:
+  * derived variables with ``record: true``,
+  * model.output entries that are derived (auxiliary) variables, and
+  * derived variables referenced as the ``source`` of any experiment observation
+    (so observations of auxiliaries work without requiring users to also list them
+    in ``model.output``).
+
+Returns ``(state_names, recorded_aux, all_var_names)`` where ``all_var_names`` is the runtime ordering on axis 1 of ``solution.ys`` / ``result.data`` and matches ``solution.variable_names`` produced by tvboptim >= 0.2.7.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                           | Default    |
+|------------|--------|-----------------------------------------------------------------------|------------|
+| model      | Any    | Dynamics object (with state_variables and derived_variables).         | _required_ |
+| experiment | Any    | Optional SimulationExperiment; observations are scanned when present. | `None`     |
+
+### get_state_bounds { #tvbo.templates.tvboptim.utils.get_state_bounds }
+
+```python
+templates.tvboptim.utils.get_state_bounds(model)
+```
+
+Extract state variable bounds as SymPy expressions.
+
+Uses ``sympy.oo`` for unbounded dimensions so that code printers automatically render the correct backend literal (``jnp.inf``, ``np.inf``, ``Inf``, etc.).
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                 | Default    |
+|--------|--------|---------------------------------------------|------------|
+| model  | Any    | Dynamics instance with ``.state_variables`` | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                      | Description                                                                                                                                                                                           |
+|--------|---------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| tuple  | tuple\[list, list, bool\] | (bounds_lo, bounds_hi, has_finite_bounds) - bounds_lo: list of sympy expressions (Float or -oo) - bounds_hi: list of sympy expressions (Float or oo) - has_finite_bounds: True if any bound is finite |
+
+### graph_selection { #tvbo.templates.tvboptim.utils.graph_selection }
+
+```python
+templates.tvboptim.utils.graph_selection(network, has_delay)
+```
+
+Pick the tvboptim graph type for a (possibly delayed) network.
+
+Returns ``(use_length_graph, use_delay_graph)``:
+
+- **tract lengths present** → ``DenseLengthGraph`` (delays = lengths /
+  conduction_speed, so the conduction speed is a live, sweepable and differentiable graph leaf) → ``(True, False)``.
+- **only explicit per-edge ``delay`` attributes** (no lengths) →
+  ``DenseDelayGraph`` over those delays → ``(False, True)``.
+- **no delays** (``has_delay`` False) → ``DenseGraph`` → ``(False, False)``.
+
+Lengths win over edge delays: a network that measures tract lengths derives its delays from the swept/optimised conduction speed.
+
+### has_host_pipeline { #tvbo.templates.tvboptim.utils.has_host_pipeline }
+
+```python
+templates.tvboptim.utils.has_host_pipeline(observations)
+```
+
+True when any of *observations* reaches a host callable in its pipeline.
+
+The collection is read through :func:`tvbo.utils.keyed_items`, which knows every shape a keyed slot takes: a ``JsonObj`` (what an assigned slot holds) has no ``.values()`` and iterates its *keys*, so reading it directly answered "no host stage" for a pipeline full of them and the observable was jitted.
+
+### initial_conditions_axis_sv { #tvbo.templates.tvboptim.utils.initial_conditions_axis_sv }
+
+```python
+templates.tvboptim.utils.initial_conditions_axis_sv(ref)
+```
+
+State variable swept by an ``initial_conditions.``-scoped axis, else None.
+
+``initial_conditions.<state_var>`` sweeps the *initial value* of one state variable across grid cells — a deterministic initial-condition ensemble (one trajectory per swept value), as opposed to the stochastic ``n_trials`` + ``StateVariable.distribution`` ensemble. Returns the bare ``<state_var>`` name; None for a reference outside the ``initial_conditions.`` scope, which callers route through the dynamics/coupling path. The name is validated against the model's state variables at codegen, where they are known.
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                                                                    |
+|--------|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | the reference is ``initial_conditions.``-scoped but does not name a single state variable (empty, or a further-dotted path) — failing at codegen rather than sweeping nothing. |
+
+### is_data_driven_event { #tvbo.templates.tvboptim.utils.is_data_driven_event }
+
+```python
+templates.tvboptim.utils.is_data_driven_event(event)
+```
+
+True when an event's signal is read from a file and interpolated, rather than evaluated from an equation.
+
+Such an event is emitted as a ``DataInput`` subclass, so the module that holds it needs that import; a condition-triggered event keeps its own bespoke class whatever it carries.
+
+### is_external_observation { #tvbo.templates.tvboptim.utils.is_external_observation }
+
+```python
+templates.tvboptim.utils.is_external_observation(obs)
+```
+
+Check if observation is external (has data_source or network.observations source).
+
+### is_network_observation { #tvbo.templates.tvboptim.utils.is_network_observation }
+
+```python
+templates.tvboptim.utils.is_network_observation(obs)
+```
+
+Check if observation is bound from data rather than the simulation state.
+
+True when the source starts with ``network.observations`` or ``dataset.subject`` (data targets), or when a PIPELINE-LESS observation sources a connectome matrix (``network.weight`` / ``network.edges.<label>``, resolved through ``edge_label`` — matching the observation template's network-edge branch). These are materialized into a module-level constant and bound at ``run_experiment`` time, not recorded from the solver. A matrix source WITH a pipeline stays a simulation-side monitor class whose callable receives the matrix as an argument, so it is NOT classified here. The slot is multivalued; accept both scalar and list forms.
+
+### iter_parameter_values { #tvbo.templates.tvboptim.utils.iter_parameter_values }
+
+```python
+templates.tvboptim.utils.iter_parameter_values(parameters)
+```
+
+Yield ``(name, value)`` pairs from schema Parameter collections.
+
+### jax_platform { #tvbo.templates.tvboptim.utils.jax_platform }
+
+```python
+templates.tvboptim.utils.jax_platform(accelerator)
+```
+
+Map an ``ExecutionConfig.accelerator`` to the JAX platform name it pins.
+
+``'auto'`` (the schema default) means "let JAX detect the machine", which is expressed by leaving ``JAX_PLATFORMS`` unset — hence ``None`` rather than a string. ``'gpu'`` is JAX's ``'cuda'``; any other tier passes through lowercased, so a platform JAX gains needs no change here.
+
+### kernel_support_steps { #tvbo.templates.tvboptim.utils.kernel_support_steps }
+
+```python
+templates.tvboptim.utils.kernel_support_steps(
+    step_name,
+    step_arguments,
+    fns,
+    dt,
+)
+```
+
+Integration steps the kernel's own support spans — what a 'valid' convolution eats off the front.
+
+Read from the generator's ``time_range`` in time, not in samples, so it is right whatever grid the kernel is sampled on: a kernel decimated to n points over the same span consumes the same span of signal. A bound naming an argument is resolved against the call's own arguments first, then the function's defaults. Returns 0 for a step that is not a kernel generator.
+
+### materialise_lazy_params { #tvbo.templates.tvboptim.utils.materialise_lazy_params }
+
+```python
+templates.tvboptim.utils.materialise_lazy_params(parameters, experiment=None)
+```
+
+Resolve every sourced/produced parameter to a content-addressed artifact.
+
+A `Parameter` carrying `producer:`, `source:` or `used:` has no literal `value`, so the emission sites would otherwise fall back to a scalar default and silently drop the array — a per-node operator would become ``jnp.full(shape, 1.0)`` and the model would run with the geometry erased. Materialising here writes the array once at codegen time and lets the generated module read it back, so an operator of any size costs nothing in the generated source.
+
+Returns ``{param_name: (path, key)}`` for the lazy parameters only; literals and free parameters are absent. Empty when *experiment* is None, because materialising runs the producer and this must stay side-effect-free when called as a predicate.
+
+### network_axis_leaf { #tvbo.templates.tvboptim.utils.network_axis_leaf }
+
+```python
+templates.tvboptim.utils.network_axis_leaf(ref)
+```
+
+Graph leaf swept by a ``network.``-scoped exploration axis, else None.
+
+Accepts the canonical ``network.edges.<label>`` form and the ``network.weight(s)``/``network.length(s)`` shortcuts (both via ``edge_label``, so axes and observations resolve a matrix identically), plus the network's own scalars (``network.conduction_speed``). Returns None for a reference outside the ``network.`` scope, which callers route through the dynamics/coupling path.
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                                                                   |
+|--------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | the reference is ``network.``-scoped but names an attribute with no live graph leaf to sweep — failing at codegen rather than silently writing the axis into the wrong scope. |
+
+### network_leaf_is_matrix { #tvbo.templates.tvboptim.utils.network_leaf_is_matrix }
+
+```python
+templates.tvboptim.utils.network_leaf_is_matrix(leaf)
+```
+
+Whether a ``network.``-scoped graph leaf holds a per-edge matrix rather than a scalar.
+
+A scalar leaf (``speed``) takes the swept value as it stands. A matrix leaf (``weights``, ``lengths``, ``delays``) must keep the graph's topology: the swept value is broadcast onto every edge that exists and the rest of the matrix stays zero, so the sweep varies the attribute without moving an edge.
+
+### node_const { #tvbo.templates.tvboptim.utils.node_const }
+
+```python
+templates.tvboptim.utils.node_const(label)
+```
+
+Module-constant identifier holding the embedded per-node vector for ``label``.
+
+### node_label { #tvbo.templates.tvboptim.utils.node_label }
+
+```python
+templates.tvboptim.utils.node_label(ref)
+```
+
+Canonical per-node vector name for a ``network.<measure>`` reference, else None.
+
+Recognises ``network.positions`` (region centroids, ``(n_nodes, 3)``) and ``network.instrength`` (weighted in-degree, ``(n_nodes,)``). Accepts BOTH the fully-qualified ``network.positions`` form (observation source / collect scan) and the bare ``positions`` key that ``parse_reference`` hands ``ref_to_code`` (it splits ``network.X`` into ``('network', 'X')``) — mirroring ``edge_label``, so the emitted constant name and the resolved reference cannot disagree.
+Also accepts the explicit ``nodes.<attr>`` form for any attribute name — the node-side twin of ``edges.<label>`` — which resolves to a named per-node array carried by the network (node ``parameters``, or a ``nodes/<attr>`` dataset in the companion store).
+
+Returns None for everything else (edge matrices, state variables, ``network.observations.*``), which callers route through their normal path.
+
+### noise_axis_param { #tvbo.templates.tvboptim.utils.noise_axis_param }
+
+```python
+templates.tvboptim.utils.noise_axis_param(ref)
+```
+
+Noise parameter swept by a ``noise.``-scoped exploration axis, else None.
+
+``noise.sigma`` sweeps the noise AMPLITUDE across grid cells. The amplitude is declared per state variable (``state_variables.<sv>.noise.parameters.sigma``) or once for the integration, and a backend holds it as an ordinary parameter leaf beside the dynamics parameters — so it is swept like any other parameter once the axis can name it. The scope is the experiment's noise as a whole, matching how an amplitude is applied: one diffusion coefficient, scaled per targeted state.
+
+Returns the bare parameter name; None for a reference outside the ``noise.`` scope, which callers route through the dynamics/coupling path.
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                                                                                 |
+|--------|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | the reference is ``noise.``-scoped but names no sweepable noise parameter — failing at codegen rather than silently writing the axis into the dynamics scope, where it would sweep nothing. |
+
+### normalize_coupling_aliases { #tvbo.templates.tvboptim.utils.normalize_coupling_aliases }
+
+```python
+templates.tvboptim.utils.normalize_coupling_aliases(all_couplings, model=None)
+```
+
+Collapse duplicate keys that point to the same coupling object.
+
+tvbo can expose one coupling under multiple names such as the coupling function name, a coupling-input key, or an explicit CouplingInput.source.
+tvboptim only needs one key per distinct object, so prefer stable, user-meaningful aliases before attempting input-to-coupling mapping.
+
+### normalize_n_parallel { #tvbo.templates.tvboptim.utils.normalize_n_parallel }
+
+```python
+templates.tvboptim.utils.normalize_n_parallel(expl)
+```
+
+Normalise an ``Exploration.n_parallel`` to an int chunk size or ``"auto"``.
+
+``"auto"`` (the schema default) defers the vmap chunk width to runtime, where the grid size is known — the generated script resolves it via :func:`tvbo.templates.tvboptim.callbacks.resolve_n_vmap`. An explicit integer is passed through unchanged (``1`` = fully sequential).
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                                                                                                  |
+|--------|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | if ``n_parallel`` is a non-numeric string other than ``"auto"`` (the schema allows any string, so a typo like ``"sequential"`` reaches here — fail with a clear message rather than a bare ``int()`` error). |
+
+### obs_has_all_args { #tvbo.templates.tvboptim.utils.obs_has_all_args }
+
+```python
+templates.tvboptim.utils.obs_has_all_args(obs)
+```
+
+Check if observation has all required arguments satisfied.
+
+Returns True if all pipeline step arguments either have values or are implicitly satisfied by source.
+
+### observation_dims { #tvbo.templates.tvboptim.utils.observation_dims }
+
+```python
+templates.tvboptim.utils.observation_dims(experiment)
+```
+
+Every observation's declared axis names, keyed by observation name.
+
+An observation's own ``dims:`` wins wherever it is declared: a ``pipeline`` of user functions has an output shape only its author knows, and nothing here may infer one from a length. Otherwise :func:`reduction_dims` names the axes of ONE reduction, asked of every observation an experiment declares, so the result container labels all of them and not only the ``reduce: streaming`` subset. An observation that neither declares its axes nor reduces into known ones is absent, and the container falls back to its positional template for that one alone.
+
+Derived observations are then given the axes their pipeline leaves on the observations they source (:data:`_PIPELINE_STEP_KINDS`): elementwise through an ``equation`` step, re-declared by a named step that reshapes. Sources that disagree, sources that are themselves unlabelled, and pipelines whose steps are not all recognised leave the derived observation unlabelled rather than guessed. Iterating to a fixed point handles a chain of derived-of-derived in any declaration order.
+
+### parameter_keypath { #tvbo.templates.tvboptim.utils.parameter_keypath }
+
+```python
+templates.tvboptim.utils.parameter_keypath(
+    ref,
+    *,
+    couplings=(),
+    coupling_key=None,
+    external=(),
+)
+```
+
+State keypath a raw dotted parameter reference binds on — ``<sub-object>.<leaf>``.
+
+ONE resolution of WHERE a declared parameter lives, for every consumer holding the reference as a STRING rather than as a classified axis: the NSGA-II search axes, the fitted free parameters, the marked optimizer parameters, the ``initial_state`` working-point ramp, an analysis ``wrt`` and an inference prior. Each grew its own prefix ladder and they disagreed — the ramp knew no scope at all and hard-prefixed ``dynamics.``, two knew ``noise.`` but not ``network.``, and the ``wrt``/prior grammar knew ``external.`` that none of the others did. Every disagreement is silent: the reference resolves to a same-named model parameter, or to nothing, and the run still completes with a plausible answer. Write paths are where this family hides — the state is a permissive container, so assigning to a mis-resolved keypath INVENTS the leaf instead of raising, and the optimiser then fits a slot no dfun reads; a read path at least fails with an AttributeError unless the wrong scope happens to declare the same name. The ``initial_conditions.`` and ``execution.random_seed`` scopes resolve to the dummy ``dynamics`` slots a wrapper reads per cell, which is where codegen binds them. :func:`axis_keypath` is the counterpart for an exploration axis, whose reference the classifier has already split into scope flags; it must answer alike for the same reference, and a test pins that.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type   | Description                                                                                                                        | Default    |
+|--------------|--------|------------------------------------------------------------------------------------------------------------------------------------|------------|
+| ref          | Any    | Dotted reference as declared, e.g. ``noise.sigma``, ``network.conduction_speed``, ``ReducedWongWang.w``, or a bare parameter name. | _required_ |
+| couplings    | Any    | Coupling keys this experiment declares; a matching prefix routes to that coupling instance.                                        | `()`       |
+| coupling_key | Any    | Optional callable mapping a coupling name to its state key (the coupling-input spelling). Identity when omitted.                   | `None`     |
+| external     | Any    | External-input event names (the keys of the network's ``external_input``); a matching prefix routes to that event's parameters.    | `()`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                               |
+|--------|--------|-------------------------------------------------------------------------------------------|
+|        | str    | The keypath, e.g. ``noise.sigma``, ``graph.speed``, ``coupling.<key>.a``, ``dynamics.w``. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                 |
+|--------|------------|-------------------------------------------------------------------------------------------------------------|
+|        | ValueError | the reference is in a reserved scope but names nothing bindable there, raised by that scope's own resolver. |
+
+### parameter_value { #tvbo.templates.tvboptim.utils.parameter_value }
+
+```python
+templates.tvboptim.utils.parameter_value(parameters, name, default=None)
+```
+
+Return a named Parameter value from a schema collection.
+
+### parse_exploration { #tvbo.templates.tvboptim.utils.parse_exploration }
+
+```python
+templates.tvboptim.utils.parse_exploration(
+    expl,
+    all_couplings,
+    get_pipeline_output_key_fn=None,
+)
+```
+
+Parse exploration specification from YAML.
+
+Returns dict with: name, label, mode, n_parallel, axes, observable_*
+
+### parse_free_param { #tvbo.templates.tvboptim.utils.parse_free_param }
+
+```python
+templates.tvboptim.utils.parse_free_param(
+    fp,
+    coupling_keys,
+    model=None,
+    all_couplings=None,
+)
+```
+
+Parse a free_parameter entry.
+
+Handles: str, dotted notation, stringified dict, dict, and Parameter objects.
+
+#### name, heterogeneous, shape, coupling_key, dynamics_key, {.doc-section .doc-section-name-heterogeneous-shape-couplingkey-dynamicskey}
+
+lower_bound, upper_bound
+
+### parse_list_elements { #tvbo.templates.tvboptim.utils.parse_list_elements }
+
+```python
+templates.tvboptim.utils.parse_list_elements(rhs_str)
+```
+
+Split a ``[a, b, c]`` list-literal string into top-level element strings, respecting nested brackets/parens (so ``[f(x, y), g(z)]`` yields two elements).
+
+### parse_loss_arguments { #tvbo.templates.tvboptim.utils.parse_loss_arguments }
+
+```python
+templates.tvboptim.utils.parse_loss_arguments(loss_call)
+```
+
+Parse loss function call arguments.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                              | Description                                                              |
+|--------|-----------------------------------|--------------------------------------------------------------------------|
+|        | list\[dict\]                      | (parsed_args, obs_refs) where:                                           |
+|        | set\[str\]                        | - parsed_args: list of dicts with 'name', 'type', and type-specific keys |
+|        | tuple\[list\[dict\], set\[str\]\] | - obs_refs: set of observation names referenced                          |
+
+### parse_loss_function { #tvbo.templates.tvboptim.utils.parse_loss_function }
+
+```python
+templates.tvboptim.utils.parse_loss_function(opt)
+```
+
+Parse optimization loss function specification.
+
+Returns dict with: opt_name, func_name, args, obs_refs, agg_over, agg_type or None if no loss defined.
+
+### pipeline_argument { #tvbo.templates.tvboptim.utils.pipeline_argument }
+
+```python
+templates.tvboptim.utils.pipeline_argument(pipeline, name)
+```
+
+Return the named pipeline argument object (arguments are keyed by name).
+
+### pipeline_equation_parameters { #tvbo.templates.tvboptim.utils.pipeline_equation_parameters }
+
+```python
+templates.tvboptim.utils.pipeline_equation_parameters(pipeline)
+```
+
+Collect equation parameters from all observation pipeline steps.
+
+### pipeline_stage_is_host { #tvbo.templates.tvboptim.utils.pipeline_stage_is_host }
+
+```python
+templates.tvboptim.utils.pipeline_stage_is_host(stage)
+```
+
+True when an observation pipeline stage calls code that cannot trace under ``jit``.
+
+A stage's ``callable`` is emitted as ``<module>.<name>(...)`` inside the observation monitor, so whether the whole observable can be jitted/vmapped is decided by the code it names. ``Callable.traceable`` states that outright and wins when set; otherwise the import root decides, a JAX-native one (``jax.scipy.signal.fftconvolve``, ``tvboptim.observations.observation.compute_fc``) tracing and a host one (``scipy.signal``, ``numpy``) not. Inference by import root cannot see a study-local module written against the backend's array API — ``code/`` is never a library root — so a study that writes its observations in ``jax.numpy`` must say ``traceable: true`` to be believed. A wrong claim is not caught here: a host NumPy/SciPy callable declared traceable fails inside the trace instead. A stage with no ``callable`` is a rendered equation and always traces.
+
+### reduction_dims { #tvbo.templates.tvboptim.utils.reduction_dims }
+
+```python
+templates.tvboptim.utils.reduction_dims(red)
+```
+
+The axis names a reduction's output carries.
+
+A reduction's output shape is fixed by its kind, so its axes are named here — where the reducer is chosen — and travel with it to the result container. Naming them at the point of production is what keeps a reduced observation keyed like every other tvbo array without anyone re-deriving the axes from shape afterwards, which cannot distinguish (say) a frequency-by-node spectrum from a node-by-node matrix.
+
+### render_adiabatic_signal { #tvbo.templates.tvboptim.utils.render_adiabatic_signal }
+
+```python
+templates.tvboptim.utils.render_adiabatic_signal(signal_expr, var_names)
+```
+
+Render an envelope-signal expression over recorded variables as an ``observe`` body.
+
+Each recorded-variable name in ``signal_expr`` (e.g. ``"y1 - y2"``) is replaced by its slice ``_r.ys[:, <index>, :]`` (a ``[n_time, n_nodes]`` view). ``<index>`` is the variable's position in the solver's recorded ordering (:func:`get_recorded_variable_names`).
+The replacement is a single alternation pass (longest names first, so a name is not matched where it is a prefix of another like ``y1`` in ``y12``); a single pass — not iterated ``re.sub`` per name — also guarantees the emitted slice text (which itself contains ``ys``/``r``) is never re-scanned and re-substituted. Lets the adiabatic-scan exploration observe an arbitrary state/derived signal declaratively, without a driver.
+
+### render_analysis_observations { #tvbo.templates.tvboptim.utils.render_analysis_observations }
+
+```python
+templates.tvboptim.utils.render_analysis_observations(
+    analysis_obs,
+    coupling_keys,
+    solver_class,
+    t1_default,
+    dt,
+    solver_kwargs='',
+    model=None,
+    time_si_factor=0.001,
+    events=None,
+    op_constraint=None,
+)
+```
+
+Render the body of the generated ``compute_analysis_observations()`` function.
+
+Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming ``result.data``. Each is emitted from its declarative ``analysis`` metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends;
+the template only interpolates the returned block. Analysis solves drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling- evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
+
+### render_inference { #tvbo.templates.tvboptim.utils.render_inference }
+
+```python
+templates.tvboptim.utils.render_inference(
+    inf,
+    coupling_keys,
+    external_keys,
+    derived_names,
+    network_obs_names,
+)
+```
+
+Render the body of one Bayesian inference (numpyro NUTS/MCMC), 8-space indented.
+
+Mirrors the tvboptim workflow's ``make_model`` + ``MCMC(NUTS(...)).run``: sample each prior, inject it into the forward config at its resolved path, run the SAME differentiable ``model_fn``, score the observed observable under the likelihood.
+Config injection uses ``eqx.tree_at`` (functionally identical to the reference's in-place mutation). The observed data comes from the ``likelihood.source`` observation — a runtime binding or a loaded network measure — so synthetic ground-truth generation stays out of the schema.
+
+The two sides of the residual are emitted from different observables when the likelihood names them apart: ``source`` is evaluated once at the declared configuration and is the data, ``predicted`` is recomputed inside the model at each proposed theta. They coincide by default, which is what a recipe wants when the data enters from outside. A recipe that declares its own recording — a measurement-noise step in the forward pipeline — must separate them, because the noise is a deterministic draw and applying it to both sides subtracts it away.
+
+### render_jax_default { #tvbo.templates.tvboptim.utils.render_jax_default }
+
+```python
+templates.tvboptim.utils.render_jax_default(value)
+```
+
+Render a parameter default as a JAX-ready source literal.
+
+Array-valued constants (mode-coupling matrices, Gaussian-quadrature vectors) must be wrapped in ``jnp.array(...)`` so the generated dfun's arithmetic broadcasts; emitting the bare Python list would make ``scalar * list`` raise ``TypeError`` at runtime. Scalars render as their full-precision ``repr`` literal (``str``/``repr`` of a float are equivalent in Python 3, so no precision is lost).
+
+### render_recorded_observable { #tvbo.templates.tvboptim.utils.render_recorded_observable }
+
+```python
+templates.tvboptim.utils.render_recorded_observable(
+    record_names,
+    derived_names,
+    network_obs_names,
+    analysis_names,
+    only_obs=None,
+    recorded_var_names=None,
+)
+```
+
+Render the body of an exploration ``observable_fn`` that records a `record:` list.
+
+Each recorded name resolves to one of three sources: an ``analysis`` diagnostic (Lyapunov, gradients) from ``compute_analysis_observations``; a raw model channel — a state variable or a recorded auxiliary/derived variable in ``recorded_var_names`` — read from ``result.data`` at its channel index; or a declared observation from ``compute_all_observations``. The observable returns a ``Bunch`` of the named values, which the exploration stacks over the grid into one array per name. Kept in the adapter (not the template) so the same routing serves any backend. Returns the function-body string (8-space indented for ``def observable_fn(s):`` inside the exploration function).
+
+### resolve_config_access { #tvbo.templates.tvboptim.utils.resolve_config_access }
+
+```python
+templates.tvboptim.utils.resolve_config_access(
+    dotted,
+    coupling_keys,
+    external_keys=frozenset(),
+)
+```
+
+State-config path for a `<scope>.<param>` reference, or None for an empty one.
+
+The addressing grammar shared by analysis ``wrt`` and inference ``priors``; :func:`parameter_keypath` owns the grammar itself, so a reference means the same thing whether it is fitted, swept, ramped or given a prior. ``external_keys`` are stimulus/external-input event names (the keys of the network's ``external_input`` dict, e.g. ``stimulus``).
+
+### resolve_coupling_input_map { #tvbo.templates.tvboptim.utils.resolve_coupling_input_map }
+
+```python
+templates.tvboptim.utils.resolve_coupling_input_map(
+    model,
+    all_couplings,
+    coupling_inputs_dict,
+)
+```
+
+Map coupling-input names to coupling functions for the tvboptim network dict.
+
+tvboptim keys coupling by coupling-input name; the schema keys by function name.
+Resolution order: (1) explicit ``CouplingInput.source``, (2) same name, (3) a single unmapped function broadcasts to all remaining inputs, (4) equal counts zip positionally. LOCAL inputs (``CouplingInput.local=True``, e.g.
+``local_coupling``) are then dropped from the network mapping — a local term is TVB's surface/local coupling, zero for the region-based simulations tvboptim supports, so it must not be wired to the long-range connectome (the dfun binds it to 0 via its fallback).
+
+Returns ``(ci_coupling_map, func_to_first_ci)`` where ``ci_coupling_map`` maps ci_name -> (func_name, coupling_obj) and ``func_to_first_ci`` maps func_name to the first ci_name using it (for state-access translation).
+
+### resolve_coupling_spec { #tvbo.templates.tvboptim.utils.resolve_coupling_spec }
+
+```python
+templates.tvboptim.utils.resolve_coupling_spec(
+    coupling,
+    coupling_key,
+    model,
+    coupling_inputs_info,
+    func_to_ci,
+    n_modes=1,
+)
+```
+
+Resolve every derived field a tvboptim coupling class needs from a Coupling.
+
+Keeps the cfun mako template emission-only (resolution lives here, per the resolve-in-Python-not-mako convention). Covers: output dimension, incoming/local states (explicit, inferred from the pre-expression, or the model's coupling_variable states), the mode fold (a multi-mode cvar → its per-node mode slots, one output per mode), pre-expression term parsing (list decomposition + n_pre), vectorized-vs-per-edge selection, class/base names, the differentiable- delay kwarg, state-subscript aliases (``{state}_j``/``_i``) and post-recombination symbols, plus the symbol list for the JAX expression printer. Expression rendering (``jaxcode``) stays in the template.
+
+### resolve_model_output_indices { #tvbo.templates.tvboptim.utils.resolve_model_output_indices }
+
+```python
+templates.tvboptim.utils.resolve_model_output_indices(model, experiment=None)
+```
+
+Resolve ``model.output`` entries to channel indices in the recorded ordering.
+
+``model.output`` may name state variables, auxiliary (derived) variables, or a mix of the two. The recorded ordering is the state channels followed by the auxiliaries that were actually requested (:func:`get_recorded_variable_names`), so an output's position cannot be inferred from its kind — a state output sits
+*before* the auxiliaries, not after them. Multi-mode state variables expand to
+all of their ``v__mode{m}`` slots.
+
+Returns ``(indices, names)`` in the declared output order, so the emitted channel order and the reported ``output_names`` always agree.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                      | Default    |
+|------------|--------|------------------------------------------------------------------|------------|
+| model      | Any    | Dynamics object (with state_variables and derived_variables).    | _required_ |
+| experiment | Any    | Optional SimulationExperiment, forwarded to the layout resolver. | `None`     |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                                                                                                                                                                                     |
+|--------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | if an output names neither a recorded state nor a recorded auxiliary. Model construction already rejects unknown output names and every listed auxiliary is recorded by construction, so this guards the invariant against future changes to the recorded layout rather than a reachable input. |
+
+### resolve_optimizer_mode { #tvbo.templates.tvboptim.utils.resolve_optimizer_mode }
+
+```python
+templates.tvboptim.utils.resolve_optimizer_mode(integration)
+```
+
+Map the backend-neutral ``integration.differentiation.mode`` onto the native optimizer differentiation mode.
+
+``reverse`` -> ``"rev"`` (reverse-mode BPTT; pairs with a ``grad_horizon`` window for truncated BPTT); ``forward`` -> ``"fwd"`` (forward-mode AD, the exact untruncated gradient for a scalar parameter). Defaults to ``"rev"`` when no differentiation strategy is declared.
+
+### resolve_reduction { #tvbo.templates.tvboptim.utils.resolve_reduction }
+
+```python
+templates.tvboptim.utils.resolve_reduction(obs, experiment=None)
+```
+
+Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
+
+An observation may declare a co-integrated auxiliary ``Dynamics`` (the observer) that computes it online as a time recurrence, instead of a post-scan ``pipeline``.
+An observation may instead opt a post-scan ``pipeline`` into streaming via ``reduce: streaming`` (currently the HRF-Volterra BOLD pipeline), in which case the reducer is lifted by :func:`_resolve_bold_stream` (tagged ``kind: 'convolution'``).
+This resolves that Dynamics into clean context for the reduction partial: the source state variable read, and for each observer state its ``init`` value, its discrete update RHS (``equation.rhs`` with ``equation_type: recurrence``), and whether it is an *accumulator* — its update references its own symbol, so its commit is gated on the first step while its memory input is still unset (a memory state, which does not reference itself, updates every step). The readout is the observer ``output`` (a derived variable's RHS, or a bare final state), and any user ``functions`` (e.g. ``wrap``) are surfaced for the printer. Returns ``None`` when the observation declares no ``dynamics`` (the post-scan path runs).
+
+Every RHS is parsed to a **sympy** expression against the observer's symbolic vocabulary (its states, its ``parameters``, the source, and the framework scalars ``dt``/``count``; user functions become undefined ``Function``s). An observer parameter is a named constant exactly as a model Dynamics' parameters are, scalar or array-valued (a mesh operator, a template matrix), and binds by name in the rendered update. That makes the analysis symbolic, not string-based: accumulator classification is ``state_symbol in expr.free_symbols``, and an unknown symbol (a typo) is caught here rather than surfacing as a codegen error. The context carries sympy ``Expr`` objects; the partial renders them per backend via ``render_expression`` (which accepts sympy directly). Returns ``None`` when the observation declares no ``dynamics`` (the post-scan path runs).
+
+Backend array primitives (``take``, ``sum_axis``, ``clip``, ``matmul``, …) join that vocabulary as undefined ``Function``s the printer lowers later, exactly as ``parse_eq`` registers them — without it a name colliding with a SymPy builtin (``take`` is ``sympy.utilities.iterables.take``) is evaluated at parse time and blows up.
+
+A derived variable's ``surrogate`` reuses the already-computed statistic DV as its observed value, so the statistic has to be declared BEFORE it; the reverse order would reference a name assigned further down the emitted function, a runtime ``NameError`` with nothing failing at codegen. The family-wise (Westfall–Young) extremum follows the test sidedness — max-T for a ``>=`` test, min-T for ``<=`` — and is derived here rather than author-set, so an incoherent extremum/direction pairing cannot be expressed. Each surrogate's p-value DV is interleaved back into the chain at its declaration position so a DV consuming it is emitted after it; a surrogate entry carries no ``expr``, because the renderer emits the vmap-fold over the permutation table instead.
+
+A ``partition`` lifts the observer into a GROUPED reduction (``kind: 'wave'``): the per-step chain is written once for a single group, vmapped over the partition axis, and folded to per-group scalar metrics.
+
+### resolve_solver_kwargs { #tvbo.templates.tvboptim.utils.resolve_solver_kwargs }
+
+```python
+templates.tvboptim.utils.resolve_solver_kwargs(
+    integration,
+    dt,
+    is_diffrax=False,
+)
+```
+
+Map the backend-neutral ``integration.differentiation`` strategy onto native-solver kwargs, returned as a ready-to-emit string (e.g. ``"grad_horizon=100, block_size=50"``).
+
+``truncation_window`` / ``checkpoint_interval`` are in ms of simulated time;
+the native JAX solver counts integration steps, so they are converted with ``dt``. Diffrax has no such knobs, so ``is_diffrax=True`` yields ``""``.
+Shared by the experiment and solver templates so the mapping lives in one place rather than being duplicated in both mako blocks.
+
+### resolve_step_expression { #tvbo.templates.tvboptim.utils.resolve_step_expression }
+
+```python
+templates.tvboptim.utils.resolve_step_expression(
+    rhs,
+    input_var,
+    literals=None,
+    derived=None,
+    scope=None,
+    where='a pipeline step',
+)
+```
+
+A pipeline step's declared equation, bound to the locals the monitor emits around it.
+
+A monitor states what it computes as an equation over its input, and this is what makes that statement generatable instead of decorative. The source binds to whichever local holds the previous step's output; a constant declared with a ``value`` binds to it; and a constant declared as an EXPRESSION -- ``window_size = period / dt`` -- is evaluated here against the experiment's own scalars. That last case is the one that matters: without it the relationship can only be written as a number, correct for one integration grid and silently wrong on every other, or as a ``description`` no code reads, which is how these monitors came to need a Python class to stand in for their own declaration.
+
+Returns a backend-independent sympy expression. How ``window_mean`` is spelled is the printer's decision, not this one, which is what lets the same declaration emit for tvboptim, TVB or anything else.
+
+### resolve_tail_samples { #tvbo.templates.tvboptim.utils.resolve_tail_samples }
+
+```python
+templates.tvboptim.utils.resolve_tail_samples(obs, step_size)
+```
+
+Trailing-window length of ``obs`` in samples, from ``tail_samples`` or ``tail_duration``.
+
+``tail_duration`` states the window as a length of simulated time and is divided here by the observation's own sample period — its ``period``/``downsample_period``, else the integration ``step_size`` — so the window covers the same duration at any step. ``tail_samples`` states the count directly and is returned unchanged.
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                     |
+|--------|------------|---------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | if both slots are set (the two would disagree the moment the step changes), or if ``tail_duration`` is shorter than one sample. |
+
+### state_only_derived_var_names { #tvbo.templates.tvboptim.utils.state_only_derived_var_names }
+
+```python
+templates.tvboptim.utils.state_only_derived_var_names(model)
+```
+
+Derived-variable names that are provably functions of the state alone.
+
+Returned in dependency order, so each may only reference earlier ones — which is what the post-solve realignment needs when it binds them as locals, so a recorded auxiliary can reach the *intermediate* derived variables it depends on (e.g. a firing rate that is a function of a synaptic-current derived variable) without a ``NameError``.
+
+### state_only_recorded_aux { #tvbo.templates.tvboptim.utils.state_only_recorded_aux }
+
+```python
+templates.tvboptim.utils.state_only_recorded_aux(model, experiment=None)
+```
+
+Recorded derived variables that are provably functions of the state alone.
+
+Returns ``[(name, aux_offset), ...]`` for each recorded derived variable that is state-recomputable (see :func:`_state_recomputable_derived`); ``aux_offset`` is the variable's index within the recorded-auxiliary block (trajectory channel ``len(state_names) + aux_offset``). These can be recomputed from the recorded post-step state to undo the solver's one-step auxiliary lag; coupling-dependent ones cannot (they need the in-scan coupling) and are omitted.
+
+### streaming_block_size { #tvbo.templates.tvboptim.utils.streaming_block_size }
+
+```python
+templates.tvboptim.utils.streaming_block_size(
+    reductions,
+    declared=None,
+    default=1000,
+)
+```
+
+The solver block a set of streamed reductions folds on, and the one place that decides it.
+
+A reducer that writes into a sample-indexed buffer emits once per :func:`emission_period_steps`, so a block that is not a whole number of that period puts a slot boundary inside a block. The reducer's own guard then reads every block as the short *final* tail -- the branch that exists so a run may end mid-period -- which advances the observer, emits nothing, and hands back the buffer it preallocated: right shape, right dimensions, right sweep coordinates, no signal and no error. The unit is therefore the least common multiple over every slotted reducer, and a stream that folds time away carries no period and takes ``default``.
+
+``declared`` is a recipe's own ``block_size``. It is honoured only as a whole multiple of that unit, which is the invariant the schema already states for it, and a violation raises here at codegen rather than emitting a run that quietly produces zeros.
+
+### streaming_post_eval_plan { #tvbo.templates.tvboptim.utils.streaming_post_eval_plan }
+
+```python
+templates.tvboptim.utils.streaming_post_eval_plan(experiment)
+```
+
+Plan a streaming post-tuning evaluation for a fitting experiment.
+
+A ``reduce: streaming`` observation (currently HRF-Volterra BOLD) is folded into the integrator carry via ``prepare(reduce=...)`` in the algorithm post-tuning evaluation, so the full-length fit trajectory is never materialised (the memory bomb an FC group fit hits at the paper's real per-stage duration). This resolves, once for the whole experiment:
+
+- ``names``: the streaming observations to fold (empty => no streaming post-eval; the materialise path is unchanged, so every non-opted-in experiment is untouched);
+- ``deliverables``: the derived observations computable from the streamed values plus the static network observations ALONE — i.e. WITHOUT the raw trajectory (the FC family: ``fc`` from streamed ``bold``, then ``fc_corr``/``fc_rmse`` from ``fc`` and the empirical target). Observations that need the raw trajectory (e.g. a post-scan ``mean`` over a state variable) are intentionally absent — at fit scale they cannot be materialised anyway;
+- ``period_in_steps``: the block-size unit — a multiple of every reducer's ``ds_steps * tr_stride`` — so BOLD TR boundaries align to integrator block boundaries (a partial-TR block would misalign the reducer's slot writing).
+
+Observation AXIS NAMES are not part of this plan: they describe every observation an experiment declares, streamed or materialised, so :func:`observation_dims` answers that independently and the caller asks it directly.
+
+Both the experiment template (which builds the streaming ``post_model_fn``) and the algorithm template (which consumes it) call this, so the two sides cannot drift.
+
+### time_argument_ms { #tvbo.templates.tvboptim.utils.time_argument_ms }
+
+```python
+templates.tvboptim.utils.time_argument_ms(argument, default)
+```
+
+Resolve a time-valued schema argument to milliseconds.
+
+### to_numeric { #tvbo.templates.tvboptim.utils.to_numeric }
+
+```python
+templates.tvboptim.utils.to_numeric(val)
+```
+
+Convert string to numeric if possible.
+
+### toposort_observations { #tvbo.templates.tvboptim.utils.toposort_observations }
+
+```python
+templates.tvboptim.utils.toposort_observations(
+    obs_names,
+    derived_obs_dict,
+    all_observations,
+)
+```
+
+Dependency-order observations so any that lists another as a ``source`` is emitted AFTER that source — the same dependency-graph principle used for derived variables/parameters (see ``tvbo.classes.equation``). Independent observations keep their input order (stable / deterministic). Lives in the tvboptim adapter so the mako templates only call it rather than redefining the sort inline.
+
+### weight_transform_codegen { #tvbo.templates.tvboptim.utils.weight_transform_codegen }
+
+```python
+templates.tvboptim.utils.weight_transform_codegen(network)
+```
+
+Render `transforms:` targeting weight to JAX for inlining in the generated script.
+
+A transform is a `Function`, so both of its forms are lowered: an `equation:` renders through the very expression the runtime evaluates (`Network.transform_expression`, which folds any mask into the reductions it scopes), and a `callable:` renders as an import of that callable plus a call. The kit therefore applies the declared transform exactly as the runtime does, but visibly, on the RAW weights the generated `create_network` is handed — raw SC stays in the network file, the transform stays declared in the spec, and the operation is in the script rather than hidden in the tvbo runtime. This helper runs only at render time, inside the tvbo environment.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                                       | Default    |
+|---------|--------|---------------------------------------------------|------------|
+| network |        | The `Network` whose transforms are being lowered. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                          | Description                                                                      |
+|--------|---------------------------------------------------------------|----------------------------------------------------------------------------------|
+|        | list\[tuple\[str, list\[str\]\]\]                             | A `(transforms, const_env, needs_lengths)` triple. `transforms` is a list of     |
+|        | list\[str\]                                                   | `(jax_expr, chained_env)`; `chained_env` rebinds the transform's own target from |
+|        | bool                                                          | the current `weights`, so a chain composes. `const_env` binds everything bound   |
+|        | tuple\[list\[tuple\[str, list\[str\]\]\], list\[str\], bool\] | once — other edge matrices, per-node parameter vectors, imported callables.      |
+|        | tuple\[list\[tuple\[str, list\[str\]\]\], list\[str\], bool\] | `needs_lengths` reports whether `create_network` has to be handed real lengths.  |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                                                                                                                                                                                                                                                       |
+|--------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | If a transform equation names a symbol that is neither an edge attribute this kit holds, a declared per-node parameter, nor a substituted argument. Failing here beats emitting an undefined name into a kit that only dies once it reaches a cluster. Also if a callable transform takes the `network` the runtime injects, which a kit has no object to supply. |

@@ -1,0 +1,328 @@
+# Class: DBSProtocol 
+
+
+_A protocol describing DBS therapy, potentially bilateral or multi-lead._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:class/DBSProtocol](https://w3id.org/tvbo/dbs/class/DBSProtocol)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DBSProtocol
+    click DBSProtocol href "./DBSProtocol.html"
+      DBSProtocol : clinical_improvement
+        
+          
+    
+        
+        
+        DBSProtocol --> "*" ClinicalImprovement : clinical_improvement
+        click ClinicalImprovement href "./ClinicalImprovement.html"
+    
+
+        
+      DBSProtocol : electrodes
+        
+          
+    
+        
+        
+        DBSProtocol --> "*" Electrode : electrodes
+        click Electrode href "./Electrode.html"
+    
+
+        
+      DBSProtocol : name
+        
+          
+    
+        
+        
+        DBSProtocol --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSProtocol : notes
+        
+          
+    
+        
+        
+        DBSProtocol --> "0..1" String : notes
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DBSProtocol : settings
+        
+          
+    
+        
+        
+        DBSProtocol --> "*" StimulationSetting : settings
+        click StimulationSetting href "./StimulationSetting.html"
+    
+
+        
+      DBSProtocol : timing_info
+        
+          
+    
+        
+        
+        DBSProtocol --> "0..1" String : timing_info
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [electrodes](../slots/electrodes.qmd) | * <br/> [Electrode](../classes/Electrode.qmd) |  | direct |
+| [settings](../slots/settings.qmd) | * <br/> [StimulationSetting](../classes/StimulationSetting.qmd) |  | direct |
+| [timing_info](../slots/timing_info.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [notes](../slots/notes.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [clinical_improvement](../slots/clinical_improvement.qmd) | * <br/> [ClinicalImprovement](../classes/ClinicalImprovement.qmd) | Observed improvement relative to baseline based on a defined score | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [DBSSubject](../classes/DBSSubject.qmd) | [protocols](../slots/protocols.qmd) | range | [DBSProtocol](../classes/DBSProtocol.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:DBSProtocol |
+| native | tvbo_dbs:DBSProtocol |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DBSProtocol
+description: A protocol describing DBS therapy, potentially bilateral or multi-lead.
+from_schema: https://w3id.org/tvbo/dbs
+slots:
+- name
+attributes:
+  electrodes:
+    name: electrodes
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSProtocol
+    range: Electrode
+    multivalued: true
+  settings:
+    name: settings
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSProtocol
+    range: StimulationSetting
+    multivalued: true
+  timing_info:
+    name: timing_info
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSProtocol
+    range: string
+  notes:
+    name: notes
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSProtocol
+    range: string
+  clinical_improvement:
+    name: clinical_improvement
+    description: Observed improvement relative to baseline based on a defined score.
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - DBSProtocol
+    range: ClinicalImprovement
+    multivalued: true
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DBSProtocol
+description: A protocol describing DBS therapy, potentially bilateral or multi-lead.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  electrodes:
+    name: electrodes
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSProtocol
+    domain_of:
+    - DBSProtocol
+    range: Electrode
+    multivalued: true
+  settings:
+    name: settings
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSProtocol
+    domain_of:
+    - DBSProtocol
+    range: StimulationSetting
+    multivalued: true
+  timing_info:
+    name: timing_info
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSProtocol
+    domain_of:
+    - DBSProtocol
+    range: string
+  notes:
+    name: notes
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSProtocol
+    domain_of:
+    - DBSProtocol
+    range: string
+  clinical_improvement:
+    name: clinical_improvement
+    description: Observed improvement relative to baseline based on a defined score.
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: DBSProtocol
+    domain_of:
+    - DBSProtocol
+    range: ClinicalImprovement
+    multivalued: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: DBSProtocol
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+
+```
+</details></div>

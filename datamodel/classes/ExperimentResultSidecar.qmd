@@ -1,0 +1,301 @@
+# Class: ExperimentResultSidecar 
+
+
+_Descriptor for a cached ``ExperimentResult``: the ``.h5`` companion holding the fitted parameter arrays, one ``CachedArray`` entry per array, and the provenance a downstream cache needs to decide whether the result is still valid. Written by ``tvbo.data.experiment_result_io.save_sidecar``, so it is generated rather than authored — but it is self-describing (it carries a ``tvbo_class`` envelope naming this class), which is what lets ``tvbo validate schema`` check a generated sidecar instead of falling back to some unrelated class and failing on its required slots._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:ExperimentResultSidecar](https://w3id.org/tvbo/ExperimentResultSidecar)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ExperimentResultSidecar
+    click ExperimentResultSidecar href "./ExperimentResultSidecar.html"
+      ExperimentResultSidecar : data_file
+        
+          
+    
+        
+        
+        ExperimentResultSidecar --> "1" String : data_file
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ExperimentResultSidecar : metadata
+        
+          
+    
+        
+        
+        ExperimentResultSidecar --> "0..1" ScalarValue : metadata
+        click ScalarValue href "./ScalarValue.html"
+    
+
+        
+      ExperimentResultSidecar : parameters
+        
+          
+    
+        
+        
+        ExperimentResultSidecar --> "*" CachedArray : parameters
+        click CachedArray href "./CachedArray.html"
+    
+
+        
+      ExperimentResultSidecar : provenance
+        
+          
+    
+        
+        
+        ExperimentResultSidecar --> "0..1" Provenance : provenance
+        click Provenance href "./Provenance.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:ExperimentResultSidecar](https://w3id.org/tvbo/ExperimentResultSidecar) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [data_file](../slots/data_file.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to the h5 companion (relative to the yaml) | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [CachedArray](../classes/CachedArray.qmd) | One entry per array in the `` | direct |
+| [provenance](../slots/provenance.qmd) | 0..1 <br/> [Provenance](../classes/Provenance.qmd) | Producing experiment's YAML hash, its input fingerprints and the writing agen... | direct |
+| [metadata](../slots/metadata.qmd) | 0..1 <br/> [ScalarValue](../classes/ScalarValue.qmd) | Free-form extra metadata passed through by the writer's caller, so any value ... | direct |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ExperimentResultSidecar |
+| native | tvbo:ExperimentResultSidecar |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ExperimentResultSidecar
+description: 'Descriptor for a cached ``ExperimentResult``: the ``.h5`` companion
+  holding the fitted parameter arrays, one ``CachedArray`` entry per array, and the
+  provenance a downstream cache needs to decide whether the result is still valid.
+  Written by ``tvbo.data.experiment_result_io.save_sidecar``, so it is generated rather
+  than authored — but it is self-describing (it carries a ``tvbo_class`` envelope
+  naming this class), which is what lets ``tvbo validate schema`` check a generated
+  sidecar instead of falling back to some unrelated class and failing on its required
+  slots.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  data_file:
+    name: data_file
+    description: Path to the h5 companion (relative to the yaml).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    range: string
+    required: true
+  parameters:
+    name: parameters
+    description: One entry per array in the ``.h5`` companion's ``parameters`` group.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: CachedArray
+    multivalued: true
+    inlined_as_list: true
+  provenance:
+    name: provenance
+    description: Producing experiment's YAML hash, its input fingerprints and the
+      writing agent.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Figure
+    - ResultEntity
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    - SimulationExperiment
+    range: Provenance
+    inlined: true
+  metadata:
+    name: metadata
+    description: Free-form extra metadata passed through by the writer's caller, so
+      any value shape (``linkml:Any``) rather than a declared one.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Subject
+    - ExperimentResultSidecar
+    range: ScalarValue
+    inlined: true
+class_uri: tvbo:ExperimentResultSidecar
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ExperimentResultSidecar
+description: 'Descriptor for a cached ``ExperimentResult``: the ``.h5`` companion
+  holding the fitted parameter arrays, one ``CachedArray`` entry per array, and the
+  provenance a downstream cache needs to decide whether the result is still valid.
+  Written by ``tvbo.data.experiment_result_io.save_sidecar``, so it is generated rather
+  than authored — but it is self-describing (it carries a ``tvbo_class`` envelope
+  naming this class), which is what lets ``tvbo validate schema`` check a generated
+  sidecar instead of falling back to some unrelated class and failing on its required
+  slots.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  data_file:
+    name: data_file
+    description: Path to the h5 companion (relative to the yaml).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ExperimentResultSidecar
+    domain_of:
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    range: string
+    required: true
+  parameters:
+    name: parameters
+    description: One entry per array in the ``.h5`` companion's ``parameters`` group.
+    from_schema: https://w3id.org/tvbo
+    owner: ExperimentResultSidecar
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: CachedArray
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  provenance:
+    name: provenance
+    description: Producing experiment's YAML hash, its input fingerprints and the
+      writing agent.
+    from_schema: https://w3id.org/tvbo
+    owner: ExperimentResultSidecar
+    domain_of:
+    - Figure
+    - ResultEntity
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    - SimulationExperiment
+    range: Provenance
+    inlined: true
+  metadata:
+    name: metadata
+    description: Free-form extra metadata passed through by the writer's caller, so
+      any value shape (``linkml:Any``) rather than a declared one.
+    from_schema: https://w3id.org/tvbo
+    owner: ExperimentResultSidecar
+    domain_of:
+    - Subject
+    - ExperimentResultSidecar
+    range: ScalarValue
+    inlined: true
+class_uri: tvbo:ExperimentResultSidecar
+
+```
+</details></div>

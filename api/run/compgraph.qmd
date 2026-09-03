@@ -1,0 +1,86 @@
+# compgraph { #tvbo.run.compgraph }
+
+`run.compgraph`
+
+Reference simulation of network dynamics on a computational graph.
+
+Provides SciPy-based helpers that build per-node state and history buffers, propagate delayed coupling between nodes of a `networkx` graph, integrate each node's dynamics with `odeint`, and collect the results into a [TimeSeries](../data/types.qmd).
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [collect_time_series](#tvbo.run.compgraph.collect_time_series) | Gather per-node simulation traces into a single `TimeSeries`. |
+| [compute_delayed_input_signal](#tvbo.run.compgraph.compute_delayed_input_signal) | Aggregate a node's delayed afferent input. |
+| [initialize_graph_states_with_history](#tvbo.run.compgraph.initialize_graph_states_with_history) | Allocate the trace and delay-history buffers, keeping any state already set. |
+| [simulate_graph_dynamics_with_delay](#tvbo.run.compgraph.simulate_graph_dynamics_with_delay) | Run the simulation over the graph considering delays. |
+| [tqdm](#tvbo.run.compgraph.tqdm) | No-op ``tqdm`` fallback used when the package is unavailable. |
+| [update_node_state_with_delay](#tvbo.run.compgraph.update_node_state_with_delay) | Update node state considering delayed input. |
+
+### collect_time_series { #tvbo.run.compgraph.collect_time_series }
+
+```python
+run.compgraph.collect_time_series(G, time_points)
+```
+
+Gather per-node simulation traces into a single `TimeSeries`.
+
+Each node's recorded `"time-series"` is expanded to 4D and concatenated along the node axis, then wrapped in a [TimeSeries](../data/types.qmd) labelled with the model's state-variable names.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                         | Default    |
+|-------------|--------|-------------------------------------------------------------------------------------|------------|
+| G           |        | The graph whose nodes hold the simulated `"time-series"` arrays and model metadata. | _required_ |
+| time_points |        | The time axis shared by all nodes.                                                  | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                        |
+|--------|--------|--------------------------------------------------------------------|
+|        |        | A `TimeSeries` holding the stacked node traces with state-variable |
+|        |        | dimension labels.                                                  |
+
+### compute_delayed_input_signal { #tvbo.run.compgraph.compute_delayed_input_signal }
+
+```python
+run.compgraph.compute_delayed_input_signal(node, G, t, dt)
+```
+
+Aggregate a node's delayed afferent input.
+
+Graph edges point in signal direction, so the afferents are the node's in-edges: each one pre-transforms the source's delayed state and weights it, and the shared post-transform is applied once to the sum (also while the delay history is still filling, matching the matrix backends). Mixed post-transforms across one node's in-edges raise, and a node without afferents receives zero input.
+
+### initialize_graph_states_with_history { #tvbo.run.compgraph.initialize_graph_states_with_history }
+
+```python
+run.compgraph.initialize_graph_states_with_history(G, delay_buffer=1000)
+```
+
+Allocate the trace and delay-history buffers, keeping any state already set.
+
+A node that already carries a ``"state"`` (``GraphRunner.setup_initial_conditions`` puts the model's declared initial values there) keeps it — overwriting with zeros would start every run from the origin whatever the model declares. The delay history is filled with that state rather than zeros, so a delayed read before the trace exists sees the initial condition.
+
+### simulate_graph_dynamics_with_delay { #tvbo.run.compgraph.simulate_graph_dynamics_with_delay }
+
+```python
+run.compgraph.simulate_graph_dynamics_with_delay(G, T, dt)
+```
+
+Run the simulation over the graph considering delays.
+
+### tqdm { #tvbo.run.compgraph.tqdm }
+
+```python
+run.compgraph.tqdm(x, **kwargs)
+```
+
+No-op ``tqdm`` fallback used when the package is unavailable.
+
+### update_node_state_with_delay { #tvbo.run.compgraph.update_node_state_with_delay }
+
+```python
+run.compgraph.update_node_state_with_delay(G, node, t, dt, input_signal)
+```
+
+Update node state considering delayed input.

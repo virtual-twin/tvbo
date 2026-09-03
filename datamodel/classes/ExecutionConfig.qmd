@@ -1,0 +1,446 @@
+# Class: ExecutionConfig 
+
+
+_Configuration for computational execution (parallelization, precision, hardware)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:ExecutionConfig](https://w3id.org/tvbo/ExecutionConfig)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ExecutionConfig
+    click ExecutionConfig href "./ExecutionConfig.html"
+      ExecutionConfig : accelerator
+        
+          
+    
+        
+        
+        ExecutionConfig --> "0..1" String : accelerator
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ExecutionConfig : backend
+        
+          
+    
+        
+        
+        ExecutionConfig --> "0..1" String : backend
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ExecutionConfig : batch_size
+        
+          
+    
+        
+        
+        ExecutionConfig --> "0..1" Integer : batch_size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      ExecutionConfig : find_fixpoint
+        
+          
+    
+        
+        
+        ExecutionConfig --> "0..1" Boolean : find_fixpoint
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      ExecutionConfig : n_threads
+        
+          
+    
+        
+        
+        ExecutionConfig --> "0..1" Integer : n_threads
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      ExecutionConfig : n_workers
+        
+          
+    
+        
+        
+        ExecutionConfig --> "0..1" Integer : n_workers
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      ExecutionConfig : precision
+        
+          
+    
+        
+        
+        ExecutionConfig --> "0..1" String : precision
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ExecutionConfig : random_seed
+        
+          
+    
+        
+        
+        ExecutionConfig --> "0..1" Integer : random_seed
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      ExecutionConfig : system_size
+        
+          
+    
+        
+        
+        ExecutionConfig --> "0..1" Float : system_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:ExecutionConfig](https://w3id.org/tvbo/ExecutionConfig) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [n_workers](../slots/n_workers.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of parallel workers (maps to pmap devices in JAX, processes in multipr... | direct |
+| [n_threads](../slots/n_threads.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of CPU threads per worker (-1 = auto-detect) | direct |
+| [precision](../slots/precision.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Floating point precision: 'float32' or 'float64' | direct |
+| [accelerator](../slots/accelerator.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Hardware accelerator the run targets | direct |
+| [backend](../slots/backend.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Execution backend this experiment runs on when no backend is passed explicitl... | direct |
+| [batch_size](../slots/batch_size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Batch size for vectorized operations (None = auto) | direct |
+| [random_seed](../slots/random_seed.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Experiment-global RNG seed (default 0) | direct |
+| [find_fixpoint](../slots/find_fixpoint.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether to find a fixed point (steady state) before time integration | direct |
+| [system_size](../slots/system_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | System size (van Kampen Ω) for the stochastic 'gillespie' backend: the number... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Analysis](../classes/Analysis.qmd) | [execution](../slots/execution.qmd) | range | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+| [Optimization](../classes/Optimization.qmd) | [execution](../slots/execution.qmd) | range | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+| [Exploration](../classes/Exploration.qmd) | [execution](../slots/execution.qmd) | range | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+| [Inference](../classes/Inference.qmd) | [execution](../slots/execution.qmd) | range | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+| [Algorithm](../classes/Algorithm.qmd) | [execution](../slots/execution.qmd) | range | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+| [Continuation](../classes/Continuation.qmd) | [execution](../slots/execution.qmd) | range | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [execution](../slots/execution.qmd) | range | [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ExecutionConfig |
+| native | tvbo:ExecutionConfig |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ExecutionConfig
+description: Configuration for computational execution (parallelization, precision,
+  hardware).
+from_schema: https://w3id.org/tvbo
+attributes:
+  n_workers:
+    name: n_workers
+    description: Number of parallel workers (maps to pmap devices in JAX, processes
+      in multiprocessing)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    domain_of:
+    - ExecutionConfig
+    range: integer
+  n_threads:
+    name: n_threads
+    description: Number of CPU threads per worker (-1 = auto-detect)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(-1)
+    domain_of:
+    - ExecutionConfig
+    range: integer
+  precision:
+    name: precision
+    description: 'Floating point precision: ''float32'' or ''float64'''
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(float64)
+    domain_of:
+    - ExecutionConfig
+    range: string
+  accelerator:
+    name: accelerator
+    description: Hardware accelerator the run targets. 'auto' (default) lets JAX detect
+      the machine — GPU/TPU when present, else CPU; 'cpu', 'gpu', or 'tpu' pin the
+      JAX platform explicitly. tvbo maps this to JAX_PLATFORMS before JAX initialises
+      (an existing JAX_PLATFORMS in the environment still wins); tvboptim then spreads
+      work across that platform's devices via n_pmap/n_vmap. In a workflow kit, 'gpu'
+      also makes the experiment's rule request a SLURM gres unless one is set.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(auto)
+    domain_of:
+    - ExecutionConfig
+    range: string
+  backend:
+    name: backend
+    description: Execution backend this experiment runs on when no backend is passed
+      explicitly (e.g. 'tvboptim', 'tvb', 'jax', 'julia', 'brian2'). Declares the
+      engine the experiment requires — a spiking point-neuron network sets 'brian2',
+      a mean-field model leaves it unset. run(format=...) and ``tvbo run --backend``
+      override it; when unset the default backend (tvboptim) is used.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ExecutionConfig
+    range: string
+  batch_size:
+    name: batch_size
+    description: Batch size for vectorized operations (None = auto)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Dataset
+    - ExecutionConfig
+    range: integer
+  random_seed:
+    name: random_seed
+    description: Experiment-global RNG seed (default 0). Governs every stochastic
+      draw — additive noise, initial-condition and parameter distributions, and n_trials
+      ensembles — unless a specific `Distribution.seed` overrides it for that distribution.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(0)
+    domain_of:
+    - ExecutionConfig
+    range: integer
+  find_fixpoint:
+    name: find_fixpoint
+    description: Whether to find a fixed point (steady state) before time integration.
+      Used as initial condition for ODEProblem. Maps to NLsolve.fixpoint! in ND.jl
+      or similar in other backends.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - ExecutionConfig
+    range: boolean
+  system_size:
+    name: system_size
+    description: 'System size (van Kampen Ω) for the stochastic ''gillespie'' backend:
+      the number of discrete units per unit of the activity variable, and the sole
+      source of noise. Runs a mean-field rate model as a finite birth-death process
+      (Gillespie SSA): the activity state variable X becomes a discrete count n ≈
+      Ω·X, its relaxation equation tau*X'' = -X + F(...) is read as birth propensity
+      Ω·F/tau (the gain) and death propensity n/tau (the leak), while the remaining
+      state variables integrate deterministically between events. Larger Ω means finer
+      discreteness and weaker fluctuations, recovering the deterministic mean field
+      as Ω→∞. For an activity already expressed as a fraction in [0,1], Ω is the population
+      size N; for a firing rate it is N divided by the rate at full activation. Required
+      by the ''gillespie'' backend; ignored by every other backend.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ExecutionConfig
+    range: float
+class_uri: tvbo:ExecutionConfig
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ExecutionConfig
+description: Configuration for computational execution (parallelization, precision,
+  hardware).
+from_schema: https://w3id.org/tvbo
+attributes:
+  n_workers:
+    name: n_workers
+    description: Number of parallel workers (maps to pmap devices in JAX, processes
+      in multiprocessing)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(1)
+    owner: ExecutionConfig
+    domain_of:
+    - ExecutionConfig
+    range: integer
+  n_threads:
+    name: n_threads
+    description: Number of CPU threads per worker (-1 = auto-detect)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(-1)
+    owner: ExecutionConfig
+    domain_of:
+    - ExecutionConfig
+    range: integer
+  precision:
+    name: precision
+    description: 'Floating point precision: ''float32'' or ''float64'''
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(float64)
+    owner: ExecutionConfig
+    domain_of:
+    - ExecutionConfig
+    range: string
+  accelerator:
+    name: accelerator
+    description: Hardware accelerator the run targets. 'auto' (default) lets JAX detect
+      the machine — GPU/TPU when present, else CPU; 'cpu', 'gpu', or 'tpu' pin the
+      JAX platform explicitly. tvbo maps this to JAX_PLATFORMS before JAX initialises
+      (an existing JAX_PLATFORMS in the environment still wins); tvboptim then spreads
+      work across that platform's devices via n_pmap/n_vmap. In a workflow kit, 'gpu'
+      also makes the experiment's rule request a SLURM gres unless one is set.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(auto)
+    owner: ExecutionConfig
+    domain_of:
+    - ExecutionConfig
+    range: string
+  backend:
+    name: backend
+    description: Execution backend this experiment runs on when no backend is passed
+      explicitly (e.g. 'tvboptim', 'tvb', 'jax', 'julia', 'brian2'). Declares the
+      engine the experiment requires — a spiking point-neuron network sets 'brian2',
+      a mean-field model leaves it unset. run(format=...) and ``tvbo run --backend``
+      override it; when unset the default backend (tvboptim) is used.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ExecutionConfig
+    domain_of:
+    - ExecutionConfig
+    range: string
+  batch_size:
+    name: batch_size
+    description: Batch size for vectorized operations (None = auto)
+    from_schema: https://w3id.org/tvbo
+    owner: ExecutionConfig
+    domain_of:
+    - Dataset
+    - ExecutionConfig
+    range: integer
+  random_seed:
+    name: random_seed
+    description: Experiment-global RNG seed (default 0). Governs every stochastic
+      draw — additive noise, initial-condition and parameter distributions, and n_trials
+      ensembles — unless a specific `Distribution.seed` overrides it for that distribution.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(0)
+    owner: ExecutionConfig
+    domain_of:
+    - ExecutionConfig
+    range: integer
+  find_fixpoint:
+    name: find_fixpoint
+    description: Whether to find a fixed point (steady state) before time integration.
+      Used as initial condition for ODEProblem. Maps to NLsolve.fixpoint! in ND.jl
+      or similar in other backends.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: ExecutionConfig
+    domain_of:
+    - ExecutionConfig
+    range: boolean
+  system_size:
+    name: system_size
+    description: 'System size (van Kampen Ω) for the stochastic ''gillespie'' backend:
+      the number of discrete units per unit of the activity variable, and the sole
+      source of noise. Runs a mean-field rate model as a finite birth-death process
+      (Gillespie SSA): the activity state variable X becomes a discrete count n ≈
+      Ω·X, its relaxation equation tau*X'' = -X + F(...) is read as birth propensity
+      Ω·F/tau (the gain) and death propensity n/tau (the leak), while the remaining
+      state variables integrate deterministically between events. Larger Ω means finer
+      discreteness and weaker fluctuations, recovering the deterministic mean field
+      as Ω→∞. For an activity already expressed as a fraction in [0,1], Ω is the population
+      size N; for a firing rate it is N divided by the rate at full activation. Required
+      by the ''gillespie'' backend; ignored by every other backend.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ExecutionConfig
+    domain_of:
+    - ExecutionConfig
+    range: float
+class_uri: tvbo:ExecutionConfig
+
+```
+</details></div>

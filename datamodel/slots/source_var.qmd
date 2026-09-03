@@ -1,0 +1,108 @@
+# Slot: source_var 
+
+
+_Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics. The alias `source_variable` is accepted (harmonized with the `*_variable` spelling used elsewhere, e.g. the stimulus event's `target_variable`)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/source_var](https://w3id.org/tvbo/slot/source_var)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Edge](../classes/Edge.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Edge](../classes/Edge.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* source_variable
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:source_var |
+| native | tvbo:source_var |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: source_var
+description: Output variable from source node to use (e.g., 'x_out'). If not specified,
+  uses first output variable from source dynamics. The alias `source_variable` is
+  accepted (harmonized with the `*_variable` spelling used elsewhere, e.g. the stimulus
+  event's `target_variable`).
+from_schema: https://w3id.org/tvbo
+aliases:
+- source_variable
+rank: 1000
+owner: Edge
+domain_of:
+- Edge
+range: string
+
+```
+</details></div>

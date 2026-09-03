@@ -1,0 +1,98 @@
+# Slot: gres 
+
+
+_Generic scheduler resources, e.g. 'gpu:1' (Slurm --gres)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/gres](https://w3id.org/tvbo/slot/gres)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:gres |
+| native | tvbo:gres |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: gres
+description: Generic scheduler resources, e.g. 'gpu:1' (Slurm --gres).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowEngineConfig
+domain_of:
+- WorkflowEngineConfig
+range: string
+
+```
+</details></div>

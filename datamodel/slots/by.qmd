@@ -1,0 +1,99 @@
+# Slot: by 
+
+
+_Default tier for axes not named in ``vectorize`` or ``workflow``. Unset means ``auto``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/by](https://w3id.org/tvbo/slot/by)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DistributionConfig](../classes/DistributionConfig.qmd) | Policy for mapping a parameter sweep's exploration axes onto the two parallel... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [WorkflowDistributeBy](../enums/WorkflowDistributeBy.qmd) |
+| Domain Of | [DistributionConfig](../classes/DistributionConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DistributionConfig](../classes/DistributionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:by |
+| native | tvbo:by |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: by
+description: Default tier for axes not named in ``vectorize`` or ``workflow``. Unset
+  means ``auto``.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: DistributionConfig
+domain_of:
+- DistributionConfig
+range: WorkflowDistributeBy
+
+```
+</details></div>

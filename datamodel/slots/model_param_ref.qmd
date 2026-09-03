@@ -1,0 +1,98 @@
+# Slot: model_param_ref 
+
+
+_BIDS ModelParam reference: path to _param.xml LEMS file._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/model_param_ref](https://w3id.org/tvbo/slot/model_param_ref)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [TimeSeries](../classes/TimeSeries.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [TimeSeries](../classes/TimeSeries.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:model_param_ref |
+| native | tvbo:model_param_ref |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: model_param_ref
+description: 'BIDS ModelParam reference: path to _param.xml LEMS file.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: TimeSeries
+domain_of:
+- TimeSeries
+range: string
+
+```
+</details></div>

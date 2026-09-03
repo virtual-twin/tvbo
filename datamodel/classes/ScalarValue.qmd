@@ -1,0 +1,132 @@
+# Class: ScalarValue 
+
+
+_A scalar value: float, integer, string, or boolean. Used for slots that accept literals of any primitive type, such as argument values which may be numbers, strings, references, or booleans._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [linkml:Any](https://w3id.org/linkml/Any)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ScalarValue
+    click ScalarValue href "./ScalarValue.html"
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [linkml:Any](https://w3id.org/linkml/Any) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Range](../classes/Range.qmd) | [lo](../slots/lo.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+| [Range](../classes/Range.qmd) | [hi](../slots/hi.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+| [Range](../classes/Range.qmd) | [step](../slots/step.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+| [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd) | [metadata](../slots/metadata.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | [diagonal](../slots/diagonal.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+| [StateValue](../classes/StateValue.qmd) | [value](../slots/value.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+| [StateValue](../classes/StateValue.qmd) | [value](../slots/value.qmd) | any_of[range] | [ScalarValue](../classes/ScalarValue.qmd) |
+| [Parameter](../classes/Parameter.qmd) | [value](../slots/value.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+| [Parameter](../classes/Parameter.qmd) | [value](../slots/value.qmd) | any_of[range] | [ScalarValue](../classes/ScalarValue.qmd) |
+| [Argument](../classes/Argument.qmd) | [value](../slots/value.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+| [Argument](../classes/Argument.qmd) | [value](../slots/value.qmd) | any_of[range] | [ScalarValue](../classes/ScalarValue.qmd) |
+| [DerivedParameter](../classes/DerivedParameter.qmd) | [value](../slots/value.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+| [DerivedParameter](../classes/DerivedParameter.qmd) | [value](../slots/value.qmd) | any_of[range] | [ScalarValue](../classes/ScalarValue.qmd) |
+| [FreeParameter](../classes/FreeParameter.qmd) | [initial_value](../slots/initial_value.qmd) | range | [ScalarValue](../classes/ScalarValue.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | linkml:Any |
+| native | tvbo:ScalarValue |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ScalarValue
+description: 'A scalar value: float, integer, string, or boolean. Used for slots that
+  accept literals of any primitive type, such as argument values which may be numbers,
+  strings, references, or booleans.'
+from_schema: https://w3id.org/tvbo
+class_uri: linkml:Any
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ScalarValue
+description: 'A scalar value: float, integer, string, or boolean. Used for slots that
+  accept literals of any primitive type, such as argument values which may be numbers,
+  strings, references, or booleans.'
+from_schema: https://w3id.org/tvbo
+class_uri: linkml:Any
+
+```
+</details></div>

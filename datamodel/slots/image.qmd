@@ -1,0 +1,98 @@
+# Slot: image 
+
+
+_A `dseg` segmentation file, for a parcellation nobody has curated._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/image](https://w3id.org/tvbo/slot/image)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Volume](../classes/Volume.qmd) | A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Volume](../classes/Volume.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Volume](../classes/Volume.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:image |
+| native | tvbo:image |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: image
+description: A `dseg` segmentation file, for a parcellation nobody has curated.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Volume
+domain_of:
+- Volume
+range: string
+
+```
+</details></div>

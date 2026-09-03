@@ -1,0 +1,99 @@
+# Slot: skip_t 
+
+
+_Number of samples to skip at the start (transient removal). For FC: typically 10-20 TRs._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/skip_t](https://w3id.org/tvbo/slot/skip_t)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Observation](../classes/Observation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Observation](../classes/Observation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:skip_t |
+| native | tvbo:skip_t |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: skip_t
+description: 'Number of samples to skip at the start (transient removal). For FC:
+  typically 10-20 TRs.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Observation
+domain_of:
+- Observation
+range: integer
+
+```
+</details></div>

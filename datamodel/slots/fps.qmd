@@ -1,0 +1,100 @@
+# Slot: fps 
+
+
+_Playback rate of the saved movie in frames per second (default 20). Independent of `frames`: together they set how long the movie runs, and separately from how much of the data it shows._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/fps](https://w3id.org/tvbo/slot/fps)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Animation](../classes/Animation.qmd) | A figure rendered as a movie over one dimension of its data |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Animation](../classes/Animation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Animation](../classes/Animation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:fps |
+| native | tvbo:fps |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: fps
+description: 'Playback rate of the saved movie in frames per second (default 20).
+  Independent of `frames`: together they set how long the movie runs, and separately
+  from how much of the data it shows.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Animation
+domain_of:
+- Animation
+range: integer
+
+```
+</details></div>

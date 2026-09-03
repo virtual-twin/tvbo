@@ -1,0 +1,956 @@
+# The Virtual Brain Data Model
+
+Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
+
+URI: https://w3id.org/tvbo
+
+Name: tvb-datamodel
+
+
+
+## Classes
+
+| Class | Description |
+| --- | --- |
+| [Activity](classes/Activity.qmd) | One thing that was done: a solve, a fit, an analysis, a render |
+| [Aggregation](classes/Aggregation.qmd) | Specifies how to aggregate values across a dimension |
+| [Algorithm](classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |
+| [AlgorithmInclude](classes/AlgorithmInclude.qmd) | Reference to an included algorithm with optional argument overrides |
+| [AlgorithmStage](classes/AlgorithmStage.qmd) | One stage of a multi-stage tuning schedule |
+| [ArchiveConfig](classes/ArchiveConfig.qmd) | How a study packages its run into a COMBINE/OMEX archive: the output location... |
+| [Argument](classes/Argument.qmd) | A function argument with explicit value specification |
+| [Assignment](classes/Assignment.qmd) | One step of a sequential recurrence: the expression assigned to a target name |
+| [AxisReduction](classes/AxisReduction.qmd) | Marks an exploration/sweep axis to be collapsed by a statistic in the result ... |
+| [BidsEntities](classes/BidsEntities.qmd) | BIDS filename entities (BEP017-aligned) for provenance and data discovery |
+| [Binding](classes/Binding.qmd) | Per-backend construction binding for a GraphGenerator: how to build the graph... |
+| [BoundaryCondition](classes/BoundaryCondition.qmd) |  |
+| [BrainRegionSeries](classes/BrainRegionSeries.qmd) | A series whose values represent latitude |
+| [BranchSwitch](classes/BranchSwitch.qmd) | Specification for switching from a detected bifurcation point to a new branch... |
+| [CachedArray](classes/CachedArray.qmd) | One numeric array inside a cached-result `` |
+| [Callable](classes/Callable.qmd) |  |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ClassReference](classes/ClassReference.qmd) | Reference to a class that can be instantiated and called |
+| [CodeSource](classes/CodeSource.qmd) | Location of a recipe's callable code so the specification is decoupled from w... |
+| [ConditionalBlock](classes/ConditionalBlock.qmd) | A single condition and its corresponding equation segment |
+| [Continuation](classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |
+| [Coupling](classes/Coupling.qmd) |  |
+| [CouplingInput](classes/CouplingInput.qmd) | Specification of a coupling input channel for multi-coupling dynamics |
+| [DataSource](classes/DataSource.qmd) | Specification for loading external/empirical data |
+| [DerivedVariable](classes/DerivedVariable.qmd) |  |
+| [DifferentialOperator](classes/DifferentialOperator.qmd) |  |
+| [Differentiation](classes/Differentiation.qmd) | Backend-neutral configuration for how gradients are propagated through the te... |
+| [Digest](classes/Digest.qmd) | One checksum of an artifact, keyed by the function that produced it |
+| [Discretization](classes/Discretization.qmd) | Discretization method for boundary value problems in continuation (periodic o... |
+| [Distribution](classes/Distribution.qmd) | A probability distribution for sampling parameters or initial conditions |
+| [DistributionConfig](classes/DistributionConfig.qmd) | Policy for mapping a parameter sweep's exploration axes onto the two parallel... |
+| [Dynamics](classes/Dynamics.qmd) |  |
+| [Edge](classes/Edge.qmd) | An edge in a network |
+| [EnvironmentVariable](classes/EnvironmentVariable.qmd) | One environment variable assignment exported before executing the workflow ta... |
+| [Equation](classes/Equation.qmd) |  |
+| [Event](classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |
+| [ExecutionConfig](classes/ExecutionConfig.qmd) | Configuration for computational execution (parallelization, precision, hardwa... |
+| [ExperimentResultSidecar](classes/ExperimentResultSidecar.qmd) | Descriptor for a cached ``ExperimentResult``: the `` |
+| [Exploration](classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |
+| [ExplorationAxis](classes/ExplorationAxis.qmd) | One axis of a parameter exploration grid |
+| [File](classes/File.qmd) |  |
+| [FreeParameter](classes/FreeParameter.qmd) | One degree of freedom in an OptimizationStage |
+| [Function](classes/Function.qmd) | A function with explicit input -> transformation -> output flow |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[LossFunction](classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |
+| [FunctionCall](classes/FunctionCall.qmd) | Invocation of a function in a pipeline |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Analysis](classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |
+| [GraphGenerator](classes/GraphGenerator.qmd) | Backend-agnostic graph generator specification |
+| [Inference](classes/Inference.qmd) | Bayesian inference of model parameters from an observation, via MCMC |
+| [InitialState](classes/InitialState.qmd) | How to obtain the starting equilibrium or periodic orbit for continuation |
+| [Likelihood](classes/Likelihood.qmd) | Observation model for Bayesian inference: p(data | sim(theta)) |
+| [Matrix](classes/Matrix.qmd) | Adjacency matrix of a network |
+| [MeasureSpec](classes/MeasureSpec.qmd) | Metadata for one phenotype measure |
+| [Mesh](classes/Mesh.qmd) | Triangle (or higher-order) mesh geometry |
+| [NamedArray](classes/NamedArray.qmd) | A named numeric array |
+| [NDArray](classes/NDArray.qmd) |  |
+| [Network](classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |
+| [Node](classes/Node.qmd) | A node in a network with its own dynamics and properties |
+| [Noise](classes/Noise.qmd) |  |
+| [Observation](classes/Observation.qmd) | Unified class for all observation/measurement specifications |
+| [OptimizationStage](classes/OptimizationStage.qmd) | A single stage in a multi-stage optimization workflow |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Optimization](classes/Optimization.qmd) | Configuration for parameter optimization |
+| [Option](classes/Option.qmd) | A toolkit-specific key-value option (string name + string value) |
+| [Parameter](classes/Parameter.qmd) |  |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[DerivedParameter](classes/DerivedParameter.qmd) |  |
+| [Parcellation](classes/Parcellation.qmd) |  |
+| [Partition](classes/Partition.qmd) | A grouped streaming reduction over a node partition (e |
+| [PDE](classes/PDE.qmd) | Partial differential equation problem definition |
+| [Phenotype](classes/Phenotype.qmd) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention) |
+| [Prior](classes/Prior.qmd) | Prior belief over one inferred parameter |
+| [Procedure](classes/Procedure.qmd) | Symbolic procedure: an ordered list of steps producing named outputs |
+| [ProcedureStep](classes/ProcedureStep.qmd) | A single named step (or output) in a Procedure: one typed operation producing... |
+| [Provenance](classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |
+| [RandomStream](classes/RandomStream.qmd) |  |
+| [Range](classes/Range.qmd) | Specifies a range for array generation, parameter bounds, or grid exploration |
+| [Reducer](classes/Reducer.qmd) | A streaming reduction, authored as symbolic recurrences over its own state ra... |
+| [Reference](classes/Reference.qmd) | A small typed pointer to another TVBO entity (Network, Mesh, Observation, …) |
+| [ReferenceFingerprint](classes/ReferenceFingerprint.qmd) | Cache-invalidation fingerprint for one ``aux_data`` reference |
+| [RegionMapping](classes/RegionMapping.qmd) | Maps vertices to parent regions for hierarchical/aggregated coupling |
+| [ResultBinding](classes/ResultBinding.qmd) | One entry in a study's results manifest: a manuscript key bound to the value ... |
+| [ResultEntity](classes/ResultEntity.qmd) | One persisted result container, described |
+| [Sample](classes/Sample.qmd) |  |
+| [ScalarValue](classes/ScalarValue.qmd) | A scalar value: float, integer, string, or boolean |
+| [SchedulerDirective](classes/SchedulerDirective.qmd) | One engine-native scheduler directive passed through verbatim by the engine's... |
+| [SimulationExperiment](classes/SimulationExperiment.qmd) |  |
+| [Solver](classes/Solver.qmd) | Lightweight specification of a numerical ODE solver / integrator |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Integrator](classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[PDESolver](classes/PDESolver.qmd) | Numerical solver for a PDE: the time-integration algorithm, tolerances and st... |
+| [SpatialDomain](classes/SpatialDomain.qmd) |  |
+| [SpatialField](classes/SpatialField.qmd) |  |
+| [StateValue](classes/StateValue.qmd) | A named state variable value for per-node initialization |
+| [StateVariable](classes/StateVariable.qmd) |  |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[FieldStateVariable](classes/FieldStateVariable.qmd) |  |
+| [Stimulus](classes/Stimulus.qmd) |  |
+| [Study](classes/Study.qmd) | Bibliographic anchor for a source publication, identified by its citation key... |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[SimulationStudy](classes/SimulationStudy.qmd) |  |
+| [Surrogate](classes/Surrogate.qmd) | A permutation-significance test: re-evaluate a named statistic under n_perm f... |
+| [TimeSeries](classes/TimeSeries.qmd) | Time series data from simulations or measurements |
+| [Tractogram](classes/Tractogram.qmd) | Reference to tractography/diffusion MRI data used to derive structural connec... |
+| [TuningObjective](classes/TuningObjective.qmd) | Defines what the tuning algorithm optimizes for |
+| [UpdateRule](classes/UpdateRule.qmd) | Defines how a parameter is updated based on observables |
+| [WorkflowConfig](classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |
+| [WorkflowEngineConfig](classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |
+
+
+
+## Slots
+
+| Slot | Description |
+| --- | --- |
+| [abs_tol](slots/abs_tol.qmd) | Absolute tolerance for ODE integration |
+| [absolute_value](slots/absolute_value.qmd) | Absolute value of the score at the time of assessment |
+| [accelerator](slots/accelerator.qmd) | Hardware accelerator the run targets |
+| [account](slots/account.qmd) | Accounting allocation to charge the tasks against (Slurm) |
+| [acquisition](slots/acquisition.qmd) | Acquisition protocol or scanner information |
+| [acronym](slots/acronym.qmd) |  |
+| [acted_on_behalf_of](slots/acted_on_behalf_of.qmd) | Packages whose use triggered this one, so a backend invoked through a framewo... |
+| [active_contacts](slots/active_contacts.qmd) |  |
+| [activities](slots/activities.qmd) | The runs that produced this artifact, serialized to BEP028's activity record |
+| [add](slots/add.qmd) | Recurrence folding one arriving sample `v` into the state |
+| [additional_equations](slots/additional_equations.qmd) |  |
+| [additive](slots/additive.qmd) | Indicates whether the noise is additive |
+| [affect](slots/affect.qmd) | Affect function: what happens when the event triggers |
+| [affect_negative](slots/affect_negative.qmd) | Affect on downcrossing (continuous events only) |
+| [affect_parameters](slots/affect_parameters.qmd) | Parameter symbols modifiable in the affect function |
+| [affect_states](slots/affect_states.qmd) | State variable symbols modifiable in the affect function |
+| [age](slots/age.qmd) | Age at time of study (years) |
+| [aggregate](slots/aggregate.qmd) | How to aggregate the result across dimensions |
+| [aggregation](slots/aggregation.qmd) | How to aggregate over time |
+| [algorithm](slots/algorithm.qmd) | Checksum function name, e |
+| [algorithms](slots/algorithms.qmd) | Names of the experiment's algorithms (keys in `experiment |
+| [allow_self_connections](slots/allow_self_connections.qmd) | For a self-projection (source and target are the same population) expanded un... |
+| [alternative_identifier](slots/alternative_identifier.qmd) | Further identifiers for the same package, an RRID among them (BEP028 ``Altern... |
+| [amplitude](slots/amplitude.qmd) |  |
+| [analyses](slots/analyses.qmd) | Analyses of this study's results, each persisted as its own container and so ... |
+| [analysis](slots/analysis.qmd) | WHERE (short form): an in-study analysis name whose saved result holds the ar... |
+| [anatomicalAxesOrientation](slots/anatomicalAxesOrientation.qmd) | Add the axes orientation in standard anatomical terms (XYZ) |
+| [animation](slots/animation.qmd) | Turns the figure into a movie over one dimension of its data instead of a sti... |
+| [annotations](slots/annotations.qmd) | Positioned text labels drawn on the panel (e |
+| [application_category](slots/application_category.qmd) | High-level category (e |
+| [apply_every](slots/apply_every.qmd) | Apply update every N iterations |
+| [apply_on_dimension](slots/apply_on_dimension.qmd) | Which dimension to apply the transformation on |
+| [archive](slots/archive.qmd) | How to package the run into a COMBINE/OMEX archive — the single supplementary... |
+| [args](slots/args.qmd) | Ordered parameter names passed to the callable |
+| [arguments](slots/arguments.qmd) | Variables consumed by the function (referenced in the equation), keyed by arg... |
+| [array_chunk](slots/array_chunk.qmd) | Overrides ``distribute |
+| [arrow](slots/arrow.qmd) | Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in axes frac... |
+| [aspect](slots/aspect.qmd) | The DATA aspect ratio: `equal` — one unit of x is one unit of y, what a matri... |
+| [associated_with](slots/associated_with.qmd) | The software that carried the activity out (BEP028 ``AssociatedWith``) |
+| [at](slots/at.qmd) | Where the rule sits: one value for a horizontal or vertical rule, `[slope, in... |
+| [atlas](slots/atlas.qmd) | The parcellation the layer's per-region values are placed through, BY LABEL —... |
+| [author](slots/author.qmd) | Original author(s) or creating organization(s) |
+| [authors](slots/authors.qmd) | Author display strings (full detail in references |
+| [auto_format](slots/auto_format.qmd) | Apply bsplot's format_fig (tick/label normalisation + panel numbers) |
+| [autonomous](slots/autonomous.qmd) | Whether the system is autonomous (equations do not depend explicitly on time ... |
+| [aux_data](slots/aux_data.qmd) | Ordered list of auxiliary inputs the observation pipeline consumes |
+| [average](slots/average.qmd) | Averaging mode across trials |
+| [axesOrigin](slots/axesOrigin.qmd) | Enter the origin (central point where all axes intersect) |
+| [axis](slots/axis.qmd) | Array axis a `normalize` step reduces over (0 = columns) |
+| [axis_width](slots/axis_width.qmd) | Line weight of the axes frame, in points |
+| [azimuth](slots/azimuth.qmd) | Angle around the vertical axis, in degrees |
+| [backend](slots/backend.qmd) | Execution backend this experiment runs on when no backend is passed explicitl... |
+| [backends](slots/backends.qmd) | Codegen backends this recipe is registered for; others recompute |
+| [background](slots/background.qmd) | The page the figure is printed on |
+| [base](slots/base.qmd) | Standard lines, bars and markers, wherever the colour carries no meaning |
+| [baseline_value](slots/baseline_value.qmd) | Preoperative baseline value of the score |
+| [batch_mode](slots/batch_mode.qmd) | How the per-subject fits are executed |
+| [batch_size](slots/batch_size.qmd) | On-device chunk width — how many subjects form one vectorised batch |
+| [bc_type](slots/bc_type.qmd) |  |
+| [between](slots/between.qmd) | Text written in the gap BEFORE each cell, which is what turns a row of maps i... |
+| [bids](slots/bids.qmd) | Standing with the BIDS standard |
+| [bids_dir](slots/bids_dir.qmd) | Path to BEP017-compliant BIDS directory for loading connectivity matrices |
+| [bids_root](slots/bids_root.qmd) | Path to BIDS dataset root directory |
+| [bids_version](slots/bids_version.qmd) | BIDS version the layout was written against |
+| [bindings](slots/bindings.qmd) | Per-backend construction bindings, keyed by backend id (e |
+| [block_size](slots/block_size.qmd) | Streaming-fold granularity: how many integration steps form one block that is... |
+| [bothside](slots/bothside.qmd) | Continue branch in both directions |
+| [bottom](slots/bottom.qmd) | Strip reserved at the bottom for the cells' tick labels or a shared axis labe... |
+| [boundary_conditions](slots/boundary_conditions.qmd) |  |
+| [bounds](slots/bounds.qmd) | [x0, y0, width, height] in host-axes fractions, as matplotlib's inset_axes ta... |
+| [box_aspect](slots/box_aspect.qmd) | The frame's height over its width, independent of the data ranges: a square p... |
+| [branches](slots/branches.qmd) | Child branches to continue from detected bifurcation points (PO from Hopf, fo... |
+| [build_hash](slots/build_hash.qmd) | Deterministic hash of the resolved dependency set |
+| [builder](slots/builder.qmd) | Optional Python callable that builds the network at YAML load time |
+| [bundle](slots/bundle.qmd) | When true, emitting a self-contained kit copies this dataset's per-subject fi... |
+| [by](slots/by.qmd) | Default tier for axes not named in ``vectorize`` or ``workflow`` |
+| [call_args](slots/call_args.qmd) | Arguments passed when calling the instance (__call__) |
+| [callable](slots/callable.qmd) | Name of the constructor function in the library |
+| [camera](slots/camera.qmd) | Viewpoint for a 3-D panel or a surface |
+| [category](slots/category.qmd) | Coarse classification of the phenotype bundle, used for filtering in larger s... |
+| [center](slots/center.qmd) | Add the center coordinate of this entity |
+| [checkpoint_interval](slots/checkpoint_interval.qmd) | Gradient-checkpointing interval in milliseconds (backward-pass memory/time tr... |
+| [chunk](slots/chunk.qmd) | Sharding granularity — the inter-task (inter-node) tier |
+| [citation](slots/citation.qmd) | Additional citation strings or DOIs |
+| [citekey](slots/citekey.qmd) | BibTeX citation key; the join key into references |
+| [class_call](slots/class_call.qmd) | Class instantiation and call (alternative to callable/function) |
+| [class_reference](slots/class_reference.qmd) | Direct class reference (alternative to pipeline) |
+| [clinical_improvement](slots/clinical_improvement.qmd) | Observed improvement relative to baseline based on a defined score |
+| [clinical_scores](slots/clinical_scores.qmd) |  |
+| [clip](slots/clip.qmd) | [x, y, width, height] in CSS pixels to crop the capture to a region of the pa... |
+| [code_modules](slots/code_modules.qmd) | Importable module names whose import registers this figure's custom panels / ... |
+| [code_source](slots/code_source.qmd) | Where this study's callable code lives — the builders and transform/observati... |
+| [codegen_format](slots/codegen_format.qmd) | Export-registry key of the format TVBO emits for this tool (`tvbo formats`) |
+| [coefficient](slots/coefficient.qmd) |  |
+| [cohort](slots/cohort.qmd) | Cohort label (e |
+| [col_label_pad](slots/col_label_pad.qmd) | Gap between a column heading and the cells under it |
+| [col_label_size](slots/col_label_size.qmd) | Type size of the column headings |
+| [col_labels](slots/col_labels.qmd) | One heading per column, written just above the cells rather than at the panel... |
+| [color](slots/color.qmd) | Add the color code used for visual representation of this entity |
+| [colorbar](slots/colorbar.qmd) | The colour scale printed beside this panel's field |
+| [colormap](slots/colormap.qmd) | Named colormap (routed through the cmap resolver) |
+| [colormaps](slots/colormaps.qmd) | The continuous scales, so both kinds of colour move together and no figure na... |
+| [colors](slots/colors.qmd) | One colour per entry of a standalone legend, as a palette role, a hue or any ... |
+| [columns](slots/columns.qmd) | How many columns the entries are laid out in |
+| [command](slots/command.qmd) | The command performed, parameters included |
+| [comment](slots/comment.qmd) |  |
+| [comparison](slots/comparison.qmd) | Comparison a `stochastic_mask` applies between `of` and the draw |
+| [compile](slots/compile.qmd) | Code-generation hint (opt-in, backend-independent): request that the generate... |
+| [concept_iri](slots/concept_iri.qmd) | Cognitive Atlas IRI of the cognitive construct measured (e |
+| [condition](slots/condition.qmd) | Experimental condition label (e |
+| [condition_parameters](slots/condition_parameters.qmd) | Parameter symbols accessible in the condition function |
+| [condition_states](slots/condition_states.qmd) | State variable symbols accessible in the condition function |
+| [conditionals](slots/conditionals.qmd) | Conditional logic for piecewise equations — the one place a piecewise definit... |
+| [conditions](slots/conditions.qmd) | Global condition labels applied across all subjects (e |
+| [connectivity](slots/connectivity.qmd) | Connectivity rule for a population-level Edge |
+| [connectivity_ref](slots/connectivity_ref.qmd) | Reference to connectivity data (_conndata-network_connectivity |
+| [connectome](slots/connectome.qmd) | A tvbo `Network` whose companion carries a mesh group |
+| [constructor_args](slots/constructor_args.qmd) | Arguments passed to __init__ when instantiating the class |
+| [contact_id](slots/contact_id.qmd) | Identifier (e |
+| [contacts](slots/contacts.qmd) | List of physical contacts along the electrode |
+| [container](slots/container.qmd) | Path of the container this record describes, relative to the study root, so t... |
+| [container_args](slots/container_args.qmd) | Additional arguments passed verbatim to the container runtime when it execute... |
+| [container_binds](slots/container_binds.qmd) | Host paths that must be visible inside the container beyond the ones its runt... |
+| [container_image](slots/container_image.qmd) | Container image reference (e |
+| [continuation](slots/continuation.qmd) | Override solver settings for this branch |
+| [continuations](slots/continuations.qmd) | Numerical continuation and bifurcation analysis specifications |
+| [coordinate](slots/coordinate.qmd) | 3D coordinate of the contact center in the defined coordinate space |
+| [coordinate_space](slots/coordinate_space.qmd) |  |
+| [coordinates](slots/coordinates.qmd) | Node coordinates (x,y,z) in the given coordinate space |
+| [cores](slots/cores.qmd) | Total cores for local engines (Snakemake --cores) |
+| [correlated](slots/correlated.qmd) | Deprecated |
+| [correlated_over](slots/correlated_over.qmd) | Which axis `covariance` indexes — `node` (equivalently `region`) for spatiall... |
+| [correlation](slots/correlation.qmd) |  |
+| [count](slots/count.qmd) | A structural tally computed from the specification, not a run: ``<study> |
+| [coupling](slots/coupling.qmd) | How activity travels along this network's connections — the one place a coupl... |
+| [coupling_evaluation](slots/coupling_evaluation.qmd) | Backend-neutral numerical treatment of the network coupling term across the s... |
+| [coupling_function](slots/coupling_function.qmd) | Mathematical function defining the coupling |
+| [coupling_inputs](slots/coupling_inputs.qmd) |  |
+| [coupling_variable](slots/coupling_variable.qmd) | Whether this state variable is transmitted to connected nodes through the cou... |
+| [covariance](slots/covariance.qmd) | Covariance of the unit-intensity noise increment across the axis named by `co... |
+| [cpus_per_task](slots/cpus_per_task.qmd) | CPU cores requested per task (Slurm --cpus-per-task) |
+| [cse](slots/cse.qmd) | Code-generation hint (opt-in, backend-independent): eliminate common subexpre... |
+| [curvature](slots/curvature.qmd) | Optional path to per-vertex curvature (N,) float |
+| [dash](slots/dash.qmd) | Dash pattern (`solid`, `dashed`, `dotted`, `dashdot`) |
+| [data](slots/data.qmd) |  |
+| [data_file](slots/data_file.qmd) | Path to the h5 companion (relative to the yaml) |
+| [data_source](slots/data_source.qmd) |  |
+| [dataLocation](slots/dataLocation.qmd) |  |
+| [dataset](slots/dataset.qmd) | Multi-subject dataset for workflow rendering |
+| [dataset_id](slots/dataset_id.qmd) | Unique identifier for this phenotype bundle |
+| [dataset_type](slots/dataset_type.qmd) | BIDS ``DatasetType`` this layout realises, written into the dataset's ``datas... |
+| [datatype](slots/datatype.qmd) | Declared value type of this parameter, given as a schema range name — a primi... |
+| [date_created](slots/date_created.qmd) | Date the software was first released (YYYY-MM-DD) |
+| [date_modified](slots/date_modified.qmd) | Date of the most recent release or significant update |
+| [decimals](slots/decimals.qmd) | How many decimal places the tick numbers are written to |
+| [default](slots/default.qmd) |  |
+| [defaultImage](slots/defaultImage.qmd) | Add all image files used as visual representation of this common coordinate s... |
+| [definition](slots/definition.qmd) |  |
+| [degree](slots/degree.qmd) | Polynomial degree per mesh interval for collocation |
+| [delay](slots/delay.qmd) | Conduction delay (explicit edges, ms) |
+| [delayed](slots/delayed.qmd) |  |
+| [delta_p](slots/delta_p.qmd) | Initial parameter offset from the bifurcation point |
+| [density](slots/density.qmd) | The template's vertex density (`164k`) |
+| [depends_on](slots/depends_on.qmd) | Upstream task whose result seeds this optimization |
+| [derivative_initial_value](slots/derivative_initial_value.qmd) | Initial value for the first time derivative, used when equation_order > 1 |
+| [derived_from](slots/derived_from.qmd) |  |
+| [derived_from_model](slots/derived_from_model.qmd) |  |
+| [derived_parameters](slots/derived_parameters.qmd) |  |
+| [derived_variables](slots/derived_variables.qmd) |  |
+| [desc](slots/desc.qmd) | BIDS desc- entity (e |
+| [description](slots/description.qmd) |  |
+| [descriptor](slots/descriptor.qmd) | Short alphanumeric identifier for the BIDS desc- filename entity (e |
+| [detail](slots/detail.qmd) | Non-visual grouping dim (e |
+| [detect_bifurcation](slots/detect_bifurcation.qmd) | Bifurcation detection level |
+| [detect_fold](slots/detect_fold.qmd) | Enable fold (limit point) detection |
+| [development_status](slots/development_status.qmd) | Development status (repostatus |
+| [device_scale_factor](slots/device_scale_factor.qmd) | Device pixel ratio; 2-3 renders a crisp raster at print resolution (the brows... |
+| [diagnosis](slots/diagnosis.qmd) |  |
+| [diagonal](slots/diagonal.qmd) | Value written onto the diagonal of a `pairwise_distance` result, e |
+| [differentiation](slots/differentiation.qmd) | Backend-neutral strategy for propagating gradients through the temporal integ... |
+| [digest](slots/digest.qmd) | Checksums of the artifact itself, keyed by function name |
+| [dimension](slots/dimension.qmd) | The tool's name for the physical dimension of this unit |
+| [dimension_labels](slots/dimension_labels.qmd) | Ordered labels for the matrix columns (dim-1) when the matrix is non-square |
+| [dims](slots/dims.qmd) | Axis names of this observation's output, outermost first, e |
+| [directed](slots/directed.qmd) | Whether to generate a directed graph |
+| [direction](slots/direction.qmd) | Exceedance direction: ``greater_equal`` (fraction of permutations whose stati... |
+| [discretization](slots/discretization.qmd) | Discretization method for the branch solution |
+| [distance](slots/distance.qmd) | Edge length / tract distance (explicit edges, mm) |
+| [distance_unit](slots/distance_unit.qmd) | Unit for distances/lengths in the network |
+| [distribute](slots/distribute.qmd) | How exploration axes map onto the vectorized vs fanned-out tiers |
+| [distribution](slots/distribution.qmd) | Distribution sampled by a `sample` / `stochastic_mask` step, or whose density... |
+| [diverging](slots/diverging.qmd) | Signed quantities read against a midpoint, where the two directions must be t... |
+| [doi](slots/doi.qmd) | Digital Object Identifier for the software or its reference publication |
+| [domain](slots/domain.qmd) |  |
+| [downsample_period](slots/downsample_period.qmd) | Intermediate downsampling period (ms) |
+| [dpi](slots/dpi.qmd) | Raster resolution (dots per inch); scales pixel output only, not the physical... |
+| [ds](slots/ds.qmd) | Initial arc-length step size |
+| [ds_max](slots/ds_max.qmd) | Maximum adaptive step size |
+| [ds_min](slots/ds_min.qmd) | Minimum adaptive step size |
+| [dtype](slots/dtype.qmd) | Data type the matrix values are stored as |
+| [duration](slots/duration.qmd) |  |
+| [dynamics](slots/dynamics.qmd) | Dictionary of dynamics models keyed by name |
+| [ecosystem](slots/ecosystem.qmd) | Package ecosystem(s) through which the software is distributed |
+| [edge_alpha](slots/edge_alpha.qmd) | Opacity of those connections |
+| [edge_color](slots/edge_color.qmd) | Draw the triangulation in this colour, for a panel whose subject is the mesh ... |
+| [edge_matrix_files](slots/edge_matrix_files.qmd) |  |
+| [edge_percentile](slots/edge_percentile.qmd) | Keep only edges above this percentile of the weights |
+| [edge_template](slots/edge_template.qmd) | Default Edge attributes applied to every Edge in this Network |
+| [edge_width](slots/edge_width.qmd) | Line weight of the triangulation |
+| [edges](slots/edges.qmd) | List of directed edges with coupling references (optional, for explicit edge ... |
+| [efield](slots/efield.qmd) | Metadata about the E-field result for this setting |
+| [electrode_id](slots/electrode_id.qmd) | Unique identifier for this electrode |
+| [electrode_reference](slots/electrode_reference.qmd) |  |
+| [electrodes](slots/electrodes.qmd) |  |
+| [element](slots/element.qmd) | Element/node index this range applies to |
+| [element_domains](slots/element_domains.qmd) | Per-element domain overrides for heterogeneous parameters |
+| [element_type](slots/element_type.qmd) |  |
+| [elements](slots/elements.qmd) | Topology indices: either a file reference, or (when inlined on a Network) a d... |
+| [elevation](slots/elevation.qmd) | Angle above the horizontal plane, in degrees |
+| [emit](slots/emit.qmd) | Expression reading the reduced value out of the state |
+| [emit_kind](slots/emit_kind.qmd) | Whether the reduced value is read out every step or every stride |
+| [empirical_data](slots/empirical_data.qmd) | Paths to empirical recordings for this session (e |
+| [encoding](slots/encoding.qmd) |  |
+| [ended_at](slots/ended_at.qmd) | ISO 8601 end time |
+| [enforce](slots/enforce.qmd) | For a state-variable ``domain``: whether/how to enforce the range during inte... |
+| [engine](slots/engine.qmd) | Primary engine (must appear in environment |
+| [entities](slots/entities.qmd) |  |
+| [env](slots/env.qmd) | Environment variables exported before the task command on every engine (e |
+| [environment](slots/environment.qmd) |  |
+| [environment_type](slots/environment_type.qmd) | Category: conda, venv, docker, etc |
+| [equation](slots/equation.qmd) |  |
+| [equation_order](slots/equation_order.qmd) | Order of the time derivative on the LHS |
+| [equation_type](slots/equation_type.qmd) | How to interpret ``equation |
+| [evaluate](slots/evaluate.qmd) | Materialise this algorithm's post-tuning evaluation: a simulation of the tune... |
+| [evaluator](slots/evaluator.qmd) | Who performed the rating (e |
+| [event_type](slots/event_type.qmd) | Type of event trigger mechanism |
+| [events](slots/events.qmd) | Events attached to this node (e |
+| [evict](slots/evict.qmd) | Recurrence taking one leaving sample `v` back out of the state |
+| [evict_equation](slots/evict_equation.qmd) | Optional reverse recurrence for a **sliding-window** reduction: the per-step ... |
+| [execution](slots/execution.qmd) | Which backend renders this analysis, and at what precision / accelerator / wo... |
+| [executor](slots/executor.qmd) | Executor to run the pipeline through (Nextflow process |
+| [experiment](slots/experiment.qmd) | WHERE (short form): an in-study experiment id whose saved result holds the ar... |
+| [experiment_yaml_hash](slots/experiment_yaml_hash.qmd) | SHA-256 hex digest of the normalised experiment YAML that produced this artif... |
+| [expires_with](slots/expires_with.qmd) | For an unsanctioned or proposed directory, what would retire its `` |
+| [explorations](slots/explorations.qmd) | Parameter exploration/grid search specifications |
+| [explored_values](slots/explored_values.qmd) | Explicit explored values for this element |
+| [expression](slots/expression.qmd) | The equation to apply when the condition is met |
+| [extension](slots/extension.qmd) |  |
+| [family_wise](slots/family_wise.qmd) | Apply a Westfall–Young family-wise (max-T) correction: collapse the permuted ... |
+| [field](slots/field.qmd) | Dotted-path subkey within the referenced entity (optional) |
+| [field_dynamics](slots/field_dynamics.qmd) |  |
+| [figures](slots/figures.qmd) | Declarative Figure specs rendered from this study's experiment results — clos... |
+| [file](slots/file.qmd) |  |
+| [files](slots/files.qmd) | Files at the dataset root |
+| [fill](slots/fill.qmd) | Fill the rectangle rather than outlining it |
+| [fill_cell](slots/fill_cell.qmd) | Keep the position the layout engine gave this panel, rather than letting a la... |
+| [find_fixpoint](slots/find_fixpoint.qmd) | Whether to find a fixed point (steady state) before time integration |
+| [font_family](slots/font_family.qmd) | The typefaces to set text in, most-wanted first (`[Helvetica, Arial, DejaVu S... |
+| [font_size](slots/font_size.qmd) | Base font size in points (physical: 1 pt = 1/72 inch) |
+| [format](slots/format.qmd) | Output format (pdf/svg/png) |
+| [fps](slots/fps.qmd) | Playback rate of the saved movie in frames per second (default 20) |
+| [fraction](slots/fraction.qmd) | Width of the bar as a fraction of the panel |
+| [frame](slots/frame.qmd) | Whether the panel keeps its frame and its ticks |
+| [frames](slots/frames.qmd) | How many frames to draw |
+| [free](slots/free.qmd) |  |
+| [free_parameters](slots/free_parameters.qmd) | Parameters to optimize in this stage |
+| [freeze_parameters](slots/freeze_parameters.qmd) | Parameters from previous stages to freeze (keep at optimized value but not up... |
+| [frequency](slots/frequency.qmd) |  |
+| [function](slots/function.qmd) | Custom distribution function (PDF or sampling callable) |
+| [functions](slots/functions.qmd) |  |
+| [funder](slots/funder.qmd) | Funding bodies or grants (e |
+| [gather](slots/gather.qmd) | Observer parameter ``(n_groups, n)`` of node indices selecting each group's n... |
+| [gaussian](slots/gaussian.qmd) | Indicates whether the noise is Gaussian |
+| [generated](slots/generated.qmd) | Written by tooling and overwritten on the next run, so it is never hand-edite... |
+| [generated_at](slots/generated_at.qmd) | Timestamp when this TimeSeries was generated |
+| [generated_by](slots/generated_by.qmd) | Software/agent identifier: the prov:Agent this artifact is attributed to |
+| [geometry](slots/geometry.qmd) | Read the layer as (V, 3) vertex COORDINATES rather than as a field: what the ... |
+| [git](slots/git.qmd) | Git repository URL to fetch the code from (shallow-cloned and cached under ``... |
+| [graph_generator](slots/graph_generator.qmd) | Graph generator specification |
+| [graph_representation](slots/graph_representation.qmd) | Representation used to evaluate coupling over this network's connectivity (``... |
+| [gres](slots/gres.qmd) | Generic scheduler resources, e |
+| [grid](slots/grid.qmd) | How a `kind: grid` panel tiles its cells |
+| [grid_lines](slots/grid_lines.qmd) | Draw the axes grid |
+| [grounding](slots/grounding.qmd) | External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this enti... |
+| [group](slots/group.qmd) | Group assignment (e |
+| [groups](slots/groups.qmd) |  |
+| [ha](slots/ha.qmd) | Horizontal alignment against (x, y) — left, center, right |
+| [handedness](slots/handedness.qmd) |  |
+| [handle_length](slots/handle_length.qmd) | Length of each entry's sample line |
+| [has_reference](slots/has_reference.qmd) |  |
+| [hash](slots/hash.qmd) | Build or artifact hash for exact reproducibility |
+| [head](slots/head.qmd) |  |
+| [height](slots/height.qmd) | Figure height in mm (physical print size) |
+| [height_ratios](slots/height_ratios.qmd) | Relative heights of the mosaic rows, e |
+| [hemi](slots/hemi.qmd) | Which hemisphere to draw (`left`, `right`, or `both` joined into one mesh — w... |
+| [hemisphere](slots/hemisphere.qmd) | Add the hemisphere of this entity |
+| [heterogeneous](slots/heterogeneous.qmd) |  |
+| [hi](slots/hi.qmd) | Upper bound or stopping value |
+| [hide_xticklabels](slots/hide_xticklabels.qmd) | Draw the x ticks without their numbers |
+| [hide_yticklabels](slots/hide_yticklabels.qmd) | Draw the y ticks without their numbers |
+| [highlight](slots/highlight.qmd) | The single emphasis colour, kept out of the cycler so it never lands on a pan... |
+| [histogram](slots/histogram.qmd) | Bin spec (`lo`, `hi`, `n`) for a streaming order-statistic aggregation (`aggr... |
+| [history](slots/history.qmd) |  |
+| [homepage](slots/homepage.qmd) | Project homepage URL |
+| [hspace](slots/hspace.qmd) | Gap between rows, in the same fraction |
+| [hyperparameters](slots/hyperparameters.qmd) | Stage-specific hyperparameters (e |
+| [id](slots/id.qmd) | Unique node identifier |
+| [image](slots/image.qmd) | A `dseg` segmentation file, for a parcellation nobody has curated |
+| [imaging_modality](slots/imaging_modality.qmd) | Type of imaging modality (BOLD, EEG, MEG, etc |
+| [in_templates](slots/in_templates.qmd) | Init templates that include this directory |
+| [include](slots/include.qmd) | Extra file globs to add beyond the recipes, derived containers, figures and m... |
+| [includes](slots/includes.qmd) | Include update rules from other algorithms with optional argument overrides |
+| [incoming_states](slots/incoming_states.qmd) | References to state variables from connected (source) nodes |
+| [inferences](slots/inferences.qmd) | Bayesian inference configurations (posterior over parameters given an observa... |
+| [initial_expression](slots/initial_expression.qmd) | Analytic initial condition for the field |
+| [initial_state](slots/initial_state.qmd) | How to obtain the initial equilibrium |
+| [initial_value](slots/initial_value.qmd) | Value this state starts at |
+| [ink](slots/ink.qmd) | Text, spines and ticks: the near-black everything is read against |
+| [inner_coupling](slots/inner_coupling.qmd) | For hierarchical coupling: inner coupling applied at regional level |
+| [inner_iterations](slots/inner_iterations.qmd) | For mode=nested only: number of inner-loop iterations to run per outer iterat... |
+| [input](slots/input.qmd) | Simple input reference: name of previous function's output in pipeline |
+| [inputs](slots/inputs.qmd) | Per-input fingerprints for cache invalidation |
+| [insets](slots/insets.qmd) | Sub-axes drawn inside this panel after its own body — the zoom windows, corne... |
+| [integration](slots/integration.qmd) | Clock this network's nodes run on |
+| [intensity_projection](slots/intensity_projection.qmd) | How voxels collapse along the view axis (`absmax` by default) |
+| [intermediate_expressions](slots/intermediate_expressions.qmd) |  |
+| [interoperates_with](slots/interoperates_with.qmd) | Tools this tool can exchange data with or delegate to |
+| [interpolate_delays](slots/interpolate_delays.qmd) | For delayed coupling: read delayed states by linear interpolation between the... |
+| [interpolation](slots/interpolation.qmd) | Interpolation for a data-driven stimulus: 'linear' or 'cubic' |
+| [invert_x](slots/invert_x.qmd) | Draw the x axis descending |
+| [invert_y](slots/invert_y.qmd) | Draw the y axis descending — the matrix convention, row 0 at the top |
+| [invert_z](slots/invert_z.qmd) | Draw the depth axis of a 3-D panel descending |
+| [iri](slots/iri.qmd) | Optional stable IRI (or compact URI) for this entity in an external ontology ... |
+| [is_accessible_for_free](slots/is_accessible_for_free.qmd) | Whether the tool is free/open-source |
+| [issue_tracker](slots/issue_tracker.qmd) | URL of the bug tracker or issue board |
+| [jobs](slots/jobs.qmd) | Concurrent jobs the workflow engine keeps in flight (Snakemake ``--jobs``, wr... |
+| [key](slots/key.qmd) | Key/variable name within the file (for  |
+| [keys](slots/keys.qmd) | Named keys for multi-dimensional coupling |
+| [keywords](slots/keywords.qmd) | Tags for topic-based discovery and clustering |
+| [kind](slots/kind.qmd) |  |
+| [label](slots/label.qmd) |  |
+| [label_pad](slots/label_pad.qmd) | Distance from an axis label to its axis, in points |
+| [labels](slots/labels.qmd) | Annotate each node with its region name |
+| [labels_dimensions](slots/labels_dimensions.qmd) | Mapping of dimension names to their labels (JSON-encoded dict) |
+| [labels_ordering](slots/labels_ordering.qmd) | Ordering of dimensions: Time, State Variable, Space, Mode |
+| [latex](slots/latex.qmd) |  |
+| [layers](slots/layers.qmd) | Marks sharing this panel's axes (overlay) |
+| [layout](slots/layout.qmd) | bsplot mosaic string; letters = panel keys, slash (or newline) = new row, rep... |
+| [layout_engine](slots/layout_engine.qmd) | Which layout engine positions the panels |
+| [learning_rate](slots/learning_rate.qmd) |  |
+| [learning_rate_schedule](slots/learning_rate_schedule.qmd) | Learning rate schedule: 'constant', 'linear', 'exponential' |
+| [learning_rate_warmup](slots/learning_rate_warmup.qmd) | Linear warmup of learning rate from 0 to learning_rate over n_iterations |
+| [left](slots/left.qmd) | Strip reserved at the left for the row labels, as a fraction of the panel |
+| [legend](slots/legend.qmd) | A key for this panel's own marks |
+| [legend_frame](slots/legend_frame.qmd) | Draw the box around a legend |
+| [legend_handle_length](slots/legend_handle_length.qmd) | Length of a legend's sample line, in font-size units |
+| [legend_pad](slots/legend_pad.qmd) | Distance from a legend to the axes it sits against, in font-size units |
+| [level](slots/level.qmd) | Whether a study MUST, SHOULD or MAY have this directory |
+| [lhs](slots/lhs.qmd) |  |
+| [library](slots/library.qmd) | Native library/module providing the callable |
+| [license](slots/license.qmd) | SPDX license identifier (e |
+| [likelihood](slots/likelihood.qmd) | Observation model p(data | sim(theta)) |
+| [line_width](slots/line_width.qmd) | Default weight of a drawn line, in points, for any layer whose own style does... |
+| [linear_solver](slots/linear_solver.qmd) | Linear solver for the Newton bordered system |
+| [linestyles](slots/linestyles.qmd) | One dash pattern per entry of a standalone legend |
+| [lo](slots/lo.qmd) | Lower bound or starting value |
+| [loader](slots/loader.qmd) | Callable that loads the data (e |
+| [loc](slots/loc.qmd) | Named corner ('upper right', 'upper left', 'center',  |
+| [local](slots/local.qmd) | Marks this as a LOCAL (surface/local-connectivity) coupling term rather than ... |
+| [local_coupling_term](slots/local_coupling_term.qmd) |  |
+| [local_states](slots/local_states.qmd) | References to state variables from the local (target) node |
+| [location](slots/location.qmd) | Which side of the panel it sits on |
+| [log_scale](slots/log_scale.qmd) | Whether to use logarithmic spacing |
+| [loss](slots/loss.qmd) | Loss function call |
+| [mail_type](slots/mail_type.qmd) | Scheduler notification trigger (e |
+| [mail_user](slots/mail_user.qmd) | Notification email address |
+| [maintainer](slots/maintainer.qmd) | Current maintainer(s) or responsible organization(s) |
+| [manufacturer](slots/manufacturer.qmd) |  |
+| [mark](slots/mark.qmd) | Cartesian mark; omitted for heatmap panels (implied by the panel kind) |
+| [marker_size](slots/marker_size.qmd) | Default marker size, in points, for any layer whose own style does not fix on... |
+| [markers](slots/markers.qmd) | One marker per entry of a standalone legend, for a key whose entries are scat... |
+| [mask](slots/mask.qmd) | A per-vertex 0/1 file |
+| [max_bisection_steps](slots/max_bisection_steps.qmd) | Maximum bisection steps for bifurcation point localization |
+| [max_iterations](slots/max_iterations.qmd) |  |
+| [max_steps](slots/max_steps.qmd) | Maximum continuation steps |
+| [measure](slots/measure.qmd) | WHICH array to select out of `source` |
+| [measure_specs](slots/measure_specs.qmd) | Optional per-measure metadata (Cognitive Atlas IRIs, units, description) |
+| [measure_type](slots/measure_type.qmd) | Sub-type within the phenotype (e |
+| [measures](slots/measures.qmd) | Names of the measures present in the h5 companion (one ``measures/<name>`` da... |
+| [mem](slots/mem.qmd) | Memory per task in scheduler syntax (e |
+| [mesh](slots/mesh.qmd) | A surface mesh file — GIFTI, VTK, FreeSurfer, or an ` |
+| [mesh_file](slots/mesh_file.qmd) | Path to external mesh file (GIFTI, VTK, MSH, FreeSurfer, etc |
+| [mesh_format](slots/mesh_format.qmd) | The mesh file's format, where the extension does not say |
+| [mesh_intervals](slots/mesh_intervals.qmd) | Number of mesh intervals (time slices) for collocation or trapezoid methods |
+| [metadata](slots/metadata.qmd) | Additional subject metadata as key-value pairs or path to a sidecar JSON file |
+| [method](slots/method.qmd) | Discretization method |
+| [metric](slots/metric.qmd) | Metric equation for matching (e |
+| [min_coverage](slots/min_coverage.qmd) | Minimum fraction of the model network's nodes that a ``by_label`` reconciliat... |
+| [minor_tick_length](slots/minor_tick_length.qmd) | Length of a minor tick mark, in points |
+| [minor_tick_width](slots/minor_tick_width.qmd) | Line weight of a minor tick mark, in points |
+| [minor_ticks](slots/minor_ticks.qmd) | Draw minor tick marks between the major ones |
+| [modality](slots/modality.qmd) | Imaging modality or simulation output type |
+| [mode](slots/mode.qmd) |  |
+| [model](slots/model.qmd) |  |
+| [model_equation_ref](slots/model_equation_ref.qmd) | BIDS ModelEq reference: path to _eq |
+| [model_paradigm](slots/model_paradigm.qmd) | Computational paradigms supported |
+| [model_param_ref](slots/model_param_ref.qmd) | BIDS ModelParam reference: path to _param |
+| [model_type](slots/model_type.qmd) | Coarse classification of this model (mean_field, neural_mass, phase_oscillato... |
+| [modes](slots/modes.qmd) |  |
+| [modified](slots/modified.qmd) |  |
+| [module](slots/module.qmd) |  |
+| [modules](slots/modules.qmd) | (Deprecated) Use environment |
+| [mtime](slots/mtime.qmd) | File modification time at fingerprinting (POSIX timestamp) |
+| [muted](slots/muted.qmd) | Hairlines and de-emphasised strokes: present, and not competing |
+| [n](slots/n.qmd) | Number of points (alternative to step for grid exploration) |
+| [n_inversion](slots/n_inversion.qmd) | Number of eigenvalue sign inversions to flag a bifurcation |
+| [n_iterations](slots/n_iterations.qmd) | Number of outer iterations to run in this stage |
+| [n_parallel](slots/n_parallel.qmd) | Grid batch size for parameter exploration — how many sweep cells the backend ... |
+| [n_regions](slots/n_regions.qmd) | Total number of regions |
+| [n_sections](slots/n_sections.qmd) | Number of shooting sections for shooting or Poincaré methods |
+| [n_threads](slots/n_threads.qmd) | Number of CPU threads per worker (-1 = auto-detect) |
+| [n_trials](slots/n_trials.qmd) | Number of independent trials per grid point |
+| [n_vertices](slots/n_vertices.qmd) | Total number of vertices |
+| [n_workers](slots/n_workers.qmd) | Number of parallel workers (maps to pmap devices in JAX, processes in multipr... |
+| [name](slots/name.qmd) | Full name of the scale (e |
+| [nativeUnit](slots/nativeUnit.qmd) | Add the native unit that is used for this common coordinate space version |
+| [nbins](slots/nbins.qmd) | Upper bound on the number of ticks per axis |
+| [ncols](slots/ncols.qmd) | Cells per row |
+| [network](slots/network.qmd) | Path to subject-specific connectome (when not session-dependent) |
+| [nev](slots/nev.qmd) | Number of eigenvalues to compute |
+| [newton_max_iterations](slots/newton_max_iterations.qmd) | Maximum Newton corrector iterations per step |
+| [newton_tol](slots/newton_tol.qmd) | Absolute tolerance for Newton corrector convergence |
+| [nextflow](slots/nextflow.qmd) | Nextflow execution directives |
+| [node_edge_color](slots/node_edge_color.qmd) | Outline colour of the region markers |
+| [node_edge_width](slots/node_edge_width.qmd) | Outline weight of the region markers |
+| [node_mapping](slots/node_mapping.qmd) | HDF5 dataset path for node-to-parent mapping |
+| [node_size](slots/node_size.qmd) | Marker size for the regions |
+| [node_template](slots/node_template.qmd) | Default Node attributes applied to every Node in this Network |
+| [nodes](slots/nodes.qmd) | Network nodes a stimulus-type event is applied to (node ids / indices) |
+| [noise](slots/noise.qmd) | Optional stochastic contribution to the stimulus |
+| [noise_draw](slots/noise_draw.qmd) | How the base solve draws its noise realization, and therefore WHICH realizati... |
+| [noise_type](slots/noise_type.qmd) | Temporal character of the process: `gaussian`/`white` (delta-correlated in ti... |
+| [non_negative](slots/non_negative.qmd) | All values >= 0 |
+| [normals](slots/normals.qmd) | Optional path inside the parent Network's h5 (or an external file) to per-ver... |
+| [not_in_templates](slots/not_in_templates.qmd) | Init templates that do *not* get this directory, though every other kind does |
+| [notes](slots/notes.qmd) |  |
+| [nrows](slots/nrows.qmd) | Rows to fill |
+| [num_chains](slots/num_chains.qmd) | Independent MCMC chains |
+| [num_samples](slots/num_samples.qmd) | Posterior samples to draw |
+| [num_warmup](slots/num_warmup.qmd) | Warmup/adaptation steps before sampling |
+| [number](slots/number.qmd) | The panel letter to draw, overriding the mosaic key, or the string 'false' to... |
+| [number_loc](slots/number_loc.qmd) | Per-panel override of the figure's panel_number_loc — e |
+| [number_of_elements](slots/number_of_elements.qmd) | Number of elements (triangles, quads, tetrahedra, etc |
+| [number_of_modes](slots/number_of_modes.qmd) |  |
+| [number_of_nodes](slots/number_of_nodes.qmd) | Number of nodes in the network (derived from nodes if not set) |
+| [number_of_stages](slots/number_of_stages.qmd) |  |
+| [number_of_subjects](slots/number_of_subjects.qmd) | Number of subjects in the tractography dataset |
+| [number_of_vertices](slots/number_of_vertices.qmd) | Number of vertices in the mesh |
+| [objective](slots/objective.qmd) | What the algorithm optimizes for |
+| [objectives](slots/objectives.qmd) | Names of observations minimised by an adaptive `strategy` (e |
+| [observable](slots/observable.qmd) | Observable to compute at each point |
+| [observational_measures](slots/observational_measures.qmd) | BEP017 measure names for observational targets (e |
+| [observations](slots/observations.qmd) | References to observations defined in the observations section |
+| [observed](slots/observed.qmd) | Observable functions computed from states, inputs, and parameters after simul... |
+| [ode_solver](slots/ode_solver.qmd) | ODE solver for flow-based methods (shooting, poincaré) |
+| [of](slots/of.qmd) | Name of the input this step consumes — the positions for `pairwise_distance` ... |
+| [on_region](slots/on_region.qmd) | Mesh/atlas subset where BC applies |
+| [opacity](slots/opacity.qmd) |  |
+| [opaque](slots/opaque.qmd) | BIDS: the standard does not specify the contents, so a validator does not rea... |
+| [operating_system](slots/operating_system.qmd) | Supported operating systems (e |
+| [operator_type](slots/operator_type.qmd) |  |
+| [operators](slots/operators.qmd) |  |
+| [optimizations](slots/optimizations.qmd) | Parameter optimization configurations |
+| [optional](slots/optional.qmd) |  |
+| [options](slots/options.qmd) | Toolkit-specific string options (jacobian type, etc |
+| [opts](slots/opts.qmd) | The keyword options of a `custom` callable, and of the kinds that carry their... |
+| [orientation](slots/orientation.qmd) | Which way the bar runs |
+| [originalLookupLabel](slots/originalLookupLabel.qmd) | Add the original label of this entity as defined in the parcellation terminol... |
+| [out_dir](slots/out_dir.qmd) | Output directory template |
+| [output](slots/output.qmd) | WHICH array to take from the container at ``experiment`` / ``iri``: a recorde... |
+| [output_equation](slots/output_equation.qmd) | Output transformation equation (if equation-based) |
+| [outputs](slots/outputs.qmd) | The data variables the container actually holds, read off it when the record ... |
+| [outsym](slots/outsym.qmd) | Output symbol names for the edge model |
+| [over](slots/over.qmd) | The dimension the frames advance along, by NAME (e |
+| [package](slots/package.qmd) | Reference to the software package identity |
+| [pad](slots/pad.qmd) | Whitespace left around the content when trimming, in inches |
+| [palette](slots/palette.qmd) | The categorical hues, reached into only where a panel separates conditions |
+| [panel_key](slots/panel_key.qmd) | Mosaic label this panel binds to (matches a letter in Figure |
+| [panel_number_format](slots/panel_number_format.qmd) | Python format string applied to each panel letter: '{}' -> 'a', '({})' -> '(a... |
+| [panel_number_loc](slots/panel_number_loc.qmd) | Which corner the panel letter sits in |
+| [panel_number_offset](slots/panel_number_offset.qmd) | [dx, dy] shift of every panel letter from its corner, in axes fractions |
+| [panel_number_size](slots/panel_number_size.qmd) | Panel-letter size in points |
+| [panel_numbers](slots/panel_numbers.qmd) | Draw automatic panel letters (a, b,  |
+| [panels](slots/panels.qmd) | Panels keyed by their mosaic label |
+| [parallel_batch_size](slots/parallel_batch_size.qmd) | Chunk size for ``lax_map`` and chunked-``vmap`` modes |
+| [parallel_mode](slots/parallel_mode.qmd) | How trial-axis parallelism is realised at codegen time |
+| [parameter](slots/parameter.qmd) | Dotted reference to the quantity being swept; also the key of the enclosing `... |
+| [parameters](slots/parameters.qmd) |  |
+| [parcel_map_field](slots/parcel_map_field.qmd) | When the mesh is inlined on a Network with a parcellation, the dotted path in... |
+| [parcellation](slots/parcellation.qmd) | Brain parcellation/atlas reference |
+| [parent_network](slots/parent_network.qmd) | Path/URI to parent (coarser) Network |
+| [parent_score](slots/parent_score.qmd) | If this score is a subscore of a broader composite |
+| [partition](slots/partition.qmd) | Marks a grouped streaming reduction over a node partition (e |
+| [path](slots/path.qmd) | External image file (image kind) |
+| [percent_change](slots/percent_change.qmd) | Percent change compared to preoperative baseline (positive = improvement) |
+| [percentile](slots/percentile.qmd) | Clip the limit to this percentile of the values (100 = no clipping), so one o... |
+| [period](slots/period.qmd) | Sampling period for monitors (ms) |
+| [permutations](slots/permutations.qmd) | Name of the observer parameter holding the fixed ``(n_perm, n)`` permutation-... |
+| [permute](slots/permute.qmd) | The symbol whose entries are permuted (the observation source, or a parameter... |
+| [pipeline](slots/pipeline.qmd) | Ordered sequence of Functions |
+| [placeholder](slots/placeholder.qmd) | Honest-placeholder text drawn when this panel's data is missing or degenerate... |
+| [platform](slots/platform.qmd) | OS / architecture (e |
+| [position](slots/position.qmd) | Spatial coordinates (x, y, z) of the node |
+| [post_expression](slots/post_expression.qmd) | Post-processing expression applied after coupling |
+| [pre_expression](slots/pre_expression.qmd) | Pre-processing expression applied before coupling |
+| [precision](slots/precision.qmd) | Floating point precision: 'float32' or 'float64' |
+| [preconditioner](slots/preconditioner.qmd) |  |
+| [predicted](slots/predicted.qmd) | Observation(s) the model PREDICTS, recomputed for every proposed theta |
+| [preprocessing](slots/preprocessing.qmd) | Optional preprocessing to apply after loading |
+| [primary_weight](slots/primary_weight.qmd) | Name of the edge group that should serve as the canonical weights matrix when... |
+| [priors](slots/priors.qmd) | Priors over the inferred parameters, keyed by each parameter's dotted name (e |
+| [procedure](slots/procedure.qmd) | Optional symbolic procedure for derived generators (e |
+| [processing_pipeline](slots/processing_pipeline.qmd) | Processing pipeline used to generate the tractography |
+| [produced_by](slots/produced_by.qmd) | The experiment or analysis that computed it, by IRI (``tvbo:exp/<study>/exp-<... |
+| [producer](slots/producer.qmd) | HOW to compute this value, when it is derived rather than obtained — the call... |
+| [programming_language](slots/programming_language.qmd) | Implementation languages |
+| [projection](slots/projection.qmd) | Which plane the region centres flatten onto |
+| [protocols](slots/protocols.qmd) | All DBS protocols assigned to this subject |
+| [provenance](slots/provenance.qmd) | W3C PROV-O aligned provenance for this entity — what it was derived from, whi... |
+| [pulse_width](slots/pulse_width.qmd) |  |
+| [pycode](slots/pycode.qmd) | Python code for the equation |
+| [quantity_kind](slots/quantity_kind.qmd) | Scalar, vector, or tensor |
+| [query](slots/query.qmd) | BIDS entity filter that selects one per-subject file under the experiment's `... |
+| [queue](slots/queue.qmd) | Scheduler queue for the executor (Nextflow process |
+| [ramp](slots/ramp.qmd) | For method=from_working_point: the parameter + domain to ramp quasi-staticall... |
+| [random_seed](slots/random_seed.qmd) | Experiment-global RNG seed (default 0) |
+| [random_state](slots/random_state.qmd) |  |
+| [recon_path](slots/recon_path.qmd) |  |
+| [reconcile](slots/reconcile.qmd) | Align the sourced array's nodes to the consuming network by label (``by_label... |
+| [reconstruction](slots/reconstruction.qmd) | BIDS rec- entity (e |
+| [record](slots/record.qmd) | Whether to include this element in simulation output files |
+| [reduce](slots/reduce.qmd) | Opt into streaming evaluation of this observation: fold it into the integrato... |
+| [ref](slots/ref.qmd) | Git branch, tag, or commit to check out (``git`` sources only) |
+| [reference](slots/reference.qmd) | DOI or citation for this dataset |
+| [reference_image](slots/reference_image.qmd) | The published figure this one reproduces, as a path relative to the study roo... |
+| [reference_publication](slots/reference_publication.qmd) | DOI of the primary reference publication for this tool |
+| [references](slots/references.qmd) |  |
+| [region](slots/region.qmd) | Brain region or anatomical label |
+| [region_mapping](slots/region_mapping.qmd) | For hierarchical coupling: vertex-to-region mapping for aggregation |
+| [regional_connectivity](slots/regional_connectivity.qmd) | For hierarchical coupling: region-to-region connectivity with weights and del... |
+| [regions](slots/regions.qmd) | Rectangles ringing the windows this panel calls out — the parameter band a re... |
+| [rel_tol](slots/rel_tol.qmd) | Relative tolerance for ODE integration |
+| [relatedUBERONTerm](slots/relatedUBERONTerm.qmd) | Add the related anatomical entity as defined by the UBERON ontology |
+| [render](slots/render.qmd) | Name of a registered custom-panel callable fn(container, ax, **opts) (custom ... |
+| [replaces](slots/replaces.qmd) | Dotted references to the post-scan pipeline reducers this streams |
+| [reported_optimum](slots/reported_optimum.qmd) |  |
+| [repository](slots/repository.qmd) | Source code repository URL |
+| [required](slots/required.qmd) | Whether a value for this parameter must be supplied |
+| [requirements](slots/requirements.qmd) |  |
+| [requires](slots/requires.qmd) | Observables required by this update rule |
+| [reset_state](slots/reset_state.qmd) | Start this stage from the model's declared initial conditions rather than the... |
+| [results](slots/results.qmd) | The named numbers the prose cites, each keyed by the manuscript token that st... |
+| [resync](slots/resync.qmd) | Recurrence rebuilding the state exactly from the whole window `x` |
+| [resync_masked](slots/resync_masked.qmd) | Recurrence rebuilding the state from a fixed-size ring in which only `L` rows... |
+| [retries](slots/retries.qmd) | Automatic retries per failed task |
+| [rhs](slots/rhs.qmd) |  |
+| [right](slots/right.qmd) | Strip reserved at the right — what cells carrying their ticks on that side ne... |
+| [rng](slots/rng.qmd) | Random-seed policy across shards |
+| [role](slots/role.qmd) | Semantic key this directory is resolved by |
+| [rotation](slots/rotation.qmd) | Text rotation in degrees counter-clockwise; 90 for a label running up the sid... |
+| [row_label_rotation](slots/row_label_rotation.qmd) | Rotation of the row headings, in degrees |
+| [row_labels](slots/row_labels.qmd) | One heading per row, in the reserved left strip |
+| [rules](slots/rules.qmd) | Straight reference lines drawn across the panel: a zero, a threshold, the ide... |
+| [run_id](slots/run_id.qmd) | BIDS run number |
+| [runtime_platform](slots/runtime_platform.qmd) | Execution backends or platforms (e |
+| [same_as](slots/same_as.qmd) | URIs that unambiguously identify this tool (Wikidata, bio |
+| [sample](slots/sample.qmd) |  |
+| [sampler](slots/sampler.qmd) | MCMC sampler ('nuts') |
+| [sampling_period](slots/sampling_period.qmd) | Time between samples (inverse of sampling_rate) |
+| [sampling_period_unit](slots/sampling_period_unit.qmd) | Unit of the sampling period (e |
+| [sampling_rate](slots/sampling_rate.qmd) | Sample rate of the `dataLocation` waveform in samples per millisecond (e |
+| [scale](slots/scale.qmd) | The scale this score belongs to, if applicable |
+| [scipy_ode_base](slots/scipy_ode_base.qmd) |  |
+| [score](slots/score.qmd) |  |
+| [seed](slots/seed.qmd) | Random seed for reproducible graph generation |
+| [seed_offset](slots/seed_offset.qmd) | Sub-stream this step draws from, offset from the generator's seed |
+| [segmentation](slots/segmentation.qmd) | BIDS seg- entity (e |
+| [sel](slots/sel.qmd) | SLICE: label-based selector (xarray `` |
+| [sequential](slots/sequential.qmd) | Ordered magnitudes with no meaningful zero |
+| [session_id](slots/session_id.qmd) | BIDS session identifier |
+| [sessions](slots/sessions.qmd) | Data collection sessions for this subject |
+| [settings](slots/settings.qmd) |  |
+| [settle_seed](slots/settle_seed.qmd) | Seed for the noise the settle integrates, when the settle runs as its own sca... |
+| [setup](slots/setup.qmd) | Shell lines run verbatim before the task command, after ``set -euo pipefail``... |
+| [sex](slots/sex.qmd) | Biological sex |
+| [shape](slots/shape.qmd) | Matrix dimensions [N, M] |
+| [share_x](slots/share_x.qmd) | Panel groups that share one x scale, each entry a comma-separated list of mos... |
+| [share_y](slots/share_y.qmd) | Panel groups that share one y scale, each entry a comma-separated list of mos... |
+| [show](slots/show.qmd) | Whether the bar is drawn |
+| [sigma](slots/sigma.qmd) | Observation-noise scale of the likelihood |
+| [simulation_experiments](slots/simulation_experiments.qmd) |  |
+| [simulation_period](slots/simulation_period.qmd) | Duration of each simulation step (e |
+| [size](slots/size.qmd) | Text size in points, overriding the figure's font size for this label alone |
+| [slurm](slots/slurm.qmd) | Slurm sbatch directives for array-job execution |
+| [snakemake](slots/snakemake.qmd) | Snakemake execution directives |
+| [software](slots/software.qmd) |  |
+| [software_environment](slots/software_environment.qmd) | Software environment used to generate this data |
+| [solver](slots/solver.qmd) | ODE solver for time_integration method |
+| [source](slots/source.qmd) |  |
+| [source_branch](slots/source_branch.qmd) | Name of a previously computed branch (for from_branch method) |
+| [source_code](slots/source_code.qmd) |  |
+| [source_experiment](slots/source_experiment.qmd) | For method=from_experiment: the experiment whose settled per-node endpoint st... |
+| [source_network](slots/source_network.qmd) | Path or name of the Network whose nodes define the source endpoints of this E... |
+| [source_point](slots/source_point.qmd) | Which point of the source branch/run seeds this run: 'endpoint' (default, the... |
+| [source_url](slots/source_url.qmd) | Canonical source or repository URL |
+| [source_var](slots/source_var.qmd) | Output variable from source node to use (e |
+| [sources](slots/sources.qmd) |  |
+| [space](slots/space.qmd) | Exploration axes spanning the search space, keyed by the dotted parameter ref... |
+| [sparse](slots/sparse.qmd) | Whether the coupling uses sparse representations |
+| [spine_offset](slots/spine_offset.qmd) | How far the left and bottom spines sit outside the data area, in axes fractio... |
+| [spines](slots/spines.qmd) | Axes spine style: 'box' (all 4 spines, closed boxes — e |
+| [stages](slots/stages.qmd) | Ordered list of optimization stages |
+| [started_at](slots/started_at.qmd) | ISO 8601 start time |
+| [state](slots/state.qmd) | Per-node initial state variable values, keyed by state variable name |
+| [state_variables](slots/state_variables.qmd) |  |
+| [state_wise_sigma](slots/state_wise_sigma.qmd) |  |
+| [statistic](slots/statistic.qmd) | Statistic used to collapse the axis (mean, sum, std, sem, median) |
+| [step](slots/step.qmd) | Step size |
+| [step_size](slots/step_size.qmd) | Fixed time step of the solver |
+| [steps](slots/steps.qmd) | Ordered intermediate steps, keyed by name — the same keyed-collection form as... |
+| [still](slots/still.qmd) | Which frame is also saved as a still image beside the movie, for the contexts... |
+| [stimulation](slots/stimulation.qmd) |  |
+| [stimulation_variable](slots/stimulation_variable.qmd) |  |
+| [stimulus](slots/stimulus.qmd) |  |
+| [strategy](slots/strategy.qmd) | Search strategy over the decision space (the `space` axes) |
+| [structural_measures](slots/structural_measures.qmd) | BEP017 measure names for structural connectivity (e |
+| [studies](slots/studies.qmd) | Other studies this one aggregates, each a ``SimulationStudy`` in its own righ... |
+| [style](slots/style.qmd) | Style layers underneath the theme, applied left to right: a registered bsplot... |
+| [subdir](slots/subdir.qmd) | Subdirectory within the source to place on the import path (defaults to the s... |
+| [subdirs](slots/subdirs.qmd) | Directories under the dataset root, in the order a reader should meet them |
+| [subject_id](slots/subject_id.qmd) | BIDS subject identifier |
+| [subjects](slots/subjects.qmd) | Ordered list of subject IDs (e |
+| [subnetwork](slots/subnetwork.qmd) | Optional finer-scale Network that "lives inside" this Node (network-of-networ... |
+| [suffix](slots/suffix.qmd) | BIDS suffix (e |
+| [surface](slots/surface.qmd) | Geometry and colour scale of a `kind: surface` panel |
+| [surface_atlas](slots/surface_atlas.qmd) | The atlas to read vertex labels from, where it differs from the one the value... |
+| [surrogate](slots/surrogate.qmd) | Optional permutation-significance test: this derived variable's value is the ... |
+| [sweep_direction](slots/sweep_direction.qmd) | Order in which a branch-following axis (sweep_seeding: from_previous) is trav... |
+| [sweep_seeding](slots/sweep_seeding.qmd) | How each sweep point's initial state is obtained |
+| [symbol](slots/symbol.qmd) |  |
+| [symmetric](slots/symmetric.qmd) | Centre the limits on zero, so zero is the map's midpoint |
+| [symmetry](slots/symmetry.qmd) | Edge symmetry type for NetworkDynamics |
+| [system_size](slots/system_size.qmd) | System size (van Kampen Ω) for the stochastic 'gillespie' backend: the number... |
+| [system_type](slots/system_type.qmd) |  |
+| [tail](slots/tail.qmd) |  |
+| [tail_duration](slots/tail_duration.qmd) | Length of the trailing window as a duration, in the same time unit as the int... |
+| [tail_samples](slots/tail_samples.qmd) | Number of samples from the end to use |
+| [tail_used](slots/tail_used.qmd) | The arrow tail's y, read from a result container (same reference form a Layer... |
+| [tail_x](slots/tail_x.qmd) | Start the arrow at this x in DATA coordinates instead of at an axes-fraction ... |
+| [target](slots/target.qmd) | Target node ID (set for explicit edges, absent for template edges) |
+| [target_component](slots/target_component.qmd) | Component to attach this event to |
+| [target_data](slots/target_data.qmd) | Reference to empirical data observation for matching objectives |
+| [target_network](slots/target_network.qmd) | Path or name of the Network whose nodes define the target endpoints (e |
+| [target_parameter](slots/target_parameter.qmd) | The parameter to update (e |
+| [target_range](slots/target_range.qmd) | Target interval for a `minmax_rescale` step (e |
+| [target_regions](slots/target_regions.qmd) | Regions a stimulus-type event targets: 'all' (broadcast to every node) or exp... |
+| [target_structure](slots/target_structure.qmd) | Anatomical target structure from a brain atlas |
+| [target_value](slots/target_value.qmd) | Target value for activity objectives |
+| [target_var](slots/target_var.qmd) | Input variable on target node to connect to (e |
+| [target_variable](slots/target_variable.qmd) | State variable that a stimulus-type event drives — the variable its signal is... |
+| [targets](slots/targets.qmd) | State variables this noise applies to; if omitted, applies globally |
+| [task_iri](slots/task_iri.qmd) | Cognitive Atlas (``cogat:``) IRI of the assessment instrument / task that pro... |
+| [task_name](slots/task_name.qmd) | BIDS task name for the simulation (e |
+| [template](slots/template.qmd) | Asset that seeds the file at ``tvbo study init``, resolved against the scaffo... |
+| [template_variants](slots/template_variants.qmd) | Seeds that supersede ``template`` for one init variant, keyed by variant name |
+| [templates](slots/templates.qmd) | The kinds of study this record covers, keyed by the name ``tvbo study init --... |
+| [tensor_coefficient](slots/tensor_coefficient.qmd) | Optional anisotropic tensor (e |
+| [terminology](slots/terminology.qmd) | Add the parcellation terminology version used for this brain atlas version |
+| [text](slots/text.qmd) | The label |
+| [theme](slots/theme.qmd) | The look this figure declares: its colours and the geometry a style sheet use... |
+| [threshold_applied](slots/threshold_applied.qmd) | Threshold value applied to the E-field simulation |
+| [tick_direction](slots/tick_direction.qmd) | Whether tick marks point out of the axes, into them, or both |
+| [tick_length](slots/tick_length.qmd) | Length of this panel's tick marks in points, overriding the theme's |
+| [tick_pad](slots/tick_pad.qmd) | Distance from a tick mark to its label, in points |
+| [tick_prune](slots/tick_prune.qmd) | Drop the first, last, or both end ticks, for the case where a corner tick col... |
+| [tick_size](slots/tick_size.qmd) | Tick-label size in points, overriding the figure's `font_size` for this panel... |
+| [tick_width](slots/tick_width.qmd) | Line weight of a major tick mark, in points |
+| [ticklabels](slots/ticklabels.qmd) | Text for the marked values of a STANDALONE `kind: colorbar` panel, where the ... |
+| [ticks](slots/ticks.qmd) | The values to mark |
+| [time](slots/time.qmd) | Wall-clock limit per task (e |
+| [time_dependent](slots/time_dependent.qmd) |  |
+| [time_post_surgery](slots/time_post_surgery.qmd) | Timepoint of assessment in days or months after implantation |
+| [time_range](slots/time_range.qmd) | Time range for generated TimeSeries (for kernel generators) |
+| [time_unit](slots/time_unit.qmd) | Unit of every time-valued number in this scope — the step size, any period, a... |
+| [timepoint](slots/timepoint.qmd) | Timepoint of assessment (e |
+| [timing_info](slots/timing_info.qmd) |  |
+| [title](slots/title.qmd) | A heading above the panel, in the panel's own words |
+| [title_pad](slots/title_pad.qmd) | Distance from a panel title to the axes, in points |
+| [tol_stability](slots/tol_stability.qmd) | Tolerance on real part of eigenvalue for stability boundary |
+| [tool_role](slots/tool_role.qmd) | Primary function(s) in a simulation workflow |
+| [top](slots/top.qmd) | Strip reserved at the top for the column labels |
+| [traceable](slots/traceable.qmd) | Whether this callable can be traced by an array-programming backend (jit/vmap... |
+| [tracked](slots/tracked.qmd) | What version control keeps, which is what the `` |
+| [tractogram](slots/tractogram.qmd) | Reference to tractography data |
+| [trailing](slots/trailing.qmd) | Text written after the last cell, closing such an equation |
+| [trajectory](slots/trajectory.qmd) | The planned trajectory for electrode implantation |
+| [transform](slots/transform.qmd) | Optional named reduction applied to the sourced array after ``sel``, before `... |
+| [transforms](slots/transforms.qmd) | Ordered list of transforms applied to edge property matrices |
+| [transient_time](slots/transient_time.qmd) | Length of the leading settling window, prepended to `duration` |
+| [triangle](slots/triangle.qmd) | Fill only this triangle of a square matrix, masking the other half so a sibli... |
+| [triangle_gap](slots/triangle_gap.qmd) | Cells of blank left along the diagonal between two `triangle` layers, so the ... |
+| [trigger_times](slots/trigger_times.qmd) | Predetermined trigger times for preset_time events |
+| [trim_margins](slots/trim_margins.qmd) | Trim surrounding whitespace from the saved figure (default true) |
+| [truncation_window](slots/truncation_window.qmd) | Truncated-BPTT window in milliseconds of simulated time: gradients flow back ... |
+| [type](slots/type.qmd) | Controlled-vocabulary terms narrowing what kind of activity this was |
+| [unit](slots/unit.qmd) | Physical unit of measurement |
+| [units](slots/units.qmd) | How this tool spells the units TVBO declares |
+| [update_expression](slots/update_expression.qmd) |  |
+| [update_rules](slots/update_rules.qmd) | How parameters are updated each iteration |
+| [url](slots/url.qmd) | (Deprecated) Use source_url |
+| [used](slots/used.qmd) |  |
+| [va](slots/va.qmd) | Vertical alignment against (x, y) — bottom, center, top, baseline |
+| [valid_diagonal](slots/valid_diagonal.qmd) | Self-connections are meaningful |
+| [value](slots/value.qmd) | Numeric, string, or boolean value, OR an array (nested list) for array-valued... |
+| [values](slots/values.qmd) |  |
+| [variable_of_interest](slots/variable_of_interest.qmd) |  |
+| [variant](slots/variant.qmd) | The ``tvbo study init --template`` name this seed belongs to |
+| [vectorize](slots/vectorize.qmd) | Axis names or parameters to pack into a single vectorized backend call |
+| [vectorized](slots/vectorized.qmd) | Opt in to the vectorized matmul fast path for a source-only coupling — one wh... |
+| [venv](slots/venv.qmd) | Path to a virtual environment to activate before running |
+| [version](slots/version.qmd) | Version of the instrument (e |
+| [version_spec](slots/version_spec.qmd) | Version or constraint specifier (e |
+| [vertex_to_region](slots/vertex_to_region.qmd) | Array mapping each vertex index to its parent region index |
+| [vertices_field](slots/vertices_field.qmd) | When the mesh is inlined on a Network, the dotted path inside the parent's h5... |
+| [view](slots/view.qmd) | Where the camera sits |
+| [vmax](slots/vmax.qmd) | The value the scale ends at |
+| [vmin](slots/vmin.qmd) | The value the scale starts at |
+| [voi](slots/voi.qmd) | Variable of interest index (which state variable to monitor) |
+| [volume](slots/volume.qmd) | Geometry and colour scale of a `kind: volume` panel |
+| [volume_data](slots/volume_data.qmd) | Reference to raw or thresholded volume |
+| [wait_selector](slots/wait_selector.qmd) | CSS selector to wait for before capturing, so the shot is taken only once the... |
+| [warmup](slots/warmup.qmd) | Extra settle time in seconds after load / wait_selector, for late layout or a... |
+| [warmup_from](slots/warmup_from.qmd) | Previous stage to initialize from |
+| [waves](slots/waves.qmd) | Per-group boolean derived variable: a wave is present this timestep |
+| [weight](slots/weight.qmd) | Connection weight (explicit edges) |
+| [weight_distribution](slots/weight_distribution.qmd) | Distribution to sample per-region stimulus weights from, as an alternative to... |
+| [weight_parameter](slots/weight_parameter.qmd) | Per-node stimulus weighting supplied as a Parameter, so a DERIVED weighting c... |
+| [weighted](slots/weighted.qmd) | Matrix entries carry weights (not just 0/1) |
+| [weighting](slots/weighting.qmd) |  |
+| [weights](slots/weights.qmd) | Per-node stimulus weighting, aligned with `nodes` |
+| [width](slots/width.qmd) | Figure width in mm (physical print size) |
+| [width_ratios](slots/width_ratios.qmd) | Relative widths of the mosaic columns |
+| [window_size](slots/window_size.qmd) | Number of samples for windowed aggregation |
+| [workflow](slots/workflow.qmd) | Axis names or parameters to fan out into independent scheduler tasks (one wor... |
+| [workflow_overrides](slots/workflow_overrides.qmd) | Per-figure HPC/workflow resource refinement (reuses WorkflowConfig, same patt... |
+| [wrt](slots/wrt.qmd) | Quantity/quantities the analysis is taken with respect to, e |
+| [wspace](slots/wspace.qmd) | Gap between columns, as a fraction of the panel |
+| [x](slots/x.qmd) | X coordinate |
+| [xlabel](slots/xlabel.qmd) | The x axis label, as the figure prints it — unit included, LaTeX included |
+| [xlabel_pad](slots/xlabel_pad.qmd) | Gap in points between the x axis label and its tick numbers, for where the de... |
+| [xlabel_side](slots/xlabel_side.qmd) | Which edge the x axis LABEL sits on |
+| [xlim](slots/xlim.qmd) | The x range, `[min, max]` |
+| [xscale](slots/xscale.qmd) | How the x axis maps values to distance |
+| [xtick_format](slots/xtick_format.qmd) | How x tick numbers are written: `sci` forces scientific notation, `plain` for... |
+| [xtick_rotation](slots/xtick_rotation.qmd) | Rotate the x tick labels, in degrees counter-clockwise |
+| [xtick_side](slots/xtick_side.qmd) | Which edge the x ticks sit on |
+| [xticks](slots/xticks.qmd) | The x tick positions, stated outright |
+| [y](slots/y.qmd) | Y coordinate |
+| [year](slots/year.qmd) |  |
+| [ylabel](slots/ylabel.qmd) | The y axis label |
+| [ylabel_pad](slots/ylabel_pad.qmd) | Gap in points between the y axis label and its tick numbers |
+| [ylabel_side](slots/ylabel_side.qmd) | Which edge the y axis LABEL sits on |
+| [ylim](slots/ylim.qmd) | The y range, `[min, max]` |
+| [yscale](slots/yscale.qmd) | How the y axis maps values to distance |
+| [ytick_format](slots/ytick_format.qmd) | How y tick numbers are written |
+| [ytick_rotation](slots/ytick_rotation.qmd) | Rotate the y tick labels, in degrees counter-clockwise |
+| [ytick_side](slots/ytick_side.qmd) | Which edge the y ticks sit on |
+| [yticks](slots/yticks.qmd) | The y tick positions, stated outright |
+| [z](slots/z.qmd) | Z coordinate |
+| [zlabel](slots/zlabel.qmd) | The depth axis label of a 3-D panel |
+| [zlabel_pad](slots/zlabel_pad.qmd) | Gap in points between the z axis label and its tick numbers |
+| [zlim](slots/zlim.qmd) | The depth range of a 3-D panel, `[min, max]` |
+| [zoom](slots/zoom.qmd) | Scale factor on the projected view; above 1 moves the camera in |
+
+
+## Enumerations
+
+| Enumeration | Description |
+| --- | --- |
+| [AggregationType](enums/AggregationType.qmd) | How to aggregate time series data |
+| [AlgorithmCompositionMode](enums/AlgorithmCompositionMode.qmd) | How an included algorithm is composed with the outer algorithm |
+| [AxisReductionStatistic](enums/AxisReductionStatistic.qmd) | Statistic used to collapse an exploration/sweep axis into a single reduced va... |
+| [BoundaryConditionType](enums/BoundaryConditionType.qmd) |  |
+| [ComparisonOperator](enums/ComparisonOperator.qmd) | Comparison used by a `stochastic_mask` step |
+| [ConnectivityRule](enums/ConnectivityRule.qmd) | Rule for expanding a population-level Edge into individual cell-to-cell conne... |
+| [ContinuationAlgorithm](enums/ContinuationAlgorithm.qmd) | Predictor-corrector algorithm for numerical continuation |
+| [CouplingStageEvaluation](enums/CouplingStageEvaluation.qmd) | How the network coupling term is evaluated within one step of a multi-stage i... |
+| [DimensionType](enums/DimensionType.qmd) | Dimensions along which operations can be applied |
+| [DiscretizationMethod](enums/DiscretizationMethod.qmd) |  |
+| [DomainEnforcement](enums/DomainEnforcement.qmd) | Whether and how a state variable's ``domain`` constrains the trajectory durin... |
+| [ElementType](enums/ElementType.qmd) |  |
+| [EventType](enums/EventType.qmd) | Type of event triggering mechanism |
+| [GraphRepresentation](enums/GraphRepresentation.qmd) | How a Network's connectivity is represented when evaluating coupling |
+| [ImagingModality](enums/ImagingModality.qmd) |  |
+| [InitialStateMethod](enums/InitialStateMethod.qmd) | Strategy for obtaining the starting equilibrium or periodic orbit |
+| [ModelType](enums/ModelType.qmd) | Coarse classification of a Dynamics model by its mathematical/biological orig... |
+| [NoiseDraw](enums/NoiseDraw.qmd) | How a stochastic run's noise realization is generated |
+| [NoiseType](enums/NoiseType.qmd) |  |
+| [NumericalDiscretizationMethod](enums/NumericalDiscretizationMethod.qmd) | Numerical discretization method for boundary value problems (periodic orbits,... |
+| [ObservationReductionMode](enums/ObservationReductionMode.qmd) | How an observation is evaluated over the trajectory (see Observation |
+| [OperatorType](enums/OperatorType.qmd) |  |
+| [ParallelMode](enums/ParallelMode.qmd) | How a trial / grid-point axis is realised at JAX codegen time |
+| [ProcedureStepType](enums/ProcedureStepType.qmd) | The operation a ProcedureStep performs |
+| [ReducerEmitKind](enums/ReducerEmitKind.qmd) | How often a streaming reducer reads its value out (see Reducer |
+| [ReductionType](enums/ReductionType.qmd) | Operations for reducing/aggregating values across dimensions |
+| [SamplingAxis](enums/SamplingAxis.qmd) | Dimension along which a distribution is sampled |
+| [SparseFormat](enums/SparseFormat.qmd) |  |
+| [StandardGraphType](enums/StandardGraphType.qmd) | Well-known graph generator families with automatic backend mapping |
+| [SweepDirection](enums/SweepDirection.qmd) | Order in which a branch-following sweep (SweepSeeding |
+| [SweepSeeding](enums/SweepSeeding.qmd) | How each point of a parameter sweep (Exploration) obtains its initial state |
+| [SystemType](enums/SystemType.qmd) |  |
+| [WorkflowDistributeBy](enums/WorkflowDistributeBy.qmd) | Default tier a sweep axis is placed on when it is not named explicitly in a D... |
+
+
+## Types
+
+| Type | Description |
+| --- | --- |
+
+
+## Subsets
+
+| Subset | Description |
+| --- | --- |

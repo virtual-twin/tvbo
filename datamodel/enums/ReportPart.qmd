@@ -1,0 +1,76 @@
+# Enum: ReportPart 
+
+
+
+
+_Where a declared item appears in a generated report. A study with many near-identical experiments marks the routine ones ``supplementary``, so the Methods carries the experiments that make the argument and the rest stay a table row plus a paragraph in the SI._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ReportPart](https://w3id.org/tvbo/enum/ReportPart)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| main | None | The main Methods, in full |
+| supplementary | None | Supplementary material |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [part](../slots/part.qmd) | Which part of a generated report this belongs in — the main Methods or the su... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/common
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ReportPart
+description: Where a declared item appears in a generated report. A study with many
+  near-identical experiments marks the routine ones ``supplementary``, so the Methods
+  carries the experiments that make the argument and the rest stay a table row plus
+  a paragraph in the SI.
+from_schema: https://w3id.org/tvbo/common
+permissible_values:
+  main:
+    text: main
+    description: The main Methods, in full.
+  supplementary:
+    text: supplementary
+    description: Supplementary material. The item still appears as a row in the Methods'
+      experiment table, so the reader sees that it exists.
+
+```
+</details>
+
+</div>

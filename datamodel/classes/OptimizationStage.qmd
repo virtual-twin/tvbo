@@ -1,0 +1,615 @@
+# Class: OptimizationStage 
+
+
+_A single stage in a multi-stage optimization workflow. Stages run sequentially, with each stage potentially using different parameters, shapes, learning rates, and algorithms._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:OptimizationStage](https://w3id.org/tvbo/OptimizationStage)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class OptimizationStage
+    click OptimizationStage href "./OptimizationStage.html"
+      OptimizationStage <|-- Optimization
+        click Optimization href "./Optimization.html"
+      
+      OptimizationStage : algorithm
+        
+          
+    
+        
+        
+        OptimizationStage --> "0..1" String : algorithm
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      OptimizationStage : description
+        
+          
+    
+        
+        
+        OptimizationStage --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      OptimizationStage : free_parameters
+        
+          
+    
+        
+        
+        OptimizationStage --> "*" FreeParameter : free_parameters
+        click FreeParameter href "./FreeParameter.html"
+    
+
+        
+      OptimizationStage : freeze_parameters
+        
+          
+    
+        
+        
+        OptimizationStage --> "*" Parameter : freeze_parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      OptimizationStage : hyperparameters
+        
+          
+    
+        
+        
+        OptimizationStage --> "*" Parameter : hyperparameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      OptimizationStage : label
+        
+          
+    
+        
+        
+        OptimizationStage --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      OptimizationStage : learning_rate
+        
+          
+    
+        
+        
+        OptimizationStage --> "0..1" Float : learning_rate
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      OptimizationStage : max_iterations
+        
+          
+    
+        
+        
+        OptimizationStage --> "0..1" Integer : max_iterations
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      OptimizationStage : name
+        
+          
+    
+        
+        
+        OptimizationStage --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      OptimizationStage : warmup_from
+        
+          
+    
+        
+        
+        OptimizationStage --> "0..1" OptimizationStage : warmup_from
+        click OptimizationStage href "./OptimizationStage.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **OptimizationStage**
+    * [Optimization](../classes/Optimization.qmd)
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:OptimizationStage](https://w3id.org/tvbo/OptimizationStage) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [free_parameters](../slots/free_parameters.qmd) | * <br/> [FreeParameter](../classes/FreeParameter.qmd) | Parameters to optimize in this stage | direct |
+| [algorithm](../slots/algorithm.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optimizer for this stage: 'adam', 'adamw', 'sgd', etc | direct |
+| [learning_rate](../slots/learning_rate.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) |  | direct |
+| [max_iterations](../slots/max_iterations.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+| [hyperparameters](../slots/hyperparameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) | Stage-specific hyperparameters (e | direct |
+| [freeze_parameters](../slots/freeze_parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) | Parameters from previous stages to freeze (keep at optimized value but not up... | direct |
+| [warmup_from](../slots/warmup_from.qmd) | 0..1 <br/> [OptimizationStage](../classes/OptimizationStage.qmd) | Previous stage to initialize from | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [OptimizationStage](../classes/OptimizationStage.qmd) | [warmup_from](../slots/warmup_from.qmd) | range | [OptimizationStage](../classes/OptimizationStage.qmd) |
+| [Optimization](../classes/Optimization.qmd) | [stages](../slots/stages.qmd) | range | [OptimizationStage](../classes/OptimizationStage.qmd) |
+| [Optimization](../classes/Optimization.qmd) | [warmup_from](../slots/warmup_from.qmd) | range | [OptimizationStage](../classes/OptimizationStage.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:OptimizationStage |
+| native | tvbo:OptimizationStage |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: OptimizationStage
+description: A single stage in a multi-stage optimization workflow. Stages run sequentially,
+  with each stage potentially using different parameters, shapes, learning rates,
+  and algorithms.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- label
+- description
+attributes:
+  free_parameters:
+    name: free_parameters
+    description: Parameters to optimize in this stage. Each entry is a FreeParameter
+      that references an existing Parameter by dotted scope (e.g. "ReducedWongWang.w"
+      or "FastLinearCoupling.G") and supplies optimization-specific metadata (heterogeneous,
+      shape, bounds). No new Parameter is created here.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - OptimizationStage
+    - Continuation
+    range: FreeParameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  algorithm:
+    name: algorithm
+    description: 'Optimizer for this stage: ''adam'', ''adamw'', ''sgd'', etc.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(adam)
+    domain_of:
+    - Digest
+    - OptimizationStage
+    - AlgorithmInclude
+    - Continuation
+    range: string
+  learning_rate:
+    name: learning_rate
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(0.001)
+    domain_of:
+    - OptimizationStage
+    - Algorithm
+    range: float
+  max_iterations:
+    name: max_iterations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(100)
+    domain_of:
+    - OptimizationStage
+    range: integer
+  hyperparameters:
+    name: hyperparameters
+    description: Stage-specific hyperparameters (e.g., b2=0.9999 for adam)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - OptimizationStage
+    - Algorithm
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  freeze_parameters:
+    name: freeze_parameters
+    description: Parameters from previous stages to freeze (keep at optimized value
+      but not update)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - OptimizationStage
+    range: Parameter
+    multivalued: true
+    inlined: false
+  warmup_from:
+    name: warmup_from
+    description: Previous stage to initialize from. Final values from that stage become
+      initial values for this stage.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - OptimizationStage
+    range: OptimizationStage
+    inlined: false
+class_uri: tvbo:OptimizationStage
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: OptimizationStage
+description: A single stage in a multi-stage optimization workflow. Stages run sequentially,
+  with each stage potentially using different parameters, shapes, learning rates,
+  and algorithms.
+from_schema: https://w3id.org/tvbo
+attributes:
+  free_parameters:
+    name: free_parameters
+    description: Parameters to optimize in this stage. Each entry is a FreeParameter
+      that references an existing Parameter by dotted scope (e.g. "ReducedWongWang.w"
+      or "FastLinearCoupling.G") and supplies optimization-specific metadata (heterogeneous,
+      shape, bounds). No new Parameter is created here.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: OptimizationStage
+    domain_of:
+    - OptimizationStage
+    - Continuation
+    range: FreeParameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  algorithm:
+    name: algorithm
+    description: 'Optimizer for this stage: ''adam'', ''adamw'', ''sgd'', etc.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(adam)
+    owner: OptimizationStage
+    domain_of:
+    - Digest
+    - OptimizationStage
+    - AlgorithmInclude
+    - Continuation
+    range: string
+  learning_rate:
+    name: learning_rate
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(0.001)
+    owner: OptimizationStage
+    domain_of:
+    - OptimizationStage
+    - Algorithm
+    range: float
+  max_iterations:
+    name: max_iterations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: integer(100)
+    owner: OptimizationStage
+    domain_of:
+    - OptimizationStage
+    range: integer
+  hyperparameters:
+    name: hyperparameters
+    description: Stage-specific hyperparameters (e.g., b2=0.9999 for adam)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: OptimizationStage
+    domain_of:
+    - OptimizationStage
+    - Algorithm
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  freeze_parameters:
+    name: freeze_parameters
+    description: Parameters from previous stages to freeze (keep at optimized value
+      but not update)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: OptimizationStage
+    domain_of:
+    - OptimizationStage
+    range: Parameter
+    multivalued: true
+    inlined: false
+  warmup_from:
+    name: warmup_from
+    description: Previous stage to initialize from. Final values from that stage become
+      initial values for this stage.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: OptimizationStage
+    domain_of:
+    - OptimizationStage
+    range: OptimizationStage
+    inlined: false
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: OptimizationStage
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: OptimizationStage
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: OptimizationStage
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:OptimizationStage
+
+```
+</details></div>

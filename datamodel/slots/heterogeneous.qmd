@@ -1,0 +1,78 @@
+# Slot: heterogeneous 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/heterogeneous](https://w3id.org/tvbo/slot/heterogeneous)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [FreeParameter](../classes/FreeParameter.qmd) | One degree of freedom in an OptimizationStage |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Parameter](../classes/Parameter.qmd), [FreeParameter](../classes/FreeParameter.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:heterogeneous |
+| native | tvbo:heterogeneous |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: heterogeneous
+domain_of:
+- Parameter
+- FreeParameter
+range: string
+
+```
+</details></div>

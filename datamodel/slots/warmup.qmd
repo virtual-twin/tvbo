@@ -1,0 +1,79 @@
+# Slot: warmup 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/warmup](https://w3id.org/tvbo/slot/warmup)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [RenderSpec](../classes/RenderSpec.qmd) | A headless-browser capture recipe turning an `image` panel's HTML/URL `source... |  no  |
+| [ClassReference](../classes/ClassReference.qmd) | Reference to a class that can be instantiated and called |  no  |
+| [UpdateRule](../classes/UpdateRule.qmd) | Defines how a parameter is updated based on observables |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [RenderSpec](../classes/RenderSpec.qmd), [ClassReference](../classes/ClassReference.qmd), [UpdateRule](../classes/UpdateRule.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:warmup |
+| native | tvbo:warmup |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: warmup
+domain_of:
+- RenderSpec
+- ClassReference
+- UpdateRule
+range: string
+
+```
+</details></div>

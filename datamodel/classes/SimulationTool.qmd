@@ -1,0 +1,1206 @@
+# Class: SimulationTool 
+
+
+_A software tool for computational neuroscience simulation, analysis, or model specification. Extends SoftwarePackage with neuroscience-specific controlled vocabularies for scale, paradigm, role, and interoperability. Aligned with CodeMeta v3 and DOAP._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:SoftwareApplication](http://schema.org/SoftwareApplication)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class SimulationTool
+    click SimulationTool href "./SimulationTool.html"
+      SoftwarePackage <|-- SimulationTool
+        click SoftwarePackage href "./SoftwarePackage.html"
+      
+      SimulationTool : acted_on_behalf_of
+        
+          
+    
+        
+        
+        SimulationTool --> "*" SoftwarePackage : acted_on_behalf_of
+        click SoftwarePackage href "./SoftwarePackage.html"
+    
+
+        
+      SimulationTool : alternative_identifier
+        
+          
+    
+        
+        
+        SimulationTool --> "*" Uriorcurie : alternative_identifier
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      SimulationTool : application_category
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" String : application_category
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : author
+        
+          
+    
+        
+        
+        SimulationTool --> "*" String : author
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : citation
+        
+          
+    
+        
+        
+        SimulationTool --> "*" String : citation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : codegen_format
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" String : codegen_format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : date_created
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" Date : date_created
+        click Date href "../http://www.w3.org/2001/XMLSchema#date.html"
+    
+
+        
+      SimulationTool : date_modified
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" Date : date_modified
+        click Date href "../http://www.w3.org/2001/XMLSchema#date.html"
+    
+
+        
+      SimulationTool : description
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : development_status
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" DevelopmentStatus : development_status
+        click DevelopmentStatus href "../../enums/DevelopmentStatus.html"
+    
+
+        
+      SimulationTool : doi
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" String : doi
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : ecosystem
+        
+          
+    
+        
+        
+        SimulationTool --> "*" EcosystemEnum : ecosystem
+        click EcosystemEnum href "../../enums/EcosystemEnum.html"
+    
+
+        
+      SimulationTool : funder
+        
+          
+    
+        
+        
+        SimulationTool --> "*" String : funder
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : homepage
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" Uri : homepage
+        click Uri href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      SimulationTool : interoperates_with
+        
+          
+    
+        
+        
+        SimulationTool --> "*" SimulationTool : interoperates_with
+        click SimulationTool href "./SimulationTool.html"
+    
+
+        
+      SimulationTool : is_accessible_for_free
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" Boolean : is_accessible_for_free
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      SimulationTool : issue_tracker
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" Uri : issue_tracker
+        click Uri href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      SimulationTool : keywords
+        
+          
+    
+        
+        
+        SimulationTool --> "*" String : keywords
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : license
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" String : license
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : maintainer
+        
+          
+    
+        
+        
+        SimulationTool --> "*" String : maintainer
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : model_paradigm
+        
+          
+    
+        
+        
+        SimulationTool --> "*" ModelParadigm : model_paradigm
+        click ModelParadigm href "../../enums/ModelParadigm.html"
+    
+
+        
+      SimulationTool : name
+        
+          
+    
+        
+        
+        SimulationTool --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : operating_system
+        
+          
+    
+        
+        
+        SimulationTool --> "*" String : operating_system
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : programming_language
+        
+          
+    
+        
+        
+        SimulationTool --> "*" ProgrammingLanguageEnum : programming_language
+        click ProgrammingLanguageEnum href "../../enums/ProgrammingLanguageEnum.html"
+    
+
+        
+      SimulationTool : reference_publication
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" String : reference_publication
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : repository
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" Uri : repository
+        click Uri href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      SimulationTool : runtime_platform
+        
+          
+    
+        
+        
+        SimulationTool --> "*" String : runtime_platform
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationTool : same_as
+        
+          
+    
+        
+        
+        SimulationTool --> "*" Uri : same_as
+        click Uri href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      SimulationTool : scale
+        
+          
+    
+        
+        
+        SimulationTool --> "*" SimulationScale : scale
+        click SimulationScale href "../../enums/SimulationScale.html"
+    
+
+        
+      SimulationTool : tool_role
+        
+          
+    
+        
+        
+        SimulationTool --> "*" ToolRole : tool_role
+        click ToolRole href "../../enums/ToolRole.html"
+    
+
+        
+      SimulationTool : units
+        
+          
+    
+        
+        
+        SimulationTool --> "*" ToolUnit : units
+        click ToolUnit href "./ToolUnit.html"
+    
+
+        
+      SimulationTool : version
+        
+          
+    
+        
+        
+        SimulationTool --> "0..1" String : version
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [SoftwarePackage](../classes/SoftwarePackage.qmd)
+    * **SimulationTool**
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [schema:SoftwareApplication](http://schema.org/SoftwareApplication) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [application_category](../slots/application_category.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | High-level category (e | direct |
+| [scale](../slots/scale.qmd) | * <br/> [SimulationScale](../enums/SimulationScale.qmd) | Spatial/organizational scales the tool operates at | direct |
+| [model_paradigm](../slots/model_paradigm.qmd) | * <br/> [ModelParadigm](../enums/ModelParadigm.qmd) | Computational paradigms supported | direct |
+| [tool_role](../slots/tool_role.qmd) | * <br/> [ToolRole](../enums/ToolRole.qmd) | Primary function(s) in a simulation workflow | direct |
+| [programming_language](../slots/programming_language.qmd) | * <br/> [ProgrammingLanguageEnum](../enums/ProgrammingLanguageEnum.qmd) | Implementation languages | direct |
+| [runtime_platform](../slots/runtime_platform.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Execution backends or platforms (e | direct |
+| [operating_system](../slots/operating_system.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Supported operating systems (e | direct |
+| [interoperates_with](../slots/interoperates_with.qmd) | * <br/> [SimulationTool](../classes/SimulationTool.qmd) | Tools this tool can exchange data with or delegate to | direct |
+| [version](../slots/version.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Current or latest stable version string | direct |
+| [date_created](../slots/date_created.qmd) | 0..1 <br/> [xsd:date](http://www.w3.org/2001/XMLSchema#date) | Date the software was first released (YYYY-MM-DD) | direct |
+| [date_modified](../slots/date_modified.qmd) | 0..1 <br/> [xsd:date](http://www.w3.org/2001/XMLSchema#date) | Date of the most recent release or significant update | direct |
+| [development_status](../slots/development_status.qmd) | 0..1 <br/> [DevelopmentStatus](../enums/DevelopmentStatus.qmd) | Development status (repostatus | direct |
+| [author](../slots/author.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Original author(s) or creating organization(s) | direct |
+| [maintainer](../slots/maintainer.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Current maintainer(s) or responsible organization(s) | direct |
+| [funder](../slots/funder.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Funding bodies or grants (e | direct |
+| [reference_publication](../slots/reference_publication.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | DOI of the primary reference publication for this tool | direct |
+| [citation](../slots/citation.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Additional citation strings or DOIs | direct |
+| [keywords](../slots/keywords.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Tags for topic-based discovery and clustering | direct |
+| [same_as](../slots/same_as.qmd) | * <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | URIs that unambiguously identify this tool (Wikidata, bio | direct |
+| [issue_tracker](../slots/issue_tracker.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | URL of the bug tracker or issue board | direct |
+| [is_accessible_for_free](../slots/is_accessible_for_free.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether the tool is free/open-source | direct |
+| [codegen_format](../slots/codegen_format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Export-registry key of the format TVBO emits for this tool (`tvbo formats`) | direct |
+| [units](../slots/units.qmd) | * <br/> [ToolUnit](../classes/ToolUnit.qmd) | How this tool spells the units TVBO declares | direct |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [homepage](../slots/homepage.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Project homepage URL | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [license](../slots/license.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | SPDX license identifier (e | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [repository](../slots/repository.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Source code repository URL | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [doi](../slots/doi.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Digital Object Identifier for the software or its reference publication | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [alternative_identifier](../slots/alternative_identifier.qmd) | * <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Further identifiers for the same package, an RRID among them (BEP028 ``Altern... | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [acted_on_behalf_of](../slots/acted_on_behalf_of.qmd) | * <br/> [SoftwarePackage](../classes/SoftwarePackage.qmd) | Packages whose use triggered this one, so a backend invoked through a framewo... | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| [ecosystem](../slots/ecosystem.qmd) | * <br/> [EcosystemEnum](../enums/EcosystemEnum.qmd) | Package ecosystem(s) through which the software is distributed | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | [interoperates_with](../slots/interoperates_with.qmd) | range | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:SoftwareApplication |
+| native | tvbo_sw:SimulationTool |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: SimulationTool
+description: A software tool for computational neuroscience simulation, analysis,
+  or model specification. Extends SoftwarePackage with neuroscience-specific controlled
+  vocabularies for scale, paradigm, role, and interoperability. Aligned with CodeMeta
+  v3 and DOAP.
+from_schema: https://w3id.org/tvbo/software
+is_a: SoftwarePackage
+attributes:
+  application_category:
+    name: application_category
+    description: High-level category (e.g., simulation, analysis, specification).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:applicationCategory
+    domain_of:
+    - SimulationTool
+    range: string
+  scale:
+    name: scale
+    description: Spatial/organizational scales the tool operates at.
+    from_schema: https://w3id.org/tvbo/software
+    domain_of:
+    - ClinicalScore
+    - SimulationTool
+    - BidsEntities
+    range: SimulationScale
+    multivalued: true
+  model_paradigm:
+    name: model_paradigm
+    description: Computational paradigms supported.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SimulationTool
+    range: ModelParadigm
+    multivalued: true
+  tool_role:
+    name: tool_role
+    description: Primary function(s) in a simulation workflow.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SimulationTool
+    range: ToolRole
+    multivalued: true
+  programming_language:
+    name: programming_language
+    description: Implementation languages.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:programmingLanguage
+    domain_of:
+    - SimulationTool
+    range: ProgrammingLanguageEnum
+    multivalued: true
+  runtime_platform:
+    name: runtime_platform
+    description: Execution backends or platforms (e.g., MPI, OpenMP, CUDA, JAX).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:runtimePlatform
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  operating_system:
+    name: operating_system
+    description: Supported operating systems (e.g., Linux, macOS, Windows).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:operatingSystem
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  interoperates_with:
+    name: interoperates_with
+    description: Tools this tool can exchange data with or delegate to.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SimulationTool
+    range: SimulationTool
+    multivalued: true
+  version:
+    name: version
+    description: Current or latest stable version string.
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: schema:softwareVersion
+    domain_of:
+    - ClinicalScale
+    - SoftwarePackage
+    - SimulationTool
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    range: string
+  date_created:
+    name: date_created
+    description: Date the software was first released (YYYY-MM-DD).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:dateCreated
+    domain_of:
+    - SimulationTool
+    - Provenance
+    range: date
+  date_modified:
+    name: date_modified
+    description: Date of the most recent release or significant update.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:dateModified
+    domain_of:
+    - SimulationTool
+    range: date
+  development_status:
+    name: development_status
+    description: Development status (repostatus.org aligned).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SimulationTool
+    range: DevelopmentStatus
+  author:
+    name: author
+    description: Original author(s) or creating organization(s).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: dcterms:creator
+    domain_of:
+    - BrainAtlas
+    - SimulationTool
+    range: string
+    multivalued: true
+  maintainer:
+    name: maintainer
+    description: Current maintainer(s) or responsible organization(s).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:maintainer
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  funder:
+    name: funder
+    description: Funding bodies or grants (e.g., 'EU H2020 945539', 'NIH R01...').
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:funder
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  reference_publication:
+    name: reference_publication
+    description: DOI of the primary reference publication for this tool.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: dcterms:references
+    domain_of:
+    - SimulationTool
+    range: string
+  citation:
+    name: citation
+    description: Additional citation strings or DOIs.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:citation
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  keywords:
+    name: keywords
+    description: Tags for topic-based discovery and clustering.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:keywords
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  same_as:
+    name: same_as
+    description: URIs that unambiguously identify this tool (Wikidata, bio.tools,
+      RRID, SciCrunch).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:sameAs
+    domain_of:
+    - SimulationTool
+    range: uri
+    multivalued: true
+  issue_tracker:
+    name: issue_tracker
+    description: URL of the bug tracker or issue board.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SimulationTool
+    range: uri
+  is_accessible_for_free:
+    name: is_accessible_for_free
+    description: Whether the tool is free/open-source.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:isAccessibleForFree
+    ifabsent: 'True'
+    domain_of:
+    - SimulationTool
+    range: boolean
+  codegen_format:
+    name: codegen_format
+    description: Export-registry key of the format TVBO emits for this tool (`tvbo
+      formats`). Present only on tools TVBO generates code for.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SimulationTool
+    range: string
+  units:
+    name: units
+    description: How this tool spells the units TVBO declares. Only units the tool
+      has its own name for appear; anything absent is emitted unitless.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SimulationTool
+    range: ToolUnit
+    multivalued: true
+    inlined: true
+class_uri: schema:SoftwareApplication
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: SimulationTool
+description: A software tool for computational neuroscience simulation, analysis,
+  or model specification. Extends SoftwarePackage with neuroscience-specific controlled
+  vocabularies for scale, paradigm, role, and interoperability. Aligned with CodeMeta
+  v3 and DOAP.
+from_schema: https://w3id.org/tvbo/software
+is_a: SoftwarePackage
+attributes:
+  application_category:
+    name: application_category
+    description: High-level category (e.g., simulation, analysis, specification).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:applicationCategory
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: string
+  scale:
+    name: scale
+    description: Spatial/organizational scales the tool operates at.
+    from_schema: https://w3id.org/tvbo/software
+    owner: SimulationTool
+    domain_of:
+    - ClinicalScore
+    - SimulationTool
+    - BidsEntities
+    range: SimulationScale
+    multivalued: true
+  model_paradigm:
+    name: model_paradigm
+    description: Computational paradigms supported.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: ModelParadigm
+    multivalued: true
+  tool_role:
+    name: tool_role
+    description: Primary function(s) in a simulation workflow.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: ToolRole
+    multivalued: true
+  programming_language:
+    name: programming_language
+    description: Implementation languages.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:programmingLanguage
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: ProgrammingLanguageEnum
+    multivalued: true
+  runtime_platform:
+    name: runtime_platform
+    description: Execution backends or platforms (e.g., MPI, OpenMP, CUDA, JAX).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:runtimePlatform
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  operating_system:
+    name: operating_system
+    description: Supported operating systems (e.g., Linux, macOS, Windows).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:operatingSystem
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  interoperates_with:
+    name: interoperates_with
+    description: Tools this tool can exchange data with or delegate to.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: SimulationTool
+    multivalued: true
+  version:
+    name: version
+    description: Current or latest stable version string.
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: schema:softwareVersion
+    owner: SimulationTool
+    domain_of:
+    - ClinicalScale
+    - SoftwarePackage
+    - SimulationTool
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    range: string
+  date_created:
+    name: date_created
+    description: Date the software was first released (YYYY-MM-DD).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:dateCreated
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    - Provenance
+    range: date
+  date_modified:
+    name: date_modified
+    description: Date of the most recent release or significant update.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:dateModified
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: date
+  development_status:
+    name: development_status
+    description: Development status (repostatus.org aligned).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: DevelopmentStatus
+  author:
+    name: author
+    description: Original author(s) or creating organization(s).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: dcterms:creator
+    owner: SimulationTool
+    domain_of:
+    - BrainAtlas
+    - SimulationTool
+    range: string
+    multivalued: true
+  maintainer:
+    name: maintainer
+    description: Current maintainer(s) or responsible organization(s).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:maintainer
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  funder:
+    name: funder
+    description: Funding bodies or grants (e.g., 'EU H2020 945539', 'NIH R01...').
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:funder
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  reference_publication:
+    name: reference_publication
+    description: DOI of the primary reference publication for this tool.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: string
+  citation:
+    name: citation
+    description: Additional citation strings or DOIs.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:citation
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  keywords:
+    name: keywords
+    description: Tags for topic-based discovery and clustering.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:keywords
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: string
+    multivalued: true
+  same_as:
+    name: same_as
+    description: URIs that unambiguously identify this tool (Wikidata, bio.tools,
+      RRID, SciCrunch).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:sameAs
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: uri
+    multivalued: true
+  issue_tracker:
+    name: issue_tracker
+    description: URL of the bug tracker or issue board.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: uri
+  is_accessible_for_free:
+    name: is_accessible_for_free
+    description: Whether the tool is free/open-source.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:isAccessibleForFree
+    ifabsent: 'True'
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: boolean
+  codegen_format:
+    name: codegen_format
+    description: Export-registry key of the format TVBO emits for this tool (`tvbo
+      formats`). Present only on tools TVBO generates code for.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: string
+  units:
+    name: units
+    description: How this tool spells the units TVBO declares. Only units the tool
+      has its own name for appear; anything absent is emitted unitless.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SimulationTool
+    range: ToolUnit
+    multivalued: true
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: SimulationTool
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: dcterms:description
+    owner: SimulationTool
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  homepage:
+    name: homepage
+    description: Project homepage URL.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:url
+    owner: SimulationTool
+    domain_of:
+    - SoftwarePackage
+    range: uri
+  license:
+    name: license
+    description: SPDX license identifier (e.g., MIT, GPL-3.0-only).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: dcterms:license
+    owner: SimulationTool
+    domain_of:
+    - CommonCoordinateSpace
+    - SoftwarePackage
+    - SoftwareRequirement
+    - Provenance
+    range: string
+  repository:
+    name: repository
+    description: Source code repository URL.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: schema:codeRepository
+    owner: SimulationTool
+    domain_of:
+    - SoftwarePackage
+    range: uri
+  doi:
+    name: doi
+    description: Digital Object Identifier for the software or its reference publication.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    slot_uri: bibo:doi
+    owner: SimulationTool
+    domain_of:
+    - SoftwarePackage
+    - Study
+    range: string
+  alternative_identifier:
+    name: alternative_identifier
+    description: Further identifiers for the same package, an RRID among them (BEP028
+      ``AlternativeIdentifier``).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SoftwarePackage
+    range: uriorcurie
+    multivalued: true
+  acted_on_behalf_of:
+    name: acted_on_behalf_of
+    description: Packages whose use triggered this one, so a backend invoked through
+      a framework records the chain rather than only the innermost caller.
+    from_schema: https://w3id.org/tvbo/software
+    exact_mappings:
+    - prov:actedOnBehalfOf
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SoftwarePackage
+    range: SoftwarePackage
+    multivalued: true
+    inlined: false
+  ecosystem:
+    name: ecosystem
+    description: Package ecosystem(s) through which the software is distributed.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SimulationTool
+    domain_of:
+    - SoftwarePackage
+    range: EcosystemEnum
+    multivalued: true
+class_uri: schema:SoftwareApplication
+
+```
+</details></div>

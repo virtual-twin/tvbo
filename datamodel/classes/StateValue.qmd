@@ -1,0 +1,228 @@
+# Class: StateValue 
+
+
+_A named state variable value for per-node initialization._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:StateValue](https://w3id.org/tvbo/StateValue)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class StateValue
+    click StateValue href "./StateValue.html"
+      StateValue : name
+        
+          
+    
+        
+        
+        StateValue --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StateValue : value
+        
+          
+    
+        
+        
+        StateValue --> "0..1" ScalarValue : value
+        click ScalarValue href "./ScalarValue.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:StateValue](https://w3id.org/tvbo/StateValue) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [value](../slots/value.qmd) | 0..1 <br/> [ScalarValue](../classes/ScalarValue.qmd) | Numeric, string, or boolean value, OR an array (nested list) for array-valued... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Node](../classes/Node.qmd) | [state](../slots/state.qmd) | range | [StateValue](../classes/StateValue.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:StateValue |
+| native | tvbo:StateValue |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: StateValue
+description: A named state variable value for per-node initialization.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- value
+class_uri: tvbo:StateValue
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: StateValue
+description: A named state variable value for per-node initialization.
+from_schema: https://w3id.org/tvbo
+attributes:
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: StateValue
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  value:
+    name: value
+    description: Numeric, string, or boolean value, OR an array (nested list) for
+      array-valued constants such as mode-coupling coefficient matrices. ScalarValue
+      accepts any literal primitive type, allowing parameters to carry control flags
+      (e.g., booleans) or symbolic placeholders alongside numeric defaults.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: schema:value
+    owner: StateValue
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: ScalarValue
+    any_of:
+    - range: ScalarValue
+class_uri: tvbo:StateValue
+
+```
+</details></div>

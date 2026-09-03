@@ -1,0 +1,758 @@
+# observation { #tvbo.classes.observation }
+
+`classes.observation`
+
+Observation models that transform simulation output into observables.
+
+This module provides [`Function`](#tvbo.classes.observation.Function), a named symbolic transformation, and [`ObservationModel`](#tvbo.classes.observation.ObservationModel), a directed graph that chains such functions (e.g. BOLD HRF, filtering, functional connectivity) into an observation pipeline. Helper routines convert Python callables and curated ontology instances into the underlying datamodel shape.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [logger](#tvbo.classes.observation.logger) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Function](#tvbo.classes.observation.Function) | A named symbolic transformation applied to simulation outputs. |
+| [Observation](#tvbo.classes.observation.Observation) | Wrapper around the LinkML Observation datamodel with convenience factory methods for loading from file, database, or TVB monitors. |
+| [ObservationModel](#tvbo.classes.observation.ObservationModel) | A directed graph of `Function`s transforming simulation output to observables. |
+
+### Function { #tvbo.classes.observation.Function }
+
+```python
+classes.observation.Function(instance=None, **kwargs)
+```
+
+A named symbolic transformation applied to simulation outputs.
+
+`Function` wraps an `equation` (RHS string parseable by SymPy) plus parameters and metadata. Used as the building block of [`ObservationModel`](#tvbo.classes.observation.ObservationModel)s (e.g. BOLD HRF, sigmoid firing-rate, band-pass filter) and as derived quantities (e.g. coherence, PSD, FC).
+
+Construct from a callable, from the curated ontology by name, or by passing `equation=`, `parameters=`, etc. inline.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [function](#tvbo.classes.observation.Function.function) | Access to the underlying callable function if available. |
+| [metadata](#tvbo.classes.observation.Function.metadata) | Backward compatibility: return self (which is now the datamodel). |
+| [ontology](#tvbo.classes.observation.Function.ontology) | Access to the ontology instance if available. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [apply](#tvbo.classes.observation.Function.apply) | Execute the function and call it with the given arguments. |
+| [execute](#tvbo.classes.observation.Function.execute) | Compile the function into an executable callable. |
+| [from_datamodel](#tvbo.classes.observation.Function.from_datamodel) | Create Function from a datamodel instance. |
+| [from_db](#tvbo.classes.observation.Function.from_db) | Load a Function by name from the tvbo database. |
+| [from_file](#tvbo.classes.observation.Function.from_file) | Create Function from a file. |
+| [from_ontology](#tvbo.classes.observation.Function.from_ontology) | Create Function from an ontology instance. |
+| [from_python](#tvbo.classes.observation.Function.from_python) | Create Function from a Python callable. |
+| [get_equation](#tvbo.classes.observation.Function.get_equation) | Build the function as a SymPy equation. |
+| [get_parameters](#tvbo.classes.observation.Function.get_parameters) | Return the equation's parameters as a name-to-value mapping. |
+| [get_symbolic_function](#tvbo.classes.observation.Function.get_symbolic_function) | Return the function as a callable SymPy `Lambda`. |
+| [list_db](#tvbo.classes.observation.Function.list_db) | List available observation models in the tvbo database. |
+| [plot](#tvbo.classes.observation.Function.plot) | Plot the function's output against its input. |
+| [plot_metadata_graph](#tvbo.classes.observation.Function.plot_metadata_graph) | Draw a graph of the function's metadata. |
+| [render_code](#tvbo.classes.observation.Function.render_code) | Render the function's equation as backend source code. |
+| [symbol_scope](#tvbo.classes.observation.Function.symbol_scope) | The namespace this function's equation is parsed against. |
+
+##### apply { #tvbo.classes.observation.Function.apply }
+
+```python
+classes.observation.Function.apply(**kwargs)
+```
+
+Execute the function and call it with the given arguments.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                      | Default   |
+|----------|--------|--------------------------------------------------|-----------|
+| **kwargs |        | Argument values passed to the compiled callable. | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                            |
+|--------|--------|----------------------------------------|
+|        |        | The result of evaluating the function. |
+
+##### execute { #tvbo.classes.observation.Function.execute }
+
+```python
+classes.observation.Function.execute(
+    format='python',
+    fill_in_parameters=True,
+    parameters=None,
+    **kwargs,
+)
+```
+
+Compile the function into an executable callable.
+
+Returns the recorded Python callable when one is available; otherwise lambdifies the symbolic equation for the requested backend. Supplied parameters that do not appear in the equation are discarded, and the function's stored parameter values can optionally be substituted in before compilation.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name               | Type   | Description                                                                                                              | Default    |
+|--------------------|--------|--------------------------------------------------------------------------------------------------------------------------|------------|
+| format             |        | Target backend for `lambdify` (e.g. `"python"`/`"numpy"`, `"jax"`); also selects the module used for numeric evaluation. | `'python'` |
+| fill_in_parameters |        | When `True`, substitute the function's stored parameter values into the expression before compiling.                     | `True`     |
+| parameters         |        | Extra parameter values to substitute; entries whose symbol is absent from the equation are ignored.                      | `None`     |
+| **kwargs           |        | Backend options; for `format="jax"`, `jit=True` wraps the result in `jax.jit` with `stepsize` treated as static.         | `{}`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                            |
+|--------|--------|--------------------------------------------------------|
+|        |        | A callable evaluating the function over its arguments. |
+
+##### from_datamodel { #tvbo.classes.observation.Function.from_datamodel }
+
+```python
+classes.observation.Function.from_datamodel(datamodel_instance)
+```
+
+Create Function from a datamodel instance.
+
+##### from_db { #tvbo.classes.observation.Function.from_db }
+
+```python
+classes.observation.Function.from_db(name)
+```
+
+Load a Function by name from the tvbo database.
+
+##### from_file { #tvbo.classes.observation.Function.from_file }
+
+```python
+classes.observation.Function.from_file(filepath)
+```
+
+Create Function from a file.
+
+##### from_ontology { #tvbo.classes.observation.Function.from_ontology }
+
+```python
+classes.observation.Function.from_ontology(ontology_instance, **kwargs)
+```
+
+Create Function from an ontology instance.
+
+##### from_python { #tvbo.classes.observation.Function.from_python }
+
+```python
+classes.observation.Function.from_python(function_instance, **kwargs)
+```
+
+Create Function from a Python callable.
+
+##### get_equation { #tvbo.classes.observation.Function.get_equation }
+
+```python
+classes.observation.Function.get_equation()
+```
+
+Build the function as a SymPy equation.
+
+Parses the stored right-hand-side string into an expression, treats the function's arguments as `IndexedBase` symbols, and returns an equality whose left-hand side is the named function applied to its arguments.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                       |
+|--------|--------|-------------------------------------------------------------------|
+|        |        | A SymPy `Eq` relating the function call to its parsed expression. |
+
+##### get_parameters { #tvbo.classes.observation.Function.get_parameters }
+
+```python
+classes.observation.Function.get_parameters(key_as_symbol=False)
+```
+
+Return the equation's parameters as a name-to-value mapping.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                                                              | Default   |
+|---------------|--------|------------------------------------------------------------------------------------------|-----------|
+| key_as_symbol |        | When `True`, use SymPy `Symbol` objects as keys instead of plain parameter-name strings. | `False`   |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                  |
+|--------|--------|--------------------------------------------------------------|
+|        |        | Mapping from each parameter name (or `Symbol`) to its value. |
+
+##### get_symbolic_function { #tvbo.classes.observation.Function.get_symbolic_function }
+
+```python
+classes.observation.Function.get_symbolic_function()
+```
+
+Return the function as a callable SymPy `Lambda`.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                        |
+|--------|--------|--------------------------------------------------------------------|
+|        |        | A SymPy `Lambda` mapping the function's arguments to its equation. |
+
+##### list_db { #tvbo.classes.observation.Function.list_db }
+
+```python
+classes.observation.Function.list_db()
+```
+
+List available observation models in the tvbo database.
+
+##### plot { #tvbo.classes.observation.Function.plot }
+
+```python
+classes.observation.Function.plot(
+    format='python',
+    plotting_kwargs=None,
+    **kwargs,
+)
+```
+
+Plot the function's output against its input.
+
+For a single-argument function, the input array (supplied via `kwargs` under the argument name) is plotted against the evaluated output; for multi-argument functions the output is plotted directly using the stored parameter values.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name            | Type   | Description                                          | Default    |
+|-----------------|--------|------------------------------------------------------|------------|
+| format          |        | Backend used to compile the function for evaluation. | `'python'` |
+| plotting_kwargs |        | Keyword arguments forwarded to `matplotlib`.         | `None`     |
+| **kwargs        |        | Input values keyed by argument name.                 | `{}`       |
+
+##### plot_metadata_graph { #tvbo.classes.observation.Function.plot_metadata_graph }
+
+```python
+classes.observation.Function.plot_metadata_graph(
+    ax=None,
+    node_kwargs=None,
+    edge_kwargs=None,
+    edge_labels=True,
+)
+```
+
+Draw a graph of the function's metadata.
+
+Builds a directed graph linking the function node to its equation, software requirements and arguments, then renders it with a radial layout.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                                               | Default   |
+|-------------|--------|-----------------------------------------------------------------------------------------------------------|-----------|
+| ax          |        | Matplotlib axes to draw into; a new figure is created and returned when omitted.                          | `None`    |
+| node_kwargs |        | Keyword arguments forwarded to the node renderer.                                                         | `None`    |
+| edge_kwargs |        | Keyword arguments reserved for edge styling.                                                              | `None`    |
+| edge_labels |        | When `True`, annotate edges with their relation labels; otherwise fold the relation into the node labels. | `True`    |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                     |
+|--------|--------|-----------------------------------------------------------------|
+|        |        | The created figure when `ax` is not provided, otherwise `None`. |
+
+##### render_code { #tvbo.classes.observation.Function.render_code }
+
+```python
+classes.observation.Function.render_code(format='python', **kwargs)
+```
+
+Render the function's equation as backend source code.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                       | Default    |
+|----------|--------|---------------------------------------------------|------------|
+| format   |        | Target backend passed to the expression renderer. | `'python'` |
+| **kwargs |        | Additional options forwarded to the renderer.     | `{}`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                           |
+|--------|--------|-------------------------------------------------------|
+|        |        | The rendered code for the equation's right-hand side. |
+
+##### symbol_scope { #tvbo.classes.observation.Function.symbol_scope }
+
+```python
+classes.observation.Function.symbol_scope()
+```
+
+The namespace this function's equation is parsed against.
+
+Its own parameters, plus its arguments as `IndexedBase` so an argument can be indexed in the body. Shared by every caller that parses this equation, so a function's rendered graph cannot resolve a name differently from its equation.
+
+### Observation { #tvbo.classes.observation.Observation }
+
+```python
+classes.observation.Observation(
+    name=None,
+    acronym=None,
+    label=None,
+    description=None,
+    iri=None,
+    equation=None,
+    parameters=empty_dict(),
+    environment=None,
+    time_unit=None,
+    record=None,
+    unit=None,
+    references=empty_list(),
+    functions=empty_dict(),
+    source=empty_list(),
+    aux_data=empty_list(),
+    dims=empty_list(),
+    period=None,
+    downsample_period=None,
+    voi=None,
+    imaging_modality=None,
+    data_source=None,
+    query=None,
+    reconcile='by_label',
+    min_coverage=None,
+    tail_samples=None,
+    tail_duration=None,
+    aggregation=None,
+    histogram=None,
+    window_size=None,
+    partition=None,
+    pipeline=empty_list(),
+    dynamics=None,
+    reduce=None,
+    class_reference=None,
+    analysis=None,
+)
+```
+
+Wrapper around the LinkML Observation datamodel with convenience factory methods for loading from file, database, or TVB monitors.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [execute](#tvbo.classes.observation.Observation.execute) | Convert this observation to a backend monitor object. |
+| [from_db](#tvbo.classes.observation.Observation.from_db) | Load an Observation by name from the tvbo database. |
+| [from_file](#tvbo.classes.observation.Observation.from_file) | Load an Observation from a YAML file. |
+| [list_db](#tvbo.classes.observation.Observation.list_db) | List available observation models in the tvbo database. |
+| [plot](#tvbo.classes.observation.Observation.plot) | Plot a visual summary of this observation model. |
+| [render_code](#tvbo.classes.observation.Observation.render_code) | Generate backend code that creates this monitor. |
+
+##### execute { #tvbo.classes.observation.Observation.execute }
+
+```python
+classes.observation.Observation.execute(format='tvb')
+```
+
+Convert this observation to a backend monitor object.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+format : str
+    Target backend. Currently ``"tvb"`` is supported.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+tvb.simulator.monitors.Monitor
+    Configured TVB monitor instance.
+
+##### from_db { #tvbo.classes.observation.Observation.from_db }
+
+```python
+classes.observation.Observation.from_db(name)
+```
+
+Load an Observation by name from the tvbo database.
+
+##### from_file { #tvbo.classes.observation.Observation.from_file }
+
+```python
+classes.observation.Observation.from_file(path)
+```
+
+Load an Observation from a YAML file.
+
+##### list_db { #tvbo.classes.observation.Observation.list_db }
+
+```python
+classes.observation.Observation.list_db()
+```
+
+List available observation models in the tvbo database.
+
+##### plot { #tvbo.classes.observation.Observation.plot }
+
+```python
+classes.observation.Observation.plot(ax=None, **kwargs)
+```
+
+Plot a visual summary of this observation model.
+
+The plot type is derived purely from the pipeline structure:
+
+* **kernel step present** (step with ``time_range``): evaluates and
+  plots the kernel function.
+* **all other cases**: draws an annotated pipeline flowchart where each
+  box is tagged with its structural operation type (projection, temporal, transform, callable, …).
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+ax : matplotlib Axes, optional
+    Axes to draw into. A new figure is returned when ``ax`` is ``None``.
+**kwargs
+    Forwarded to the underlying plot call.
+
+##### render_code { #tvbo.classes.observation.Observation.render_code }
+
+```python
+classes.observation.Observation.render_code(format='tvb')
+```
+
+Generate backend code that creates this monitor.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+format : str
+    Target backend. Currently ``"tvb"`` is supported.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+str
+    Executable Python code string.
+
+### ObservationModel { #tvbo.classes.observation.ObservationModel }
+
+```python
+classes.observation.ObservationModel(data=None)
+```
+
+A directed graph of `Function`s transforming simulation output to observables.
+
+`ObservationModel` chains symbolic and numerical operations (e.g. BOLD HRF → low-pass filter → downsample → FC matrix) on a per-region time series. Nodes are `Function`s; edges describe data flow from `Input` to `Output`. Use `add_node(name, function, ...)`, `add_edge(src, dst)` and `run()` to evaluate the pipeline.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [add_data](#tvbo.classes.observation.ObservationModel.add_data) | Attach a data array to a graph node. |
+| [add_derivative](#tvbo.classes.observation.ObservationModel.add_derivative) | Add a derivative `Function` node to the pipeline. |
+| [add_function](#tvbo.classes.observation.ObservationModel.add_function) | Add a `Function` node to the pipeline graph. |
+| [add_projection_model](#tvbo.classes.observation.ObservationModel.add_projection_model) | Add a projection `Function` node to the pipeline. |
+| [apply](#tvbo.classes.observation.ObservationModel.apply) | Run the pipeline on a time series and return the observable. |
+| [get_function_output](#tvbo.classes.observation.ObservationModel.get_function_output) | Get the output of a specific function after execution. |
+| [get_node_data](#tvbo.classes.observation.ObservationModel.get_node_data) | Return a node's stored data as a `TimeSeries`. |
+| [plot_graph](#tvbo.classes.observation.ObservationModel.plot_graph) | Draw the pipeline graph, including `Input` and `Output` nodes. |
+| [plot_graph_data](#tvbo.classes.observation.ObservationModel.plot_graph_data) | Plot the data stored at every pipeline node. |
+| [plot_node_data](#tvbo.classes.observation.ObservationModel.plot_node_data) | Plot a single node's data onto the given axes. |
+
+##### add_data { #tvbo.classes.observation.ObservationModel.add_data }
+
+```python
+classes.observation.ObservationModel.add_data(node, data)
+```
+
+Attach a data array to a graph node.
+
+Accepts a `TimeSeries` (whose values and time axis are extracted) or a raw array (for which an integer time axis is generated). Creates the node when it does not yet exist, otherwise updates its stored data.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                               | Default    |
+|--------|--------|-----------------------------------------------------------|------------|
+| node   |        | Name of the graph node to attach the data to.             | _required_ |
+| data   |        | A `TimeSeries` or array-like providing the node's values. | _required_ |
+
+##### add_derivative { #tvbo.classes.observation.ObservationModel.add_derivative }
+
+```python
+classes.observation.ObservationModel.add_derivative(
+    function,
+    argument_mapping=None,
+    **kwargs,
+)
+```
+
+Add a derivative `Function` node to the pipeline.
+
+Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function) with `function_type="derivative"`, so the node is computed as a side branch rather than chained into `Output`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name             | Type   | Description                                     | Default    |
+|------------------|--------|-------------------------------------------------|------------|
+| function         |        | The `Function` to add as a derivative node.     | _required_ |
+| argument_mapping |        | Mapping from argument names to source nodes.    | `None`     |
+| **kwargs         |        | Additional options forwarded to `add_function`. | `{}`       |
+
+##### add_function { #tvbo.classes.observation.ObservationModel.add_function }
+
+```python
+classes.observation.ObservationModel.add_function(
+    function,
+    argument_mapping=None,
+    function_type='',
+    select_state=None,
+    select_region=None,
+    select_mode=0,
+    ensure_4d=False,
+    apply_on_time=False,
+    alt_name=None,
+    **kwargs,
+)
+```
+
+Add a `Function` node to the pipeline graph.
+
+Registers the function as a graph node, records its execution options, overrides parameter values from `kwargs`, and wires edges from the nodes named in `argument_mapping` to this node. Unless the function is a derivative, it becomes the new tail feeding the `Output` node.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name             | Type   | Description                                                                                            | Default    |
+|------------------|--------|--------------------------------------------------------------------------------------------------------|------------|
+| function         |        | The `Function` to add as a node.                                                                       | _required_ |
+| argument_mapping |        | Mapping from each function argument name to the graph node supplying that argument.                    | `None`     |
+| function_type    |        | Role of the function (e.g. `"derivative"`, `"projection"`); non-derivatives are chained into `Output`. | `''`       |
+| select_state     |        | Optional state-variable index sliced from inputs.                                                      | `None`     |
+| select_region    |        | Optional region selection applied to inputs.                                                           | `None`     |
+| select_mode      |        | Mode index selected from inputs.                                                                       | `0`        |
+| ensure_4d        |        | When `True`, expand inputs to four dimensions.                                                         | `False`    |
+| apply_on_time    |        | When `True`, apply the function to the time axis.                                                      | `False`    |
+| alt_name         |        | Alternative name/acronym used for the node.                                                            | `None`     |
+| **kwargs         |        | Parameter values; entries matching equation parameters override the function's stored values.          | `{}`       |
+
+##### add_projection_model { #tvbo.classes.observation.ObservationModel.add_projection_model }
+
+```python
+classes.observation.ObservationModel.add_projection_model(
+    function,
+    argument_mapping=None,
+    **kwargs,
+)
+```
+
+Add a projection `Function` node to the pipeline.
+
+Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function) with `function_type="projection"`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name             | Type   | Description                                     | Default    |
+|------------------|--------|-------------------------------------------------|------------|
+| function         |        | The `Function` to add as a projection node.     | _required_ |
+| argument_mapping |        | Mapping from argument names to source nodes.    | `None`     |
+| **kwargs         |        | Additional options forwarded to `add_function`. | `{}`       |
+
+##### apply { #tvbo.classes.observation.ObservationModel.apply }
+
+```python
+classes.observation.ObservationModel.apply(timeseries, mode=0)
+```
+
+Run the pipeline on a time series and return the observable.
+
+Feeds the input into the `Input` node, evaluates every node in topological order, propagates each function's output to its successors, and trims the final `Output` back to the input's shape.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                                                                            | Default    |
+|------------|--------|------------------------------------------------------------------------------------------------------------------------|------------|
+| timeseries |        | A `TimeSeries` or array-like of simulation output; a raw array is wrapped in a `TimeSeries` with an integer time axis. | _required_ |
+| mode       |        | Mode index (currently unused in slicing).                                                                              | `0`        |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                      |
+|--------|--------|------------------------------------------------------------------|
+|        |        | A `TimeSeries` holding the pipeline's output data and time axis. |
+
+##### get_function_output { #tvbo.classes.observation.ObservationModel.get_function_output }
+
+```python
+classes.observation.ObservationModel.get_function_output(function_name)
+```
+
+Get the output of a specific function after execution.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                        | Default    |
+|---------------|--------|----------------------------------------------------|------------|
+| function_name | str    | The name of the function whose output to retrieve. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                          |
+|--------|--------|--------------------------------------|
+|        | Any    | The result produced by the function. |
+
+##### get_node_data { #tvbo.classes.observation.ObservationModel.get_node_data }
+
+```python
+classes.observation.ObservationModel.get_node_data(node)
+```
+
+Return a node's stored data as a `TimeSeries`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                     | Default    |
+|--------|--------|---------------------------------|------------|
+| node   |        | Name of the graph node to read. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                  |
+|--------|--------|--------------------------------------------------------------|
+|        |        | A `TimeSeries` pairing the node's data with its time axis (a |
+|        |        | generated integer axis is used when none was stored).        |
+
+##### plot_graph { #tvbo.classes.observation.ObservationModel.plot_graph }
+
+```python
+classes.observation.ObservationModel.plot_graph(
+    ax=None,
+    plot_edge_labels=True,
+    node_kwargs=None,
+    edge_kwargs=None,
+)
+```
+
+Draw the pipeline graph, including `Input` and `Output` nodes.
+
+Lays out the directed graph (falling back to a spring layout when Graphviz is unavailable) and annotates edges with their argument names and any selected state index.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name             | Type   | Description                                                                                 | Default   |
+|------------------|--------|---------------------------------------------------------------------------------------------|-----------|
+| ax               |        | Matplotlib axes to draw into; a new figure is created and returned when omitted.            | `None`    |
+| plot_edge_labels |        | When `True`, draw argument/state labels on edges.                                           | `True`    |
+| node_kwargs      |        | Keyword arguments forwarded to the node renderer.                                           | `None`    |
+| edge_kwargs      |        | Keyword arguments forwarded to the edge renderer; `font_size` controls the edge-label size. | `None`    |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                     |
+|--------|--------|-----------------------------------------------------------------|
+|        |        | The created figure when `ax` is not provided, otherwise `None`. |
+
+##### plot_graph_data { #tvbo.classes.observation.ObservationModel.plot_graph_data }
+
+```python
+classes.observation.ObservationModel.plot_graph_data(ax=None)
+```
+
+Plot the data stored at every pipeline node.
+
+Iterates the nodes in topological order (skipping the raw input nodes) and overlays each node's time series, highlighting the `Output` trace.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                      | Default   |
+|--------|--------|----------------------------------------------------------------------------------|-----------|
+| ax     |        | Matplotlib axes to draw into; a new figure is created and returned when omitted. | `None`    |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                     |
+|--------|--------|-----------------------------------------------------------------|
+|        |        | The created figure when `ax` is not provided, otherwise `None`. |
+
+##### plot_node_data { #tvbo.classes.observation.ObservationModel.plot_node_data }
+
+```python
+classes.observation.ObservationModel.plot_node_data(node, ax)
+```
+
+Plot a single node's data onto the given axes.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                     | Default    |
+|--------|--------|---------------------------------|------------|
+| node   |        | Name of the graph node to plot. | _required_ |
+| ax     |        | Matplotlib axes to draw into.   | _required_ |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [expand_to_4d](#tvbo.classes.observation.expand_to_4d) | Expand dimensions of the input array to ensure it has 4 dimensions. |
+| [functioninstance2metadata](#tvbo.classes.observation.functioninstance2metadata) | Normalize a function/ontology instance into datamodel kwargs. |
+| [instance2metadata](#tvbo.classes.observation.instance2metadata) | Normalize an ontology transformation instance into datamodel kwargs. |
+| [populate_observation_from_iri](#tvbo.classes.observation.populate_observation_from_iri) | Fill an observation from the curated model its ``iri`` names, and collect its functions. |
+
+### expand_to_4d { #tvbo.classes.observation.expand_to_4d }
+
+```python
+classes.observation.expand_to_4d(array)
+```
+
+Expand dimensions of the input array to ensure it has 4 dimensions.
+
+### functioninstance2metadata { #tvbo.classes.observation.functioninstance2metadata }
+
+```python
+classes.observation.functioninstance2metadata(function_instance, **kwargs)
+```
+
+Normalize a function/ontology instance into datamodel kwargs.
+
+- For Python callables: infer arguments/parameters, capture source code,
+  record callable path (module + qualname), and infer software requirements.
+- For ontology instances: map fields from the ontology to datamodel shape.
+
+### instance2metadata { #tvbo.classes.observation.instance2metadata }
+
+```python
+classes.observation.instance2metadata(instance, **kwargs)
+```
+
+Normalize an ontology transformation instance into datamodel kwargs.
+
+Maps the instance's name, arguments, equation, parameters and acronym onto the keyword arguments used to construct a datamodel object, nesting the argument and equation metadata under a `transformation` key.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                       | Default    |
+|----------|--------|-------------------------------------------------------------------------------------------------------------------|------------|
+| instance |        | Ontology instance exposing `name`, `has_argument`, `equation`, `has_parameter` and `acronym` accessors.           | _required_ |
+| **kwargs |        | Extra keyword arguments merged into the result; keys produced here take precedence over same-named incoming keys. | `{}`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                        |
+|--------|--------|--------------------------------------------------------------------|
+|        |        | The merged keyword-argument mapping describing the transformation. |
+
+### populate_observation_from_iri { #tvbo.classes.observation.populate_observation_from_iri }
+
+```python
+classes.observation.populate_observation_from_iri(obs, functions_sink=None)
+```
+
+Fill an observation from the curated model its ``iri`` names, and collect its functions.
+
+The filling itself is :meth:`IriEnrichable.enrich`, which every class the schema gives an ``iri`` carries: the curated record supervenes nowhere, so ``source``/``period`` overrides stay in force while the curated hemodynamic pipeline fills in.
+
+What is specific to an observation is where its ``functions`` go. A curated model ships the helper functions its pipeline calls by name — an HRF kernel, a downsample, a convolution — and codegen reads those from ``experiment.functions``, not from the observation. Given a ``functions_sink`` (a mutable name -> Function mapping) they are merged there instead, a function the experiment already declares winning.
+
+Returns True if a curated model was found, False otherwise.

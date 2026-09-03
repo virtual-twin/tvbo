@@ -1,0 +1,99 @@
+# Slot: mask 
+
+
+_A per-vertex 0/1 file. Vertices OUTSIDE it — a medial wall — are drawn grey and kept out of the colour range rather than coloured as zeros._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/mask](https://w3id.org/tvbo/slot/mask)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surface](../classes/Surface.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Surface](../classes/Surface.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:mask |
+| native | tvbo:mask |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: mask
+description: A per-vertex 0/1 file. Vertices OUTSIDE it — a medial wall — are drawn
+  grey and kept out of the colour range rather than coloured as zeros.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Surface
+domain_of:
+- Surface
+range: string
+
+```
+</details></div>

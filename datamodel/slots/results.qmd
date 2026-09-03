@@ -1,0 +1,107 @@
+# Slot: results 
+
+
+_The named numbers the prose cites, each keyed by the manuscript token that stands in for it (``key``) and bound either to a computed value (``used:`` a DataRef into this study's or a nested study's analysis) or to an authored constant quoted from prior work (``value`` + ``source``). ``tvbo run`` collects these into a results manifest the document reads, so no reported figure is transcribed by hand and a stale or missing key fails the build rather than printing a wrong number._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/results](https://w3id.org/tvbo/slot/results)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ResultBinding](../classes/ResultBinding.qmd) |
+| Domain Of | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:results |
+| native | tvbo:results |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: results
+description: The named numbers the prose cites, each keyed by the manuscript token
+  that stands in for it (``key``) and bound either to a computed value (``used:``
+  a DataRef into this study's or a nested study's analysis) or to an authored constant
+  quoted from prior work (``value`` + ``source``). ``tvbo run`` collects these into
+  a results manifest the document reads, so no reported figure is transcribed by hand
+  and a stale or missing key fails the build rather than printing a wrong number.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationStudy
+domain_of:
+- SimulationStudy
+range: ResultBinding
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

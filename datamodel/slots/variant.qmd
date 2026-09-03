@@ -1,0 +1,102 @@
+# Slot: variant 
+
+
+_The ``tvbo study init --template`` name this seed belongs to._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/variant](https://w3id.org/tvbo/study/slot/variant)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [LayoutTemplateVariant](../classes/LayoutTemplateVariant.qmd) | One variant's seed for a file the record already accounts for |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [LayoutTemplateVariant](../classes/LayoutTemplateVariant.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Key | Yes |
+| Owner | [LayoutTemplateVariant](../classes/LayoutTemplateVariant.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:variant |
+| native | tvbo_study:variant |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: variant
+description: The ``tvbo study init --template`` name this seed belongs to.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+key: true
+owner: LayoutTemplateVariant
+domain_of:
+- LayoutTemplateVariant
+range: string
+required: true
+
+```
+</details></div>

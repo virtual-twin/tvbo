@@ -1,0 +1,102 @@
+# Slot: class_call 
+
+
+_Class instantiation and call (alternative to callable/function). Use for external library classes that need __init__ then __call__. Example: Bold monitor from tvboptim._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/class_call](https://w3id.org/tvbo/slot/class_call)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [FunctionCall](../classes/FunctionCall.qmd) | Invocation of a function in a pipeline |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ClassReference](../classes/ClassReference.qmd) |
+| Domain Of | [FunctionCall](../classes/FunctionCall.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [FunctionCall](../classes/FunctionCall.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:class_call |
+| native | tvbo:class_call |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: class_call
+description: 'Class instantiation and call (alternative to callable/function). Use
+  for external library classes that need __init__ then __call__. Example: Bold monitor
+  from tvboptim.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: FunctionCall
+domain_of:
+- FunctionCall
+range: ClassReference
+inlined: true
+
+```
+</details></div>

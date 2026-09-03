@@ -1,0 +1,1241 @@
+# dynamics_runtime { #tvbo.behaviour.dynamics_runtime }
+
+`behaviour.dynamics_runtime`
+
+What a `Dynamics` does, on every `Dynamics` however it was built.
+
+Attached through [`DynamicsBehaviour`](dynamics.qmd), so a model loaded through LinkML, validated through Pydantic or resolved onto an edge answers the same questions as one constructed through :mod:`tvbo.classes.dynamics`. There is no runtime subclass to promote a record into: the methods are on the generated class itself.
+
+Split out of [`DynamicsBehaviour`](dynamics.qmd) only to keep one file readable; the mixin discovery in ``hatch_build`` attaches classes whose name ends in ``Behaviour``, so this one adds no second attachment point. :mod:`tvbo.classes.dynamics` remains the public import location for the class itself.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [analysis](#tvbo.behaviour.dynamics_runtime.analysis) |  |
+| [data_types](#tvbo.behaviour.dynamics_runtime.data_types) |  |
+| [expression](#tvbo.behaviour.dynamics_runtime.expression) |  |
+| [model_helpers](#tvbo.behaviour.dynamics_runtime.model_helpers) |  |
+| [nx](#tvbo.behaviour.dynamics_runtime.nx) |  |
+| [ontology](#tvbo.behaviour.dynamics_runtime.ontology) |  |
+| [owlready2](#tvbo.behaviour.dynamics_runtime.owlready2) |  |
+| [perturbation](#tvbo.behaviour.dynamics_runtime.perturbation) |  |
+| [plt](#tvbo.behaviour.dynamics_runtime.plt) |  |
+| [query](#tvbo.behaviour.dynamics_runtime.query) |  |
+| [report](#tvbo.behaviour.dynamics_runtime.report) |  |
+| [templater](#tvbo.behaviour.dynamics_runtime.templater) |  |
+| [templates](#tvbo.behaviour.dynamics_runtime.templates) |  |
+| [tvbo_datamodel](#tvbo.behaviour.dynamics_runtime.tvbo_datamodel) |  |
+| [utils](#tvbo.behaviour.dynamics_runtime.utils) |  |
+| [yaml_loader](#tvbo.behaviour.dynamics_runtime.yaml_loader) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [DynamicsRuntime](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime) | Construction, code generation, simulation, plotting and reporting for a model. |
+
+### DynamicsRuntime { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime()
+```
+
+Construction, code generation, simulation, plotting and reporting for a model.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [components](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.components) | Alias for ``modes`` — sub-dynamics contained in this model. |
+| [metadata](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.metadata) | The underlying datamodel instance holding the schema fields (this object). |
+| [ontology](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.ontology) | The ontology class matching this model's name, or `None` if it is not a known neural mass model. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [add_coupling_input](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_coupling_input) | Add a coupling input (a network-supplied term) to the model. |
+| [add_derived_parameter](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_derived_parameter) | Add a derived parameter (computed from other parameters) to the model. |
+| [add_derived_variable](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_derived_variable) | Add a derived (algebraic) variable to the model. |
+| [add_function](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_function) | Add a reusable function definition to the model. |
+| [add_output](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_output) | Add an output variable. Creates a derived_variable and adds its name to output list. |
+| [add_parameter](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_parameter) | Add a parameter to the model. |
+| [add_state_variable](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_state_variable) | Add a state variable (with its differential equation) to the model. |
+| [add_stimulus](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_stimulus) | Attach a stimulus to the model. |
+| [animate](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.animate) | Animate by sweeping one parameter through ``values``. |
+| [copy](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.copy) | Return a deep copy of this experiment. |
+| [db_overview](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.db_overview) | Return a pandas DataFrame summarising the Dynamics database. |
+| [display_markdown](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.display_markdown) | Render generated code as an IPython Markdown code block. |
+| [execute](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.execute) | Generate and execute the model code, returning a runnable object. |
+| [fill_in_equations](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.fill_in_equations) | Substitute parameter values (and any overrides) into every equation. |
+| [find_periodic_orbits](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.find_periodic_orbits) | Find sibling periodic-orbit output files for a run. |
+| [from_datamodel](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_datamodel) | Create from a datamodel Dynamics instance by copying its already-normalized state (avoids ``_as_dict`` re-init crash on ``inlined_as_dict`` fields). |
+| [from_db](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_db) | Load a Dynamics model by name from the tvbo database. |
+| [from_file](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_file) | Load a model from a YAML/JSON specification file on disk. |
+| [from_ontology](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_ontology) | Create a model populated from an ontology class. |
+| [from_platform](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_platform) | Load a dynamics model from the tvbo platform API. |
+| [from_pydantic](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_pydantic) | Create a Dynamics from a tvbopydantic.Dynamics (or dict-like). |
+| [from_pyrates](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_pyrates) | Load a Dynamics model from a PyRates YAML template file. |
+| [from_string](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_string) | Load a model from a YAML specification string. |
+| [generate_report](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.generate_report) | Render a human-readable report of the model. |
+| [get_dependency_tree](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.get_dependency_tree) | Build the equation dependency graph for this model. |
+| [get_initial_values](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.get_initial_values) | Build the initial state vector for a simulation. |
+| [get_run_filename](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.get_run_filename) | Build a deterministic cache filename for a run in the temp directory. |
+| [list_db](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.list_db) | List available models in the tvbo database. |
+| [list_platform_models](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.list_platform_models) | List available dynamics models on the tvbo platform. |
+| [parameter_table](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.parameter_table) | Return a pandas DataFrame of the model's parameters. |
+| [plot](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.plot) | Plot trajectories of this dynamics in 1D, 2D, or 3D. |
+| [plot_bifurcation_timeseries](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.plot_bifurcation_timeseries) | Plot a bifurcation diagram alongside representative time series. |
+| [plot_dependency_tree](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.plot_dependency_tree) | Plot the model's equation dependency graph. |
+| [plot_ontology](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.plot_ontology) | Plot this model's ontology graph. |
+| [render](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render) | Unified entry point for rendering the model in any output format. |
+| [render_code](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_code) | Generate backend source code for this model. |
+| [render_equation](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_equation) | Render a model element's equation to a string. |
+| [render_equation_cse](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_equation_cse) | Common-subexpression-eliminated variant of :meth:`render_equation`. |
+| [run](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.run) | Generate, execute, and integrate the model, returning its output. |
+| [save_model_metadata](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.save_model_metadata) | Serialize the model metadata to a YAML file. |
+| [save_python_class](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.save_python_class) | Write the model as a standalone TVB Python class file. |
+| [save_report](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.save_report) | Generate the model report and write it to a directory. |
+| [search_ontology](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.search_ontology) | Search this model's ontology subtree for a term. |
+| [symbolic_rhs](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.symbolic_rhs) | The parsed right-hand side of one of this model's elements. |
+| [to_lems](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.to_lems) | Build a LEMS model for this local neural mass model. |
+| [to_pydantic](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.to_pydantic) | Return a tvbopydantic.Dynamics validated instance for this model. |
+| [to_yaml](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.to_yaml) | Export the model to YAML format. |
+| [update_parameters_from_equations](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.update_parameters_from_equations) | Scan all equations and add any free symbols as parameters (default value if missing). |
+
+##### add_coupling_input { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_coupling_input }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.add_coupling_input(
+    name,
+    description=None,
+    unit=None,
+    dimension=1,
+    keys=None,
+)
+```
+
+Add a coupling input (a network-supplied term) to the model.
+
+Any existing parameter with the same name is removed so the name resolves to the coupling input.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type                | Description                                                                      | Default    |
+|-------------|---------------------|----------------------------------------------------------------------------------|------------|
+| name        | str                 | Coupling-input name (also its dict key).                                         | _required_ |
+| description | str \| None         | Human-readable description.                                                      | `None`     |
+| unit        | str \| None         | Accepted for backward compatibility; not currently stored on the coupling input. | `None`     |
+| dimension   | int                 | Number of components the input carries.                                          | `1`        |
+| keys        | list\[str\] \| None | Optional sub-keys addressed by the coupling input.                               | `None`     |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                       |
+|--------|--------|-----------------------------------|
+|        |        | `self`, to allow fluent chaining. |
+
+##### add_derived_parameter { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_derived_parameter }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.add_derived_parameter(
+    name,
+    expression=None,
+    *,
+    unit=None,
+    description=None,
+    symbol=None,
+)
+```
+
+Add a derived parameter (computed from other parameters) to the model.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type        | Description                                                         | Default    |
+|-------------|-------------|---------------------------------------------------------------------|------------|
+| name        | str         | Derived-parameter name (also its dict key).                         | _required_ |
+| expression  |             | RHS expression; accepts a string, `sympy.Eq`/`Expr`, or `Equation`. | `None`     |
+| unit        | str \| None | Physical unit.                                                      | `None`     |
+| description | str \| None | Human-readable description.                                         | `None`     |
+| symbol      | str \| None | Display symbol.                                                     | `None`     |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                       |
+|--------|--------|-----------------------------------|
+|        |        | `self`, to allow fluent chaining. |
+
+##### add_derived_variable { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_derived_variable }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.add_derived_variable(
+    name,
+    expression=None,
+    *,
+    conditionals=None,
+    unit=None,
+    description=None,
+    symbol=None,
+)
+```
+
+Add a derived (algebraic) variable to the model.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type                                    | Description                                                                                 | Default    |
+|--------------|-----------------------------------------|---------------------------------------------------------------------------------------------|------------|
+| name         | str                                     | Derived-variable name (also its dict key).                                                  | _required_ |
+| expression   |                                         | RHS expression; accepts a string, `sympy.Eq`/`Expr`, or `Equation`.                         | `None`     |
+| conditionals | list\[tuple\[object, object\]\] \| None | Optional list of `(expression, condition)` pairs defining a piecewise/conditional variable. | `None`     |
+| unit         | str \| None                             | Physical unit.                                                                              | `None`     |
+| description  | str \| None                             | Human-readable description.                                                                 | `None`     |
+| symbol       | str \| None                             | Display symbol.                                                                             | `None`     |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                       |
+|--------|--------|-----------------------------------|
+|        |        | `self`, to allow fluent chaining. |
+
+##### add_function { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_function }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.add_function(
+    name,
+    expression=None,
+    *,
+    arguments=(),
+    description=None,
+    definition=None,
+)
+```
+
+Add a reusable function definition to the model.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type        | Description                                                        | Default    |
+|-------------|-------------|--------------------------------------------------------------------|------------|
+| name        | str         | Function name (also its dict key).                                 | _required_ |
+| expression  |             | Function body; accepts a string, `sympy.Eq`/`Expr`, or `Equation`. | `None`     |
+| arguments   |             | Argument names as a sequence, or a mapping of name to `Parameter`. | `()`       |
+| description | str \| None | Human-readable description.                                        | `None`     |
+| definition  | str \| None | Formal definition or ontology reference.                           | `None`     |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                       |
+|--------|--------|-----------------------------------|
+|        |        | `self`, to allow fluent chaining. |
+
+##### add_output { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_output }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.add_output(
+    name,
+    expression=None,
+    *,
+    unit=None,
+    description=None,
+)
+```
+
+Add an output variable. Creates a derived_variable and adds its name to output list.
+
+##### add_parameter { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_parameter }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.add_parameter(
+    name,
+    value=None,
+    unit=None,
+    description=None,
+    domain=None,
+    definition=None,
+    symbol=None,
+)
+```
+
+Add a parameter to the model.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type          | Description                                                  | Default    |
+|-------------|---------------|--------------------------------------------------------------|------------|
+| name        | str           | Parameter name (also its dict key).                          | _required_ |
+| value       | float \| None | Numeric default value.                                       | `None`     |
+| unit        | str \| None   | Physical unit.                                               | `None`     |
+| description | str \| None   | Human-readable description.                                  | `None`     |
+| domain      |               | Valid range as a `Range`, `(lo, hi[, step])` tuple, or dict. | `None`     |
+| definition  | str \| None   | Formal definition or ontology reference.                     | `None`     |
+| symbol      | str \| None   | Display symbol.                                              | `None`     |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                       |
+|--------|--------|-----------------------------------|
+|        |        | `self`, to allow fluent chaining. |
+
+##### add_state_variable { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_state_variable }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.add_state_variable(
+    name,
+    equation=None,
+    *,
+    description=None,
+    domain=None,
+    boundaries=None,
+    initial_value=0.1,
+    unit=None,
+    coupling_variable=False,
+    stimulation_variable=None,
+    symbol=None,
+)
+```
+
+Add a state variable (with its differential equation) to the model.
+
+Any free symbols in `equation` that are not yet known are auto-registered as parameters. A legacy `boundaries` clamp is folded into `domain` (with the descriptive range preserved as the sampling `distribution`).
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name                 | Type          | Description                                                                              | Default    |
+|----------------------|---------------|------------------------------------------------------------------------------------------|------------|
+| name                 | str           | State-variable name (also its dict key).                                                 | _required_ |
+| equation             |               | RHS of its time-derivative equation; accepts a string, `sympy.Eq`/`Expr`, or `Equation`. | `None`     |
+| description          | str \| None   | Human-readable description.                                                              | `None`     |
+| domain               |               | Valid/sampling range as a `Range`, tuple, or dict.                                       | `None`     |
+| boundaries           |               | Legacy hard-clamp range, folded into `domain`.                                           | `None`     |
+| initial_value        | float \| None | Default initial condition.                                                               | `0.1`      |
+| unit                 | str \| None   | Physical unit.                                                                           | `None`     |
+| coupling_variable    | bool          | Mark this variable as observed for network coupling.                                     | `False`    |
+| stimulation_variable | bool \| None  | Mark this variable as a stimulation target.                                              | `None`     |
+| symbol               | str \| None   | Display symbol.                                                                          | `None`     |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                       |
+|--------|--------|-----------------------------------|
+|        |        | `self`, to allow fluent chaining. |
+
+##### add_stimulus { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.add_stimulus }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.add_stimulus(
+    stimulus,
+    as_derived_variable=True,
+)
+```
+
+Attach a stimulus to the model.
+
+Warns if no state variable is marked as a stimulation target.
+Depending on `as_derived_variable`, the stimulus is either stored on `self.stimulus` or lowered into a `stim_t` derived variable plus suffixed stimulus parameters.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name                | Type   | Description                                                                                                      | Default    |
+|---------------------|--------|------------------------------------------------------------------------------------------------------------------|------------|
+| stimulus            |        | A [`Stimulus`](#tvbo.classes.perturbation.Stimulus) to apply.                                                    | _required_ |
+| as_derived_variable |        | If `True`, inline the stimulus as a `stim_t` derived variable; if `False`, store the `Stimulus` object directly. | `True`     |
+
+##### animate { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.animate }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.animate(
+    parameter,
+    values,
+    *dims,
+    **kwargs,
+)
+```
+
+Animate by sweeping one parameter through ``values``.
+
+See :func:`tvbo.plot.dynamics.animate_dynamics` for parameters.
+Returns a :class:`matplotlib.animation.FuncAnimation`.
+
+##### copy { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.copy }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.copy(**overrides)
+```
+
+Return a deep copy of this experiment.
+
+Use keyword overrides to set attributes on the returned copy.
+
+Errors are not swallowed; if a field can't be copied, an exception is raised.
+
+##### db_overview { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.db_overview }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.db_overview(model_type=None)
+```
+
+Return a pandas DataFrame summarising the Dynamics database.
+
+Columns: ``name``, ``model_type``, ``system_type``, ``description``.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+model_type : str, optional
+    If given, only show models of that category.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> Dynamics.db_overview()
+>>> Dynamics.db_overview(model_type='neural_mass')
+
+##### display_markdown { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.display_markdown }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.display_markdown(
+    format='tvb',
+    **kwargs,
+)
+```
+
+Render generated code as an IPython Markdown code block.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                      | Default   |
+|----------|--------|--------------------------------------------------------------------------------------------------|-----------|
+| format   |        | Backend passed to [`render_code`](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_code). | `'tvb'`   |
+| **kwargs |        | Forwarded to `render_code`.                                                                      | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                       |
+|--------|--------|-------------------------------------------------------------------|
+|        |        | An `IPython.display.Markdown` object wrapping the generated code. |
+
+##### execute { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.execute }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.execute(format='tvb', **kwargs)
+```
+
+Generate and execute the model code, returning a runnable object.
+
+Dispatches on `format`: builds a configured TVB model instance, a tvboptim dynamics instance, a compiled C module (`sympy2c`), a bifurcation/continuation run, or a plain dfun callable.
+
+Every code format resolves its binding through [`entry_point_name`](#tvbo.codegen.templater.entry_point_name), the same declaration the templates emit against, so any backend that renders Python hands back a usable object for a custom JAX, NumPy or SciPy workflow rather than failing on a name the caller had to guess.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                      | Default   |
+|----------|--------|------------------------------------------------------------------------------------------------------------------|-----------|
+| format   |        | Backend to execute, e.g. `"tvb"`, `"tvboptim"`, `"c"`, `"bifurcation-auto7p"`, or a code format yielding a dfun. | `'tvb'`   |
+| **kwargs |        | Constructor/runtime arguments forwarded to the executed code.                                                    | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                          |
+|--------|--------|------------------------------------------------------|
+|        |        | The executed object, whose type depends on `format`. |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                 |
+|--------|------------|---------------------------------------------------------------------------------------------|
+|        | ValueError | If `format` declares no entry point, so nothing can be re-entered from the rendered source. |
+
+##### fill_in_equations { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.fill_in_equations }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.fill_in_equations(**kwargs)
+```
+
+Substitute parameter values (and any overrides) into every equation.
+
+Parameter symbols are replaced with their numeric values, then any `**kwargs` overrides are applied, and finally all coupling inputs are forced to `0` (for fixed-point / equilibrium analysis) — so a `kwargs` entry named after a coupling input is overridden by that `0`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                    | Default   |
+|----------|--------|------------------------------------------------|-----------|
+| **kwargs |        | Additional symbol-name to value substitutions. | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                       |
+|--------|--------|---------------------------------------------------|
+|        |        | The list of equations with substitutions applied. |
+
+##### find_periodic_orbits { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.find_periodic_orbits }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.find_periodic_orbits(f)
+```
+
+Find sibling periodic-orbit output files for a run.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                                      | Default    |
+|--------|--------|------------------------------------------------------------------------------------------------------------------|------------|
+| f      |        | Path to the base run file whose periodic-orbit companions (`<base>_po*`) are searched for in the same directory. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                     |
+|--------|--------|-------------------------------------------------|
+|        |        | The list of matching periodic-orbit file paths. |
+
+##### from_datamodel { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_datamodel }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.from_datamodel(model_meta)
+```
+
+Create from a datamodel Dynamics instance by copying its already-normalized state (avoids ``_as_dict`` re-init crash on ``inlined_as_dict`` fields).
+
+##### from_db { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_db }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.from_db(name)
+```
+
+Load a Dynamics model by name from the tvbo database.
+
+##### from_file { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_file }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.from_file(path)
+```
+
+Load a model from a YAML/JSON specification file on disk.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type               | Description                              | Default    |
+|--------|--------------------|------------------------------------------|------------|
+| path   | str \| os.PathLike | Path to a TVBO model specification file. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type     | Description                        |
+|--------|----------|------------------------------------|
+|        | Dynamics | The instance parsed from the file. |
+
+##### from_ontology { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_ontology }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.from_ontology(ontoclass, **kwargs)
+```
+
+Create a model populated from an ontology class.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type                        | Description                                                                                                 | Default    |
+|-----------|-----------------------------|-------------------------------------------------------------------------------------------------------------|------------|
+| ontoclass | owlready2.ThingClass \| str | An owlready2 model class, or a label string that is resolved against the `NeuralMassModel` ontology branch. | _required_ |
+| **kwargs  |                             | Extra fields forwarded to the constructor and ontology population.                                          | `{}`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description           |
+|--------|--------|-----------------------|
+|        |        | A populated instance. |
+
+##### from_platform { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_platform }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.from_platform(
+    name,
+    base_url=TVBO_PLATFORM_URL,
+)
+```
+
+Load a dynamics model from the tvbo platform API.
+
+Fetches the full LinkML-valid YAML definition from the platform and constructs a Dynamics instance.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+name : str
+    Model name (e.g., "JansenRit", "ReducedWongWang").
+base_url : str
+    Platform base URL.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Dynamics
+    Dynamics instance loaded from the platform.
+
+##### from_pydantic { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_pydantic }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.from_pydantic(pyd_obj)
+```
+
+Create a Dynamics from a tvbopydantic.Dynamics (or dict-like).
+
+##### from_pyrates { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_pyrates }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.from_pyrates(path, operator_key=None)
+```
+
+Load a Dynamics model from a PyRates YAML template file.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+path : str
+    Path to PyRates YAML file.
+operator_key : str, optional
+    Name of the specific OperatorTemplate to load (without _op suffix).
+    If None, loads the first OperatorTemplate found.
+    Use SimulationExperiment.from_pyrates() to load all operators.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+Dynamics
+    New Dynamics instance populated from the PyRates template.
+
+
+
+###### Example: {.doc-section .doc-section-example}
+
+>>> model = Dynamics.from_pyrates("jansen_rit.yaml")
+>>> # Load specific operator from multi-operator file
+>>> tsodyks = Dynamics.from_pyrates("synaptic_plasticity.yaml", operator_key="tsodyks")
+
+##### from_string { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.from_string }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.from_string(str)
+```
+
+Load a model from a YAML specification string.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                           | Default    |
+|--------|--------|---------------------------------------|------------|
+| str    | str    | A YAML document describing the model. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type     | Description                          |
+|--------|----------|--------------------------------------|
+|        | Dynamics | The instance parsed from the string. |
+
+##### generate_report { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.generate_report }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.generate_report(
+    format='markdown',
+    template_name='tvbo-report-model',
+    outputfile=None,
+    derivative_notation='dot',
+    baseline=None,
+    citeformat=None,
+)
+```
+
+Render a human-readable report of the model.
+
+Reads the model and does not modify it, for the same reason as [`render_code`](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_code): normalisation belongs to construction, and repeating it here made a report a command as well as a query.
+
+Refreshes metadata and renders the Markdown report template; the result is optionally written to `outputfile` (as Markdown or, for `format="pdf"`, a PDF).
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name                | Type   | Description                                                                                                                                                                                                                                                                                                                               | Default               |
+|---------------------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|
+| format              |        | `"markdown"`/`"md"` or `"pdf"`.                                                                                                                                                                                                                                                                                                           | `'markdown'`          |
+| template_name       |        | Base name of the report Mako template.                                                                                                                                                                                                                                                                                                    | `'tvbo-report-model'` |
+| outputfile          |        | If given, path the report is written to.                                                                                                                                                                                                                                                                                                  | `None`                |
+| derivative_notation | str    | Notation for time derivatives, e.g. `"dot"`.                                                                                                                                                                                                                                                                                              | `'dot'`               |
+| baseline            |        | Another `Dynamics` to diff against. When given, the report lists only the state variables, parameters, derived variables and couplings that are new or changed relative to it (a "relative to" note replaces the shared rows) — e.g. a controlled variant shown against its uncontrolled base without repeating every shared term.        | `None`                |
+| citeformat          |        | How references are emitted. Default (`None`) renders a formatted **References** section at the end (a standalone report). `"quarto"` instead emits inline `@key` citations in the fulltext and omits the list, so the report can be embedded in a Quarto document whose own `bibliography:` resolves the citations into one bibliography. | `None`                |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                          |
+|--------|--------|--------------------------------------|
+|        |        | The rendered Markdown report string. |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                           |
+|--------|------------|-------------------------------------------------------|
+|        | ValueError | If `format` is not one of `markdown`, `md`, or `pdf`. |
+
+##### get_dependency_tree { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.get_dependency_tree }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.get_dependency_tree(
+    ontomapping=False,
+    include_state_equations=False,
+)
+```
+
+Build the equation dependency graph for this model.
+
+Nodes are the model's symbols; each edge points from a dependency to the quantity whose equation uses it (dependencies → dependents). State equations are excluded by default to avoid cycles in discrete systems.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name                    | Type   | Description                                                                                          | Default   |
+|-------------------------|--------|------------------------------------------------------------------------------------------------------|-----------|
+| ontomapping             |        | If `True`, also build an ontology-class version of the graph and the symbol↔ontology-class mappings. | `False`   |
+| include_state_equations |        | If `True`, include state equations in the graph.                                                     | `False`   |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                      |
+|--------|--------|------------------------------------------------------------------|
+|        |        | The dependency graph, or — when `ontomapping` is `True` — the    |
+|        |        | tuple `(graph, ontology_graph, symbol_to_onto, onto_to_symbol)`. |
+
+##### get_initial_values { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.get_initial_values }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.get_initial_values(
+    default=0.1,
+    random=False,
+    N=1,
+    **kwargs,
+)
+```
+
+Build the initial state vector for a simulation.
+
+If any state variable defines a `distribution` (or `random=True`), initial values are sampled from it (Gaussian or uniform over the finite domain bounds); otherwise each variable's `initial_value` (or `default`) is used.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                            | Default   |
+|----------|--------|--------------------------------------------------------|-----------|
+| default  |        | Fallback value for variables without an initial value. | `0.1`     |
+| random   |        | Deprecated flag to sample from each variable's domain. | `False`   |
+| N        |        | Number of samples per state variable.                  | `1`       |
+| **kwargs |        | Ignored extra arguments.                               | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                         |
+|--------|--------|---------------------------------------------------------------------|
+|        |        | A NumPy array of initial values. When sampling from a distribution  |
+|        |        | (or `random=True`) the shape is `(n_state_variables, N)`; otherwise |
+|        |        | it is 1-D with one entry per state variable.                        |
+
+##### get_run_filename { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.get_run_filename }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.get_run_filename(format, **kwargs)
+```
+
+Build a deterministic cache filename for a run in the temp directory.
+
+Non-identifying keyword arguments (e.g. `filename`, `force`, `verbose`) are dropped and the rest are sorted so the same run maps to the same path.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                     | Default    |
+|----------|--------|-------------------------------------------------|------------|
+| format   |        | Backend format string included in the filename. | _required_ |
+| **kwargs |        | Run parameters encoded into the filename.       | `{}`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                        |
+|--------|--------|--------------------------------------------------------------------|
+|        |        | The cache-file path (without extension) inside the temp directory. |
+
+##### list_db { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.list_db }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.list_db(model_type=None)
+```
+
+List available models in the tvbo database.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+model_type : str, optional
+    Filter by model category.  Valid values: ``mean_field``,
+    ``neural_mass``, ``phase_oscillator``, ``phenomenological``,
+    ``spiking``, ``generic``, ``field``.
+
+
+
+###### Examples: {.doc-section .doc-section-examples}
+
+>>> Dynamics.list_db()                           # all models
+>>> Dynamics.list_db(model_type='mean_field')    # mean-field only
+>>> Dynamics.list_db(model_type='spiking')       # spiking models
+
+##### list_platform_models { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.list_platform_models }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.list_platform_models(
+    base_url=TVBO_PLATFORM_URL,
+    **filters,
+)
+```
+
+List available dynamics models on the tvbo platform.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+base_url : str
+    Platform base URL.
+**filters
+    Filtering parameters (e.g., system_type="continuous").
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+list[dict]
+    List of model summaries.
+
+##### parameter_table { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.parameter_table }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.parameter_table()
+```
+
+Return a pandas DataFrame of the model's parameters.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                       |
+|--------|--------|-------------------------------------------------------------------|
+|        |        | A DataFrame with `Parameter`, `Value`, and `Description` columns. |
+
+##### plot { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.plot }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.plot(*dims, **kwargs)
+```
+
+Plot trajectories of this dynamics in 1D, 2D, or 3D.
+
+See :func:`tvbo.plot.dynamics.plot_dynamics` for parameters.
+
+##### plot_bifurcation_timeseries { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.plot_bifurcation_timeseries }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.plot_bifurcation_timeseries(
+    ICS,
+    VOI,
+    n_runs=2,
+    t=np.arange(0, 500, 0.1),
+    offset=2,
+    ax1=None,
+    ax2=None,
+    **kwargs,
+)
+```
+
+Plot a bifurcation diagram alongside representative time series.
+
+Builds two linked panels — a bifurcation diagram over `ICS` and time series of `VOI` sampled at several parameter values — and either returns the combined figure or draws into the supplied axes.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                      | Default                  |
+|----------|--------|------------------------------------------------------------------|--------------------------|
+| ICS      |        | Name of the continuation/bifurcation parameter to vary.          | _required_               |
+| VOI      |        | Variable of interest to plot.                                    | _required_               |
+| n_runs   |        | Number of parameter values sampled for the time-series panel.    | `2`                      |
+| t        |        | Time vector for the time-series simulations.                     | `np.arange(0, 500, 0.1)` |
+| offset   |        | Vertical offset between successive time-series traces.           | `2`                      |
+| ax1      |        | Axis for the bifurcation panel; a new layout is made if omitted. | `None`                   |
+| ax2      |        | Axis for the time-series panel.                                  | `None`                   |
+| **kwargs |        | Forwarded to the bifurcation run.                                | `{}`                     |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                       |
+|--------|--------|-------------------------------------------------------------------|
+|        |        | The combined figure when axes are not supplied, otherwise `None`. |
+
+##### plot_dependency_tree { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.plot_dependency_tree }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.plot_dependency_tree(
+    ax=None,
+    edgecolor='#426665',
+    color_nodes_by=None,
+    pos='graphviz',
+    edgekwargs=None,
+    **kwargs,
+)
+```
+
+Plot the model's equation dependency graph.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description                                                                              | Default      |
+|----------------|--------|------------------------------------------------------------------------------------------|--------------|
+| ax             |        | Existing matplotlib axis to draw into; if omitted, a new figure is created and returned. | `None`       |
+| edgecolor      |        | Node edge color.                                                                         | `'#426665'`  |
+| color_nodes_by |        | Ontology attribute used to color nodes by category.                                      | `None`       |
+| pos            |        | Node layout, `"graphviz"` (hierarchical) or otherwise a Kamada–Kawai layout.             | `'graphviz'` |
+| edgekwargs     |        | Extra keyword arguments for edge drawing.                                                | `None`       |
+| **kwargs       |        | Forwarded to the node-drawing helper.                                                    | `{}`         |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                      |
+|--------|--------|------------------------------------------------------------------|
+|        |        | The created figure when `ax` was not supplied, otherwise `None`. |
+
+##### plot_ontology { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.plot_ontology }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.plot_ontology(**kwargs)
+```
+
+Plot this model's ontology graph.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                   | Default   |
+|----------|--------|-----------------------------------------------|-----------|
+| **kwargs |        | Forwarded to `tvbo.plot.ontology.plot_model`. | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                 |
+|--------|--------|-----------------------------|
+|        |        | The rendered ontology plot. |
+
+##### render { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.render(format='yaml', **kwargs)
+```
+
+Unified entry point for rendering the model in any output format.
+
+Dispatches to the appropriate renderer based on *format*:
+
+- ``'yaml'`` — TVBO YAML specification
+- ``'pyrates-yaml'`` — PyRates YAML
+- ``'report'`` / ``'markdown'`` / ``'md'`` — human-readable Markdown report
+- ``'pdf'`` — report rendered to PDF (requires *outputfile* kwarg)
+- ``'neuroml'`` / ``'nml'`` / ``'lems'`` — LEMS XML via NeuroMLAdapter
+- Any code format accepted by :meth:`render_code` (``'tvb'``,
+  ``'jax'``, ``'julia'``, ``'bifurcation-julia'``, …)
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+format : str
+    Target output format.
+**kwargs
+    Forwarded to the underlying renderer.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+str
+
+##### render_code { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_code }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.render_code(
+    format='tvb',
+    alt_label=None,
+    **kwargs,
+)
+```
+
+Generate backend source code for this model.
+
+Dispatches to the template (or adapter) for the requested backend and returns the formatted source. Reads the model and does not modify it, so the source depends on the model alone and not on how often it has been rendered — nor on whether anything reordered it first. The dependency order the straight-line emitters need is a view the symbolic layer computes, not a state the model is put into: see [`in_dependency_order`](../behaviour/dynamics.qmd#in_dependency_order).
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                                                                                                                                                                                                                         | Default   |
+|-----------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| format    |        | Target backend, e.g. `"tvb"`, `"jax"`, `"numpy"`, `"tvboptim"`, `"julia"`, `"bifurcation-julia"`, `"pde-fem"`, or `"neuroml"`. The template-rendered ones are declared in [`CODE_FORMATS`](#tvbo.codegen.templater.CODE_FORMATS); the rest are built by an adapter. | `'tvb'`   |
+| alt_label |        | Optional alternative label for the generated model.                                                                                                                                                                                                                 | `None`    |
+| **kwargs  |        | Forwarded to the template/adapter (e.g. `continuation`).                                                                                                                                                                                                            | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                               |
+|--------|--------|-------------------------------------------|
+|        |        | The generated code as a formatted string. |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                             |
+|--------|------------|-----------------------------------------|
+|        | ValueError | If `format` is not a supported backend. |
+
+##### render_equation { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_equation }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.render_equation(
+    obj,
+    format='latex',
+    inline_functions=False,
+    **kwargs,
+)
+```
+
+Render a model element's equation to a string.
+
+Handles conditional derived variables (converting `conditionals` to a SymPy `Piecewise`) and can optionally inline the model's function definitions.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name             | Type   | Description                                                                            | Default    |
+|------------------|--------|----------------------------------------------------------------------------------------|------------|
+| obj              |        | A model element exposing an `equation` (state/derived variable, derived parameter, …). | _required_ |
+| format           |        | Output format, e.g. `"latex"`, `"numpy"`, `"julia"`.                                   | `'latex'`  |
+| inline_functions |        | If `True`, substitute model function bodies inline instead of emitting function calls. | `False`    |
+| **kwargs         |        | Forwarded to `tvbo.codegen.code.render_equation`.                                      | `{}`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                    |
+|--------|--------|------------------------------------------------|
+|        |        | The rendered equation in the requested format. |
+
+##### render_equation_cse { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_equation_cse }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.render_equation_cse(
+    obj,
+    format='numpy',
+    inline_functions=False,
+    **kwargs,
+)
+```
+
+Common-subexpression-eliminated variant of :meth:`render_equation`.
+
+Returns ``(setup, final)`` — a list of ``(name, expr)`` assignments plus the return expression — so interpreted backends (TVB / numpy) evaluate each shared subexpression (notably repeated model-function calls) once instead of per occurrence. Builds the same symbolic scope / user-function set as :meth:`render_equation`; see :func:`tvbo.codegen.code.render_equation_cse`.
+
+##### run { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.run }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.run(
+    format='python',
+    verbose=0,
+    save=True,
+    run_kwargs=None,
+    **kwargs,
+)
+```
+
+Generate, execute, and integrate the model, returning its output.
+
+Supports Julia (ODE and bifurcation), Python (SciPy `odeint`, or an iterated map for discrete systems), and compiled C backends.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                                  | Default    |
+|------------|--------|------------------------------------------------------------------------------|------------|
+| format     |        | Backend to run, e.g. `"python"`, `"julia"`, `"bifurcation-julia"`, or `"c"`. | `'python'` |
+| verbose    |        | Verbosity level.                                                             | `0`        |
+| save       |        | If `True`, cache results under a deterministic run filename.                 | `True`     |
+| run_kwargs |        | Extra arguments forwarded to the integrated dfun (e.g. `stimulus`).          | `None`     |
+| **kwargs   |        | Simulation settings such as `duration`, `dt`, `t`, and `u_0`.                | `{}`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type                                                | Description                                                   |
+|--------|-----------------------------------------------------|---------------------------------------------------------------|
+|        | data_types.TimeSeries \| analysis.BifurcationResult | A [`TimeSeries`](#tvbo.data.types.TimeSeries) for time-domain |
+|        | data_types.TimeSeries \| analysis.BifurcationResult | runs, or a `BifurcationResult` for bifurcation formats.       |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                   |
+|--------|------------|-------------------------------|
+|        | ValueError | If `format` is not supported. |
+
+##### save_model_metadata { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.save_model_metadata }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.save_model_metadata(filename)
+```
+
+Serialize the model metadata to a YAML file.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                           | Default    |
+|----------|--------|---------------------------------------|------------|
+| filename |        | Destination path for the dumped YAML. | _required_ |
+
+##### save_python_class { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.save_python_class }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.save_python_class(directory='.')
+```
+
+Write the model as a standalone TVB Python class file.
+
+Emits `<name>.py` in `directory` with the required imports followed by the rendered TVB model code.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                          | Default   |
+|-----------|--------|------------------------------------------------------|-----------|
+| directory |        | Target directory for the generated `<name>.py` file. | `'.'`     |
+
+##### save_report { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.save_report }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.save_report(opath, format='markdown')
+```
+
+Generate the model report and write it to a directory.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                             | Default      |
+|--------|--------|-----------------------------------------------------------------------------------------|--------------|
+| opath  |        | Directory the report file is written to (as `<name>.<ext>`).                            | _required_   |
+| format |        | Report format passed to `generate_report` — `"markdown"` (written as `.md`) or `"pdf"`. | `'markdown'` |
+
+##### search_ontology { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.search_ontology }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.search_ontology(search_str, **kwargs)
+```
+
+Search this model's ontology subtree for a term.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                                        | Default    |
+|------------|--------|--------------------------------------------------------------------|------------|
+| search_str | str    | Text to search for among the model's ontology labels and synonyms. | _required_ |
+| **kwargs   |        | Forwarded to the underlying ontology search.                       | `{}`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                     |
+|--------|--------|-----------------------------------------------------------------|
+|        |        | The ontology search matches for `search_str` within this model. |
+
+##### symbolic_rhs { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.symbolic_rhs }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.symbolic_rhs(obj, evaluate=True)
+```
+
+The parsed right-hand side of one of this model's elements.
+
+Resolved through the symbolic layer, so rendering an element reuses the expression already parsed for it rather than parsing its metadata again — the reason a second `render_code` on the same model costs nothing. Falls back to the element's own `Equation` for anything the model does not declare (a stimulus, a caller's ad-hoc element); `parse_eq` accepts either, so the caller does not need to know which.
+
+*evaluate* must match what the caller would have parsed with. A backend that
+preserves authored term order needs the unevaluated form: SymPy canonicalises `a + V*b + c*V**2` out of the order its author wrote it in, and the emitted source is compared against a frozen reference.
+
+##### to_lems { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.to_lems }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.to_lems(
+    initial_conditions=1,
+    component_id=None,
+)
+```
+
+Build a LEMS model for this local neural mass model.
+
+.. deprecated::
+    Use ``NeuroMLAdapter(model).render_code()`` from
+    ``tvbo.adapters.neuroml`` instead.  This method returns a
+    ``lems.Model`` object (PyLEMS API); the adapter produces a
+    validated XML string.
+
+Parameters:
+- initial_conditions: number or dict; if number, used for all SVs; if dict, keys are sv name or sv_name_0
+- component_id: optional id for the component; defaults to model label
+
+Returns:
+- lems.Model instance containing a ComponentType and a Component for this model
+
+##### to_pydantic { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.to_pydantic }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.to_pydantic()
+```
+
+Return a tvbopydantic.Dynamics validated instance for this model.
+
+##### to_yaml { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.to_yaml }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.to_yaml(filepath=None, format='tvbo')
+```
+
+Export the model to YAML format.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+filepath : str, optional
+    Path to write the YAML file. If None, returns the YAML string.
+format : str
+    Output format: "tvbo" (default) or "pyrates".
+    PyRates format generates a complete experiment YAML (model + network).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+str
+    YAML string or filepath if written to file.
+
+
+
+###### Example: {.doc-section .doc-section-example}
+
+>>> model.to_yaml("model.yaml")  # TVBO format
+>>> model.to_yaml("model.yaml", format="pyrates")  # PyRates experiment format
+
+##### update_parameters_from_equations { #tvbo.behaviour.dynamics_runtime.DynamicsRuntime.update_parameters_from_equations }
+
+```python
+behaviour.dynamics_runtime.DynamicsRuntime.update_parameters_from_equations(
+    default_value=1.0,
+    overwrite=False,
+)
+```
+
+Scan all equations and add any free symbols as parameters (default value if missing).
+
+- Skips symbols that are known state variables, derived variables, or function arguments
+- Skips the time symbol 't'
+- Removes any previously added parameters that later become known entities
+- Returns the list of parameter names that were added (or updated if overwrite=True)

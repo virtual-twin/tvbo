@@ -1,0 +1,98 @@
+# Slot: anatomicalAxesOrientation 
+
+
+_Add the axes orientation in standard anatomical terms (XYZ)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:slot/anatomicalAxesOrientation](http://uri.interlex.org/tgbugs/uris/readable/slot/anatomicalAxesOrientation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | A schema for representing a version of a common coordinate space |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:anatomicalAxesOrientation |
+| native | atom:anatomicalAxesOrientation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: anatomicalAxesOrientation
+description: Add the axes orientation in standard anatomical terms (XYZ).
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+rank: 1000
+owner: CommonCoordinateSpace
+domain_of:
+- CommonCoordinateSpace
+range: string
+
+```
+</details></div>

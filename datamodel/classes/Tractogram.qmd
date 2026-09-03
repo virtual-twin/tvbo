@@ -1,0 +1,555 @@
+# Class: Tractogram 
+
+
+_Reference to tractography/diffusion MRI data used to derive structural connectivity_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Tractogram](https://w3id.org/tvbo/Tractogram)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Tractogram
+    click Tractogram href "./Tractogram.html"
+      Tractogram : acquisition
+        
+          
+    
+        
+        
+        Tractogram --> "0..1" String : acquisition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Tractogram : data_source
+        
+          
+    
+        
+        
+        Tractogram --> "0..1" String : data_source
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Tractogram : description
+        
+          
+    
+        
+        
+        Tractogram --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Tractogram : iri
+        
+          
+    
+        
+        
+        Tractogram --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Tractogram : label
+        
+          
+    
+        
+        
+        Tractogram --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Tractogram : name
+        
+          
+    
+        
+        
+        Tractogram --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Tractogram : number_of_subjects
+        
+          
+    
+        
+        
+        Tractogram --> "0..1" Integer : number_of_subjects
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Tractogram : processing_pipeline
+        
+          
+    
+        
+        
+        Tractogram --> "0..1" String : processing_pipeline
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Tractogram : reference
+        
+          
+    
+        
+        
+        Tractogram --> "0..1" String : reference
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Tractogram](https://w3id.org/tvbo/Tractogram) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [data_source](../slots/data_source.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path or URI to the tractography data file | direct |
+| [number_of_subjects](../slots/number_of_subjects.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of subjects in the tractography dataset | direct |
+| [acquisition](../slots/acquisition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Acquisition protocol or scanner information | direct |
+| [processing_pipeline](../slots/processing_pipeline.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Processing pipeline used to generate the tractography | direct |
+| [reference](../slots/reference.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Publication or DOI reference for this tractography dataset | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [tractogram](../slots/tractogram.qmd) | range | [Tractogram](../classes/Tractogram.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Tractogram |
+| native | tvbo:Tractogram |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Tractogram
+description: Reference to tractography/diffusion MRI data used to derive structural
+  connectivity
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- label
+- iri
+- description
+attributes:
+  data_source:
+    name: data_source
+    description: Path or URI to the tractography data file
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Parcellation
+    - Tractogram
+    - Observation
+    range: string
+  number_of_subjects:
+    name: number_of_subjects
+    description: Number of subjects in the tractography dataset
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Tractogram
+    range: integer
+  acquisition:
+    name: acquisition
+    description: Acquisition protocol or scanner information
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Tractogram
+    - BidsEntities
+    range: string
+  processing_pipeline:
+    name: processing_pipeline
+    description: Processing pipeline used to generate the tractography
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Tractogram
+    range: string
+  reference:
+    name: reference
+    description: Publication or DOI reference for this tractography dataset
+    from_schema: https://w3id.org/tvbo
+    slot_uri: dcterms:references
+    domain_of:
+    - Dataset
+    - ClinicalScale
+    - ClinicalScore
+    - Tractogram
+    range: string
+class_uri: tvbo:Tractogram
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Tractogram
+description: Reference to tractography/diffusion MRI data used to derive structural
+  connectivity
+from_schema: https://w3id.org/tvbo
+attributes:
+  data_source:
+    name: data_source
+    description: Path or URI to the tractography data file
+    from_schema: https://w3id.org/tvbo
+    owner: Tractogram
+    domain_of:
+    - Parcellation
+    - Tractogram
+    - Observation
+    range: string
+  number_of_subjects:
+    name: number_of_subjects
+    description: Number of subjects in the tractography dataset
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Tractogram
+    domain_of:
+    - Tractogram
+    range: integer
+  acquisition:
+    name: acquisition
+    description: Acquisition protocol or scanner information
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Tractogram
+    domain_of:
+    - Tractogram
+    - BidsEntities
+    range: string
+  processing_pipeline:
+    name: processing_pipeline
+    description: Processing pipeline used to generate the tractography
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Tractogram
+    domain_of:
+    - Tractogram
+    range: string
+  reference:
+    name: reference
+    description: Publication or DOI reference for this tractography dataset
+    from_schema: https://w3id.org/tvbo
+    slot_uri: dcterms:references
+    owner: Tractogram
+    domain_of:
+    - Dataset
+    - ClinicalScale
+    - ClinicalScore
+    - Tractogram
+    range: string
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Tractogram
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Tractogram
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Tractogram
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Tractogram
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Tractogram
+
+```
+</details></div>

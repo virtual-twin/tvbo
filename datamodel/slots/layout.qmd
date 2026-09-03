@@ -1,0 +1,99 @@
+# Slot: layout 
+
+
+_bsplot mosaic string; letters = panel keys, slash (or newline) = new row, repeated letters span cells, dot = empty. e.g. aab/ccb._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/layout](https://w3id.org/tvbo/slot/layout)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:layout |
+| native | tvbo:layout |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: layout
+description: bsplot mosaic string; letters = panel keys, slash (or newline) = new
+  row, repeated letters span cells, dot = empty. e.g. aab/ccb.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: string
+
+```
+</details></div>

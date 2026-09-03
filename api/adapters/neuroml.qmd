@@ -1,0 +1,519 @@
+# neuroml { #tvbo.adapters.neuroml }
+
+`adapters.neuroml`
+
+NeuroML/LEMS adapter for SimulationExperiment.
+
+Renders a self-contained LEMS XML simulation file from any TVBO `SimulationExperiment` through a Mako template. Every Dynamics model is exported as a custom LEMS ComponentType, so there are no hardcoded mappings onto built-in NeuroML cell types. Validation goes through PyLEMS (`lems.Model`); simulation through pyNeuroML (jnml).
+
+**How a component reaches XML.** A role slot renders as `<key_name type="iri_type" .../>`; every other component slot as `<iri_type id="key_name" .../>`. A standard NeuroML type — one with an IRI but no equations — becomes a plain XML element, while a custom type with derived variables generates a LEMS `<ComponentType>` definition and is referenced by name.
+
+**Custom types over LEMS bases.** A dynamics tree using `iri: extends:base*` defines all of its equations explicitly rather than reaching for standard NeuroML biological types, and the generated ComponentTypes extend the LEMS base types so the type system still accepts them. Emitting one needs its base type's contract — the quantities it exposes and requires, its inherited parameters, and the Child/Children/Attachments slots it carries — which `_base_type_meta` returns for any NeuroML base type out of the ingested ontology in `neuroml_contracts.json`, with no per-type entry to maintain. `_BUILTIN_BASE_META` covers only the abstract cell, channel, gate and rate bases the standard biological emitter drives: NeuroML declares their synapse-hosting, gate-children and initial-value structure on concrete descendants such as `iafCell` and `ionChannelHH`, never on the abstract base, so the structure a custom cell, channel or gate emits is fixed here instead.
+
+Identifier minting (`safe_id`, `_unique_component_id`) lives in `tvbo.adapters.smallscale.lowering`, so every small-scale backend derives ids the same way.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [ALL_INPUT_TYPES](#tvbo.adapters.neuroml.ALL_INPUT_TYPES) |  |
+| [CURRENT_INPUT_TYPES](#tvbo.adapters.neuroml.CURRENT_INPUT_TYPES) |  |
+| [DIMENSIONS](#tvbo.adapters.neuroml.DIMENSIONS) |  |
+| [EVENT_SOURCE_TYPES](#tvbo.adapters.neuroml.EVENT_SOURCE_TYPES) |  |
+| [LEMS_EXAMPLES](#tvbo.adapters.neuroml.LEMS_EXAMPLES) |  |
+| [UNITS](#tvbo.adapters.neuroml.UNITS) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [NeuroMLAdapter](#tvbo.adapters.neuroml.NeuroMLAdapter) | Adapter for exporting a SimulationExperiment (or bare Dynamics) as LEMS XML. |
+
+### NeuroMLAdapter { #tvbo.adapters.neuroml.NeuroMLAdapter }
+
+```python
+adapters.neuroml.NeuroMLAdapter(source=None)
+```
+
+Adapter for exporting a SimulationExperiment (or bare Dynamics) as LEMS XML.
+
+Supports both a single monolithic file and a canonical three-file split:
+
+* ``render_dynamics()``   → standalone ComponentType definitions
+* ``render_network()``    → Network component (may include a dynamics file)
+* ``render_simulation()`` → LEMS Simulation block (may include a network file)
+* ``render_code()``       → monolithic all-in-one LEMS file (default)
+* ``render_neuroml()``    → NeuroML v2 document (``<neuroml>`` root)
+* ``render_lems_wrapper()`` → LEMS wrapper for a NeuroML file
+* ``export(dir)``         → write file(s) to disk, optionally validate
+
+``render('lems')`` produces a self-contained ``<Lems>`` file.
+``render('neuroml')`` produces a ``<neuroml>`` document with custom ComponentType definitions — no mapping to native NeuroML cell types.
+
+All ``render_*`` methods pass a fully pre-computed context via :func:`build_lems_context` so templates stay logic-free.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [export](#tvbo.adapters.neuroml.NeuroMLAdapter.export) | Export LEMS or NeuroML XML to a directory. |
+| [render_code](#tvbo.adapters.neuroml.NeuroMLAdapter.render_code) | Render a complete, self-contained LEMS simulation file (``<Lems>`` root). |
+| [render_dynamics](#tvbo.adapters.neuroml.NeuroMLAdapter.render_dynamics) | Render a standalone LEMS file with only ComponentType definitions. |
+| [render_lems_wrapper](#tvbo.adapters.neuroml.NeuroMLAdapter.render_lems_wrapper) | Render a LEMS simulation wrapper for a NeuroML file. |
+| [render_network](#tvbo.adapters.neuroml.NeuroMLAdapter.render_network) | Render a LEMS Network document. |
+| [render_neuroml](#tvbo.adapters.neuroml.NeuroMLAdapter.render_neuroml) | Render a NeuroML v2 document (``<neuroml>`` root). |
+| [render_simulation](#tvbo.adapters.neuroml.NeuroMLAdapter.render_simulation) | Render a LEMS Simulation document. |
+| [run](#tvbo.adapters.neuroml.NeuroMLAdapter.run) | Run the LEMS simulation through a downstream simulator. |
+| [validate](#tvbo.adapters.neuroml.NeuroMLAdapter.validate) | Validate rendered LEMS XML with PyLEMS. Returns True or raises. |
+
+##### export { #tvbo.adapters.neuroml.NeuroMLAdapter.export }
+
+```python
+adapters.neuroml.NeuroMLAdapter.export(
+    dir,
+    format='lems',
+    split=False,
+    validate=True,
+    **kwargs,
+)
+```
+
+Export LEMS or NeuroML XML to a directory.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+dir : str or Path
+    Output directory (created if needed).
+format : str
+    ``'lems'`` (default) — LEMS output (monolithic or split).
+    ``'neuroml'`` — NeuroML ``.nml`` document + LEMS simulation wrapper. split : bool Only used for ``format='lems'``.
+    ``False`` (default) — one monolithic ``{prefix}_simulation.xml``.
+    ``True`` — three canonical files:
+
+    * ``{prefix}_dynamics.xml``   — ComponentType definitions
+    * ``{prefix}_network.xml``    — Network (includes dynamics)
+    * ``{prefix}_simulation.xml`` — Simulation (includes network) validate : bool Run PyLEMS validation on every written file (default ``True``).
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+dict
+    Mapping of role to absolute file paths.
+
+##### render_code { #tvbo.adapters.neuroml.NeuroMLAdapter.render_code }
+
+```python
+adapters.neuroml.NeuroMLAdapter.render_code(use_standard_types=False, **kwargs)
+```
+
+Render a complete, self-contained LEMS simulation file (``<Lems>`` root).
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+use_standard_types : bool
+    When True and the dynamics uses NeuroML standard types (``iri: neuroml:*``), emit standard components with ``<Include file="Cells.xml"/>`` etc.  These includes are resolved by jNeuroML at runtime but NOT by the Python ``lems`` validator, so this should only be True when the output is destined for ``run()``.
+
+##### render_dynamics { #tvbo.adapters.neuroml.NeuroMLAdapter.render_dynamics }
+
+```python
+adapters.neuroml.NeuroMLAdapter.render_dynamics(**kwargs)
+```
+
+Render a standalone LEMS file with only ComponentType definitions.
+
+The output is a valid LEMS document containing dimensions, units, the dynamics ``ComponentType``, the ``Coupling`` ``ComponentType``, and the default ``Component`` instances.  No ``Network`` or ``Simulation`` elements are included, making it suitable for inclusion in larger LEMS documents via ``<Include file="..."/>``.
+
+##### render_lems_wrapper { #tvbo.adapters.neuroml.NeuroMLAdapter.render_lems_wrapper }
+
+```python
+adapters.neuroml.NeuroMLAdapter.render_lems_wrapper(neuroml_file=None, **kwargs)
+```
+
+Render a LEMS simulation wrapper for a NeuroML file.
+
+The wrapper includes standard NeuroML type files and the given NeuroML document, then defines a ``<Simulation>`` targeting the network defined in the ``.nml`` file.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+neuroml_file : str or None
+    Filename of the NeuroML document to include.
+
+##### render_network { #tvbo.adapters.neuroml.NeuroMLAdapter.render_network }
+
+```python
+adapters.neuroml.NeuroMLAdapter.render_network(dynamics_file=None, **kwargs)
+```
+
+Render a LEMS Network document.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+dynamics_file : str or None
+    If given, an ``<Include file="..."/>`` referencing that filename is prepended so the document can be used standalone.
+
+##### render_neuroml { #tvbo.adapters.neuroml.NeuroMLAdapter.render_neuroml }
+
+```python
+adapters.neuroml.NeuroMLAdapter.render_neuroml(**kwargs)
+```
+
+Render a NeuroML v2 document (``<neuroml>`` root).
+
+Uses custom ``<ComponentType>`` definitions for the dynamics model rather than mapping to native NeuroML cell types.  The output contains ComponentType definitions, Component instances, and a ``<network>`` with populations.
+
+To run the output, pair it with a LEMS simulation wrapper generated by :meth:`render_lems_wrapper`.
+
+##### render_simulation { #tvbo.adapters.neuroml.NeuroMLAdapter.render_simulation }
+
+```python
+adapters.neuroml.NeuroMLAdapter.render_simulation(network_file=None, **kwargs)
+```
+
+Render a LEMS Simulation document.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+network_file : str or None
+    If given, an ``<Include file="..."/>`` referencing that filename is prepended so the document can be used standalone.
+
+##### run { #tvbo.adapters.neuroml.NeuroMLAdapter.run }
+
+```python
+adapters.neuroml.NeuroMLAdapter.run(backend='jneuroml', **kwargs)
+```
+
+Run the LEMS simulation through a downstream simulator.
+
+Exports a self-contained monolithic LEMS file and executes it with one of the pyNeuroML runners.
+
+Where the output lands depends on the backend: jNeuroML and NEURON respect the path the LEMS file asks for (`results/*.dat`), while Brian2 and EDEN write to the working directory, so both are searched. A multi-population or multi-compartment run writes one file per population, each with its own columns; those are loaded in stem order — deterministic, and matching the order the `OutputFile` elements were emitted in — and their value columns concatenated. Column names come from the rendered LEMS `OutputColumn` quantities rather than being reconstructed, since those are what actually got written.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                                                                | Default      |
+|----------|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| backend  |        | Which simulator to use — `jneuroml` (the reference LEMS engine, in Java), `neuron`, `brian2`, `netpyne`, or `eden`. The middle three run through jNeuroML. | `'jneuroml'` |
+| **kwargs |        | Passed through to `render_code()`.                                                                                                                         | `{}`         |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type             | Description                                           |
+|--------|------------------|-------------------------------------------------------|
+|        | ExperimentResult | The simulation results, loaded from the output files. |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type         | Description                           |
+|--------|--------------|---------------------------------------|
+|        | ValueError   | If *backend* is not a supported name. |
+|        | RuntimeError | If the downstream simulator fails.    |
+
+##### validate { #tvbo.adapters.neuroml.NeuroMLAdapter.validate }
+
+```python
+adapters.neuroml.NeuroMLAdapter.validate(xml_string=None)
+```
+
+Validate rendered LEMS XML with PyLEMS. Returns True or raises.
+
+Standard NeuroML type outputs (``<Include file="Cells.xml"/>`` etc.) cannot be validated by PyLEMS because the type definition files are bundled with jNeuroML, not PyLEMS.  For those, validation is skipped here (jNeuroML validates them at runtime).
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [build_lems_context](#tvbo.adapters.neuroml.build_lems_context) | Build the shared rendering context passed to all LEMS Mako templates. |
+| [build_std_lems_context](#tvbo.adapters.neuroml.build_std_lems_context) | Build a context dict for standard NeuroML-type Mako templates. |
+| [compare_traces](#tvbo.adapters.neuroml.compare_traces) | Compare reference and TVBO traces, print metrics. |
+| [get_lems_examples_dir](#tvbo.adapters.neuroml.get_lems_examples_dir) | Return the path to the LEMSexamples directory in the NeuroML2 repo. |
+| [normalize_unit](#tvbo.adapters.neuroml.normalize_unit) | Normalize a unit string to its canonical TVBO form. |
+| [parse_lems_displays](#tvbo.adapters.neuroml.parse_lems_displays) | Parse Display + Line elements from a LEMS XML file. |
+| [parse_lems_output_columns](#tvbo.adapters.neuroml.parse_lems_output_columns) | Parse OutputFile → OutputColumn quantities from a LEMS file. |
+| [plot_comparison](#tvbo.adapters.neuroml.plot_comparison) | Plot overlaid traces: reference vs TVBO. |
+| [plot_lems_comparison](#tvbo.adapters.neuroml.plot_lems_comparison) | Create publication-quality comparison plots mirroring LEMS Display layout. |
+| [run_lems_example](#tvbo.adapters.neuroml.run_lems_example) | Run a LEMS XML file via jNeuroML and return {filename: array} for each .dat output. |
+| [standard_type_dynamics](#tvbo.adapters.neuroml.standard_type_dynamics) | The canonical LEMS dynamics of a standard NeuroML type, or ``None`` if not indexed. |
+| [sympy_to_lems](#tvbo.adapters.neuroml.sympy_to_lems) | Convert a TVBO equation RHS string (or SymPy expr) to LEMS syntax. |
+| [unit_to_dimension](#tvbo.adapters.neuroml.unit_to_dimension) | Return the physical dimension name for a unit string. |
+| [validate_lems_xml](#tvbo.adapters.neuroml.validate_lems_xml) | Validate a LEMS XML string using PyLEMS. |
+
+### build_lems_context { #tvbo.adapters.neuroml.build_lems_context }
+
+```python
+adapters.neuroml.build_lems_context(experiment)
+```
+
+Build the shared rendering context passed to all LEMS Mako templates.
+
+Pre-computes every variable the templates need — model objects, name lists for safe SymPy parsing, expression helpers, and integration and network scalars. Templates receive it as `template.render(**build_lems_context(experiment))`.
+
+**Resolving the top-level dynamics.** A network-only experiment has none, and gets an empty placeholder: its cell types live in `experiment.network.dynamics` and render separately. A bare `model: ModelName` reference that names a row in the TVBO database is loaded from it. A NeuroML or otherwise external reference — an `iri` starting with `neuroml:`, or a name the database does not hold — is left alone and emitted through the network template.
+
+**Dimensions are all-or-nothing, and decide `/ SEC`.** When every parameter, state variable and derived variable carries a LEMS dimension, the model is emitted with them and LEMS converts natively — `tau="30 ms"` becomes 0.03 s internally — so the TimeDerivative right-hand side already comes out as `per_time` and dividing by SEC again would double-count. Otherwise every quantity is emitted dimensionless with a bare value in model units, and each right-hand side is divided by SEC, a one-model-time-unit constant, to make `d(x)/dt` a rate. The mixed form — real dimensions on the parameters that have units, `none` on the rest — is never emitted: a `tau` in ms against a dimensionless state, or a `mV` state fed by a derivative whose unit LEMS has no name for (JansenRit's `mV_per_s`), fails jLEMS's dimension check at the first equation. A YAML value is in model units and its symbol suffix, when emitted, is what tells LEMS how to convert.
+
+**Spike events.** An event carrying both a condition and an affect — spike plus reset — renders as LEMS Regimes, integrating and refractory, rather than a flat `OnCondition`, matching the reference NeuroML execution model. A single-cell model keeps the flat form unless it declares a `refract` parameter, which follows NeuroML's own convention: `izhikevichCell` is flat where `adExIaFCell` and `iafRefCell` use a Regime with an explicit refractory period. The distinction matters because a Regime adds a one-timestep delay that drifts the phase of a flat-reference model. Network mode always uses Regimes, so `EventOut` is correct.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description               | Default    |
+|------------|--------|---------------------------|------------|
+| experiment |        | The experiment to render. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                                                                                                                                                                                                                                                             |
+|--------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        |        | The context dict, keyed `dyn`, `dyn_id`, `params`, `svs`, `dvs`, `events`, `coupling_inputs`, `coupling_meta`, `coupling_params`, `coupling_pre_rhs`, `coupling_post_rhs`, `coupling_global`, `sv_names_set`, `n_nodes`, `dt`, `duration`, and the callables `lems_expr`, `_parse_piecewise`, `lems_dim` and `safe_id`. |
+
+### build_std_lems_context { #tvbo.adapters.neuroml.build_std_lems_context }
+
+```python
+adapters.neuroml.build_std_lems_context(experiment)
+```
+
+Build a context dict for standard NeuroML-type Mako templates.
+
+Inspects the experiment to determine whether it uses standard NeuroML types (``iri: neuroml:*``).  When it does, extracts *all* data that the Mako templates need — integration parameters, pre-rendered XML fragments for cells/channels/synapses, population lists, connection lists, and simulation metadata.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict or None
+    ``None`` when the experiment cannot be rendered using standard NeuroML types.  Otherwise a dict containing:
+
+    * ``'is_network'``  – True for multi-population network template
+    * ``'is_fhn'``      – True for FitzHugh-Nagumo cell template
+    * All scalar and list variables that the templates iterate over.
+
+### compare_traces { #tvbo.adapters.neuroml.compare_traces }
+
+```python
+adapters.neuroml.compare_traces(
+    ref_data,
+    tvbo_data,
+    ref_cols,
+    tvbo_cols,
+    time_col=0,
+    rtol=0.05,
+    atol=0.0001,
+)
+```
+
+Compare reference and TVBO traces, print metrics.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+ref_data, tvbo_data : (n_time, n_cols) arrays ref_cols, tvbo_cols : column names (index 0 is time) time_col : which column is time (default 0) rtol, atol : tolerances for _np.allclose
+
+### get_lems_examples_dir { #tvbo.adapters.neuroml.get_lems_examples_dir }
+
+```python
+adapters.neuroml.get_lems_examples_dir()
+```
+
+Return the path to the LEMSexamples directory in the NeuroML2 repo.
+
+### normalize_unit { #tvbo.adapters.neuroml.normalize_unit }
+
+```python
+adapters.neuroml.normalize_unit(unit_str)
+```
+
+Normalize a unit string to its canonical TVBO form.
+
+Strips surrounding whitespace and resolves known aliases (for example `"millisecond"` to `"ms"` or `"µm"` to `"um"`) via the `_ALIASES` table.
+Strings without an alias are returned unchanged.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                              | Default    |
+|----------|--------|----------------------------------------------------------------------------------------------------------|------------|
+| unit_str |        | The raw unit label; any value is coerced to `str`. A falsy value (such as `None` or `""`) yields `None`. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                    |
+|--------|--------|----------------------------------------------------------------|
+|        |        | The canonical unit string, or `None` when `unit_str` is empty. |
+
+### parse_lems_displays { #tvbo.adapters.neuroml.parse_lems_displays }
+
+```python
+adapters.neuroml.parse_lems_displays(lems_file)
+```
+
+Parse Display + Line elements from a LEMS XML file.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+lems_file : str
+    LEMS filename (e.g. 'LEMS_NML2_Ex9_FN.xml') resolved relative to the LEMSexamples directory.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+list of _Display objects with their Line children.
+
+### parse_lems_output_columns { #tvbo.adapters.neuroml.parse_lems_output_columns }
+
+```python
+adapters.neuroml.parse_lems_output_columns(lems_file)
+```
+
+Parse OutputFile → OutputColumn quantities from a LEMS file.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict mapping output filename (e.g. 'ex14.dat') to list of quantity strings.
+
+### plot_comparison { #tvbo.adapters.neuroml.plot_comparison }
+
+```python
+adapters.neuroml.plot_comparison(
+    ref_data,
+    tvbo_data,
+    ref_cols,
+    tvbo_cols,
+    title='',
+    time_scale=1.0,
+    time_unit='s',
+)
+```
+
+Plot overlaid traces: reference vs TVBO.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+ref_data, tvbo_data : arrays with time in col 0 ref_cols, tvbo_cols : column names title : plot title time_scale : multiply time by this factor for display time_unit : label for x axis
+
+### plot_lems_comparison { #tvbo.adapters.neuroml.plot_lems_comparison }
+
+```python
+adapters.neuroml.plot_lems_comparison(
+    lems_file,
+    ref_outputs,
+    tvbo_result=None,
+    title_prefix='',
+)
+```
+
+Create publication-quality comparison plots mirroring LEMS Display layout.
+
+For each Display in the LEMS file, creates one subplot panel with:
+- Reference traces as solid lines (using original colors from LEMS)
+- TVBO traces as dashed lines (same color, slightly transparent)
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+lems_file : str
+    Reference LEMS filename (e.g. 'LEMS_NML2_Ex2_Izh.xml') ref_outputs : dict
+    {filename: array} from run_lems_example()
+tvbo_result : xarray.DataArray, optional
+    ``result.integration.data`` from ``exp.run("neuroml")``.
+    Expects dims ``(time, quantity)``.  If None, only reference is plotted. title_prefix : str, optional Prefix for figure titles (e.g. 'Ex2')
+
+### run_lems_example { #tvbo.adapters.neuroml.run_lems_example }
+
+```python
+adapters.neuroml.run_lems_example(lems_file, cwd=None)
+```
+
+Run a LEMS XML file via jNeuroML and return {filename: array} for each .dat output.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+lems_file : str
+    Name of the LEMS file (e.g., 'LEMS_NML2_Ex9_FN.xml'). cwd : path, optional Working directory.  Defaults to the LEMSexamples directory.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+dict mapping output filename to (n_time, n_cols) numpy arrays.
+
+### standard_type_dynamics { #tvbo.adapters.neuroml.standard_type_dynamics }
+
+```python
+adapters.neuroml.standard_type_dynamics(nml_type)
+```
+
+The canonical LEMS dynamics of a standard NeuroML type, or ``None`` if not indexed.
+
+Transcribed from the NeuroML2 core type definitions (``Synapses.xml``). A recipe that references such a type by ``neuroml:`` iri carries no equations of its own, so a consumer needing the symbolic system — the report's model cards — resolves it here. ``v`` is the postsynaptic membrane potential, bound at the projection target.
+
+Returns a datamodel-shaped dict (``state_variables`` / ``derived_variables`` / ``events``) ready to merge onto such a component. It is a fresh copy, so a caller may hand it straight to a constructor that normalises its argument in place.
+
+### sympy_to_lems { #tvbo.adapters.neuroml.sympy_to_lems }
+
+```python
+adapters.neuroml.sympy_to_lems(expr_str, parameters=None)
+```
+
+Convert a TVBO equation RHS string (or SymPy expr) to LEMS syntax.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+expr_str : str or sympy.Basic
+    Equation RHS to convert.
+parameters : list of str, optional
+    Model symbol names (parameters, state variables, etc.) to inject as SymPy Symbols before parsing, overriding any conflicting built-ins (e.g. ``I``, ``gamma``, ``lambda``).
+
+### unit_to_dimension { #tvbo.adapters.neuroml.unit_to_dimension }
+
+```python
+adapters.neuroml.unit_to_dimension(unit_str)
+```
+
+Return the physical dimension name for a unit string.
+
+Normalizes the unit and looks it up in the `UNITS` table, returning its dimension label (for example `"voltage"`, `"current"`, `"conductance"`).
+Unknown or empty units map to `"none"`.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                              | Default    |
+|----------|--------|----------------------------------------------------------|------------|
+| unit_str |        | The unit label to resolve; aliases are normalized first. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        |        | The dimension name, or `"none"` if the unit is missing or unrecognized. |
+
+### validate_lems_xml { #tvbo.adapters.neuroml.validate_lems_xml }
+
+```python
+adapters.neuroml.validate_lems_xml(xml_string)
+```
+
+Validate a LEMS XML string using PyLEMS.
+
+Raises if the XML is not valid LEMS.

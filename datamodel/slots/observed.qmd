@@ -1,0 +1,77 @@
+# Slot: observed 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/observed](https://w3id.org/tvbo/slot/observed)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd), [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:observed |
+| native | tvbo:observed |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: observed
+domain_of:
+- Dynamics
+- Coupling
+range: string
+
+```
+</details></div>

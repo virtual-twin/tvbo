@@ -1,0 +1,79 @@
+# Slot: opts 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/opts](https://w3id.org/tvbo/slot/opts)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+| [Inset](../classes/Inset.qmd) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, ann... |  no  |
+| [Style](../classes/Style.qmd) | Layer/panel styling, portable intent plus a namespaced backend passthrough |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Panel](../classes/Panel.qmd), [Inset](../classes/Inset.qmd), [Style](../classes/Style.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:opts |
+| native | tvbo:opts |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: opts
+domain_of:
+- Panel
+- Inset
+- Style
+range: string
+
+```
+</details></div>

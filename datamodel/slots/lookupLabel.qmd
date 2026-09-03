@@ -1,0 +1,91 @@
+# Slot: lookupLabel 
+
+
+_Enter the label used for looking up this entity in the parcellation terminology._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:atlas/lookupLabel](http://uri.interlex.org/tgbugs/uris/readable/atlas/lookupLabel)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+| Slot URI | [atom:atlas/lookupLabel](http://uri.interlex.org/tgbugs/uris/readable/atlas/lookupLabel) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:atlas/lookupLabel |
+| native | atom:lookupLabel |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: lookupLabel
+description: Enter the label used for looking up this entity in the parcellation terminology.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: atom:atlas/lookupLabel
+domain_of:
+- ParcellationEntity
+range: integer
+
+```
+</details></div>

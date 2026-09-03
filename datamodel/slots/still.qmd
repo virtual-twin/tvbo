@@ -1,0 +1,100 @@
+# Slot: still 
+
+
+_Which frame is also saved as a still image beside the movie, for the contexts a movie cannot reach — a printed page, a PDF report, a thumbnail. Unset saves no still._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/still](https://w3id.org/tvbo/slot/still)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Animation](../classes/Animation.qmd) | A figure rendered as a movie over one dimension of its data |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Animation](../classes/Animation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Animation](../classes/Animation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:still |
+| native | tvbo:still |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: still
+description: Which frame is also saved as a still image beside the movie, for the
+  contexts a movie cannot reach — a printed page, a PDF report, a thumbnail. Unset
+  saves no still.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Animation
+domain_of:
+- Animation
+range: integer
+
+```
+</details></div>

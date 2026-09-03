@@ -1,0 +1,77 @@
+# Slot: opacity 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/opacity](https://w3id.org/tvbo/slot/opacity)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Style](../classes/Style.qmd) | Layer/panel styling, portable intent plus a namespaced backend passthrough |  no  |
+| [Region](../classes/Region.qmd) | A rectangle drawn over a panel to ring the window a paper calls out — the par... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Style](../classes/Style.qmd), [Region](../classes/Region.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:opacity |
+| native | tvbo:opacity |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: opacity
+domain_of:
+- Style
+- Region
+range: string
+
+```
+</details></div>

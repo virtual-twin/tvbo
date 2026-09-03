@@ -1,0 +1,77 @@
+# Slot: cohort 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/cohort](https://w3id.org/tvbo/slot/cohort)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Phenotype](../classes/Phenotype.qmd) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention) |  no  |
+| [BidsEntities](../classes/BidsEntities.qmd) | BIDS filename entities (BEP017-aligned) for provenance and data discovery |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Phenotype](../classes/Phenotype.qmd), [BidsEntities](../classes/BidsEntities.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:cohort |
+| native | tvbo:cohort |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: cohort
+domain_of:
+- Phenotype
+- BidsEntities
+range: string
+
+```
+</details></div>

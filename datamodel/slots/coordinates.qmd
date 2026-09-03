@@ -1,0 +1,100 @@
+# Slot: coordinates 
+
+
+_Node coordinates (x,y,z) in the given coordinate space._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/coordinates](https://w3id.org/tvbo/slot/coordinates)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Mesh](../classes/Mesh.qmd) | Triangle (or higher-order) mesh geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Coordinate](../classes/Coordinate.qmd) |
+| Domain Of | [Mesh](../classes/Mesh.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Mesh](../classes/Mesh.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:coordinates |
+| native | tvbo:coordinates |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: coordinates
+description: Node coordinates (x,y,z) in the given coordinate space.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Mesh
+domain_of:
+- Mesh
+range: Coordinate
+multivalued: true
+
+```
+</details></div>

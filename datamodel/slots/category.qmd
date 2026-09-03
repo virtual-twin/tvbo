@@ -1,0 +1,104 @@
+# Slot: category 
+
+
+_Coarse classification of the phenotype bundle, used for filtering in larger study libraries. Canonical values: ``cognitive`` (intelligence / memory / attention scores), ``clinical`` (UPDRS, MMSE, …), ``behavioral`` (raw task outputs), ``demographic``, ``physiological``, ``derived`` (composite scores like g-factor or brain-age). Free string — extend as needed._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/category](https://w3id.org/tvbo/slot/category)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Phenotype](../classes/Phenotype.qmd) | Per-subject phenotype table (BIDS ``phenotype/`` directory convention) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Phenotype](../classes/Phenotype.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(cognitive)` |
+| Owner | [Phenotype](../classes/Phenotype.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:category |
+| native | tvbo:category |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: category
+description: 'Coarse classification of the phenotype bundle, used for filtering in
+  larger study libraries. Canonical values: ``cognitive`` (intelligence / memory /
+  attention scores), ``clinical`` (UPDRS, MMSE, …), ``behavioral`` (raw task outputs),
+  ``demographic``, ``physiological``, ``derived`` (composite scores like g-factor
+  or brain-age). Free string — extend as needed.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(cognitive)
+owner: Phenotype
+domain_of:
+- Phenotype
+range: string
+
+```
+</details></div>

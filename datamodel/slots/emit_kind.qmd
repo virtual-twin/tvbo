@@ -1,0 +1,100 @@
+# Slot: emit_kind 
+
+
+_Whether the reduced value is read out every step or every stride._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/emit_kind](https://w3id.org/tvbo/slot/emit_kind)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Reducer](../classes/Reducer.qmd) | A streaming reduction, authored as symbolic recurrences over its own state ra... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ReducerEmitKind](../enums/ReducerEmitKind.qmd) |
+| Domain Of | [Reducer](../classes/Reducer.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(window)` |
+| Owner | [Reducer](../classes/Reducer.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:emit_kind |
+| native | tvbo:emit_kind |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: emit_kind
+description: Whether the reduced value is read out every step or every stride.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(window)
+owner: Reducer
+domain_of:
+- Reducer
+range: ReducerEmitKind
+
+```
+</details></div>

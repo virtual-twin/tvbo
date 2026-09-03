@@ -1,0 +1,64 @@
+# continuation { #tvbo.behaviour.continuation }
+
+`behaviour.continuation`
+
+Factory constructors for :class:`Continuation`.
+
+Loading a continuation from YAML, a string, or the curated database. Attached to the generated classes by name (``ContinuationBehaviour`` -> ``Continuation``), so the factories are available wherever the class is, including on a continuation nested inside a loaded experiment.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [ContinuationBehaviour](#tvbo.behaviour.continuation.ContinuationBehaviour) | Load a continuation specification from YAML or the database. |
+
+### ContinuationBehaviour { #tvbo.behaviour.continuation.ContinuationBehaviour }
+
+```python
+behaviour.continuation.ContinuationBehaviour()
+```
+
+Load a continuation specification from YAML or the database.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [from_db](#tvbo.behaviour.continuation.ContinuationBehaviour.from_db) | Load a Continuation by name from the tvbo database. |
+| [from_file](#tvbo.behaviour.continuation.ContinuationBehaviour.from_file) | Load a Continuation from a YAML file. |
+| [from_string](#tvbo.behaviour.continuation.ContinuationBehaviour.from_string) | Create a Continuation from a YAML string. |
+| [list_db](#tvbo.behaviour.continuation.ContinuationBehaviour.list_db) | List available continuations in the tvbo database. |
+
+##### from_db { #tvbo.behaviour.continuation.ContinuationBehaviour.from_db }
+
+```python
+behaviour.continuation.ContinuationBehaviour.from_db(name)
+```
+
+Load a Continuation by name from the tvbo database.
+
+##### from_file { #tvbo.behaviour.continuation.ContinuationBehaviour.from_file }
+
+```python
+behaviour.continuation.ContinuationBehaviour.from_file(path)
+```
+
+Load a Continuation from a YAML file.
+
+The file can be either a standalone Continuation YAML (root keys are Continuation fields), or a SimulationExperiment YAML containing a ``continuations`` section — in which case the *first* continuation entry is returned.
+
+##### from_string { #tvbo.behaviour.continuation.ContinuationBehaviour.from_string }
+
+```python
+behaviour.continuation.ContinuationBehaviour.from_string(yaml_string)
+```
+
+Create a Continuation from a YAML string.
+
+##### list_db { #tvbo.behaviour.continuation.ContinuationBehaviour.list_db }
+
+```python
+behaviour.continuation.ContinuationBehaviour.list_db()
+```
+
+List available continuations in the tvbo database.

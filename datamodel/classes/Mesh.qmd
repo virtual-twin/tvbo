@@ -1,0 +1,739 @@
+# Class: Mesh 
+
+
+_Triangle (or higher-order) mesh geometry. May stand alone (via ``mesh_file`` pointing at an external GIFTI/VTK/MSH file) OR be inlined on a Network as ``Network.mesh``. In the inlined-on-Network case, the vertices are the parent Network's ``nodes/coordinates`` (so ``coordinates`` here may be left empty), the faces live in the same h5 companion under a path given by ``elements`` (default ``mesh/faces``), and optional per-vertex ``normals`` / ``curvature`` live alongside. The optional ``parcel_map_field`` points at the parent Network's per-vertex parcel-id array (default ``nodes/parent_index`` from the hierarchical-Network pattern, see Network.qmd §7.1)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Mesh](https://w3id.org/tvbo/Mesh)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Mesh
+    click Mesh href "./Mesh.html"
+      Mesh : coordinate_space
+        
+          
+    
+        
+        
+        Mesh --> "0..1" CommonCoordinateSpace : coordinate_space
+        click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+    
+
+        
+      Mesh : coordinates
+        
+          
+    
+        
+        
+        Mesh --> "*" Coordinate : coordinates
+        click Coordinate href "./Coordinate.html"
+    
+
+        
+      Mesh : curvature
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : curvature
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Mesh : dataLocation
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : dataLocation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Mesh : description
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Mesh : element_type
+        
+          
+    
+        
+        
+        Mesh --> "0..1" ElementType : element_type
+        click ElementType href "../../enums/ElementType.html"
+    
+
+        
+      Mesh : elements
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : elements
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Mesh : label
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Mesh : mesh_file
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : mesh_file
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Mesh : mesh_format
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : mesh_format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Mesh : normals
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : normals
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Mesh : number_of_elements
+        
+          
+    
+        
+        
+        Mesh --> "0..1" Integer : number_of_elements
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Mesh : number_of_vertices
+        
+          
+    
+        
+        
+        Mesh --> "0..1" Integer : number_of_vertices
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Mesh : parcel_map_field
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : parcel_map_field
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Mesh : parcellation
+        
+          
+    
+        
+        
+        Mesh --> "0..1" Parcellation : parcellation
+        click Parcellation href "./Parcellation.html"
+    
+
+        
+      Mesh : vertices_field
+        
+          
+    
+        
+        
+        Mesh --> "0..1" String : vertices_field
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Mesh](https://w3id.org/tvbo/Mesh) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dataLocation](../slots/dataLocation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add the location of the data file containing the parcellation terminology | direct |
+| [element_type](../slots/element_type.qmd) | 0..1 <br/> [ElementType](../enums/ElementType.qmd) |  | direct |
+| [coordinates](../slots/coordinates.qmd) | * <br/> [Coordinate](../classes/Coordinate.qmd) | Node coordinates (x,y,z) in the given coordinate space | direct |
+| [elements](../slots/elements.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Topology indices: either a file reference, or (when inlined on a Network) a d... | direct |
+| [coordinate_space](../slots/coordinate_space.qmd) | 0..1 <br/> [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |  | direct |
+| [mesh_file](../slots/mesh_file.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to external mesh file (GIFTI, VTK, MSH, FreeSurfer, etc | direct |
+| [mesh_format](../slots/mesh_format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Explicit format override (gifti, freesurfer, meshio, vtk, gmsh) | direct |
+| [number_of_vertices](../slots/number_of_vertices.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of vertices in the mesh | direct |
+| [number_of_elements](../slots/number_of_elements.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of elements (triangles, quads, tetrahedra, etc | direct |
+| [parcellation](../slots/parcellation.qmd) | 0..1 <br/> [Parcellation](../classes/Parcellation.qmd) | Brain parcellation this mesh's parcel_map indexes into | direct |
+| [normals](../slots/normals.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional path inside the parent Network's h5 (or an external file) to per-ver... | direct |
+| [curvature](../slots/curvature.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional path to per-vertex curvature (N,) float | direct |
+| [vertices_field](../slots/vertices_field.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | When the mesh is inlined on a Network, the dotted path inside the parent's h5... | direct |
+| [parcel_map_field](../slots/parcel_map_field.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | When the mesh is inlined on a Network with a parcellation, the dotted path in... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [mesh](../slots/mesh.qmd) | range | [Mesh](../classes/Mesh.qmd) |
+| [SpatialField](../classes/SpatialField.qmd) | [mesh](../slots/mesh.qmd) | range | [Mesh](../classes/Mesh.qmd) |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) | [mesh](../slots/mesh.qmd) | range | [Mesh](../classes/Mesh.qmd) |
+| [PDE](../classes/PDE.qmd) | [mesh](../slots/mesh.qmd) | range | [Mesh](../classes/Mesh.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Mesh |
+| native | tvbo:Mesh |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Mesh
+description: Triangle (or higher-order) mesh geometry. May stand alone (via ``mesh_file``
+  pointing at an external GIFTI/VTK/MSH file) OR be inlined on a Network as ``Network.mesh``.
+  In the inlined-on-Network case, the vertices are the parent Network's ``nodes/coordinates``
+  (so ``coordinates`` here may be left empty), the faces live in the same h5 companion
+  under a path given by ``elements`` (default ``mesh/faces``), and optional per-vertex
+  ``normals`` / ``curvature`` live alongside. The optional ``parcel_map_field`` points
+  at the parent Network's per-vertex parcel-id array (default ``nodes/parent_index``
+  from the hierarchical-Network pattern, see Network.qmd §7.1).
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+- dataLocation
+attributes:
+  element_type:
+    name: element_type
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: ElementType
+  coordinates:
+    name: coordinates
+    description: Node coordinates (x,y,z) in the given coordinate space.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: Coordinate
+    multivalued: true
+  elements:
+    name: elements
+    description: 'Topology indices: either a file reference, or (when inlined on a
+      Network) a dotted path inside the parent Network''s h5 companion to the (M,
+      3) int triangle face array. Default convention: ``mesh/faces``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: string
+  coordinate_space:
+    name: coordinate_space
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  mesh_file:
+    name: mesh_file
+    description: Path to external mesh file (GIFTI, VTK, MSH, FreeSurfer, etc.).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: string
+  mesh_format:
+    name: mesh_format
+    description: Explicit format override (gifti, freesurfer, meshio, vtk, gmsh).
+      Auto-detected from extension if null.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Surface
+    - Mesh
+    range: string
+  number_of_vertices:
+    name: number_of_vertices
+    description: Number of vertices in the mesh.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: integer
+  number_of_elements:
+    name: number_of_elements
+    description: Number of elements (triangles, quads, tetrahedra, etc.).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: integer
+  parcellation:
+    name: parcellation
+    description: Brain parcellation this mesh's parcel_map indexes into. Inlined to
+      match Network.parcellation's existing pattern. When the mesh is inlined on a
+      Network that already declares ``parcellation``, this slot is optional and defaults
+      to the parent's value.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Network
+    - Mesh
+    range: Parcellation
+    inlined: true
+  normals:
+    name: normals
+    description: 'Optional path inside the parent Network''s h5 (or an external file)
+      to per-vertex normals (N, 3) float. Default convention: ``mesh/normals``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: string
+  curvature:
+    name: curvature
+    description: 'Optional path to per-vertex curvature (N,) float. Default convention:
+      ``mesh/curvature``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: string
+  vertices_field:
+    name: vertices_field
+    description: 'When the mesh is inlined on a Network, the dotted path inside the
+      parent''s h5 to vertex coordinates. Default: ``nodes/coordinates``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: string
+  parcel_map_field:
+    name: parcel_map_field
+    description: 'When the mesh is inlined on a Network with a parcellation, the dotted
+      path inside the parent''s h5 to the per-vertex parcel id array. Default: ``nodes/parent_index``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Mesh
+    range: string
+class_uri: tvbo:Mesh
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Mesh
+description: Triangle (or higher-order) mesh geometry. May stand alone (via ``mesh_file``
+  pointing at an external GIFTI/VTK/MSH file) OR be inlined on a Network as ``Network.mesh``.
+  In the inlined-on-Network case, the vertices are the parent Network's ``nodes/coordinates``
+  (so ``coordinates`` here may be left empty), the faces live in the same h5 companion
+  under a path given by ``elements`` (default ``mesh/faces``), and optional per-vertex
+  ``normals`` / ``curvature`` live alongside. The optional ``parcel_map_field`` points
+  at the parent Network's per-vertex parcel-id array (default ``nodes/parent_index``
+  from the hierarchical-Network pattern, see Network.qmd §7.1).
+from_schema: https://w3id.org/tvbo
+attributes:
+  element_type:
+    name: element_type
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: ElementType
+  coordinates:
+    name: coordinates
+    description: Node coordinates (x,y,z) in the given coordinate space.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: Coordinate
+    multivalued: true
+  elements:
+    name: elements
+    description: 'Topology indices: either a file reference, or (when inlined on a
+      Network) a dotted path inside the parent Network''s h5 companion to the (M,
+      3) int triangle face array. Default convention: ``mesh/faces``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: string
+  coordinate_space:
+    name: coordinate_space
+    from_schema: https://w3id.org/tvbo
+    owner: Mesh
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  mesh_file:
+    name: mesh_file
+    description: Path to external mesh file (GIFTI, VTK, MSH, FreeSurfer, etc.).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: string
+  mesh_format:
+    name: mesh_format
+    description: Explicit format override (gifti, freesurfer, meshio, vtk, gmsh).
+      Auto-detected from extension if null.
+    from_schema: https://w3id.org/tvbo
+    owner: Mesh
+    domain_of:
+    - Surface
+    - Mesh
+    range: string
+  number_of_vertices:
+    name: number_of_vertices
+    description: Number of vertices in the mesh.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: integer
+  number_of_elements:
+    name: number_of_elements
+    description: Number of elements (triangles, quads, tetrahedra, etc.).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: integer
+  parcellation:
+    name: parcellation
+    description: Brain parcellation this mesh's parcel_map indexes into. Inlined to
+      match Network.parcellation's existing pattern. When the mesh is inlined on a
+      Network that already declares ``parcellation``, this slot is optional and defaults
+      to the parent's value.
+    from_schema: https://w3id.org/tvbo
+    owner: Mesh
+    domain_of:
+    - Network
+    - Mesh
+    range: Parcellation
+    inlined: true
+  normals:
+    name: normals
+    description: 'Optional path inside the parent Network''s h5 (or an external file)
+      to per-vertex normals (N, 3) float. Default convention: ``mesh/normals``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: string
+  curvature:
+    name: curvature
+    description: 'Optional path to per-vertex curvature (N,) float. Default convention:
+      ``mesh/curvature``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: string
+  vertices_field:
+    name: vertices_field
+    description: 'When the mesh is inlined on a Network, the dotted path inside the
+      parent''s h5 to vertex coordinates. Default: ``nodes/coordinates``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: string
+  parcel_map_field:
+    name: parcel_map_field
+    description: 'When the mesh is inlined on a Network with a parcellation, the dotted
+      path inside the parent''s h5 to the per-vertex parcel id array. Default: ``nodes/parent_index``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Mesh
+    domain_of:
+    - Mesh
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Mesh
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Mesh
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  dataLocation:
+    name: dataLocation
+    description: Add the location of the data file containing the parcellation terminology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    owner: Mesh
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+class_uri: tvbo:Mesh
+
+```
+</details></div>

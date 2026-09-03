@@ -1,0 +1,98 @@
+# Slot: connectivity_ref 
+
+
+_Reference to connectivity data (_conndata-network_connectivity.tsv)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/connectivity_ref](https://w3id.org/tvbo/slot/connectivity_ref)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [TimeSeries](../classes/TimeSeries.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [TimeSeries](../classes/TimeSeries.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:connectivity_ref |
+| native | tvbo:connectivity_ref |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: connectivity_ref
+description: Reference to connectivity data (_conndata-network_connectivity.tsv).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: TimeSeries
+domain_of:
+- TimeSeries
+range: string
+
+```
+</details></div>

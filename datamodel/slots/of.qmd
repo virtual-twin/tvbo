@@ -1,0 +1,102 @@
+# Slot: of 
+
+
+_Name of the input this step consumes — the positions for `pairwise_distance` / `distribution_pdf`, the matrix for `normalize`, the compared quantity for `stochastic_mask`, and for `sample` (which consumes no array) the Distribution-valued generator parameter to draw from. It names either a previously defined step or a generator parameter; steps are ordered, so a referenced step must already be defined._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/of](https://w3id.org/tvbo/slot/of)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | A single named step (or output) in a Procedure: one typed operation producing... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ProcedureStep](../classes/ProcedureStep.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ProcedureStep](../classes/ProcedureStep.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:of |
+| native | tvbo:of |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: of
+description: Name of the input this step consumes — the positions for `pairwise_distance`
+  / `distribution_pdf`, the matrix for `normalize`, the compared quantity for `stochastic_mask`,
+  and for `sample` (which consumes no array) the Distribution-valued generator parameter
+  to draw from. It names either a previously defined step or a generator parameter;
+  steps are ordered, so a referenced step must already be defined.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ProcedureStep
+domain_of:
+- ProcedureStep
+range: string
+
+```
+</details></div>

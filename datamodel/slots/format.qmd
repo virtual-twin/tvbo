@@ -1,0 +1,89 @@
+# Slot: format 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/format](https://w3id.org/tvbo/slot/format)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+| [Animation](../classes/Animation.qmd) | A figure rendered as a movie over one dimension of its data |  no  |
+| [RenderSpec](../classes/RenderSpec.qmd) | A headless-browser capture recipe turning an `image` panel's HTML/URL `source... |  no  |
+| [Matrix](../classes/Matrix.qmd) | Adjacency matrix of a network |  no  |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+| [DataSource](../classes/DataSource.qmd) | Specification for loading external/empirical data |  no  |
+| [ResultBinding](../classes/ResultBinding.qmd) | One entry in a study's results manifest: a manuscript key bound to the value ... |  no  |
+| [ArchiveConfig](../classes/ArchiveConfig.qmd) | How a study packages its run into a COMBINE/OMEX archive: the output location... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Figure](../classes/Figure.qmd), [Animation](../classes/Animation.qmd), [RenderSpec](../classes/RenderSpec.qmd), [Matrix](../classes/Matrix.qmd), [Edge](../classes/Edge.qmd), [DataSource](../classes/DataSource.qmd), [ResultBinding](../classes/ResultBinding.qmd), [ArchiveConfig](../classes/ArchiveConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:format |
+| native | tvbo:format |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: format
+domain_of:
+- Figure
+- Animation
+- RenderSpec
+- Matrix
+- Edge
+- DataSource
+- ResultBinding
+- ArchiveConfig
+range: string
+
+```
+</details></div>

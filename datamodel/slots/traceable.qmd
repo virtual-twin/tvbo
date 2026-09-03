@@ -1,0 +1,106 @@
+# Slot: traceable 
+
+
+_Whether this callable can be traced by an array-programming backend (jit/vmap under JAX), asserted by the recipe rather than inferred from the module name. A backend that batches a parameter grid must know whether an observation's callable survives tracing; without this it can only guess from the import root, which makes every study-local callable untraceable however it is written. Set it true only for a callable written against the backend's array API -- a host NumPy/SciPy callable declared traceable fails inside the trace, with the tracer error naming this claim as its cause. Unset means "infer", preserving the import-root default._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/traceable](https://w3id.org/tvbo/slot/traceable)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Callable](../classes/Callable.qmd) |  |  no  |
+| [ClassReference](../classes/ClassReference.qmd) | Reference to a class that can be instantiated and called |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Callable](../classes/Callable.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Callable](../classes/Callable.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:traceable |
+| native | tvbo:traceable |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: traceable
+description: Whether this callable can be traced by an array-programming backend (jit/vmap
+  under JAX), asserted by the recipe rather than inferred from the module name. A
+  backend that batches a parameter grid must know whether an observation's callable
+  survives tracing; without this it can only guess from the import root, which makes
+  every study-local callable untraceable however it is written. Set it true only for
+  a callable written against the backend's array API -- a host NumPy/SciPy callable
+  declared traceable fails inside the trace, with the tracer error naming this claim
+  as its cause. Unset means "infer", preserving the import-root default.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Callable
+domain_of:
+- Callable
+range: boolean
+
+```
+</details></div>

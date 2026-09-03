@@ -1,0 +1,72 @@
+# Slot: file 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/file](https://w3id.org/tvbo/slot/file)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:file |
+| native | tvbo:file |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: file
+from_schema: https://w3id.org/tvbo
+rank: 1000
+range: string
+
+```
+</details></div>

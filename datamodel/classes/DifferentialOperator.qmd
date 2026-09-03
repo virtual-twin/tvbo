@@ -1,0 +1,361 @@
+# Class: DifferentialOperator 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:DifferentialOperator](https://w3id.org/tvbo/DifferentialOperator)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DifferentialOperator
+    click DifferentialOperator href "./DifferentialOperator.html"
+      DifferentialOperator : coefficient
+        
+          
+    
+        
+        
+        DifferentialOperator --> "0..1" Parameter : coefficient
+        click Parameter href "./Parameter.html"
+    
+
+        
+      DifferentialOperator : definition
+        
+          
+    
+        
+        
+        DifferentialOperator --> "0..1" String : definition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DifferentialOperator : equation
+        
+          
+    
+        
+        
+        DifferentialOperator --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      DifferentialOperator : expression
+        
+          
+    
+        
+        
+        DifferentialOperator --> "0..1" Equation : expression
+        click Equation href "./Equation.html"
+    
+
+        
+      DifferentialOperator : label
+        
+          
+    
+        
+        
+        DifferentialOperator --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DifferentialOperator : operator_type
+        
+          
+    
+        
+        
+        DifferentialOperator --> "0..1" OperatorType : operator_type
+        click OperatorType href "../../enums/OperatorType.html"
+    
+
+        
+      DifferentialOperator : tensor_coefficient
+        
+          
+    
+        
+        
+        DifferentialOperator --> "0..1" Parameter : tensor_coefficient
+        click Parameter href "./Parameter.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:DifferentialOperator](https://w3id.org/tvbo/DifferentialOperator) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [definition](../slots/definition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | direct |
+| [operator_type](../slots/operator_type.qmd) | 0..1 <br/> [OperatorType](../enums/OperatorType.qmd) |  | direct |
+| [coefficient](../slots/coefficient.qmd) | 0..1 <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [tensor_coefficient](../slots/tensor_coefficient.qmd) | 0..1 <br/> [Parameter](../classes/Parameter.qmd) | Optional anisotropic tensor (e | direct |
+| [expression](../slots/expression.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Symbolic form (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [PDE](../classes/PDE.qmd) | [operators](../slots/operators.qmd) | range | [DifferentialOperator](../classes/DifferentialOperator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:DifferentialOperator |
+| native | tvbo:DifferentialOperator |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DifferentialOperator
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- definition
+- equation
+attributes:
+  operator_type:
+    name: operator_type
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DifferentialOperator
+    range: OperatorType
+  coefficient:
+    name: coefficient
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DifferentialOperator
+    range: Parameter
+  tensor_coefficient:
+    name: tensor_coefficient
+    description: Optional anisotropic tensor (e.g., diffusion).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DifferentialOperator
+    range: Parameter
+  expression:
+    name: expression
+    description: Symbolic form (e.g., '-div(D * grad(u))').
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ConditionalBlock
+    - DifferentialOperator
+    - Assignment
+    range: Equation
+class_uri: tvbo:DifferentialOperator
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DifferentialOperator
+from_schema: https://w3id.org/tvbo
+attributes:
+  operator_type:
+    name: operator_type
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DifferentialOperator
+    domain_of:
+    - DifferentialOperator
+    range: OperatorType
+  coefficient:
+    name: coefficient
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DifferentialOperator
+    domain_of:
+    - DifferentialOperator
+    range: Parameter
+  tensor_coefficient:
+    name: tensor_coefficient
+    description: Optional anisotropic tensor (e.g., diffusion).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DifferentialOperator
+    domain_of:
+    - DifferentialOperator
+    range: Parameter
+  expression:
+    name: expression
+    description: Symbolic form (e.g., '-div(D * grad(u))').
+    from_schema: https://w3id.org/tvbo
+    owner: DifferentialOperator
+    domain_of:
+    - ConditionalBlock
+    - DifferentialOperator
+    - Assignment
+    range: Equation
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: DifferentialOperator
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  definition:
+    name: definition
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: skos:definition
+    owner: DifferentialOperator
+    domain_of:
+    - Equation
+    - StateVariable
+    - Parameter
+    - Function
+    - DifferentialOperator
+    range: string
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:Equation
+    owner: DifferentialOperator
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+class_uri: tvbo:DifferentialOperator
+
+```
+</details></div>

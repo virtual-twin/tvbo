@@ -1,0 +1,187 @@
+# tvboptim { #tvbo.adapters.tvboptim }
+
+`adapters.tvboptim`
+
+tvboptim adapter for tvbo.
+
+Export (tvbo → tvboptim)
+
+- :func:`to_tvboptim` — Network → tvboptim Network or DenseGraph / DenseDelayGraph
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [SOLVER_MAP](#tvbo.adapters.tvboptim.SOLVER_MAP) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [TvboptimAdapter](#tvbo.adapters.tvboptim.TvboptimAdapter) | What the tvboptim templates need, resolved in Python before they emit anything. |
+
+### TvboptimAdapter { #tvbo.adapters.tvboptim.TvboptimAdapter }
+
+```python
+adapters.tvboptim.TvboptimAdapter(experiment)
+```
+
+What the tvboptim templates need, resolved in Python before they emit anything.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [resolve_couplings](#tvbo.adapters.tvboptim.TvboptimAdapter.resolve_couplings) | The network's couplings, one key per distinct coupling. |
+
+##### resolve_couplings { #tvbo.adapters.tvboptim.TvboptimAdapter.resolve_couplings }
+
+```python
+adapters.tvboptim.TvboptimAdapter.resolve_couplings()
+```
+
+The network's couplings, one key per distinct coupling.
+
+tvbo can reach the same coupling under more than one name — the function's, a coupling-input key, an explicit ``CouplingInput.source`` — and tvboptim wants one key per object, so the aliases are collapsed against the model that names them.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [is_heterogeneous](#tvbo.adapters.tvboptim.is_heterogeneous) | True when the experiment's nodes run more than one distinct dynamics. |
+| [run_heterogeneous_tvboptim](#tvbo.adapters.tvboptim.run_heterogeneous_tvboptim) | Run a heterogeneous ``SimulationExperiment`` on tvboptim, in process. |
+| [solver_class](#tvbo.adapters.tvboptim.solver_class) | The tvboptim solver class that integrates by *method*. |
+| [to_heterogeneous_network](#tvbo.adapters.tvboptim.to_heterogeneous_network) | Build a tvboptim ``HeterogeneousNetwork`` from a heterogeneous tvbo Network. |
+| [to_tvboptim](#tvbo.adapters.tvboptim.to_tvboptim) | Export a tvbo Network to a tvboptim Network or graph object. |
+
+### is_heterogeneous { #tvbo.adapters.tvboptim.is_heterogeneous }
+
+```python
+adapters.tvboptim.is_heterogeneous(experiment)
+```
+
+True when the experiment's nodes run more than one distinct dynamics.
+
+The trigger for the heterogeneous tvboptim path: a homogeneous experiment (one model on every node) uses :func:`to_tvboptim`, a heterogeneous one :func:`to_heterogeneous_network`. Delegates to the adapter-layer predicate every codegen backend already uses, so this path agrees with them about the nodes that declare no ``dynamics`` and fall back to the experiment's.
+
+### run_heterogeneous_tvboptim { #tvbo.adapters.tvboptim.run_heterogeneous_tvboptim }
+
+```python
+adapters.tvboptim.run_heterogeneous_tvboptim(
+    experiment,
+    *,
+    dynamics_lib=None,
+    seed=None,
+    **kwargs,
+)
+```
+
+Run a heterogeneous ``SimulationExperiment`` on tvboptim, in process.
+
+Builds a ``HeterogeneousNetwork`` from the experiment's network, integrates with a native fixed-step solver, and returns an ``ExperimentResult`` whose integration ``TimeSeries`` carries a per-group variable union (see :func:`_heterogeneous_solution_to_dataarray`). This is the P1 path that lets ``exp.run("tvboptim")`` handle heterogeneous networks without the codegen experiment template (that is a later milestone). *seed* overrides the recipe's ``execution.random_seed``. Unknown ``kwargs`` (e.g. ``benchmark``, ``mode``) are accepted and ignored.
+
+### solver_class { #tvbo.adapters.tvboptim.solver_class }
+
+```python
+adapters.tvboptim.solver_class(method)
+```
+
+The tvboptim solver class that integrates by *method*.
+
+Raises for a method tvboptim has no solver for. Falling back to ``Euler`` — which the templates this centralises each did — silently integrates a fourth-order recipe by a first-order scheme and reports the result as the recipe's own.
+
+### to_heterogeneous_network { #tvbo.adapters.tvboptim.to_heterogeneous_network }
+
+```python
+adapters.tvboptim.to_heterogeneous_network(
+    network,
+    *,
+    dynamics_lib=None,
+    default_dynamics=None,
+    delays=None,
+    max_delay=None,
+)
+```
+
+Build a tvboptim ``HeterogeneousNetwork`` from a heterogeneous tvbo Network.
+
+Nodes are partitioned into ``NodeGroup``s by their referenced dynamics (graph order = node order); edges are collapsed into ``SignalRoute``s keyed by ``(coupling NAME, target_var, delayed)`` — keying on object identity would split two edges naming one coupling into two routes, applying the shared graph twice. The shared graph is built by the same :func:`_build_graph` the homogeneous path uses, so the connectome weights (with signs) and delays carry over unchanged.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+network : Network
+    A heterogeneous tvbo Network (``is_heterogeneous(network)`` is True).
+dynamics_lib : mapping, optional
+    ``{name: Dynamics}`` resolving each ``Node.dynamics`` reference.
+    Defaults to ``network.dynamics``.
+default_dynamics : str, optional
+    Name used for nodes that declare no ``dynamics`` of their own
+    (``Node.dynamics`` is optional — the experiment's dynamics is the
+    documented fallback).
+delays, max_delay
+    Forwarded to :func:`_build_graph`; ``delays=None`` auto-infers from the
+    network's couplings (any ``delayed=True``).
+
+### to_tvboptim { #tvbo.adapters.tvboptim.to_tvboptim }
+
+```python
+adapters.tvboptim.to_tvboptim(
+    network,
+    delays=None,
+    return_type='network',
+    dynamics=None,
+    coupling=None,
+    noise=None,
+    max_delay=None,
+    interpolate_delays=False,
+    **kwargs,
+)
+```
+
+Export a tvbo Network to a tvboptim Network or graph object.
+
+When *dynamics* / *coupling* are not provided explicitly, they are auto-extracted from ``network.dynamics`` and ``network.coupling`` using each object's ``.execute('tvboptim')`` method.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+network : Network
+    tvbo Network instance with weights (and optionally lengths) matrices.
+delays : bool or None, default=None
+    Whether to include delay matrices in the graph.  When ``None``
+    (default), auto-inferred from ``network.coupling``: uses delays
+    only when at least one coupling has ``delayed=True``.
+return_type : str, default="network"
+    ``"network"`` — return a full ``tvboptim.experimental.network_dynamics.Network``
+    (requires *dynamics* and *coupling*).
+    ``"graph"`` — return only the ``DenseGraph`` / ``DenseDelayGraph``.
+dynamics : AbstractDynamics, optional
+    tvboptim dynamics instance. If not given, auto-extracted from
+    ``network.dynamics``.
+coupling : AbstractCoupling | dict, optional
+    tvboptim coupling instance(s). If not given, auto-extracted from
+    ``network.coupling``.
+noise : AbstractNoise, optional
+    tvboptim noise instance. Optional.
+max_delay : float, optional
+    Concrete upper bound on the delay, forwarded to ``DenseDelayGraph`` to
+    size the static history buffer. Pass it when the delays are meant to
+    vary differentiably (e.g. ``delays = lengths / speed`` with ``speed``
+    optimised) so the buffer length stays static while the delays may be
+    JAX tracers. When ``None``, derived from the concrete delays.
+interpolate_delays : bool, default=False
+    When True, enable linear interpolation between bracketing history steps
+    on every delayed coupling, making the coupling differentiable w.r.t. the
+    continuous delay (and hence conduction speed). Requires the ``"roll"``
+    buffer strategy (the default).
+**kwargs
+    Extra keyword arguments forwarded to the tvboptim ``Network`` constructor.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+Network or DenseGraph or DenseDelayGraph

@@ -1,0 +1,39 @@
+# parcellation { #tvbo.classes.parcellation }
+
+`classes.parcellation`
+
+This module provides functions for loading and accessing parcellation data.
+
+Author: Leon Martin
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [load_from_url](#tvbo.classes.parcellation.load_from_url) | Load a NIFTI file from a given URL. |
+
+### load_from_url { #tvbo.classes.parcellation.load_from_url }
+
+```python
+classes.parcellation.load_from_url(url)
+```
+
+Load a NIFTI file from a given URL.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                | Default    |
+|--------|--------|----------------------------|------------|
+| url    | str    | The URL of the NIFTI file. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                         |
+|--------|--------|-----------------------------------------------------|
+|        | Any    | nibabel.nifti1.Nifti1Image: The loaded NIFTI image. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type      | Description                                                 |
+|--------|-----------|-------------------------------------------------------------|
+|        | Exception | If the download request fails or the file cannot be loaded. |

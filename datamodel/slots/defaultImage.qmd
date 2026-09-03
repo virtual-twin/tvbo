@@ -1,0 +1,101 @@
+# Slot: defaultImage 
+
+
+_Add all image files used as visual representation of this common coordinate space version._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:slot/defaultImage](http://uri.interlex.org/tgbugs/uris/readable/slot/defaultImage)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | A schema for representing a version of a common coordinate space |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:defaultImage |
+| native | atom:defaultImage |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: defaultImage
+description: Add all image files used as visual representation of this common coordinate
+  space version.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+rank: 1000
+owner: CommonCoordinateSpace
+domain_of:
+- CommonCoordinateSpace
+range: string
+multivalued: true
+
+```
+</details></div>

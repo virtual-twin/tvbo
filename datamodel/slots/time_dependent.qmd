@@ -1,0 +1,77 @@
+# Slot: time_dependent 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/time_dependent](https://w3id.org/tvbo/slot/time_dependent)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SpatialField](../classes/SpatialField.qmd) |  |  no  |
+| [BoundaryCondition](../classes/BoundaryCondition.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SpatialField](../classes/SpatialField.qmd), [BoundaryCondition](../classes/BoundaryCondition.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:time_dependent |
+| native | tvbo:time_dependent |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: time_dependent
+domain_of:
+- SpatialField
+- BoundaryCondition
+range: string
+
+```
+</details></div>

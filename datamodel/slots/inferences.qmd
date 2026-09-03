@@ -1,0 +1,109 @@
+# Slot: inferences 
+
+
+_Bayesian inference configurations (posterior over parameters given an observation, via MCMC). Keyed by name, like optimizations._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/inferences](https://w3id.org/tvbo/slot/inferences)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Inference](../classes/Inference.qmd) |
+| Domain Of | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* inference
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:inferences |
+| native | tvbo:inferences |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: inferences
+description: Bayesian inference configurations (posterior over parameters given an
+  observation, via MCMC). Keyed by name, like optimizations.
+from_schema: https://w3id.org/tvbo
+aliases:
+- inference
+rank: 1000
+owner: SimulationExperiment
+domain_of:
+- SimulationExperiment
+range: Inference
+multivalued: true
+inlined: true
+
+```
+</details></div>

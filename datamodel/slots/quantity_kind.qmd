@@ -1,0 +1,98 @@
+# Slot: quantity_kind 
+
+
+_Scalar, vector, or tensor._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/quantity_kind](https://w3id.org/tvbo/slot/quantity_kind)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SpatialField](../classes/SpatialField.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SpatialField](../classes/SpatialField.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SpatialField](../classes/SpatialField.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:quantity_kind |
+| native | tvbo:quantity_kind |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: quantity_kind
+description: Scalar, vector, or tensor.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SpatialField
+domain_of:
+- SpatialField
+range: string
+
+```
+</details></div>

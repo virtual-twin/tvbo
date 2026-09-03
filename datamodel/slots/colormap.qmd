@@ -1,0 +1,81 @@
+# Slot: colormap 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/colormap](https://w3id.org/tvbo/slot/colormap)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Style](../classes/Style.qmd) | Layer/panel styling, portable intent plus a namespaced backend passthrough |  no  |
+| [ColorScale](../classes/ColorScale.qmd) | How values become colours, and where the scale starts and stops |  no  |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [Volume](../classes/Volume.qmd) | A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, ... |  no  |
+| [Graph](../classes/Graph.qmd) | A node-link panel's graph and how it is drawn: the connectome the model actua... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Style](../classes/Style.qmd), [ColorScale](../classes/ColorScale.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:colormap |
+| native | tvbo:colormap |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: colormap
+domain_of:
+- Style
+- ColorScale
+range: string
+
+```
+</details></div>

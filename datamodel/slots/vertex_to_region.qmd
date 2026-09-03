@@ -1,0 +1,101 @@
+# Slot: vertex_to_region 
+
+
+_Array mapping each vertex index to its parent region index. Can use dataLocation instead for large arrays._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/vertex_to_region](https://w3id.org/tvbo/slot/vertex_to_region)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [RegionMapping](../classes/RegionMapping.qmd) | Maps vertices to parent regions for hierarchical/aggregated coupling |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [RegionMapping](../classes/RegionMapping.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [RegionMapping](../classes/RegionMapping.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:vertex_to_region |
+| native | tvbo:vertex_to_region |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: vertex_to_region
+description: Array mapping each vertex index to its parent region index. Can use dataLocation
+  instead for large arrays.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: RegionMapping
+domain_of:
+- RegionMapping
+range: integer
+multivalued: true
+
+```
+</details></div>

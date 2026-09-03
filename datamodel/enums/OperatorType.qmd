@@ -1,0 +1,71 @@
+# Enum: OperatorType 
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/OperatorType](https://w3id.org/tvbo/enum/OperatorType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| gradient | None |  |
+| divergence | None |  |
+| laplacian | None |  |
+| curl | None |  |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [operator_type](../slots/operator_type.qmd) |  |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: OperatorType
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  gradient:
+    text: gradient
+  divergence:
+    text: divergence
+  laplacian:
+    text: laplacian
+  curl:
+    text: curl
+
+```
+</details>
+
+</div>

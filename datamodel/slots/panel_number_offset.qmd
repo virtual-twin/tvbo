@@ -1,0 +1,102 @@
+# Slot: panel_number_offset 
+
+
+_[dx, dy] shift of every panel letter from its corner, in axes fractions. The default sits it on the axes corner, where a top y-tick label can reach it; a small negative dx clears the tick labels._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/panel_number_offset](https://w3id.org/tvbo/slot/panel_number_offset)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:panel_number_offset |
+| native | tvbo:panel_number_offset |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: panel_number_offset
+description: '[dx, dy] shift of every panel letter from its corner, in axes fractions.
+  The default sits it on the axes corner, where a top y-tick label can reach it; a
+  small negative dx clears the tick labels.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: float
+multivalued: true
+
+```
+</details></div>

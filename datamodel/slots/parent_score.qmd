@@ -1,0 +1,98 @@
+# Slot: parent_score 
+
+
+_If this score is a subscore of a broader composite_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/parent_score](https://w3id.org/tvbo/dbs/slot/parent_score)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ClinicalScore](../classes/ClinicalScore.qmd) | Metadata about a clinical score or scale |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ClinicalScore](../classes/ClinicalScore.qmd) |
+| Domain Of | [ClinicalScore](../classes/ClinicalScore.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ClinicalScore](../classes/ClinicalScore.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:parent_score |
+| native | tvbo_dbs:parent_score |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: parent_score
+description: If this score is a subscore of a broader composite
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: ClinicalScore
+domain_of:
+- ClinicalScore
+range: ClinicalScore
+
+```
+</details></div>

@@ -1,0 +1,42 @@
+# brain { #tvbo.cli.brain }
+
+`cli.brain`
+
+``tvbo brain`` — the ASCII spec-to-cortex portrait, and the bare-``tvbo`` splash.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [brain](#tvbo.cli.brain.brain) | Draw a model spec dissolving into a cortical surface built from its own characters. |
+| [splash](#tvbo.cli.brain.splash) | What a bare ``tvbo`` prints: the wordmark beside a small cortex, then the commands. |
+
+### brain { #tvbo.cli.brain.brain }
+
+```python
+cli.brain.brain(
+    spec=typer.Argument(None, help='Path, CURIE, or DB name whose text draws the cortex.'),
+    animate=typer.Option(False, '--animate', '-a', help='Play the dissolve instead of the still frame.'),
+    background=typer.Option('dark', '--bg', help='Background the output is viewed on (dark|light).'),
+    width=typer.Option(None, '--width', '-w', help='Portrait width in characters (default: the terminal).'),
+    plain=typer.Option(False, '--plain', help='Plain characters, no ANSI colour.'),
+    no_flow=typer.Option(False, '--no-flow', help='Drop the letters caught mid-flight.'),
+    hemi=typer.Option('lh', '--hemi', help='Hemisphere to render live (lh|rh|both).'),
+    view=typer.Option('lateral', '--view', help='View to render live (lateral, medial, top, ...).'),
+    render=typer.Option(False, '--render', help='Re-render the surface with bsplot instead of the shipped one.'),
+    save_asset=typer.Option(None, '--save-asset', help='Write the rendered surface as a shippable asset.'),
+    save_logo=typer.Option(None, '--save-logo', help='Re-render the TVB-O logo from the project artwork into an asset.'),
+)
+```
+
+Draw a model spec dissolving into a cortical surface built from its own characters.
+
+The surface ships precomputed, so the still frame is instant. ``--render`` recomputes the geometry with bsplot for another hemisphere or view, and ``--save-asset`` stores that render for reuse.
+
+### splash { #tvbo.cli.brain.splash }
+
+```python
+cli.brain.splash(ctx)
+```
+
+What a bare ``tvbo`` prints: the wordmark beside a small cortex, then the commands.

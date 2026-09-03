@@ -1,0 +1,102 @@
+# Slot: generated_by 
+
+
+_Software/agent identifier: the prov:Agent this artifact is attributed to._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/generated_by](https://w3id.org/tvbo/slot/generated_by)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Provenance](../classes/Provenance.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Provenance](../classes/Provenance.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:generated_by |
+| native | tvbo:generated_by |
+| close | prov:wasAttributedTo |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: generated_by
+description: 'Software/agent identifier: the prov:Agent this artifact is attributed
+  to.'
+from_schema: https://w3id.org/tvbo
+close_mappings:
+- prov:wasAttributedTo
+rank: 1000
+owner: Provenance
+domain_of:
+- Provenance
+range: string
+
+```
+</details></div>

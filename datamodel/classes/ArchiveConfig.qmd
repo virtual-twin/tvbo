@@ -1,0 +1,234 @@
+# Class: ArchiveConfig 
+
+
+_How a study packages its run into a COMBINE/OMEX archive: the output location and format, plus any extra files to include beyond the recipes, derived containers, figures and manifest added automatically._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:ArchiveConfig](https://w3id.org/tvbo/ArchiveConfig)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ArchiveConfig
+    click ArchiveConfig href "./ArchiveConfig.html"
+      ArchiveConfig : format
+        
+          
+    
+        
+        
+        ArchiveConfig --> "0..1" String : format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ArchiveConfig : include
+        
+          
+    
+        
+        
+        ArchiveConfig --> "*" String : include
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ArchiveConfig : path
+        
+          
+    
+        
+        
+        ArchiveConfig --> "0..1" String : path
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:ArchiveConfig](https://w3id.org/tvbo/ArchiveConfig) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [path](../slots/path.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Output archive path, relative to the study recipe | direct |
+| [format](../slots/format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Archive format; ``omex`` (COMBINE) by default | direct |
+| [include](../slots/include.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Extra file globs to add beyond the recipes, derived containers, figures and m... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [archive](../slots/archive.qmd) | range | [ArchiveConfig](../classes/ArchiveConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ArchiveConfig |
+| native | tvbo:ArchiveConfig |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ArchiveConfig
+description: 'How a study packages its run into a COMBINE/OMEX archive: the output
+  location and format, plus any extra files to include beyond the recipes, derived
+  containers, figures and manifest added automatically.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  path:
+    name: path
+    description: Output archive path, relative to the study recipe. Defaults to ``<name>.omex``.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  format:
+    name: format
+    description: Archive format; ``omex`` (COMBINE) by default.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: omex
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  include:
+    name: include
+    description: Extra file globs to add beyond the recipes, derived containers, figures
+      and manifest included automatically.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ArchiveConfig
+    range: string
+    multivalued: true
+class_uri: tvbo:ArchiveConfig
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ArchiveConfig
+description: 'How a study packages its run into a COMBINE/OMEX archive: the output
+  location and format, plus any extra files to include beyond the recipes, derived
+  containers, figures and manifest added automatically.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  path:
+    name: path
+    description: Output archive path, relative to the study recipe. Defaults to ``<name>.omex``.
+    from_schema: https://w3id.org/tvbo
+    owner: ArchiveConfig
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  format:
+    name: format
+    description: Archive format; ``omex`` (COMBINE) by default.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: omex
+    owner: ArchiveConfig
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  include:
+    name: include
+    description: Extra file globs to add beyond the recipes, derived containers, figures
+      and manifest included automatically.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ArchiveConfig
+    domain_of:
+    - ArchiveConfig
+    range: string
+    multivalued: true
+class_uri: tvbo:ArchiveConfig
+
+```
+</details></div>

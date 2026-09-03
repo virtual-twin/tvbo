@@ -1,0 +1,99 @@
+# Slot: parcel_map_field 
+
+
+_When the mesh is inlined on a Network with a parcellation, the dotted path inside the parent's h5 to the per-vertex parcel id array. Default: ``nodes/parent_index``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/parcel_map_field](https://w3id.org/tvbo/slot/parcel_map_field)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Mesh](../classes/Mesh.qmd) | Triangle (or higher-order) mesh geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Mesh](../classes/Mesh.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Mesh](../classes/Mesh.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:parcel_map_field |
+| native | tvbo:parcel_map_field |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: parcel_map_field
+description: 'When the mesh is inlined on a Network with a parcellation, the dotted
+  path inside the parent''s h5 to the per-vertex parcel id array. Default: ``nodes/parent_index``.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Mesh
+domain_of:
+- Mesh
+range: string
+
+```
+</details></div>

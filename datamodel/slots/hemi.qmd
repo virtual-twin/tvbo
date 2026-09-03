@@ -1,0 +1,77 @@
+# Slot: hemi 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/hemi](https://w3id.org/tvbo/slot/hemi)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [BidsEntities](../classes/BidsEntities.qmd) | BIDS filename entities (BEP017-aligned) for provenance and data discovery |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surface](../classes/Surface.qmd), [BidsEntities](../classes/BidsEntities.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:hemi |
+| native | tvbo:hemi |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: hemi
+domain_of:
+- Surface
+- BidsEntities
+range: string
+
+```
+</details></div>

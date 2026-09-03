@@ -1,0 +1,111 @@
+# Slot: sequential 
+
+
+_Ordered magnitudes with no meaningful zero. The scale an undeclared continuous mark takes, and what `image.cmap` is set to._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/sequential](https://w3id.org/tvbo/slot/sequential)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Colormaps](../classes/Colormaps.qmd) | Continuous colour scales, by key: anything ordinal or continuous draws from o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Colormaps](../classes/Colormaps.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Colormaps](../classes/Colormaps.qmd) |
+
+
+<details>
+<summary>Expressions & Logic</summary>
+#### Any Of
+
+Value must satisfy at least one of:
+- AnonymousSlotExpression({'range': 'string'})
+- AnonymousSlotExpression({'array': ArrayExpression({})})
+
+</details>
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:sequential |
+| native | tvbo:sequential |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sequential
+description: Ordered magnitudes with no meaningful zero. The scale an undeclared continuous
+  mark takes, and what `image.cmap` is set to.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Colormaps
+domain_of:
+- Colormaps
+range: string
+any_of:
+- range: string
+
+```
+</details></div>

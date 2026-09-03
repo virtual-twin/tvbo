@@ -1,0 +1,101 @@
+# Slot: required 
+
+
+_Whether a value for this parameter must be supplied. Optional parameters (e.g. a generator's ``seed``) set this to false. Declaration metadata; unset means unconstrained._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/required](https://w3id.org/tvbo/slot/required)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Parameter](../classes/Parameter.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Parameter](../classes/Parameter.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:required |
+| native | tvbo:required |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: required
+description: Whether a value for this parameter must be supplied. Optional parameters
+  (e.g. a generator's ``seed``) set this to false. Declaration metadata; unset means
+  unconstrained.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Parameter
+domain_of:
+- Parameter
+range: boolean
+
+```
+</details></div>

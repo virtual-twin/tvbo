@@ -1,0 +1,265 @@
+# Class: StudyMember 
+
+
+_One member of a study-of-studies: a reference to a study recipe on disk (or by IRI) and whether it is optional. The recipe carries its own experiments, analyses, figures and code_source; the member only states where it is and how heavy it is to run._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:StudyMember](https://w3id.org/tvbo/StudyMember)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class StudyMember
+    click StudyMember href "./StudyMember.html"
+      StudyMember : label
+        
+          
+    
+        
+        
+        StudyMember --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyMember : optional
+        
+          
+    
+        
+        
+        StudyMember --> "0..1" Boolean : optional
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      StudyMember : recipe
+        
+          
+    
+        
+        
+        StudyMember --> "1" String : recipe
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:StudyMember](https://w3id.org/tvbo/StudyMember) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [recipe](../slots/recipe.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to the member's study recipe YAML, relative to this owning study's recip... | direct |
+| [optional](../slots/optional.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | When true the member is skipped unless explicitly requested — for runs too he... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [members](../slots/members.qmd) | range | [StudyMember](../classes/StudyMember.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:StudyMember |
+| native | tvbo:StudyMember |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: StudyMember
+description: 'One member of a study-of-studies: a reference to a study recipe on disk
+  (or by IRI) and whether it is optional. The recipe carries its own experiments,
+  analyses, figures and code_source; the member only states where it is and how heavy
+  it is to run.'
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+attributes:
+  recipe:
+    name: recipe
+    description: Path to the member's study recipe YAML, relative to this owning study's
+      recipe, or an IRI resolving to one.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - StudyMember
+    range: string
+    required: true
+  optional:
+    name: optional
+    description: When true the member is skipped unless explicitly requested — for
+      runs too heavy to recompute on every build (a full-atlas or long-simulation
+      study whose derived artifacts ship in the archive). Defaults to false. ``tvbo
+      run --dry-run`` lists it; ``--skip`` drops other members down to it.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - SoftwareRequirement
+    - StudyMember
+    range: boolean
+class_uri: tvbo:StudyMember
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: StudyMember
+description: 'One member of a study-of-studies: a reference to a study recipe on disk
+  (or by IRI) and whether it is optional. The recipe carries its own experiments,
+  analyses, figures and code_source; the member only states where it is and how heavy
+  it is to run.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  recipe:
+    name: recipe
+    description: Path to the member's study recipe YAML, relative to this owning study's
+      recipe, or an IRI resolving to one.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyMember
+    domain_of:
+    - StudyMember
+    range: string
+    required: true
+  optional:
+    name: optional
+    description: When true the member is skipped unless explicitly requested — for
+      runs too heavy to recompute on every build (a full-atlas or long-simulation
+      study whose derived artifacts ship in the archive). Defaults to false. ``tvbo
+      run --dry-run`` lists it; ``--skip`` drops other members down to it.
+    from_schema: https://w3id.org/tvbo
+    owner: StudyMember
+    domain_of:
+    - SoftwareRequirement
+    - StudyMember
+    range: boolean
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: StudyMember
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - StudyMember
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+class_uri: tvbo:StudyMember
+
+```
+</details></div>

@@ -1,0 +1,1063 @@
+# Class: Analysis 
+
+
+_A quantity obtained by ANALYZING something — a model, its solve, a derived loss, simulated results, or empirical data — rather than by transforming a recorded trajectory. Nothing here requires a model: decomposing empirical maps into a basis, taking their spectrum, or running a permutation test over measured data are analyses in exactly this sense, and so are parameter sensitivities/gradients (autodiff or finite-difference), stability spectra (Lyapunov), bifurcation quantities, identifiability metrics, and reductions spanning several experiments._
+
+_It is an invocation (``is_a: FunctionCall``) with two mutually exclusive ways of saying WHAT is analyzed, the same alternative-specification idiom ``Parameter`` uses for provenance:_
+
+_- **the solve** — ``type`` names the analysis (a free string, extensible;_
+
+_  the vocabulary lives in the ontology as AnalysisObservable concepts rather_
+
+_  than a closed enum), ``target`` and ``wrt`` bind it to what is analyzed and_
+
+_  with respect to what, and ``parameters`` configures it. Evaluated as part_
+
+_  of the integration, so it is emitted by the same codegen and limited to_
+
+_  what that backend can trace. Declared on ``Observation.analysis``._
+
+__
+
+_- **saved data** — ``callable`` (or ``class_call``) invoked with_
+
+_  ``arguments``, each a literal ``value`` or a ``used:`` DataRef reading an_
+
+_  experiment, another analysis, or a dataset. The data need not be simulated:_
+
+_  this is equally the form for analysing empirical maps, an atlas, or a_
+
+_  measured connectome. Because it consumes containers rather than a running_
+
+_  solve, it is scheduled on its own — before or after the experiments,_
+
+_  according to what it uses. Declared in ``SimulationStudy.analyses``, where_
+
+_  the result is persisted as its own container_
+
+_  (``derivatives/tvbo/ana-<name>_result.h5``) — which is what lets a figure bind it_
+
+_  with ``used: {analysis: <name>}`` exactly as it binds a run, and why a study_
+
+_  needs no driver script for its non-simulation figures. ``name`` is then_
+
+_  required and unique, since it keys that container. The invocation yields a_
+
+_  mapping of name -> labelled array (or one array, keyed by the analysis_
+
+_  name); each key becomes an ``observation__<key>`` data-variable keeping its_
+
+_  dims and coordinates, so a figure ``encoding`` can name them._
+
+__
+
+_Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: which backend renders it, at what precision, on which accelerator. That states a requirement, not a mechanism — the same analysis is renderable by more than one backend, and one that cannot render it says so rather than silently substituting another._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Analysis](https://w3id.org/tvbo/Analysis)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Analysis
+    click Analysis href "./Analysis.html"
+      FunctionCall <|-- Analysis
+        click FunctionCall href "./FunctionCall.html"
+      
+      Analysis : acronym
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : acronym
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : aggregate
+        
+          
+    
+        
+        
+        Analysis --> "0..1" Aggregation : aggregate
+        click Aggregation href "./Aggregation.html"
+    
+
+        
+      Analysis : apply_on_dimension
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : apply_on_dimension
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : arguments
+        
+          
+    
+        
+        
+        Analysis --> "*" Argument : arguments
+        click Argument href "./Argument.html"
+    
+
+        
+      Analysis : callable
+        
+          
+    
+        
+        
+        Analysis --> "0..1" Callable : callable
+        click Callable href "./Callable.html"
+    
+
+        
+      Analysis : class_call
+        
+          
+    
+        
+        
+        Analysis --> "0..1" ClassReference : class_call
+        click ClassReference href "./ClassReference.html"
+    
+
+        
+      Analysis : description
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : dims
+        
+          
+    
+        
+        
+        Analysis --> "*" String : dims
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : equation
+        
+          
+    
+        
+        
+        Analysis --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      Analysis : execution
+        
+          
+    
+        
+        
+        Analysis --> "0..1" ExecutionConfig : execution
+        click ExecutionConfig href "./ExecutionConfig.html"
+    
+
+        
+      Analysis : function
+        
+          
+    
+        
+        
+        Analysis --> "0..1" Function : function
+        click Function href "./Function.html"
+    
+
+        
+      Analysis : input
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : input
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : iri
+        
+          
+    
+        
+        
+        Analysis --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Analysis : label
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : name
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : output
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : output
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : parameters
+        
+          
+    
+        
+        
+        Analysis --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Analysis : source_code
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : source_code
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : target
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : target
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : time_range
+        
+          
+    
+        
+        
+        Analysis --> "0..1" Range : time_range
+        click Range href "./Range.html"
+    
+
+        
+      Analysis : type
+        
+          
+    
+        
+        
+        Analysis --> "0..1" String : type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Analysis : wrt
+        
+          
+    
+        
+        
+        Analysis --> "*" String : wrt
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [FunctionCall](../classes/FunctionCall.qmd)
+    * **Analysis**
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Analysis](https://w3id.org/tvbo/Analysis) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [execution](../slots/execution.qmd) | 0..1 <br/> [ExecutionConfig](../classes/ExecutionConfig.qmd) | Which backend renders this analysis, and at what precision / accelerator / wo... | direct |
+| [dims](../slots/dims.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Axis names of this analysis's output, in order — declared, never inferred fro... | direct |
+| [type](../slots/type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The analysis kind, e | direct |
+| [target](../slots/target.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | What is analyzed: typically an observation or loss name (e | direct |
+| [wrt](../slots/wrt.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Quantity/quantities the analysis is taken with respect to, e | direct |
+| [acronym](../slots/acronym.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [FunctionCall](../classes/FunctionCall.qmd) |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [FunctionCall](../classes/FunctionCall.qmd) |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | [FunctionCall](../classes/FunctionCall.qmd) |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [FunctionCall](../classes/FunctionCall.qmd) |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | [FunctionCall](../classes/FunctionCall.qmd) |
+| [name](../slots/name.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional step label; used in pipelines to key step outputs | [FunctionCall](../classes/FunctionCall.qmd) |
+| [function](../slots/function.qmd) | 0..1 <br/> [Function](../classes/Function.qmd) | Reference to a defined Function (by name) | [FunctionCall](../classes/FunctionCall.qmd) |
+| [callable](../slots/callable.qmd) | 0..1 <br/> [Callable](../classes/Callable.qmd) | Direct callable specification (alternative to function reference) | [FunctionCall](../classes/FunctionCall.qmd) |
+| [class_call](../slots/class_call.qmd) | 0..1 <br/> [ClassReference](../classes/ClassReference.qmd) | Class instantiation and call (alternative to callable/function) | [FunctionCall](../classes/FunctionCall.qmd) |
+| [input](../slots/input.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Reference to previous function's output in pipeline (by name) | [FunctionCall](../classes/FunctionCall.qmd) |
+| [output](../slots/output.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name for this step's output (referenced by subsequent functions) | [FunctionCall](../classes/FunctionCall.qmd) |
+| [apply_on_dimension](../slots/apply_on_dimension.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Axis to apply the function over, one element at a time (generates a vmap in c... | [FunctionCall](../classes/FunctionCall.qmd) |
+| [aggregate](../slots/aggregate.qmd) | 0..1 <br/> [Aggregation](../classes/Aggregation.qmd) | How to aggregate the result across dimensions | [FunctionCall](../classes/FunctionCall.qmd) |
+| [arguments](../slots/arguments.qmd) | * <br/> [Argument](../classes/Argument.qmd) | Function arguments keyed by name (the key is the argument name) | [FunctionCall](../classes/FunctionCall.qmd) |
+| [time_range](../slots/time_range.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) | Time range for generated TimeSeries (for kernel generators) | [FunctionCall](../classes/FunctionCall.qmd) |
+| [source_code](../slots/source_code.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [FunctionCall](../classes/FunctionCall.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | [analysis](../slots/analysis.qmd) | range | [Analysis](../classes/Analysis.qmd) |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [analyses](../slots/analyses.qmd) | range | [Analysis](../classes/Analysis.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Analysis |
+| native | tvbo:Analysis |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Analysis
+description: "A quantity obtained by ANALYZING something — a model, its solve, a derived\
+  \ loss, simulated results, or empirical data — rather than by transforming a recorded\
+  \ trajectory. Nothing here requires a model: decomposing empirical maps into a basis,\
+  \ taking their spectrum, or running a permutation test over measured data are analyses\
+  \ in exactly this sense, and so are parameter sensitivities/gradients (autodiff\
+  \ or finite-difference), stability spectra (Lyapunov), bifurcation quantities, identifiability\
+  \ metrics, and reductions spanning several experiments.\nIt is an invocation (``is_a:\
+  \ FunctionCall``) with two mutually exclusive ways of saying WHAT is analyzed, the\
+  \ same alternative-specification idiom ``Parameter`` uses for provenance:\n- **the\
+  \ solve** — ``type`` names the analysis (a free string, extensible;\n  the vocabulary\
+  \ lives in the ontology as AnalysisObservable concepts rather\n  than a closed enum),\
+  \ ``target`` and ``wrt`` bind it to what is analyzed and\n  with respect to what,\
+  \ and ``parameters`` configures it. Evaluated as part\n  of the integration, so\
+  \ it is emitted by the same codegen and limited to\n  what that backend can trace.\
+  \ Declared on ``Observation.analysis``.\n\n- **saved data** — ``callable`` (or ``class_call``)\
+  \ invoked with\n  ``arguments``, each a literal ``value`` or a ``used:`` DataRef\
+  \ reading an\n  experiment, another analysis, or a dataset. The data need not be\
+  \ simulated:\n  this is equally the form for analysing empirical maps, an atlas,\
+  \ or a\n  measured connectome. Because it consumes containers rather than a running\n\
+  \  solve, it is scheduled on its own — before or after the experiments,\n  according\
+  \ to what it uses. Declared in ``SimulationStudy.analyses``, where\n  the result\
+  \ is persisted as its own container\n  (``derivatives/tvbo/ana-<name>_result.h5``)\
+  \ — which is what lets a figure bind it\n  with ``used: {analysis: <name>}`` exactly\
+  \ as it binds a run, and why a study\n  needs no driver script for its non-simulation\
+  \ figures. ``name`` is then\n  required and unique, since it keys that container.\
+  \ The invocation yields a\n  mapping of name -> labelled array (or one array, keyed\
+  \ by the analysis\n  name); each key becomes an ``observation__<key>`` data-variable\
+  \ keeping its\n  dims and coordinates, so a figure ``encoding`` can name them.\n\
+  \nLike a ``SimulationExperiment``, an Analysis declares its own ``execution``: which\
+  \ backend renders it, at what precision, on which accelerator. That states a requirement,\
+  \ not a mechanism — the same analysis is renderable by more than one backend, and\
+  \ one that cannot render it says so rather than silently substituting another."
+from_schema: https://w3id.org/tvbo
+is_a: FunctionCall
+slots:
+- parameters
+attributes:
+  execution:
+    name: execution
+    description: Which backend renders this analysis, and at what precision / accelerator
+      / worker count — the same declaration a ``SimulationExperiment`` carries, so
+      an analysis is not tied to one engine. Unset means the study's default.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  dims:
+    name: dims
+    description: 'Axis names of this analysis''s output, in order — declared, never
+      inferred from the result''s shape, which cannot tell a frequency-by-node spectrum
+      from a node-by-node matrix. Needed only where the expression RESHAPES: for the
+      ordinary map-then-aggregate form the axes follow from ``apply_on_dimension``
+      plus the inputs'' own axes minus ``aggregate.over``, and a renderer derives
+      them and cross-checks the result''s rank against that derivation. Declare it
+      when the expression builds an axis none of its inputs carried (an outer product,
+      a correlation matrix) or the derivation raises.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Observation
+    - Analysis
+    range: string
+    multivalued: true
+  type:
+    name: type
+    description: The analysis kind, e.g. 'gradient', 'finite_difference', 'lyapunov',
+      'bifurcation', 'identifiability', 'sensitivity'. A free string, not a closed
+      enum, so backends can extend the set; the backend-independent vocabulary (what
+      each kind computes) is defined as AnalysisObservable concepts in the ontology
+      (tvb-o-axioms §4.1d). Backends dispatch on it and skip (with a comment, not
+      a raise) when they have no equivalent.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  target:
+    name: target
+    description: 'What is analyzed: typically an observation or loss name (e.g. ''loss''
+      for a gradient). Omitted when the analysis acts on the whole solve (e.g. a Lyapunov
+      spectrum).'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Edge
+    - Analysis
+    - Assignment
+    range: string
+  wrt:
+    name: wrt
+    description: Quantity/quantities the analysis is taken with respect to, e.g. a
+      parameter 'c_sigmJR.G' for a gradient/sensitivity. Omitted for analyses that
+      need no explicit differentiation target.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Analysis
+    range: string
+    multivalued: true
+class_uri: tvbo:Analysis
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Analysis
+description: "A quantity obtained by ANALYZING something — a model, its solve, a derived\
+  \ loss, simulated results, or empirical data — rather than by transforming a recorded\
+  \ trajectory. Nothing here requires a model: decomposing empirical maps into a basis,\
+  \ taking their spectrum, or running a permutation test over measured data are analyses\
+  \ in exactly this sense, and so are parameter sensitivities/gradients (autodiff\
+  \ or finite-difference), stability spectra (Lyapunov), bifurcation quantities, identifiability\
+  \ metrics, and reductions spanning several experiments.\nIt is an invocation (``is_a:\
+  \ FunctionCall``) with two mutually exclusive ways of saying WHAT is analyzed, the\
+  \ same alternative-specification idiom ``Parameter`` uses for provenance:\n- **the\
+  \ solve** — ``type`` names the analysis (a free string, extensible;\n  the vocabulary\
+  \ lives in the ontology as AnalysisObservable concepts rather\n  than a closed enum),\
+  \ ``target`` and ``wrt`` bind it to what is analyzed and\n  with respect to what,\
+  \ and ``parameters`` configures it. Evaluated as part\n  of the integration, so\
+  \ it is emitted by the same codegen and limited to\n  what that backend can trace.\
+  \ Declared on ``Observation.analysis``.\n\n- **saved data** — ``callable`` (or ``class_call``)\
+  \ invoked with\n  ``arguments``, each a literal ``value`` or a ``used:`` DataRef\
+  \ reading an\n  experiment, another analysis, or a dataset. The data need not be\
+  \ simulated:\n  this is equally the form for analysing empirical maps, an atlas,\
+  \ or a\n  measured connectome. Because it consumes containers rather than a running\n\
+  \  solve, it is scheduled on its own — before or after the experiments,\n  according\
+  \ to what it uses. Declared in ``SimulationStudy.analyses``, where\n  the result\
+  \ is persisted as its own container\n  (``derivatives/tvbo/ana-<name>_result.h5``)\
+  \ — which is what lets a figure bind it\n  with ``used: {analysis: <name>}`` exactly\
+  \ as it binds a run, and why a study\n  needs no driver script for its non-simulation\
+  \ figures. ``name`` is then\n  required and unique, since it keys that container.\
+  \ The invocation yields a\n  mapping of name -> labelled array (or one array, keyed\
+  \ by the analysis\n  name); each key becomes an ``observation__<key>`` data-variable\
+  \ keeping its\n  dims and coordinates, so a figure ``encoding`` can name them.\n\
+  \nLike a ``SimulationExperiment``, an Analysis declares its own ``execution``: which\
+  \ backend renders it, at what precision, on which accelerator. That states a requirement,\
+  \ not a mechanism — the same analysis is renderable by more than one backend, and\
+  \ one that cannot render it says so rather than silently substituting another."
+from_schema: https://w3id.org/tvbo
+is_a: FunctionCall
+attributes:
+  execution:
+    name: execution
+    description: Which backend renders this analysis, and at what precision / accelerator
+      / worker count — the same declaration a ``SimulationExperiment`` carries, so
+      an analysis is not tied to one engine. Unset means the study's default.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Analysis
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  dims:
+    name: dims
+    description: 'Axis names of this analysis''s output, in order — declared, never
+      inferred from the result''s shape, which cannot tell a frequency-by-node spectrum
+      from a node-by-node matrix. Needed only where the expression RESHAPES: for the
+      ordinary map-then-aggregate form the axes follow from ``apply_on_dimension``
+      plus the inputs'' own axes minus ``aggregate.over``, and a renderer derives
+      them and cross-checks the result''s rank against that derivation. Declare it
+      when the expression builds an axis none of its inputs carried (an outer product,
+      a correlation matrix) or the derivation raises.'
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Observation
+    - Analysis
+    range: string
+    multivalued: true
+  type:
+    name: type
+    description: The analysis kind, e.g. 'gradient', 'finite_difference', 'lyapunov',
+      'bifurcation', 'identifiability', 'sensitivity'. A free string, not a closed
+      enum, so backends can extend the set; the backend-independent vocabulary (what
+      each kind computes) is defined as AnalysisObservable concepts in the ontology
+      (tvb-o-axioms §4.1d). Backends dispatch on it and skip (with a comment, not
+      a raise) when they have no equivalent.
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  target:
+    name: target
+    description: 'What is analyzed: typically an observation or loss name (e.g. ''loss''
+      for a gradient). Omitted when the analysis acts on the whole solve (e.g. a Lyapunov
+      spectrum).'
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Edge
+    - Analysis
+    - Assignment
+    range: string
+  wrt:
+    name: wrt
+    description: Quantity/quantities the analysis is taken with respect to, e.g. a
+      parameter 'c_sigmJR.G' for a gradient/sensitivity. Omitted for analyses that
+      need no explicit differentiation target.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Analysis
+    domain_of:
+    - Analysis
+    range: string
+    multivalued: true
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Analysis
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  acronym:
+    name: acronym
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: skos:notation
+    owner: Analysis
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - Observation
+    - Function
+    - FunctionCall
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Analysis
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:Equation
+    owner: Analysis
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Analysis
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Analysis
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+  name:
+    name: name
+    description: Optional step label; used in pipelines to key step outputs.
+    from_schema: https://w3id.org/tvbo
+    slot_uri: schema:name
+    owner: Analysis
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+  function:
+    name: function
+    description: Reference to a defined Function (by name)
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Distribution
+    - FunctionCall
+    - Noise
+    range: Function
+    inlined: false
+  callable:
+    name: callable
+    description: Direct callable specification (alternative to function reference)
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Binding
+    - Function
+    - FunctionCall
+    range: Callable
+    inlined: true
+  class_call:
+    name: class_call
+    description: 'Class instantiation and call (alternative to callable/function).
+      Use for external library classes that need __init__ then __call__. Example:
+      Bold monitor from tvboptim.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Analysis
+    domain_of:
+    - FunctionCall
+    range: ClassReference
+    inlined: true
+  input:
+    name: input
+    description: Reference to previous function's output in pipeline (by name)
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Function
+    - FunctionCall
+    range: string
+  output:
+    name: output
+    description: Name for this step's output (referenced by subsequent functions)
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - DataRef
+    - Procedure
+    - Dynamics
+    - Function
+    - FunctionCall
+    range: string
+  apply_on_dimension:
+    name: apply_on_dimension
+    description: Axis to apply the function over, one element at a time (generates
+      a vmap in code). ``node`` applies per node, ``time`` per sample. Inside an observation
+      pipeline the axes are the solve grid's and the ``DimensionType`` vocabulary
+      names them; a study-level ``Analysis`` maps over the axes of the CONTAINERS
+      it reads, which are declared by whatever produced them (``subject``, ``parcel``,
+      ``n_modes``, ``variant``), so this is a free string rather than that closed
+      enum.
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Function
+    - FunctionCall
+    range: string
+  aggregate:
+    name: aggregate
+    description: 'How to aggregate the result across dimensions. Example: aggregate.over=node,
+      aggregate.type=mean applies function per node, then averages. Used in loss functions.'
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Function
+    - LossFunction
+    - FunctionCall
+    range: Aggregation
+    inlined: true
+  arguments:
+    name: arguments
+    description: Function arguments keyed by name (the key is the argument name).
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Function
+    - FunctionCall
+    - AlgorithmInclude
+    - AlgorithmStage
+    range: Argument
+    multivalued: true
+    inlined: true
+  time_range:
+    name: time_range
+    description: Time range for generated TimeSeries (for kernel generators)
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Function
+    - FunctionCall
+    range: Range
+    inlined: true
+  source_code:
+    name: source_code
+    from_schema: https://w3id.org/tvbo
+    owner: Analysis
+    domain_of:
+    - Function
+    - FunctionCall
+    range: string
+class_uri: tvbo:Analysis
+
+```
+</details></div>

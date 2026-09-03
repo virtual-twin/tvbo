@@ -1,0 +1,222 @@
+# Class: Differentiation 
+
+
+_Backend-neutral configuration for how gradients are propagated through the temporal integration. Expressed in physical/semantic terms; each backend maps it to its own mechanism (JAX solver grad_horizon / block_size, Julia adjoint sensitivity, ...). Backends without autodiff (e.g. MATLAB) emit a comment noting differentiation is unsupported and proceed with the plain forward integration -- they do not raise._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Differentiation](https://w3id.org/tvbo/Differentiation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Differentiation
+    click Differentiation href "./Differentiation.html"
+      Differentiation : checkpoint_interval
+        
+          
+    
+        
+        
+        Differentiation --> "0..1" Float : checkpoint_interval
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Differentiation : mode
+        
+          
+    
+        
+        
+        Differentiation --> "0..1" String : mode
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Differentiation : truncation_window
+        
+          
+    
+        
+        
+        Differentiation --> "0..1" Float : truncation_window
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Differentiation](https://w3id.org/tvbo/Differentiation) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [truncation_window](../slots/truncation_window.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Truncated-BPTT window in milliseconds of simulated time: gradients flow back ... | direct |
+| [checkpoint_interval](../slots/checkpoint_interval.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Gradient-checkpointing interval in milliseconds (backward-pass memory/time tr... | direct |
+| [mode](../slots/mode.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Autodiff direction: 'reverse' (default) or 'forward' | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | [differentiation](../slots/differentiation.qmd) | range | [Differentiation](../classes/Differentiation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Differentiation |
+| native | tvbo:Differentiation |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Differentiation
+description: Backend-neutral configuration for how gradients are propagated through
+  the temporal integration. Expressed in physical/semantic terms; each backend maps
+  it to its own mechanism (JAX solver grad_horizon / block_size, Julia adjoint sensitivity,
+  ...). Backends without autodiff (e.g. MATLAB) emit a comment noting differentiation
+  is unsupported and proceed with the plain forward integration -- they do not raise.
+from_schema: https://w3id.org/tvbo
+attributes:
+  truncation_window:
+    name: truncation_window
+    description: 'Truncated-BPTT window in milliseconds of simulated time: gradients
+      flow back at most this far. Omit for full BPTT.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Differentiation
+    range: float
+  checkpoint_interval:
+    name: checkpoint_interval
+    description: Gradient-checkpointing interval in milliseconds (backward-pass memory/time
+      trade-off). Omit for no checkpointing.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Differentiation
+    range: float
+  mode:
+    name: mode
+    description: 'Autodiff direction: ''reverse'' (default) or ''forward''.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(reverse)
+    domain_of:
+    - StimulationSetting
+    - Exploration
+    - AlgorithmInclude
+    - Differentiation
+    range: string
+class_uri: tvbo:Differentiation
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Differentiation
+description: Backend-neutral configuration for how gradients are propagated through
+  the temporal integration. Expressed in physical/semantic terms; each backend maps
+  it to its own mechanism (JAX solver grad_horizon / block_size, Julia adjoint sensitivity,
+  ...). Backends without autodiff (e.g. MATLAB) emit a comment noting differentiation
+  is unsupported and proceed with the plain forward integration -- they do not raise.
+from_schema: https://w3id.org/tvbo
+attributes:
+  truncation_window:
+    name: truncation_window
+    description: 'Truncated-BPTT window in milliseconds of simulated time: gradients
+      flow back at most this far. Omit for full BPTT.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Differentiation
+    domain_of:
+    - Differentiation
+    range: float
+  checkpoint_interval:
+    name: checkpoint_interval
+    description: Gradient-checkpointing interval in milliseconds (backward-pass memory/time
+      trade-off). Omit for no checkpointing.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Differentiation
+    domain_of:
+    - Differentiation
+    range: float
+  mode:
+    name: mode
+    description: 'Autodiff direction: ''reverse'' (default) or ''forward''.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(reverse)
+    owner: Differentiation
+    domain_of:
+    - StimulationSetting
+    - Exploration
+    - AlgorithmInclude
+    - Differentiation
+    range: string
+class_uri: tvbo:Differentiation
+
+```
+</details></div>

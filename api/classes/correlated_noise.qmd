@@ -1,0 +1,122 @@
+# correlated_noise { #tvbo.classes.correlated_noise }
+
+`classes.correlated_noise`
+
+Correlated-noise lowering: a declared covariance becomes a Wiener-increment mixer.
+
+`Noise.covariance` states the second-order structure of the driving process across the axis named by `Noise.correlated_over` — mathematics, not a factorisation. Turning that statement into samples is a backend concern, and this module is tvbo's concrete implementation of it for the JAX/tvboptim path.
+
+It is built the way tvbo extends every backend: tvboptim supplies the abstract framework (`NativeSolver`, its `step` contract), and tvbo emits a concrete implementation against it. :class:`CorrelatedNoiseSolver` wraps any native solver and mixes the increment before delegating, exactly as tvboptim's own `BoundedSolver` wraps one and clips after. Because every integration path — the codegen template, the in-process heterogeneous runner, homogeneous and grouped networks alike — funnels its increment through `solver.step`, one wrapper covers all of them and there is no second mechanism to keep in sync.
+
+Mixing iid draws by a factor ``L`` with ``L Lᵀ = C`` yields increments with covariance ``C`` along the chosen axis. Which factor is used is deliberately invisible to the spec:
+Cholesky when ``C`` is positive definite, a symmetric eigendecomposition when it is only positive semi-definite (a rank-deficient covariance is legitimate — it says fewer independent sources than elements).
+
+The declared reading is that σ carries the amplitude and ``C`` the correlation, so the realised covariance is ``diag(σ) C diag(σ) dt`` — for a scalar σ, ``σ² dt C``.
+
+That composition is ``diag(σ) L``, NOT ``L diag(σ)``. The two agree exactly when σ is uniform along the mixed axis, which is why a per-node covariance with a scalar amplitude is insensitive to the difference; they diverge when σ varies along that axis, and there the wrong order is not a small error but a silent loss of the process. With a rank-deficient ``C`` — one independent source shared by two states, say — ``L``'s surviving column is placed by the eigendecomposition, and multiplying by a σ that is zero on the states the column happens to land on annihilates the increment entirely.
+
+So the amplitude is folded into the covariance (:func:`fold_amplitudes`) and the increment arrives at unit amplitude, leaving the mixer to apply ``L'`` alone. Conjugating instead — ``diag(σ) L diag(1/σ⁺)`` — looks equivalent and is not, for the same reason: it drops the draw components at the zero-σ indices, which is where the rank-deficient source lives.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [CorrelatedNoiseSolver](#tvbo.classes.correlated_noise.CorrelatedNoiseSolver) | Wrap a native solver so its Wiener increment carries a declared covariance. |
+| [covariance_factor](#tvbo.classes.correlated_noise.covariance_factor) | A factor ``L`` with ``L Lᵀ = C``, after validating that ``C`` is a covariance. |
+| [fold_amplitudes](#tvbo.classes.correlated_noise.fold_amplitudes) | ``diag(σ) C diag(σ)`` — the declared covariance carried at each element's amplitude. |
+| [noise_mixer](#tvbo.classes.correlated_noise.noise_mixer) | A ``mix(xi) -> xi'`` that imposes the declared covariance on iid draws. |
+
+### CorrelatedNoiseSolver { #tvbo.classes.correlated_noise.CorrelatedNoiseSolver }
+
+```python
+classes.correlated_noise.CorrelatedNoiseSolver(base_solver, factor, axis='node')
+```
+
+Wrap a native solver so its Wiener increment carries a declared covariance.
+
+tvboptim owns the integration step; this is tvbo's concrete solver against that abstract contract, mirroring the backend's own `BoundedSolver` (delegate, then transform — here the increment on the way in rather than the state on the way out).
+Wrapping is the one place that works for every network shape, because the grouped and ungrouped scans both hand their increment to `solver.step`.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                                                                                                                                                                               | Default    |
+|-------------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| base_solver |        | The native solver to wrap.                                                                                                                                                                                                                | _required_ |
+| factor      |        | A single ``L`` applied to every group's increment, or a mapping from group name to ``L`` so a heterogeneous network can drive different groups with different processes. A group absent from the mapping keeps its independent increment. | _required_ |
+| axis        | str    | The `correlated_over` axis name.                                                                                                                                                                                                          | `'node'`   |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                    |
+|--------|--------|------------------------------------------------|
+|        |        | A solver instance delegating to `base_solver`. |
+
+### covariance_factor { #tvbo.classes.correlated_noise.covariance_factor }
+
+```python
+classes.correlated_noise.covariance_factor(cov, *, name='covariance')
+```
+
+A factor ``L`` with ``L Lᵀ = C``, after validating that ``C`` is a covariance.
+
+Raises rather than silently repairing: a non-symmetric or indefinite matrix is a specification error, and letting it through would surface as NaNs deep inside a jitted scan, far from the declaration that caused it.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                        | Default        |
+|--------|--------|----------------------------------------------------|----------------|
+| cov    |        | Square, symmetric, positive semi-definite matrix.  | _required_     |
+| name   | str    | Label used in error messages (the declaring slot). | `'covariance'` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type       | Description                                                                 |
+|--------|------------|-----------------------------------------------------------------------------|
+|        | np.ndarray | Lower-triangular Cholesky factor when `cov` is positive definite, otherwise |
+|        | np.ndarray | ``V sqrt(Λ)`` from a symmetric eigendecomposition.                          |
+
+### fold_amplitudes { #tvbo.classes.correlated_noise.fold_amplitudes }
+
+```python
+classes.correlated_noise.fold_amplitudes(cov, sigmas, *, name='covariance')
+```
+
+``diag(σ) C diag(σ)`` — the declared covariance carried at each element's amplitude.
+
+Folding the amplitude in here, and driving the increment at unit amplitude, is what makes the realised covariance ``diag(σ) C diag(σ)`` rather than ``L diag(σ²) Lᵀ``. The two coincide for uniform σ, so this is a no-op wherever σ does not vary along the correlated axis; where it does vary, it is the difference between the declared process and (for a rank-deficient ``C``) no process at all.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                             | Default        |
+|--------|--------|---------------------------------------------------------|----------------|
+| cov    |        | The declared covariance, square in the correlated axis. | _required_     |
+| sigmas |        | Per-element amplitude along that axis, same length.     | _required_     |
+| name   | str    | Label for error messages.                               | `'covariance'` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type       | Description                                                             |
+|--------|------------|-------------------------------------------------------------------------|
+|        | np.ndarray | The amplitude-carrying covariance, ready for :func:`covariance_factor`. |
+
+### noise_mixer { #tvbo.classes.correlated_noise.noise_mixer }
+
+```python
+classes.correlated_noise.noise_mixer(factor, axis='node')
+```
+
+A ``mix(xi) -> xi'`` that imposes the declared covariance on iid draws.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                               | Default    |
+|--------|--------|-----------------------------------------------------------------------------------------------------------|------------|
+| factor |        | The ``L`` from :func:`covariance_factor`.                                                                 | _required_ |
+| axis   | str    | Which axis of a ``[..., n_noise_states, n_nodes]`` block the covariance indexes — a `DimensionType` name. | `'node'`   |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                    |
+|--------|--------|--------------------------------------------------------------------------------|
+|        |        | A callable mixing the trailing ``[n_noise_states, n_nodes]`` block of an array |
+|        |        | whose leading axes (time, blocks) are left untouched.                          |

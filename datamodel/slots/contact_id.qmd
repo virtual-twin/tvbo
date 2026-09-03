@@ -1,0 +1,100 @@
+# Slot: contact_id 
+
+
+_Identifier (e.g., 0, 1, 2)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:identifier](http://purl.org/dc/terms/identifier)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Contact](../classes/Contact.qmd) | Individual contact on a DBS electrode |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Contact](../classes/Contact.qmd) |
+| Slot URI | [dcterms:identifier](http://purl.org/dc/terms/identifier) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Contact](../classes/Contact.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:identifier |
+| native | tvbo_dbs:contact_id |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: contact_id
+description: Identifier (e.g., 0, 1, 2)
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+slot_uri: dcterms:identifier
+owner: Contact
+domain_of:
+- Contact
+range: integer
+
+```
+</details></div>

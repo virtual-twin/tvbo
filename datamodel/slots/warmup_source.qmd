@@ -1,0 +1,77 @@
+# Slot: warmup_source 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/warmup_source](https://w3id.org/tvbo/slot/warmup_source)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [ClassReference](../classes/ClassReference.qmd) | Reference to a class that can be instantiated and called |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Observation](../classes/Observation.qmd), [ClassReference](../classes/ClassReference.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:warmup_source |
+| native | tvbo:warmup_source |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: warmup_source
+domain_of:
+- Observation
+- ClassReference
+range: string
+
+```
+</details></div>

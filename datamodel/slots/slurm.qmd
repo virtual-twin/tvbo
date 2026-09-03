@@ -1,0 +1,99 @@
+# Slot: slurm 
+
+
+_Slurm sbatch directives for array-job execution._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/slurm](https://w3id.org/tvbo/slot/slurm)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+| Domain Of | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:slurm |
+| native | tvbo:slurm |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: slurm
+description: Slurm sbatch directives for array-job execution.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowConfig
+domain_of:
+- WorkflowConfig
+range: WorkflowEngineConfig
+inlined: true
+
+```
+</details></div>

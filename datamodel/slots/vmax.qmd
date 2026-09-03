@@ -1,0 +1,102 @@
+# Slot: vmax 
+
+
+_The value the scale ends at. See `vmin`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/vmax](https://w3id.org/tvbo/slot/vmax)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ColorScale](../classes/ColorScale.qmd) | How values become colours, and where the scale starts and stops |  no  |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [Volume](../classes/Volume.qmd) | A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, ... |  no  |
+| [Graph](../classes/Graph.qmd) | A node-link panel's graph and how it is drawn: the connectome the model actua... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [ColorScale](../classes/ColorScale.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ColorScale](../classes/ColorScale.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:vmax |
+| native | tvbo:vmax |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: vmax
+description: The value the scale ends at. See `vmin`.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: ColorScale
+domain_of:
+- ColorScale
+range: float
+
+```
+</details></div>

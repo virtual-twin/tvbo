@@ -1,0 +1,455 @@
+# Class: InitialState 
+
+
+_How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady state._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:InitialState](https://w3id.org/tvbo/InitialState)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class InitialState
+    click InitialState href "./InitialState.html"
+      InitialState : abs_tol
+        
+          
+    
+        
+        
+        InitialState --> "0..1" Float : abs_tol
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      InitialState : duration
+        
+          
+    
+        
+        
+        InitialState --> "0..1" Float : duration
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      InitialState : method
+        
+          
+    
+        
+        
+        InitialState --> "0..1" InitialStateMethod : method
+        click InitialStateMethod href "../../enums/InitialStateMethod.html"
+    
+
+        
+      InitialState : ramp
+        
+          
+    
+        
+        
+        InitialState --> "0..1" ExplorationAxis : ramp
+        click ExplorationAxis href "./ExplorationAxis.html"
+    
+
+        
+      InitialState : rel_tol
+        
+          
+    
+        
+        
+        InitialState --> "0..1" Float : rel_tol
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      InitialState : solver
+        
+          
+    
+        
+        
+        InitialState --> "0..1" Solver : solver
+        click Solver href "./Solver.html"
+    
+
+        
+      InitialState : source_branch
+        
+          
+    
+        
+        
+        InitialState --> "0..1" String : source_branch
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      InitialState : source_experiment
+        
+          
+    
+        
+        
+        InitialState --> "0..1" SimulationExperiment : source_experiment
+        click SimulationExperiment href "./SimulationExperiment.html"
+    
+
+        
+      InitialState : source_point
+        
+          
+    
+        
+        
+        InitialState --> "0..1" String : source_point
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:InitialState](https://w3id.org/tvbo/InitialState) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [method](../slots/method.qmd) | 0..1 <br/> [InitialStateMethod](../enums/InitialStateMethod.qmd) | Strategy for finding the initial state | direct |
+| [duration](../slots/duration.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Integration duration for time_integration method | direct |
+| [abs_tol](../slots/abs_tol.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Absolute tolerance for ODE integration | direct |
+| [rel_tol](../slots/rel_tol.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Relative tolerance for ODE integration | direct |
+| [solver](../slots/solver.qmd) | 0..1 <br/> [Solver](../classes/Solver.qmd) | ODE solver for time_integration method | direct |
+| [source_branch](../slots/source_branch.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name of a previously computed branch (for from_branch method) | direct |
+| [source_point](../slots/source_point.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Which point of the source branch/run seeds this run: 'endpoint' (default, the... | direct |
+| [source_experiment](../slots/source_experiment.qmd) | 0..1 <br/> [SimulationExperiment](../classes/SimulationExperiment.qmd) | For method=from_experiment: the experiment whose settled per-node endpoint st... | direct |
+| [ramp](../slots/ramp.qmd) | 0..1 <br/> [ExplorationAxis](../classes/ExplorationAxis.qmd) | For method=from_working_point: the parameter + domain to ramp quasi-staticall... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Continuation](../classes/Continuation.qmd) | [initial_state](../slots/initial_state.qmd) | range | [InitialState](../classes/InitialState.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [initial_state](../slots/initial_state.qmd) | range | [InitialState](../classes/InitialState.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:InitialState |
+| native | tvbo:InitialState |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: InitialState
+description: 'How to obtain the starting equilibrium or periodic orbit for continuation.
+  Most robust: time-integrate to steady state.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  method:
+    name: method
+    description: Strategy for finding the initial state.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(time_integration)
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: InitialStateMethod
+  duration:
+    name: duration
+    description: Integration duration for time_integration method.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(2000.0)
+    domain_of:
+    - Stimulus
+    - Event
+    - InitialState
+    - Integrator
+    range: float
+  abs_tol:
+    name: abs_tol
+    description: Absolute tolerance for ODE integration.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(1e-10)
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  rel_tol:
+    name: rel_tol
+    description: Relative tolerance for ODE integration.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(1e-10)
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  solver:
+    name: solver
+    description: ODE solver for time_integration method. Specify method (e.g., Tsit5,
+      Heun, RK4) and tolerances.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - InitialState
+    - PDE
+    range: Solver
+    inlined: true
+  source_branch:
+    name: source_branch
+    description: Name of a previously computed branch (for from_branch method).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - InitialState
+    range: string
+  source_point:
+    name: source_point
+    description: 'Which point of the source branch/run seeds this run: ''endpoint''
+      (default, the last recorded point), a step number, ''hopf:1'', ''fold:2'', etc.
+      — a single operating point. The special value ''branch'' instead selects the
+      WHOLE recorded branch: every recorded point becomes one cell of this experiment''s
+      exploration, seeded from that point''s swept-parameter value and settled state.
+      That turns a sequential branch (e.g. a from_previous warm-start scan) into an
+      independent, parallel per-point restart analysis — Lyapunov spectra, Jacobian/Floquet
+      eigenvalues, basin sampling, perturbation kicks, first-passage — that shards
+      across a cluster. The consuming exploration declares one axis (the source''s
+      swept parameter) with no domain; its values come from the branch, keeping the
+      source run as the single source of truth for which points exist.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - InitialState
+    - BranchSwitch
+    range: string
+  source_experiment:
+    name: source_experiment
+    description: 'For method=from_experiment: the experiment whose settled per-node
+      endpoint state seeds this run (its operating point). Referenced by identifier
+      (id); the referenced run''s saved final state is loaded as this run''s initial
+      condition, with source_point selecting which settled point (default ''endpoint'').
+      Lets a control/perturbation experiment start from a working point another experiment
+      already reached, without recomputing its warm-start ramp — a declarative data
+      dependency the workflow engine can order.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - InitialState
+    - TimeSeries
+    range: SimulationExperiment
+  ramp:
+    name: ramp
+    description: 'For method=from_working_point: the parameter + domain to ramp quasi-statically
+      (warm-start, from_previous) to reach the working point; the run then seeds from
+      the ramp endpoint. Reuses ExplorationAxis (parameter + Range domain) — the same
+      primitive an Exploration warm-start uses; the per-step settle comes from the
+      experiment''s integration (transient, else duration).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - InitialState
+    range: ExplorationAxis
+    inlined: true
+class_uri: tvbo:InitialState
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: InitialState
+description: 'How to obtain the starting equilibrium or periodic orbit for continuation.
+  Most robust: time-integrate to steady state.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  method:
+    name: method
+    description: Strategy for finding the initial state.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(time_integration)
+    owner: InitialState
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: InitialStateMethod
+  duration:
+    name: duration
+    description: Integration duration for time_integration method.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(2000.0)
+    owner: InitialState
+    domain_of:
+    - Stimulus
+    - Event
+    - InitialState
+    - Integrator
+    range: float
+  abs_tol:
+    name: abs_tol
+    description: Absolute tolerance for ODE integration.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(1e-10)
+    owner: InitialState
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  rel_tol:
+    name: rel_tol
+    description: Relative tolerance for ODE integration.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: float(1e-10)
+    owner: InitialState
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  solver:
+    name: solver
+    description: ODE solver for time_integration method. Specify method (e.g., Tsit5,
+      Heun, RK4) and tolerances.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: InitialState
+    domain_of:
+    - InitialState
+    - PDE
+    range: Solver
+    inlined: true
+  source_branch:
+    name: source_branch
+    description: Name of a previously computed branch (for from_branch method).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: InitialState
+    domain_of:
+    - InitialState
+    range: string
+  source_point:
+    name: source_point
+    description: 'Which point of the source branch/run seeds this run: ''endpoint''
+      (default, the last recorded point), a step number, ''hopf:1'', ''fold:2'', etc.
+      — a single operating point. The special value ''branch'' instead selects the
+      WHOLE recorded branch: every recorded point becomes one cell of this experiment''s
+      exploration, seeded from that point''s swept-parameter value and settled state.
+      That turns a sequential branch (e.g. a from_previous warm-start scan) into an
+      independent, parallel per-point restart analysis — Lyapunov spectra, Jacobian/Floquet
+      eigenvalues, basin sampling, perturbation kicks, first-passage — that shards
+      across a cluster. The consuming exploration declares one axis (the source''s
+      swept parameter) with no domain; its values come from the branch, keeping the
+      source run as the single source of truth for which points exist.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: InitialState
+    domain_of:
+    - InitialState
+    - BranchSwitch
+    range: string
+  source_experiment:
+    name: source_experiment
+    description: 'For method=from_experiment: the experiment whose settled per-node
+      endpoint state seeds this run (its operating point). Referenced by identifier
+      (id); the referenced run''s saved final state is loaded as this run''s initial
+      condition, with source_point selecting which settled point (default ''endpoint'').
+      Lets a control/perturbation experiment start from a working point another experiment
+      already reached, without recomputing its warm-start ramp — a declarative data
+      dependency the workflow engine can order.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: InitialState
+    domain_of:
+    - InitialState
+    - TimeSeries
+    range: SimulationExperiment
+  ramp:
+    name: ramp
+    description: 'For method=from_working_point: the parameter + domain to ramp quasi-statically
+      (warm-start, from_previous) to reach the working point; the run then seeds from
+      the ramp endpoint. Reuses ExplorationAxis (parameter + Range domain) — the same
+      primitive an Exploration warm-start uses; the per-step settle comes from the
+      experiment''s integration (transient, else duration).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: InitialState
+    domain_of:
+    - InitialState
+    range: ExplorationAxis
+    inlined: true
+class_uri: tvbo:InitialState
+
+```
+</details></div>

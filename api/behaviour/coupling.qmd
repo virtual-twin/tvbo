@@ -1,0 +1,310 @@
+# coupling { #tvbo.behaviour.coupling }
+
+`behaviour.coupling`
+
+Ontology population, symbolic reading, code generation and plotting for coupling.
+
+Attached to the generated classes by name (``CouplingBehaviour`` -> ``Coupling``), so a coupling carries these however it was built. The experiment loader used to reassign ``__class__`` to reach the one nested in a loaded experiment, which left couplings reached any other way — ``network.coupling`` entries, an inner coupling, a hand-built one — as plain records.
+
+A coupling named solely by ``iri`` is expanded before validation, by the dialect; filling one that names its function any other way is :meth:`IriEnrichable.enrich`, whose ontology source is :meth:`CouplingBehaviour._from_ontology` below.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [CouplingBehaviour](#tvbo.behaviour.coupling.CouplingBehaviour) | Population, rendering and symbolic reading for a coupling function. |
+
+### CouplingBehaviour { #tvbo.behaviour.coupling.CouplingBehaviour }
+
+```python
+behaviour.coupling.CouplingBehaviour()
+```
+
+Population, rendering and symbolic reading for a coupling function.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [equation](#tvbo.behaviour.coupling.CouplingBehaviour.equation) | The full assembled global coupling equation (pre and post combined), or `None` if it cannot be built. |
+| [metadata](#tvbo.behaviour.coupling.CouplingBehaviour.metadata) | The coupling's own metadata, i.e. this object itself (back-compat accessor). |
+| [ontoclass](#tvbo.behaviour.coupling.CouplingBehaviour.ontoclass) | The ontology `Coupling` class matching this coupling's name, or `None` if not found. |
+| [post](#tvbo.behaviour.coupling.CouplingBehaviour.post) | The parsed post-summation expression of the coupling function. |
+| [pre](#tvbo.behaviour.coupling.CouplingBehaviour.pre) | The parsed pre-summation expression of the coupling function. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [execute](#tvbo.behaviour.coupling.CouplingBehaviour.execute) | Render, execute, and instantiate this coupling for a backend. |
+| [from_datamodel](#tvbo.behaviour.coupling.CouplingBehaviour.from_datamodel) | Copy an existing datamodel `Coupling`'s fields into a new one. |
+| [from_db](#tvbo.behaviour.coupling.CouplingBehaviour.from_db) | Load a Coupling by name from the tvbo database. |
+| [from_file](#tvbo.behaviour.coupling.CouplingBehaviour.from_file) | Load a Coupling from a YAML file. |
+| [from_ontology](#tvbo.behaviour.coupling.CouplingBehaviour.from_ontology) | Create a Coupling instance from an ontology Coupling class or name. |
+| [generate_report](#tvbo.behaviour.coupling.CouplingBehaviour.generate_report) | Backward-compatible alias for :meth:`report`. |
+| [list_db](#tvbo.behaviour.coupling.CouplingBehaviour.list_db) | List available coupling functions in the tvbo database. |
+| [plot](#tvbo.behaviour.coupling.CouplingBehaviour.plot) | Plot the coupling output against a single input state component. |
+| [render](#tvbo.behaviour.coupling.CouplingBehaviour.render) | Render this coupling in the requested output format. |
+| [render_code](#tvbo.behaviour.coupling.CouplingBehaviour.render_code) | Generate backend-specific code for this coupling. |
+| [report](#tvbo.behaviour.coupling.CouplingBehaviour.report) | Render a human-readable markdown (or pdf) report for this coupling. |
+| [summed_inputs](#tvbo.behaviour.coupling.CouplingBehaviour.summed_inputs) | Summed inputs ``gx_k`` of a factored / vectorized coupling. |
+| [symbolic](#tvbo.behaviour.coupling.CouplingBehaviour.symbolic) | Full symbolic coupling equation with proper indexed state variables. |
+| [to_yaml](#tvbo.behaviour.coupling.CouplingBehaviour.to_yaml) | Serialize this coupling to YAML. |
+
+##### execute { #tvbo.behaviour.coupling.CouplingBehaviour.execute }
+
+```python
+behaviour.coupling.CouplingBehaviour.execute(
+    format='tvb',
+    alt_label=None,
+    **kwargs,
+)
+```
+
+Render, execute, and instantiate this coupling for a backend.
+
+Renders the coupling code via `render_code`, executes it, and returns the resulting runtime object.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                                                                                                                                                                                      | Default   |
+|-----------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| format    |        | Target backend. `"tvb"` returns an instantiated TVB coupling object; `"tvboptim"`/`"tvb-optim"` returns an instantiated tvboptim coupling class; `"python"` returns a `sympy.lambdify`-based callable for the coupling equation. | `'tvb'`   |
+| alt_label |        | Alternative name to instantiate the coupling under (TVB backend only).                                                                                                                                                           | `None`    |
+| **kwargs  |        | Constructor arguments forwarded to the instantiated coupling object.                                                                                                                                                             | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                     |
+|--------|--------|-----------------------------------------------------------------|
+|        |        | The instantiated backend coupling object, or a callable for the |
+|        |        | `"python"` format.                                              |
+
+##### from_datamodel { #tvbo.behaviour.coupling.CouplingBehaviour.from_datamodel }
+
+```python
+behaviour.coupling.CouplingBehaviour.from_datamodel(datamodel_instance)
+```
+
+Copy an existing datamodel `Coupling`'s fields into a new one.
+
+##### from_db { #tvbo.behaviour.coupling.CouplingBehaviour.from_db }
+
+```python
+behaviour.coupling.CouplingBehaviour.from_db(name)
+```
+
+Load a Coupling by name from the tvbo database.
+
+##### from_file { #tvbo.behaviour.coupling.CouplingBehaviour.from_file }
+
+```python
+behaviour.coupling.CouplingBehaviour.from_file(filepath)
+```
+
+Load a Coupling from a YAML file.
+
+##### from_ontology { #tvbo.behaviour.coupling.CouplingBehaviour.from_ontology }
+
+```python
+behaviour.coupling.CouplingBehaviour.from_ontology(ontoclass)
+```
+
+Create a Coupling instance from an ontology Coupling class or name.
+
+Accepts an owlready2 class, a plain name (``"SigmoidalJansenRit"``), or a CURIE (``"tvbo:SigmoidalJansenRit"``).
+Tries the database YAML first, then falls back to ontology lookup.
+
+##### generate_report { #tvbo.behaviour.coupling.CouplingBehaviour.generate_report }
+
+```python
+behaviour.coupling.CouplingBehaviour.generate_report(
+    format='markdown',
+    outputfile=None,
+)
+```
+
+Backward-compatible alias for :meth:`report`.
+
+##### list_db { #tvbo.behaviour.coupling.CouplingBehaviour.list_db }
+
+```python
+behaviour.coupling.CouplingBehaviour.list_db()
+```
+
+List available coupling functions in the tvbo database.
+
+##### plot { #tvbo.behaviour.coupling.CouplingBehaviour.plot }
+
+```python
+behaviour.coupling.CouplingBehaviour.plot(
+    weights=None,
+    node_idx=0,
+    xs=None,
+    ax=None,
+    **kwargs,
+)
+```
+
+Plot the coupling output against a single input state component.
+
+Lambdifies the assembled coupling `equation` and evaluates it while sweeping one node's state over `xs`, holding the other components fixed.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                                                                                          | Default   |
+|----------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| weights  |        | Connectivity weight matrix. If omitted, a random 3x3 matrix with a zeroed diagonal is used.                                                                                          | `None`    |
+| node_idx |        | Plotting gate only. When not `None` (the default is `0`) the plot is drawn; the value is not otherwise used, as the swept component is always index 0. Pass `None` to skip plotting. | `0`       |
+| xs       |        | Values to sweep the selected state component over. Defaults to 100 points on the interval `[-2, 2]`.                                                                                 | `None`    |
+| ax       |        | Matplotlib axes to draw on. If omitted, a new figure is created and returned.                                                                                                        | `None`    |
+| **kwargs |        | Accepted for signature flexibility; currently unused.                                                                                                                                | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                       |
+|--------|--------|-------------------------------------------------------------------|
+|        |        | The created Matplotlib figure when `ax` is omitted and `node_idx` |
+|        |        | is not `None`; otherwise `None`.                                  |
+
+##### render { #tvbo.behaviour.coupling.CouplingBehaviour.render }
+
+```python
+behaviour.coupling.CouplingBehaviour.render(format='yaml', **kwargs)
+```
+
+Render this coupling in the requested output format.
+
+Dispatches to `to_yaml`, `report`, or `render_code` depending on `format`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                                                                                                       | Default   |
+|----------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| format   |        | Output format. `"yaml"` serializes to YAML; `"report"`, `"markdown"`, `"md"`, or `"pdf"` produce a human-readable report; any other value is forwarded to `render_code` to generate backend code. | `'yaml'`  |
+| **kwargs |        | Forwarded to the underlying renderer (e.g. `filepath`).                                                                                                                                           | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                      |
+|--------|--------|----------------------------------|
+|        | str    | The rendered output as a string. |
+
+##### render_code { #tvbo.behaviour.coupling.CouplingBehaviour.render_code }
+
+```python
+behaviour.coupling.CouplingBehaviour.render_code(
+    format='tvb',
+    model=None,
+    alt_label=None,
+    **kwargs,
+)
+```
+
+Generate backend-specific code for this coupling.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                                                                         | Default   |
+|-----------|--------|---------------------------------------------------------------------------------------------------------------------|-----------|
+| format    |        | Target backend (case-insensitive). One of `"tvb"`, `"autodiff"`/`"jax"`, `"tvboptim"`/`"tvb-optim"`, or `"python"`. | `'tvb'`   |
+| model     |        | Model context passed to the JAX template when relevant.                                                             | `None`    |
+| alt_label |        | Alternative label accepted for signature compatibility; not used directly by this method.                           | `None`    |
+| **kwargs  |        | Additional arguments forwarded to the selected template.                                                            | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                              |
+|--------|--------|----------------------------------------------------------|
+|        |        | The formatted, backend-specific source code as a string. |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                             |
+|--------|------------|-----------------------------------------|
+|        | ValueError | If `format` is not a supported backend. |
+
+##### report { #tvbo.behaviour.coupling.CouplingBehaviour.report }
+
+```python
+behaviour.coupling.CouplingBehaviour.report(
+    format='markdown',
+    outputfile=None,
+    parameters=True,
+    equations=None,
+)
+```
+
+Render a human-readable markdown (or pdf) report for this coupling.
+
+Includes pre/post expressions, the full assembled coupling equation (``Coupling.equation``), and the parameter table.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type        | Description                                                                                                                                                                                                                                                             | Default      |
+|------------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| format     | str         | ``markdown``/``md`` or ``pdf``.                                                                                                                                                                                                                                         | `'markdown'` |
+| outputfile | str \| None | Where to write the rendering, if anywhere.                                                                                                                                                                                                                              | `None`       |
+| parameters | bool        | Emit the parameter table. A host report that already glossaries these symbols passes ``False`` — a study's Methods lists them beside the model's, so the table here would repeat rows the reader has just read, uncaptioned and unnumbered.                             | `True`       |
+| equations  |             | A ``tvbo.utils.report.Equations`` to number and anchor the coupling equation with. Without one it renders bare, and in a study report that is the only unnumbered equation on the page — the reader can cite every state equation and not the coupling that joins them. | `None`       |
+
+##### summed_inputs { #tvbo.behaviour.coupling.CouplingBehaviour.summed_inputs }
+
+```python
+behaviour.coupling.CouplingBehaviour.summed_inputs(delays=False)
+```
+
+Summed inputs ``gx_k`` of a factored / vectorized coupling.
+
+A factored coupling emits a *list* pre-expression whose k-th component is summed over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
+
+##### symbolic { #tvbo.behaviour.coupling.CouplingBehaviour.symbolic }
+
+```python
+behaviour.coupling.CouplingBehaviour.symbolic(delays=False)
+```
+
+Full symbolic coupling equation with proper indexed state variables.
+
+Resolves all expression styles (``theta_j``/``theta_i``, ``x_j``/``x_i``, ``incoming_states``/``local_states``) into proper ``IndexedBase`` notation and wraps the pre-expression in a weighted summation over connected nodes.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+delays : bool
+    If True, incoming states carry an explicit time-delay index:
+    ``y1[j, t - tau[i, j]]`` instead of plain ``y1[j]``.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+sympy.Expr
+    E.g. ``Sum(w[i, j]*sin(theta[j] - theta[i]), (j, 0, N - 1))/N``
+
+
+
+###### Notes: {.doc-section .doc-section-notes}
+
+Parsing and substitution both stay inside ``evaluate(False)`` so that sympy neither canonicalizes signs nor reorders an ``Add`` before the states are indexed. In the factored case a bare state name refers to the summed (``j``) node even where it is declared ``local``; only an explicit ``_i`` stays local.
+
+##### to_yaml { #tvbo.behaviour.coupling.CouplingBehaviour.to_yaml }
+
+```python
+behaviour.coupling.CouplingBehaviour.to_yaml(filepath=None)
+```
+
+Serialize this coupling to YAML.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type        | Description                                                                | Default   |
+|----------|-------------|----------------------------------------------------------------------------|-----------|
+| filepath | str \| None | Optional path to write the YAML to. If omitted, the YAML is only returned. | `None`    |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                          |
+|--------|--------|------------------------------------------------------|
+|        |        | The YAML representation of the coupling as a string. |

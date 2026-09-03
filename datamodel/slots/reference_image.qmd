@@ -1,0 +1,101 @@
+# Slot: reference_image 
+
+
+_The published figure this one reproduces, as a path relative to the study root (e.g. original_study/img/fig_04.png). Names the A/B target for `tvbo figure compare`, which measures panel geometry against it; it is never a data source, and never rendered into a panel._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/reference_image](https://w3id.org/tvbo/slot/reference_image)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:reference_image |
+| native | tvbo:reference_image |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: reference_image
+description: The published figure this one reproduces, as a path relative to the study
+  root (e.g. original_study/img/fig_04.png). Names the A/B target for `tvbo figure
+  compare`, which measures panel geometry against it; it is never a data source, and
+  never rendered into a panel.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: string
+
+```
+</details></div>

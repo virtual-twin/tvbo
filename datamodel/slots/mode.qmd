@@ -1,0 +1,81 @@
+# Slot: mode 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/mode](https://w3id.org/tvbo/slot/mode)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StimulationSetting](../classes/StimulationSetting.qmd) | DBS parameters for a specific session |  no  |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+| [AlgorithmInclude](../classes/AlgorithmInclude.qmd) | Reference to an included algorithm with optional argument overrides |  no  |
+| [Differentiation](../classes/Differentiation.qmd) | Backend-neutral configuration for how gradients are propagated through the te... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [StimulationSetting](../classes/StimulationSetting.qmd), [Exploration](../classes/Exploration.qmd), [AlgorithmInclude](../classes/AlgorithmInclude.qmd), [Differentiation](../classes/Differentiation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:mode |
+| native | tvbo:mode |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: mode
+domain_of:
+- StimulationSetting
+- Exploration
+- AlgorithmInclude
+- Differentiation
+range: string
+
+```
+</details></div>

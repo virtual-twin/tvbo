@@ -1,0 +1,23 @@
+# save { #tvbo.cli.save }
+
+`cli.save`
+
+``tvbo save`` — alias for ``tvbo export --with-data``.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [save](#tvbo.cli.save.save) | Alias for `tvbo export --with-data` — render *spec* into *format* bundling all data. |
+
+### save { #tvbo.cli.save.save }
+
+```python
+cli.save.save(
+    format=typer.Argument(..., help='Format key (see `tvbo formats`).'),
+    spec=typer.Argument(..., help='Path, CURIE, or DB name.'),
+    output=typer.Option(..., '-o', '--output', help='Output file or directory.'),
+)
+```
+
+Alias for `tvbo export --with-data` — render *spec* into *format* bundling all data.

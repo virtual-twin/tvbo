@@ -1,0 +1,106 @@
+# Slot: reset_state 
+
+
+_Start this stage from the model's declared initial conditions rather than the previous stage's endpoint. The update rules' tuned targets always cross the stage boundary; what resets is the dynamical state — state variables, delay and coupling history, observation window buffers and monitors — and the noise stream, which restarts from the run's seed so each stage samples the same realisation. False, the default, makes the schedule one continuous trajectory; true makes each stage an independent simulation warm-started from the parameters learned so far._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/reset_state](https://w3id.org/tvbo/slot/reset_state)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [AlgorithmStage](../classes/AlgorithmStage.qmd) | One stage of a multi-stage tuning schedule |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [AlgorithmStage](../classes/AlgorithmStage.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [AlgorithmStage](../classes/AlgorithmStage.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:reset_state |
+| native | tvbo:reset_state |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: reset_state
+description: Start this stage from the model's declared initial conditions rather
+  than the previous stage's endpoint. The update rules' tuned targets always cross
+  the stage boundary; what resets is the dynamical state — state variables, delay
+  and coupling history, observation window buffers and monitors — and the noise stream,
+  which restarts from the run's seed so each stage samples the same realisation. False,
+  the default, makes the schedule one continuous trajectory; true makes each stage
+  an independent simulation warm-started from the parameters learned so far.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: AlgorithmStage
+domain_of:
+- AlgorithmStage
+range: boolean
+
+```
+</details></div>

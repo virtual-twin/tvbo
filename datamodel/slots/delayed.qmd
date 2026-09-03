@@ -1,0 +1,77 @@
+# Slot: delayed 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/delayed](https://w3id.org/tvbo/slot/delayed)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Integrator](../classes/Integrator.qmd), [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:delayed |
+| native | tvbo:delayed |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: delayed
+domain_of:
+- Integrator
+- Coupling
+range: string
+
+```
+</details></div>

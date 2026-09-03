@@ -1,0 +1,106 @@
+# Slot: part 
+
+
+_Which part of a generated report this belongs in — the main Methods or the supplementary material. Placement only: every experiment runs and every figure renders regardless, so demoting one never changes what is computed. It answers a different question from a replication's target tier (how central a claim is) and from the source paper's own Fig/EDF numbering (where *they* printed it), because our document may carry a headline result's parameter dump in the SI, or relegate a figure the paper printed up front. Defaults to ``main``, so a recipe that says nothing keeps everything in the Methods._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/part](https://w3id.org/tvbo/slot/part)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ReportPart](../enums/ReportPart.qmd) |
+| Domain Of | [Figure](../classes/Figure.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `ReportPart(main)` |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/common
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:part |
+| native | tvbo:part |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: part
+description: 'Which part of a generated report this belongs in — the main Methods
+  or the supplementary material. Placement only: every experiment runs and every figure
+  renders regardless, so demoting one never changes what is computed. It answers a
+  different question from a replication''s target tier (how central a claim is) and
+  from the source paper''s own Fig/EDF numbering (where *they* printed it), because
+  our document may carry a headline result''s parameter dump in the SI, or relegate
+  a figure the paper printed up front. Defaults to ``main``, so a recipe that says
+  nothing keeps everything in the Methods.'
+from_schema: https://w3id.org/tvbo/common
+ifabsent: ReportPart(main)
+domain_of:
+- Figure
+- SimulationExperiment
+range: ReportPart
+
+```
+</details></div>

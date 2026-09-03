@@ -1,0 +1,101 @@
+# Slot: likelihood 
+
+
+_Observation model p(data | sim(theta))._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/likelihood](https://w3id.org/tvbo/slot/likelihood)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Inference](../classes/Inference.qmd) | Bayesian inference of model parameters from an observation, via MCMC |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Likelihood](../classes/Likelihood.qmd) |
+| Domain Of | [Inference](../classes/Inference.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Inference](../classes/Inference.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:likelihood |
+| native | tvbo:likelihood |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: likelihood
+description: Observation model p(data | sim(theta)).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Inference
+domain_of:
+- Inference
+range: Likelihood
+required: true
+inlined: true
+
+```
+</details></div>

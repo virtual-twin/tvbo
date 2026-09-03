@@ -1,0 +1,522 @@
+# Class: ParcellationEntity 
+
+
+_A schema for representing a parcellation entity, which is an anatomical location or study target._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:atlas/Region](http://uri.interlex.org/tgbugs/uris/readable/atlas/Region)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ParcellationEntity
+    click ParcellationEntity href "./ParcellationEntity.html"
+      ParcellationEntity : abbreviation
+        
+          
+    
+        
+        
+        ParcellationEntity --> "0..1" String : abbreviation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParcellationEntity : alternateName
+        
+          
+    
+        
+        
+        ParcellationEntity --> "*" String : alternateName
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParcellationEntity : center
+        
+          
+    
+        
+        
+        ParcellationEntity --> "0..1" Coordinate : center
+        click Coordinate href "./Coordinate.html"
+    
+
+        
+      ParcellationEntity : color
+        
+          
+    
+        
+        
+        ParcellationEntity --> "0..1" String : color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParcellationEntity : hasParent
+        
+          
+    
+        
+        
+        ParcellationEntity --> "*" ParcellationEntity : hasParent
+        click ParcellationEntity href "./ParcellationEntity.html"
+    
+
+        
+      ParcellationEntity : hemisphere
+        
+          
+    
+        
+        
+        ParcellationEntity --> "0..1" Hemisphere : hemisphere
+        click Hemisphere href "../../enums/Hemisphere.html"
+    
+
+        
+      ParcellationEntity : lookupLabel
+        
+          
+    
+        
+        
+        ParcellationEntity --> "0..1" Integer : lookupLabel
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      ParcellationEntity : name
+        
+          
+    
+        
+        
+        ParcellationEntity --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParcellationEntity : ontologyIdentifier
+        
+          
+    
+        
+        
+        ParcellationEntity --> "*" String : ontologyIdentifier
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParcellationEntity : originalLookupLabel
+        
+          
+    
+        
+        
+        ParcellationEntity --> "0..1" Integer : originalLookupLabel
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      ParcellationEntity : relatedUBERONTerm
+        
+          
+    
+        
+        
+        ParcellationEntity --> "0..1" String : relatedUBERONTerm
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ParcellationEntity : versionIdentifier
+        
+          
+    
+        
+        
+        ParcellationEntity --> "0..1" String : versionIdentifier
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [atom:atlas/Region](http://uri.interlex.org/tgbugs/uris/readable/atlas/Region) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [abbreviation](../slots/abbreviation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Slot for the abbreviation of a resource | direct |
+| [alternateName](../slots/alternateName.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Enter any alternate names, including abbreviations, for this entity | direct |
+| [lookupLabel](../slots/lookupLabel.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Enter the label used for looking up this entity in the parcellation terminolo... | direct |
+| [hasParent](../slots/hasParent.qmd) | * <br/> [ParcellationEntity](../classes/ParcellationEntity.qmd) | Add all anatomical parent structures for this entity as defined within the co... | direct |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [ontologyIdentifier](../slots/ontologyIdentifier.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Enter the internationalized resource identifier (IRI) to the related ontologi... | direct |
+| [versionIdentifier](../slots/versionIdentifier.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Enter the version identifier of this brain atlas or coordinate space version | direct |
+| [relatedUBERONTerm](../slots/relatedUBERONTerm.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add the related anatomical entity as defined by the UBERON ontology | direct |
+| [originalLookupLabel](../slots/originalLookupLabel.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Add the original label of this entity as defined in the parcellation terminol... | direct |
+| [hemisphere](../slots/hemisphere.qmd) | 0..1 <br/> [Hemisphere](../enums/Hemisphere.qmd) | Add the hemisphere of this entity | direct |
+| [center](../slots/center.qmd) | 0..1 <br/> [Coordinate](../classes/Coordinate.qmd) | Add the center coordinate of this entity | direct |
+| [color](../slots/color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add the color code used for visual representation of this entity | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | [hasParent](../slots/hasParent.qmd) | range | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+| [ParcellationTerminology](../classes/ParcellationTerminology.qmd) | [entities](../slots/entities.qmd) | range | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+| [Electrode](../classes/Electrode.qmd) | [target_structure](../slots/target_structure.qmd) | range | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+
+
+
+
+
+
+## Categories
+
+
+* atom:anatomicalLocation
+* atom:studyTarget
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:atlas/Region |
+| native | atom:ParcellationEntity |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ParcellationEntity
+description: A schema for representing a parcellation entity, which is an anatomical
+  location or study target.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+categories:
+- atom:anatomicalLocation
+- atom:studyTarget
+slots:
+- abbreviation
+- alternateName
+- lookupLabel
+- hasParent
+- name
+- ontologyIdentifier
+- versionIdentifier
+attributes:
+  relatedUBERONTerm:
+    name: relatedUBERONTerm
+    description: Add the related anatomical entity as defined by the UBERON ontology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - ParcellationEntity
+    range: string
+  originalLookupLabel:
+    name: originalLookupLabel
+    description: Add the original label of this entity as defined in the parcellation
+      terminology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - ParcellationEntity
+    range: integer
+  hemisphere:
+    name: hemisphere
+    description: Add the hemisphere of this entity.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - ParcellationEntity
+    - Electrode
+    range: Hemisphere
+  center:
+    name: center
+    description: Add the center coordinate of this entity.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - ParcellationEntity
+    - Colorbar
+    range: Coordinate
+  color:
+    name: color
+    description: Add the color code used for visual representation of this entity.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+class_uri: atom:atlas/Region
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ParcellationEntity
+description: A schema for representing a parcellation entity, which is an anatomical
+  location or study target.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+categories:
+- atom:anatomicalLocation
+- atom:studyTarget
+attributes:
+  relatedUBERONTerm:
+    name: relatedUBERONTerm
+    description: Add the related anatomical entity as defined by the UBERON ontology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: ParcellationEntity
+    domain_of:
+    - ParcellationEntity
+    range: string
+  originalLookupLabel:
+    name: originalLookupLabel
+    description: Add the original label of this entity as defined in the parcellation
+      terminology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: ParcellationEntity
+    domain_of:
+    - ParcellationEntity
+    range: integer
+  hemisphere:
+    name: hemisphere
+    description: Add the hemisphere of this entity.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: ParcellationEntity
+    domain_of:
+    - ParcellationEntity
+    - Electrode
+    range: Hemisphere
+  center:
+    name: center
+    description: Add the center coordinate of this entity.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: ParcellationEntity
+    domain_of:
+    - ParcellationEntity
+    - Colorbar
+    range: Coordinate
+  color:
+    name: color
+    description: Add the color code used for visual representation of this entity.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: ParcellationEntity
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  abbreviation:
+    name: abbreviation
+    description: Slot for the abbreviation of a resource.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: skos:notation
+    owner: ParcellationEntity
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    range: string
+  alternateName:
+    name: alternateName
+    description: Enter any alternate names, including abbreviations, for this entity.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: atom:atlas/hasName
+    owner: ParcellationEntity
+    domain_of:
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - Node
+    range: string
+    multivalued: true
+  lookupLabel:
+    name: lookupLabel
+    description: Enter the label used for looking up this entity in the parcellation
+      terminology.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: atom:atlas/lookupLabel
+    owner: ParcellationEntity
+    domain_of:
+    - ParcellationEntity
+    range: integer
+  hasParent:
+    name: hasParent
+    description: Add all anatomical parent structures for this entity as defined within
+      the corresponding brain atlas.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: atom:atlas/hasParent
+    owner: ParcellationEntity
+    domain_of:
+    - ParcellationEntity
+    range: ParcellationEntity
+    multivalued: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: ParcellationEntity
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  ontologyIdentifier:
+    name: ontologyIdentifier
+    description: Enter the internationalized resource identifier (IRI) to the related
+      ontological terms.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: atom:atlas/hasIlxId
+    owner: ParcellationEntity
+    domain_of:
+    - ParcellationEntity
+    - ParcellationTerminology
+    range: string
+    multivalued: true
+  versionIdentifier:
+    name: versionIdentifier
+    description: Enter the version identifier of this brain atlas or coordinate space
+      version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: dcterms:hasVersion
+    owner: ParcellationEntity
+    domain_of:
+    - BrainAtlas
+    - ParcellationEntity
+    - ParcellationTerminology
+    range: string
+class_uri: atom:atlas/Region
+
+```
+</details></div>

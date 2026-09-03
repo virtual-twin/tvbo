@@ -1,0 +1,100 @@
+# Slot: contacts 
+
+
+_List of physical contacts along the electrode_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/contacts](https://w3id.org/tvbo/dbs/slot/contacts)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Electrode](../classes/Electrode.qmd) | Implanted DBS electrode and contact geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Contact](../classes/Contact.qmd) |
+| Domain Of | [Electrode](../classes/Electrode.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Electrode](../classes/Electrode.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:contacts |
+| native | tvbo_dbs:contacts |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: contacts
+description: List of physical contacts along the electrode
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: Electrode
+domain_of:
+- Electrode
+range: Contact
+multivalued: true
+
+```
+</details></div>

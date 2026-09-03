@@ -1,0 +1,77 @@
+# Slot: coupling 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/coupling](https://w3id.org/tvbo/slot/coupling)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Network](../classes/Network.qmd), [Edge](../classes/Edge.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:coupling |
+| native | tvbo:coupling |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: coupling
+domain_of:
+- Network
+- Edge
+range: string
+
+```
+</details></div>

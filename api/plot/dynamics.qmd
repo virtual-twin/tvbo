@@ -1,0 +1,169 @@
+# dynamics { #tvbo.plot.dynamics }
+
+`plot.dynamics`
+
+General-purpose plotting for ``Dynamics`` objects.
+
+A single entry point ``plot_dynamics`` (also exposed as ``Dynamics.plot``) that selects between several ``kind`` of representations: time series, 1D/2D/3D phase portraits, and 2D vector fields. Dimensions can be state-variable names, derived-variable names, or arbitrary sympy-parseable expressions over them. Labels are rendered as LaTeX via ``sympy.latex``. Styling and colormaps come from ``bsplot``.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [animate_dynamics](#tvbo.plot.dynamics.animate_dynamics) | Animate a :class:`Dynamics` by sweeping one parameter through ``values``. |
+| [plot_dynamics](#tvbo.plot.dynamics.plot_dynamics) | Plot a ``Dynamics`` in several ways. |
+| [plot_dynamics_layout](#tvbo.plot.dynamics.plot_dynamics_layout) | Backwards-compatible shim — delegates to [`tvbo.plot.dynamics_layout.plot_dynamics_layout`](./dynamics_layout.qmd#tvbo.plot.dynamics_layout.plot_dynamics_layout). |
+| [plot_experiment_layout](#tvbo.plot.dynamics.plot_experiment_layout) | Backwards-compatible shim — delegates to [`tvbo.plot.experiment_layout.plot_experiment_layout`](./experiment_layout.qmd#tvbo.plot.experiment_layout.plot_experiment_layout). |
+
+### animate_dynamics { #tvbo.plot.dynamics.animate_dynamics }
+
+```python
+plot.dynamics.animate_dynamics(
+    dynamics,
+    parameter,
+    values,
+    *dims,
+    kind='vectorfield',
+    interval=80,
+    figsize=(5, 4.5),
+    title_fmt='{name} = {value:.3f}',
+    **kwargs,
+)
+```
+
+Animate a :class:`Dynamics` by sweeping one parameter through ``values``.
+
+For each frame the parameter is set, the chosen ``kind`` of plot is drawn on the same axes (cleared between frames), and a title shows the current value. Returns a :class:`matplotlib.animation.FuncAnimation` that you can display with ``anim.to_jshtml()`` (Quarto / notebooks) or save with ``anim.save("foo.mp4")``.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+dynamics : Dynamics parameter : str
+    Name of the parameter to sweep (must be in ``dynamics.parameters``).
+values : sequence of float
+    Parameter values, one per frame.
+*dims, kind, **kwargs
+    Forwarded to :func:`plot_dynamics`.
+interval : int
+    Delay between frames in ms.
+figsize : (float, float) title_fmt : str
+    Format string with ``{name}`` and ``{value}`` placeholders.
+
+### plot_dynamics { #tvbo.plot.dynamics.plot_dynamics }
+
+```python
+plot.dynamics.plot_dynamics(
+    dynamics,
+    *dims,
+    kind='auto',
+    duration=2000,
+    dt=0.1,
+    n_trials=1,
+    u_0=None,
+    color_by=None,
+    cmap='viridis',
+    transient=0.0,
+    ax=None,
+    show_ic=True,
+    lw=0.8,
+    alpha=0.8,
+    grid_n=20,
+    stream=True,
+    stream_density=1.2,
+    stream_arrowsize=1.0,
+    quiver_scale=None,
+    quiver_width=None,
+    n_trajectories=0,
+    show_nullclines=True,
+    show_fixed_points=True,
+    trajectory_color='red',
+)
+```
+
+Plot a ``Dynamics`` in several ways.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+dynamics : Dynamics
+*dims : str
+    1-3 dimensions: state-variable name, derived-variable name, or any
+    sympy-parseable expression over them. Defaults: first SV (timeseries),
+    first 2 SVs (phase / vectorfield / phaseplane).
+kind : {"auto", "timeseries", "phase", "vectorfield", "phaseplane"}
+    - ``timeseries``: stacked time series, one panel per dim.
+    - ``phase``: 1D/2D/3D phase portrait.
+    - ``vectorfield``: 2D vector field (stream- or quiver-plot).
+    - ``phaseplane``: vector field + nullclines + (optional) sample
+      trajectories + auto-detected fixed points.
+    - ``auto``: timeseries for 1 dim, phase for 2-3 dims.
+duration, dt : float
+    Integration parameters in ms.
+n_trials : int
+    Number of trajectories. ``> 1`` resamples ICs from each SV's distribution.
+u_0 : array-like, optional
+    Explicit IC(s); shape ``(n_sv,)`` or ``(n_trials, n_sv)``.
+color_by : str, optional
+    Variable / expression to color trajectories by (phase). Defaults to
+    trial index for multi-trial plots, time for single-trial 2D/3D.
+cmap : str
+    Matplotlib / bsplot colormap name.
+transient : float
+    Discard this many ms from the start of each trajectory.
+ax : matplotlib.axes.Axes, optional show_ic : bool lw, alpha : float grid_n : int
+    Grid resolution for ``kind="vectorfield"`` / ``"phaseplane"``.
+stream : bool
+    Stream- vs quiver-plot for vectorfield / phaseplane.
+stream_density, stream_arrowsize : float
+    Matplotlib streamplot controls used when ``stream=True``.
+quiver_scale, quiver_width : float, optional
+    Matplotlib quiver sizing controls used when ``stream=False``.
+n_trajectories : int
+    Number of sample trajectories overlaid on a phase plane (random ICs).
+show_nullclines, show_fixed_points : bool
+    Toggles for ``kind="phaseplane"``.
+trajectory_color : str
+    Color of overlaid sample trajectories on a ``kind="phaseplane"`` plot.
+    Defaults to ``"red"`` for clear contrast against the streamline /
+    nullcline overlay.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.figure.Figure
+
+### plot_dynamics_layout { #tvbo.plot.dynamics.plot_dynamics_layout }
+
+```python
+plot.dynamics.plot_dynamics_layout(
+    dynamics,
+    layout=None,
+    panels=None,
+    figsize=None,
+    subplot_kwargs=None,
+    fig=None,
+    axes=None,
+)
+```
+
+Backwards-compatible shim — delegates to [`tvbo.plot.dynamics_layout.plot_dynamics_layout`](./dynamics_layout.qmd#tvbo.plot.dynamics_layout.plot_dynamics_layout).
+
+### plot_experiment_layout { #tvbo.plot.dynamics.plot_experiment_layout }
+
+```python
+plot.dynamics.plot_experiment_layout(
+    experiment,
+    layout=None,
+    panels=None,
+    figsize=None,
+    subplot_kwargs=None,
+    run_kwargs=None,
+    fig=None,
+    axes=None,
+)
+```
+
+Backwards-compatible shim — delegates to [`tvbo.plot.experiment_layout.plot_experiment_layout`](./experiment_layout.qmd#tvbo.plot.experiment_layout.plot_experiment_layout).

@@ -1,0 +1,303 @@
+# Class: Animation 
+
+
+_A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the frames advance along the axis the spec means rather than along whatever happens to be axis 0; and because the frame is the same mosaic the still would draw, an animated figure and its still cannot disagree about what they show._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Animation](https://w3id.org/tvbo/class/Animation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Animation
+    click Animation href "./Animation.html"
+      Animation : format
+        
+          
+    
+        
+        
+        Animation --> "0..1" String : format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Animation : fps
+        
+          
+    
+        
+        
+        Animation --> "0..1" Integer : fps
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Animation : frames
+        
+          
+    
+        
+        
+        Animation --> "0..1" Integer : frames
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Animation : over
+        
+          
+    
+        
+        
+        Animation --> "1" String : over
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Animation : still
+        
+          
+    
+        
+        
+        Animation --> "0..1" Integer : still
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [over](../slots/over.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The dimension the frames advance along, by NAME (e | direct |
+| [frames](../slots/frames.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | How many frames to draw | direct |
+| [fps](../slots/fps.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Playback rate of the saved movie in frames per second (default 20) | direct |
+| [format](../slots/format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Movie container: `gif` (default, needs nothing installed) or `mp4` (much smal... | direct |
+| [still](../slots/still.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Which frame is also saved as a still image beside the movie, for the contexts... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | [animation](../slots/animation.qmd) | range | [Animation](../classes/Animation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Animation |
+| native | tvbo:Animation |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Animation
+description: A figure rendered as a movie over one dimension of its data. The dimension
+  is named, never positional, so the frames advance along the axis the spec means
+  rather than along whatever happens to be axis 0; and because the frame is the same
+  mosaic the still would draw, an animated figure and its still cannot disagree about
+  what they show.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  over:
+    name: over
+    description: The dimension the frames advance along, by NAME (e.g. `time`). Every
+      layer carrying it is sliced at the current frame unless its own `frame:` says
+      otherwise.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Animation
+    - Aggregation
+    - Partition
+    range: string
+    required: true
+  frames:
+    name: frames
+    description: How many frames to draw. Unset draws one per position along `over`,
+      which for a simulation is one frame per integration sample and is almost never
+      what a figure wants; a smaller number subsamples the axis evenly, so a 600 000-step
+      run becomes a movie of the length declared here.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Animation
+    range: integer
+  fps:
+    name: fps
+    description: 'Playback rate of the saved movie in frames per second (default 20).
+      Independent of `frames`: together they set how long the movie runs, and separately
+      from how much of the data it shows.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Animation
+    range: integer
+  format:
+    name: format
+    description: 'Movie container: `gif` (default, needs nothing installed) or `mp4`
+      (much smaller, needs ffmpeg on the machine that renders). The saved file takes
+      this extension in place of the still''s, so a figure cannot be half-written
+      as both.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  still:
+    name: still
+    description: Which frame is also saved as a still image beside the movie, for
+      the contexts a movie cannot reach — a printed page, a PDF report, a thumbnail.
+      Unset saves no still.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Animation
+    range: integer
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Animation
+description: A figure rendered as a movie over one dimension of its data. The dimension
+  is named, never positional, so the frames advance along the axis the spec means
+  rather than along whatever happens to be axis 0; and because the frame is the same
+  mosaic the still would draw, an animated figure and its still cannot disagree about
+  what they show.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  over:
+    name: over
+    description: The dimension the frames advance along, by NAME (e.g. `time`). Every
+      layer carrying it is sliced at the current frame unless its own `frame:` says
+      otherwise.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Animation
+    domain_of:
+    - Animation
+    - Aggregation
+    - Partition
+    range: string
+    required: true
+  frames:
+    name: frames
+    description: How many frames to draw. Unset draws one per position along `over`,
+      which for a simulation is one frame per integration sample and is almost never
+      what a figure wants; a smaller number subsamples the axis evenly, so a 600 000-step
+      run becomes a movie of the length declared here.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Animation
+    domain_of:
+    - Animation
+    range: integer
+  fps:
+    name: fps
+    description: 'Playback rate of the saved movie in frames per second (default 20).
+      Independent of `frames`: together they set how long the movie runs, and separately
+      from how much of the data it shows.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Animation
+    domain_of:
+    - Animation
+    range: integer
+  format:
+    name: format
+    description: 'Movie container: `gif` (default, needs nothing installed) or `mp4`
+      (much smaller, needs ffmpeg on the machine that renders). The saved file takes
+      this extension in place of the still''s, so a figure cannot be half-written
+      as both.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Animation
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  still:
+    name: still
+    description: Which frame is also saved as a still image beside the movie, for
+      the contexts a movie cannot reach — a printed page, a PDF report, a thumbnail.
+      Unset saves no still.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Animation
+    domain_of:
+    - Animation
+    range: integer
+
+```
+</details></div>

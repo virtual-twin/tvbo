@@ -1,0 +1,102 @@
+# Slot: allow_self_connections 
+
+
+_For a self-projection (source and target are the same population) expanded under a connectivity rule, whether to include the diagonal i->i self connections. Ignored when the source and target populations differ._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/allow_self_connections](https://w3id.org/tvbo/slot/allow_self_connections)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Edge](../classes/Edge.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `boolean(true)` |
+| Owner | [Edge](../classes/Edge.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:allow_self_connections |
+| native | tvbo:allow_self_connections |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: allow_self_connections
+description: For a self-projection (source and target are the same population) expanded
+  under a connectivity rule, whether to include the diagonal i->i self connections.
+  Ignored when the source and target populations differ.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: boolean(true)
+owner: Edge
+domain_of:
+- Edge
+range: boolean
+
+```
+</details></div>

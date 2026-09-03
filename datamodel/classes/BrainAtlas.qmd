@@ -1,0 +1,348 @@
+# Class: BrainAtlas 
+
+
+_A schema for representing a version of a brain atlas._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:atlas/Atlas](http://uri.interlex.org/tgbugs/uris/readable/atlas/Atlas)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class BrainAtlas
+    click BrainAtlas href "./BrainAtlas.html"
+      BrainAtlas : abbreviation
+        
+          
+    
+        
+        
+        BrainAtlas --> "0..1" String : abbreviation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BrainAtlas : author
+        
+          
+    
+        
+        
+        BrainAtlas --> "*" String : author
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BrainAtlas : coordinateSpace
+        
+          
+    
+        
+        
+        BrainAtlas --> "0..1" CommonCoordinateSpace : coordinateSpace
+        click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+    
+
+        
+      BrainAtlas : isVersionOf
+        
+          
+    
+        
+        
+        BrainAtlas --> "0..1" String : isVersionOf
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BrainAtlas : name
+        
+          
+    
+        
+        
+        BrainAtlas --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BrainAtlas : terminology
+        
+          
+    
+        
+        
+        BrainAtlas --> "0..1" ParcellationTerminology : terminology
+        click ParcellationTerminology href "./ParcellationTerminology.html"
+    
+
+        
+      BrainAtlas : versionIdentifier
+        
+          
+    
+        
+        
+        BrainAtlas --> "0..1" String : versionIdentifier
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [atom:atlas/Atlas](http://uri.interlex.org/tgbugs/uris/readable/atlas/Atlas) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [coordinateSpace](../slots/coordinateSpace.qmd) | 0..1 <br/> [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | Common coordinate space (e | direct |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [abbreviation](../slots/abbreviation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Slot for the abbreviation of a resource | direct |
+| [author](../slots/author.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [isVersionOf](../slots/isVersionOf.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Linked type for the version of a brain atlas or coordinate space | direct |
+| [versionIdentifier](../slots/versionIdentifier.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Enter the version identifier of this brain atlas or coordinate space version | direct |
+| [terminology](../slots/terminology.qmd) | 0..1 <br/> [ParcellationTerminology](../classes/ParcellationTerminology.qmd) | Add the parcellation terminology version used for this brain atlas version | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Parcellation](../classes/Parcellation.qmd) | [atlas](../slots/atlas.qmd) | range | [BrainAtlas](../classes/BrainAtlas.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:atlas/Atlas |
+| native | atom:BrainAtlas |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: BrainAtlas
+description: A schema for representing a version of a brain atlas.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slots:
+- coordinateSpace
+- name
+- abbreviation
+- author
+- isVersionOf
+- versionIdentifier
+attributes:
+  terminology:
+    name: terminology
+    description: Add the parcellation terminology version used for this brain atlas
+      version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - BrainAtlas
+    range: ParcellationTerminology
+class_uri: atom:atlas/Atlas
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: BrainAtlas
+description: A schema for representing a version of a brain atlas.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+attributes:
+  terminology:
+    name: terminology
+    description: Add the parcellation terminology version used for this brain atlas
+      version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: BrainAtlas
+    domain_of:
+    - BrainAtlas
+    range: ParcellationTerminology
+  coordinateSpace:
+    name: coordinateSpace
+    description: Common coordinate space (e.g. FSLMNI152, MNI152NLin2009cAsym). Reference
+      by name; the CommonCoordinateSpace must be defined in tvbo/database/coordinate_spaces/
+      (or future equivalent location).
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    owner: BrainAtlas
+    domain_of:
+    - Coordinate
+    - BrainAtlas
+    range: CommonCoordinateSpace
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: BrainAtlas
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  abbreviation:
+    name: abbreviation
+    description: Slot for the abbreviation of a resource.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: skos:notation
+    owner: BrainAtlas
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    range: string
+  author:
+    name: author
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: dcterms:creator
+    owner: BrainAtlas
+    domain_of:
+    - BrainAtlas
+    - SimulationTool
+    range: string
+    multivalued: true
+  isVersionOf:
+    name: isVersionOf
+    description: Linked type for the version of a brain atlas or coordinate space.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: dcterms:isVersionOf
+    owner: BrainAtlas
+    domain_of:
+    - BrainAtlas
+    union_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationTerminology
+    - ParcellationEntity
+    range: string
+  versionIdentifier:
+    name: versionIdentifier
+    description: Enter the version identifier of this brain atlas or coordinate space
+      version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: dcterms:hasVersion
+    owner: BrainAtlas
+    domain_of:
+    - BrainAtlas
+    - ParcellationEntity
+    - ParcellationTerminology
+    range: string
+class_uri: atom:atlas/Atlas
+
+```
+</details></div>

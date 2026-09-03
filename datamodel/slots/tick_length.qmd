@@ -1,0 +1,79 @@
+# Slot: tick_length 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/tick_length](https://w3id.org/tvbo/slot/tick_length)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+| [Inset](../classes/Inset.qmd) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, ann... |  no  |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Panel](../classes/Panel.qmd), [Inset](../classes/Inset.qmd), [Theme](../classes/Theme.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:tick_length |
+| native | tvbo:tick_length |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: tick_length
+domain_of:
+- Panel
+- Inset
+- Theme
+range: string
+
+```
+</details></div>

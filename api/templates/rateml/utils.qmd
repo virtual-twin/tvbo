@@ -1,0 +1,136 @@
+# utils { #tvbo.templates.rateml.utils }
+
+`templates.rateml.utils`
+
+Code printers for generating RateML-style CUDA and Python from TVBO.
+
+The LinkML datamodel already carries every piece of metadata a RateML template needs, so all this module adds is the printers that turn a sympy right-hand side into target-language source.
+
+    <%
+    from tvbo.templates.rateml.utils import cuda_code, python_code
+    %>
+    ${cuda_code(sv.equation.rhs)}
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [CUDACodePrinter](#tvbo.templates.rateml.utils.CUDACodePrinter) | CUDA code printer extending SymPy's C99 printer. |
+| [NumbaPrinter](#tvbo.templates.rateml.utils.NumbaPrinter) | Python printer compatible with Numba's nopython mode. |
+
+### CUDACodePrinter { #tvbo.templates.rateml.utils.CUDACodePrinter }
+
+```python
+templates.rateml.utils.CUDACodePrinter(settings=None)
+```
+
+CUDA code printer extending SymPy's C99 printer.
+
+Handles:
+- powf instead of pow for floats
+- CUDA math functions (expf, sinf, etc.)
+- PI/INF macros
+
+### NumbaPrinter { #tvbo.templates.rateml.utils.NumbaPrinter }
+
+```python
+templates.rateml.utils.NumbaPrinter()
+```
+
+Python printer compatible with Numba's nopython mode.
+
+Uses numpy functions but avoids constructs Numba doesn't support.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [cuda_code](#tvbo.templates.rateml.utils.cuda_code) | Convert expression to CUDA code string. |
+| [get_boundary_str](#tvbo.templates.rateml.utils.get_boundary_str) | Get clamp bounds as 'lo, hi' string for state variable clipping. |
+| [get_domain_str](#tvbo.templates.rateml.utils.get_domain_str) | Get domain as 'lo, hi' string for state variable initialization. |
+| [get_initial_value](#tvbo.templates.rateml.utils.get_initial_value) | Get initial value for state variable, with sensible default. |
+| [get_range_str](#tvbo.templates.rateml.utils.get_range_str) | Get parameter range as 'lo=x, hi=y, step=z' string for NArray domain. |
+| [has_boundaries](#tvbo.templates.rateml.utils.has_boundaries) | Check if any state variable opts into clamping (domain enforce='clamp'). |
+| [python_code](#tvbo.templates.rateml.utils.python_code) | Convert expression to Python/Numba code string. |
+
+### cuda_code { #tvbo.templates.rateml.utils.cuda_code }
+
+```python
+templates.rateml.utils.cuda_code(expr, local_dict=None)
+```
+
+Convert expression to CUDA code string.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type                     | Description                                  | Default    |
+|------------|--------------------------|----------------------------------------------|------------|
+| expr       | Any                      | SymPy expression, Equation object, or string | _required_ |
+| local_dict | dict\[str, Any\] \| None | Optional dict of symbols for parsing strings | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description      |
+|--------|--------|------------------|
+|        | str    | CUDA code string |
+
+### get_boundary_str { #tvbo.templates.rateml.utils.get_boundary_str }
+
+```python
+templates.rateml.utils.get_boundary_str(sv)
+```
+
+Get clamp bounds as 'lo, hi' string for state variable clipping.
+
+### get_domain_str { #tvbo.templates.rateml.utils.get_domain_str }
+
+```python
+templates.rateml.utils.get_domain_str(obj)
+```
+
+Get domain as 'lo, hi' string for state variable initialization.
+
+### get_initial_value { #tvbo.templates.rateml.utils.get_initial_value }
+
+```python
+templates.rateml.utils.get_initial_value(sv)
+```
+
+Get initial value for state variable, with sensible default.
+
+### get_range_str { #tvbo.templates.rateml.utils.get_range_str }
+
+```python
+templates.rateml.utils.get_range_str(param)
+```
+
+Get parameter range as 'lo=x, hi=y, step=z' string for NArray domain.
+
+### has_boundaries { #tvbo.templates.rateml.utils.has_boundaries }
+
+```python
+templates.rateml.utils.has_boundaries(model)
+```
+
+Check if any state variable opts into clamping (domain enforce='clamp').
+
+### python_code { #tvbo.templates.rateml.utils.python_code }
+
+```python
+templates.rateml.utils.python_code(expr, local_dict=None)
+```
+
+Convert expression to Python/Numba code string.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type                     | Description                                  | Default    |
+|------------|--------------------------|----------------------------------------------|------------|
+| expr       | Any                      | SymPy expression, Equation object, or string | _required_ |
+| local_dict | dict\[str, Any\] \| None | Optional dict of symbols for parsing strings | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description        |
+|--------|--------|--------------------|
+|        | str    | Python code string |

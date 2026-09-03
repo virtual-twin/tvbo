@@ -1,0 +1,94 @@
+# Slot: state_wise_sigma 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/state_wise_sigma](https://w3id.org/tvbo/slot/state_wise_sigma)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Integrator](../classes/Integrator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:state_wise_sigma |
+| native | tvbo:state_wise_sigma |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: state_wise_sigma
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Integrator
+domain_of:
+- Integrator
+range: float
+multivalued: true
+
+```
+</details></div>

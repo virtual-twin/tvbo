@@ -1,0 +1,105 @@
+# Slot: bundle 
+
+
+_When true, emitting a self-contained kit copies this dataset's per-subject files into the kit (``spec/<exp>/dataset/``) and rewrites ``bids_root`` to that bundled copy, so the kit needs no external mount or ``$TVBO_BIDS_ROOT`` at run time. The exact files are resolved from the dataset-sourced observation's BIDS query (atlas, desc, …) — the same query that scopes the fan-out — so no CLI selection is needed. Declares the packaging intent in metadata instead of a ``--bundle-dataset`` flag; a subset is scoped via ``subjects``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/bundle](https://w3id.org/tvbo/study/slot/bundle)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dataset](../classes/Dataset.qmd) | A collection of subjects for a multi-subject study |  no  |
+| [DBSDataset](../classes/DBSDataset.qmd) | Collection of data related to a specific DBS study |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Dataset](../classes/Dataset.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Dataset](../classes/Dataset.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:bundle |
+| native | tvbo_study:bundle |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: bundle
+description: When true, emitting a self-contained kit copies this dataset's per-subject
+  files into the kit (``spec/<exp>/dataset/``) and rewrites ``bids_root`` to that
+  bundled copy, so the kit needs no external mount or ``$TVBO_BIDS_ROOT`` at run time.
+  The exact files are resolved from the dataset-sourced observation's BIDS query (atlas,
+  desc, …) — the same query that scopes the fan-out — so no CLI selection is needed.
+  Declares the packaging intent in metadata instead of a ``--bundle-dataset`` flag;
+  a subset is scoped via ``subjects``.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+owner: Dataset
+domain_of:
+- Dataset
+range: boolean
+
+```
+</details></div>

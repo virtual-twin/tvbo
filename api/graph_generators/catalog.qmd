@@ -1,0 +1,43 @@
+# catalog { #tvbo.graph_generators.catalog }
+
+`graph_generators.catalog`
+
+The curated GraphGenerator catalog: entry lookup, declared defaults, reference matrices.
+
+What is left here is the residue that no printer should ever emit. Graph construction itself lives in :mod:`tvbo.graph_generators.procedural`, which resolves a generator's typed DAG to SymPy and renders it through the printer tables in ``tvbo/codegen/code.py`` — one primitive definition per backend. This module used to carry a second, numpy-only implementation of those same primitives (sampling, reductions, linear algebra) behind a restricted ``eval``; that table is gone, because two implementations of one vocabulary can only ever agree by coincidence, and the disagreement would show up as a network that differs between a local run and a swept one.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [declared_defaults](#tvbo.graph_generators.catalog.declared_defaults) | Default values from a curated entry's ``parameters:`` interface block. |
+| [load_matrix](#tvbo.graph_generators.catalog.load_matrix) | Resolve ``source`` (IRI / path / bare DB name) into a 2-D adjacency matrix. |
+| [run_generator](#tvbo.graph_generators.catalog.run_generator) | Materialise a curated generator by name from its typed ``procedure:`` DAG. |
+
+### declared_defaults { #tvbo.graph_generators.catalog.declared_defaults }
+
+```python
+graph_generators.catalog.declared_defaults(entry)
+```
+
+Default values from a curated entry's ``parameters:`` interface block.
+
+A curated entry declares each parameter (``datatype``, ``description``, ``default``) while a concrete Network supplies its ``value``. Only the defaults cross over into evaluation — the declaration itself is an interface, not a value, and binding it as one would hand a step a ``{'datatype': ...}`` dict where it expects a number.
+
+### load_matrix { #tvbo.graph_generators.catalog.load_matrix }
+
+```python
+graph_generators.catalog.load_matrix(source)
+```
+
+Resolve ``source`` (IRI / path / bare DB name) into a 2-D adjacency matrix.
+
+### run_generator { #tvbo.graph_generators.catalog.run_generator }
+
+```python
+graph_generators.catalog.run_generator(name, params, seed=None)
+```
+
+Materialise a curated generator by name from its typed ``procedure:`` DAG.
+
+Convenience entry point for scripts and notebooks. ``Network._resolve`` goes through the same resolver, so a generator built here matches the one a recipe builds value for value.

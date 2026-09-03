@@ -1,0 +1,142 @@
+# bids { #tvbo.adapters.bids }
+
+`adapters.bids`
+
+BIDS BEP034 Export Module.
+
+This module provides utilities for exporting TVB simulation data to BIDS format following the BEP034 Computational Modeling Extension v1.0.0.
+
+Uses:
+- Pydantic models from tvbo.datamodel.tvbopydantic for metadata serialization
+- pybids for BIDS-compliant filename generation
+- nibabel for CIFTI-2 ptseries files
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [RESULT_ENTITIES](#tvbo.adapters.bids.RESULT_ENTITIES) | What each entity in :data:`RESULT_PATTERNS` identifies. |
+| [RESULT_PATTERNS](#tvbo.adapters.bids.RESULT_PATTERNS) |  |
+| [SPEC_SUFFIXES](#tvbo.adapters.bids.SPEC_SUFFIXES) | BIDS suffix to the tvbo class a spec fragment of that suffix declares. |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [BidsBaseModel](#tvbo.adapters.bids.BidsBaseModel) | Base model for the BIDS metadata documents tvbo writes. |
+| [DatasetDescription](#tvbo.adapters.bids.DatasetDescription) | BIDS dataset_description.json model. |
+
+### BidsBaseModel { #tvbo.adapters.bids.BidsBaseModel }
+
+```python
+adapters.bids.BidsBaseModel()
+```
+
+Base model for the BIDS metadata documents tvbo writes.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [to_dict](#tvbo.adapters.bids.BidsBaseModel.to_dict) | Export to dictionary, excluding None values. |
+| [to_json](#tvbo.adapters.bids.BidsBaseModel.to_json) | Export to JSON string. |
+
+##### to_dict { #tvbo.adapters.bids.BidsBaseModel.to_dict }
+
+```python
+adapters.bids.BidsBaseModel.to_dict()
+```
+
+Export to dictionary, excluding None values.
+
+##### to_json { #tvbo.adapters.bids.BidsBaseModel.to_json }
+
+```python
+adapters.bids.BidsBaseModel.to_json(**kwargs)
+```
+
+Export to JSON string.
+
+### DatasetDescription { #tvbo.adapters.bids.DatasetDescription }
+
+```python
+adapters.bids.DatasetDescription()
+```
+
+BIDS dataset_description.json model.
+
+``BIDSVersion`` comes from the layout record rather than a literal, so a dataset a run writes cannot claim a different version from the one the record scaffolds a study against.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [analysis_entities](#tvbo.adapters.bids.analysis_entities) | BIDS entities for a declared analysis's own result container. |
+| [build_result_path](#tvbo.adapters.bids.build_result_path) | Filename for an experiment result via pybids ``build_path`` + RESULT_PATTERNS. |
+| [entity_value](#tvbo.adapters.bids.entity_value) | ``value`` as a legal BIDS entity value: the alphanumeric characters, in order. |
+| [get_unique_entity_values](#tvbo.adapters.bids.get_unique_entity_values) | Get a set of all unique values for a given entity key from the BIDSLayout files. |
+| [result_entities](#tvbo.adapters.bids.result_entities) | BIDS entities for an experiment's result, with alphanumeric values. |
+
+### analysis_entities { #tvbo.adapters.bids.analysis_entities }
+
+```python
+adapters.bids.analysis_entities(name, extension='.h5')
+```
+
+BIDS entities for a declared analysis's own result container.
+
+The analysis's name becomes the ``ana-`` entity, through :func:`entity_value` like every other entity value, so its container sits beside the experiment results it was derived from and a listing groups the two by prefix.
+
+### build_result_path { #tvbo.adapters.bids.build_result_path }
+
+```python
+adapters.bids.build_result_path(
+    experiment=None,
+    *,
+    entities=None,
+    extension='.h5',
+)
+```
+
+Filename for an experiment result via pybids ``build_path`` + RESULT_PATTERNS.
+
+### entity_value { #tvbo.adapters.bids.entity_value }
+
+```python
+adapters.bids.entity_value(value)
+```
+
+``value`` as a legal BIDS entity value: the alphanumeric characters, in order.
+
+BIDS requires an entity value to be alphanumeric, because a hyphen or underscore inside one moves the key/value boundary and makes the file unqueryable. Every name tvbo puts in a filename goes through here, so a name the writer accepts is a name ``tvbo validate study`` accepts.
+
+### get_unique_entity_values { #tvbo.adapters.bids.get_unique_entity_values }
+
+```python
+adapters.bids.get_unique_entity_values(bids_layout, key)
+```
+
+Get a set of all unique values for a given entity key from the BIDSLayout files.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type       | Description                                                    | Default    |
+|-------------|------------|----------------------------------------------------------------|------------|
+| bids_layout | BIDSLayout | The BIDSLayout object to extract entities from.                | _required_ |
+| key         | str        | The entity key to extract values for (e.g., 'atlas', 'space'). | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                          |
+|--------|--------|------------------------------------------------------|
+| set    | set    | A set of unique values for the specified entity key. |
+
+### result_entities { #tvbo.adapters.bids.result_entities }
+
+```python
+adapters.bids.result_entities(experiment, extension='.h5')
+```
+
+BIDS entities for an experiment's result, with alphanumeric values.
+
+Every value passes through :func:`entity_value`. The model goes in its own ``model-`` entity rather than being packed into ``desc-``: ``desc-`` is BIDS's free-text discriminator, and spending it on the model made the one fact a reader most wants to filter on unqueryable. Returns a dict ready for :func:`bids.layout.writing.build_path` with :data:`RESULT_PATTERNS`.

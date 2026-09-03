@@ -1,0 +1,98 @@
+# Slot: minor_ticks 
+
+
+_Draw minor tick marks between the major ones._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/minor_ticks](https://w3id.org/tvbo/slot/minor_ticks)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Theme](../classes/Theme.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Theme](../classes/Theme.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:minor_ticks |
+| native | tvbo:minor_ticks |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: minor_ticks
+description: Draw minor tick marks between the major ones.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Theme
+domain_of:
+- Theme
+range: boolean
+
+```
+</details></div>

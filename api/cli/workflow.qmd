@@ -1,0 +1,169 @@
+# workflow { #tvbo.cli.workflow }
+
+`cli.workflow`
+
+``tvbo workflow`` — emit Slurm / Snakemake / Nextflow artefacts from a Study.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [app](#tvbo.cli.workflow.app) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [backends](#tvbo.cli.workflow.backends) | List execution backends and their ontology-derived capabilities (continuous/spiking/jit/etc.). |
+| [finalize](#tvbo.cli.workflow.finalize) | Gather sharded HPC outputs into one self-describing ``ExperimentResult``. |
+| [nextflow](#tvbo.cli.workflow.nextflow) | Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec). |
+| [plan_cmd](#tvbo.cli.workflow.plan_cmd) | Show the resolved workflow plan for *spec* without emitting any artefacts. |
+| [run_workflow](#tvbo.cli.workflow.run_workflow) | Emit a self-contained kit then execute it (or submit for Slurm). |
+| [slurm](#tvbo.cli.workflow.slurm) | Emit a self-contained sbatch kit (`run.sbatch` + scripts + frozen spec). |
+| [snakemake](#tvbo.cli.workflow.snakemake) | Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec). |
+| [submit_kit](#tvbo.cli.workflow.submit_kit) | Submit a kit already emitted by ``tvbo workflow slurm\|snakemake\|nextflow``. |
+
+### backends { #tvbo.cli.workflow.backends }
+
+```python
+cli.workflow.backends(json=typer.Option(False, '--json'))
+```
+
+List execution backends and their ontology-derived capabilities (continuous/spiking/jit/etc.).
+
+### finalize { #tvbo.cli.workflow.finalize }
+
+```python
+cli.workflow.finalize(
+    shards_dir=typer.Argument('results', help="Directory holding the array tasks' shard outputs."),
+    output=typer.Option(Path('results'), '-o', '--output', help='Where to write the reassembled result.'),
+    spec=typer.Option(None, '--spec', help='Frozen spec YAML to attach as the result sidecar (auto-detected in spec/ when omitted).'),
+    stem=typer.Option('result', '--stem', help='Basename of the result artifact (<stem>.h5 + <stem>.yaml).'),
+    compress=typer.Option(True, '--compress/--no-compress', help='gzip-deflate the reassembled HDF5 (default on).'),
+)
+```
+
+Gather sharded HPC outputs into one self-describing ``ExperimentResult``.
+
+Concatenates each array task's slice by parameter value into the full grid a local run produces, and writes it as ``<stem>.h5`` (keyed groups) plus a ``<stem>.yaml`` sidecar (the frozen, fully-overridden spec) — the same HDF5-plus-YAML layout as a network. No manual post-processing is needed;
+emitted kits submit this automatically as a dependent gather job.
+
+### nextflow { #tvbo.cli.workflow.nextflow }
+
+```python
+cli.workflow.nextflow(
+    spec=typer.Argument(...),
+    backend=typer.Option(None, '--backend', '-b', help="Execution backend; default: the experiment's declared execution.backend, else tvboptim."),
+    experiment=typer.Option(None, '--experiment'),
+    output=typer.Option(None, '-o', '--output', help='Output directory.'),
+    override=typer.Option([], '--set'),
+    stdout=typer.Option(False, '--stdout', help='Print artefact only; do not write a kit.'),
+    pack=typer.Option(False, '--pack', help='Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`.'),
+    bundle_dataset=typer.Option(False, '--bundle-dataset', help="Copy the fan-out's per-subject dataset files into the kit (spec/dataset/) and point dataset.bids_root at them, so the kit is self-contained — no separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects."),
+    bundle_select=typer.Option([], '--bundle-select', help="Override: add a BIDS entity to disambiguate when a subject directory holds several files matching the observation's query (not needed when the query already names one file). Repeatable. Implies --bundle-dataset."),
+)
+```
+
+Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec).
+
+### plan_cmd { #tvbo.cli.workflow.plan_cmd }
+
+```python
+cli.workflow.plan_cmd(
+    spec=typer.Argument(..., help='Path, CURIE, or DB name (Study or Experiment).'),
+    backend=typer.Option(None, '--backend', '-b', help="Execution backend; default: the experiment's declared execution.backend, else tvboptim."),
+    engine=typer.Option('local', '--engine', '-e'),
+    experiment=typer.Option(None, '--experiment'),
+    override=typer.Option([], '--set', help='Override a workflow spec key, e.g. ``--set slurm.account=foo`` (repeatable).'),
+    json=typer.Option(False, '--json'),
+)
+```
+
+Show the resolved workflow plan for *spec* without emitting any artefacts.
+
+Reports the chosen study/experiment, backend, engine, vectorized vs workflow-fanned axes, total cell count, chunking, and applied overrides.
+
+### run_workflow { #tvbo.cli.workflow.run_workflow }
+
+```python
+cli.workflow.run_workflow(
+    engine=typer.Argument(..., help='Execution engine: slurm | snakemake | nextflow.'),
+    spec=typer.Argument(..., help='Path, CURIE, or DB name (Study or Experiment).'),
+    backend=typer.Option(None, '--backend', '-b', help="Execution backend; default: the experiment's declared execution.backend, else tvboptim."),
+    experiment=typer.Option(None, '--experiment'),
+    output=typer.Option(None, '-o', '--output', help='Output directory.'),
+    override=typer.Option([], '--set'),
+    array=typer.Option(None, '--array', help="Slurm array index or range to submit (e.g. '0' for smoke, '0-3' for four tasks). Ignored for non-Slurm engines."),
+    array_throttle=typer.Option(None, '--array-throttle', min=1, help='Limit concurrent Slurm array tasks when using --array, e.g. 1 for one GPU at a time.'),
+    profile=typer.Option(None, '--profile', help="Snakemake only: run with this profile (name or path) instead of the kit's shipped 'profile/' — e.g. a site profile carrying the cluster's executor config like BIH CUBI's 'cubi-v1'. Per-rule resources in the Snakefile apply on top of it."),
+    cores=typer.Option(None, '--cores', help="Snakemake only: run LOCALLY on this many cores (an integer, or 'all'). Overrides only the profile's executor — the kit still runs in the container its profile declares. The SAME kit submits to the scheduler on HPC when --cores is omitted; on a machine with no `sbatch` a bare run falls back to local automatically."),
+    code_source=typer.Option('spec', '--code-source', help="Snakemake only: code source for the emitted-and-run kit — 'spec' re-renders backend code at run time (default), 'frozen' runs the pre-rendered scripts/<key> (no codegen). Baked in as the kit's default AND exported for this run; BOTH artefacts are emitted, so the kit stays submittable either way afterwards.", callback=_validate_code_source),
+)
+```
+
+Emit a self-contained kit then execute it (or submit for Slurm).
+
+Use ``--array 0`` to submit only the first array task as a quick smoke test without changing the experiment spec. Use ``--array-throttle`` to cap how many Slurm array tasks run at once, for example ``--array 0-39 --array-throttle 1`` to keep one GPU busy at a time.
+
+### slurm { #tvbo.cli.workflow.slurm }
+
+```python
+cli.workflow.slurm(
+    spec=typer.Argument(...),
+    backend=typer.Option(None, '--backend', '-b', help="Execution backend; default: the experiment's declared execution.backend, else tvboptim."),
+    experiment=typer.Option(None, '--experiment'),
+    output=typer.Option(None, '-o', '--output', help='Output directory.'),
+    override=typer.Option([], '--set'),
+    stdout=typer.Option(False, '--stdout', help='Print artefact only; do not write a kit.'),
+    pack=typer.Option(False, '--pack', help='Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`.'),
+    bundle_dataset=typer.Option(False, '--bundle-dataset', help="Copy the fan-out's per-subject dataset files into the kit (spec/dataset/) and point dataset.bids_root at them, so the kit is self-contained — no separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects."),
+    bundle_select=typer.Option([], '--bundle-select', help="Override: add a BIDS entity to disambiguate when a subject directory holds several files matching the observation's query (not needed when the query already names one file). Repeatable. Implies --bundle-dataset."),
+)
+```
+
+Emit a self-contained sbatch kit (`run.sbatch` + scripts + frozen spec).
+
+### snakemake { #tvbo.cli.workflow.snakemake }
+
+```python
+cli.workflow.snakemake(
+    spec=typer.Argument(...),
+    backend=typer.Option(None, '--backend', '-b', help="Execution backend; default: the experiment's declared execution.backend, else tvboptim."),
+    experiment=typer.Option(None, '--experiment'),
+    output=typer.Option(None, '-o', '--output', help='Output directory.'),
+    override=typer.Option([], '--set'),
+    stdout=typer.Option(False, '--stdout', help='Print artefact only; do not write a kit.'),
+    pack=typer.Option(False, '--pack', help='Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`.'),
+    benchmark=typer.Option(None, '--benchmark/--no-benchmark', help="Attach Snakemake's native `benchmark:` directive to every rule: a per-cell TSV (wall time, max_rss/max_vms/max_uss/max_pss MB, CPU time, I/O) written next to each output — locally or as a SLURM job. ON by default (a 30 s psutil sampler, near-zero overhead); pass --no-benchmark to skip. Sugar for --set benchmark=<bool>."),
+    smoke=typer.Option(False, '--smoke', help="Cap every rule's `tvbo run` to one tuning iteration (reach the post-tuning evaluation fast, e.g. to verify a fit streams within memory). --set smoke=true."),
+    max_iterations=typer.Option(None, '--max-iterations', min=1, help="Cap every rule's `tvbo run` to N tuning iterations. --set max_iterations=N."),
+    code_source=typer.Option('spec', '--code-source', help="Emit-time DEFAULT code source baked into each rule: 'spec' re-renders backend code from the frozen spec at run time (back-compat); 'frozen' runs the pre-rendered scripts/<key> as-is (no codegen — needs only the node's tvbo runtime). BOTH artefacts are always emitted, so the SAME kit runs either way; override per run with $TVBO_CODE_SOURCE (see `tvbo workflow submit --code-source`).", callback=_validate_code_source),
+    bundle_dataset=typer.Option(False, '--bundle-dataset', help="Copy the fan-out's per-subject dataset files into the kit (spec/<exp>/dataset/) and point dataset.bids_root at them, so the kit is self-contained — no separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects."),
+    bundle_select=typer.Option([], '--bundle-select', help="Override: add a BIDS entity to disambiguate when a subject directory holds several files matching the observation's query (not needed when the query already names one file). Repeatable. Implies --bundle-dataset."),
+)
+```
+
+Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec).
+
+### submit_kit { #tvbo.cli.workflow.submit_kit }
+
+```python
+cli.workflow.submit_kit(
+    kit=typer.Argument(..., help='Path to an emitted kit directory OR a .tar.gz/.tgz/.tar/.zip archive of one (holds run.sbatch / Snakefile / main.nf).'),
+    engine=typer.Option(None, '--engine', '-e', help='Engine to submit with; auto-detected from the kit when omitted.'),
+    experiment=typer.Option(None, '--experiment', help="Snakemake study kit only: run only these experiments from the full pack (e.g. '41,50' -> the exp_41 and exp_50 rules). Validated against the kit's Snakefile; omit to run the whole study (the `all` target)."),
+    array=typer.Option(None, '--array', help="Slurm array index or range to submit (e.g. '0' for a smoke task, '0-3' for four). Ignored for non-Slurm engines."),
+    array_throttle=typer.Option(None, '--array-throttle', min=1, help='Limit concurrent Slurm array tasks when using --array (e.g. 1 for one GPU at a time).'),
+    force=typer.Option(False, '--force', '-f', help='Re-extract a re-uploaded archive over an already-extracted kit, refreshing the Snakefile/spec/code/profile. Leaves results/ and .snakemake/ intact so the run resumes with the new definition (no need to rm the kit dir first).'),
+    out=typer.Option(None, '--out', '-o', help='Directory to extract the archive into (default: next to the archive). Point it at a fresh dir to run a second copy in parallel — its results/ + logs/ stay isolated from an in-progress kit. Ignored when the kit is already a directory.'),
+    dry_run=typer.Option(False, '--dry-run', '-n', help="Resolve and report the work without running or queueing anything — the engine's own dry run. Validates the kit (DAG, wildcards, inputs) before a large submission."),
+    profile=typer.Option(None, '--profile', help="Snakemake only: use this profile (a name resolved against the Snakemake config search path, or a path) instead of the kit's shipped 'profile/'. Use a site profile that carries the cluster's canonical executor config — e.g. BIH CUBI's 'cubi-v1' (`--profile cubi-v1`). The Snakefile's per-rule resources apply on top of it."),
+    cores=typer.Option(None, '--cores', help="Snakemake only: run the kit LOCALLY on this many cores (an integer, or 'all'). Overrides only the profile's executor — the kit still runs in the container its profile declares. The SAME kit submits to the scheduler on HPC when --cores is omitted; on a machine with no `sbatch`, a bare submit falls back to local."),
+    code_source=typer.Option(None, '--code-source', help="Override the kit's baked-in code source for THIS submission by exporting TVBO_CODE_SOURCE into the run environment: 'frozen' runs the pre-rendered scripts/<key> (no codegen); 'spec' re-renders from the frozen spec. Omit to use the kit's emit-time default (`tvbo workflow snakemake --code-source`). Lets ONE kit be submitted both ways for verification. Forwarded to the job by a local run and by any executor that exports its environment (Slurm `--export=ALL`).", callback=_validate_code_source),
+)
+```
+
+Submit a kit already emitted by ``tvbo workflow slurm|snakemake|nextflow``.
+
+Runs only the *execute* half of ``tvbo workflow run`` against an existing kit — no recipe, no re-emit. The kit may be a directory or a packaged ``.tar.gz`` / ``.zip`` archive of one; an archive is extracted next to itself first, so a shipped kit runs without a manual unzip. For Slurm this submits ``run.sbatch`` (the array job) and chains ``finalize.sbatch`` with an ``afterok`` dependency, so you get one reassembled result without touching ``sbatch`` yourself. The engine is inferred from the kit's artefact file unless ``--engine`` is given.
+Run it from a login node (Slurm) or wherever the engine's launcher is available.

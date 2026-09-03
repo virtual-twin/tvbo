@@ -1,0 +1,98 @@
+# Slot: platform 
+
+
+_OS / architecture (e.g., linux-64, macos-arm64)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/platform](https://w3id.org/tvbo/software/slot/platform)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | A reproducible software environment aggregating one or more SoftwareRequireme... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:platform |
+| native | tvbo_sw:platform |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: platform
+description: OS / architecture (e.g., linux-64, macos-arm64).
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+owner: SoftwareEnvironment
+domain_of:
+- SoftwareEnvironment
+range: string
+
+```
+</details></div>

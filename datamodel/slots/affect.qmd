@@ -1,0 +1,100 @@
+# Slot: affect 
+
+
+_Affect function: what happens when the event triggers. Can modify state variables and/or parameters. For stimulus type, this is the stimulus equation._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/affect](https://w3id.org/tvbo/slot/affect)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Equation](../classes/Equation.qmd) |
+| Domain Of | [Event](../classes/Event.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Event](../classes/Event.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:affect |
+| native | tvbo:affect |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: affect
+description: 'Affect function: what happens when the event triggers. Can modify state
+  variables and/or parameters. For stimulus type, this is the stimulus equation.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Event
+domain_of:
+- Event
+range: Equation
+inlined: true
+
+```
+</details></div>

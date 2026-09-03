@@ -1,0 +1,101 @@
+# Slot: element 
+
+
+_Element/node index this range applies to. Used in element_domains to explicitly link a domain to a specific element of a heterogeneous parameter (e.g., element: 0 for node 0). Required when used in element_domains to avoid ambiguous positional indexing._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/element](https://w3id.org/tvbo/slot/element)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Range](../classes/Range.qmd) | Specifies a range for array generation, parameter bounds, or grid exploration |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Range](../classes/Range.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Range](../classes/Range.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:element |
+| native | tvbo:element |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: element
+description: 'Element/node index this range applies to. Used in element_domains to
+  explicitly link a domain to a specific element of a heterogeneous parameter (e.g.,
+  element: 0 for node 0). Required when used in element_domains to avoid ambiguous
+  positional indexing.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Range
+domain_of:
+- Range
+range: integer
+
+```
+</details></div>

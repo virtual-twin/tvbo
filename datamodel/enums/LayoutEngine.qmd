@@ -1,0 +1,90 @@
+# Enum: LayoutEngine 
+
+
+
+
+_Which matplotlib layout engine positions the mosaic's axes. Unset lets the backend pick (bsplot asks for 'compressed' and falls back to 'tight'), which is right for a plain grid of plots. A figure whose panels carry their own absolute geometry — a schematic stepped out in axes fractions, or a mosaic dense enough that the constrained solver reports cells collapsed to zero and silently falls back — has to say so, because an engine that gives up still leaves the figure laid out by a fallback nobody declared._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/LayoutEngine](https://w3id.org/tvbo/enum/LayoutEngine)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| constrained | None | Solve the margins so no decoration overlaps another panel |
+| compressed | None | Constrained, then pull fixed-aspect axes together so equal-aspect panels leav... |
+| tight | None | Adjust the subplot parameters after the fact to fit the decorations |
+| none | None | No engine: every axes keeps the position its gridspec cell gives it, and anyt... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [layout_engine](../slots/layout_engine.qmd) | Which layout engine positions the panels |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: LayoutEngine
+description: Which matplotlib layout engine positions the mosaic's axes. Unset lets
+  the backend pick (bsplot asks for 'compressed' and falls back to 'tight'), which
+  is right for a plain grid of plots. A figure whose panels carry their own absolute
+  geometry — a schematic stepped out in axes fractions, or a mosaic dense enough that
+  the constrained solver reports cells collapsed to zero and silently falls back —
+  has to say so, because an engine that gives up still leaves the figure laid out
+  by a fallback nobody declared.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  constrained:
+    text: constrained
+    description: Solve the margins so no decoration overlaps another panel. The general-purpose
+      engine.
+  compressed:
+    text: compressed
+    description: Constrained, then pull fixed-aspect axes together so equal-aspect
+      panels leave no gap between them.
+  tight:
+    text: tight
+    description: Adjust the subplot parameters after the fact to fit the decorations.
+      No solver, so it cannot honour a shared aspect.
+  none:
+    text: none
+    description: 'No engine: every axes keeps the position its gridspec cell gives
+      it, and anything placed at absolute geometry survives the draw.'
+
+```
+</details>
+
+</div>

@@ -1,0 +1,146 @@
+# dynamics { #tvbo.classes.dynamics }
+
+`classes.dynamics`
+
+Dynamics models.
+
+The public import location for :class:`Dynamics`, alongside the helpers that read a model out of the ontology.
+
+There is no wrapper class: a model's own methods live in [`tvbo.behaviour.dynamics`](../behaviour/dynamics.qmd) and are attached to the generated class itself, so a `Dynamics` carries them however it was built — loaded through LinkML, validated through Pydantic, or resolved onto an edge. The equations live on a [`SymbolicSystem`](../parse/system.qmd), one per model.
+
+## Examples {.doc-section .doc-section-examples}
+
+```python
+from tvbo import Dynamics
+
+lorenz = Dynamics(
+    parameters={"sigma": {"value": 10.0}, "rho": {"value": 28.0},
+                "beta": {"value": 8/3}},
+    state_variables={
+        "X": {"equation": {"rhs": "sigma * (Y - X)"}},
+        "Y": {"equation": {"rhs": "X * (rho - Z) - Y"}},
+        "Z": {"equation": {"rhs": "X * Y - beta * Z"}},
+    },
+)
+
+rww = Dynamics.from_db("ReducedWongWangExcInh")
+rww = Dynamics(iri="tvbo:ReducedWongWangExcInh")
+```
+
+See the [writing-models](../../../skills/writing-models/SKILL.md) skill for the YAML form and equation conventions.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [DynamicalSystem](#tvbo.classes.dynamics.DynamicalSystem) |  |
+| [Model](#tvbo.classes.dynamics.Model) | Former runtime subclasses of the generated `Dynamics`, now the class itself. |
+| [TEMPLATES](#tvbo.classes.dynamics.TEMPLATES) |  |
+| [logger](#tvbo.classes.dynamics.logger) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [class2metadata](#tvbo.classes.dynamics.class2metadata) | Populate a `Dynamics` metadata object from an owlready2 ontology class. |
+| [clean_code](#tvbo.classes.dynamics.clean_code) | Replace Unicode infinity (`∞`) with the Python literal `inf`. |
+| [ontology_class](#tvbo.classes.dynamics.ontology_class) | The ontology neural mass model labelled *name*, or ``None``. |
+| [order_by_equations](#tvbo.classes.dynamics.order_by_equations) | Orders the `derived_variables` dictionary based on the key order of the `dependent_equations` dictionary. |
+| [populate_from_ontology](#tvbo.classes.dynamics.populate_from_ontology) | Fill *model*'s unset schema fields from *ontoclass*. |
+| [update_parameters](#tvbo.classes.dynamics.update_parameters) | Update a model's parameters from the ontology. |
+
+### class2metadata { #tvbo.classes.dynamics.class2metadata }
+
+```python
+classes.dynamics.class2metadata(ontoclass, metadata)
+```
+
+Populate a `Dynamics` metadata object from an owlready2 ontology class.
+
+Fills in description, state variables (with equations, boundaries, and coupling-variable flags), derived variables, and parameters by querying the TVB-O ontology for the corresponding semantic annotations.
+
+Every name in the model is put into a `local_dict` as a plain `Symbol` before any equation is parsed. Without it, sympy reads `e` as Euler's number and `I` as the imaginary unit, so neither turns up in `free_symbols` and the parameters behind them are dropped in silence. An ontology coupling term is added only where a state equation actually requires it.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                   | Default    |
+|-----------|--------|-----------------------------------------------|------------|
+| ontoclass | Any    | The owlready2 class to read from.             | _required_ |
+| metadata  | Any    | The `Dynamics` instance to populate in place. | _required_ |
+
+### clean_code { #tvbo.classes.dynamics.clean_code }
+
+```python
+classes.dynamics.clean_code(code)
+```
+
+Replace Unicode infinity (`∞`) with the Python literal `inf`.
+
+Generated model code occasionally carries the ∞ glyph from upstream ontology labels; SymPy and most backends can't parse it.
+
+### ontology_class { #tvbo.classes.dynamics.ontology_class }
+
+```python
+classes.dynamics.ontology_class(name)
+```
+
+The ontology neural mass model labelled *name*, or ``None``.
+
+Restricted to that branch on purpose: the ontology holds classes of every kind under one label space, and a model must not be filled from a coupling function or an integrator that happens to share its name.
+
+### order_by_equations { #tvbo.classes.dynamics.order_by_equations }
+
+```python
+classes.dynamics.order_by_equations(derived_variables, dependent_equations)
+```
+
+Orders the `derived_variables` dictionary based on the key order of the `dependent_equations` dictionary.
+
+Parameters:
+derived_variables (dict): Dictionary to be ordered.
+dependent_equations (dict): Dictionary providing the key order for sorting.
+
+Returns:
+dict: A new dictionary ordered by the key order from `dependent_equations`.
+
+### populate_from_ontology { #tvbo.classes.dynamics.populate_from_ontology }
+
+```python
+classes.dynamics.populate_from_ontology(model, ontoclass, **kwargs)
+```
+
+Fill *model*'s unset schema fields from *ontoclass*.
+
+The one implementation behind both ways in: `Dynamics.from_ontology`, which is handed the class, and `enrich(source="ontology")`, which resolves it from what the model names. Nothing runtime-only is written, so the model stays serializable.
+
+### update_parameters { #tvbo.classes.dynamics.update_parameters }
+
+```python
+classes.dynamics.update_parameters(
+    metadata,
+    ontoclass,
+    verbose=0,
+    only_used=True,
+    **kwargs,
+)
+```
+
+Update a model's parameters from the ontology.
+
+As in `class2metadata`, every model name is bound as a plain `Symbol` first, so `e` and `I` are not read as Euler's number and the imaginary unit and their parameters silently lost.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+metadata : Dynamics
+    Model metadata to update
+ontoclass : owlready2.ThingClass
+    Ontology class
+verbose : int
+    Verbosity level
+only_used : bool
+    If True (default), only add parameters that are referenced in equations.
+    If False, add all parameters from ontology (legacy behavior).
+**kwargs : dict
+    Parameter overrides

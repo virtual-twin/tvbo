@@ -1,0 +1,540 @@
+# Class: CommonCoordinateSpace 
+
+
+_A schema for representing a version of a common coordinate space._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:atlas/Transformation](http://uri.interlex.org/tgbugs/uris/readable/atlas/Transformation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class CommonCoordinateSpace
+    click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+      CommonCoordinateSpace : abbreviation
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "0..1" String : abbreviation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CommonCoordinateSpace : alternateName
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "*" String : alternateName
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CommonCoordinateSpace : anatomicalAxesOrientation
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "0..1" String : anatomicalAxesOrientation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CommonCoordinateSpace : axesOrigin
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "0..1" String : axesOrigin
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CommonCoordinateSpace : defaultImage
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "*" String : defaultImage
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CommonCoordinateSpace : description
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CommonCoordinateSpace : license
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "0..1" String : license
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CommonCoordinateSpace : name
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CommonCoordinateSpace : nativeUnit
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "0..1" String : nativeUnit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      CommonCoordinateSpace : unit
+        
+          
+    
+        
+        
+        CommonCoordinateSpace --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [atom:atlas/Transformation](http://uri.interlex.org/tgbugs/uris/readable/atlas/Transformation) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [abbreviation](../slots/abbreviation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Slot for the abbreviation of a resource | direct |
+| [alternateName](../slots/alternateName.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Enter any alternate names, including abbreviations, for this entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[UnitEnum](../enums/UnitEnum.qmd) | Physical unit of measurement | direct |
+| [license](../slots/license.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Linked type for the license of the brain atlas or coordinate space version | direct |
+| [anatomicalAxesOrientation](../slots/anatomicalAxesOrientation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add the axes orientation in standard anatomical terms (XYZ) | direct |
+| [axesOrigin](../slots/axesOrigin.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Enter the origin (central point where all axes intersect) | direct |
+| [nativeUnit](../slots/nativeUnit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add the native unit that is used for this common coordinate space version | direct |
+| [defaultImage](../slots/defaultImage.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Add all image files used as visual representation of this common coordinate s... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Coordinate](../classes/Coordinate.qmd) | [coordinateSpace](../slots/coordinateSpace.qmd) | range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+| [BrainAtlas](../classes/BrainAtlas.qmd) | [coordinateSpace](../slots/coordinateSpace.qmd) | range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+| [DBSDataset](../classes/DBSDataset.qmd) | [coordinate_space](../slots/coordinate_space.qmd) | range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+| [DBSSubject](../classes/DBSSubject.qmd) | [coordinate_space](../slots/coordinate_space.qmd) | range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+| [Electrode](../classes/Electrode.qmd) | [coordinate_space](../slots/coordinate_space.qmd) | range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+| [EField](../classes/EField.qmd) | [coordinate_space](../slots/coordinate_space.qmd) | range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+| [Network](../classes/Network.qmd) | [coordinate_space](../slots/coordinate_space.qmd) | range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+| [SpatialDomain](../classes/SpatialDomain.qmd) | [coordinate_space](../slots/coordinate_space.qmd) | range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+| [Mesh](../classes/Mesh.qmd) | [coordinate_space](../slots/coordinate_space.qmd) | range | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:atlas/Transformation |
+| native | atom:CommonCoordinateSpace |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: CommonCoordinateSpace
+description: A schema for representing a version of a common coordinate space.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slots:
+- name
+- abbreviation
+- alternateName
+- description
+- unit
+- license
+attributes:
+  anatomicalAxesOrientation:
+    name: anatomicalAxesOrientation
+    description: Add the axes orientation in standard anatomical terms (XYZ).
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - CommonCoordinateSpace
+    range: string
+  axesOrigin:
+    name: axesOrigin
+    description: Enter the origin (central point where all axes intersect).
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - CommonCoordinateSpace
+    range: string
+  nativeUnit:
+    name: nativeUnit
+    description: Add the native unit that is used for this common coordinate space
+      version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - CommonCoordinateSpace
+    range: string
+  defaultImage:
+    name: defaultImage
+    description: Add all image files used as visual representation of this common
+      coordinate space version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    domain_of:
+    - CommonCoordinateSpace
+    range: string
+    multivalued: true
+class_uri: atom:atlas/Transformation
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: CommonCoordinateSpace
+description: A schema for representing a version of a common coordinate space.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+attributes:
+  anatomicalAxesOrientation:
+    name: anatomicalAxesOrientation
+    description: Add the axes orientation in standard anatomical terms (XYZ).
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: CommonCoordinateSpace
+    domain_of:
+    - CommonCoordinateSpace
+    range: string
+  axesOrigin:
+    name: axesOrigin
+    description: Enter the origin (central point where all axes intersect).
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: CommonCoordinateSpace
+    domain_of:
+    - CommonCoordinateSpace
+    range: string
+  nativeUnit:
+    name: nativeUnit
+    description: Add the native unit that is used for this common coordinate space
+      version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: CommonCoordinateSpace
+    domain_of:
+    - CommonCoordinateSpace
+    range: string
+  defaultImage:
+    name: defaultImage
+    description: Add all image files used as visual representation of this common
+      coordinate space version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    rank: 1000
+    owner: CommonCoordinateSpace
+    domain_of:
+    - CommonCoordinateSpace
+    range: string
+    multivalued: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: CommonCoordinateSpace
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  abbreviation:
+    name: abbreviation
+    description: Slot for the abbreviation of a resource.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: skos:notation
+    owner: CommonCoordinateSpace
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    range: string
+  alternateName:
+    name: alternateName
+    description: Enter any alternate names, including abbreviations, for this entity.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: atom:atlas/hasName
+    owner: CommonCoordinateSpace
+    domain_of:
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - Node
+    range: string
+    multivalued: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: CommonCoordinateSpace
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  unit:
+    name: unit
+    description: 'Physical unit of measurement. `UnitEnum` is the curated vocabulary
+      — each of its values is vendored from QUDT (`ontology/tvb-o-units.ttl`) and
+      can be reasoned about dimensionally. The range is deliberately open beyond it:
+      a unit nobody has curated yet is recorded as written and reported `uncurated`,
+      because a closed range forces the author to either misdeclare the quantity or
+      leave it undeclared, and both lose more than an unrecognised string does. An
+      uncurated unit carries no dimensional claim, so a check involving it reports
+      `underdetermined` rather than guessing. Promote one with `tvbo units add <unit>`,
+      which pulls its QUDT record into the vendored module — so every unit TVBO *reasons*
+      about stays authoritative, and only what it *records* is open.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: qudt:unit
+    owner: CommonCoordinateSpace
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+    any_of:
+    - range: UnitEnum
+    - range: string
+  license:
+    name: license
+    description: Linked type for the license of the brain atlas or coordinate space
+      version.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: dcterms:license
+    owner: CommonCoordinateSpace
+    domain_of:
+    - CommonCoordinateSpace
+    - SoftwarePackage
+    - SoftwareRequirement
+    - Provenance
+    range: string
+class_uri: atom:atlas/Transformation
+
+```
+</details></div>

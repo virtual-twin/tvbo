@@ -1,0 +1,434 @@
+# Class: DataRef 
+
+
+_A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container reference primitive (a PROV entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study experiment id, resolved like ``initial_state.source_experiment``), ``analysis`` (an in-study analysis name), or the full ``iri`` (a curated / result / external pointer); at most one. WHICH is ``output`` (a recorded variable, ``observation__<name>``, ``estimate__<param>``, or external variable). SLICE is ``sel`` (label-keyed ``.sel``, never positional). ``reconcile`` optionally aligns the sourced array to the consuming network's node order by label. One model reused by figure layers (``Layer.used``), sourced arguments (``Argument.used``) and sourced parameters (``Parameter.used``), so data binding, cross-experiment sourcing and PROV provenance are the same edge. A sourced array is resolved lazily and never inlined into generated code._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [prov:Entity](http://www.w3.org/ns/prov#Entity)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DataRef
+    click DataRef href "./DataRef.html"
+      DataRef : analysis
+        
+          
+    
+        
+        
+        DataRef --> "0..1" String : analysis
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DataRef : experiment
+        
+          
+    
+        
+        
+        DataRef --> "0..1" String : experiment
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DataRef : iri
+        
+          
+    
+        
+        
+        DataRef --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      DataRef : output
+        
+          
+    
+        
+        
+        DataRef --> "0..1" String : output
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DataRef : reconcile
+        
+          
+    
+        
+        
+        DataRef --> "0..1" NodeReconciliation : reconcile
+        click NodeReconciliation href "../../enums/NodeReconciliation.html"
+    
+
+        
+      DataRef : sel
+        
+          
+    
+        
+        
+        DataRef --> "*" Argument : sel
+        click Argument href "./Argument.html"
+    
+
+        
+      DataRef : transform
+        
+          
+    
+        
+        
+        DataRef --> "0..1" String : transform
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [prov:Entity](http://www.w3.org/ns/prov#Entity) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | direct |
+| [experiment](../slots/experiment.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | WHERE (short form): an in-study experiment id whose saved result holds the ar... | direct |
+| [analysis](../slots/analysis.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | WHERE (short form): an in-study analysis name whose saved result holds the ar... | direct |
+| [output](../slots/output.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | WHICH array to take from the container at ``experiment`` / ``iri``: a recorde... | direct |
+| [sel](../slots/sel.qmd) | * <br/> [Argument](../classes/Argument.qmd) | SLICE: label-based selector (xarray `` | direct |
+| [transform](../slots/transform.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional named reduction applied to the sourced array after ``sel``, before `... | direct |
+| [reconcile](../slots/reconcile.qmd) | 0..1 <br/> [NodeReconciliation](../enums/NodeReconciliation.qmd) | Align the sourced array's nodes to the consuming network by label (``by_label... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Layer](../classes/Layer.qmd) | [used](../slots/used.qmd) | range | [DataRef](../classes/DataRef.qmd) |
+| [Annotation](../classes/Annotation.qmd) | [used](../slots/used.qmd) | range | [DataRef](../classes/DataRef.qmd) |
+| [Annotation](../classes/Annotation.qmd) | [tail_used](../slots/tail_used.qmd) | range | [DataRef](../classes/DataRef.qmd) |
+| [Parameter](../classes/Parameter.qmd) | [used](../slots/used.qmd) | range | [DataRef](../classes/DataRef.qmd) |
+| [Argument](../classes/Argument.qmd) | [used](../slots/used.qmd) | range | [DataRef](../classes/DataRef.qmd) |
+| [DerivedParameter](../classes/DerivedParameter.qmd) | [used](../slots/used.qmd) | range | [DataRef](../classes/DataRef.qmd) |
+| [ResultBinding](../classes/ResultBinding.qmd) | [used](../slots/used.qmd) | range | [DataRef](../classes/DataRef.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/common
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | prov:Entity |
+| native | tvbo:DataRef |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DataRef
+description: A pointer to one labelled array in a result container, dataset, or curated
+  entity — the single cross-container reference primitive (a PROV entity a consumer
+  ``prov:used``). WHERE is ``experiment`` (an in-study experiment id, resolved like
+  ``initial_state.source_experiment``), ``analysis`` (an in-study analysis name),
+  or the full ``iri`` (a curated / result / external pointer); at most one. WHICH
+  is ``output`` (a recorded variable, ``observation__<name>``, ``estimate__<param>``,
+  or external variable). SLICE is ``sel`` (label-keyed ``.sel``, never positional).
+  ``reconcile`` optionally aligns the sourced array to the consuming network's node
+  order by label. One model reused by figure layers (``Layer.used``), sourced arguments
+  (``Argument.used``) and sourced parameters (``Parameter.used``), so data binding,
+  cross-experiment sourcing and PROV provenance are the same edge. A sourced array
+  is resolved lazily and never inlined into generated code.
+from_schema: https://w3id.org/tvbo/common
+slots:
+- iri
+attributes:
+  experiment:
+    name: experiment
+    description: 'WHERE (short form): an in-study experiment id whose saved result
+      holds the array, resolved within the enclosing study like ``initial_state.source_experiment``.
+      Written as the bare integer id (``34``), or as one of the string spellings the
+      workflow planner also accepts (``exp-34``, ``"34"``) — ``tvbo.data.dataref``
+      normalises all three to the integer it globs the container by. Mutually exclusive
+      with ``iri`` (the full cross-study / curated / external form). When both are
+      absent the reference is local — ``output`` names this experiment''s own output
+      — otherwise falling back to ``initial_state.source_experiment`` when present.'
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    domain_of:
+    - DataRef
+    any_of:
+    - range: integer
+    - range: string
+  analysis:
+    name: analysis
+    description: 'WHERE (short form): an in-study analysis name whose saved result
+      holds the array (``derivatives/tvbo/ana-<name>_result.h5``). Mutually exclusive
+      with ``experiment`` and ``iri``, and — like ``experiment`` — it registers the
+      run-order dependency, so the analysis runs before whatever consumes it.'
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    domain_of:
+    - DataRef
+    - Observation
+    range: string
+  output:
+    name: output
+    description: 'WHICH array to take from the container at ``experiment`` / ``iri``:
+      a recorded state variable, an ``observation__<name>``, an ``estimate__<param>``
+      (a tuned free parameter a fit persisted), or an external variable. Matched exactly
+      or by the ``<producer>__<name>`` suffix.'
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    domain_of:
+    - DataRef
+    - Procedure
+    - Dynamics
+    - Function
+    - FunctionCall
+    range: string
+  sel:
+    name: sel
+    description: 'SLICE: label-based selector (xarray ``.sel``), keyed by dimension
+      (reuses ``Argument``; name = dim, value = coordinate label), taking the nearest
+      coordinate for a numeric selection. Never positional — picks e.g. one operating
+      point out of a swept branch by its parameter value.'
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    domain_of:
+    - DataRef
+    range: Argument
+    multivalued: true
+    inlined: true
+  transform:
+    name: transform
+    description: Optional named reduction applied to the sourced array after ``sel``,
+      before ``reconcile`` — a registered ``fn(da) -> da`` (the same ``bsplot.register_transform``
+      registry a figure ``Layer.transform`` uses). Handles a selection a label ``sel``
+      cannot express on its own, e.g. picking the operating point (endpoint) out of
+      a branch-restart container keyed by ordinal. Presentation/selection only — prefer
+      a ``sel`` or an upstream observation when one suffices.
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    domain_of:
+    - DataRef
+    - Layer
+    - ExplorationAxis
+    range: string
+  reconcile:
+    name: reconcile
+    description: Align the sourced array's nodes to the consuming network by label
+      (``by_label``) or take it as-is (``none``, the default — a sibling experiment
+      usually already shares the node order). A property of the reference, so figure
+      layers, dataset targets and warm-starts share one flag.
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    ifabsent: none
+    domain_of:
+    - DataRef
+    - Observation
+    range: NodeReconciliation
+class_uri: prov:Entity
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DataRef
+description: A pointer to one labelled array in a result container, dataset, or curated
+  entity — the single cross-container reference primitive (a PROV entity a consumer
+  ``prov:used``). WHERE is ``experiment`` (an in-study experiment id, resolved like
+  ``initial_state.source_experiment``), ``analysis`` (an in-study analysis name),
+  or the full ``iri`` (a curated / result / external pointer); at most one. WHICH
+  is ``output`` (a recorded variable, ``observation__<name>``, ``estimate__<param>``,
+  or external variable). SLICE is ``sel`` (label-keyed ``.sel``, never positional).
+  ``reconcile`` optionally aligns the sourced array to the consuming network's node
+  order by label. One model reused by figure layers (``Layer.used``), sourced arguments
+  (``Argument.used``) and sourced parameters (``Parameter.used``), so data binding,
+  cross-experiment sourcing and PROV provenance are the same edge. A sourced array
+  is resolved lazily and never inlined into generated code.
+from_schema: https://w3id.org/tvbo/common
+attributes:
+  experiment:
+    name: experiment
+    description: 'WHERE (short form): an in-study experiment id whose saved result
+      holds the array, resolved within the enclosing study like ``initial_state.source_experiment``.
+      Written as the bare integer id (``34``), or as one of the string spellings the
+      workflow planner also accepts (``exp-34``, ``"34"``) — ``tvbo.data.dataref``
+      normalises all three to the integer it globs the container by. Mutually exclusive
+      with ``iri`` (the full cross-study / curated / external form). When both are
+      absent the reference is local — ``output`` names this experiment''s own output
+      — otherwise falling back to ``initial_state.source_experiment`` when present.'
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    owner: DataRef
+    domain_of:
+    - DataRef
+    range: string
+    any_of:
+    - range: integer
+    - range: string
+  analysis:
+    name: analysis
+    description: 'WHERE (short form): an in-study analysis name whose saved result
+      holds the array (``derivatives/tvbo/ana-<name>_result.h5``). Mutually exclusive
+      with ``experiment`` and ``iri``, and — like ``experiment`` — it registers the
+      run-order dependency, so the analysis runs before whatever consumes it.'
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    owner: DataRef
+    domain_of:
+    - DataRef
+    - Observation
+    range: string
+  output:
+    name: output
+    description: 'WHICH array to take from the container at ``experiment`` / ``iri``:
+      a recorded state variable, an ``observation__<name>``, an ``estimate__<param>``
+      (a tuned free parameter a fit persisted), or an external variable. Matched exactly
+      or by the ``<producer>__<name>`` suffix.'
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    owner: DataRef
+    domain_of:
+    - DataRef
+    - Procedure
+    - Dynamics
+    - Function
+    - FunctionCall
+    range: string
+  sel:
+    name: sel
+    description: 'SLICE: label-based selector (xarray ``.sel``), keyed by dimension
+      (reuses ``Argument``; name = dim, value = coordinate label), taking the nearest
+      coordinate for a numeric selection. Never positional — picks e.g. one operating
+      point out of a swept branch by its parameter value.'
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    owner: DataRef
+    domain_of:
+    - DataRef
+    range: Argument
+    multivalued: true
+    inlined: true
+  transform:
+    name: transform
+    description: Optional named reduction applied to the sourced array after ``sel``,
+      before ``reconcile`` — a registered ``fn(da) -> da`` (the same ``bsplot.register_transform``
+      registry a figure ``Layer.transform`` uses). Handles a selection a label ``sel``
+      cannot express on its own, e.g. picking the operating point (endpoint) out of
+      a branch-restart container keyed by ordinal. Presentation/selection only — prefer
+      a ``sel`` or an upstream observation when one suffices.
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    owner: DataRef
+    domain_of:
+    - DataRef
+    - Layer
+    - ExplorationAxis
+    range: string
+  reconcile:
+    name: reconcile
+    description: Align the sourced array's nodes to the consuming network by label
+      (``by_label``) or take it as-is (``none``, the default — a sibling experiment
+      usually already shares the node order). A property of the reference, so figure
+      layers, dataset targets and warm-starts share one flag.
+    from_schema: https://w3id.org/tvbo/common
+    rank: 1000
+    ifabsent: none
+    owner: DataRef
+    domain_of:
+    - DataRef
+    - Observation
+    range: NodeReconciliation
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: DataRef
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+class_uri: prov:Entity
+
+```
+</details></div>

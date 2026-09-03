@@ -1,0 +1,101 @@
+# Slot: spine_offset 
+
+
+_How far the left and bottom spines sit outside the data area, in axes fractions. 0 makes them meet at the corner; the default detaches them slightly (bsplot's house look). Journals differ on this, so a replication states which one the paper uses._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/spine_offset](https://w3id.org/tvbo/slot/spine_offset)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:spine_offset |
+| native | tvbo:spine_offset |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: spine_offset
+description: How far the left and bottom spines sit outside the data area, in axes
+  fractions. 0 makes them meet at the corner; the default detaches them slightly (bsplot's
+  house look). Journals differ on this, so a replication states which one the paper
+  uses.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: float
+
+```
+</details></div>

@@ -1,0 +1,77 @@
+# Slot: state 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/state](https://w3id.org/tvbo/slot/state)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Node](../classes/Node.qmd) | A node in a network with its own dynamics and properties |  no  |
+| [Reducer](../classes/Reducer.qmd) | A streaming reduction, authored as symbolic recurrences over its own state ra... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Node](../classes/Node.qmd), [Reducer](../classes/Reducer.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:state |
+| native | tvbo:state |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: state
+domain_of:
+- Node
+- Reducer
+range: string
+
+```
+</details></div>

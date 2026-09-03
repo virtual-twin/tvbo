@@ -1,0 +1,102 @@
+# Slot: symmetry 
+
+
+_Edge symmetry type for NetworkDynamics.jl EdgeModel: 'directed' (default), 'antisymmetric', or 'symmetric'. AntiSymmetric edges flip sign for the reverse direction._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/symmetry](https://w3id.org/tvbo/slot/symmetry)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Coupling](../classes/Coupling.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(directed)` |
+| Owner | [Coupling](../classes/Coupling.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:symmetry |
+| native | tvbo:symmetry |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: symmetry
+description: 'Edge symmetry type for NetworkDynamics.jl EdgeModel: ''directed'' (default),
+  ''antisymmetric'', or ''symmetric''. AntiSymmetric edges flip sign for the reverse
+  direction.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(directed)
+owner: Coupling
+domain_of:
+- Coupling
+range: string
+
+```
+</details></div>

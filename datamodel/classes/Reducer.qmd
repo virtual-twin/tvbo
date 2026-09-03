@@ -1,0 +1,593 @@
+# Class: Reducer 
+
+
+_A streaming reduction, authored as symbolic recurrences over its own state rather than as backend code. Folded into the integrator carry so a windowed observable (a sliding-window FC, a running mean) is computed without ever materialising the trajectory. `add` folds an arriving sample in, `evict` takes a leaving one back out, `resync` rebuilds the state exactly from the window when incremental drift would accumulate, and `emit` reads the reduced value out. TVBO lowers all four through the sympy printers, so no backend ships a reducer and adding one is a YAML file rather than code._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Reducer](https://w3id.org/tvbo/Reducer)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Reducer
+    click Reducer href "./Reducer.html"
+      Reducer : add
+        
+          
+    
+        
+        
+        Reducer --> "*" Assignment : add
+        click Assignment href "./Assignment.html"
+    
+
+        
+      Reducer : backends
+        
+          
+    
+        
+        
+        Reducer --> "*" String : backends
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Reducer : description
+        
+          
+    
+        
+        
+        Reducer --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Reducer : emit
+        
+          
+    
+        
+        
+        Reducer --> "1" String : emit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Reducer : emit_kind
+        
+          
+    
+        
+        
+        Reducer --> "0..1" ReducerEmitKind : emit_kind
+        click ReducerEmitKind href "../../enums/ReducerEmitKind.html"
+    
+
+        
+      Reducer : evict
+        
+          
+    
+        
+        
+        Reducer --> "*" Assignment : evict
+        click Assignment href "./Assignment.html"
+    
+
+        
+      Reducer : name
+        
+          
+    
+        
+        
+        Reducer --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Reducer : replaces
+        
+          
+    
+        
+        
+        Reducer --> "*" String : replaces
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Reducer : resync
+        
+          
+    
+        
+        
+        Reducer --> "*" Assignment : resync
+        click Assignment href "./Assignment.html"
+    
+
+        
+      Reducer : resync_masked
+        
+          
+    
+        
+        
+        Reducer --> "*" Assignment : resync_masked
+        click Assignment href "./Assignment.html"
+    
+
+        
+      Reducer : state
+        
+          
+    
+        
+        
+        Reducer --> "1..*" String : state
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Reducer](https://w3id.org/tvbo/Reducer) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [replaces](../slots/replaces.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Dotted references to the post-scan pipeline reducers this streams | direct |
+| [backends](../slots/backends.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Codegen backends this recipe is registered for; others recompute | direct |
+| [emit_kind](../slots/emit_kind.qmd) | 0..1 <br/> [ReducerEmitKind](../enums/ReducerEmitKind.qmd) | Whether the reduced value is read out every step or every stride | direct |
+| [state](../slots/state.qmd) | 1..* <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The names carried across steps — the reducer's own carry | direct |
+| [add](../slots/add.qmd) | * <br/> [Assignment](../classes/Assignment.qmd) | Recurrence folding one arriving sample `v` into the state | direct |
+| [evict](../slots/evict.qmd) | * <br/> [Assignment](../classes/Assignment.qmd) | Recurrence taking one leaving sample `v` back out of the state | direct |
+| [resync](../slots/resync.qmd) | * <br/> [Assignment](../classes/Assignment.qmd) | Recurrence rebuilding the state exactly from the whole window `x` | direct |
+| [resync_masked](../slots/resync_masked.qmd) | * <br/> [Assignment](../classes/Assignment.qmd) | Recurrence rebuilding the state from a fixed-size ring in which only `L` rows... | direct |
+| [emit](../slots/emit.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Expression reading the reduced value out of the state | direct |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Reducer |
+| native | tvbo:Reducer |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Reducer
+description: A streaming reduction, authored as symbolic recurrences over its own
+  state rather than as backend code. Folded into the integrator carry so a windowed
+  observable (a sliding-window FC, a running mean) is computed without ever materialising
+  the trajectory. `add` folds an arriving sample in, `evict` takes a leaving one back
+  out, `resync` rebuilds the state exactly from the window when incremental drift
+  would accumulate, and `emit` reads the reduced value out. TVBO lowers all four through
+  the sympy printers, so no backend ships a reducer and adding one is a YAML file
+  rather than code.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+attributes:
+  replaces:
+    name: replaces
+    description: Dotted references to the post-scan pipeline reducers this streams.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Reducer
+    range: string
+    multivalued: true
+  backends:
+    name: backends
+    description: Codegen backends this recipe is registered for; others recompute.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Reducer
+    range: string
+    multivalued: true
+  emit_kind:
+    name: emit_kind
+    description: Whether the reduced value is read out every step or every stride.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(window)
+    domain_of:
+    - Reducer
+    range: ReducerEmitKind
+  state:
+    name: state
+    description: The names carried across steps — the reducer's own carry.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Node
+    - Reducer
+    range: string
+    required: true
+    multivalued: true
+  add:
+    name: add
+    description: Recurrence folding one arriving sample `v` into the state.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Reducer
+    range: Assignment
+    multivalued: true
+    inlined_as_list: true
+  evict:
+    name: evict
+    description: Recurrence taking one leaving sample `v` back out of the state.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Reducer
+    range: Assignment
+    multivalued: true
+    inlined_as_list: true
+  resync:
+    name: resync
+    description: Recurrence rebuilding the state exactly from the whole window `x`.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Reducer
+    range: Assignment
+    multivalued: true
+    inlined_as_list: true
+  resync_masked:
+    name: resync_masked
+    description: Recurrence rebuilding the state from a fixed-size ring in which only
+      `L` rows are live, selected by mask `m`. Separate from `resync` because a ring
+      sized for the longest window carries rows that are not yet part of it, and summing
+      over them would fold padding into the result. Absent where a reducer has no
+      ring to mask.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Reducer
+    range: Assignment
+    multivalued: true
+    inlined_as_list: true
+  emit:
+    name: emit
+    description: Expression reading the reduced value out of the state.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Reducer
+    range: string
+    required: true
+class_uri: tvbo:Reducer
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Reducer
+description: A streaming reduction, authored as symbolic recurrences over its own
+  state rather than as backend code. Folded into the integrator carry so a windowed
+  observable (a sliding-window FC, a running mean) is computed without ever materialising
+  the trajectory. `add` folds an arriving sample in, `evict` takes a leaving one back
+  out, `resync` rebuilds the state exactly from the window when incremental drift
+  would accumulate, and `emit` reads the reduced value out. TVBO lowers all four through
+  the sympy printers, so no backend ships a reducer and adding one is a YAML file
+  rather than code.
+from_schema: https://w3id.org/tvbo
+attributes:
+  replaces:
+    name: replaces
+    description: Dotted references to the post-scan pipeline reducers this streams.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Reducer
+    domain_of:
+    - Reducer
+    range: string
+    multivalued: true
+  backends:
+    name: backends
+    description: Codegen backends this recipe is registered for; others recompute.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Reducer
+    domain_of:
+    - Reducer
+    range: string
+    multivalued: true
+  emit_kind:
+    name: emit_kind
+    description: Whether the reduced value is read out every step or every stride.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(window)
+    owner: Reducer
+    domain_of:
+    - Reducer
+    range: ReducerEmitKind
+  state:
+    name: state
+    description: The names carried across steps — the reducer's own carry.
+    from_schema: https://w3id.org/tvbo
+    owner: Reducer
+    domain_of:
+    - Node
+    - Reducer
+    range: string
+    required: true
+    multivalued: true
+  add:
+    name: add
+    description: Recurrence folding one arriving sample `v` into the state.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Reducer
+    domain_of:
+    - Reducer
+    range: Assignment
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  evict:
+    name: evict
+    description: Recurrence taking one leaving sample `v` back out of the state.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Reducer
+    domain_of:
+    - Reducer
+    range: Assignment
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  resync:
+    name: resync
+    description: Recurrence rebuilding the state exactly from the whole window `x`.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Reducer
+    domain_of:
+    - Reducer
+    range: Assignment
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  resync_masked:
+    name: resync_masked
+    description: Recurrence rebuilding the state from a fixed-size ring in which only
+      `L` rows are live, selected by mask `m`. Separate from `resync` because a ring
+      sized for the longest window carries rows that are not yet part of it, and summing
+      over them would fold padding into the result. Absent where a reducer has no
+      ring to mask.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Reducer
+    domain_of:
+    - Reducer
+    range: Assignment
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  emit:
+    name: emit
+    description: Expression reading the reduced value out of the state.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Reducer
+    domain_of:
+    - Reducer
+    range: string
+    required: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Reducer
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Reducer
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Reducer
+
+```
+</details></div>

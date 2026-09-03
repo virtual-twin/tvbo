@@ -1,0 +1,167 @@
+# atlas { #tvbo.classes.atlas }
+
+`classes.atlas`
+
+Runtime helpers for brain atlases and parcellation volumes.
+
+Provides the `Atlas` wrapper around the LinkML `BrainAtlas` datamodel, exposing lazy, computed access to the parcellation volume, SANDS terminology, region labels, and region centers. Also defines helpers to build atlas metadata and to produce ranked (relabelled) parcellation volumes from FreeSurfer segmentations.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [aseg_gm_regions](#tvbo.classes.atlas.aseg_gm_regions) |  |
+| [atlas_data](#tvbo.classes.atlas.atlas_data) |  |
+| [available_atlases](#tvbo.classes.atlas.available_atlases) |  |
+| [logger](#tvbo.classes.atlas.logger) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Atlas](#tvbo.classes.atlas.Atlas) | BrainAtlas with lazy, computed properties for data files and derived attributes. |
+
+### Atlas { #tvbo.classes.atlas.Atlas }
+
+```python
+classes.atlas.Atlas(atlas=None, **kwargs)
+```
+
+BrainAtlas with lazy, computed properties for data files and derived attributes.
+
+Usage mirrors other runtime wrappers (Dynamics, SimulationExperiment):
+- Construct from a BrainAtlas instance, a string name, or nothing (defaults to 'wholebrain').
+- Access `metadata` to get a self-reference as a LinkML object.
+- Access properties: volume, volume_file, metadata_file, region_labels, centers.
+
+SANDS entities are stored in ``self.terminology.entities`` — a schema-native ``dict[ParcellationEntityName, ParcellationEntity]`` produced by the LinkML loader (the ``entities`` slot uses ``inlined: true`` in the SANDS schema).
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [centers](#tvbo.classes.atlas.Atlas.centers) | Region center coordinates as (N, 3) array. |
+| [metadata](#tvbo.classes.atlas.Atlas.metadata) | Return this atlas itself as its LinkML metadata object. |
+| [metadata_file](#tvbo.classes.atlas.Atlas.metadata_file) | Filesystem path to the atlas `_dseg.yaml` metadata file, or `None` if not uniquely found. |
+| [region_labels](#tvbo.classes.atlas.Atlas.region_labels) | Region labels sorted by SANDS lookupLabel. |
+| [volume](#tvbo.classes.atlas.Atlas.volume) | NIfTI image of the atlas parcellation volume. |
+| [volume_file](#tvbo.classes.atlas.Atlas.volume_file) | Filesystem path to the atlas parcellation volume, or `None` if not found. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [create_terminology](#tvbo.classes.atlas.Atlas.create_terminology) | Build terminology entities from the atlas volume if not already populated. |
+| [get_label_by_lookup](#tvbo.classes.atlas.Atlas.get_label_by_lookup) | Return the region name for a given SANDS lookup label. |
+| [to_yaml](#tvbo.classes.atlas.Atlas.to_yaml) | Serialise the atlas to YAML. |
+
+##### create_terminology { #tvbo.classes.atlas.Atlas.create_terminology }
+
+```python
+classes.atlas.Atlas.create_terminology()
+```
+
+Build terminology entities from the atlas volume if not already populated.
+
+##### get_label_by_lookup { #tvbo.classes.atlas.Atlas.get_label_by_lookup }
+
+```python
+classes.atlas.Atlas.get_label_by_lookup(lookup_id)
+```
+
+Return the region name for a given SANDS lookup label.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                        | Default    |
+|-----------|--------|--------------------------------------------------------------------|------------|
+| lookup_id |        | The `lookupLabel` value to match against the terminology entities. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        |        | The matching entity name, or `None` if no entity has that lookup label. |
+
+##### to_yaml { #tvbo.classes.atlas.Atlas.to_yaml }
+
+```python
+classes.atlas.Atlas.to_yaml(fname=None)
+```
+
+Serialise the atlas to YAML.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                       | Default   |
+|--------|--------|-----------------------------------------------------------------------------------|-----------|
+| fname  |        | Optional path to write the YAML to; if omitted, the YAML is returned as a string. | `None`    |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        |        | The written file path when `fname` is given, otherwise the YAML string. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [create_atlas_metadata](#tvbo.classes.atlas.create_atlas_metadata) | Build `BrainAtlas` metadata and region centers of mass from a parcellation file. |
+| [rank_atlas](#tvbo.classes.atlas.rank_atlas) | Relabel a parcellation with contiguous rank IDs and write the ranked volume and metadata. |
+| [tqdm](#tvbo.classes.atlas.tqdm) | No-op ``tqdm`` fallback used when the package is unavailable. |
+
+### create_atlas_metadata { #tvbo.classes.atlas.create_atlas_metadata }
+
+```python
+classes.atlas.create_atlas_metadata(fname_atlas, labels='freesurfer')
+```
+
+Build `BrainAtlas` metadata and region centers of mass from a parcellation file.
+
+Parses BIDS entities from the file name to seed a `BrainAtlas` with its coordinate space and terminology, then computes the center of mass of each non-background label in the parcellation volume.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                                                       | Default        |
+|-------------|--------|-------------------------------------------------------------------------------------------------------------------|----------------|
+| fname_atlas |        | Path to the parcellation NIfTI file to derive metadata from.                                                      | _required_     |
+| labels      |        | Reserved for a labelling scheme; currently unused (region labels are read directly from the parcellation volume). | `'freesurfer'` |
+
+### rank_atlas { #tvbo.classes.atlas.rank_atlas }
+
+```python
+classes.atlas.rank_atlas(
+    fname_atlas,
+    labels='freesurfer',
+    desc='ranked',
+    gm_only=True,
+)
+```
+
+Relabel a parcellation with contiguous rank IDs and write the ranked volume and metadata.
+
+Remaps each original label to a consecutive integer (1, 2, 3, ...), records the mapping as `ParcellationEntity` metadata (keeping the original lookup label), then saves the ranked NIfTI volume alongside its `.yaml` metadata using a BIDS-style path with the given `desc`.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name        | Type   | Description                                                                                                                         | Default        |
+|-------------|--------|-------------------------------------------------------------------------------------------------------------------------------------|----------------|
+| fname_atlas |        | Path to the source parcellation NIfTI file.                                                                                         | _required_     |
+| labels      |        | Labelling scheme; `"freesurfer"` maps indices to region names via the FreeSurfer lookup, otherwise `labels` is indexed by label id. | `'freesurfer'` |
+| desc        |        | BIDS `desc` entity used when building the output file path.                                                                         | `'ranked'`     |
+| gm_only     |        | When using FreeSurfer labels, keep only cortical (`ctx`) and grey-matter subcortical regions, skipping all others.                  | `True`         |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                               |
+|--------|--------|-------------------------------------------|
+|        |        | The ranked parcellation as a NIfTI image. |
+
+### tqdm { #tvbo.classes.atlas.tqdm }
+
+```python
+classes.atlas.tqdm(x, **kwargs)
+```
+
+No-op ``tqdm`` fallback used when the package is unavailable.

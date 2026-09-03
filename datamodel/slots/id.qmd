@@ -1,0 +1,93 @@
+# Slot: id 
+
+
+_Surrogate integer key._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:identifier](http://purl.org/dc/terms/identifier)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Node](../classes/Node.qmd) | A node in a network with its own dynamics and properties |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Node](../classes/Node.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+| Slot URI | [dcterms:identifier](http://purl.org/dc/terms/identifier) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:identifier |
+| native | tvbo_dbs:id |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: id
+description: Surrogate integer key.
+from_schema: https://w3id.org/tvbo/dbs
+slot_uri: dcterms:identifier
+domain_of:
+- Node
+- SimulationExperiment
+range: integer
+
+```
+</details></div>

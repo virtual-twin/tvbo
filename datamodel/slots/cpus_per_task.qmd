@@ -1,0 +1,106 @@
+# Slot: cpus_per_task 
+
+
+_CPU cores requested per task (Slurm --cpus-per-task)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/cpus_per_task](https://w3id.org/tvbo/slot/cpus_per_task)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+
+### Value Constraints
+
+| Property | Value |
+| --- | --- |
+| Minimum Value | 1 |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:cpus_per_task |
+| native | tvbo:cpus_per_task |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: cpus_per_task
+description: CPU cores requested per task (Slurm --cpus-per-task).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowEngineConfig
+domain_of:
+- WorkflowEngineConfig
+range: integer
+minimum_value: 1
+
+```
+</details></div>

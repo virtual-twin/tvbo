@@ -1,0 +1,106 @@
+# Slot: target_var 
+
+
+_Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics. The alias `target_variable` is accepted._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target_var](https://w3id.org/tvbo/slot/target_var)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Edge](../classes/Edge.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Edge](../classes/Edge.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* target_variable
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target_var |
+| native | tvbo:target_var |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_var
+description: Input variable on target node to connect to (e.g., 'c_in'). If not specified,
+  uses first coupling input from target dynamics. The alias `target_variable` is accepted.
+from_schema: https://w3id.org/tvbo
+aliases:
+- target_variable
+rank: 1000
+owner: Edge
+domain_of:
+- Edge
+range: string
+
+```
+</details></div>

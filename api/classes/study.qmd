@@ -1,0 +1,404 @@
+# study { #tvbo.classes.study }
+
+`classes.study`
+
+User-facing `SimulationStudy` class for grouping related experiments.
+
+Provides a thin wrapper around the generated datamodel that adds loading helpers (YAML files, the tvbo database, openMINDS JSON-LD), citation formatting, and access to individual `SimulationExperiment`s.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [FigureImage](#tvbo.classes.study.FigureImage) | One figure a study run rendered: the image, the self-contained script that drew it, and an inline representation. |
+| [SimulationStudy](#tvbo.classes.study.SimulationStudy) | A collection of related `SimulationExperiment`s with shared provenance. |
+| [StudyResult](#tvbo.classes.study.StudyResult) | What one :meth:`SimulationStudy.run` produced — the study-level counterpart of the :class:`~tvbo.data.types.ExperimentResult` a single experiment's ``run()`` returns. |
+
+### FigureImage { #tvbo.classes.study.FigureImage }
+
+```python
+classes.study.FigureImage(name, path, script=None, caption=None)
+```
+
+One figure a study run rendered: the image, the self-contained script that drew it, and an inline representation.
+
+``_repr_png_`` / ``_repr_svg_`` are what a notebook or Quarto cell calls, so the cell that ran the study also shows what it drew and a page never writes its own image reference. The object is a :class:`os.PathLike`, so it still passes anywhere a path does.
+
+### SimulationStudy { #tvbo.classes.study.SimulationStudy }
+
+```python
+classes.study.SimulationStudy(
+    description=None,
+    citekey=None,
+    type=None,
+    title=None,
+    authors=empty_list(),
+    year=None,
+    doi=None,
+    label=None,
+    derived_from=None,
+    model=None,
+    references=empty_list(),
+    key=None,
+    sample=None,
+    workflow=None,
+    experiments=empty_dict(),
+    analyses=empty_list(),
+    figures=empty_dict(),
+    code_source=None,
+    requires=empty_dict(),
+    studies=empty_list(),
+    results=empty_dict(),
+    archive=None,
+)
+```
+
+A collection of related `SimulationExperiment`s with shared provenance.
+
+Aggregates the experiments behind a published paper or analysis (model, DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
+Load with `from_db(name)` for curated studies, `from_file(path)` for local YAML, or `from_openminds(...)` for JSON-LD provenance graphs.
+
+A study that declares `studies` is a study-of-studies: it aggregates other studies and owns whatever experiments, analyses and figures belong to none of them. The nested studies are `SimulationStudy` objects like this one, so the nesting is self-similar and recurses to any depth.
+
+The most-used entry points are [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment) to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite) for the formatted citation, and [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for JSON-LD export.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [cite](#tvbo.classes.study.SimulationStudy.cite) | Return the formatted citation for this study. |
+| [experiment_ids](#tvbo.classes.study.SimulationStudy.experiment_ids) | The declared experiment ids, in recipe order. |
+| [from_datamodel](#tvbo.classes.study.SimulationStudy.from_datamodel) | Wrap a generated datamodel instance as a `SimulationStudy`. |
+| [from_db](#tvbo.classes.study.SimulationStudy.from_db) | Load a SimulationStudy by name from the tvbo database. |
+| [from_file](#tvbo.classes.study.SimulationStudy.from_file) | Load a study from a local YAML file. |
+| [from_openminds](#tvbo.classes.study.SimulationStudy.from_openminds) | Create a SimulationStudy from openMINDS JSON-LD. |
+| [get_experiment](#tvbo.classes.study.SimulationStudy.get_experiment) | Retrieve a single experiment by its declared id. |
+| [list_db](#tvbo.classes.study.SimulationStudy.list_db) | List available studies in the tvbo database. |
+| [nested_studies](#tvbo.classes.study.SimulationStudy.nested_studies) | This study's immediate sub-studies as ``(label, study)`` pairs. |
+| [report](#tvbo.classes.study.SimulationStudy.report) | Render one Methods section for the whole study. |
+| [run](#tvbo.classes.study.SimulationStudy.run) | Run the whole study in process — every experiment, its analyses, its declared figures — and return what it produced. |
+| [study_label](#tvbo.classes.study.SimulationStudy.study_label) | The name this study is addressed by — in a `--skip` list, a `count:` binding, or a run's progress line. |
+| [to_openminds](#tvbo.classes.study.SimulationStudy.to_openminds) | Export study to openMINDS JSON-LD format. |
+| [walk_studies](#tvbo.classes.study.SimulationStudy.walk_studies) | Every study in this tree, each sub-study before the study that holds it. |
+
+##### cite { #tvbo.classes.study.SimulationStudy.cite }
+
+```python
+classes.study.SimulationStudy.cite()
+```
+
+Return the formatted citation for this study.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                          |
+|--------|--------|------------------------------------------------------|
+|        |        | The citation string resolved from the study's `key`. |
+
+##### experiment_ids { #tvbo.classes.study.SimulationStudy.experiment_ids }
+
+```python
+classes.study.SimulationStudy.experiment_ids()
+```
+
+The declared experiment ids, in recipe order.
+
+##### from_datamodel { #tvbo.classes.study.SimulationStudy.from_datamodel }
+
+```python
+classes.study.SimulationStudy.from_datamodel(datamodel)
+```
+
+Wrap a generated datamodel instance as a `SimulationStudy`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type                           | Description                                                                 | Default    |
+|-----------|--------------------------------|-----------------------------------------------------------------------------|------------|
+| datamodel | tvbo_datamodel.SimulationStudy | A datamodel-level study whose fields are copied into the user-facing class. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                    |
+|--------|--------|----------------------------------------------------------------|
+|        |        | A `SimulationStudy` with the same field values as `datamodel`. |
+
+##### from_db { #tvbo.classes.study.SimulationStudy.from_db }
+
+```python
+classes.study.SimulationStudy.from_db(name)
+```
+
+Load a SimulationStudy by name from the tvbo database.
+
+##### from_file { #tvbo.classes.study.SimulationStudy.from_file }
+
+```python
+classes.study.SimulationStudy.from_file(filepath)
+```
+
+Load a study from a local YAML file.
+
+The resolved absolute path is stored on the returned instance so that experiments materialised later can locate sibling data files.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                  | Default    |
+|----------|--------|------------------------------|------------|
+| filepath |        | Path to the study YAML file. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                               |
+|--------|--------|-------------------------------------------|
+|        |        | A `SimulationStudy` parsed from the file. |
+
+##### from_openminds { #tvbo.classes.study.SimulationStudy.from_openminds }
+
+```python
+classes.study.SimulationStudy.from_openminds(source)
+```
+
+Create a SimulationStudy from openMINDS JSON-LD.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+source : str or dict
+    Either a file path to a JSON-LD file, or a dict containing
+    JSON-LD data.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+SimulationStudy
+    New instance constructed from the openMINDS data.
+
+
+
+###### Example: {.doc-section .doc-section-example}
+
+>>> study = SimulationStudy.from_openminds("study.jsonld")
+>>> study = SimulationStudy.from_openminds({"@type": "tvbo:SimulationStudy", ...})
+
+##### get_experiment { #tvbo.classes.study.SimulationStudy.get_experiment }
+
+```python
+classes.study.SimulationStudy.get_experiment(experiment_id)
+```
+
+Retrieve a single experiment by its declared id.
+
+##### list_db { #tvbo.classes.study.SimulationStudy.list_db }
+
+```python
+classes.study.SimulationStudy.list_db()
+```
+
+List available studies in the tvbo database.
+
+##### nested_studies { #tvbo.classes.study.SimulationStudy.nested_studies }
+
+```python
+classes.study.SimulationStudy.nested_studies()
+```
+
+This study's immediate sub-studies as ``(label, study)`` pairs.
+
+A sub-study spliced in by ``!include`` carries the file it came from, so it keeps its own ``_source_file`` and therefore its own results root, code directory and relative references — which is the whole point of nesting by pointer rather than by copy. A sub-study written inline has no file of its own and inherits this study's.
+
+Wired once when the study is loaded, so the tree is parsed exactly once however often it is walked.
+
+##### report { #tvbo.classes.study.SimulationStudy.report }
+
+```python
+classes.study.SimulationStudy.report(
+    format='markdown',
+    part='main',
+    level=2,
+    equations='semantic',
+    orient='auto',
+    experiments=None,
+    outputfile=None,
+    derivative_notation='dot',
+    mul_symbol=None,
+)
+```
+
+Render one Methods section for the whole study.
+
+Experiments that share a model share its equations and its symbol table; a model that merely varies a sibling contributes only its delta. Everything the experiments hold in common is stated once, and the comparison table carries only what actually differs — so a seven-experiment study stops emitting seven copies of the same six equations and three copies of the same parameter table.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name                | Type        | Description                                                                                                                                                                                                                                                             | Default      |
+|---------------------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| format              | str         | ``markdown`` / ``md`` (``\\tag`` numbering), ``qmd`` (Quarto ``{#eq-…}`` / ``{#tbl-…}`` anchors), or ``pdf``.                                                                                                                                                           | `'markdown'` |
+| part                | str         | ``main``, ``supplementary`` or ``all`` — which experiments carry their full paragraph, read from each experiment's declared ``part``. Every experiment appears in the comparison table regardless, so a demoted one is still visible; ``part`` never changes what runs. | `'main'`     |
+| level               | int         | Heading depth of the model sections, so the block nests under the section that hosts it; experiments sit one level deeper.                                                                                                                                              | `2`          |
+| equations           | str         | ``semantic`` anchors on model and variable (stable when an experiment is inserted), ``sequential`` anchors on the number, ``none`` leaves equations unnumbered.                                                                                                         | `'semantic'` |
+| orient              | str         | ``auto`` keeps the experiment table narrow, or pin it with ``rows`` / ``columns`` (where the *experiments* go) so the Methods keeps its shape.                                                                                                                          | `'auto'`     |
+| experiments         |             | Optional explicit ids to describe; defaults to all of them.                                                                                                                                                                                                             | `None`       |
+| outputfile          | str \| None | Write the render here; the extension (``.md`` / ``.qmd`` / ``.pdf``) overrides ``format``.                                                                                                                                                                              | `None`       |
+| derivative_notation | str         | ``dot`` for :math:`\\dot x`, anything else for ``dx/dt``.                                                                                                                                                                                                               | `'dot'`      |
+| mul_symbol          | str \| None | Passed to ``sympy.latex``.                                                                                                                                                                                                                                              | `None`       |
+
+##### run { #tvbo.classes.study.SimulationStudy.run }
+
+```python
+classes.study.SimulationStudy.run(root=None, *, backend=None, figures=True)
+```
+
+Run the whole study in process — every experiment, its analyses, its declared figures — and return what it produced.
+
+The Python entry point to what ``tvbo run <recipe>.yaml`` does from a shell, on the same orchestration, so a notebook and the CLI cannot drift apart. Use it wherever the containers are wanted as objects rather than as files: a docs page, a notebook, an embedding application.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type        | Description                                                                                                                                                                                                                                                                                                                   | Default   |
+|---------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| root    |             | The study root this run writes into — containers land in its results directory, figures in its figures directory, and every layer's ``used:`` resolves against it. Defaults to the recipe's own directory, which is what the CLI uses; point it elsewhere to keep a run's outputs out of the tree the recipe is committed in. | `None`    |
+| backend | str \| None | Backend for each experiment that does not declare its own.                                                                                                                                                                                                                                                                    | `None`    |
+| figures | bool        | Render the study's declared ``figures:`` once the experiments finish.                                                                                                                                                                                                                                                         | `True`    |
+
+A study-of-studies runs through the same branch the CLI takes: every nested study first, in its own directory, then this study's own content, then the results manifest — and each nested study's own `StudyResult` comes back under `StudyResult.studies`.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type        | Description                                                                                                                                                 |
+|--------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | StudyResult | A [`StudyResult`](#tvbo.classes.study.StudyResult) — the experiments' containers by id, the analyses by name, the rendered figures, and any nested studies. |
+
+##### study_label { #tvbo.classes.study.SimulationStudy.study_label }
+
+```python
+classes.study.SimulationStudy.study_label()
+```
+
+The name this study is addressed by — in a `--skip` list, a `count:` binding, or a run's progress line.
+
+The citekey first, then the recipe's own filename, and only then ``label``: a study's ``label`` is a human-readable title and is frequently a whole sentence, which no one can type into ``--skip`` and which reads as noise in a progress line.
+
+##### to_openminds { #tvbo.classes.study.SimulationStudy.to_openminds }
+
+```python
+classes.study.SimulationStudy.to_openminds(
+    filepath=None,
+    base_id=None,
+    include_context=True,
+)
+```
+
+Export study to openMINDS JSON-LD format.
+
+
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+filepath : str, optional
+    If provided, write JSON-LD to this file path.
+base_id : str, optional
+    Base URI for generating @id values (e.g., "https://example.org/studies").
+    If not provided and study has a DOI, uses the DOI as @id.
+include_context : bool
+    Whether to include the @context in the output. Default True.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+dict
+    OpenMINDS-compatible JSON-LD dictionary.
+
+
+
+###### Example: {.doc-section .doc-section-example}
+
+>>> study = SimulationStudy.from_file("study.yaml")
+>>> jsonld = study.to_openminds()
+>>> study.to_openminds("output.jsonld", base_id="https://example.org")
+
+##### walk_studies { #tvbo.classes.study.SimulationStudy.walk_studies }
+
+```python
+classes.study.SimulationStudy.walk_studies(include_self=True)
+```
+
+Every study in this tree, each sub-study before the study that holds it.
+
+Depth first with the holder last, because that is the order the content depends in: a study's own analyses and figures may read what its sub-studies produced, never the other way round. *include_self* drops the outermost study, which is how a caller runs the tree without re-running the study it started from.
+
+### StudyResult { #tvbo.classes.study.StudyResult }
+
+```python
+classes.study.StudyResult(
+    study,
+    root,
+    results_root,
+    experiments,
+    figures,
+    studies=None,
+)
+```
+
+What one :meth:`SimulationStudy.run` produced — the study-level counterpart of the :class:`~tvbo.data.types.ExperimentResult` a single experiment's ``run()`` returns.
+
+A mapping from experiment to that experiment's outputs, read back from the same container the study's figures read, so a page and the figure it shows cannot report different numbers. Keys are the ``exp-<id>`` spelling the recipe's ``id:`` gives each experiment, which is also the name of the container on disk; the experiment's ``label`` reaches it too, and so does the bare id a figure layer writes (``used: {experiment: 2}``). A bare integer is accepted for that last reason and no other: it is the id, never a position in the list.
+
+Each entry is an :class:`xarray.DataTree` in the recipe's own shape rather than the container's flat one, so an output is reached along the path it was declared at::
+
+    results["exp-1"].optimizations.spectral_gradient_fit.observations.peak_frequencies
+
+Being a tree rather than a bag of attributes is what keeps the run an xarray object end to end: the node labels are declared once at the root and inherited by every group, one ``.sel`` reaches every per-node output at once, and an analysis can write back out what it derived.
+
+:meth:`dataset` hands back the underlying :class:`xarray.Dataset` for anyone who wants the flat names, :meth:`analysis` reaches an analysis container by name, :meth:`figure` a rendered figure by name, and :meth:`report` the study's Methods section. Containers are read on first access and cached.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [figures](#tvbo.classes.study.StudyResult.figures) | The rendered figures, keyed by their declared ``name``. |
+| [studies](#tvbo.classes.study.StudyResult.studies) | Each nested study's own result, keyed by the label it goes by — empty unless this is a study-of-studies. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [analysis](#tvbo.classes.study.StudyResult.analysis) | The container the analysis *name* wrote, as a labelled :class:`xarray.Dataset`. |
+| [dataset](#tvbo.classes.study.StudyResult.dataset) | The raw :class:`xarray.Dataset` behind experiment *key*, with the container's flat variable names. |
+| [figure](#tvbo.classes.study.StudyResult.figure) | The rendered figure *name*, or the only one when the study declares a single figure. |
+| [report](#tvbo.classes.study.StudyResult.report) | The study's Methods section — :meth:`SimulationStudy.report`, reached from the run that produced the numbers it describes. |
+
+##### analysis { #tvbo.classes.study.StudyResult.analysis }
+
+```python
+classes.study.StudyResult.analysis(name)
+```
+
+The container the analysis *name* wrote, as a labelled :class:`xarray.Dataset`.
+
+##### dataset { #tvbo.classes.study.StudyResult.dataset }
+
+```python
+classes.study.StudyResult.dataset(key)
+```
+
+The raw :class:`xarray.Dataset` behind experiment *key*, with the container's flat variable names.
+
+##### figure { #tvbo.classes.study.StudyResult.figure }
+
+```python
+classes.study.StudyResult.figure(name=None)
+```
+
+The rendered figure *name*, or the only one when the study declares a single figure.
+
+##### report { #tvbo.classes.study.StudyResult.report }
+
+```python
+classes.study.StudyResult.report(*args, **kwargs)
+```
+
+The study's Methods section — :meth:`SimulationStudy.report`, reached from the run that produced the numbers it describes.

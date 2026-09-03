@@ -1,0 +1,104 @@
+# Slot: continuations 
+
+
+_Numerical continuation and bifurcation analysis specifications. Each entry defines a continuation experiment (equilibrium branch, codim-2 curve, periodic orbit family, etc.).            # Either reference a full reusable environment (preferred) or, for_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/continuations](https://w3id.org/tvbo/slot/continuations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Continuation](../classes/Continuation.qmd) |
+| Domain Of | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:continuations |
+| native | tvbo:continuations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: continuations
+description: 'Numerical continuation and bifurcation analysis specifications. Each
+  entry defines a continuation experiment (equilibrium branch, codim-2 curve, periodic
+  orbit family, etc.).            # Either reference a full reusable environment (preferred)
+  or, for'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationExperiment
+domain_of:
+- SimulationExperiment
+range: Continuation
+multivalued: true
+inlined: true
+
+```
+</details></div>

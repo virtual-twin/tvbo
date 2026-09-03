@@ -1,0 +1,104 @@
+# Slot: graph_representation 
+
+
+_Representation used to evaluate coupling over this network's connectivity (``auto`` | ``dense`` | ``sparse``). ``auto`` lets the backend choose by connection density. This names whether to exploit edge sparsity, not a concrete data structure, so it is backend-independent; the delayed-vs-instantaneous graph kind is decided separately from the couplings' conduction delays._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/graph_representation](https://w3id.org/tvbo/slot/graph_representation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [GraphRepresentation](../enums/GraphRepresentation.qmd) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(auto)` |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:graph_representation |
+| native | tvbo:graph_representation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: graph_representation
+description: Representation used to evaluate coupling over this network's connectivity
+  (``auto`` | ``dense`` | ``sparse``). ``auto`` lets the backend choose by connection
+  density. This names whether to exploit edge sparsity, not a concrete data structure,
+  so it is backend-independent; the delayed-vs-instantaneous graph kind is decided
+  separately from the couplings' conduction delays.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(auto)
+owner: Network
+domain_of:
+- Network
+range: GraphRepresentation
+
+```
+</details></div>

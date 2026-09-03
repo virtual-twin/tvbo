@@ -1,0 +1,105 @@
+# Slot: cse 
+
+
+_Code-generation hint (opt-in, backend-independent): eliminate common subexpressions. When true, the generator evaluates each repeated subexpression — including repeated calls to model-defined functions — once and reuses the result instead of re-emitting it at every occurrence. Purely a performance hint: results are numerically identical. A backend whose compiler already performs this elimination may honour it as a no-op. Off by default (expressions are emitted in flat form)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/cse](https://w3id.org/tvbo/slot/cse)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:cse |
+| native | tvbo:cse |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: cse
+description: 'Code-generation hint (opt-in, backend-independent): eliminate common
+  subexpressions. When true, the generator evaluates each repeated subexpression —
+  including repeated calls to model-defined functions — once and reuses the result
+  instead of re-emitting it at every occurrence. Purely a performance hint: results
+  are numerically identical. A backend whose compiler already performs this elimination
+  may honour it as a no-op. Off by default (expressions are emitted in flat form).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: Dynamics
+domain_of:
+- Dynamics
+range: boolean
+
+```
+</details></div>

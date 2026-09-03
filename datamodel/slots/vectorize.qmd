@@ -1,0 +1,101 @@
+# Slot: vectorize 
+
+
+_Axis names or parameters to pack into a single vectorized backend call. It is an error to name an axis the backend cannot batch._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/vectorize](https://w3id.org/tvbo/slot/vectorize)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DistributionConfig](../classes/DistributionConfig.qmd) | Policy for mapping a parameter sweep's exploration axes onto the two parallel... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [DistributionConfig](../classes/DistributionConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DistributionConfig](../classes/DistributionConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:vectorize |
+| native | tvbo:vectorize |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: vectorize
+description: Axis names or parameters to pack into a single vectorized backend call.
+  It is an error to name an axis the backend cannot batch.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: DistributionConfig
+domain_of:
+- DistributionConfig
+range: string
+multivalued: true
+
+```
+</details></div>

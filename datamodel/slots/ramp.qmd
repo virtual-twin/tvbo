@@ -1,0 +1,103 @@
+# Slot: ramp 
+
+
+_For method=from_working_point: the parameter + domain to ramp quasi-statically (warm-start, from_previous) to reach the working point; the run then seeds from the ramp endpoint. Reuses ExplorationAxis (parameter + Range domain) — the same primitive an Exploration warm-start uses; the per-step settle comes from the experiment's integration (transient, else duration)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/ramp](https://w3id.org/tvbo/slot/ramp)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [InitialState](../classes/InitialState.qmd) | How to obtain the starting equilibrium or periodic orbit for continuation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ExplorationAxis](../classes/ExplorationAxis.qmd) |
+| Domain Of | [InitialState](../classes/InitialState.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [InitialState](../classes/InitialState.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ramp |
+| native | tvbo:ramp |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ramp
+description: 'For method=from_working_point: the parameter + domain to ramp quasi-statically
+  (warm-start, from_previous) to reach the working point; the run then seeds from
+  the ramp endpoint. Reuses ExplorationAxis (parameter + Range domain) — the same
+  primitive an Exploration warm-start uses; the per-step settle comes from the experiment''s
+  integration (transient, else duration).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: InitialState
+domain_of:
+- InitialState
+range: ExplorationAxis
+inlined: true
+
+```
+</details></div>

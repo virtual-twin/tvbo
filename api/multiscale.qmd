@@ -1,0 +1,71 @@
+# multiscale { #tvbo.multiscale }
+
+`multiscale`
+
+Flatten a multi-scale reservoir SimulationExperiment to a flat one (Python).
+
+Lowering strategy for Experiment A (per-region reservoirs): a network of ``R`` macro regions, each hosting an ``n``-unit reservoir (``Node.subnetwork`` with a ``RandomReservoir`` generator) coupled long-range through the empirical SC, is compiled into a single **flat** ``R·n``-node scalar network plus a global weight matrix that the existing tvboptim backend runs unchanged. No vector-state machinery in the templates — the multi-scale structure is resolved entirely in Python (the chosen "flatten in Python" approach).
+
+
+
+## The reservoir multi-scale pattern this handles {.doc-section .doc-section-the-reservoir-multi-scale-pattern-this-handles}
+
+Inner unit dynamics (leaky-integrator + activation of recurrence + drive)::
+
+    dx/dt = (1/tau) * (-x + act(W_int @ x + sc_drive))
+
+with the cross-layer edges forming a **linear** down/up coupling:
+
+* downward (``source_network: ".."``): ``sc_drive = W_in ⊙ (kappa · SC @ x_bar)``
+  — the parent's long-range signal, scaled by a per-unit projection ``W_in``;
+* upward mean-pool (``target_network: ".."``, ``rhs: mean(x)``): ``x_bar`` feeds
+  the macro coupling;
+* (optional) upward trained readout ``W_out @ x`` — ignored for free-running.
+
+Because both the recurrence (``W_int @ x``) and the cross-region drive are linear in the units' states and enter the *same* activation, they fold into one global matrix via Kronecker structure::
+
+    W_global = kron(I_R, W_int)  +  (kappa / n) · kron(SC, outer(W_in, 1ₙ))
+    dX/dt    = (1/tau) · (-X + act(W_global @ X))            # X ∈ ℝ^{R·n}
+
+The flat model is a scalar leaky-integrator whose coupling enters *inside* the activation. ``flatten_reservoir`` validates the spec matches this pattern and raises otherwise — it is a principled lowering of a well-defined model class, not a general arbitrary-coupling compiler (that would be the Stage-3 codegen engine emitting the procedure on-device).
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [FlatReservoir](#tvbo.multiscale.FlatReservoir) | Result of flattening: ready-to-run flat experiment pieces. |
+
+### FlatReservoir { #tvbo.multiscale.FlatReservoir }
+
+```python
+multiscale.FlatReservoir(
+    dynamics,
+    coupling,
+    integration,
+    weights,
+    n_units,
+    n_regions,
+    tau,
+    activation,
+)
+```
+
+Result of flattening: ready-to-run flat experiment pieces.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [flatten_reservoir](#tvbo.multiscale.flatten_reservoir) | Flatten a per-region-reservoir experiment dict into a flat scalar model. |
+
+### flatten_reservoir { #tvbo.multiscale.flatten_reservoir }
+
+```python
+multiscale.flatten_reservoir(exp, n_override=None, max_flat_nodes=12000)
+```
+
+Flatten a per-region-reservoir experiment dict into a flat scalar model.
+
+``exp`` is the parsed Experiment-A YAML (a plain dict). ``n_override`` optionally shrinks the reservoir size for a fast demonstration run (the full ``n`` from the spec is memory-heavy: ``W_global`` is dense ``(R·n)²``).
+
+``max_flat_nodes`` caps the flat node count ``R·n`` before the dense ``(R·n)²`` float64 ``W_global`` is allocated. Because memory grows quadratically, a full-``n`` reservoir over a whole-brain SC can exhaust RAM (this lowering has OOM-crashed a machine). Exceeding the cap raises with the projected allocation size; pass a larger value — or ``None`` to disable — once the memory is known to be available.

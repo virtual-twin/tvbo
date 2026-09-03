@@ -1,0 +1,735 @@
+# Class: SoftwareEnvironment 
+
+
+_A reproducible software environment aggregating one or more SoftwareRequirement entries. Used by SimulationExperiment to specify the execution context._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:class/SoftwareEnvironment](https://w3id.org/tvbo/software/class/SoftwareEnvironment)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class SoftwareEnvironment
+    click SoftwareEnvironment href "./SoftwareEnvironment.html"
+      SoftwareEnvironment : build_hash
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "0..1" String : build_hash
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareEnvironment : container_image
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "0..1" String : container_image
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareEnvironment : dataLocation
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "0..1" String : dataLocation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareEnvironment : description
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareEnvironment : environment_type
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "0..1" EnvironmentType : environment_type
+        click EnvironmentType href "../../enums/EnvironmentType.html"
+    
+
+        
+      SoftwareEnvironment : label
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareEnvironment : name
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareEnvironment : platform
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "0..1" String : platform
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SoftwareEnvironment : requirements
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "*" SoftwareRequirement : requirements
+        click SoftwareRequirement href "./SoftwareRequirement.html"
+    
+
+        
+      SoftwareEnvironment : version
+        
+          
+    
+        
+        
+        SoftwareEnvironment --> "0..1" String : version
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dataLocation](../slots/dataLocation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [version](../slots/version.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Environment definition version (not a package version) | direct |
+| [platform](../slots/platform.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | OS / architecture (e | direct |
+| [environment_type](../slots/environment_type.qmd) | 0..1 <br/> [EnvironmentType](../enums/EnvironmentType.qmd) | Category: conda, venv, docker, etc | direct |
+| [container_image](../slots/container_image.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Container image reference (e | direct |
+| [build_hash](../slots/build_hash.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Deterministic hash of the resolved dependency set | direct |
+| [requirements](../slots/requirements.qmd) | * <br/> [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | Constituent software requirements | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | [environment](../slots/environment.qmd) | range | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+| [Observation](../classes/Observation.qmd) | [environment](../slots/environment.qmd) | range | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [environment](../slots/environment.qmd) | range | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+| [TimeSeries](../classes/TimeSeries.qmd) | [software_environment](../slots/software_environment.qmd) | range | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+| [PDESolver](../classes/PDESolver.qmd) | [environment](../slots/environment.qmd) | range | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |
+
+
+
+
+
+
+
+
+
+
+## Comments
+
+* An environment aggregates one or more SoftwareRequirement entries.
+* Use SimulationExperiment.environment to reference a reusable environment.
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:SoftwareEnvironment |
+| native | tvbo_sw:SoftwareEnvironment |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: SoftwareEnvironment
+description: A reproducible software environment aggregating one or more SoftwareRequirement
+  entries. Used by SimulationExperiment to specify the execution context.
+comments:
+- An environment aggregates one or more SoftwareRequirement entries.
+- Use SimulationExperiment.environment to reference a reusable environment.
+from_schema: https://w3id.org/tvbo/software
+slots:
+- name
+attributes:
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: rdfs:label
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: dcterms:description
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  dataLocation:
+    name: dataLocation
+    from_schema: https://w3id.org/tvbo/software
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+  version:
+    name: version
+    description: Environment definition version (not a package version).
+    from_schema: https://w3id.org/tvbo/software
+    domain_of:
+    - ClinicalScale
+    - SoftwarePackage
+    - SimulationTool
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    range: string
+  platform:
+    name: platform
+    description: OS / architecture (e.g., linux-64, macos-arm64).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareEnvironment
+    range: string
+  environment_type:
+    name: environment_type
+    description: 'Category: conda, venv, docker, etc.'
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareEnvironment
+    range: EnvironmentType
+  container_image:
+    name: container_image
+    description: Container image reference (e.g., ghcr.io/org/img:tag@sha256:...).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareEnvironment
+    range: string
+  build_hash:
+    name: build_hash
+    description: Deterministic hash of the resolved dependency set.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    domain_of:
+    - SoftwareEnvironment
+    range: string
+  requirements:
+    name: requirements
+    description: Constituent software requirements.
+    from_schema: https://w3id.org/tvbo/software
+    domain_of:
+    - SoftwareEnvironment
+    - Function
+    - WorkflowConfig
+    - PDESolver
+    range: SoftwareRequirement
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: SoftwareEnvironment
+description: A reproducible software environment aggregating one or more SoftwareRequirement
+  entries. Used by SimulationExperiment to specify the execution context.
+comments:
+- An environment aggregates one or more SoftwareRequirement entries.
+- Use SimulationExperiment.environment to reference a reusable environment.
+from_schema: https://w3id.org/tvbo/software
+attributes:
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: rdfs:label
+    owner: SoftwareEnvironment
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/software
+    slot_uri: dcterms:description
+    owner: SoftwareEnvironment
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  dataLocation:
+    name: dataLocation
+    from_schema: https://w3id.org/tvbo/software
+    owner: SoftwareEnvironment
+    domain_of:
+    - ParcellationTerminology
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Stimulus
+    - Event
+    - Matrix
+    - Dynamics
+    - RandomStream
+    - RegionMapping
+    - TimeSeries
+    - NDArray
+    - Mesh
+    range: string
+  version:
+    name: version
+    description: Environment definition version (not a package version).
+    from_schema: https://w3id.org/tvbo/software
+    owner: SoftwareEnvironment
+    domain_of:
+    - ClinicalScale
+    - SoftwarePackage
+    - SimulationTool
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    range: string
+  platform:
+    name: platform
+    description: OS / architecture (e.g., linux-64, macos-arm64).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareEnvironment
+    domain_of:
+    - SoftwareEnvironment
+    range: string
+  environment_type:
+    name: environment_type
+    description: 'Category: conda, venv, docker, etc.'
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareEnvironment
+    domain_of:
+    - SoftwareEnvironment
+    range: EnvironmentType
+  container_image:
+    name: container_image
+    description: Container image reference (e.g., ghcr.io/org/img:tag@sha256:...).
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareEnvironment
+    domain_of:
+    - SoftwareEnvironment
+    range: string
+  build_hash:
+    name: build_hash
+    description: Deterministic hash of the resolved dependency set.
+    from_schema: https://w3id.org/tvbo/software
+    rank: 1000
+    owner: SoftwareEnvironment
+    domain_of:
+    - SoftwareEnvironment
+    range: string
+  requirements:
+    name: requirements
+    description: Constituent software requirements.
+    from_schema: https://w3id.org/tvbo/software
+    owner: SoftwareEnvironment
+    domain_of:
+    - SoftwareEnvironment
+    - Function
+    - WorkflowConfig
+    - PDESolver
+    range: SoftwareRequirement
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: SoftwareEnvironment
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+
+```
+</details></div>

@@ -1,0 +1,88 @@
+# phase { #tvbo.plot.phase }
+
+`plot.phase`
+
+Phase-space trajectory and vector-field plots for SimulationResult.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [plot_phase](#tvbo.plot.phase.plot_phase) | 2D phase-space trajectory colored by time. |
+| [plot_vector_field](#tvbo.plot.phase.plot_vector_field) | Vector field (streamplot or quiver) from the dynamics RHS. |
+
+### plot_phase { #tvbo.plot.phase.plot_phase }
+
+```python
+plot.phase.plot_phase(
+    result,
+    x_var=None,
+    y_var=None,
+    region=0,
+    mode=0,
+    ax=None,
+    colorbar=True,
+    **kwargs,
+)
+```
+
+2D phase-space trajectory colored by time.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+result : SimulationResult x_var, y_var : str, optional
+    Variable names for x/y axes. Defaults to first two.
+region, mode : int
+    Index selection when node/mode dims exist.
+ax : matplotlib.axes.Axes, optional colorbar : bool
+    Show time colorbar.
+**kwargs
+    Forwarded to ``ax.scatter()``.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.figure.Figure or None
+
+### plot_vector_field { #tvbo.plot.phase.plot_vector_field }
+
+```python
+plot.phase.plot_vector_field(
+    result,
+    x_var=None,
+    y_var=None,
+    region=0,
+    mode=0,
+    grid_n=20,
+    ax=None,
+    stream=True,
+    trajectory=True,
+    inputs=None,
+    **kwargs,
+)
+```
+
+Vector field (streamplot or quiver) from the dynamics RHS.
+
+Requires ``result`` to carry a reference to the source experiment (via ``ExperimentResult.source``) so the dynamics equations are available.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+result : SimulationResult x_var, y_var : str, optional region, mode : int grid_n : int
+    Grid resolution per axis.
+ax : matplotlib.axes.Axes, optional stream : bool
+    If True use streamplot, otherwise quiver.
+trajectory : bool
+    Overlay the simulation trajectory.
+inputs : dict, optional
+    Values for symbols the dfun expects but the phase plane does not supply —
+    typically coupling inputs such as ``c_glob``. Anything unspecified is
+    evaluated at ``0``, giving the isolated-node vector field. Pass e.g.
+    ``inputs={"c_glob": 0.3}`` to draw the field at a fixed coupling drive.
+**kwargs
+    Forwarded to ``streamplot`` / ``quiver``.

@@ -1,0 +1,127 @@
+# units { #tvbo.analysis.units }
+
+`analysis.units`
+
+Dimensional analysis of a model's equations.
+
+The symbolic layer knows a quantity is *real*. This is what lets it know a quantity is
+*a voltage*: units travel **beside** the expression, as a map from the scope's own
+symbols to the unit each was declared in, and propagate through the equation rather than being multiplied into it.
+
+Beside, not inside, for three reasons. 87% of quantities in the curated database declare no unit, so an expression carrying `Quantity` factors would be inconsistent by construction for almost every model; every consumer of the symbolic layer would have to strip those factors before printing; and the frozen codegen corpus would move. None of that buys anything a separate map does not.
+
+The verdict is three-valued — `consistent`, `inconsistent`, `underdetermined` — because "I cannot tell" is a different claim from "this is wrong", and collapsing them is how a checker becomes noise. An undeclared quantity is the common case, and treating it as dimensionless silently corrupts the answer: `hhcell_1` declares units for 92% of its symbols and reports `dv/dt` as `1/capacitance` — not voltage over time — purely because its one undeclared symbol was assumed dimensionless.
+
+Two strictnesses over one map (U2). `dimensional` compares base-dimension vectors, so `mV/ms` and `V/s` agree; `exact` compares the full quantity, so they do not, and the disagreement is reported as the exact rational ratio `1` vs `1000`. The ratio is the part that names the bug — a boolean does not.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [CONSISTENT](#tvbo.analysis.units.CONSISTENT) |  |
+| [INCONSISTENT](#tvbo.analysis.units.INCONSISTENT) |  |
+| [UNDERDETERMINED](#tvbo.analysis.units.UNDERDETERMINED) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [DimensionalClash](#tvbo.analysis.units.DimensionalClash) | Two quantities that must agree dimensionally do not. |
+| [Term](#tvbo.analysis.units.Term) | One addend of an equation, with the unit propagation assigned to it. |
+| [Verdict](#tvbo.analysis.units.Verdict) | The dimensional standing of one equation. |
+
+### DimensionalClash { #tvbo.analysis.units.DimensionalClash }
+
+```python
+analysis.units.DimensionalClash()
+```
+
+Two quantities that must agree dimensionally do not.
+
+### Term { #tvbo.analysis.units.Term }
+
+```python
+analysis.units.Term(expression, unit=None, unknown=None)
+```
+
+One addend of an equation, with the unit propagation assigned to it.
+
+### Verdict { #tvbo.analysis.units.Verdict }
+
+```python
+analysis.units.Verdict(
+    name,
+    equation,
+    status,
+    detail='',
+    unit=None,
+    ratios=dict(),
+    inferred=dict(),
+    undeclared=(),
+)
+```
+
+The dimensional standing of one equation.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [check_units](#tvbo.analysis.units.check_units) | Per-equation dimensional verdicts for *model*. |
+| [declared_units](#tvbo.analysis.units.declared_units) | The third projection of the symbolic layer: `{scope symbol: declared unit}`. |
+| [dimension_exponents](#tvbo.analysis.units.dimension_exponents) | ISO 80000-1 base-dimension exponents of a declared unit, for reporting (U25). |
+| [quantity_name](#tvbo.analysis.units.quantity_name) | The name of the quantity *expression* stands for. |
+
+### check_units { #tvbo.analysis.units.check_units }
+
+```python
+analysis.units.check_units(model, strictness='dimensional', time_unit=None)
+```
+
+Per-equation dimensional verdicts for *model*.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type        | Description                                                                                                                                                    | Default         |
+|------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| model      |             | A `Dynamics`, read through its symbolic projection.                                                                                                            | _required_      |
+| strictness | str         | `"dimensional"` compares base-dimension vectors, so `mV/ms` and `V/s` agree. `"exact"` compares the whole quantity, so they do not, and the ratio is reported. | `'dimensional'` |
+| time_unit  | str \| None | The scope's time unit; resolved via `time_unit_of` when omitted.                                                                                               | `None`          |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type            | Description                                                                     |
+|--------|-----------------|---------------------------------------------------------------------------------|
+|        | list\[Verdict\] | One `Verdict` per state equation, each `consistent`, `inconsistent` or          |
+|        | list\[Verdict\] | `underdetermined`, carrying the derived unit, any inferred units, and the exact |
+|        | list\[Verdict\] | ratios of any disagreement.                                                     |
+
+### declared_units { #tvbo.analysis.units.declared_units }
+
+```python
+analysis.units.declared_units(model, scope=None)
+```
+
+The third projection of the symbolic layer: `{scope symbol: declared unit}`.
+
+Keyed by the scope's own symbols, like `Dynamics.symbolic["parameters"]` — rebuilt keys look identical, compare unequal, and would silently match nothing. A caller that already holds the analysis scope passes it, so the map is keyed by the very table its equations were parsed against rather than by whichever one the model resolves to.
+
+### dimension_exponents { #tvbo.analysis.units.dimension_exponents }
+
+```python
+analysis.units.dimension_exponents(unit)
+```
+
+ISO 80000-1 base-dimension exponents of a declared unit, for reporting (U25).
+
+`dim Q = L²MT⁻³I⁻¹` is what makes an inconsistency legible: `L²MT⁻³I⁻¹` against `L²MT⁻⁴I⁻¹` shows where the discrepancy is, where "voltage vs something else" does not.
+
+### quantity_name { #tvbo.analysis.units.quantity_name }
+
+```python
+analysis.units.quantity_name(expression)
+```
+
+The name of the quantity *expression* stands for.
+
+`y0` for all of `y0`, `y0(t)` and `Derivative(y0(t), t)` — a quantity is the same quantity however the notation renders it, and every caller (a verdict's label, a report row keyed by parameter name) wants that one name.

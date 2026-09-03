@@ -1,0 +1,104 @@
+# Slot: symmetric 
+
+
+_Centre the limits on zero, so zero is the map's midpoint. What a field of signed deviations needs — read on an off-centre scale it is misleading in a way no axis label catches._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/symmetric](https://w3id.org/tvbo/slot/symmetric)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ColorScale](../classes/ColorScale.qmd) | How values become colours, and where the scale starts and stops |  no  |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [Volume](../classes/Volume.qmd) | A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, ... |  no  |
+| [Graph](../classes/Graph.qmd) | A node-link panel's graph and how it is drawn: the connectome the model actua... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [ColorScale](../classes/ColorScale.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ColorScale](../classes/ColorScale.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:symmetric |
+| native | tvbo:symmetric |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: symmetric
+description: Centre the limits on zero, so zero is the map's midpoint. What a field
+  of signed deviations needs — read on an off-centre scale it is misleading in a way
+  no axis label catches.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: ColorScale
+domain_of:
+- ColorScale
+range: boolean
+
+```
+</details></div>

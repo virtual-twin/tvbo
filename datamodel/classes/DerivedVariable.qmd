@@ -1,0 +1,579 @@
+# Class: DerivedVariable 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:DerivedVariable](https://w3id.org/tvbo/DerivedVariable)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DerivedVariable
+    click DerivedVariable href "./DerivedVariable.html"
+      DerivedVariable : description
+        
+          
+    
+        
+        
+        DerivedVariable --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedVariable : equation
+        
+          
+    
+        
+        
+        DerivedVariable --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      DerivedVariable : grounding
+        
+          
+    
+        
+        
+        DerivedVariable --> "*" Uriorcurie : grounding
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      DerivedVariable : label
+        
+          
+    
+        
+        
+        DerivedVariable --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedVariable : name
+        
+          
+    
+        
+        
+        DerivedVariable --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedVariable : record
+        
+          
+    
+        
+        
+        DerivedVariable --> "0..1" Boolean : record
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      DerivedVariable : surrogate
+        
+          
+    
+        
+        
+        DerivedVariable --> "0..1" Surrogate : surrogate
+        click Surrogate href "./Surrogate.html"
+    
+
+        
+      DerivedVariable : symbol
+        
+          
+    
+        
+        
+        DerivedVariable --> "0..1" String : symbol
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedVariable : unit
+        
+          
+    
+        
+        
+        DerivedVariable --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:DerivedVariable](https://w3id.org/tvbo/DerivedVariable) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [symbol](../slots/symbol.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[UnitEnum](../enums/UnitEnum.qmd) | Physical unit of measurement | direct |
+| [record](../slots/record.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether to include this element in simulation output files | direct |
+| [grounding](../slots/grounding.qmd) | * <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this enti... | direct |
+| [surrogate](../slots/surrogate.qmd) | 0..1 <br/> [Surrogate](../classes/Surrogate.qmd) | Optional permutation-significance test: this derived variable's value is the ... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) | [derived_variables](../slots/derived_variables.qmd) | range | [DerivedVariable](../classes/DerivedVariable.qmd) |
+| [Dynamics](../classes/Dynamics.qmd) | [observed](../slots/observed.qmd) | range | [DerivedVariable](../classes/DerivedVariable.qmd) |
+| [Integrator](../classes/Integrator.qmd) | [intermediate_expressions](../slots/intermediate_expressions.qmd) | range | [DerivedVariable](../classes/DerivedVariable.qmd) |
+| [Integrator](../classes/Integrator.qmd) | [update_expression](../slots/update_expression.qmd) | range | [DerivedVariable](../classes/DerivedVariable.qmd) |
+| [Coupling](../classes/Coupling.qmd) | [observed](../slots/observed.qmd) | range | [DerivedVariable](../classes/DerivedVariable.qmd) |
+| [PDE](../classes/PDE.qmd) | [derived_variables](../slots/derived_variables.qmd) | range | [DerivedVariable](../classes/DerivedVariable.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:DerivedVariable |
+| native | tvbo:DerivedVariable |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DerivedVariable
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- label
+- symbol
+- description
+- equation
+- unit
+- record
+- grounding
+slot_usage:
+  record:
+    name: record
+    ifabsent: 'False'
+attributes:
+  surrogate:
+    name: surrogate
+    description: 'Optional permutation-significance test: this derived variable''s
+      value is the exceedance p-value of a named statistic under permutations of a
+      field (a general surrogate null — any permutation test, not wave-specific —
+      emitted as a vmap-fold over the captured permutations; the wrapped statistic
+      stays symbolic). When set, the variable''s own ``equation`` may be omitted.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DerivedVariable
+    range: Surrogate
+    inlined: true
+class_uri: tvbo:DerivedVariable
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DerivedVariable
+from_schema: https://w3id.org/tvbo
+slot_usage:
+  record:
+    name: record
+    ifabsent: 'False'
+attributes:
+  surrogate:
+    name: surrogate
+    description: 'Optional permutation-significance test: this derived variable''s
+      value is the exceedance p-value of a named statistic under permutations of a
+      field (a general surrogate null — any permutation test, not wave-specific —
+      emitted as a vmap-fold over the captured permutations; the wrapped statistic
+      stays symbolic). When set, the variable''s own ``equation`` may be omitted.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedVariable
+    domain_of:
+    - DerivedVariable
+    range: Surrogate
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: DerivedVariable
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: DerivedVariable
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  symbol:
+    name: symbol
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedVariable
+    domain_of:
+    - ToolUnit
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - DerivedParameter
+    - DerivedVariable
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: DerivedVariable
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:Equation
+    owner: DerivedVariable
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  unit:
+    name: unit
+    description: 'Physical unit of measurement. `UnitEnum` is the curated vocabulary
+      — each of its values is vendored from QUDT (`ontology/tvb-o-units.ttl`) and
+      can be reasoned about dimensionally. The range is deliberately open beyond it:
+      a unit nobody has curated yet is recorded as written and reported `uncurated`,
+      because a closed range forces the author to either misdeclare the quantity or
+      leave it undeclared, and both lose more than an unrecognised string does. An
+      uncurated unit carries no dimensional claim, so a check involving it reports
+      `underdetermined` rather than guessing. Promote one with `tvbo units add <unit>`,
+      which pulls its QUDT record into the vendored module — so every unit TVBO *reasons*
+      about stays authoritative, and only what it *records* is open.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: qudt:unit
+    owner: DerivedVariable
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+    any_of:
+    - range: UnitEnum
+    - range: string
+  record:
+    name: record
+    description: Whether to include this element in simulation output files. Applicable
+      to state variables (default true), derived variables (default false), and network
+      nodes (default true). On an observation it forces (true) or suppresses (false)
+      persistence in the result; left unset, a terminal observation (one not consumed
+      by another observation or a loss) is recorded and an intermediate one is not.
+      Set false to suppress recording.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: DerivedVariable
+    domain_of:
+    - Node
+    - Observation
+    - StateVariable
+    - DerivedVariable
+    - Exploration
+    range: boolean
+  grounding:
+    name: grounding
+    description: 'External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that
+      this entity is a surrogate / abstraction / model of. Realized as the `tvbo:surrogate_of`
+      object property, carried inline with the YAML data instance. Multiple IRIs allowed:
+      a single parameter may abstract several biological processes (e.g. a synaptic
+      conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical
+      synaptic transmission)).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:surrogate_of
+    owner: DerivedVariable
+    domain_of:
+    - StateVariable
+    - Parameter
+    - DerivedVariable
+    range: uriorcurie
+    multivalued: true
+class_uri: tvbo:DerivedVariable
+
+```
+</details></div>

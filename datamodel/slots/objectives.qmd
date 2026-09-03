@@ -1,0 +1,104 @@
+# Slot: objectives 
+
+
+_Names of observations minimised by an adaptive `strategy` (e.g. 'nsga2'). Each entry references an existing observation already framed lower-is-better (e.g. `one_minus_fc`, `psd_mae`). Count sets the semantics: 0 → pure sweep (use `record`), 1 → single-objective, ≥2 → multi-objective / Pareto. Ignored when strategy is 'grid'. Forward-compatible with `Search.objectives`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/objectives](https://w3id.org/tvbo/slot/objectives)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:objectives |
+| native | tvbo:objectives |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: objectives
+description: 'Names of observations minimised by an adaptive `strategy` (e.g. ''nsga2'').
+  Each entry references an existing observation already framed lower-is-better (e.g.
+  `one_minus_fc`, `psd_mae`). Count sets the semantics: 0 → pure sweep (use `record`),
+  1 → single-objective, ≥2 → multi-objective / Pareto. Ignored when strategy is ''grid''.
+  Forward-compatible with `Search.objectives`.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Exploration
+domain_of:
+- Exploration
+range: string
+multivalued: true
+
+```
+</details></div>

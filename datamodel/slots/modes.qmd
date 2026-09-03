@@ -1,0 +1,102 @@
+# Slot: modes 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/modes](https://w3id.org/tvbo/slot/modes)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Dynamics](../classes/Dynamics.qmd) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* components
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:modes |
+| native | tvbo:modes |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: modes
+from_schema: https://w3id.org/tvbo
+aliases:
+- components
+rank: 1000
+owner: Dynamics
+domain_of:
+- Dynamics
+range: Dynamics
+multivalued: true
+inlined: true
+
+```
+</details></div>

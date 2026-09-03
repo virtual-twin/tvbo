@@ -1,0 +1,1967 @@
+# Class: Inset 
+
+
+_A sub-axes that draws exactly as a panel does — same kinds, layers, opts, annotations — minus the things only a mosaic cell has (a panel letter, a placeholder, a position in the layout). One class for both an inset and a grid cell, so a cell cannot behave unlike the inset beside it; they differ only in who positions them._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Inset](https://w3id.org/tvbo/class/Inset)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Inset
+    click Inset href "./Inset.html"
+      Inset : annotations
+        
+          
+    
+        
+        
+        Inset --> "*" Annotation : annotations
+        click Annotation href "./Annotation.html"
+    
+
+        
+      Inset : aspect
+        
+          
+    
+        
+        
+        Inset --> "0..1" String : aspect
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inset : bounds
+        
+          
+    
+        
+        
+        Inset --> "*" Float : bounds
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : box_aspect
+        
+          
+    
+        
+        
+        Inset --> "0..1" Float : box_aspect
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : camera
+        
+          
+    
+        
+        
+        Inset --> "0..1" Camera : camera
+        click Camera href "./Camera.html"
+    
+
+        
+      Inset : cell
+        
+          
+    
+        
+        
+        Inset --> "0..1" Inset : cell
+        click Inset href "./Inset.html"
+    
+
+        
+      Inset : cells
+        
+          
+    
+        
+        
+        Inset --> "*" Inset : cells
+        click Inset href "./Inset.html"
+    
+
+        
+      Inset : colorbar
+        
+          
+    
+        
+        
+        Inset --> "0..1" Colorbar : colorbar
+        click Colorbar href "./Colorbar.html"
+    
+
+        
+      Inset : fill_cell
+        
+          
+    
+        
+        
+        Inset --> "0..1" Boolean : fill_cell
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Inset : frame
+        
+          
+    
+        
+        
+        Inset --> "0..1" Boolean : frame
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Inset : grid
+        
+          
+    
+        
+        
+        Inset --> "0..1" Grid : grid
+        click Grid href "./Grid.html"
+    
+
+        
+      Inset : hide_xticklabels
+        
+          
+    
+        
+        
+        Inset --> "0..1" Boolean : hide_xticklabels
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Inset : hide_yticklabels
+        
+          
+    
+        
+        
+        Inset --> "0..1" Boolean : hide_yticklabels
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Inset : invert_x
+        
+          
+    
+        
+        
+        Inset --> "0..1" Boolean : invert_x
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Inset : invert_y
+        
+          
+    
+        
+        
+        Inset --> "0..1" Boolean : invert_y
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Inset : invert_z
+        
+          
+    
+        
+        
+        Inset --> "0..1" Boolean : invert_z
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Inset : kind
+        
+          
+    
+        
+        
+        Inset --> "1" PanelKind : kind
+        click PanelKind href "../../enums/PanelKind.html"
+    
+
+        
+      Inset : label
+        
+          
+    
+        
+        
+        Inset --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inset : layers
+        
+          
+    
+        
+        
+        Inset --> "*" Layer : layers
+        click Layer href "./Layer.html"
+    
+
+        
+      Inset : legend
+        
+          
+    
+        
+        
+        Inset --> "0..1" Legend : legend
+        click Legend href "./Legend.html"
+    
+
+        
+      Inset : nbins
+        
+          
+    
+        
+        
+        Inset --> "0..1" Integer : nbins
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Inset : network
+        
+          
+    
+        
+        
+        Inset --> "0..1" Graph : network
+        click Graph href "./Graph.html"
+    
+
+        
+      Inset : opts
+        
+          
+    
+        
+        
+        Inset --> "*" Argument : opts
+        click Argument href "./Argument.html"
+    
+
+        
+      Inset : path
+        
+          
+    
+        
+        
+        Inset --> "0..1" String : path
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inset : regions
+        
+          
+    
+        
+        
+        Inset --> "*" Region : regions
+        click Region href "./Region.html"
+    
+
+        
+      Inset : render
+        
+          
+    
+        
+        
+        Inset --> "0..1" String : render
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inset : rules
+        
+          
+    
+        
+        
+        Inset --> "*" Rule : rules
+        click Rule href "./Rule.html"
+    
+
+        
+      Inset : surface
+        
+          
+    
+        
+        
+        Inset --> "0..1" Surface : surface
+        click Surface href "./Surface.html"
+    
+
+        
+      Inset : tick_length
+        
+          
+    
+        
+        
+        Inset --> "0..1" Float : tick_length
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : tick_prune
+        
+          
+    
+        
+        
+        Inset --> "0..1" TickPrune : tick_prune
+        click TickPrune href "../../enums/TickPrune.html"
+    
+
+        
+      Inset : tick_size
+        
+          
+    
+        
+        
+        Inset --> "0..1" Float : tick_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : title
+        
+          
+    
+        
+        
+        Inset --> "0..1" String : title
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inset : triangle_gap
+        
+          
+    
+        
+        
+        Inset --> "0..1" Integer : triangle_gap
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Inset : volume
+        
+          
+    
+        
+        
+        Inset --> "0..1" Volume : volume
+        click Volume href "./Volume.html"
+    
+
+        
+      Inset : xlabel
+        
+          
+    
+        
+        
+        Inset --> "0..1" String : xlabel
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inset : xlabel_pad
+        
+          
+    
+        
+        
+        Inset --> "0..1" Float : xlabel_pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : xlabel_side
+        
+          
+    
+        
+        
+        Inset --> "0..1" AxisSide : xlabel_side
+        click AxisSide href "../../enums/AxisSide.html"
+    
+
+        
+      Inset : xlim
+        
+          
+    
+        
+        
+        Inset --> "*" Float : xlim
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : xscale
+        
+          
+    
+        
+        
+        Inset --> "0..1" AxisScale : xscale
+        click AxisScale href "../../enums/AxisScale.html"
+    
+
+        
+      Inset : xtick_format
+        
+          
+    
+        
+        
+        Inset --> "0..1" TickFormat : xtick_format
+        click TickFormat href "../../enums/TickFormat.html"
+    
+
+        
+      Inset : xtick_rotation
+        
+          
+    
+        
+        
+        Inset --> "0..1" Float : xtick_rotation
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : xtick_side
+        
+          
+    
+        
+        
+        Inset --> "0..1" AxisSide : xtick_side
+        click AxisSide href "../../enums/AxisSide.html"
+    
+
+        
+      Inset : xticks
+        
+          
+    
+        
+        
+        Inset --> "*" Float : xticks
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : ylabel
+        
+          
+    
+        
+        
+        Inset --> "0..1" String : ylabel
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inset : ylabel_pad
+        
+          
+    
+        
+        
+        Inset --> "0..1" Float : ylabel_pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : ylabel_side
+        
+          
+    
+        
+        
+        Inset --> "0..1" AxisSide : ylabel_side
+        click AxisSide href "../../enums/AxisSide.html"
+    
+
+        
+      Inset : ylim
+        
+          
+    
+        
+        
+        Inset --> "*" Float : ylim
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : yscale
+        
+          
+    
+        
+        
+        Inset --> "0..1" AxisScale : yscale
+        click AxisScale href "../../enums/AxisScale.html"
+    
+
+        
+      Inset : ytick_format
+        
+          
+    
+        
+        
+        Inset --> "0..1" TickFormat : ytick_format
+        click TickFormat href "../../enums/TickFormat.html"
+    
+
+        
+      Inset : ytick_rotation
+        
+          
+    
+        
+        
+        Inset --> "0..1" Float : ytick_rotation
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : ytick_side
+        
+          
+    
+        
+        
+        Inset --> "0..1" AxisSide : ytick_side
+        click AxisSide href "../../enums/AxisSide.html"
+    
+
+        
+      Inset : yticks
+        
+          
+    
+        
+        
+        Inset --> "*" Float : yticks
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : zlabel
+        
+          
+    
+        
+        
+        Inset --> "0..1" String : zlabel
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Inset : zlabel_pad
+        
+          
+    
+        
+        
+        Inset --> "0..1" Float : zlabel_pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Inset : zlim
+        
+          
+    
+        
+        
+        Inset --> "*" Float : zlim
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [cell](../slots/cell.qmd) | 0..1 <br/> [Inset](../classes/Inset.qmd) | What every cell of a `grid` is: the kind they all draw, and the opts they sha... | direct |
+| [cells](../slots/cells.qmd) | * <br/> [Inset](../classes/Inset.qmd) | A `grid`'s cells stated one at a time, for a grid whose cells differ — a firs... | direct |
+| [bounds](../slots/bounds.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | [x0, y0, width, height] in host-axes fractions, as matplotlib's inset_axes ta... | direct |
+| [kind](../slots/kind.qmd) | 1 <br/> [PanelKind](../enums/PanelKind.qmd) |  | direct |
+| [layers](../slots/layers.qmd) | * <br/> [Layer](../classes/Layer.qmd) | Marks sharing the inset's axes | direct |
+| [render](../slots/render.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Name of a registered custom-panel callable (custom kind) — the same registry ... | direct |
+| [tick_size](../slots/tick_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Tick-label size in points, overriding the figure's `font_size` for this panel... | direct |
+| [tick_length](../slots/tick_length.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Length of this panel's tick marks in points, overriding the theme's | direct |
+| [tick_prune](../slots/tick_prune.qmd) | 0..1 <br/> [TickPrune](../enums/TickPrune.qmd) | Drop the first, last, or both end ticks, for the case where a corner tick col... | direct |
+| [nbins](../slots/nbins.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Upper bound on the number of ticks per axis | direct |
+| [xticks](../slots/xticks.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The x tick positions, stated outright | direct |
+| [yticks](../slots/yticks.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The y tick positions, stated outright | direct |
+| [hide_xticklabels](../slots/hide_xticklabels.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Draw the x ticks without their numbers | direct |
+| [hide_yticklabels](../slots/hide_yticklabels.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Draw the y ticks without their numbers | direct |
+| [xtick_rotation](../slots/xtick_rotation.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Rotate the x tick labels, in degrees counter-clockwise | direct |
+| [ytick_rotation](../slots/ytick_rotation.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Rotate the y tick labels, in degrees counter-clockwise | direct |
+| [xtick_format](../slots/xtick_format.qmd) | 0..1 <br/> [TickFormat](../enums/TickFormat.qmd) | How x tick numbers are written: `sci` forces scientific notation, `plain` for... | direct |
+| [ytick_format](../slots/ytick_format.qmd) | 0..1 <br/> [TickFormat](../enums/TickFormat.qmd) | How y tick numbers are written | direct |
+| [xtick_side](../slots/xtick_side.qmd) | 0..1 <br/> [AxisSide](../enums/AxisSide.qmd) | Which edge the x ticks sit on | direct |
+| [ytick_side](../slots/ytick_side.qmd) | 0..1 <br/> [AxisSide](../enums/AxisSide.qmd) | Which edge the y ticks sit on | direct |
+| [xlabel](../slots/xlabel.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The x axis label, as the figure prints it — unit included, LaTeX included | direct |
+| [ylabel](../slots/ylabel.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The y axis label | direct |
+| [zlabel](../slots/zlabel.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The depth axis label of a 3-D panel | direct |
+| [title](../slots/title.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | A heading above the panel, in the panel's own words | direct |
+| [xlabel_pad](../slots/xlabel_pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Gap in points between the x axis label and its tick numbers, for where the de... | direct |
+| [ylabel_pad](../slots/ylabel_pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Gap in points between the y axis label and its tick numbers | direct |
+| [zlabel_pad](../slots/zlabel_pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Gap in points between the z axis label and its tick numbers | direct |
+| [xlabel_side](../slots/xlabel_side.qmd) | 0..1 <br/> [AxisSide](../enums/AxisSide.qmd) | Which edge the x axis LABEL sits on | direct |
+| [ylabel_side](../slots/ylabel_side.qmd) | 0..1 <br/> [AxisSide](../enums/AxisSide.qmd) | Which edge the y axis LABEL sits on | direct |
+| [xlim](../slots/xlim.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The x range, `[min, max]` | direct |
+| [ylim](../slots/ylim.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The y range, `[min, max]` | direct |
+| [zlim](../slots/zlim.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The depth range of a 3-D panel, `[min, max]` | direct |
+| [xscale](../slots/xscale.qmd) | 0..1 <br/> [AxisScale](../enums/AxisScale.qmd) | How the x axis maps values to distance | direct |
+| [yscale](../slots/yscale.qmd) | 0..1 <br/> [AxisScale](../enums/AxisScale.qmd) | How the y axis maps values to distance | direct |
+| [aspect](../slots/aspect.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[xsd:float](http://www.w3.org/2001/XMLSchema#float) | The DATA aspect ratio: `equal` — one unit of x is one unit of y, what a matri... | direct |
+| [box_aspect](../slots/box_aspect.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The frame's height over its width, independent of the data ranges: a square p... | direct |
+| [invert_x](../slots/invert_x.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Draw the x axis descending | direct |
+| [invert_y](../slots/invert_y.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Draw the y axis descending — the matrix convention, row 0 at the top | direct |
+| [invert_z](../slots/invert_z.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Draw the depth axis of a 3-D panel descending | direct |
+| [frame](../slots/frame.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether the panel keeps its frame and its ticks | direct |
+| [legend](../slots/legend.qmd) | 0..1 <br/> [Legend](../classes/Legend.qmd)&nbsp;or&nbsp;<br />[xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean)&nbsp;or&nbsp;<br />[xsd:string](http://www.w3.org/2001/XMLSchema#string) | A key for this panel's own marks | direct |
+| [colorbar](../slots/colorbar.qmd) | 0..1 <br/> [Colorbar](../classes/Colorbar.qmd) | The colour scale printed beside this panel's field | direct |
+| [surface](../slots/surface.qmd) | 0..1 <br/> [Surface](../classes/Surface.qmd) | Geometry and colour scale of a `kind: surface` panel | direct |
+| [volume](../slots/volume.qmd) | 0..1 <br/> [Volume](../classes/Volume.qmd) | Geometry and colour scale of a `kind: volume` panel | direct |
+| [network](../slots/network.qmd) | 0..1 <br/> [Graph](../classes/Graph.qmd) | Graph and colour scale of a `kind: network` panel | direct |
+| [grid](../slots/grid.qmd) | 0..1 <br/> [Grid](../classes/Grid.qmd) | How a `kind: grid` panel tiles its cells | direct |
+| [fill_cell](../slots/fill_cell.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Keep the position the layout engine gave this panel, rather than letting a la... | direct |
+| [triangle_gap](../slots/triangle_gap.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Cells of blank left along the diagonal between two `triangle` layers, so the ... | direct |
+| [rules](../slots/rules.qmd) | * <br/> [Rule](../classes/Rule.qmd) | Straight reference lines drawn across the panel: a zero, a threshold, the ide... | direct |
+| [regions](../slots/regions.qmd) | * <br/> [Region](../classes/Region.qmd) | Rectangles ringing the windows this panel calls out — the parameter band a re... | direct |
+| [camera](../slots/camera.qmd) | 0..1 <br/> [Camera](../classes/Camera.qmd) | Viewpoint for a 3-D panel or a surface | direct |
+| [opts](../slots/opts.qmd) | * <br/> [Argument](../classes/Argument.qmd) | The keyword options of a `custom` callable, and of the kinds that carry their... | direct |
+| [path](../slots/path.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | External image file (image kind) | direct |
+| [annotations](../slots/annotations.qmd) | * <br/> [Annotation](../classes/Annotation.qmd) | Positioned text labels drawn on the inset, in ITS axes fractions | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [cell](../slots/cell.qmd) | range | [Inset](../classes/Inset.qmd) |
+| [Panel](../classes/Panel.qmd) | [cells](../slots/cells.qmd) | range | [Inset](../classes/Inset.qmd) |
+| [Panel](../classes/Panel.qmd) | [insets](../slots/insets.qmd) | range | [Inset](../classes/Inset.qmd) |
+| [Inset](../classes/Inset.qmd) | [cell](../slots/cell.qmd) | range | [Inset](../classes/Inset.qmd) |
+| [Inset](../classes/Inset.qmd) | [cells](../slots/cells.qmd) | range | [Inset](../classes/Inset.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Inset |
+| native | tvbo:Inset |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Inset
+description: A sub-axes that draws exactly as a panel does — same kinds, layers, opts,
+  annotations — minus the things only a mosaic cell has (a panel letter, a placeholder,
+  a position in the layout). One class for both an inset and a grid cell, so a cell
+  cannot behave unlike the inset beside it; they differ only in who positions them.
+from_schema: https://w3id.org/tvbo/figure
+slots:
+- label
+- cell
+- cells
+attributes:
+  bounds:
+    name: bounds
+    description: '[x0, y0, width, height] in host-axes fractions, as matplotlib''s
+      inset_axes takes them. Values outside 0-1 place the inset beyond the host frame,
+      which is how a thumbnail sits in the margin above a plot. Required of an inset,
+      and left unset by a `grid` cell, whose bounds the grid computes from the row/column
+      it lands in.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Inset
+    - Region
+    - UpdateRule
+    range: float
+    multivalued: true
+  kind:
+    name: kind
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: PanelKind
+    required: true
+  layers:
+    name: layers
+    description: Marks sharing the inset's axes. Grammar kinds only.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: Layer
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  render:
+    name: render
+    description: Name of a registered custom-panel callable (custom kind) — the same
+      registry the host panel draws from.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: string
+  tick_size:
+    name: tick_size
+    description: Tick-label size in points, overriding the figure's `font_size` for
+      this panel's ticks alone.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  tick_length:
+    name: tick_length
+    description: Length of this panel's tick marks in points, overriding the theme's.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Theme
+    range: float
+  tick_prune:
+    name: tick_prune
+    description: Drop the first, last, or both end ticks, for the case where a corner
+      tick collides with its neighbour panel's.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: TickPrune
+  nbins:
+    name: nbins
+    description: Upper bound on the number of ticks per axis. The lever to reach for
+      when a dense mosaic runs its numbers together.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: integer
+  xticks:
+    name: xticks
+    description: The x tick positions, stated outright. Unset lets the locator choose
+      them.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  yticks:
+    name: yticks
+    description: The y tick positions, stated outright.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  hide_xticklabels:
+    name: hide_xticklabels
+    description: 'Draw the x ticks without their numbers. Declare `share_x` on the
+      figure alongside it: hiding the numbers alone asserts a shared scale the axes
+      may not have, and a reader then compares two panels drawn at different ranges.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  hide_yticklabels:
+    name: hide_yticklabels
+    description: Draw the y ticks without their numbers. Same rule as `hide_xticklabels`,
+      with `share_y`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  xtick_rotation:
+    name: xtick_rotation
+    description: 'Rotate the x tick labels, in degrees counter-clockwise. Worth reaching
+      for when a dense row would otherwise run its numbers together: a slanted label
+      is anchored at its tick rather than centred under it, so it costs width it would
+      otherwise steal from its neighbour.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  ytick_rotation:
+    name: ytick_rotation
+    description: Rotate the y tick labels, in degrees counter-clockwise.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  xtick_format:
+    name: xtick_format
+    description: 'How x tick numbers are written: `sci` forces scientific notation,
+      `plain` forbids it.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: TickFormat
+  ytick_format:
+    name: ytick_format
+    description: How y tick numbers are written.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: TickFormat
+  xtick_side:
+    name: xtick_side
+    description: Which edge the x ticks sit on.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisSide
+  ytick_side:
+    name: ytick_side
+    description: Which edge the y ticks sit on.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisSide
+  xlabel:
+    name: xlabel
+    description: 'The x axis label, as the figure prints it — unit included, LaTeX
+      included. Unset leaves the renderer''s own, which is the encoded field''s bare
+      name: right for a working figure, wrong for a printed one.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: string
+  ylabel:
+    name: ylabel
+    description: The y axis label. See `xlabel`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: string
+  zlabel:
+    name: zlabel
+    description: The depth axis label of a 3-D panel. Ignored by every flat kind.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: string
+  title:
+    name: title
+    description: A heading above the panel, in the panel's own words. A panel LETTER
+      is not a title — that is `number`, which the layout places and sizes to the
+      journal's convention.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Legend
+    - Study
+    range: string
+  xlabel_pad:
+    name: xlabel_pad
+    description: Gap in points between the x axis label and its tick numbers, for
+      where the default lets the two touch. Unset takes the theme's `label_pad`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  ylabel_pad:
+    name: ylabel_pad
+    description: Gap in points between the y axis label and its tick numbers. See
+      `xlabel_pad`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  zlabel_pad:
+    name: zlabel_pad
+    description: Gap in points between the z axis label and its tick numbers. See
+      `xlabel_pad`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  xlabel_side:
+    name: xlabel_side
+    description: Which edge the x axis LABEL sits on. The tick numbers stay where
+      `xtick_side` puts them, so a label can cross to the far side of a panel whose
+      ticks do not follow it.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisSide
+  ylabel_side:
+    name: ylabel_side
+    description: Which edge the y axis LABEL sits on. See `xlabel_side`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisSide
+  xlim:
+    name: xlim
+    description: The x range, `[min, max]`. Declared rather than inferred, because
+      two panels a figure asks the reader to compare must not end up on whatever ranges
+      their own data happened to reach.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  ylim:
+    name: ylim
+    description: The y range, `[min, max]`. See `xlim`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  zlim:
+    name: zlim
+    description: The depth range of a 3-D panel, `[min, max]`. Ignored by every flat
+      kind.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  xscale:
+    name: xscale
+    description: How the x axis maps values to distance.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisScale
+  yscale:
+    name: yscale
+    description: How the y axis maps values to distance.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisScale
+  aspect:
+    name: aspect
+    description: 'The DATA aspect ratio: `equal` — one unit of x is one unit of y,
+      what a matrix or a spatial map needs — or `auto` to fill the cell, or a number.
+      `box_aspect` shapes the frame instead.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Colorbar
+    range: string
+    any_of:
+    - range: string
+    - range: float
+  box_aspect:
+    name: box_aspect
+    description: 'The frame''s height over its width, independent of the data ranges:
+      a square panel over data that is not square. `aspect` constrains the data instead.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  invert_x:
+    name: invert_x
+    description: Draw the x axis descending.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  invert_y:
+    name: invert_y
+    description: Draw the y axis descending — the matrix convention, row 0 at the
+      top.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  invert_z:
+    name: invert_z
+    description: Draw the depth axis of a 3-D panel descending.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  frame:
+    name: frame
+    description: 'Whether the panel keeps its frame and its ticks. `false` strips
+      both, for a panel with no measurable axis: an image, a schematic, a connectivity
+      matrix shown as a picture. Unset keeps them.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Layer
+    - Legend
+    range: boolean
+  legend:
+    name: legend
+    description: 'A key for this panel''s own marks. `legend: true` draws it wherever
+      the backend finds room, `legend: upper right` fixes the corner, and the object
+      form states the rest — frame, columns, title. All three are one slot, so a panel
+      that starts with a corner and later needs two columns keeps the word it had.
+      Distinct from `kind: legend`, a standalone legend PANEL that occupies a cell
+      of its own.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: Legend
+    inlined: true
+    any_of:
+    - range: Legend
+    - range: boolean
+    - range: string
+  colorbar:
+    name: colorbar
+    description: The colour scale printed beside this panel's field.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: Colorbar
+    inlined: true
+  surface:
+    name: surface
+    description: 'Geometry and colour scale of a `kind: surface` panel. Ignored by
+      every other kind.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: Surface
+    inlined: true
+  volume:
+    name: volume
+    description: 'Geometry and colour scale of a `kind: volume` panel. Ignored by
+      every other kind.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: Volume
+    inlined: true
+  network:
+    name: network
+    description: 'Graph and colour scale of a `kind: network` panel. Ignored by every
+      other kind.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Subject
+    - Session
+    - Panel
+    - Inset
+    - SimulationExperiment
+    range: Graph
+    inlined: true
+  grid:
+    name: grid
+    description: 'How a `kind: grid` panel tiles its cells. Ignored by every other
+      kind.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: Grid
+    inlined: true
+  fill_cell:
+    name: fill_cell
+    description: Keep the position the layout engine gave this panel, rather than
+      letting a later pass move it. For a panel whose position carries meaning — aligned
+      with the one above it, or sized to match a sibling.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  triangle_gap:
+    name: triangle_gap
+    description: Cells of blank left along the diagonal between two `triangle` layers,
+      so the two halves of a split matrix read as two quantities rather than one image.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: integer
+  rules:
+    name: rules
+    description: 'Straight reference lines drawn across the panel: a zero, a threshold,
+      the identity line of a target-versus-simulated plot. Each carries its own colour
+      and dash, so a rule and the way it is drawn cannot be stated apart.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: Rule
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  regions:
+    name: regions
+    description: Rectangles ringing the windows this panel calls out — the parameter
+      band a regime lives in, the interval a statistic was taken over.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Stimulus
+    range: Region
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  camera:
+    name: camera
+    description: Viewpoint for a 3-D panel or a surface. Ignored by every flat kind.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: Camera
+    inlined: true
+  opts:
+    name: opts
+    description: 'The keyword options of a `custom` callable, and of the kinds that
+      carry their own option family — a `surface`/`volume`/`network` panel''s geometry,
+      a colorbar''s. No part of how an axis is DRAWN belongs here: the labels, limits,
+      scales, shape and legend are slots on the panel itself, the tick family sits
+      beside them, and `rules`, `regions` and `camera` carry the marks that travel
+      with a colour. The renderer refuses a retired name here rather than passing
+      it into the emitted script, and names the slot that replaced it.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Style
+    range: Argument
+    multivalued: true
+    inlined: true
+  path:
+    name: path
+    description: External image file (image kind).
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  annotations:
+    name: annotations
+    description: Positioned text labels drawn on the inset, in ITS axes fractions.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    range: Annotation
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Inset
+description: A sub-axes that draws exactly as a panel does — same kinds, layers, opts,
+  annotations — minus the things only a mosaic cell has (a panel letter, a placeholder,
+  a position in the layout). One class for both an inset and a grid cell, so a cell
+  cannot behave unlike the inset beside it; they differ only in who positions them.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  bounds:
+    name: bounds
+    description: '[x0, y0, width, height] in host-axes fractions, as matplotlib''s
+      inset_axes takes them. Values outside 0-1 place the inset beyond the host frame,
+      which is how a thumbnail sits in the margin above a plot. Required of an inset,
+      and left unset by a `grid` cell, whose bounds the grid computes from the row/column
+      it lands in.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Inset
+    domain_of:
+    - Inset
+    - Region
+    - UpdateRule
+    range: float
+    multivalued: true
+  kind:
+    name: kind
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: PanelKind
+    required: true
+  layers:
+    name: layers
+    description: Marks sharing the inset's axes. Grammar kinds only.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Layer
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  render:
+    name: render
+    description: Name of a registered custom-panel callable (custom kind) — the same
+      registry the host panel draws from.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: string
+  tick_size:
+    name: tick_size
+    description: Tick-label size in points, overriding the figure's `font_size` for
+      this panel's ticks alone.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  tick_length:
+    name: tick_length
+    description: Length of this panel's tick marks in points, overriding the theme's.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    - Theme
+    range: float
+  tick_prune:
+    name: tick_prune
+    description: Drop the first, last, or both end ticks, for the case where a corner
+      tick collides with its neighbour panel's.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: TickPrune
+  nbins:
+    name: nbins
+    description: Upper bound on the number of ticks per axis. The lever to reach for
+      when a dense mosaic runs its numbers together.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: integer
+  xticks:
+    name: xticks
+    description: The x tick positions, stated outright. Unset lets the locator choose
+      them.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  yticks:
+    name: yticks
+    description: The y tick positions, stated outright.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  hide_xticklabels:
+    name: hide_xticklabels
+    description: 'Draw the x ticks without their numbers. Declare `share_x` on the
+      figure alongside it: hiding the numbers alone asserts a shared scale the axes
+      may not have, and a reader then compares two panels drawn at different ranges.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  hide_yticklabels:
+    name: hide_yticklabels
+    description: Draw the y ticks without their numbers. Same rule as `hide_xticklabels`,
+      with `share_y`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  xtick_rotation:
+    name: xtick_rotation
+    description: 'Rotate the x tick labels, in degrees counter-clockwise. Worth reaching
+      for when a dense row would otherwise run its numbers together: a slanted label
+      is anchored at its tick rather than centred under it, so it costs width it would
+      otherwise steal from its neighbour.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  ytick_rotation:
+    name: ytick_rotation
+    description: Rotate the y tick labels, in degrees counter-clockwise.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  xtick_format:
+    name: xtick_format
+    description: 'How x tick numbers are written: `sci` forces scientific notation,
+      `plain` forbids it.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: TickFormat
+  ytick_format:
+    name: ytick_format
+    description: How y tick numbers are written.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: TickFormat
+  xtick_side:
+    name: xtick_side
+    description: Which edge the x ticks sit on.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisSide
+  ytick_side:
+    name: ytick_side
+    description: Which edge the y ticks sit on.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisSide
+  xlabel:
+    name: xlabel
+    description: 'The x axis label, as the figure prints it — unit included, LaTeX
+      included. Unset leaves the renderer''s own, which is the encoded field''s bare
+      name: right for a working figure, wrong for a printed one.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: string
+  ylabel:
+    name: ylabel
+    description: The y axis label. See `xlabel`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: string
+  zlabel:
+    name: zlabel
+    description: The depth axis label of a 3-D panel. Ignored by every flat kind.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: string
+  title:
+    name: title
+    description: A heading above the panel, in the panel's own words. A panel LETTER
+      is not a title — that is `number`, which the layout places and sizes to the
+      journal's convention.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    - Legend
+    - Study
+    range: string
+  xlabel_pad:
+    name: xlabel_pad
+    description: Gap in points between the x axis label and its tick numbers, for
+      where the default lets the two touch. Unset takes the theme's `label_pad`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  ylabel_pad:
+    name: ylabel_pad
+    description: Gap in points between the y axis label and its tick numbers. See
+      `xlabel_pad`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  zlabel_pad:
+    name: zlabel_pad
+    description: Gap in points between the z axis label and its tick numbers. See
+      `xlabel_pad`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  xlabel_side:
+    name: xlabel_side
+    description: Which edge the x axis LABEL sits on. The tick numbers stay where
+      `xtick_side` puts them, so a label can cross to the far side of a panel whose
+      ticks do not follow it.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisSide
+  ylabel_side:
+    name: ylabel_side
+    description: Which edge the y axis LABEL sits on. See `xlabel_side`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisSide
+  xlim:
+    name: xlim
+    description: The x range, `[min, max]`. Declared rather than inferred, because
+      two panels a figure asks the reader to compare must not end up on whatever ranges
+      their own data happened to reach.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  ylim:
+    name: ylim
+    description: The y range, `[min, max]`. See `xlim`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  zlim:
+    name: zlim
+    description: The depth range of a 3-D panel, `[min, max]`. Ignored by every flat
+      kind.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+    multivalued: true
+  xscale:
+    name: xscale
+    description: How the x axis maps values to distance.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisScale
+  yscale:
+    name: yscale
+    description: How the y axis maps values to distance.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: AxisScale
+  aspect:
+    name: aspect
+    description: 'The DATA aspect ratio: `equal` — one unit of x is one unit of y,
+      what a matrix or a spatial map needs — or `auto` to fill the cell, or a number.
+      `box_aspect` shapes the frame instead.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    - Colorbar
+    range: string
+    any_of:
+    - range: string
+    - range: float
+  box_aspect:
+    name: box_aspect
+    description: 'The frame''s height over its width, independent of the data ranges:
+      a square panel over data that is not square. `aspect` constrains the data instead.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: float
+  invert_x:
+    name: invert_x
+    description: Draw the x axis descending.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  invert_y:
+    name: invert_y
+    description: Draw the y axis descending — the matrix convention, row 0 at the
+      top.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  invert_z:
+    name: invert_z
+    description: Draw the depth axis of a 3-D panel descending.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  frame:
+    name: frame
+    description: 'Whether the panel keeps its frame and its ticks. `false` strips
+      both, for a panel with no measurable axis: an image, a schematic, a connectivity
+      matrix shown as a picture. Unset keeps them.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    - Layer
+    - Legend
+    range: boolean
+  legend:
+    name: legend
+    description: 'A key for this panel''s own marks. `legend: true` draws it wherever
+      the backend finds room, `legend: upper right` fixes the corner, and the object
+      form states the rest — frame, columns, title. All three are one slot, so a panel
+      that starts with a corner and later needs two columns keeps the word it had.
+      Distinct from `kind: legend`, a standalone legend PANEL that occupies a cell
+      of its own.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Legend
+    inlined: true
+    any_of:
+    - range: Legend
+    - range: boolean
+    - range: string
+  colorbar:
+    name: colorbar
+    description: The colour scale printed beside this panel's field.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Colorbar
+    inlined: true
+  surface:
+    name: surface
+    description: 'Geometry and colour scale of a `kind: surface` panel. Ignored by
+      every other kind.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Surface
+    inlined: true
+  volume:
+    name: volume
+    description: 'Geometry and colour scale of a `kind: volume` panel. Ignored by
+      every other kind.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Volume
+    inlined: true
+  network:
+    name: network
+    description: 'Graph and colour scale of a `kind: network` panel. Ignored by every
+      other kind.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Subject
+    - Session
+    - Panel
+    - Inset
+    - SimulationExperiment
+    range: Graph
+    inlined: true
+  grid:
+    name: grid
+    description: 'How a `kind: grid` panel tiles its cells. Ignored by every other
+      kind.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Grid
+    inlined: true
+  fill_cell:
+    name: fill_cell
+    description: Keep the position the layout engine gave this panel, rather than
+      letting a later pass move it. For a panel whose position carries meaning — aligned
+      with the one above it, or sized to match a sibling.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: boolean
+  triangle_gap:
+    name: triangle_gap
+    description: Cells of blank left along the diagonal between two `triangle` layers,
+      so the two halves of a split matrix read as two quantities rather than one image.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: integer
+  rules:
+    name: rules
+    description: 'Straight reference lines drawn across the panel: a zero, a threshold,
+      the identity line of a target-versus-simulated plot. Each carries its own colour
+      and dash, so a rule and the way it is drawn cannot be stated apart.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Rule
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  regions:
+    name: regions
+    description: Rectangles ringing the windows this panel calls out — the parameter
+      band a regime lives in, the interval a statistic was taken over.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    - Stimulus
+    range: Region
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  camera:
+    name: camera
+    description: Viewpoint for a 3-D panel or a surface. Ignored by every flat kind.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Camera
+    inlined: true
+  opts:
+    name: opts
+    description: 'The keyword options of a `custom` callable, and of the kinds that
+      carry their own option family — a `surface`/`volume`/`network` panel''s geometry,
+      a colorbar''s. No part of how an axis is DRAWN belongs here: the labels, limits,
+      scales, shape and legend are slots on the panel itself, the tick family sits
+      beside them, and `rules`, `regions` and `camera` carry the marks that travel
+      with a colour. The renderer refuses a retired name here rather than passing
+      it into the emitted script, and names the slot that replaced it.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    - Style
+    range: Argument
+    multivalued: true
+    inlined: true
+  path:
+    name: path
+    description: External image file (image kind).
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  annotations:
+    name: annotations
+    description: Positioned text labels drawn on the inset, in ITS axes fractions.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Annotation
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Inset
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  cell:
+    name: cell
+    description: 'What every cell of a `grid` is: the kind they all draw, and the
+      opts they share. Each entry in `layers:` then fills one cell with this template,
+      which is why a grid of twenty surfaces needs the surface declared once. Its
+      `bounds` stay unset — the grid positions its cells.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Inset
+    inlined: true
+  cells:
+    name: cells
+    description: A `grid`'s cells stated one at a time, for a grid whose cells differ
+      — a first cell showing the bare mesh the rest are maps on, or a row pairing
+      two kinds. Each is merged over `cell:`, and carries its own layers. Mutually
+      exclusive with `layers:`, which is the compact form of the same thing.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Inset
+    domain_of:
+    - Panel
+    - Inset
+    range: Inset
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+
+```
+</details></div>

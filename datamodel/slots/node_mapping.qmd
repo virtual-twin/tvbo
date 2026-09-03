@@ -1,0 +1,99 @@
+# Slot: node_mapping 
+
+
+_HDF5 dataset path for node-to-parent mapping. Int32 array of shape (N,) where entry i is the parent node ID. Required when parent_network is set._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/node_mapping](https://w3id.org/tvbo/slot/node_mapping)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:node_mapping |
+| native | tvbo:node_mapping |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: node_mapping
+description: HDF5 dataset path for node-to-parent mapping. Int32 array of shape (N,)
+  where entry i is the parent node ID. Required when parent_network is set.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Network
+domain_of:
+- Network
+range: string
+
+```
+</details></div>

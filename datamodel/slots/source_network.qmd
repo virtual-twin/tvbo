@@ -1,0 +1,104 @@
+# Slot: source_network 
+
+
+_Path or name of the Network whose nodes define the source endpoints of this Edge. Symmetric counterpart to `target_network`. Together they let an Edge bridge any two Networks: both unset (within-Network edge), one set (this Network ↔ the named one), or both set (peer-to-peer projection between two other Networks). Accepts either an absolute IRI (peer Network) or the relative-path sentinel `parent` / `parent/parent` (cross-scale up/down via the Node.subnetwork hierarchy)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/source_network](https://w3id.org/tvbo/slot/source_network)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Edge](../classes/Edge.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Edge](../classes/Edge.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:source_network |
+| native | tvbo:source_network |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: source_network
+description: 'Path or name of the Network whose nodes define the source endpoints
+  of this Edge. Symmetric counterpart to `target_network`. Together they let an Edge
+  bridge any two Networks: both unset (within-Network edge), one set (this Network
+  ↔ the named one), or both set (peer-to-peer projection between two other Networks).
+  Accepts either an absolute IRI (peer Network) or the relative-path sentinel `parent`
+  / `parent/parent` (cross-scale up/down via the Node.subnetwork hierarchy).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Edge
+domain_of:
+- Edge
+range: string
+required: false
+
+```
+</details></div>

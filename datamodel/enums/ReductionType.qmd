@@ -1,0 +1,79 @@
+# Enum: ReductionType 
+
+
+
+
+_Operations for reducing/aggregating values across dimensions_
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ReductionType](https://w3id.org/tvbo/enum/ReductionType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| mean | None | Arithmetic mean |
+| sum | None | Sum of values |
+| max | None | Maximum value |
+| min | None | Minimum value |
+| none | None | No reduction (return per-element values) |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ReductionType
+description: Operations for reducing/aggregating values across dimensions
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  mean:
+    text: mean
+    description: Arithmetic mean
+  sum:
+    text: sum
+    description: Sum of values
+  max:
+    text: max
+    description: Maximum value
+  min:
+    text: min
+    description: Minimum value
+  none:
+    text: none
+    description: No reduction (return per-element values)
+
+```
+</details>
+
+</div>

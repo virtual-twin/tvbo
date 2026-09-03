@@ -1,0 +1,81 @@
+# Slot: events 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/events](https://w3id.org/tvbo/slot/events)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Node](../classes/Node.qmd) | A node in a network with its own dynamics and properties |  no  |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Node](../classes/Node.qmd), [Edge](../classes/Edge.qmd), [Dynamics](../classes/Dynamics.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:events |
+| native | tvbo:events |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: events
+domain_of:
+- Node
+- Edge
+- Dynamics
+- SimulationExperiment
+range: string
+
+```
+</details></div>

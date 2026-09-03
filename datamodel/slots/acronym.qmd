@@ -1,0 +1,96 @@
+# Slot: acronym 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [skos:notation](http://www.w3.org/2004/02/skos/core#notation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ClinicalScale](../classes/ClinicalScale.qmd) | A clinical assessment inventory or structured scale composed of multiple scor... |  no  |
+| [ClinicalScore](../classes/ClinicalScore.qmd) | Metadata about a clinical score or scale |  no  |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [Function](../classes/Function.qmd) | A function with explicit input -> transformation -> output flow |  no  |
+| [FunctionCall](../classes/FunctionCall.qmd) | Invocation of a function in a pipeline |  no  |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [LossFunction](../classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ClinicalScale](../classes/ClinicalScale.qmd), [ClinicalScore](../classes/ClinicalScore.qmd), [Observation](../classes/Observation.qmd), [Function](../classes/Function.qmd), [FunctionCall](../classes/FunctionCall.qmd) |
+| Slot URI | [skos:notation](http://www.w3.org/2004/02/skos/core#notation) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | skos:notation |
+| native | tvbo:acronym |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: acronym
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: skos:notation
+domain_of:
+- ClinicalScale
+- ClinicalScore
+- Observation
+- Function
+- FunctionCall
+range: string
+
+```
+</details></div>

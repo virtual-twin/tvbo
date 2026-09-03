@@ -1,0 +1,93 @@
+# Slot: capture 
+
+
+_How to turn an `image` panel's HTML/URL `source` into its `path`: the headless-browser recipe (viewport, scale, wait, clip). The declarative form of code/capture-screenshots.py, so a screenshot regenerates from the spec instead of being hand-captured. Ignored when `source` is a static file or a script._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/capture](https://w3id.org/tvbo/slot/capture)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [RenderSpec](../classes/RenderSpec.qmd) |
+| Domain Of | [Panel](../classes/Panel.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:capture |
+| native | tvbo:capture |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: capture
+description: 'How to turn an `image` panel''s HTML/URL `source` into its `path`: the
+  headless-browser recipe (viewport, scale, wait, clip). The declarative form of code/capture-screenshots.py,
+  so a screenshot regenerates from the spec instead of being hand-captured. Ignored
+  when `source` is a static file or a script.'
+from_schema: https://w3id.org/tvbo/figure
+domain_of:
+- Panel
+range: RenderSpec
+inlined: true
+
+```
+</details></div>

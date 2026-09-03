@@ -1,0 +1,81 @@
+# Slot: callable 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/callable](https://w3id.org/tvbo/slot/callable)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Binding](../classes/Binding.qmd) | Per-backend construction binding for a GraphGenerator: how to build the graph... |  no  |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [Function](../classes/Function.qmd) | A function with explicit input -> transformation -> output flow |  no  |
+| [LossFunction](../classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |  no  |
+| [FunctionCall](../classes/FunctionCall.qmd) | Invocation of a function in a pipeline |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Binding](../classes/Binding.qmd), [Function](../classes/Function.qmd), [FunctionCall](../classes/FunctionCall.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:callable |
+| native | tvbo:callable |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: callable
+domain_of:
+- Binding
+- Function
+- FunctionCall
+range: string
+
+```
+</details></div>

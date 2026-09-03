@@ -1,0 +1,95 @@
+# Slot: abbreviation 
+
+
+_Slot for the abbreviation of a resource._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [skos:notation](http://www.w3.org/2004/02/skos/core#notation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BrainAtlas](../classes/BrainAtlas.qmd) | A schema for representing a version of a brain atlas |  no  |
+| [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | A schema for representing a version of a common coordinate space |  no  |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [BrainAtlas](../classes/BrainAtlas.qmd), [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd), [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+| Slot URI | [skos:notation](http://www.w3.org/2004/02/skos/core#notation) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | skos:notation |
+| native | atom:abbreviation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: abbreviation
+description: Slot for the abbreviation of a resource.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: skos:notation
+domain_of:
+- BrainAtlas
+- CommonCoordinateSpace
+- ParcellationEntity
+range: string
+
+```
+</details></div>

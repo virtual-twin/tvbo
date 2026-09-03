@@ -1,0 +1,85 @@
+# Enum: AxisScale 
+
+
+
+
+_How an axis maps values to distance. Part of what a panel claims, not decoration: a straight line on a log axis is a power law, and the same points on a linear axis are not._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/AxisScale](https://w3id.org/tvbo/enum/AxisScale)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| linear | None | Equal value, equal distance |
+| log | None | Equal ratio, equal distance |
+| symlog | None | Logarithmic either side of zero, linear across it, so a quantity that changes... |
+| logit | None | For a probability: stretches both ends of [0, 1] so behaviour near 0 and 1 is... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [xscale](../slots/xscale.qmd) | How the x axis maps values to distance |
+| [yscale](../slots/yscale.qmd) | How the y axis maps values to distance |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: AxisScale
+description: 'How an axis maps values to distance. Part of what a panel claims, not
+  decoration: a straight line on a log axis is a power law, and the same points on
+  a linear axis are not.'
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  linear:
+    text: linear
+    description: Equal value, equal distance.
+  log:
+    text: log
+    description: Equal ratio, equal distance. Refuses non-positive data.
+  symlog:
+    text: symlog
+    description: Logarithmic either side of zero, linear across it, so a quantity
+      that changes sign still spans decades.
+  logit:
+    text: logit
+    description: 'For a probability: stretches both ends of [0, 1] so behaviour near
+      0 and 1 is visible.'
+
+```
+</details>
+
+</div>

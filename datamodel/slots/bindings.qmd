@@ -1,0 +1,107 @@
+# Slot: bindings 
+
+
+_Per-backend construction bindings, keyed by backend id (e.g. python, julia, networkx).  Each names the native library, callable and the ordered parameter names to pass._
+
+__
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/bindings](https://w3id.org/tvbo/slot/bindings)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | Backend-agnostic graph generator specification |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Binding](../classes/Binding.qmd) |
+| Domain Of | [GraphGenerator](../classes/GraphGenerator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [GraphGenerator](../classes/GraphGenerator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:bindings |
+| native | tvbo:bindings |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: bindings
+description: 'Per-backend construction bindings, keyed by backend id (e.g. python,
+  julia, networkx).  Each names the native library, callable and the ordered parameter
+  names to pass.
+
+  '
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: GraphGenerator
+domain_of:
+- GraphGenerator
+range: Binding
+multivalued: true
+inlined: true
+
+```
+</details></div>

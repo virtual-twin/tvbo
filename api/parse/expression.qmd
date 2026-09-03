@@ -1,0 +1,159 @@
+# expression { #tvbo.parse.expression }
+
+`parse.expression`
+
+Parse TVBO equation strings into SymPy expressions.
+
+Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw string) into a SymPy expression, along with the custom aggregation symbols and the `ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`, `slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to backend-specific calls.
+
+`parse_eq` is the only parser in TVBO. An `Equation` states its right-hand side either directly or as a list of conditional branches, and `parse_eq` resolves both, so callers never have to ask which form they were given — the branch that used to be written out at each call site now lives here once. The namespace to parse against is supplied by the caller, normally as a [`SymbolContext`](symbols.qmd#SymbolContext).
+
+`ARRAY_FUNCTIONS` is the single source of truth for parsing. Each entry is an undefined SymPy `Function` — that is what makes `mean(x)` parse as a call rather than being split by implicit multiplication into `m*e*a*n*(x)`. The names are lowercase to keep them distinct from SymPy's own symbolic `Sum` and `Product`, which need explicit index variables where these reduce over whole arrays, numpy-style. Printer mappings live in `tvbo.codegen.code`.
+
+**Every argument is positional.** SymPy's parser forwards `f(x, axis=0)` into `Basic`'s options and raises `ValueError: Unknown options`, so a primitive can never carry a keyword. Anything that would be one — a metric, an axis, a target range, a distribution, a seed — is a schema field on the DAG step and is lowered into a positional argument, which is why the `Procedural` graph-generator DAG is typed rather than free-form.
+
+The registry covers array manipulation with Python-specific semantics (`window_mean`, `subsample`), structural slice and shape ops so a pipeline that selects a variable of interest, trims a transient or downsamples is authored as declarative equations rather than `source_code`, general ops for per-timestep detectors and permutation-significance tests (`take`, `sum_axis`, `pearson`), the graph-construction primitives a `Procedural` GraphGenerator lowers to, and the distribution samplers.
+
+A sampler takes its PRNG state as the **first** argument, because JAX is functionally pure and a key cannot be threaded implicitly through a rendered expression; the trailing arguments are the sample shape. Draws are *not* bit-identical across backends — numpy's PCG64 is not jax's Threefry.
+
+Symbolic summation uses SymPy's own `Sum`, which needs explicit index variables: `Sum(x[i]*y[i], (i, 0, n-1))`. Index variables are detected from the `Sum` and `Product` limits, and the code printers handle the translation.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [ARRAY_FUNCTIONS](#tvbo.parse.expression.ARRAY_FUNCTIONS) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Mean](#tvbo.parse.expression.Mean) | Mean over indexed expression: Mean(f(x[i]), (i, 0, N-1)). |
+
+### Mean { #tvbo.parse.expression.Mean }
+
+```python
+parse.expression.Mean()
+```
+
+Mean over indexed expression: Mean(f(x[i]), (i, 0, N-1)).
+
+Mathematical notation for averaging over a dimension. Translates to jnp.mean(jax.vmap(...)) or jnp.mean(...) depending on the inner function.
+
+#### Example {.doc-section .doc-section-example}
+
+Mean(1 - correlation(x[i], y[i]), (i, 0, N-1))
+-> jnp.mean(jax.vmap(lambda x, y: 1 - correlation(x, y))(x, y))
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [eval](#tvbo.parse.expression.Mean.eval) | Suppress automatic simplification so the symbol survives to codegen. |
+
+##### eval { #tvbo.parse.expression.Mean.eval }
+
+```python
+parse.expression.Mean.eval(*args)
+```
+
+Suppress automatic simplification so the symbol survives to codegen.
+
+SymPy calls this classmethod when a `Mean(...)` is constructed. Returning `None` signals that no closed-form evaluation should be performed, keeping the expression as an unevaluated `Mean` node that the code printers in [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's mean/reduction call.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                                                                    | Default   |
+|--------|--------|----------------------------------------------------------------------------------------------------------------|-----------|
+| *args  |        | The positional arguments the `Mean` was called with (the inner expression and index limit tuple). Left unused. | `()`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                |
+|--------|--------|------------------------------------------------------------|
+|        |        | Always `None`, leaving the `Mean` application unevaluated. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [function_bodies](#tvbo.parse.expression.function_bodies) | A model's function definitions as ``{name: (arg_names, body)}``. |
+| [parse_eq](#tvbo.parse.expression.parse_eq) | Parse the right-hand side of an equation or a raw expression string. |
+| [states_an_expression](#tvbo.parse.expression.states_an_expression) | Whether `equation` states anything to parse — a right-hand side, or branches. |
+
+### function_bodies { #tvbo.parse.expression.function_bodies }
+
+```python
+parse.expression.function_bodies(model)
+```
+
+A model's function definitions as ``{name: (arg_names, body)}``.
+
+The table [`inline_functions`](../codegen/code.qmd#inline_functions) consumes, for the backends that have no user-function mechanism and must expand every call before printing.
+
+Read from the model's symbolic layer, so a body is parsed once however many backends inline it. A free function rather than a `Dynamics` method because both flavours of model need it: the runtime `Dynamics` in `tvbo.classes` and the generated one an edge's `resolved_dyn` is. Both carry the layer, so both answer from the same parse, and the caller no longer supplies a namespace of its own, which is what let a body be parsed against names the model does not declare.
+
+The layer's scope registers every function name as a function, so a call to one inside another's body parses as an application rather than a product — Zerlaut's `sigmaV` calls `muV`. Functions with no arguments or no equation are skipped: there is nothing to substitute into, and a call to one is left for the printer to emit verbatim.
+
+### parse_eq { #tvbo.parse.expression.parse_eq }
+
+```python
+parse.expression.parse_eq(equation, parameters=None, **kwargs)
+```
+
+Parse the right-hand side of an equation or a raw expression string.
+
+Extends parsing with the ability to pass parameters, functions, symbols, and arbitrary SymPy objects commonly used in nonlinear systems dynamics.
+
+A user-defined parameter always overrides a SymPy built-in of the same name, so a model free to call something `gamma` or `lambda` gets its own symbol rather than the special function. Indexed variables are detected in the source text and bound as `IndexedBase`, which likewise overrides any `Symbol` of that name — `x[i]` cannot be parsed against a plain `Symbol`. Index variables are picked out of `Sum` and `Product` limits and bound as plain `Symbol`s where they are not already defined.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+equation : Equation | str
+    An Equation from tvbo's datamodel or a raw expression string. If an
+    `Equation` with `latex=True` is provided, LaTeX parsing is used.
+parameters : Iterable[str] | Mapping[str, object] | None
+    Names or a mapping of parameter names to SymPy objects or numbers. If an
+    iterable of strings is provided, they are created as SymPy Symbols and
+    injected into the parsing context. If a mapping is provided, the values
+    are injected as-is (Symbols, Functions, Expressions, numbers, etc.).
+
+
+
+#### Keyword-only enhancements (optional) {.doc-section .doc-section-keyword-only-enhancements-optional}
+
+local_dict : dict
+    Additional local names to inject into the parser (merged on top of defaults).
+functions : Iterable[str] | Mapping[str, object]
+    Names or mapping for functions. String names are created as undefined
+    SymPy functions, e.g., Function('f'). Mapping values are used as-is.
+symbols : Iterable[str] | Mapping[str, Symbol]
+    Extra symbol names or mapping for state variables, etc. String names are
+    created as SymPy Symbols. Mapping values are used as-is.
+objects : Mapping[str, object]
+    Arbitrary additional objects (e.g., Heaviside, MatrixSymbol, IndexedBase,
+    Derivative alias, etc.) to inject into the local namespace.
+extra_transformations : Iterable[callable]
+    Extra SymPy parser transformations to augment the defaults.
+transformations : Iterable[callable]
+    Full control over the transformation pipeline (overrides defaults if provided).
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+sympy.Expr
+    Parsed SymPy expression.
+
+### states_an_expression { #tvbo.parse.expression.states_an_expression }
+
+```python
+parse.expression.states_an_expression(equation)
+```
+
+Whether `equation` states anything to parse — a right-hand side, or branches.
+
+An `Equation` carries its expression in either slot, so a caller that guards with `if eq.rhs:` silently skips every equation written purely as conditional branches.
+Guard with this instead and hand the whole `Equation` to [`parse_eq`](#parse_eq), which resolves both spellings.

@@ -1,0 +1,98 @@
+# Slot: license 
+
+
+_Linked type for the license of the brain atlas or coordinate space version._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:license](http://purl.org/dc/terms/license)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | A schema for representing a version of a common coordinate space |  no  |
+| [SoftwarePackage](../classes/SoftwarePackage.qmd) | Identity and metadata for a software package, aligned with schema |  no  |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+| [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | An individual software requirement binding a package to a version constraint ... |  no  |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd), [SoftwarePackage](../classes/SoftwarePackage.qmd), [SoftwareRequirement](../classes/SoftwareRequirement.qmd), [Provenance](../classes/Provenance.qmd) |
+| Slot URI | [dcterms:license](http://purl.org/dc/terms/license) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:license |
+| native | atom:license |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: license
+description: Linked type for the license of the brain atlas or coordinate space version.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: dcterms:license
+domain_of:
+- CommonCoordinateSpace
+- SoftwarePackage
+- SoftwareRequirement
+- Provenance
+range: string
+
+```
+</details></div>

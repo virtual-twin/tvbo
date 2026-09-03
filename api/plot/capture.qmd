@@ -1,0 +1,52 @@
+# capture { #tvbo.plot.capture }
+
+`plot.capture`
+
+Render an HTML page to a static file with a headless browser, from a figure spec.
+
+A panel that shows a live web view — a knowledge-graph browser, a JavaScript force layout, the platform's own UI — has no matplotlib equivalent, and a screenshot someone took once drifts silently from the page it claims to show. An ``image`` panel carrying a ``capture:`` recipe re-renders its ``source`` on every build instead, so the committed raster is a build product like any other and the page is what is under version control.
+
+Resolution is a device pixel ratio rather than a dpi: the page is laid out in CSS pixels and rasterised at ``device_scale_factor`` times that, so text and vector art in the page come out at the scale factor's full resolution. The default puts a panel-width capture above what a journal asks of a raster figure.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [DEFAULT_SCALE](#tvbo.plot.capture.DEFAULT_SCALE) | Device pixel ratio when the recipe names none, so a default capture is already above print resolution. |
+| [DEFAULT_WIDTH](#tvbo.plot.capture.DEFAULT_WIDTH) | Viewport width in CSS pixels when the recipe names none. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [capture](#tvbo.plot.capture.capture) | Render *source* to *path* with a headless Chromium, honouring a ``RenderSpec``, and return the path written. |
+| [is_stale](#tvbo.plot.capture.is_stale) | Whether *path* has to be re-captured: it is missing, its local source has changed, or it was taken with a different recipe. |
+| [recipe_sidecar](#tvbo.plot.capture.recipe_sidecar) | Where the recipe a capture was taken with is recorded, beside the file it produced. |
+
+### capture { #tvbo.plot.capture.capture }
+
+```python
+plot.capture.capture(source, path, spec=None, *, base_dir=None, force=False)
+```
+
+Render *source* to *path* with a headless Chromium, honouring a ``RenderSpec``, and return the path written.
+
+A capture whose output is already newer than its local source is skipped, so re-running a build does not re-launch a browser for a page nothing has touched; *force* takes the shot regardless. A remote source has no mtime to compare, so it is captured once and then only on *force*.
+
+### is_stale { #tvbo.plot.capture.is_stale }
+
+```python
+plot.capture.is_stale(path, source_path, recipe=None)
+```
+
+Whether *path* has to be re-captured: it is missing, its local source has changed, or it was taken with a different recipe.
+
+The recipe counts because it decides what the file *is*: raising ``device_scale_factor`` or changing the viewport with the page untouched must re-render, or the spec says one thing and the committed raster is another. Split out from :func:`capture` so the decision is testable without a browser, and so a build can report what it is about to re-render.
+
+### recipe_sidecar { #tvbo.plot.capture.recipe_sidecar }
+
+```python
+plot.capture.recipe_sidecar(path)
+```
+
+Where the recipe a capture was taken with is recorded, beside the file it produced.

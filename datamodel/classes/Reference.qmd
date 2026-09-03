@@ -1,0 +1,215 @@
+# Class: Reference 
+
+
+_A small typed pointer to another TVBO entity (Network, Mesh, Observation, …). The ``iri`` identifies the target via the registry; the optional ``field`` is a dotted-path subkey resolved by attribute walk on the loaded target (e.g. ``field: 'weight_alpha'`` picks the ``weight_alpha`` named edge matrix on a Network; ``field: 'mesh.faces'`` picks the mesh face array). Used uniformly anywhere a TVBO entity needs to point at a sub-array of another entity without inlining the data._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Reference](https://w3id.org/tvbo/Reference)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Reference
+    click Reference href "./Reference.html"
+      Reference : field
+        
+          
+    
+        
+        
+        Reference --> "0..1" String : field
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Reference : iri
+        
+          
+    
+        
+        
+        Reference --> "1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Reference](https://w3id.org/tvbo/Reference) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [iri](../slots/iri.qmd) | 1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | CURIE or full IRI of the referenced TVBO entity | direct |
+| [field](../slots/field.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional dotted-path subkey into the referenced entity (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | [aux_data](../slots/aux_data.qmd) | range | [Reference](../classes/Reference.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Reference |
+| native | tvbo:Reference |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Reference
+description: 'A small typed pointer to another TVBO entity (Network, Mesh, Observation,
+  …). The ``iri`` identifies the target via the registry; the optional ``field`` is
+  a dotted-path subkey resolved by attribute walk on the loaded target (e.g. ``field:
+  ''weight_alpha''`` picks the ``weight_alpha`` named edge matrix on a Network; ``field:
+  ''mesh.faces''`` picks the mesh face array). Used uniformly anywhere a TVBO entity
+  needs to point at a sub-array of another entity without inlining the data.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  iri:
+    name: iri
+    description: CURIE or full IRI of the referenced TVBO entity.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+    required: true
+  field:
+    name: field
+    description: Optional dotted-path subkey into the referenced entity (e.g. ``weight_alpha``
+      for a Network's named edge matrix, ``mesh.faces`` for the face array, or ``nodes.ef_alpha``
+      for a per-node scalar field). Resolved by attribute walk at load time.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ReferenceFingerprint
+    - Reference
+    range: string
+class_uri: tvbo:Reference
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Reference
+description: 'A small typed pointer to another TVBO entity (Network, Mesh, Observation,
+  …). The ``iri`` identifies the target via the registry; the optional ``field`` is
+  a dotted-path subkey resolved by attribute walk on the loaded target (e.g. ``field:
+  ''weight_alpha''`` picks the ``weight_alpha`` named edge matrix on a Network; ``field:
+  ''mesh.faces''`` picks the mesh face array). Used uniformly anywhere a TVBO entity
+  needs to point at a sub-array of another entity without inlining the data.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  iri:
+    name: iri
+    description: CURIE or full IRI of the referenced TVBO entity.
+    from_schema: https://w3id.org/tvbo
+    owner: Reference
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+    required: true
+  field:
+    name: field
+    description: Optional dotted-path subkey into the referenced entity (e.g. ``weight_alpha``
+      for a Network's named edge matrix, ``mesh.faces`` for the face array, or ``nodes.ef_alpha``
+      for a per-node scalar field). Resolved by attribute walk at load time.
+    from_schema: https://w3id.org/tvbo
+    owner: Reference
+    domain_of:
+    - ReferenceFingerprint
+    - Reference
+    range: string
+class_uri: tvbo:Reference
+
+```
+</details></div>

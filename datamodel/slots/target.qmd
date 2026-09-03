@@ -1,0 +1,79 @@
+# Slot: target 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target](https://w3id.org/tvbo/slot/target)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [Assignment](../classes/Assignment.qmd) | One step of a sequential recurrence: the expression assigned to a target name |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Edge](../classes/Edge.qmd), [Analysis](../classes/Analysis.qmd), [Assignment](../classes/Assignment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target |
+| native | tvbo:target |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target
+domain_of:
+- Edge
+- Analysis
+- Assignment
+range: string
+
+```
+</details></div>

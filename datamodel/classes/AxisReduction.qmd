@@ -1,0 +1,160 @@
+# Class: AxisReduction 
+
+
+_Marks an exploration/sweep axis to be collapsed by a statistic in the result container. When set on an ExplorationAxis, that axis's named grid dimension is reduced across every observation that carries it (e.g. an `execution.random_seed` trial ensemble becomes a first-class reduced observation). Backend-independent: states the reduction intent; the result layer applies it by dimension name._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:AxisReduction](https://w3id.org/tvbo/AxisReduction)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class AxisReduction
+    click AxisReduction href "./AxisReduction.html"
+      AxisReduction : statistic
+        
+          
+    
+        
+        
+        AxisReduction --> "0..1" AxisReductionStatistic : statistic
+        click AxisReductionStatistic href "../../enums/AxisReductionStatistic.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:AxisReduction](https://w3id.org/tvbo/AxisReduction) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [statistic](../slots/statistic.qmd) | 0..1 <br/> [AxisReductionStatistic](../enums/AxisReductionStatistic.qmd) | Statistic used to collapse the axis (mean, sum, std, sem, median) | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [ExplorationAxis](../classes/ExplorationAxis.qmd) | [reduce](../slots/reduce.qmd) | range | [AxisReduction](../classes/AxisReduction.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:AxisReduction |
+| native | tvbo:AxisReduction |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: AxisReduction
+description: 'Marks an exploration/sweep axis to be collapsed by a statistic in the
+  result container. When set on an ExplorationAxis, that axis''s named grid dimension
+  is reduced across every observation that carries it (e.g. an `execution.random_seed`
+  trial ensemble becomes a first-class reduced observation). Backend-independent:
+  states the reduction intent; the result layer applies it by dimension name.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  statistic:
+    name: statistic
+    description: Statistic used to collapse the axis (mean, sum, std, sem, median).
+      Defaults to mean.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(mean)
+    domain_of:
+    - AxisReduction
+    - Surrogate
+    range: AxisReductionStatistic
+class_uri: tvbo:AxisReduction
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: AxisReduction
+description: 'Marks an exploration/sweep axis to be collapsed by a statistic in the
+  result container. When set on an ExplorationAxis, that axis''s named grid dimension
+  is reduced across every observation that carries it (e.g. an `execution.random_seed`
+  trial ensemble becomes a first-class reduced observation). Backend-independent:
+  states the reduction intent; the result layer applies it by dimension name.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  statistic:
+    name: statistic
+    description: Statistic used to collapse the axis (mean, sum, std, sem, median).
+      Defaults to mean.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(mean)
+    owner: AxisReduction
+    domain_of:
+    - AxisReduction
+    - Surrogate
+    range: AxisReductionStatistic
+class_uri: tvbo:AxisReduction
+
+```
+</details></div>

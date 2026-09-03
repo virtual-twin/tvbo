@@ -1,0 +1,588 @@
+# Class: ClinicalScore 
+
+
+_Metadata about a clinical score or scale._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:class/ClinicalScore](https://w3id.org/tvbo/dbs/class/ClinicalScore)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ClinicalScore
+    click ClinicalScore href "./ClinicalScore.html"
+      ClinicalScore : acronym
+        
+          
+    
+        
+        
+        ClinicalScore --> "0..1" String : acronym
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ClinicalScore : description
+        
+          
+    
+        
+        
+        ClinicalScore --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ClinicalScore : domain
+        
+          
+    
+        
+        
+        ClinicalScore --> "0..1" String : domain
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ClinicalScore : name
+        
+          
+    
+        
+        
+        ClinicalScore --> "0..1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ClinicalScore : parent_score
+        
+          
+    
+        
+        
+        ClinicalScore --> "0..1" ClinicalScore : parent_score
+        click ClinicalScore href "./ClinicalScore.html"
+    
+
+        
+      ClinicalScore : reference
+        
+          
+    
+        
+        
+        ClinicalScore --> "0..1" String : reference
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ClinicalScore : scale
+        
+          
+    
+        
+        
+        ClinicalScore --> "0..1" ClinicalScale : scale
+        click ClinicalScale href "./ClinicalScale.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [acronym](../slots/acronym.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [name](../slots/name.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Full name of the score (e | direct |
+| [acronym](../slots/acronym.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [domain](../slots/domain.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Domain assessed (e | direct |
+| [reference](../slots/reference.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | PubMed ID, DOI, or other reference to the score definition | direct |
+| [scale](../slots/scale.qmd) | 0..1 <br/> [ClinicalScale](../classes/ClinicalScale.qmd) | The scale this score belongs to, if applicable | direct |
+| [parent_score](../slots/parent_score.qmd) | 0..1 <br/> [ClinicalScore](../classes/ClinicalScore.qmd) | If this score is a subscore of a broader composite | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [DBSDataset](../classes/DBSDataset.qmd) | [clinical_scores](../slots/clinical_scores.qmd) | range | [ClinicalScore](../classes/ClinicalScore.qmd) |
+| [ClinicalScore](../classes/ClinicalScore.qmd) | [parent_score](../slots/parent_score.qmd) | range | [ClinicalScore](../classes/ClinicalScore.qmd) |
+| [ClinicalImprovement](../classes/ClinicalImprovement.qmd) | [score](../slots/score.qmd) | range | [ClinicalScore](../classes/ClinicalScore.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:ClinicalScore |
+| native | tvbo_dbs:ClinicalScore |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ClinicalScore
+description: Metadata about a clinical score or scale.
+from_schema: https://w3id.org/tvbo/dbs
+slots:
+- acronym
+attributes:
+  name:
+    name: name
+    description: Full name of the score (e.g., Unified Parkinson's Disease Rating
+      Scale - Part III)
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: schema:name
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+  acronym:
+    name: acronym
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: skos:notation
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - Observation
+    - Function
+    - FunctionCall
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: dcterms:description
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  domain:
+    name: domain
+    description: Domain assessed (e.g. motor, mood, pain)
+    from_schema: https://w3id.org/tvbo/dbs
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: string
+  reference:
+    name: reference
+    description: PubMed ID, DOI, or other reference to the score definition
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: dcterms:references
+    domain_of:
+    - Dataset
+    - ClinicalScale
+    - ClinicalScore
+    - Tractogram
+    range: string
+  scale:
+    name: scale
+    description: The scale this score belongs to, if applicable
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - ClinicalScore
+    - SimulationTool
+    - BidsEntities
+    range: ClinicalScale
+    required: false
+  parent_score:
+    name: parent_score
+    description: If this score is a subscore of a broader composite
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - ClinicalScore
+    range: ClinicalScore
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ClinicalScore
+description: Metadata about a clinical score or scale.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  name:
+    name: name
+    description: Full name of the score (e.g., Unified Parkinson's Disease Rating
+      Scale - Part III)
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: schema:name
+    owner: ClinicalScore
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+  acronym:
+    name: acronym
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: skos:notation
+    owner: ClinicalScore
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - Observation
+    - Function
+    - FunctionCall
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: dcterms:description
+    owner: ClinicalScore
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  domain:
+    name: domain
+    description: Domain assessed (e.g. motor, mood, pain)
+    from_schema: https://w3id.org/tvbo/dbs
+    owner: ClinicalScore
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: string
+  reference:
+    name: reference
+    description: PubMed ID, DOI, or other reference to the score definition
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: dcterms:references
+    owner: ClinicalScore
+    domain_of:
+    - Dataset
+    - ClinicalScale
+    - ClinicalScore
+    - Tractogram
+    range: string
+  scale:
+    name: scale
+    description: The scale this score belongs to, if applicable
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: ClinicalScore
+    domain_of:
+    - ClinicalScore
+    - SimulationTool
+    - BidsEntities
+    range: ClinicalScale
+    required: false
+  parent_score:
+    name: parent_score
+    description: If this score is a subscore of a broader composite
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: ClinicalScore
+    domain_of:
+    - ClinicalScore
+    range: ClinicalScore
+
+```
+</details></div>

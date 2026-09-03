@@ -1,0 +1,101 @@
+# Slot: archive 
+
+
+_How to package the run into a COMBINE/OMEX archive — the single supplementary artifact from which every figure, number and caption regenerates. Unset means no archive is emitted._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/archive](https://w3id.org/tvbo/slot/archive)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ArchiveConfig](../classes/ArchiveConfig.qmd) |
+| Domain Of | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:archive |
+| native | tvbo:archive |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: archive
+description: How to package the run into a COMBINE/OMEX archive — the single supplementary
+  artifact from which every figure, number and caption regenerates. Unset means no
+  archive is emitted.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationStudy
+domain_of:
+- SimulationStudy
+range: ArchiveConfig
+inlined: true
+
+```
+</details></div>

@@ -1,0 +1,77 @@
+# Slot: dimension 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/dimension](https://w3id.org/tvbo/slot/dimension)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ToolUnit](../classes/ToolUnit.qmd) | One TVBO unit as a single tool writes it |  no  |
+| [CouplingInput](../classes/CouplingInput.qmd) | Specification of a coupling input channel for multi-coupling dynamics |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ToolUnit](../classes/ToolUnit.qmd), [CouplingInput](../classes/CouplingInput.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:dimension |
+| native | tvbo:dimension |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: dimension
+domain_of:
+- ToolUnit
+- CouplingInput
+range: string
+
+```
+</details></div>

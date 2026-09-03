@@ -1,0 +1,100 @@
+# Slot: differentiation 
+
+
+_Backend-neutral strategy for propagating gradients through the temporal integration (e.g. truncated backprop-through-time)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/differentiation](https://w3id.org/tvbo/slot/differentiation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Differentiation](../classes/Differentiation.qmd) |
+| Domain Of | [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Integrator](../classes/Integrator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:differentiation |
+| native | tvbo:differentiation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: differentiation
+description: Backend-neutral strategy for propagating gradients through the temporal
+  integration (e.g. truncated backprop-through-time).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Integrator
+domain_of:
+- Integrator
+range: Differentiation
+inlined: true
+
+```
+</details></div>

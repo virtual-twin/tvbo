@@ -1,0 +1,503 @@
+# Class: PDESolver 
+
+
+_Numerical solver for a PDE: the time-integration algorithm, tolerances and step inherited from `Solver`, plus the spatial discretization and preconditioner a PDE additionally needs._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:PDESolver](https://w3id.org/tvbo/PDESolver)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class PDESolver
+    click PDESolver href "./PDESolver.html"
+      Solver <|-- PDESolver
+        click Solver href "./Solver.html"
+      
+      PDESolver : abs_tol
+        
+          
+    
+        
+        
+        PDESolver --> "0..1" Float : abs_tol
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      PDESolver : description
+        
+          
+    
+        
+        
+        PDESolver --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      PDESolver : discretization
+        
+          
+    
+        
+        
+        PDESolver --> "0..1" DiscretizationMethod : discretization
+        click DiscretizationMethod href "../../enums/DiscretizationMethod.html"
+    
+
+        
+      PDESolver : environment
+        
+          
+    
+        
+        
+        PDESolver --> "0..1" SoftwareEnvironment : environment
+        click SoftwareEnvironment href "./SoftwareEnvironment.html"
+    
+
+        
+      PDESolver : label
+        
+          
+    
+        
+        
+        PDESolver --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      PDESolver : method
+        
+          
+    
+        
+        
+        PDESolver --> "0..1" String : method
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      PDESolver : preconditioner
+        
+          
+    
+        
+        
+        PDESolver --> "0..1" String : preconditioner
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      PDESolver : rel_tol
+        
+          
+    
+        
+        
+        PDESolver --> "0..1" Float : rel_tol
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      PDESolver : requirements
+        
+          
+    
+        
+        
+        PDESolver --> "*" SoftwareRequirement : requirements
+        click SoftwareRequirement href "./SoftwareRequirement.html"
+    
+
+        
+      PDESolver : step_size
+        
+          
+    
+        
+        
+        PDESolver --> "0..1" Float : step_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [Solver](../classes/Solver.qmd)
+    * **PDESolver**
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:PDESolver](https://w3id.org/tvbo/PDESolver) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [requirements](../slots/requirements.qmd) | * <br/> [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |  | direct |
+| [environment](../slots/environment.qmd) | 0..1 <br/> [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |  | direct |
+| [method](../slots/method.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Time-integration algorithm, e | direct |
+| [discretization](../slots/discretization.qmd) | 0..1 <br/> [DiscretizationMethod](../enums/DiscretizationMethod.qmd) |  | direct |
+| [preconditioner](../slots/preconditioner.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [abs_tol](../slots/abs_tol.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Absolute tolerance for adaptive solvers | [Solver](../classes/Solver.qmd) |
+| [rel_tol](../slots/rel_tol.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Relative tolerance for adaptive solvers | [Solver](../classes/Solver.qmd) |
+| [step_size](../slots/step_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Fixed time step of the solver | [Solver](../classes/Solver.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [PDE](../classes/PDE.qmd) | [solver](../slots/solver.qmd) | range | [PDESolver](../classes/PDESolver.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:PDESolver |
+| native | tvbo:PDESolver |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: PDESolver
+description: 'Numerical solver for a PDE: the time-integration algorithm, tolerances
+  and step inherited from `Solver`, plus the spatial discretization and preconditioner
+  a PDE additionally needs.'
+from_schema: https://w3id.org/tvbo
+is_a: Solver
+slots:
+- label
+- description
+- requirements
+- environment
+attributes:
+  method:
+    name: method
+    description: Time-integration algorithm, e.g. implicit Euler or Crank-Nicolson.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: string
+  discretization:
+    name: discretization
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - BranchSwitch
+    - PDESolver
+    range: DiscretizationMethod
+  preconditioner:
+    name: preconditioner
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - PDESolver
+    range: string
+class_uri: tvbo:PDESolver
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: PDESolver
+description: 'Numerical solver for a PDE: the time-integration algorithm, tolerances
+  and step inherited from `Solver`, plus the spatial discretization and preconditioner
+  a PDE additionally needs.'
+from_schema: https://w3id.org/tvbo
+is_a: Solver
+attributes:
+  method:
+    name: method
+    description: Time-integration algorithm, e.g. implicit Euler or Crank-Nicolson.
+    from_schema: https://w3id.org/tvbo
+    owner: PDESolver
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: string
+  discretization:
+    name: discretization
+    from_schema: https://w3id.org/tvbo
+    owner: PDESolver
+    domain_of:
+    - BranchSwitch
+    - PDESolver
+    range: DiscretizationMethod
+  preconditioner:
+    name: preconditioner
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: PDESolver
+    domain_of:
+    - PDESolver
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: PDESolver
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: PDESolver
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  requirements:
+    name: requirements
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: PDESolver
+    domain_of:
+    - SoftwareEnvironment
+    - Function
+    - WorkflowConfig
+    - PDESolver
+    range: SoftwareRequirement
+    multivalued: true
+  environment:
+    name: environment
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: PDESolver
+    domain_of:
+    - Provenance
+    - Observation
+    - SimulationExperiment
+    - PDESolver
+    range: SoftwareEnvironment
+  abs_tol:
+    name: abs_tol
+    description: Absolute tolerance for adaptive solvers.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(1e-10)
+    owner: PDESolver
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  rel_tol:
+    name: rel_tol
+    description: Relative tolerance for adaptive solvers.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(1e-10)
+    owner: PDESolver
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  step_size:
+    name: step_size
+    description: Fixed time step of the solver. Unset for an adaptive solver, which
+      chooses its own step from `abs_tol` / `rel_tol`.
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - dt
+    rank: 1000
+    owner: PDESolver
+    domain_of:
+    - Solver
+    - Integrator
+    range: float
+class_uri: tvbo:PDESolver
+
+```
+</details></div>

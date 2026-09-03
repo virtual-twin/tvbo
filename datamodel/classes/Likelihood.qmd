@@ -1,0 +1,429 @@
+# Class: Likelihood 
+
+
+_Observation model for Bayesian inference: p(data | sim(theta)). Points at the observation holding the data and specifies the noise family + scale. `name` is the noise family (default Normal); `source` uses the same referencing as `Observation.source`, so the observed data can come from this experiment's integration, an empirical network measure, or a runtime-bound array — one flexible hook, no data-loading path of its own. `predicted` names the other side of the residual when it differs from the data's own observable._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Likelihood](https://w3id.org/tvbo/Likelihood)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Likelihood
+    click Likelihood href "./Likelihood.html"
+      Likelihood : description
+        
+          
+    
+        
+        
+        Likelihood --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Likelihood : name
+        
+          
+    
+        
+        
+        Likelihood --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Likelihood : predicted
+        
+          
+    
+        
+        
+        Likelihood --> "*" String : predicted
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Likelihood : sigma
+        
+          
+    
+        
+        
+        Likelihood --> "0..1" Float : sigma
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Likelihood : source
+        
+          
+    
+        
+        
+        Likelihood --> "1..*" String : source
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Likelihood](https://w3id.org/tvbo/Likelihood) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [source](../slots/source.qmd) | 1..* <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Observation(s) providing the observed data, evaluated once at the declared co... | direct |
+| [predicted](../slots/predicted.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Observation(s) the model PREDICTS, recomputed for every proposed theta | direct |
+| [sigma](../slots/sigma.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Observation-noise scale of the likelihood | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Inference](../classes/Inference.qmd) | [likelihood](../slots/likelihood.qmd) | range | [Likelihood](../classes/Likelihood.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Likelihood |
+| native | tvbo:Likelihood |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Likelihood
+description: 'Observation model for Bayesian inference: p(data | sim(theta)). Points
+  at the observation holding the data and specifies the noise family + scale. `name`
+  is the noise family (default Normal); `source` uses the same referencing as `Observation.source`,
+  so the observed data can come from this experiment''s integration, an empirical
+  network measure, or a runtime-bound array — one flexible hook, no data-loading path
+  of its own. `predicted` names the other side of the residual when it differs from
+  the data''s own observable.'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+slot_usage:
+  name:
+    name: name
+    ifabsent: string(Normal)
+attributes:
+  source:
+    name: source
+    description: Observation(s) providing the observed data, evaluated once at the
+      declared configuration.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: string
+    required: true
+    multivalued: true
+  predicted:
+    name: predicted
+    description: 'Observation(s) the model PREDICTS, recomputed for every proposed
+      theta. Defaults to `source`, which is right whenever the data enters from outside
+      — a runtime-bound array or an empirical measure — because then the same observable
+      serves both sides. Name it separately when the recording is itself declared
+      in the forward pipeline: measurement noise applied to both sides is the same
+      deterministic draw twice, so it cancels in the residual and the inference silently
+      fits noiseless data.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Likelihood
+    range: string
+    multivalued: true
+  sigma:
+    name: sigma
+    description: Observation-noise scale of the likelihood. May deliberately differ
+      from the data's generative noise — it sets how tightly the likelihood constrains
+      the (possibly degenerate) parameter ridge.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Likelihood
+    range: float
+class_uri: tvbo:Likelihood
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Likelihood
+description: 'Observation model for Bayesian inference: p(data | sim(theta)). Points
+  at the observation holding the data and specifies the noise family + scale. `name`
+  is the noise family (default Normal); `source` uses the same referencing as `Observation.source`,
+  so the observed data can come from this experiment''s integration, an empirical
+  network measure, or a runtime-bound array — one flexible hook, no data-loading path
+  of its own. `predicted` names the other side of the residual when it differs from
+  the data''s own observable.'
+from_schema: https://w3id.org/tvbo
+slot_usage:
+  name:
+    name: name
+    ifabsent: string(Normal)
+attributes:
+  source:
+    name: source
+    description: Observation(s) providing the observed data, evaluated once at the
+      declared configuration.
+    from_schema: https://w3id.org/tvbo
+    owner: Likelihood
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: string
+    required: true
+    multivalued: true
+  predicted:
+    name: predicted
+    description: 'Observation(s) the model PREDICTS, recomputed for every proposed
+      theta. Defaults to `source`, which is right whenever the data enters from outside
+      — a runtime-bound array or an empirical measure — because then the same observable
+      serves both sides. Name it separately when the recording is itself declared
+      in the forward pipeline: measurement noise applied to both sides is the same
+      deterministic draw twice, so it cancels in the residual and the inference silently
+      fits noiseless data.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Likelihood
+    domain_of:
+    - Likelihood
+    range: string
+    multivalued: true
+  sigma:
+    name: sigma
+    description: Observation-noise scale of the likelihood. May deliberately differ
+      from the data's generative noise — it sets how tightly the likelihood constrains
+      the (possibly degenerate) parameter ridge.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Likelihood
+    domain_of:
+    - Likelihood
+    range: float
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    ifabsent: string(Normal)
+    identifier: true
+    owner: Likelihood
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Likelihood
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Likelihood
+
+```
+</details></div>

@@ -1,0 +1,532 @@
+# Class: DataSource 
+
+
+_Specification for loading external/empirical data._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:DataSource](https://w3id.org/tvbo/DataSource)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DataSource
+    click DataSource href "./DataSource.html"
+      DataSource : description
+        
+          
+    
+        
+        
+        DataSource --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DataSource : format
+        
+          
+    
+        
+        
+        DataSource --> "0..1" String : format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DataSource : key
+        
+          
+    
+        
+        
+        DataSource --> "0..1" String : key
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DataSource : label
+        
+          
+    
+        
+        
+        DataSource --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DataSource : loader
+        
+          
+    
+        
+        
+        DataSource --> "0..1" Callable : loader
+        click Callable href "./Callable.html"
+    
+
+        
+      DataSource : name
+        
+          
+    
+        
+        
+        DataSource --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DataSource : path
+        
+          
+    
+        
+        
+        DataSource --> "0..1" String : path
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DataSource : preprocessing
+        
+          
+    
+        
+        
+        DataSource --> "0..1" Function : preprocessing
+        click Function href "./Function.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:DataSource](https://w3id.org/tvbo/DataSource) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [path](../slots/path.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | File path or URI to the data | direct |
+| [loader](../slots/loader.qmd) | 0..1 <br/> [Callable](../classes/Callable.qmd) | Callable that loads the data (e | direct |
+| [format](../slots/format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Data format: 'npy', 'mat', 'csv', 'nifti', etc | direct |
+| [key](../slots/key.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Key/variable name within the file (for  | direct |
+| [preprocessing](../slots/preprocessing.qmd) | 0..1 <br/> [Function](../classes/Function.qmd) | Optional preprocessing to apply after loading | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | [data_source](../slots/data_source.qmd) | range | [DataSource](../classes/DataSource.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:DataSource |
+| native | tvbo:DataSource |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DataSource
+description: Specification for loading external/empirical data.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- label
+- description
+attributes:
+  path:
+    name: path
+    description: File path or URI to the data
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  loader:
+    name: loader
+    description: Callable that loads the data (e.g., load_functional_connectivity)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DataSource
+    range: Callable
+    inlined: true
+  format:
+    name: format
+    description: 'Data format: ''npy'', ''mat'', ''csv'', ''nifti'', etc.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  key:
+    name: key
+    description: Key/variable name within the file (for .mat, .npz, etc.)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DataSource
+    - SimulationStudy
+    - ResultBinding
+    range: string
+  preprocessing:
+    name: preprocessing
+    description: Optional preprocessing to apply after loading
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DataSource
+    range: Function
+    inlined: true
+class_uri: tvbo:DataSource
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DataSource
+description: Specification for loading external/empirical data.
+from_schema: https://w3id.org/tvbo
+attributes:
+  path:
+    name: path
+    description: File path or URI to the data
+    from_schema: https://w3id.org/tvbo
+    owner: DataSource
+    domain_of:
+    - Panel
+    - Inset
+    - File
+    - DataSource
+    - CodeSource
+    - ArchiveConfig
+    range: string
+  loader:
+    name: loader
+    description: Callable that loads the data (e.g., load_functional_connectivity)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DataSource
+    domain_of:
+    - DataSource
+    range: Callable
+    inlined: true
+  format:
+    name: format
+    description: 'Data format: ''npy'', ''mat'', ''csv'', ''nifti'', etc.'
+    from_schema: https://w3id.org/tvbo
+    owner: DataSource
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+  key:
+    name: key
+    description: Key/variable name within the file (for .mat, .npz, etc.)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DataSource
+    domain_of:
+    - DataSource
+    - SimulationStudy
+    - ResultBinding
+    range: string
+  preprocessing:
+    name: preprocessing
+    description: Optional preprocessing to apply after loading
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DataSource
+    domain_of:
+    - DataSource
+    range: Function
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: DataSource
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: DataSource
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: DataSource
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:DataSource
+
+```
+</details></div>

@@ -1,0 +1,77 @@
+# Slot: parameter 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/parameter](https://w3id.org/tvbo/slot/parameter)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ExplorationAxis](../classes/ExplorationAxis.qmd) | One axis of a parameter exploration grid |  no  |
+| [FreeParameter](../classes/FreeParameter.qmd) | One degree of freedom in an OptimizationStage |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ExplorationAxis](../classes/ExplorationAxis.qmd), [FreeParameter](../classes/FreeParameter.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:parameter |
+| native | tvbo:parameter |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: parameter
+domain_of:
+- ExplorationAxis
+- FreeParameter
+range: string
+
+```
+</details></div>

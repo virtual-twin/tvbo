@@ -1,0 +1,935 @@
+# Class: SimulationStudy 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:SimulationStudy](https://w3id.org/tvbo/SimulationStudy)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class SimulationStudy
+    click SimulationStudy href "./SimulationStudy.html"
+      Study <|-- SimulationStudy
+        click Study href "./Study.html"
+      
+      SimulationStudy : analyses
+        
+          
+    
+        
+        
+        SimulationStudy --> "*" Analysis : analyses
+        click Analysis href "./Analysis.html"
+    
+
+        
+      SimulationStudy : archive
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" ArchiveConfig : archive
+        click ArchiveConfig href "./ArchiveConfig.html"
+    
+
+        
+      SimulationStudy : authors
+        
+          
+    
+        
+        
+        SimulationStudy --> "*" String : authors
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : citekey
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" String : citekey
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : code_source
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" CodeSource : code_source
+        click CodeSource href "./CodeSource.html"
+    
+
+        
+      SimulationStudy : derived_from
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" String : derived_from
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : description
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : doi
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" String : doi
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : figures
+        
+          
+    
+        
+        
+        SimulationStudy --> "*" Figure : figures
+        click Figure href "./Figure.html"
+    
+
+        
+      SimulationStudy : key
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" String : key
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : label
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : model
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" Dynamics : model
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      SimulationStudy : references
+        
+          
+    
+        
+        
+        SimulationStudy --> "*" String : references
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : requires
+        
+          
+    
+        
+        
+        SimulationStudy --> "*" SoftwarePackage : requires
+        click SoftwarePackage href "./SoftwarePackage.html"
+    
+
+        
+      SimulationStudy : results
+        
+          
+    
+        
+        
+        SimulationStudy --> "*" ResultBinding : results
+        click ResultBinding href "./ResultBinding.html"
+    
+
+        
+      SimulationStudy : sample
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" Sample : sample
+        click Sample href "./Sample.html"
+    
+
+        
+      SimulationStudy : simulation_experiments
+        
+          
+    
+        
+        
+        SimulationStudy --> "*" SimulationExperiment : simulation_experiments
+        click SimulationExperiment href "./SimulationExperiment.html"
+    
+
+        
+      SimulationStudy : studies
+        
+          
+    
+        
+        
+        SimulationStudy --> "*" SimulationStudy : studies
+        click SimulationStudy href "./SimulationStudy.html"
+    
+
+        
+      SimulationStudy : title
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" String : title
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : type
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" String : type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationStudy : workflow
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" WorkflowConfig : workflow
+        click WorkflowConfig href "./WorkflowConfig.html"
+    
+
+        
+      SimulationStudy : year
+        
+          
+    
+        
+        
+        SimulationStudy --> "0..1" Integer : year
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [Study](../classes/Study.qmd)
+    * **SimulationStudy**
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:SimulationStudy](https://w3id.org/tvbo/SimulationStudy) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [derived_from](../slots/derived_from.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [model](../slots/model.qmd) | 0..1 <br/> [Dynamics](../classes/Dynamics.qmd) |  | direct |
+| [references](../slots/references.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [key](../slots/key.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Deprecated alias of the inherited ``citekey``; retained for back-compatibilit... | direct |
+| [sample](../slots/sample.qmd) | 0..1 <br/> [Sample](../classes/Sample.qmd) |  | direct |
+| [workflow](../slots/workflow.qmd) | 0..1 <br/> [WorkflowConfig](../classes/WorkflowConfig.qmd) | Study-wide default orchestration for rendering its experiments' sweeps into d... | direct |
+| [simulation_experiments](../slots/simulation_experiments.qmd) | * <br/> [SimulationExperiment](../classes/SimulationExperiment.qmd) |  | direct |
+| [analyses](../slots/analyses.qmd) | * <br/> [Analysis](../classes/Analysis.qmd) | Analyses of this study's results, each persisted as its own container and so ... | direct |
+| [figures](../slots/figures.qmd) | * <br/> [Figure](../classes/Figure.qmd) | Declarative Figure specs rendered from this study's experiment results — clos... | direct |
+| [code_source](../slots/code_source.qmd) | 0..1 <br/> [CodeSource](../classes/CodeSource.qmd) | Where this study's callable code lives — the builders and transform/observati... | direct |
+| [requires](../slots/requires.qmd) | * <br/> [SoftwarePackage](../classes/SoftwarePackage.qmd) | Packages this study's own code needs beyond what tvbo itself installs, keyed ... | direct |
+| [studies](../slots/studies.qmd) | * <br/> [SimulationStudy](../classes/SimulationStudy.qmd) | Other studies this one aggregates, each a ``SimulationStudy`` in its own righ... | direct |
+| [results](../slots/results.qmd) | * <br/> [ResultBinding](../classes/ResultBinding.qmd) | The named numbers the prose cites, each keyed by the manuscript token that st... | direct |
+| [archive](../slots/archive.qmd) | 0..1 <br/> [ArchiveConfig](../classes/ArchiveConfig.qmd) | How to package the run into a COMBINE/OMEX archive — the single supplementary... | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Study](../classes/Study.qmd) |
+| [citekey](../slots/citekey.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BibTeX citation key; the join key into references | [Study](../classes/Study.qmd) |
+| [type](../slots/type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Publication type (article, book, inproceedings, …) | [Study](../classes/Study.qmd) |
+| [title](../slots/title.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Study](../classes/Study.qmd) |
+| [authors](../slots/authors.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Author display strings (full detail in references | [Study](../classes/Study.qmd) |
+| [year](../slots/year.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | [Study](../classes/Study.qmd) |
+| [doi](../slots/doi.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Study](../classes/Study.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [studies](../slots/studies.qmd) | range | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:SimulationStudy |
+| native | tvbo:SimulationStudy |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: SimulationStudy
+from_schema: https://w3id.org/tvbo
+is_a: Study
+slots:
+- label
+- derived_from
+- model
+- references
+attributes:
+  key:
+    name: key
+    description: Deprecated alias of the inherited ``citekey``; retained for back-compatibility
+      with existing tooling.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DataSource
+    - SimulationStudy
+    - ResultBinding
+    range: string
+  sample:
+    name: sample
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationStudy
+    range: Sample
+  workflow:
+    name: workflow
+    description: Study-wide default orchestration for rendering its experiments' sweeps
+      into distributed workflows (Slurm/Snakemake/Nextflow). Individual experiments
+      refine it via ``workflow_overrides``.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DistributionConfig
+    - SimulationExperiment
+    - SimulationStudy
+    range: WorkflowConfig
+    inlined: true
+  simulation_experiments:
+    name: simulation_experiments
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    alias: experiments
+    domain_of:
+    - SimulationStudy
+    range: SimulationExperiment
+    multivalued: true
+    inlined_as_list: true
+  analyses:
+    name: analyses
+    description: 'Analyses of this study''s results, each persisted as its own container
+      and so bindable by a figure or a later analysis exactly like a run. These take
+      the ``Analysis`` form that invokes a ``callable`` over ``arguments`` (the ``type``/``target``/``wrt``
+      form analyses a solve and belongs on an ``Observation`` instead), and each needs
+      a unique ``name`` — it keys the container. An argument''s ``used:`` DataRef
+      both records what was consumed and orders the run: ``tvbo run`` executes the
+      analyses around the experiments — one an experiment consumes first, one consuming
+      an experiment after — and then renders the figures.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationStudy
+    range: Analysis
+    multivalued: true
+    inlined_as_list: true
+  figures:
+    name: figures
+    description: Declarative Figure specs rendered from this study's experiment results
+      — closes the replication loop (a study is its experiments plus the figures that
+      read them).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationStudy
+    range: Figure
+    multivalued: true
+    inlined_as_list: true
+  code_source:
+    name: code_source
+    description: 'Where this study''s callable code lives — the builders and transform/observation
+      callables it references by bare ``module:`` name. Decouples the specification
+      from its code: a local directory (relative to the recipe YAML or absolute) or
+      a git repository fetched and cached at load time. When absent, the conventional
+      ``<recipe-dir>/code/`` is used.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationStudy
+    range: CodeSource
+    inlined: true
+  requires:
+    name: requires
+    description: Packages this study's own code needs beyond what tvbo itself installs,
+      keyed by package name and carrying the version it was reproduced against. A
+      replication that matches a paper's method often has to use the paper's tool
+      — a spectral parameterisation, a specific solver — and a study whose report
+      imports one that nothing declares runs only on the machine that happens to have
+      it. This states what is required; ``prov-<label>_soft`` records what actually
+      ran, so the two can be compared rather than assumed equal.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - UpdateRule
+    - SimulationStudy
+    range: SoftwarePackage
+    multivalued: true
+    inlined: true
+  studies:
+    name: studies
+    description: 'Other studies this one aggregates, each a ``SimulationStudy`` in
+      its own right — so a study-of-studies is the same class as the studies it holds,
+      and nesting recurses to any depth without a wrapper class standing between a
+      study and the studies it holds. A whole manuscript is then one runnable specification
+      whose sub-studies are runnable specifications. Written as ``!include <path>``
+      so each sub-study keeps its own recipe file and therefore its own directory:
+      its ``code_source``, its results root and its relative references all resolve
+      against where it lives, not against whoever included it. ``tvbo run`` walks
+      the nested studies depth first, then runs the owning study''s own experiments,
+      analyses and figures — the paper-native content belonging to no sub-study. Legitimized
+      by COMBINE/OMEX, SED-ML and the ISA ``Investigation`` top-level container it
+      parallels.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationStudy
+    range: SimulationStudy
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  results:
+    name: results
+    description: The named numbers the prose cites, each keyed by the manuscript token
+      that stands in for it (``key``) and bound either to a computed value (``used:``
+      a DataRef into this study's or a nested study's analysis) or to an authored
+      constant quoted from prior work (``value`` + ``source``). ``tvbo run`` collects
+      these into a results manifest the document reads, so no reported figure is transcribed
+      by hand and a stale or missing key fails the build rather than printing a wrong
+      number.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationStudy
+    range: ResultBinding
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  archive:
+    name: archive
+    description: How to package the run into a COMBINE/OMEX archive — the single supplementary
+      artifact from which every figure, number and caption regenerates. Unset means
+      no archive is emitted.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationStudy
+    range: ArchiveConfig
+    inlined: true
+class_uri: tvbo:SimulationStudy
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: SimulationStudy
+from_schema: https://w3id.org/tvbo
+is_a: Study
+attributes:
+  key:
+    name: key
+    description: Deprecated alias of the inherited ``citekey``; retained for back-compatibility
+      with existing tooling.
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationStudy
+    domain_of:
+    - DataSource
+    - SimulationStudy
+    - ResultBinding
+    range: string
+  sample:
+    name: sample
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - SimulationStudy
+    range: Sample
+  workflow:
+    name: workflow
+    description: Study-wide default orchestration for rendering its experiments' sweeps
+      into distributed workflows (Slurm/Snakemake/Nextflow). Individual experiments
+      refine it via ``workflow_overrides``.
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationStudy
+    domain_of:
+    - DistributionConfig
+    - SimulationExperiment
+    - SimulationStudy
+    range: WorkflowConfig
+    inlined: true
+  simulation_experiments:
+    name: simulation_experiments
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    alias: experiments
+    owner: SimulationStudy
+    domain_of:
+    - SimulationStudy
+    range: SimulationExperiment
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  analyses:
+    name: analyses
+    description: 'Analyses of this study''s results, each persisted as its own container
+      and so bindable by a figure or a later analysis exactly like a run. These take
+      the ``Analysis`` form that invokes a ``callable`` over ``arguments`` (the ``type``/``target``/``wrt``
+      form analyses a solve and belongs on an ``Observation`` instead), and each needs
+      a unique ``name`` — it keys the container. An argument''s ``used:`` DataRef
+      both records what was consumed and orders the run: ``tvbo run`` executes the
+      analyses around the experiments — one an experiment consumes first, one consuming
+      an experiment after — and then renders the figures.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - SimulationStudy
+    range: Analysis
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  figures:
+    name: figures
+    description: Declarative Figure specs rendered from this study's experiment results
+      — closes the replication loop (a study is its experiments plus the figures that
+      read them).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - SimulationStudy
+    range: Figure
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  code_source:
+    name: code_source
+    description: 'Where this study''s callable code lives — the builders and transform/observation
+      callables it references by bare ``module:`` name. Decouples the specification
+      from its code: a local directory (relative to the recipe YAML or absolute) or
+      a git repository fetched and cached at load time. When absent, the conventional
+      ``<recipe-dir>/code/`` is used.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - SimulationStudy
+    range: CodeSource
+    inlined: true
+  requires:
+    name: requires
+    description: Packages this study's own code needs beyond what tvbo itself installs,
+      keyed by package name and carrying the version it was reproduced against. A
+      replication that matches a paper's method often has to use the paper's tool
+      — a spectral parameterisation, a specific solver — and a study whose report
+      imports one that nothing declares runs only on the machine that happens to have
+      it. This states what is required; ``prov-<label>_soft`` records what actually
+      ran, so the two can be compared rather than assumed equal.
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationStudy
+    domain_of:
+    - UpdateRule
+    - SimulationStudy
+    range: SoftwarePackage
+    multivalued: true
+    inlined: true
+  studies:
+    name: studies
+    description: 'Other studies this one aggregates, each a ``SimulationStudy`` in
+      its own right — so a study-of-studies is the same class as the studies it holds,
+      and nesting recurses to any depth without a wrapper class standing between a
+      study and the studies it holds. A whole manuscript is then one runnable specification
+      whose sub-studies are runnable specifications. Written as ``!include <path>``
+      so each sub-study keeps its own recipe file and therefore its own directory:
+      its ``code_source``, its results root and its relative references all resolve
+      against where it lives, not against whoever included it. ``tvbo run`` walks
+      the nested studies depth first, then runs the owning study''s own experiments,
+      analyses and figures — the paper-native content belonging to no sub-study. Legitimized
+      by COMBINE/OMEX, SED-ML and the ISA ``Investigation`` top-level container it
+      parallels.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - SimulationStudy
+    range: SimulationStudy
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  results:
+    name: results
+    description: The named numbers the prose cites, each keyed by the manuscript token
+      that stands in for it (``key``) and bound either to a computed value (``used:``
+      a DataRef into this study's or a nested study's analysis) or to an authored
+      constant quoted from prior work (``value`` + ``source``). ``tvbo run`` collects
+      these into a results manifest the document reads, so no reported figure is transcribed
+      by hand and a stale or missing key fails the build rather than printing a wrong
+      number.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - SimulationStudy
+    range: ResultBinding
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  archive:
+    name: archive
+    description: How to package the run into a COMBINE/OMEX archive — the single supplementary
+      artifact from which every figure, number and caption regenerates. Unset means
+      no archive is emitted.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - SimulationStudy
+    range: ArchiveConfig
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: SimulationStudy
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  derived_from:
+    name: derived_from
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: prov:wasDerivedFrom
+    owner: SimulationStudy
+    domain_of:
+    - Provenance
+    - SimulationStudy
+    range: string
+  model:
+    name: model
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - Electrode
+    - SimulationExperiment
+    - SimulationStudy
+    range: Dynamics
+  references:
+    name: references
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: SimulationStudy
+    domain_of:
+    - Provenance
+    - Observation
+    - Dynamics
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+    multivalued: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: SimulationStudy
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  citekey:
+    name: citekey
+    description: BibTeX citation key; the join key into references.bib for full bibliographic
+      detail. A study is identified by its key/citekey and described by its title
+      — no ``name`` needed.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - Study
+    range: string
+  type:
+    name: type
+    description: Publication type (article, book, inproceedings, …).
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationStudy
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  title:
+    name: title
+    from_schema: https://w3id.org/tvbo
+    slot_uri: dcterms:title
+    owner: SimulationStudy
+    domain_of:
+    - Panel
+    - Inset
+    - Legend
+    - Study
+    range: string
+  authors:
+    name: authors
+    description: Author display strings (full detail in references.bib).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationStudy
+    domain_of:
+    - Study
+    range: string
+    multivalued: true
+  year:
+    name: year
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:issued
+    owner: SimulationStudy
+    domain_of:
+    - Study
+    range: integer
+  doi:
+    name: doi
+    from_schema: https://w3id.org/tvbo
+    slot_uri: bibo:doi
+    owner: SimulationStudy
+    domain_of:
+    - SoftwarePackage
+    - Study
+    range: string
+class_uri: tvbo:SimulationStudy
+
+```
+</details></div>

@@ -1,0 +1,481 @@
+# Class: Layer 
+
+
+_One mark bound to one data reference, with its encoding._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Layer](https://w3id.org/tvbo/class/Layer)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Layer
+    click Layer href "./Layer.html"
+      Layer : encoding
+        
+          
+    
+        
+        
+        Layer --> "0..1" Encoding : encoding
+        click Encoding href "./Encoding.html"
+    
+
+        
+      Layer : frame
+        
+          
+    
+        
+        
+        Layer --> "0..1" FrameRole : frame
+        click FrameRole href "../../enums/FrameRole.html"
+    
+
+        
+      Layer : label
+        
+          
+    
+        
+        
+        Layer --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Layer : mark
+        
+          
+    
+        
+        
+        Layer --> "0..1" MarkType : mark
+        click MarkType href "../../enums/MarkType.html"
+    
+
+        
+      Layer : style
+        
+          
+    
+        
+        
+        Layer --> "0..1" Style : style
+        click Style href "./Style.html"
+    
+
+        
+      Layer : transform
+        
+          
+    
+        
+        
+        Layer --> "0..1" String : transform
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Layer : triangle
+        
+          
+    
+        
+        
+        Layer --> "0..1" Triangle : triangle
+        click Triangle href "../../enums/Triangle.html"
+    
+
+        
+      Layer : used
+        
+          
+    
+        
+        
+        Layer --> "1" DataRef : used
+        click DataRef href "./DataRef.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [used](../slots/used.qmd) | 1 <br/> [DataRef](../classes/DataRef.qmd) |  | direct |
+| [transform](../slots/transform.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional presentation-only reduction | direct |
+| [mark](../slots/mark.qmd) | 0..1 <br/> [MarkType](../enums/MarkType.qmd) | Cartesian mark; omitted for heatmap panels (implied by the panel kind) | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Legend entry for this layer | direct |
+| [triangle](../slots/triangle.qmd) | 0..1 <br/> [Triangle](../enums/Triangle.qmd) | Fill only this triangle of a square matrix, masking the other half so a sibli... | direct |
+| [frame](../slots/frame.qmd) | 0..1 <br/> [FrameRole](../enums/FrameRole.qmd) | This layer's part in an animation: whether it advances with the frame, stays ... | direct |
+| [encoding](../slots/encoding.qmd) | 0..1 <br/> [Encoding](../classes/Encoding.qmd) |  | direct |
+| [style](../slots/style.qmd) | 0..1 <br/> [Style](../classes/Style.qmd) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [layers](../slots/layers.qmd) | range | [Layer](../classes/Layer.qmd) |
+| [Inset](../classes/Inset.qmd) | [layers](../slots/layers.qmd) | range | [Layer](../classes/Layer.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Layer |
+| native | tvbo:Layer |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Layer
+description: One mark bound to one data reference, with its encoding.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  used:
+    name: used
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    slot_uri: prov:used
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: DataRef
+    required: true
+    inlined: true
+  transform:
+    name: transform
+    description: Optional presentation-only reduction. Prefer declaring an Observation
+      upstream; else name a declarative postprocessing (tvbo schema) or a registered
+      callable fn(da)->da.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - DataRef
+    - Layer
+    - ExplorationAxis
+    range: string
+  mark:
+    name: mark
+    description: Cartesian mark; omitted for heatmap panels (implied by the panel
+      kind).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Layer
+    range: MarkType
+  label:
+    name: label
+    description: Legend entry for this layer. Needed whenever a panel's legend distinguishes
+      layers rather than entries along a `color` dim, which supplies its own labels.
+      Without it a layer is drawn but unnamed.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  triangle:
+    name: triangle
+    description: Fill only this triangle of a square matrix, masking the other half
+      so a sibling layer fills it. Two layers then compose one matrix image whose
+      halves are the quantities being compared.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Layer
+    range: Triangle
+  frame:
+    name: frame
+    description: 'This layer''s part in an animation: whether it advances with the
+      frame, stays whole, or draws the cursor that marks the current frame. Ignored
+      by a still figure.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Layer
+    - Legend
+    range: FrameRole
+  encoding:
+    name: encoding
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Layer
+    range: Encoding
+    inlined: true
+  style:
+    name: style
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Figure
+    - Layer
+    range: Style
+    inlined: true
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Layer
+description: One mark bound to one data reference, with its encoding.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  used:
+    name: used
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    slot_uri: prov:used
+    owner: Layer
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: DataRef
+    required: true
+    inlined: true
+  transform:
+    name: transform
+    description: Optional presentation-only reduction. Prefer declaring an Observation
+      upstream; else name a declarative postprocessing (tvbo schema) or a registered
+      callable fn(da)->da.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Layer
+    domain_of:
+    - DataRef
+    - Layer
+    - ExplorationAxis
+    range: string
+  mark:
+    name: mark
+    description: Cartesian mark; omitted for heatmap panels (implied by the panel
+      kind).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Layer
+    domain_of:
+    - Layer
+    range: MarkType
+  label:
+    name: label
+    description: Legend entry for this layer. Needed whenever a panel's legend distinguishes
+      layers rather than entries along a `color` dim, which supplies its own labels.
+      Without it a layer is drawn but unnamed.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Layer
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  triangle:
+    name: triangle
+    description: Fill only this triangle of a square matrix, masking the other half
+      so a sibling layer fills it. Two layers then compose one matrix image whose
+      halves are the quantities being compared.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Layer
+    domain_of:
+    - Layer
+    range: Triangle
+  frame:
+    name: frame
+    description: 'This layer''s part in an animation: whether it advances with the
+      frame, stays whole, or draws the cursor that marks the current frame. Ignored
+      by a still figure.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Layer
+    domain_of:
+    - Panel
+    - Inset
+    - Layer
+    - Legend
+    range: FrameRole
+  encoding:
+    name: encoding
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Layer
+    domain_of:
+    - Layer
+    range: Encoding
+    inlined: true
+  style:
+    name: style
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Layer
+    domain_of:
+    - Figure
+    - Layer
+    range: Style
+    inlined: true
+
+```
+</details></div>

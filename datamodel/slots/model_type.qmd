@@ -1,0 +1,99 @@
+# Slot: model_type 
+
+
+_Coarse classification of this model (mean_field, neural_mass, phase_oscillator, phenomenological, spiking, generic, field). Used for filtering in Dynamics.list_db(model_type=...)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/model_type](https://w3id.org/tvbo/slot/model_type)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ModelType](../enums/ModelType.qmd) |
+| Domain Of | [Dynamics](../classes/Dynamics.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Dynamics](../classes/Dynamics.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:model_type |
+| native | tvbo:model_type |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: model_type
+description: Coarse classification of this model (mean_field, neural_mass, phase_oscillator,
+  phenomenological, spiking, generic, field). Used for filtering in Dynamics.list_db(model_type=...).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Dynamics
+domain_of:
+- Dynamics
+range: ModelType
+
+```
+</details></div>

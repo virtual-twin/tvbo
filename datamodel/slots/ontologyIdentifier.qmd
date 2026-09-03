@@ -1,0 +1,96 @@
+# Slot: ontologyIdentifier 
+
+
+_Enter the internationalized resource identifier (IRI) to the related ontological terms._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [atom:atlas/hasIlxId](http://uri.interlex.org/tgbugs/uris/readable/atlas/hasIlxId)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+| [ParcellationTerminology](../classes/ParcellationTerminology.qmd) | A schema for representing a parcellation terminology, which consists of parce... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ParcellationEntity](../classes/ParcellationEntity.qmd), [ParcellationTerminology](../classes/ParcellationTerminology.qmd) |
+| Slot URI | [atom:atlas/hasIlxId](http://uri.interlex.org/tgbugs/uris/readable/atlas/hasIlxId) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | atom:atlas/hasIlxId |
+| native | atom:ontologyIdentifier |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ontologyIdentifier
+description: Enter the internationalized resource identifier (IRI) to the related
+  ontological terms.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: atom:atlas/hasIlxId
+domain_of:
+- ParcellationEntity
+- ParcellationTerminology
+range: string
+multivalued: true
+
+```
+</details></div>

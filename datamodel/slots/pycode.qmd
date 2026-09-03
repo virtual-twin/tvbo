@@ -1,0 +1,77 @@
+# Slot: pycode 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/pycode](https://w3id.org/tvbo/slot/pycode)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Equation](../classes/Equation.qmd) |  |  no  |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Equation](../classes/Equation.qmd), [Noise](../classes/Noise.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:pycode |
+| native | tvbo:pycode |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: pycode
+domain_of:
+- Equation
+- Noise
+range: string
+
+```
+</details></div>

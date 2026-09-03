@@ -1,0 +1,98 @@
+# Slot: max_bisection_steps 
+
+
+_Maximum bisection steps for bifurcation point localization._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/max_bisection_steps](https://w3id.org/tvbo/slot/max_bisection_steps)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Continuation](../classes/Continuation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Continuation](../classes/Continuation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:max_bisection_steps |
+| native | tvbo:max_bisection_steps |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: max_bisection_steps
+description: Maximum bisection steps for bifurcation point localization.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Continuation
+domain_of:
+- Continuation
+range: integer
+
+```
+</details></div>

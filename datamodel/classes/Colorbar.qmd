@@ -1,0 +1,736 @@
+# Class: Colorbar 
+
+
+_The colour scale a panel prints beside its field. Declared as one object because nine loose `colorbar_*` options were nine chances to style a bar that is not drawn, and because a tick list written in an options bag is not a list of numbers to anything that reads it._
+
+__
+
+_A heatmap carries one unasked, since it is unreadable without one; a scatter shaded by a third quantity asks with `show: true`, because a row of them conventionally shares ONE bar. `kind: colorbar` is the standalone form — a bar occupying its own cell of the mosaic, keying the panels around it, and the only case that states its own `colormap` and limits rather than taking them from the field it sits beside._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Colorbar](https://w3id.org/tvbo/class/Colorbar)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Colorbar
+    click Colorbar href "./Colorbar.html"
+      ColorScale <|-- Colorbar
+        click ColorScale href "./ColorScale.html"
+      
+      Colorbar : aspect
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Float : aspect
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Colorbar : center
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Float : center
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Colorbar : colormap
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" String : colormap
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Colorbar : decimals
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Integer : decimals
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Colorbar : fraction
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Float : fraction
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Colorbar : label
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Colorbar : location
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" AxisSide : location
+        click AxisSide href "../../enums/AxisSide.html"
+    
+
+        
+      Colorbar : orientation
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" BarOrientation : orientation
+        click BarOrientation href "../../enums/BarOrientation.html"
+    
+
+        
+      Colorbar : pad
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Float : pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Colorbar : percentile
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Float : percentile
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Colorbar : show
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Boolean : show
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Colorbar : symmetric
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Boolean : symmetric
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Colorbar : ticklabels
+        
+          
+    
+        
+        
+        Colorbar --> "*" String : ticklabels
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Colorbar : ticks
+        
+          
+    
+        
+        
+        Colorbar --> "*" Float : ticks
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Colorbar : vmax
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Float : vmax
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Colorbar : vmin
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Float : vmin
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Colorbar : width
+        
+          
+    
+        
+        
+        Colorbar --> "0..1" Float : width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [ColorScale](../classes/ColorScale.qmd)
+    * **Colorbar**
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [show](../slots/show.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether the bar is drawn | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | What the scale measures, printed along the bar | direct |
+| [ticks](../slots/ticks.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The values to mark | direct |
+| [ticklabels](../slots/ticklabels.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Text for the marked values of a STANDALONE `kind: colorbar` panel, where the ... | direct |
+| [decimals](../slots/decimals.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | How many decimal places the tick numbers are written to | direct |
+| [fraction](../slots/fraction.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Width of the bar as a fraction of the panel | direct |
+| [pad](../slots/pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Gap between the panel and its bar, in the same fraction | direct |
+| [aspect](../slots/aspect.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The bar's length over its width | direct |
+| [orientation](../slots/orientation.qmd) | 0..1 <br/> [BarOrientation](../enums/BarOrientation.qmd) | Which way the bar runs | direct |
+| [location](../slots/location.qmd) | 0..1 <br/> [AxisSide](../enums/AxisSide.qmd) | Which side of the panel it sits on | direct |
+| [width](../slots/width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Width of a STANDALONE `kind: colorbar` panel's bar within its own cell, as a ... | direct |
+| [center](../slots/center.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Pin the map's neutral colour to this value and truncate the map to the half-r... | direct |
+| [colormap](../slots/colormap.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`, or... | [ColorScale](../classes/ColorScale.qmd) |
+| [vmin](../slots/vmin.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale starts at | [ColorScale](../classes/ColorScale.qmd) |
+| [vmax](../slots/vmax.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale ends at | [ColorScale](../classes/ColorScale.qmd) |
+| [symmetric](../slots/symmetric.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Centre the limits on zero, so zero is the map's midpoint | [ColorScale](../classes/ColorScale.qmd) |
+| [percentile](../slots/percentile.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Clip the limit to this percentile of the values (100 = no clipping), so one o... | [ColorScale](../classes/ColorScale.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [colorbar](../slots/colorbar.qmd) | range | [Colorbar](../classes/Colorbar.qmd) |
+| [Inset](../classes/Inset.qmd) | [colorbar](../slots/colorbar.qmd) | range | [Colorbar](../classes/Colorbar.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Colorbar |
+| native | tvbo:Colorbar |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Colorbar
+description: 'The colour scale a panel prints beside its field. Declared as one object
+  because nine loose `colorbar_*` options were nine chances to style a bar that is
+  not drawn, and because a tick list written in an options bag is not a list of numbers
+  to anything that reads it.
+
+
+  A heatmap carries one unasked, since it is unreadable without one; a scatter shaded
+  by a third quantity asks with `show: true`, because a row of them conventionally
+  shares ONE bar. `kind: colorbar` is the standalone form — a bar occupying its own
+  cell of the mosaic, keying the panels around it, and the only case that states its
+  own `colormap` and limits rather than taking them from the field it sits beside.'
+from_schema: https://w3id.org/tvbo/figure
+is_a: ColorScale
+attributes:
+  show:
+    name: show
+    description: Whether the bar is drawn. Unset means yes for a heatmap and no for
+      a scatter.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Colorbar
+    - Legend
+    range: boolean
+  label:
+    name: label
+    description: What the scale measures, printed along the bar.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  ticks:
+    name: ticks
+    description: The values to mark. A declared tick list is the paper's own; unset
+      lets the backend choose.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Colorbar
+    range: float
+    multivalued: true
+  ticklabels:
+    name: ticklabels
+    description: 'Text for the marked values of a STANDALONE `kind: colorbar` panel,
+      where the numbers themselves are not what the figure wants to print. A bar attached
+      to a panel writes its own numbers, which the shared format pass rounds to `decimals`.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Colorbar
+    range: string
+    multivalued: true
+  decimals:
+    name: decimals
+    description: How many decimal places the tick numbers are written to.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Colorbar
+    range: integer
+  fraction:
+    name: fraction
+    description: 'Width of the bar as a fraction of the panel. The default is slim
+      on purpose: matplotlib''s own steals about a fifth of a small panel.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Colorbar
+    range: float
+  pad:
+    name: pad
+    description: Gap between the panel and its bar, in the same fraction.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Figure
+    - Colorbar
+    range: float
+  aspect:
+    name: aspect
+    description: The bar's length over its width.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Panel
+    - Inset
+    - Colorbar
+    range: float
+  orientation:
+    name: orientation
+    description: Which way the bar runs.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Colorbar
+    - Rule
+    range: BarOrientation
+  location:
+    name: location
+    description: Which side of the panel it sits on.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Colorbar
+    range: AxisSide
+  width:
+    name: width
+    description: 'Width of a STANDALONE `kind: colorbar` panel''s bar within its own
+      cell, as a fraction of that cell.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Figure
+    - Colorbar
+    - Rule
+    - RenderSpec
+    range: float
+  center:
+    name: center
+    description: 'Pin the map''s neutral colour to this value and truncate the map
+      to the half-range the data reaches, keeping the data''s own limits: a unit of
+      change is the same colour distance either side, and the bar shows no colour
+      the field never takes.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationEntity
+    - Colorbar
+    range: float
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Colorbar
+description: 'The colour scale a panel prints beside its field. Declared as one object
+  because nine loose `colorbar_*` options were nine chances to style a bar that is
+  not drawn, and because a tick list written in an options bag is not a list of numbers
+  to anything that reads it.
+
+
+  A heatmap carries one unasked, since it is unreadable without one; a scatter shaded
+  by a third quantity asks with `show: true`, because a row of them conventionally
+  shares ONE bar. `kind: colorbar` is the standalone form — a bar occupying its own
+  cell of the mosaic, keying the panels around it, and the only case that states its
+  own `colormap` and limits rather than taking them from the field it sits beside.'
+from_schema: https://w3id.org/tvbo/figure
+is_a: ColorScale
+attributes:
+  show:
+    name: show
+    description: Whether the bar is drawn. Unset means yes for a heatmap and no for
+      a scatter.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - Colorbar
+    - Legend
+    range: boolean
+  label:
+    name: label
+    description: What the scale measures, printed along the bar.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Colorbar
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  ticks:
+    name: ticks
+    description: The values to mark. A declared tick list is the paper's own; unset
+      lets the backend choose.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - Colorbar
+    range: float
+    multivalued: true
+  ticklabels:
+    name: ticklabels
+    description: 'Text for the marked values of a STANDALONE `kind: colorbar` panel,
+      where the numbers themselves are not what the figure wants to print. A bar attached
+      to a panel writes its own numbers, which the shared format pass rounds to `decimals`.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - Colorbar
+    range: string
+    multivalued: true
+  decimals:
+    name: decimals
+    description: How many decimal places the tick numbers are written to.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - Colorbar
+    range: integer
+  fraction:
+    name: fraction
+    description: 'Width of the bar as a fraction of the panel. The default is slim
+      on purpose: matplotlib''s own steals about a fifth of a small panel.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - Colorbar
+    range: float
+  pad:
+    name: pad
+    description: Gap between the panel and its bar, in the same fraction.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Colorbar
+    domain_of:
+    - Figure
+    - Colorbar
+    range: float
+  aspect:
+    name: aspect
+    description: The bar's length over its width.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Colorbar
+    domain_of:
+    - Panel
+    - Inset
+    - Colorbar
+    range: float
+  orientation:
+    name: orientation
+    description: Which way the bar runs.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - Colorbar
+    - Rule
+    range: BarOrientation
+  location:
+    name: location
+    description: Which side of the panel it sits on.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - Colorbar
+    range: AxisSide
+  width:
+    name: width
+    description: 'Width of a STANDALONE `kind: colorbar` panel''s bar within its own
+      cell, as a fraction of that cell.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Colorbar
+    domain_of:
+    - Figure
+    - Colorbar
+    - Rule
+    - RenderSpec
+    range: float
+  center:
+    name: center
+    description: 'Pin the map''s neutral colour to this value and truncate the map
+      to the half-range the data reaches, keeping the data''s own limits: a unit of
+      change is the same colour distance either side, and the bar shows no colour
+      the field never takes.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Colorbar
+    domain_of:
+    - ParcellationEntity
+    - Colorbar
+    range: float
+  colormap:
+    name: colormap
+    description: The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`,
+      or one a project added) or a name the backend knows. Unset takes the theme's
+      `sequential`, or its `diverging` where the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Colorbar
+    domain_of:
+    - Style
+    - ColorScale
+    range: string
+  vmin:
+    name: vmin
+    description: The value the scale starts at. A declared end is honoured as given;
+      the other is still derived from the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - ColorScale
+    range: float
+  vmax:
+    name: vmax
+    description: The value the scale ends at. See `vmin`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - ColorScale
+    range: float
+  symmetric:
+    name: symmetric
+    description: Centre the limits on zero, so zero is the map's midpoint. What a
+      field of signed deviations needs — read on an off-centre scale it is misleading
+      in a way no axis label catches.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - ColorScale
+    range: boolean
+  percentile:
+    name: percentile
+    description: Clip the limit to this percentile of the values (100 = no clipping),
+      so one outlier region cannot wash the whole map out. Applies whether or not
+      the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Colorbar
+    domain_of:
+    - ColorScale
+    range: float
+
+```
+</details></div>

@@ -1,0 +1,92 @@
+# Slot: operator_type 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/operator_type](https://w3id.org/tvbo/slot/operator_type)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DifferentialOperator](../classes/DifferentialOperator.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [OperatorType](../enums/OperatorType.qmd) |
+| Domain Of | [DifferentialOperator](../classes/DifferentialOperator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DifferentialOperator](../classes/DifferentialOperator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:operator_type |
+| native | tvbo:operator_type |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: operator_type
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: DifferentialOperator
+domain_of:
+- DifferentialOperator
+range: OperatorType
+
+```
+</details></div>

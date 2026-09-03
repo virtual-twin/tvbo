@@ -1,0 +1,101 @@
+# Slot: mesh_intervals 
+
+
+_Number of mesh intervals (time slices) for collocation or trapezoid methods. Collocation: N in PeriodicOrbitOCollProblem(N, m). Trapezoid: M in PeriodicOrbitTrapProblem(M=...)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/mesh_intervals](https://w3id.org/tvbo/slot/mesh_intervals)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Discretization](../classes/Discretization.qmd) | Discretization method for boundary value problems in continuation (periodic o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Discretization](../classes/Discretization.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `int(50)` |
+| Owner | [Discretization](../classes/Discretization.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:mesh_intervals |
+| native | tvbo:mesh_intervals |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: mesh_intervals
+description: 'Number of mesh intervals (time slices) for collocation or trapezoid
+  methods. Collocation: N in PeriodicOrbitOCollProblem(N, m). Trapezoid: M in PeriodicOrbitTrapProblem(M=...).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: int(50)
+owner: Discretization
+domain_of:
+- Discretization
+range: integer
+
+```
+</details></div>

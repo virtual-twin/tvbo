@@ -1,0 +1,89 @@
+# Slot: color 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/color](https://w3id.org/tvbo/slot/color)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ParcellationEntity](../classes/ParcellationEntity.qmd) | A schema for representing a parcellation entity, which is an anatomical locat... |  no  |
+| [Encoding](../classes/Encoding.qmd) | Map visual channels to container dims/coords/vars, by NAME (keyed, never posi... |  no  |
+| [Annotation](../classes/Annotation.qmd) | A positioned text label on a panel, in axes-fraction coordinates |  no  |
+| [Style](../classes/Style.qmd) | Layer/panel styling, portable intent plus a namespaced backend passthrough |  no  |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [Graph](../classes/Graph.qmd) | A node-link panel's graph and how it is drawn: the connectome the model actua... |  no  |
+| [Rule](../classes/Rule.qmd) | A straight reference line drawn across a panel: the zero a signal is measured... |  no  |
+| [Region](../classes/Region.qmd) | A rectangle drawn over a panel to ring the window a paper calls out — the par... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ParcellationEntity](../classes/ParcellationEntity.qmd), [Encoding](../classes/Encoding.qmd), [Annotation](../classes/Annotation.qmd), [Style](../classes/Style.qmd), [Surface](../classes/Surface.qmd), [Graph](../classes/Graph.qmd), [Rule](../classes/Rule.qmd), [Region](../classes/Region.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:color |
+| native | tvbo:color |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: color
+domain_of:
+- ParcellationEntity
+- Encoding
+- Annotation
+- Style
+- Surface
+- Graph
+- Rule
+- Region
+range: string
+
+```
+</details></div>

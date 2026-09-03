@@ -1,0 +1,67 @@
+# prune { #tvbo.codegen.prune }
+
+`codegen.prune`
+
+Drop the imports and bindings a generated module does not use.
+
+A backend template cannot know which imports its output will need: whether ``BoundedSolver`` appears depends on a state variable declaring ``domain.enforce``, whether ``optax`` appears depends on the experiment carrying an optimization. Writing that out as one ``% if`` per import means every new feature has to remember to extend a condition it does not otherwise touch, and the ones already written drift — the tvb and tvboptim headers between them carried nineteen names no render referenced.
+
+So the templates emit the imports their features *may* need and this pass removes the ones the assembled module does not reference. The decision is made from the finished source, which is the only place the answer is actually known.
+
+Imports are pruned **in place**, never hoisted. Order is load-bearing in generated code:
+the tvboptim module sets ``JAX_PLATFORMS`` in ``os.environ`` and only then imports jax, so moving that import above the assignment would silently change which device the experiment runs on.
+
+The same reasoning applies to local scaffolding a template emits for downstream code that a given spec does not produce — ``n_nodes = weights.shape[0]`` ahead of thirty conditional uses, none of which fired. :func:`prune_dead_assignments` removes those, but only when the right-hand side cannot do anything besides compute a value: dropping ``initial_state = copy.deepcopy(state)`` would skip the copy, so a call is never touched however plainly unread its result is.
+
+Both passes are deliberately conservative — they drop a name only when the module cannot plausibly refer to it. A string literal that parses as Python counts as a reference, so a name reached by ``getattr`` or an ``eval``-ed expression survives.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [prune](#tvbo.codegen.prune.prune) | Run every pruning pass over generated *source*, in dependency order. |
+| [prune_dead_assignments](#tvbo.codegen.prune.prune_dead_assignments) | Remove ``name = <pure expression>`` statements whose *name* is never read. |
+| [prune_unused_imports](#tvbo.codegen.prune.prune_unused_imports) | Return *source* with unreferenced imports removed, everything else untouched. |
+| [unused_import_names](#tvbo.codegen.prune.unused_import_names) | Names *source* imports but never refers to. Empty when *source* does not parse. |
+
+### prune { #tvbo.codegen.prune.prune }
+
+```python
+codegen.prune.prune(source)
+```
+
+Run every pruning pass over generated *source*, in dependency order.
+
+Assignments go first: removing one can make an import unused, and removing an import never makes an assignment dead.
+
+### prune_dead_assignments { #tvbo.codegen.prune.prune_dead_assignments }
+
+```python
+codegen.prune.prune_dead_assignments(source)
+```
+
+Remove ``name = <pure expression>`` statements whose *name* is never read.
+
+Only the plainest form is considered, and every condition must hold: the binding sits directly in a function body (:data:`_PRUNABLE_SCOPES`), it has a single ``Name`` target, its right-hand side cannot do anything but compute (:func:`_is_pure`), the name is bound exactly once in that scope, and nothing in that scope reads it — including a nested function that closes over it, and including a non-docstring string that parses as code.
+
+Requiring a single binding keeps loop accumulators and rebound temporaries intact, and the purity check is what separates the scaffolding this is meant to remove from a call whose effect the program depends on.
+
+### prune_unused_imports { #tvbo.codegen.prune.prune_unused_imports }
+
+```python
+codegen.prune.prune_unused_imports(source)
+```
+
+Return *source* with unreferenced imports removed, everything else untouched.
+
+A statement importing several names keeps the ones that are used; a statement whose names are all unused is dropped whole. ``from __future__`` imports, star imports and lines carrying a ``noqa`` comment are always kept — the first two because dropping them changes semantics, the last because it is how a template says an import is deliberate.
+
+Source that does not parse is returned unchanged: reporting a syntax error is :func:`tvbo.codegen.style.format_source`'s job, and it gives a better message.
+
+### unused_import_names { #tvbo.codegen.prune.unused_import_names }
+
+```python
+codegen.prune.unused_import_names(source)
+```
+
+Names *source* imports but never refers to. Empty when *source* does not parse.

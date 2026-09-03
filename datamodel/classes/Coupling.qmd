@@ -1,0 +1,1058 @@
+# Class: Coupling 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Coupling](https://w3id.org/tvbo/Coupling)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Coupling
+    click Coupling href "./Coupling.html"
+      Coupling : aggregation
+        
+          
+    
+        
+        
+        Coupling --> "0..1" String : aggregation
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Coupling : coupling_function
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Equation : coupling_function
+        click Equation href "./Equation.html"
+    
+
+        
+      Coupling : delayed
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Boolean : delayed
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Coupling : description
+        
+          
+    
+        
+        
+        Coupling --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Coupling : distribution
+        
+          
+    
+        
+        
+        Coupling --> "0..1" String : distribution
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Coupling : incoming_states
+        
+          
+    
+        
+        
+        Coupling --> "*" StateVariable : incoming_states
+        click StateVariable href "./StateVariable.html"
+    
+
+        
+      Coupling : inner_coupling
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Coupling : inner_coupling
+        click Coupling href "./Coupling.html"
+    
+
+        
+      Coupling : interpolate_delays
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Boolean : interpolate_delays
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Coupling : iri
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Coupling : label
+        
+          
+    
+        
+        
+        Coupling --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Coupling : local_states
+        
+          
+    
+        
+        
+        Coupling --> "*" StateVariable : local_states
+        click StateVariable href "./StateVariable.html"
+    
+
+        
+      Coupling : name
+        
+          
+    
+        
+        
+        Coupling --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Coupling : observed
+        
+          
+    
+        
+        
+        Coupling --> "*" DerivedVariable : observed
+        click DerivedVariable href "./DerivedVariable.html"
+    
+
+        
+      Coupling : outsym
+        
+          
+    
+        
+        
+        Coupling --> "*" String : outsym
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Coupling : parameters
+        
+          
+    
+        
+        
+        Coupling --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Coupling : post_expression
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Equation : post_expression
+        click Equation href "./Equation.html"
+    
+
+        
+      Coupling : pre_expression
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Equation : pre_expression
+        click Equation href "./Equation.html"
+    
+
+        
+      Coupling : region_mapping
+        
+          
+    
+        
+        
+        Coupling --> "0..1" RegionMapping : region_mapping
+        click RegionMapping href "./RegionMapping.html"
+    
+
+        
+      Coupling : regional_connectivity
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Network : regional_connectivity
+        click Network href "./Network.html"
+    
+
+        
+      Coupling : sparse
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Boolean : sparse
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Coupling : symmetry
+        
+          
+    
+        
+        
+        Coupling --> "0..1" String : symmetry
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Coupling : vectorized
+        
+          
+    
+        
+        
+        Coupling --> "0..1" Boolean : vectorized
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Coupling](https://w3id.org/tvbo/Coupling) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | The coupling function this record is an instance of | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [coupling_function](../slots/coupling_function.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Mathematical function defining the coupling | direct |
+| [sparse](../slots/sparse.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether the coupling uses sparse representations | direct |
+| [pre_expression](../slots/pre_expression.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Pre-processing expression applied before coupling | direct |
+| [post_expression](../slots/post_expression.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Post-processing expression applied after coupling | direct |
+| [incoming_states](../slots/incoming_states.qmd) | * <br/> [StateVariable](../classes/StateVariable.qmd) | References to state variables from connected (source) nodes | direct |
+| [local_states](../slots/local_states.qmd) | * <br/> [StateVariable](../classes/StateVariable.qmd) | References to state variables from the local (target) node | direct |
+| [delayed](../slots/delayed.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether coupling includes transmission delays | direct |
+| [interpolate_delays](../slots/interpolate_delays.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | For delayed coupling: read delayed states by linear interpolation between the... | direct |
+| [vectorized](../slots/vectorized.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Opt in to the vectorized matmul fast path for a source-only coupling — one wh... | direct |
+| [symmetry](../slots/symmetry.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Edge symmetry type for NetworkDynamics | direct |
+| [outsym](../slots/outsym.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Output symbol names for the edge model | direct |
+| [observed](../slots/observed.qmd) | * <br/> [DerivedVariable](../classes/DerivedVariable.qmd) | Observable functions computed from edge inputs and parameters after simulatio... | direct |
+| [inner_coupling](../slots/inner_coupling.qmd) | 0..1 <br/> [Coupling](../classes/Coupling.qmd) | For hierarchical coupling: inner coupling applied at regional level | direct |
+| [region_mapping](../slots/region_mapping.qmd) | 0..1 <br/> [RegionMapping](../classes/RegionMapping.qmd) | For hierarchical coupling: vertex-to-region mapping for aggregation | direct |
+| [regional_connectivity](../slots/regional_connectivity.qmd) | 0..1 <br/> [Network](../classes/Network.qmd) | For hierarchical coupling: region-to-region connectivity with weights and del... | direct |
+| [aggregation](../slots/aggregation.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[Function](../classes/Function.qmd) | For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custo... | direct |
+| [distribution](../slots/distribution.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[Function](../classes/Function.qmd) | For hierarchical coupling: distribution method ('broadcast', 'weighted') or c... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [coupling](../slots/coupling.qmd) | range | [Coupling](../classes/Coupling.qmd) |
+| [Edge](../classes/Edge.qmd) | [coupling](../slots/coupling.qmd) | range | [Coupling](../classes/Coupling.qmd) |
+| [Coupling](../classes/Coupling.qmd) | [inner_coupling](../slots/inner_coupling.qmd) | range | [Coupling](../classes/Coupling.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Coupling |
+| native | tvbo:Coupling |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Coupling
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- label
+- iri
+- parameters
+- description
+slot_usage:
+  name:
+    name: name
+    ifabsent: Linear
+  iri:
+    name: iri
+    description: The coupling function this record is an instance of. A ``network.coupling``
+      entry is keyed by its role in the network ('excitatory', 'delayed'), so naming
+      the function it instantiates is what ``iri`` is for; ``type`` is accepted as
+      the older spelling of the same thing.
+    aliases:
+    - type
+attributes:
+  coupling_function:
+    name: coupling_function
+    description: Mathematical function defining the coupling
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Coupling
+    range: Equation
+    inlined: true
+  sparse:
+    name: sparse
+    description: Whether the coupling uses sparse representations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Coupling
+    range: boolean
+  pre_expression:
+    name: pre_expression
+    description: Pre-processing expression applied before coupling
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Coupling
+    range: Equation
+    inlined: true
+  post_expression:
+    name: post_expression
+    description: Post-processing expression applied after coupling
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Coupling
+    range: Equation
+    inlined: true
+  incoming_states:
+    name: incoming_states
+    description: References to state variables from connected (source) nodes. Auto-populated
+      from state_variables with coupling_variable=true when omitted. Used by name
+      in pre_expression.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Coupling
+    range: StateVariable
+    multivalued: true
+    inlined: false
+  local_states:
+    name: local_states
+    description: References to state variables from the local (target) node. Used
+      by name in pre_expression.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Coupling
+    range: StateVariable
+    multivalued: true
+    inlined: false
+  delayed:
+    name: delayed
+    description: Whether coupling includes transmission delays
+    from_schema: https://w3id.org/tvbo
+    ifabsent: 'True'
+    domain_of:
+    - Integrator
+    - Coupling
+    range: boolean
+  interpolate_delays:
+    name: interpolate_delays
+    description: 'For delayed coupling: read delayed states by linear interpolation
+      between the two bracketing history time-steps instead of snapping each delay
+      to the nearest integer step. Removes sub-step quantisation error and makes the
+      coupling differentiable w.r.t. the continuous delay — hence w.r.t. conduction
+      speed v (delay = tract_length / v) — so v can be gradient-optimised. Default
+      false preserves exact nearest-step behaviour (tvboptim roll strategy).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Coupling
+    range: boolean
+  vectorized:
+    name: vectorized
+    description: 'Opt in to the vectorized matmul fast path for a source-only coupling
+      — one whose pre_expression depends only on source states (e.g. the angle-addition
+      decomposition [sin(theta_j), cos(theta_j)]). The W-reduction then becomes a
+      single ``pre @ weights`` matmul instead of materialising the dense per-edge
+      tensor. ONLY valid for INSTANTANEOUS coupling on a SYMMETRIC connectome (W ==
+      Wᵀ): the matmul contracts W while the per-edge path contracts Wᵀ, so the two
+      agree only when W is symmetric. Default false keeps the always-correct per-edge
+      reduction (and delays are inherently per-edge, so this flag is ignored when
+      delayed=true).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Coupling
+    range: boolean
+  symmetry:
+    name: symmetry
+    description: 'Edge symmetry type for NetworkDynamics.jl EdgeModel: ''directed''
+      (default), ''antisymmetric'', or ''symmetric''. AntiSymmetric edges flip sign
+      for the reverse direction.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(directed)
+    domain_of:
+    - Coupling
+    range: string
+  outsym:
+    name: outsym
+    description: Output symbol names for the edge model. E.g. ['P'] for a scalar power
+      flow, ['Fx', 'Fy'] for 2D forces. Maps directly to outsym in ND.jl EdgeModel.
+      If not specified, derived from coupling variables of the connected vertex dynamics.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Coupling
+    range: string
+    multivalued: true
+  observed:
+    name: observed
+    description: 'Observable functions computed from edge inputs and parameters after
+      simulation. Maps to obsf/obssym in ND.jl EdgeModel. Example: absolute force
+      magnitude computed from force components.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Dynamics
+    - Coupling
+    range: DerivedVariable
+    multivalued: true
+    inlined: true
+  inner_coupling:
+    name: inner_coupling
+    description: 'For hierarchical coupling: inner coupling applied at regional level'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Coupling
+    range: Coupling
+    inlined: true
+  region_mapping:
+    name: region_mapping
+    description: 'For hierarchical coupling: vertex-to-region mapping for aggregation'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Coupling
+    range: RegionMapping
+    inlined: true
+  regional_connectivity:
+    name: regional_connectivity
+    description: 'For hierarchical coupling: region-to-region connectivity with weights
+      and delays'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Coupling
+    range: Network
+    inlined: true
+  aggregation:
+    name: aggregation
+    description: 'For hierarchical coupling: aggregation method (''sum'', ''mean'',
+      ''max'') or custom Function'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Observation
+    - Coupling
+    any_of:
+    - range: string
+    - range: Function
+  distribution:
+    name: distribution
+    description: 'For hierarchical coupling: distribution method (''broadcast'', ''weighted'')
+      or custom Function'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    any_of:
+    - range: string
+    - range: Function
+class_uri: tvbo:Coupling
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Coupling
+from_schema: https://w3id.org/tvbo
+slot_usage:
+  name:
+    name: name
+    ifabsent: Linear
+  iri:
+    name: iri
+    description: The coupling function this record is an instance of. A ``network.coupling``
+      entry is keyed by its role in the network ('excitatory', 'delayed'), so naming
+      the function it instantiates is what ``iri`` is for; ``type`` is accepted as
+      the older spelling of the same thing.
+    aliases:
+    - type
+attributes:
+  coupling_function:
+    name: coupling_function
+    description: Mathematical function defining the coupling
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: Equation
+    inlined: true
+  sparse:
+    name: sparse
+    description: Whether the coupling uses sparse representations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: boolean
+  pre_expression:
+    name: pre_expression
+    description: Pre-processing expression applied before coupling
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: Equation
+    inlined: true
+  post_expression:
+    name: post_expression
+    description: Post-processing expression applied after coupling
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: Equation
+    inlined: true
+  incoming_states:
+    name: incoming_states
+    description: References to state variables from connected (source) nodes. Auto-populated
+      from state_variables with coupling_variable=true when omitted. Used by name
+      in pre_expression.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: StateVariable
+    multivalued: true
+    inlined: false
+  local_states:
+    name: local_states
+    description: References to state variables from the local (target) node. Used
+      by name in pre_expression.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: StateVariable
+    multivalued: true
+    inlined: false
+  delayed:
+    name: delayed
+    description: Whether coupling includes transmission delays
+    from_schema: https://w3id.org/tvbo
+    ifabsent: 'True'
+    owner: Coupling
+    domain_of:
+    - Integrator
+    - Coupling
+    range: boolean
+  interpolate_delays:
+    name: interpolate_delays
+    description: 'For delayed coupling: read delayed states by linear interpolation
+      between the two bracketing history time-steps instead of snapping each delay
+      to the nearest integer step. Removes sub-step quantisation error and makes the
+      coupling differentiable w.r.t. the continuous delay — hence w.r.t. conduction
+      speed v (delay = tract_length / v) — so v can be gradient-optimised. Default
+      false preserves exact nearest-step behaviour (tvboptim roll strategy).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: boolean
+  vectorized:
+    name: vectorized
+    description: 'Opt in to the vectorized matmul fast path for a source-only coupling
+      — one whose pre_expression depends only on source states (e.g. the angle-addition
+      decomposition [sin(theta_j), cos(theta_j)]). The W-reduction then becomes a
+      single ``pre @ weights`` matmul instead of materialising the dense per-edge
+      tensor. ONLY valid for INSTANTANEOUS coupling on a SYMMETRIC connectome (W ==
+      Wᵀ): the matmul contracts W while the per-edge path contracts Wᵀ, so the two
+      agree only when W is symmetric. Default false keeps the always-correct per-edge
+      reduction (and delays are inherently per-edge, so this flag is ignored when
+      delayed=true).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: boolean
+  symmetry:
+    name: symmetry
+    description: 'Edge symmetry type for NetworkDynamics.jl EdgeModel: ''directed''
+      (default), ''antisymmetric'', or ''symmetric''. AntiSymmetric edges flip sign
+      for the reverse direction.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(directed)
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: string
+  outsym:
+    name: outsym
+    description: Output symbol names for the edge model. E.g. ['P'] for a scalar power
+      flow, ['Fx', 'Fy'] for 2D forces. Maps directly to outsym in ND.jl EdgeModel.
+      If not specified, derived from coupling variables of the connected vertex dynamics.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: string
+    multivalued: true
+  observed:
+    name: observed
+    description: 'Observable functions computed from edge inputs and parameters after
+      simulation. Maps to obsf/obssym in ND.jl EdgeModel. Example: absolute force
+      magnitude computed from force components.'
+    from_schema: https://w3id.org/tvbo
+    owner: Coupling
+    domain_of:
+    - Dynamics
+    - Coupling
+    range: DerivedVariable
+    multivalued: true
+    inlined: true
+  inner_coupling:
+    name: inner_coupling
+    description: 'For hierarchical coupling: inner coupling applied at regional level'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: Coupling
+    inlined: true
+  region_mapping:
+    name: region_mapping
+    description: 'For hierarchical coupling: vertex-to-region mapping for aggregation'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: RegionMapping
+    inlined: true
+  regional_connectivity:
+    name: regional_connectivity
+    description: 'For hierarchical coupling: region-to-region connectivity with weights
+      and delays'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Coupling
+    range: Network
+    inlined: true
+  aggregation:
+    name: aggregation
+    description: 'For hierarchical coupling: aggregation method (''sum'', ''mean'',
+      ''max'') or custom Function'
+    from_schema: https://w3id.org/tvbo
+    owner: Coupling
+    domain_of:
+    - Observation
+    - Coupling
+    range: string
+    any_of:
+    - range: string
+    - range: Function
+  distribution:
+    name: distribution
+    description: 'For hierarchical coupling: distribution method (''broadcast'', ''weighted'')
+      or custom Function'
+    from_schema: https://w3id.org/tvbo
+    owner: Coupling
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    range: string
+    any_of:
+    - range: string
+    - range: Function
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    ifabsent: Linear
+    identifier: true
+    owner: Coupling
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Coupling
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  iri:
+    name: iri
+    description: The coupling function this record is an instance of. A ``network.coupling``
+      entry is keyed by its role in the network ('excitatory', 'delayed'), so naming
+      the function it instantiates is what ``iri`` is for; ``type`` is accepted as
+      the older spelling of the same thing.
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - type
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Coupling
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Coupling
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Coupling
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Coupling
+
+```
+</details></div>

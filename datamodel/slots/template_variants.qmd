@@ -1,0 +1,106 @@
+# Slot: template_variants 
+
+
+_Seeds that supersede ``template`` for one init variant, keyed by variant name. A file every study gets may still need different starting text once the variant says what kind of study this is — a replication's provenance note names a paper, and a general study has no paper to name — so stating only the difference keeps one entry per file rather than two that drift apart. The first selected variant naming a seed wins; absent means every variant starts from ``template``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/template_variants](https://w3id.org/tvbo/study/slot/template_variants)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StudyFile](../classes/StudyFile.qmd) | One file a study layout accounts for |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [LayoutTemplateVariant](../classes/LayoutTemplateVariant.qmd) |
+| Domain Of | [StudyFile](../classes/StudyFile.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [StudyFile](../classes/StudyFile.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:template_variants |
+| native | tvbo_study:template_variants |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: template_variants
+description: Seeds that supersede ``template`` for one init variant, keyed by variant
+  name. A file every study gets may still need different starting text once the variant
+  says what kind of study this is — a replication's provenance note names a paper,
+  and a general study has no paper to name — so stating only the difference keeps
+  one entry per file rather than two that drift apart. The first selected variant
+  naming a seed wins; absent means every variant starts from ``template``.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+owner: StudyFile
+domain_of:
+- StudyFile
+range: LayoutTemplateVariant
+multivalued: true
+inlined: true
+
+```
+</details></div>

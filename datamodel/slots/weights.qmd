@@ -1,0 +1,115 @@
+# Slot: weights 
+
+
+_Per-node stimulus weighting, aligned with `nodes`. (Formerly `weighting`.)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/weights](https://w3id.org/tvbo/slot/weights)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Event](../classes/Event.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Event](../classes/Event.qmd) |
+
+
+<details>
+<summary>Advanced Properties</summary>
+**Array Configuration:**
+
+- **Dimensions:** 
+
+</details>
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* weighting
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:weights |
+| native | tvbo:weights |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: weights
+description: Per-node stimulus weighting, aligned with `nodes`. (Formerly `weighting`.)
+from_schema: https://w3id.org/tvbo
+aliases:
+- weighting
+rank: 1000
+owner: Event
+domain_of:
+- Event
+range: float
+multivalued: true
+
+```
+</details></div>

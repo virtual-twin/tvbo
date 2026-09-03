@@ -1,0 +1,104 @@
+# Slot: grounding 
+
+
+_External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this entity is a surrogate / abstraction / model of. Realized as the `tvbo:surrogate_of` object property, carried inline with the YAML data instance. Multiple IRIs allowed: a single parameter may abstract several biological processes (e.g. a synaptic conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic transmission))._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:surrogate_of](https://w3id.org/tvbo/surrogate_of)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StateVariable](../classes/StateVariable.qmd) |  |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedVariable](../classes/DerivedVariable.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) |
+| Domain Of | [StateVariable](../classes/StateVariable.qmd), [Parameter](../classes/Parameter.qmd), [DerivedVariable](../classes/DerivedVariable.qmd) |
+| Slot URI | [tvbo:surrogate_of](https://w3id.org/tvbo/surrogate_of) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:surrogate_of |
+| native | tvbo:grounding |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: grounding
+description: 'External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that
+  this entity is a surrogate / abstraction / model of. Realized as the `tvbo:surrogate_of`
+  object property, carried inline with the YAML data instance. Multiple IRIs allowed:
+  a single parameter may abstract several biological processes (e.g. a synaptic conductance
+  grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical synaptic transmission)).'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: tvbo:surrogate_of
+domain_of:
+- StateVariable
+- Parameter
+- DerivedVariable
+range: uriorcurie
+multivalued: true
+
+```
+</details></div>

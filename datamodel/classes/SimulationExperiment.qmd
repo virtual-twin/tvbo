@@ -1,0 +1,1312 @@
+# Class: SimulationExperiment 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Simulation](https://w3id.org/tvbo/Simulation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class SimulationExperiment
+    click SimulationExperiment href "./SimulationExperiment.html"
+      SimulationExperiment : additional_equations
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" Equation : additional_equations
+        click Equation href "./Equation.html"
+    
+
+        
+      SimulationExperiment : algorithms
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" Algorithm : algorithms
+        click Algorithm href "./Algorithm.html"
+    
+
+        
+      SimulationExperiment : connectivity
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" Network : connectivity
+        click Network href "./Network.html"
+    
+
+        
+      SimulationExperiment : continuations
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" Continuation : continuations
+        click Continuation href "./Continuation.html"
+    
+
+        
+      SimulationExperiment : dataset
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" Dataset : dataset
+        click Dataset href "./Dataset.html"
+    
+
+        
+      SimulationExperiment : description
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationExperiment : dynamics
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" Dynamics : dynamics
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      SimulationExperiment : environment
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" SoftwareEnvironment : environment
+        click SoftwareEnvironment href "./SoftwareEnvironment.html"
+    
+
+        
+      SimulationExperiment : events
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" Event : events
+        click Event href "./Event.html"
+    
+
+        
+      SimulationExperiment : execution
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" ExecutionConfig : execution
+        click ExecutionConfig href "./ExecutionConfig.html"
+    
+
+        
+      SimulationExperiment : explorations
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" Exploration : explorations
+        click Exploration href "./Exploration.html"
+    
+
+        
+      SimulationExperiment : field_dynamics
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" PDE : field_dynamics
+        click PDE href "./PDE.html"
+    
+
+        
+      SimulationExperiment : functions
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" Function : functions
+        click Function href "./Function.html"
+    
+
+        
+      SimulationExperiment : id
+        
+          
+    
+        
+        
+        SimulationExperiment --> "1" Integer : id
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      SimulationExperiment : inferences
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" Inference : inferences
+        click Inference href "./Inference.html"
+    
+
+        
+      SimulationExperiment : initial_state
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" InitialState : initial_state
+        click InitialState href "./InitialState.html"
+    
+
+        
+      SimulationExperiment : integration
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" Integrator : integration
+        click Integrator href "./Integrator.html"
+    
+
+        
+      SimulationExperiment : label
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationExperiment : model
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" Dynamics : model
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      SimulationExperiment : network
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" Network : network
+        click Network href "./Network.html"
+    
+
+        
+      SimulationExperiment : observations
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" Observation : observations
+        click Observation href "./Observation.html"
+    
+
+        
+      SimulationExperiment : optimizations
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" Optimization : optimizations
+        click Optimization href "./Optimization.html"
+    
+
+        
+      SimulationExperiment : part
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" ReportPart : part
+        click ReportPart href "../../enums/ReportPart.html"
+    
+
+        
+      SimulationExperiment : provenance
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" Provenance : provenance
+        click Provenance href "./Provenance.html"
+    
+
+        
+      SimulationExperiment : references
+        
+          
+    
+        
+        
+        SimulationExperiment --> "*" String : references
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      SimulationExperiment : software
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" SoftwareRequirement : software
+        click SoftwareRequirement href "./SoftwareRequirement.html"
+    
+
+        
+      SimulationExperiment : stimulation
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" Stimulus : stimulation
+        click Stimulus href "./Stimulus.html"
+    
+
+        
+      SimulationExperiment : workflow
+        
+          
+    
+        
+        
+        SimulationExperiment --> "0..1" WorkflowConfig : workflow
+        click WorkflowConfig href "./WorkflowConfig.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Simulation](https://w3id.org/tvbo/Simulation) |
+| Tree Root | Yes |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [provenance](../slots/provenance.qmd) | 0..1 <br/> [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance for this entity — what it was derived from, whi... | direct |
+| [model](../slots/model.qmd) | 0..1 <br/> [Dynamics](../classes/Dynamics.qmd) |  | direct |
+| [references](../slots/references.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [part](../slots/part.qmd) | 0..1 <br/> [ReportPart](../enums/ReportPart.qmd) | Which part of a generated report this belongs in — the main Methods or the su... | direct |
+| [id](../slots/id.qmd) | 1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [additional_equations](../slots/additional_equations.qmd) | * <br/> [Equation](../classes/Equation.qmd) |  | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dynamics](../slots/dynamics.qmd) | 0..1 <br/> [Dynamics](../classes/Dynamics.qmd) | Default dynamics model for all nodes | direct |
+| [integration](../slots/integration.qmd) | 0..1 <br/> [Integrator](../classes/Integrator.qmd) |  | direct |
+| [initial_state](../slots/initial_state.qmd) | 0..1 <br/> [InitialState](../classes/InitialState.qmd) | How to obtain the starting state for the run | direct |
+| [connectivity](../slots/connectivity.qmd) | 0..1 <br/> [Network](../classes/Network.qmd) |  | direct |
+| [network](../slots/network.qmd) | 0..1 <br/> [Network](../classes/Network.qmd) |  | direct |
+| [observations](../slots/observations.qmd) | * <br/> [Observation](../classes/Observation.qmd) | All observations on this experiment, keyed by name | direct |
+| [functions](../slots/functions.qmd) | * <br/> [Function](../classes/Function.qmd) | Reusable function definitions | direct |
+| [stimulation](../slots/stimulation.qmd) | 0..1 <br/> [Stimulus](../classes/Stimulus.qmd) |  | direct |
+| [events](../slots/events.qmd) | * <br/> [Event](../classes/Event.qmd) | Events that apply at the experiment level | direct |
+| [field_dynamics](../slots/field_dynamics.qmd) | 0..1 <br/> [PDE](../classes/PDE.qmd) |  | direct |
+| [optimizations](../slots/optimizations.qmd) | * <br/> [Optimization](../classes/Optimization.qmd) | Parameter optimization configurations | direct |
+| [explorations](../slots/explorations.qmd) | * <br/> [Exploration](../classes/Exploration.qmd) | Parameter exploration/grid search specifications | direct |
+| [inferences](../slots/inferences.qmd) | * <br/> [Inference](../classes/Inference.qmd) | Bayesian inference configurations (posterior over parameters given an observa... | direct |
+| [algorithms](../slots/algorithms.qmd) | * <br/> [Algorithm](../classes/Algorithm.qmd) | Iterative parameter tuning algorithms (FIC, EIB, etc | direct |
+| [continuations](../slots/continuations.qmd) | * <br/> [Continuation](../classes/Continuation.qmd) | Numerical continuation and bifurcation analysis specifications | direct |
+| [environment](../slots/environment.qmd) | 0..1 <br/> [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | Execution environment (collection of requirements) | direct |
+| [execution](../slots/execution.qmd) | 0..1 <br/> [ExecutionConfig](../classes/ExecutionConfig.qmd) | Computational execution configuration (parallelization, devices) | direct |
+| [software](../slots/software.qmd) | 0..1 <br/> [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | (Deprecated) Single software requirement; prefer 'environment' with aggregate... | direct |
+| [dataset](../slots/dataset.qmd) | 0..1 <br/> [Dataset](../classes/Dataset.qmd) | Multi-subject dataset for workflow rendering | direct |
+| [workflow](../slots/workflow.qmd) | 0..1 <br/> [WorkflowConfig](../classes/WorkflowConfig.qmd) | Orchestration for distributing this experiment's sweep across a workflow engi... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [InitialState](../classes/InitialState.qmd) | [source_experiment](../slots/source_experiment.qmd) | range | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+| [SimulationStudy](../classes/SimulationStudy.qmd) | [simulation_experiments](../slots/simulation_experiments.qmd) | range | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+| [TimeSeries](../classes/TimeSeries.qmd) | [source_experiment](../slots/source_experiment.qmd) | range | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Simulation |
+| native | tvbo:SimulationExperiment |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: SimulationExperiment
+from_schema: https://w3id.org/tvbo
+slots:
+- provenance
+- model
+- references
+- part
+attributes:
+  id:
+    name: id
+    from_schema: https://w3id.org/tvbo
+    slot_uri: dcterms:identifier
+    identifier: true
+    domain_of:
+    - Node
+    - SimulationExperiment
+    range: integer
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    slot_uri: dcterms:description
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  additional_equations:
+    name: additional_equations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationExperiment
+    range: Equation
+    multivalued: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    slot_uri: rdfs:label
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  dynamics:
+    name: dynamics
+    description: Default dynamics model for all nodes. For heterogeneous networks
+      with multiple dynamics, use network.dynamics instead.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    inlined: true
+  integration:
+    name: integration
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Network
+    - Optimization
+    - Inference
+    - SimulationExperiment
+    range: Integrator
+    inlined: true
+  initial_state:
+    name: initial_state
+    description: 'How to obtain the starting state for the run. Default: the model''s
+      declared initial values (method ``given``). ``from_working_point`` ramps a parameter
+      quasi-statically to a target (reusing the warm-start ``from_previous`` primitive,
+      see ``ramp``) and starts the run from the branch endpoint — e.g. the operating
+      point reached by an adiabatic K-upsweep. ``from_experiment`` instead reuses
+      a working point another experiment already reached, seeding from its saved endpoint
+      (see ``source_experiment``) rather than recomputing the ramp.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Continuation
+    - SimulationExperiment
+    range: InitialState
+    inlined: true
+  connectivity:
+    name: connectivity
+    deprecated: Use 'network' instead. 'connectivity' is kept for backward compatibility
+      only and will be removed in a future version.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Edge
+    - SimulationExperiment
+    range: Network
+    inlined: true
+  network:
+    name: network
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Subject
+    - Session
+    - Panel
+    - Inset
+    - SimulationExperiment
+    range: Network
+    inlined: true
+  observations:
+    name: observations
+    description: All observations on this experiment, keyed by name. An Observation
+      is considered derived (computed from other observations rather than directly
+      from state variables) when any item in its multivalued ``source`` slot names
+      another observation in this same dict.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Algorithm
+    - SimulationExperiment
+    range: Observation
+    multivalued: true
+    inlined: true
+  functions:
+    name: functions
+    description: 'Reusable function definitions. Referenced by name in observation
+      pipelines. Enables DRY: define compute_fc once, use in both simulated and empirical
+      paths.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: Function
+    multivalued: true
+    inlined: true
+  stimulation:
+    name: stimulation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationExperiment
+    range: Stimulus
+    inlined: true
+  events:
+    name: events
+    description: Events that apply at the experiment level. For component-level events,
+      attach them to individual nodes or edges instead.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Node
+    - Edge
+    - Dynamics
+    - SimulationExperiment
+    range: Event
+    multivalued: true
+    inlined: true
+  field_dynamics:
+    name: field_dynamics
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationExperiment
+    range: PDE
+    inlined: true
+  optimizations:
+    name: optimizations
+    description: Parameter optimization configurations
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - optimization
+    rank: 1000
+    domain_of:
+    - SimulationExperiment
+    range: Optimization
+    multivalued: true
+    inlined: true
+  explorations:
+    name: explorations
+    description: Parameter exploration/grid search specifications
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationExperiment
+    range: Exploration
+    multivalued: true
+    inlined: true
+  inferences:
+    name: inferences
+    description: Bayesian inference configurations (posterior over parameters given
+      an observation, via MCMC). Keyed by name, like optimizations.
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - inference
+    rank: 1000
+    domain_of:
+    - SimulationExperiment
+    range: Inference
+    multivalued: true
+    inlined: true
+  algorithms:
+    name: algorithms
+    description: Iterative parameter tuning algorithms (FIC, EIB, etc.)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Exploration
+    - SimulationExperiment
+    range: Algorithm
+    multivalued: true
+    inlined: true
+  continuations:
+    name: continuations
+    description: 'Numerical continuation and bifurcation analysis specifications.
+      Each entry defines a continuation experiment (equilibrium branch, codim-2 curve,
+      periodic orbit family, etc.).            # Either reference a full reusable
+      environment (preferred) or, for'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationExperiment
+    range: Continuation
+    multivalued: true
+    inlined: true
+  environment:
+    name: environment
+    description: Execution environment (collection of requirements).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Provenance
+    - Observation
+    - SimulationExperiment
+    - PDESolver
+    range: SoftwareEnvironment
+    inlined: true
+  execution:
+    name: execution
+    description: Computational execution configuration (parallelization, devices).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  software:
+    name: software
+    description: (Deprecated) Single software requirement; prefer 'environment' with
+      aggregated requirements.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Callable
+    - Continuation
+    - SimulationExperiment
+    range: SoftwareRequirement
+    inlined: true
+  dataset:
+    name: dataset
+    description: Multi-subject dataset for workflow rendering. When set, render_workflow()
+      uses dataset.subjects/sessions to generate per-subject parallel jobs.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - SimulationExperiment
+    range: Dataset
+    inlined: true
+  workflow:
+    name: workflow
+    description: 'Orchestration for distributing this experiment''s sweep across a
+      workflow engine. Refines the study''s ``workflow`` block: only the fields it
+      sets take precedence, the rest are inherited. Use it to give one experiment
+      its own shard count or resources.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DistributionConfig
+    - SimulationExperiment
+    - SimulationStudy
+    range: WorkflowConfig
+    inlined: true
+class_uri: tvbo:Simulation
+tree_root: true
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: SimulationExperiment
+from_schema: https://w3id.org/tvbo
+attributes:
+  id:
+    name: id
+    from_schema: https://w3id.org/tvbo
+    slot_uri: dcterms:identifier
+    identifier: true
+    owner: SimulationExperiment
+    domain_of:
+    - Node
+    - SimulationExperiment
+    range: integer
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    slot_uri: dcterms:description
+    owner: SimulationExperiment
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  additional_equations:
+    name: additional_equations
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - SimulationExperiment
+    range: Equation
+    multivalued: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    slot_uri: rdfs:label
+    owner: SimulationExperiment
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  dynamics:
+    name: dynamics
+    description: Default dynamics model for all nodes. For heterogeneous networks
+      with multiple dynamics, use network.dynamics instead.
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    inlined: true
+  integration:
+    name: integration
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Network
+    - Optimization
+    - Inference
+    - SimulationExperiment
+    range: Integrator
+    inlined: true
+  initial_state:
+    name: initial_state
+    description: 'How to obtain the starting state for the run. Default: the model''s
+      declared initial values (method ``given``). ``from_working_point`` ramps a parameter
+      quasi-statically to a target (reusing the warm-start ``from_previous`` primitive,
+      see ``ramp``) and starts the run from the branch endpoint — e.g. the operating
+      point reached by an adiabatic K-upsweep. ``from_experiment`` instead reuses
+      a working point another experiment already reached, seeding from its saved endpoint
+      (see ``source_experiment``) rather than recomputing the ramp.'
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Continuation
+    - SimulationExperiment
+    range: InitialState
+    inlined: true
+  connectivity:
+    name: connectivity
+    deprecated: Use 'network' instead. 'connectivity' is kept for backward compatibility
+      only and will be removed in a future version.
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Edge
+    - SimulationExperiment
+    range: Network
+    inlined: true
+  network:
+    name: network
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Subject
+    - Session
+    - Panel
+    - Inset
+    - SimulationExperiment
+    range: Network
+    inlined: true
+  observations:
+    name: observations
+    description: All observations on this experiment, keyed by name. An Observation
+      is considered derived (computed from other observations rather than directly
+      from state variables) when any item in its multivalued ``source`` slot names
+      another observation in this same dict.
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Algorithm
+    - SimulationExperiment
+    range: Observation
+    multivalued: true
+    inlined: true
+  functions:
+    name: functions
+    description: 'Reusable function definitions. Referenced by name in observation
+      pipelines. Enables DRY: define compute_fc once, use in both simulated and empirical
+      paths.'
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Observation
+    - Dynamics
+    - Algorithm
+    - SimulationExperiment
+    - PDE
+    range: Function
+    multivalued: true
+    inlined: true
+  stimulation:
+    name: stimulation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - SimulationExperiment
+    range: Stimulus
+    inlined: true
+  events:
+    name: events
+    description: Events that apply at the experiment level. For component-level events,
+      attach them to individual nodes or edges instead.
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Node
+    - Edge
+    - Dynamics
+    - SimulationExperiment
+    range: Event
+    multivalued: true
+    inlined: true
+  field_dynamics:
+    name: field_dynamics
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - SimulationExperiment
+    range: PDE
+    inlined: true
+  optimizations:
+    name: optimizations
+    description: Parameter optimization configurations
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - optimization
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - SimulationExperiment
+    range: Optimization
+    multivalued: true
+    inlined: true
+  explorations:
+    name: explorations
+    description: Parameter exploration/grid search specifications
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - SimulationExperiment
+    range: Exploration
+    multivalued: true
+    inlined: true
+  inferences:
+    name: inferences
+    description: Bayesian inference configurations (posterior over parameters given
+      an observation, via MCMC). Keyed by name, like optimizations.
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - inference
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - SimulationExperiment
+    range: Inference
+    multivalued: true
+    inlined: true
+  algorithms:
+    name: algorithms
+    description: Iterative parameter tuning algorithms (FIC, EIB, etc.)
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Exploration
+    - SimulationExperiment
+    range: Algorithm
+    multivalued: true
+    inlined: true
+  continuations:
+    name: continuations
+    description: 'Numerical continuation and bifurcation analysis specifications.
+      Each entry defines a continuation experiment (equilibrium branch, codim-2 curve,
+      periodic orbit family, etc.).            # Either reference a full reusable
+      environment (preferred) or, for'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - SimulationExperiment
+    range: Continuation
+    multivalued: true
+    inlined: true
+  environment:
+    name: environment
+    description: Execution environment (collection of requirements).
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Provenance
+    - Observation
+    - SimulationExperiment
+    - PDESolver
+    range: SoftwareEnvironment
+    inlined: true
+  execution:
+    name: execution
+    description: Computational execution configuration (parallelization, devices).
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  software:
+    name: software
+    description: (Deprecated) Single software requirement; prefer 'environment' with
+      aggregated requirements.
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - Callable
+    - Continuation
+    - SimulationExperiment
+    range: SoftwareRequirement
+    inlined: true
+  dataset:
+    name: dataset
+    description: Multi-subject dataset for workflow rendering. When set, render_workflow()
+      uses dataset.subjects/sessions to generate per-subject parallel jobs.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - SimulationExperiment
+    range: Dataset
+    inlined: true
+  workflow:
+    name: workflow
+    description: 'Orchestration for distributing this experiment''s sweep across a
+      workflow engine. Refines the study''s ``workflow`` block: only the fields it
+      sets take precedence, the rest are inherited. Use it to give one experiment
+      its own shard count or resources.'
+    from_schema: https://w3id.org/tvbo
+    owner: SimulationExperiment
+    domain_of:
+    - DistributionConfig
+    - SimulationExperiment
+    - SimulationStudy
+    range: WorkflowConfig
+    inlined: true
+  provenance:
+    name: provenance
+    description: W3C PROV-O aligned provenance for this entity — what it was derived
+      from, which agent produced it, and when.
+    from_schema: https://w3id.org/tvbo
+    close_mappings:
+    - prov:wasGeneratedBy
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - Figure
+    - ResultEntity
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    - SimulationExperiment
+    range: Provenance
+    inlined: true
+  model:
+    name: model
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: SimulationExperiment
+    domain_of:
+    - Electrode
+    - SimulationExperiment
+    - SimulationStudy
+    range: Dynamics
+  references:
+    name: references
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: SimulationExperiment
+    domain_of:
+    - Provenance
+    - Observation
+    - Dynamics
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+    multivalued: true
+  part:
+    name: part
+    description: 'Which part of a generated report this belongs in — the main Methods
+      or the supplementary material. Placement only: every experiment runs and every
+      figure renders regardless, so demoting one never changes what is computed. It
+      answers a different question from a replication''s target tier (how central
+      a claim is) and from the source paper''s own Fig/EDF numbering (where *they*
+      printed it), because our document may carry a headline result''s parameter dump
+      in the SI, or relegate a figure the paper printed up front. Defaults to ``main``,
+      so a recipe that says nothing keeps everything in the Methods.'
+    from_schema: https://w3id.org/tvbo/common
+    ifabsent: ReportPart(main)
+    owner: SimulationExperiment
+    domain_of:
+    - Figure
+    - SimulationExperiment
+    range: ReportPart
+class_uri: tvbo:Simulation
+tree_root: true
+
+```
+</details></div>

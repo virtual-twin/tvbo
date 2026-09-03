@@ -1,0 +1,105 @@
+# Slot: space 
+
+
+_Exploration axes spanning the search space, keyed by the dotted parameter reference each axis sweeps (e.g. "ReducedWongWang.w" or "FastLinearCoupling.G"). Insertion order is preserved and defines the grid axis order. Each axis references an existing Parameter and supplies the Range to sweep; no new Parameter is created here._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/space](https://w3id.org/tvbo/slot/space)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ExplorationAxis](../classes/ExplorationAxis.qmd) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:space |
+| native | tvbo:space |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: space
+description: Exploration axes spanning the search space, keyed by the dotted parameter
+  reference each axis sweeps (e.g. "ReducedWongWang.w" or "FastLinearCoupling.G").
+  Insertion order is preserved and defines the grid axis order. Each axis references
+  an existing Parameter and supplies the Range to sweep; no new Parameter is created
+  here.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Exploration
+domain_of:
+- Exploration
+range: ExplorationAxis
+multivalued: true
+inlined: true
+
+```
+</details></div>

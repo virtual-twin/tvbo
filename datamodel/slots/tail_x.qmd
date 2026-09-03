@@ -1,0 +1,101 @@
+# Slot: tail_x 
+
+
+_Start the arrow at this x in DATA coordinates instead of at an axes-fraction offset. Pair with tail_used, which supplies the y: together they anchor the arrow's tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/tail_x](https://w3id.org/tvbo/slot/tail_x)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Annotation](../classes/Annotation.qmd) | A positioned text label on a panel, in axes-fraction coordinates |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Annotation](../classes/Annotation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Annotation](../classes/Annotation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:tail_x |
+| native | tvbo:tail_x |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: tail_x
+description: 'Start the arrow at this x in DATA coordinates instead of at an axes-fraction
+  offset. Pair with tail_used, which supplies the y: together they anchor the arrow''s
+  tail on a point the run computed, so a callout keeps pointing at its data when the
+  data changes. Ignored unless tail_used is also set.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Annotation
+domain_of:
+- Annotation
+range: float
+
+```
+</details></div>

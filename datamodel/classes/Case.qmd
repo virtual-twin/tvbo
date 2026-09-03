@@ -1,0 +1,194 @@
+# Class: Case 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Case](https://w3id.org/tvbo/Case)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Case
+    click Case href "./Case.html"
+      Case : condition
+        
+          
+    
+        
+        
+        Case --> "0..1" String : condition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Case : equation
+        
+          
+    
+        
+        
+        Case --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Case](https://w3id.org/tvbo/Case) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [condition](../slots/condition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [DerivedVariable](../classes/DerivedVariable.qmd) | [cases](../slots/cases.qmd) | range | [Case](../classes/Case.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Case |
+| native | tvbo:Case |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Case
+from_schema: https://w3id.org/tvbo
+attributes:
+  condition:
+    name: condition
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Session
+    - ConditionalBlock
+    - Event
+    - Case
+    range: string
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - Case
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    range: Equation
+    inlined: true
+class_uri: tvbo:Case
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Case
+from_schema: https://w3id.org/tvbo
+attributes:
+  condition:
+    name: condition
+    from_schema: https://w3id.org/tvbo
+    owner: Case
+    domain_of:
+    - Session
+    - ConditionalBlock
+    - Event
+    - Case
+    range: string
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    owner: Case
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - Case
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    range: Equation
+    inlined: true
+class_uri: tvbo:Case
+
+```
+</details></div>

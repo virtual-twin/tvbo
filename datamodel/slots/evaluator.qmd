@@ -1,0 +1,98 @@
+# Slot: evaluator 
+
+
+_Who performed the rating (e.g., rater initials, clinician ID, or system)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/evaluator](https://w3id.org/tvbo/dbs/slot/evaluator)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ClinicalImprovement](../classes/ClinicalImprovement.qmd) | Relative improvement on a defined clinical score |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [ClinicalImprovement](../classes/ClinicalImprovement.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ClinicalImprovement](../classes/ClinicalImprovement.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:evaluator |
+| native | tvbo_dbs:evaluator |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: evaluator
+description: Who performed the rating (e.g., rater initials, clinician ID, or system)
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: ClinicalImprovement
+domain_of:
+- ClinicalImprovement
+range: string
+
+```
+</details></div>

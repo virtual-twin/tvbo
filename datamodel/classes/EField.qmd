@@ -1,0 +1,205 @@
+# Class: EField 
+
+
+_Simulated electric field from DBS modeling._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:class/EField](https://w3id.org/tvbo/dbs/class/EField)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class EField
+    click EField href "./EField.html"
+      EField : coordinate_space
+        
+          
+    
+        
+        
+        EField --> "0..1" CommonCoordinateSpace : coordinate_space
+        click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+    
+
+        
+      EField : threshold_applied
+        
+          
+    
+        
+        
+        EField --> "0..1" Float : threshold_applied
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      EField : volume_data
+        
+          
+    
+        
+        
+        EField --> "0..1" String : volume_data
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [volume_data](../slots/volume_data.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Reference to raw or thresholded volume | direct |
+| [coordinate_space](../slots/coordinate_space.qmd) | 0..1 <br/> [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | Reference to a common coordinate space (e | direct |
+| [threshold_applied](../slots/threshold_applied.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Threshold value applied to the E-field simulation | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [StimulationSetting](../classes/StimulationSetting.qmd) | [efield](../slots/efield.qmd) | range | [EField](../classes/EField.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:EField |
+| native | tvbo_dbs:EField |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: EField
+description: Simulated electric field from DBS modeling.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  volume_data:
+    name: volume_data
+    description: Reference to raw or thresholded volume
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - EField
+    range: string
+  coordinate_space:
+    name: coordinate_space
+    description: Reference to a common coordinate space (e.g. MNI152)
+    from_schema: https://w3id.org/tvbo/dbs
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  threshold_applied:
+    name: threshold_applied
+    description: Threshold value applied to the E-field simulation
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - EField
+    range: float
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: EField
+description: Simulated electric field from DBS modeling.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  volume_data:
+    name: volume_data
+    description: Reference to raw or thresholded volume
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: EField
+    domain_of:
+    - EField
+    range: string
+  coordinate_space:
+    name: coordinate_space
+    description: Reference to a common coordinate space (e.g. MNI152)
+    from_schema: https://w3id.org/tvbo/dbs
+    owner: EField
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  threshold_applied:
+    name: threshold_applied
+    description: Threshold value applied to the E-field simulation
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: EField
+    domain_of:
+    - EField
+    range: float
+
+```
+</details></div>

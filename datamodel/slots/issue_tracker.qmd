@@ -1,0 +1,98 @@
+# Slot: issue_tracker 
+
+
+_URL of the bug tracker or issue board._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/issue_tracker](https://w3id.org/tvbo/software/slot/issue_tracker)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:issue_tracker |
+| native | tvbo_sw:issue_tracker |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: issue_tracker
+description: URL of the bug tracker or issue board.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: uri
+
+```
+</details></div>

@@ -1,0 +1,108 @@
+# Enum: AggregationType 
+
+
+
+
+_How to aggregate time series data_
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/AggregationType](https://w3id.org/tvbo/enum/AggregationType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| mean | None | Average over time |
+| median | None | Median over time (per node) |
+| variance | None | Variance over time (per node) |
+| std | None | Standard deviation over time (per node) |
+| first_passage | None | First-passage time index (per node): the first sample at which the source cro... |
+| last | None | Last value in window |
+| first | None | First value in window |
+| window | None | Sliding window aggregation |
+| none | None | No aggregation |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [aggregation](../slots/aggregation.qmd) | How to aggregate over time |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: AggregationType
+description: How to aggregate time series data
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  mean:
+    text: mean
+    description: Average over time
+  median:
+    text: median
+    description: 'Median over time (per node). Robust to phase-slip / outlier samples
+      that bias the mean. For an Observation.dynamics observer this is computed streaming:
+      a per-node histogram (bins from the observation''s `histogram` slot) is folded
+      into the integrator carry and the 0.5 quantile is read at finalize, so no trajectory
+      is held.'
+  variance:
+    text: variance
+    description: Variance over time (per node)
+  std:
+    text: std
+    description: Standard deviation over time (per node)
+  first_passage:
+    text: first_passage
+    description: 'First-passage time index (per node): the first sample at which the
+      source crosses the observation''s `threshold` parameter (>=), or the sample
+      count if it never crosses. Backend-independent (argmax of the threshold-crossing).
+      Multiply by the sampling step for a time.'
+  last:
+    text: last
+    description: Last value in window
+  first:
+    text: first
+    description: First value in window
+  window:
+    text: window
+    description: Sliding window aggregation
+  none:
+    text: none
+    description: No aggregation
+
+```
+</details>
+
+</div>

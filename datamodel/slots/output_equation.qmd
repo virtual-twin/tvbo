@@ -1,0 +1,100 @@
+# Slot: output_equation 
+
+
+_Output transformation equation (if equation-based)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/output_equation](https://w3id.org/tvbo/slot/output_equation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Function](../classes/Function.qmd) | A function with explicit input -> transformation -> output flow |  no  |
+| [LossFunction](../classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Equation](../classes/Equation.qmd) |
+| Domain Of | [Function](../classes/Function.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Function](../classes/Function.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:output_equation |
+| native | tvbo:output_equation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: output_equation
+description: Output transformation equation (if equation-based)
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Function
+domain_of:
+- Function
+range: Equation
+inlined: true
+
+```
+</details></div>

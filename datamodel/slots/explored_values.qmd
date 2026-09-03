@@ -1,0 +1,80 @@
+# Slot: explored_values 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/explored_values](https://w3id.org/tvbo/slot/explored_values)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Range](../classes/Range.qmd) | Specifies a range for array generation, parameter bounds, or grid exploration |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [ExplorationAxis](../classes/ExplorationAxis.qmd) | One axis of a parameter exploration grid |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Range](../classes/Range.qmd), [Parameter](../classes/Parameter.qmd), [ExplorationAxis](../classes/ExplorationAxis.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:explored_values |
+| native | tvbo:explored_values |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: explored_values
+domain_of:
+- Range
+- Parameter
+- ExplorationAxis
+range: string
+
+```
+</details></div>

@@ -1,0 +1,77 @@
+# Slot: bothside 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/bothside](https://w3id.org/tvbo/slot/bothside)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | Specification for switching from a detected bifurcation point to a new branch... |  no  |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [BranchSwitch](../classes/BranchSwitch.qmd), [Continuation](../classes/Continuation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:bothside |
+| native | tvbo:bothside |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: bothside
+domain_of:
+- BranchSwitch
+- Continuation
+range: string
+
+```
+</details></div>

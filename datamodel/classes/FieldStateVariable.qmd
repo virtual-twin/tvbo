@@ -1,0 +1,918 @@
+# Class: FieldStateVariable 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:FieldStateVariable](https://w3id.org/tvbo/FieldStateVariable)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class FieldStateVariable
+    click FieldStateVariable href "./FieldStateVariable.html"
+      StateVariable <|-- FieldStateVariable
+        click StateVariable href "./StateVariable.html"
+      
+      FieldStateVariable : boundary_conditions
+        
+          
+    
+        
+        
+        FieldStateVariable --> "*" BoundaryCondition : boundary_conditions
+        click BoundaryCondition href "./BoundaryCondition.html"
+    
+
+        
+      FieldStateVariable : coupling_variable
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Boolean : coupling_variable
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      FieldStateVariable : definition
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" String : definition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      FieldStateVariable : derivative_initial_value
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Float : derivative_initial_value
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      FieldStateVariable : description
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      FieldStateVariable : distribution
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Distribution : distribution
+        click Distribution href "./Distribution.html"
+    
+
+        
+      FieldStateVariable : domain
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Range : domain
+        click Range href "./Range.html"
+    
+
+        
+      FieldStateVariable : equation
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      FieldStateVariable : equation_order
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Integer : equation_order
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      FieldStateVariable : equation_type
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" String : equation_type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      FieldStateVariable : evict_equation
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Equation : evict_equation
+        click Equation href "./Equation.html"
+    
+
+        
+      FieldStateVariable : grounding
+        
+          
+    
+        
+        
+        FieldStateVariable --> "*" Uriorcurie : grounding
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      FieldStateVariable : history
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" TimeSeries : history
+        click TimeSeries href "./TimeSeries.html"
+    
+
+        
+      FieldStateVariable : initial_value
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Float : initial_value
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      FieldStateVariable : label
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      FieldStateVariable : mesh
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Mesh : mesh
+        click Mesh href "./Mesh.html"
+    
+
+        
+      FieldStateVariable : name
+        
+          
+    
+        
+        
+        FieldStateVariable --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      FieldStateVariable : noise
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Noise : noise
+        click Noise href "./Noise.html"
+    
+
+        
+      FieldStateVariable : record
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Boolean : record
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      FieldStateVariable : stimulation_variable
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Boolean : stimulation_variable
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      FieldStateVariable : symbol
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" String : symbol
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      FieldStateVariable : unit
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      FieldStateVariable : variable_of_interest
+        
+          
+    
+        
+        
+        FieldStateVariable --> "0..1" Boolean : variable_of_interest
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [StateVariable](../classes/StateVariable.qmd)
+    * **FieldStateVariable**
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:FieldStateVariable](https://w3id.org/tvbo/FieldStateVariable) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [mesh](../slots/mesh.qmd) | 0..1 <br/> [Mesh](../classes/Mesh.qmd) |  | direct |
+| [boundary_conditions](../slots/boundary_conditions.qmd) | * <br/> [BoundaryCondition](../classes/BoundaryCondition.qmd) |  | direct |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | [StateVariable](../classes/StateVariable.qmd) |
+| [symbol](../slots/symbol.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [StateVariable](../classes/StateVariable.qmd) |
+| [definition](../slots/definition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [StateVariable](../classes/StateVariable.qmd) |
+| [domain](../slots/domain.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) |  | [StateVariable](../classes/StateVariable.qmd) |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | [StateVariable](../classes/StateVariable.qmd) |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[UnitEnum](../enums/UnitEnum.qmd) | Physical unit of measurement | [StateVariable](../classes/StateVariable.qmd) |
+| [record](../slots/record.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether to include this element in simulation output files | [StateVariable](../classes/StateVariable.qmd) |
+| [grounding](../slots/grounding.qmd) | * <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this enti... | [StateVariable](../classes/StateVariable.qmd) |
+| [variable_of_interest](../slots/variable_of_interest.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | [StateVariable](../classes/StateVariable.qmd) |
+| [coupling_variable](../slots/coupling_variable.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether this state variable is transmitted to connected nodes through the cou... | [StateVariable](../classes/StateVariable.qmd) |
+| [equation_type](../slots/equation_type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | How to interpret ``equation | [StateVariable](../classes/StateVariable.qmd) |
+| [evict_equation](../slots/evict_equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) | Optional reverse recurrence for a **sliding-window** reduction: the per-step ... | [StateVariable](../classes/StateVariable.qmd) |
+| [equation_order](../slots/equation_order.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Order of the time derivative on the LHS | [StateVariable](../classes/StateVariable.qmd) |
+| [noise](../slots/noise.qmd) | 0..1 <br/> [Noise](../classes/Noise.qmd) |  | [StateVariable](../classes/StateVariable.qmd) |
+| [stimulation_variable](../slots/stimulation_variable.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | [StateVariable](../classes/StateVariable.qmd) |
+| [initial_value](../slots/initial_value.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Value this state starts at | [StateVariable](../classes/StateVariable.qmd) |
+| [derivative_initial_value](../slots/derivative_initial_value.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Initial value for the first time derivative, used when equation_order > 1 | [StateVariable](../classes/StateVariable.qmd) |
+| [distribution](../slots/distribution.qmd) | 0..1 <br/> [Distribution](../classes/Distribution.qmd) | Distribution for sampling initial conditions per node | [StateVariable](../classes/StateVariable.qmd) |
+| [history](../slots/history.qmd) | 0..1 <br/> [TimeSeries](../classes/TimeSeries.qmd) |  | [StateVariable](../classes/StateVariable.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [PDE](../classes/PDE.qmd) | [state_variables](../slots/state_variables.qmd) | range | [FieldStateVariable](../classes/FieldStateVariable.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:FieldStateVariable |
+| native | tvbo:FieldStateVariable |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: FieldStateVariable
+from_schema: https://w3id.org/tvbo
+is_a: StateVariable
+slots:
+- label
+- description
+attributes:
+  mesh:
+    name: mesh
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Surface
+    - Network
+    - SpatialField
+    - FieldStateVariable
+    - PDE
+    range: Mesh
+  boundary_conditions:
+    name: boundary_conditions
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - FieldStateVariable
+    - PDE
+    range: BoundaryCondition
+    multivalued: true
+class_uri: tvbo:FieldStateVariable
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: FieldStateVariable
+from_schema: https://w3id.org/tvbo
+is_a: StateVariable
+attributes:
+  mesh:
+    name: mesh
+    from_schema: https://w3id.org/tvbo
+    owner: FieldStateVariable
+    domain_of:
+    - Surface
+    - Network
+    - SpatialField
+    - FieldStateVariable
+    - PDE
+    range: Mesh
+  boundary_conditions:
+    name: boundary_conditions
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: FieldStateVariable
+    domain_of:
+    - FieldStateVariable
+    - PDE
+    range: BoundaryCondition
+    multivalued: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: FieldStateVariable
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: FieldStateVariable
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: FieldStateVariable
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  symbol:
+    name: symbol
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: FieldStateVariable
+    domain_of:
+    - ToolUnit
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - DerivedParameter
+    - DerivedVariable
+    range: string
+  definition:
+    name: definition
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: skos:definition
+    owner: FieldStateVariable
+    domain_of:
+    - Equation
+    - StateVariable
+    - Parameter
+    - Function
+    - DifferentialOperator
+    range: string
+  domain:
+    name: domain
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - range
+    - boundaries
+    rank: 1000
+    owner: FieldStateVariable
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: Range
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:Equation
+    owner: FieldStateVariable
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  unit:
+    name: unit
+    description: 'Physical unit of measurement. `UnitEnum` is the curated vocabulary
+      — each of its values is vendored from QUDT (`ontology/tvb-o-units.ttl`) and
+      can be reasoned about dimensionally. The range is deliberately open beyond it:
+      a unit nobody has curated yet is recorded as written and reported `uncurated`,
+      because a closed range forces the author to either misdeclare the quantity or
+      leave it undeclared, and both lose more than an unrecognised string does. An
+      uncurated unit carries no dimensional claim, so a check involving it reports
+      `underdetermined` rather than guessing. Promote one with `tvbo units add <unit>`,
+      which pulls its QUDT record into the vendored module — so every unit TVBO *reasons*
+      about stays authoritative, and only what it *records* is open.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: qudt:unit
+    owner: FieldStateVariable
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+    any_of:
+    - range: UnitEnum
+    - range: string
+  record:
+    name: record
+    description: Whether to include this element in simulation output files. Applicable
+      to state variables (default true), derived variables (default false), and network
+      nodes (default true). On an observation it forces (true) or suppresses (false)
+      persistence in the result; left unset, a terminal observation (one not consumed
+      by another observation or a loss) is recorded and an intermediate one is not.
+      Set false to suppress recording.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'True'
+    owner: FieldStateVariable
+    domain_of:
+    - Node
+    - Observation
+    - StateVariable
+    - DerivedVariable
+    - Exploration
+    range: boolean
+  grounding:
+    name: grounding
+    description: 'External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that
+      this entity is a surrogate / abstraction / model of. Realized as the `tvbo:surrogate_of`
+      object property, carried inline with the YAML data instance. Multiple IRIs allowed:
+      a single parameter may abstract several biological processes (e.g. a synaptic
+      conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical
+      synaptic transmission)).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:surrogate_of
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    - Parameter
+    - DerivedVariable
+    range: uriorcurie
+    multivalued: true
+  variable_of_interest:
+    name: variable_of_interest
+    deprecated: Use 'record' instead. A state variable is recorded in the output when
+      record=true (the default); set record=false to suppress it. 'variable_of_interest'
+      is retained for backward compatibility and is ignored by the TVB/jax/rateml
+      codegen.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'True'
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    range: boolean
+  coupling_variable:
+    name: coupling_variable
+    description: Whether this state variable is transmitted to connected nodes through
+      the coupling function. In TVB terms, this determines the cvar indices (state
+      variables extracted from history and fed into the coupling function). The coupling
+      function may override this via its incoming_states attribute.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    range: boolean
+  equation_type:
+    name: equation_type
+    description: 'How to interpret ``equation.rhs`` when advancing this state: ''differential''
+      (default) integrates it as ``dx/dt = rhs``; ''algebraic'' is a constraint ``0
+      = rhs`` / ``x ~ rhs`` (DAE); ''recurrence'' is a discrete per-step update ``x_next
+      = rhs`` (no integrator applied), used by an observation''s auxiliary ``dynamics``
+      for online reductions/accumulators (e.g. a running sum ``x_next = x + f``) —
+      the symbolic, backend-independent sibling of the continuous ''differential''
+      form. Algebraic equations are used by ModelingToolkit.jl backend.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(differential)
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    range: string
+  evict_equation:
+    name: evict_equation
+    description: 'Optional reverse recurrence for a **sliding-window** reduction:
+      the per-step downdate that removes the sample leaving the window, the inverse
+      of ``equation`` (which folds an arriving sample in). Only meaningful when ``equation_type:
+      recurrence`` on an observation''s auxiliary ``dynamics``. When present, the
+      observer is a windowed reduction — its state is maintained by ``equation`` (add)
+      and ``evict_equation`` (evict) and rebuilt exactly from the window on resync
+      — rather than a cumulative accumulator over the whole trajectory (``equation``
+      alone). Absent for ordinary state variables and cumulative reductions.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    range: Equation
+  equation_order:
+    name: equation_order
+    description: Order of the time derivative on the LHS. Default 1 means dx/dt =
+      rhs (first-order ODE). Order 2 means d²x/dt² = rhs (second-order ODE), etc.
+      Higher-order ODEs are automatically lowered to coupled first-order systems by
+      backends like ModelingToolkit.jl via mtkcompile.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: int(1)
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    range: integer
+  noise:
+    name: noise
+    from_schema: https://w3id.org/tvbo
+    owner: FieldStateVariable
+    domain_of:
+    - Stimulus
+    - StateVariable
+    - Integrator
+    range: Noise
+    inlined: true
+  stimulation_variable:
+    name: stimulation_variable
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    range: boolean
+  initial_value:
+    name: initial_value
+    description: 'Value this state starts at. Absent means undeclared: the consumer
+      supplies its own fallback via ``tvbo.utils.initial_value``, which documents
+      why this slot carries no schema default.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    - FreeParameter
+    - SpatialField
+    range: float
+  derivative_initial_value:
+    name: derivative_initial_value
+    description: Initial value for the first time derivative, used when equation_order
+      > 1. For a second-order ODE d²x/dt² = f, this sets dx/dt(0). Required by ModelingToolkit.jl
+      to fully specify higher-order initial value problems.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    range: float
+  distribution:
+    name: distribution
+    description: Distribution for sampling initial conditions per node. If present,
+      initial_value is used as fallback/mean.
+    from_schema: https://w3id.org/tvbo
+    owner: FieldStateVariable
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    range: Distribution
+    inlined: true
+  history:
+    name: history
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: FieldStateVariable
+    domain_of:
+    - StateVariable
+    range: TimeSeries
+    inlined: true
+class_uri: tvbo:FieldStateVariable
+
+```
+</details></div>

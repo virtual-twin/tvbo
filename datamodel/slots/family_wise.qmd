@@ -1,0 +1,104 @@
+# Slot: family_wise 
+
+
+_Apply a Westfall–Young family-wise (max-T) correction: collapse the permuted statistic to its extremum over the element axes, forming one family-wise null per permutation that every observed element is tested against. The extremum follows ``direction`` (``greater_equal`` → maximum, ``less_equal`` → minimum). Absent → the symmetric per-element test._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/family_wise](https://w3id.org/tvbo/slot/family_wise)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surrogate](../classes/Surrogate.qmd) | A permutation-significance test: re-evaluate a named statistic under n_perm f... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Surrogate](../classes/Surrogate.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [Surrogate](../classes/Surrogate.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:family_wise |
+| native | tvbo:family_wise |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: family_wise
+description: 'Apply a Westfall–Young family-wise (max-T) correction: collapse the
+  permuted statistic to its extremum over the element axes, forming one family-wise
+  null per permutation that every observed element is tested against. The extremum
+  follows ``direction`` (``greater_equal`` → maximum, ``less_equal`` → minimum). Absent
+  → the symmetric per-element test.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: 'False'
+owner: Surrogate
+domain_of:
+- Surrogate
+range: boolean
+
+```
+</details></div>

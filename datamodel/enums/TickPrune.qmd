@@ -1,0 +1,77 @@
+# Enum: TickPrune 
+
+
+
+
+_Which end ticks to drop where a corner tick would collide with its neighbour panel's._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/TickPrune](https://w3id.org/tvbo/enum/TickPrune)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| lower | None | Drop the first tick |
+| upper | None | Drop the last tick |
+| both | None | Drop both end ticks |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [tick_prune](../slots/tick_prune.qmd) | Drop the first, last, or both end ticks, for the case where a corner tick col... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: TickPrune
+description: Which end ticks to drop where a corner tick would collide with its neighbour
+  panel's.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  lower:
+    text: lower
+    description: Drop the first tick.
+  upper:
+    text: upper
+    description: Drop the last tick.
+  both:
+    text: both
+    description: Drop both end ticks.
+
+```
+</details>
+
+</div>

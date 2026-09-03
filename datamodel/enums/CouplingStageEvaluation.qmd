@@ -1,0 +1,86 @@
+# Enum: CouplingStageEvaluation 
+
+
+
+
+_How the network coupling term is evaluated within one step of a multi-stage integrator (Heun, RK4, ...). A backend-neutral numerical contract: whether the coupling is part of the vector field, re-evaluated at each solver stage, or computed once per step and held constant across the stages. Matters because the two choices integrate a different effective system — for stiff / chaotic / multistable dynamics they can converge to different trajectories or attractors._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/CouplingStageEvaluation](https://w3id.org/tvbo/enum/CouplingStageEvaluation)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| per_stage | None | Re-evaluate the coupling at every integrator stage — the coupling is a full p... |
+| per_step | None | Evaluate the coupling once per integration step and hold it constant across t... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [coupling_evaluation](../slots/coupling_evaluation.qmd) | Backend-neutral numerical treatment of the network coupling term across the s... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: CouplingStageEvaluation
+description: 'How the network coupling term is evaluated within one step of a multi-stage
+  integrator (Heun, RK4, ...). A backend-neutral numerical contract: whether the coupling
+  is part of the vector field, re-evaluated at each solver stage, or computed once
+  per step and held constant across the stages. Matters because the two choices integrate
+  a different effective system — for stiff / chaotic / multistable dynamics they can
+  converge to different trajectories or attractors.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  per_stage:
+    text: per_stage
+    description: Re-evaluate the coupling at every integrator stage — the coupling
+      is a full part of the vector field (standard ODE integration). Accurate; required
+      to reproduce reference integrators for stiff / chaotic / multistable systems.
+      (tvboptim maps this to recompute_coupling_per_stage=True; diffrax already recomputes
+      the whole RHS per stage.)
+  per_step:
+    text: per_step
+    description: 'Evaluate the coupling once per integration step and hold it constant
+      across the stages — a TVB-style efficiency shortcut (the coupling reduction
+      runs once per step). Faster but lower- order in the coupling; can change the
+      trajectory for sensitive systems. (tvboptim: recompute_coupling_per_stage=False,
+      the current backend default.)'
+
+```
+</details>
+
+</div>

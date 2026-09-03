@@ -1,0 +1,137 @@
+# provenance { #tvbo.data.provenance }
+
+`data.provenance`
+
+What a run actually did, recorded beside the container it produced.
+
+The frozen spec beside a container says what was *asked for*. This says what *happened*: the command, when it ran, on which machine, with which package versions, and the checksum of what came out. None of that exists anywhere in a recipe, which is why it is recorded at all.
+
+It goes into the container's own YAML sidecar, under the shared ``provenance`` slot, because that file already carries the other half of the story — the recipe, and the ``used:`` edges saying what this result was derived from. BEP028 spreads the same content over four files per container (``prov-<label>_{act,ent,env,soft}``) in a parallel ``prov/`` tree; one ``Provenance`` on the sidecar says it once, in the file a reader already has open, and cannot fall out of step with the spec it describes. ``activities`` is the run, ``environment`` the machine and the resolved package set, ``digest`` the artifact's checksum.
+
+The sidecar is a product of the run, so these machine-specific facts are written unconditionally and never tracked — no flag decides whether a run remembers what it did.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [PROV_ACTIVITY](#tvbo.data.provenance.PROV_ACTIVITY) |  |
+| [PROV_AGENT](#tvbo.data.provenance.PROV_AGENT) | The three PROV-O node types these records describe: what ran, what came out, and what it ran with. |
+| [PROV_ENTITY](#tvbo.data.provenance.PROV_ENTITY) |  |
+| [RUN_AUTHORED](#tvbo.data.provenance.RUN_AUTHORED) | The slots a run speaks for, cleared before its record is merged into whatever the sidecar already said. A digest is a claim about bytes: a re-run that wrote no container must leave none rather than inherit the one that last matched. |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [build_provenance](#tvbo.data.provenance.build_provenance) | One container's run, as the ``Provenance`` its sidecar carries. |
+| [digest_of](#tvbo.data.provenance.digest_of) | The container's own checksum, or ``None`` when it is not there to read. |
+| [emit](#tvbo.data.provenance.emit) | Record this run under ``provenance:`` in the container's own sidecar, returning the file written. |
+| [input_containers](#tvbo.data.provenance.input_containers) | The containers a set of ``used:`` DataRefs point at, named the way an entity record names its own. |
+| [now](#tvbo.data.provenance.now) | The current instant as ISO 8601 with an explicit offset, which PROV requires. |
+| [prov_label](#tvbo.data.provenance.prov_label) | The ``prov-<label>`` grouping key for the producer named by ``produced_by``. |
+| [provenance_graph](#tvbo.data.provenance.provenance_graph) | The runs *study_root* has recorded, as one PROV-O typed graph of nodes and edges. |
+| [read_records](#tvbo.data.provenance.read_records) | Every run *study_root* has recorded, keyed by its label, in BEP028's four-kind shape. |
+
+### build_provenance { #tvbo.data.provenance.build_provenance }
+
+```python
+data.provenance.build_provenance(
+    container,
+    produced_by,
+    outputs=(),
+    used=(),
+    started_at=None,
+    ended_at=None,
+    command=None,
+    requires=(),
+)
+```
+
+One container's run, as the ``Provenance`` its sidecar carries.
+
+Every field is a pointer or read off the artifact: the digest and the output names come from the container itself, the versions from the interpreter, the command from the invocation. Nothing restates a value the frozen spec around it already carries — which is why the container path is not here either, the sidecar being the container's own.
+
+BEP028's four records collapse into this one object: its ``activities`` entry is the ``act`` record, ``environment`` carries ``env`` and ``soft`` together as the machine plus one requirement per package, and ``digest`` with ``outputs`` is what ``ent`` said that the spec does not.
+
+### digest_of { #tvbo.data.provenance.digest_of }
+
+```python
+data.provenance.digest_of(path)
+```
+
+The container's own checksum, or ``None`` when it is not there to read.
+
+### emit { #tvbo.data.provenance.emit }
+
+```python
+data.provenance.emit(
+    container,
+    produced_by,
+    outputs=(),
+    used=(),
+    started_at=None,
+    ended_at=None,
+    command=None,
+    requires=(),
+)
+```
+
+Record this run under ``provenance:`` in the container's own sidecar, returning the file written.
+
+The sidecar already holds the recipe and its ``used:`` edges, so writing here puts what happened beside what was asked for in the one file a reader opens. It is merged rather than replaced, at both levels: the frozen spec is the rest of the document, and the ``provenance`` block itself may already carry assertions this run does not make — ``experiment_yaml_hash`` and the input fingerprints the cross-experiment cache reads — which a wholesale overwrite would silently drop. The slots the run does speak for (:data:`RUN_AUTHORED`) are replaced and not merged, so a claim the previous run made about bytes this one did not write cannot survive. A container written without a sidecar still gets one, because a run that recorded nothing about itself is the case these records exist for.
+
+### input_containers { #tvbo.data.provenance.input_containers }
+
+```python
+data.provenance.input_containers(refs, *, results_root, study_root)
+```
+
+The containers a set of ``used:`` DataRefs point at, named the way an entity record names its own.
+
+Both ends of a ``prov:used`` edge have to spell a container identically or the graph reads one artifact as two, so this relativises against the study root exactly as :func:`read_records` names the entity it produced. A reference that cannot be resolved is dropped rather than raising: provenance describes a run that already succeeded, and a binding this run never had to read is not a reason to fail it.
+
+### now { #tvbo.data.provenance.now }
+
+```python
+data.provenance.now()
+```
+
+The current instant as ISO 8601 with an explicit offset, which PROV requires.
+
+### prov_label { #tvbo.data.provenance.prov_label }
+
+```python
+data.provenance.prov_label(produced_by)
+```
+
+The ``prov-<label>`` grouping key for the producer named by ``produced_by``.
+
+Built from the producer's own IRI scope, so a record set and the ``DataRef`` that reaches the same container agree on which thing produced it. ``tvbo:exp/<study>/exp-3`` gives ``exp3``; ``tvbo:ana/<study>/fcGradient`` gives ``anafcGradient``.
+
+### provenance_graph { #tvbo.data.provenance.provenance_graph }
+
+```python
+data.provenance.provenance_graph(study_root)
+```
+
+The runs *study_root* has recorded, as one PROV-O typed graph of nodes and edges.
+
+The inverse of :func:`emit`: the records say what happened one container at a time, and this reads the set back as the derivation it collectively describes. Every node carries its PROV-O type so a consumer draws or queries the graph by what a node IS — an activity, the entity it generated, the software agent it ran with — rather than by where the filename put it.
+
+Three relations come out of the four record kinds. An entity ``prov:wasGeneratedBy`` the activity of its own label; that activity ``prov:wasAssociatedWith`` each package named in ``associated_with``, versioned from the requirement list under the software record's ``packages``; and it ``prov:used`` each entity its ``used`` list points at, which is what makes a chain of runs one graph rather than a pile of independent ones. An entity that is only ever used and never generated here still becomes a node, because a reference to something this study did not produce is exactly what an external input looks like.
+
+### read_records { #tvbo.data.provenance.read_records }
+
+```python
+data.provenance.read_records(study_root)
+```
+
+Every run *study_root* has recorded, keyed by its label, in BEP028's four-kind shape.
+
+The records live one per container, in that container's sidecar; this reads the study's results directory back as the set they collectively form. The four kinds are reconstructed rather than stored: ``act`` is the activity, ``ent`` is what the sidecar's own location and ``outputs`` say about the container, and ``env``/``soft`` are the environment and the requirements it aggregates. A consumer written against BEP028 therefore reads a tvbo study without knowing where the four went.
+
+The study root is the argument rather than the results directory because an entity has to be named here exactly as :func:`input_containers` names it at the other end of a ``prov:used`` edge — relative to the study — or the graph reads one artifact as two.
+
+A sidecar with no ``provenance:`` is skipped rather than faulted: it describes a container written before the run recorded itself, and refusing to read the directory would lose every record that is there.
+
+One producer can write several containers — a cohort experiment fans into one per subject — and they share a label. Those are keyed ``<label>/<container stem>`` rather than collapsed onto the label, because keying them all the same would report the fan-out as the single run that happened to be read last.

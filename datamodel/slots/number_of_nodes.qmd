@@ -1,0 +1,107 @@
+# Slot: number_of_nodes 
+
+
+_Number of nodes in the network (derived from nodes if not set)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/number_of_nodes](https://w3id.org/tvbo/slot/number_of_nodes)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* number_of_nodes
+* number_of_regions
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:number_of_nodes |
+| native | tvbo:number_of_nodes |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: number_of_nodes
+description: Number of nodes in the network (derived from nodes if not set)
+from_schema: https://w3id.org/tvbo
+aliases:
+- number_of_nodes
+- number_of_regions
+rank: 1000
+owner: Network
+domain_of:
+- Network
+range: integer
+
+```
+</details></div>

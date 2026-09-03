@@ -1,0 +1,269 @@
+# Class: Solver 
+
+
+_Lightweight specification of a numerical ODE solver / integrator. Covers adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state integration, and other contexts where only the algorithm and tolerances matter._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Solver](https://w3id.org/tvbo/Solver)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Solver
+    click Solver href "./Solver.html"
+      Solver <|-- Integrator
+        click Integrator href "./Integrator.html"
+      Solver <|-- PDESolver
+        click PDESolver href "./PDESolver.html"
+      
+      Solver : abs_tol
+        
+          
+    
+        
+        
+        Solver --> "0..1" Float : abs_tol
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Solver : method
+        
+          
+    
+        
+        
+        Solver --> "0..1" String : method
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Solver : rel_tol
+        
+          
+    
+        
+        
+        Solver --> "0..1" Float : rel_tol
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Solver : step_size
+        
+          
+    
+        
+        
+        Solver --> "0..1" Float : step_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **Solver**
+    * [Integrator](../classes/Integrator.qmd)
+    * [PDESolver](../classes/PDESolver.qmd)
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Solver](https://w3id.org/tvbo/Solver) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [method](../slots/method.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Solver algorithm name (e | direct |
+| [abs_tol](../slots/abs_tol.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Absolute tolerance for adaptive solvers | direct |
+| [rel_tol](../slots/rel_tol.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Relative tolerance for adaptive solvers | direct |
+| [step_size](../slots/step_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Fixed time step of the solver | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Discretization](../classes/Discretization.qmd) | [ode_solver](../slots/ode_solver.qmd) | range | [Solver](../classes/Solver.qmd) |
+| [Discretization](../classes/Discretization.qmd) | [linear_solver](../slots/linear_solver.qmd) | range | [Solver](../classes/Solver.qmd) |
+| [InitialState](../classes/InitialState.qmd) | [solver](../slots/solver.qmd) | range | [Solver](../classes/Solver.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Solver |
+| native | tvbo:Solver |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Solver
+description: Lightweight specification of a numerical ODE solver / integrator. Covers
+  adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state
+  integration, and other contexts where only the algorithm and tolerances matter.
+from_schema: https://w3id.org/tvbo
+attributes:
+  method:
+    name: method
+    description: Solver algorithm name (e.g., Vern9, Rodas5, Tsit5, euler, heun, rk4).
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(Tsit5)
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: string
+  abs_tol:
+    name: abs_tol
+    description: Absolute tolerance for adaptive solvers.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(1e-10)
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  rel_tol:
+    name: rel_tol
+    description: Relative tolerance for adaptive solvers.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(1e-10)
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  step_size:
+    name: step_size
+    description: Fixed time step of the solver. Unset for an adaptive solver, which
+      chooses its own step from `abs_tol` / `rel_tol`.
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - dt
+    rank: 1000
+    domain_of:
+    - Solver
+    - Integrator
+    range: float
+class_uri: tvbo:Solver
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Solver
+description: Lightweight specification of a numerical ODE solver / integrator. Covers
+  adaptive solvers (Vern9, Rodas5, Tsit5, etc.) used in shooting methods, initial-state
+  integration, and other contexts where only the algorithm and tolerances matter.
+from_schema: https://w3id.org/tvbo
+attributes:
+  method:
+    name: method
+    description: Solver algorithm name (e.g., Vern9, Rodas5, Tsit5, euler, heun, rk4).
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(Tsit5)
+    owner: Solver
+    domain_of:
+    - Discretization
+    - InitialState
+    - Solver
+    - Integrator
+    - PDESolver
+    range: string
+  abs_tol:
+    name: abs_tol
+    description: Absolute tolerance for adaptive solvers.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(1e-10)
+    owner: Solver
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  rel_tol:
+    name: rel_tol
+    description: Relative tolerance for adaptive solvers.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: float(1e-10)
+    owner: Solver
+    domain_of:
+    - InitialState
+    - Solver
+    range: float
+  step_size:
+    name: step_size
+    description: Fixed time step of the solver. Unset for an adaptive solver, which
+      chooses its own step from `abs_tol` / `rel_tol`.
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - dt
+    rank: 1000
+    owner: Solver
+    domain_of:
+    - Solver
+    - Integrator
+    range: float
+class_uri: tvbo:Solver
+
+```
+</details></div>

@@ -1,0 +1,101 @@
+# Slot: share_y 
+
+
+_Panel groups that share one y scale, each entry a comma-separated list of mosaic keys ('c,g,h'). Same rule as share_x._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/share_y](https://w3id.org/tvbo/slot/share_y)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:share_y |
+| native | tvbo:share_y |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: share_y
+description: Panel groups that share one y scale, each entry a comma-separated list
+  of mosaic keys ('c,g,h'). Same rule as share_x.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: string
+multivalued: true
+
+```
+</details></div>

@@ -1,0 +1,98 @@
+# Slot: account 
+
+
+_Accounting allocation to charge the tasks against (Slurm)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/account](https://w3id.org/tvbo/slot/account)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:account |
+| native | tvbo:account |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: account
+description: Accounting allocation to charge the tasks against (Slurm).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowEngineConfig
+domain_of:
+- WorkflowEngineConfig
+range: string
+
+```
+</details></div>

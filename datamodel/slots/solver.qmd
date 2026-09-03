@@ -1,0 +1,77 @@
+# Slot: solver 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/solver](https://w3id.org/tvbo/slot/solver)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [InitialState](../classes/InitialState.qmd) | How to obtain the starting equilibrium or periodic orbit for continuation |  no  |
+| [PDE](../classes/PDE.qmd) | Partial differential equation problem definition |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [InitialState](../classes/InitialState.qmd), [PDE](../classes/PDE.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:solver |
+| native | tvbo:solver |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: solver
+domain_of:
+- InitialState
+- PDE
+range: string
+
+```
+</details></div>

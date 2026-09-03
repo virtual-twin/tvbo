@@ -1,0 +1,483 @@
+# Class: ResultEntity 
+
+
+_One persisted result container, described. The ``prov:Entity`` of BEP028's ``prov-<label>_ent`` record: what the file is, what produced it, and what it holds. Every field is either a pointer or read off the artifact when it is written — nothing here restates a value the frozen spec beside the container already carries, which is what made the earlier curated JSON sidecar drift from the YAML next to it._
+
+_Named for the entity rather than for the experiment because an analysis container (``ana-<name>_result.h5``) gets one too, and because the in-memory ``tvbo.data.types.ExperimentResult`` is a different thing: the arrays themselves, not the description of the file holding them._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [prov:Entity](http://www.w3.org/ns/prov#Entity)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ResultEntity
+    click ResultEntity href "./ResultEntity.html"
+      ResultEntity : container
+        
+          
+    
+        
+        
+        ResultEntity --> "1" String : container
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ResultEntity : description
+        
+          
+    
+        
+        
+        ResultEntity --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ResultEntity : iri
+        
+          
+    
+        
+        
+        ResultEntity --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      ResultEntity : name
+        
+          
+    
+        
+        
+        ResultEntity --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ResultEntity : outputs
+        
+          
+    
+        
+        
+        ResultEntity --> "*" String : outputs
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ResultEntity : produced_by
+        
+          
+    
+        
+        
+        ResultEntity --> "0..1" Uriorcurie : produced_by
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      ResultEntity : provenance
+        
+          
+    
+        
+        
+        ResultEntity --> "0..1" Provenance : provenance
+        click Provenance href "./Provenance.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [prov:Entity](http://www.w3.org/ns/prov#Entity) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | direct |
+| [container](../slots/container.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path of the container this record describes, relative to the study root, so t... | direct |
+| [produced_by](../slots/produced_by.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | The experiment or analysis that computed it, by IRI (``tvbo:exp/<study>/exp-<... | direct |
+| [outputs](../slots/outputs.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The data variables the container actually holds, read from it at write time r... | direct |
+| [provenance](../slots/provenance.qmd) | 0..1 <br/> [Provenance](../classes/Provenance.qmd) | When it was made, under what licence, by which activities, from which inputs,... | direct |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | prov:Entity |
+| native | tvbo:ResultEntity |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ResultEntity
+description: 'One persisted result container, described. The ``prov:Entity`` of BEP028''s
+  ``prov-<label>_ent`` record: what the file is, what produced it, and what it holds.
+  Every field is either a pointer or read off the artifact when it is written — nothing
+  here restates a value the frozen spec beside the container already carries, which
+  is what made the earlier curated JSON sidecar drift from the YAML next to it.
+
+  Named for the entity rather than for the experiment because an analysis container
+  (``ana-<name>_result.h5``) gets one too, and because the in-memory ``tvbo.data.types.ExperimentResult``
+  is a different thing: the arrays themselves, not the description of the file holding
+  them.'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+- iri
+attributes:
+  container:
+    name: container
+    description: Path of the container this record describes, relative to the study
+      root, so the record stays valid wherever the study is checked out.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ResultEntity
+    - WorkflowConfig
+    range: string
+    required: true
+  produced_by:
+    name: produced_by
+    description: The experiment or analysis that computed it, by IRI (``tvbo:exp/<study>/exp-<id>``,
+      ``tvbo:ana/<study>/<name>``) — the same scope grammar a ``DataRef`` resolves
+      through, so a record and a reference name the producer the one way.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ResultEntity
+    range: uriorcurie
+  outputs:
+    name: outputs
+    description: 'The data variables the container actually holds, read from it at
+      write time rather than predicted from the spec: a run that recorded less than
+      it declared is then visible in the record.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Provenance
+    - ResultEntity
+    range: string
+    multivalued: true
+  provenance:
+    name: provenance
+    description: When it was made, under what licence, by which activities, from which
+      inputs, and its checksums — the PROV assertions about this entity, in the one
+      class that already carries them.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Figure
+    - ResultEntity
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    - SimulationExperiment
+    range: Provenance
+    inlined: true
+class_uri: prov:Entity
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ResultEntity
+description: 'One persisted result container, described. The ``prov:Entity`` of BEP028''s
+  ``prov-<label>_ent`` record: what the file is, what produced it, and what it holds.
+  Every field is either a pointer or read off the artifact when it is written — nothing
+  here restates a value the frozen spec beside the container already carries, which
+  is what made the earlier curated JSON sidecar drift from the YAML next to it.
+
+  Named for the entity rather than for the experiment because an analysis container
+  (``ana-<name>_result.h5``) gets one too, and because the in-memory ``tvbo.data.types.ExperimentResult``
+  is a different thing: the arrays themselves, not the description of the file holding
+  them.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  container:
+    name: container
+    description: Path of the container this record describes, relative to the study
+      root, so the record stays valid wherever the study is checked out.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ResultEntity
+    domain_of:
+    - ResultEntity
+    - WorkflowConfig
+    range: string
+    required: true
+  produced_by:
+    name: produced_by
+    description: The experiment or analysis that computed it, by IRI (``tvbo:exp/<study>/exp-<id>``,
+      ``tvbo:ana/<study>/<name>``) — the same scope grammar a ``DataRef`` resolves
+      through, so a record and a reference name the producer the one way.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ResultEntity
+    domain_of:
+    - ResultEntity
+    range: uriorcurie
+  outputs:
+    name: outputs
+    description: 'The data variables the container actually holds, read from it at
+      write time rather than predicted from the spec: a run that recorded less than
+      it declared is then visible in the record.'
+    from_schema: https://w3id.org/tvbo
+    owner: ResultEntity
+    domain_of:
+    - Provenance
+    - ResultEntity
+    range: string
+    multivalued: true
+  provenance:
+    name: provenance
+    description: When it was made, under what licence, by which activities, from which
+      inputs, and its checksums — the PROV assertions about this entity, in the one
+      class that already carries them.
+    from_schema: https://w3id.org/tvbo
+    owner: ResultEntity
+    domain_of:
+    - Figure
+    - ResultEntity
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    - SimulationExperiment
+    range: Provenance
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: ResultEntity
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: ResultEntity
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: ResultEntity
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+class_uri: prov:Entity
+
+```
+</details></div>

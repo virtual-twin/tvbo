@@ -1,0 +1,123 @@
+# Slot: parameters 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/parameters](https://w3id.org/tvbo/slot/parameters)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Equation](../classes/Equation.qmd) |  |  no  |
+| [Stimulus](../classes/Stimulus.qmd) |  |  no  |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+| [Node](../classes/Node.qmd) | A node in a network with its own dynamics and properties |  no  |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+| [Distribution](../classes/Distribution.qmd) | A probability distribution for sampling parameters or initial conditions |  no  |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+| [Discretization](../classes/Discretization.qmd) | Discretization method for boundary value problems in continuation (periodic o... |  no  |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | Specification for switching from a detected bifurcation point to a new branch... |  no  |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+| [Coupling](../classes/Coupling.qmd) |  |  no  |
+| [PDE](../classes/PDE.qmd) | Partial differential equation problem definition |  no  |
+| [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd) | Descriptor for a cached ``ExperimentResult``: the `` |  no  |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | Backend-agnostic graph generator specification |  no  |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Parameter](../classes/Parameter.qmd) |
+| Domain Of | [Equation](../classes/Equation.qmd), [Stimulus](../classes/Stimulus.qmd), [Event](../classes/Event.qmd), [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd), [Network](../classes/Network.qmd), [GraphGenerator](../classes/GraphGenerator.qmd), [Node](../classes/Node.qmd), [Edge](../classes/Edge.qmd), [Observation](../classes/Observation.qmd), [Analysis](../classes/Analysis.qmd), [Dynamics](../classes/Dynamics.qmd), [Distribution](../classes/Distribution.qmd), [Noise](../classes/Noise.qmd), [Exploration](../classes/Exploration.qmd), [Discretization](../classes/Discretization.qmd), [BranchSwitch](../classes/BranchSwitch.qmd), [Integrator](../classes/Integrator.qmd), [Coupling](../classes/Coupling.qmd), [PDE](../classes/PDE.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:parameters |
+| native | tvbo:parameters |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: parameters
+from_schema: https://w3id.org/tvbo
+rank: 1000
+domain_of:
+- Equation
+- Stimulus
+- Event
+- ExperimentResultSidecar
+- Network
+- GraphGenerator
+- Node
+- Edge
+- Observation
+- Analysis
+- Dynamics
+- Distribution
+- Noise
+- Exploration
+- Discretization
+- BranchSwitch
+- Integrator
+- Coupling
+- PDE
+range: Parameter
+multivalued: true
+inlined: true
+
+```
+</details></div>

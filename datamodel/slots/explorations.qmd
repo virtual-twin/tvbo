@@ -1,0 +1,101 @@
+# Slot: explorations 
+
+
+_Parameter exploration/grid search specifications_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/explorations](https://w3id.org/tvbo/slot/explorations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Exploration](../classes/Exploration.qmd) |
+| Domain Of | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:explorations |
+| native | tvbo:explorations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: explorations
+description: Parameter exploration/grid search specifications
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationExperiment
+domain_of:
+- SimulationExperiment
+range: Exploration
+multivalued: true
+inlined: true
+
+```
+</details></div>

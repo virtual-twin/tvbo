@@ -1,0 +1,197 @@
+# perturbation { #tvbo.behaviour.perturbation }
+
+`behaviour.perturbation`
+
+Symbolic reading, code generation and plotting for :class:`Stimulus`.
+
+Attached to the generated classes by name (``StimulusBehaviour`` -> ``Stimulus``), so a stimulus carries these however it was built — loaded from YAML, nested in an experiment, or constructed directly. The experiment loader used to reassign ``__class__`` to reach the nested one, which left every other construction path without them.
+
+A stimulus is emitted as a Python definition, and the only name it has is ``label``, which is free text. :attr:`StimulusBehaviour.identifier` is that one resolution — the templates and :meth:`StimulusBehaviour.execute` both read it, so what is emitted and what is looked up afterwards cannot drift apart.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [logger](#tvbo.behaviour.perturbation.logger) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [StimulusBehaviour](#tvbo.behaviour.perturbation.StimulusBehaviour) | Loading, symbolic reading, rendering and plotting for an exogenous stimulus. |
+
+### StimulusBehaviour { #tvbo.behaviour.perturbation.StimulusBehaviour }
+
+```python
+behaviour.perturbation.StimulusBehaviour()
+```
+
+Loading, symbolic reading, rendering and plotting for an exogenous stimulus.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [identifier](#tvbo.behaviour.perturbation.StimulusBehaviour.identifier) | The Python name the stimulus is emitted under. |
+| [metadata](#tvbo.behaviour.perturbation.StimulusBehaviour.metadata) | The stimulus itself, exposed as its own metadata. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [execute](#tvbo.behaviour.perturbation.StimulusBehaviour.execute) | Build an executable stimulus for the requested backend. |
+| [from_datamodel](#tvbo.behaviour.perturbation.StimulusBehaviour.from_datamodel) | Copy a datamodel `Stimulus`'s fields into a new one. |
+| [from_file](#tvbo.behaviour.perturbation.StimulusBehaviour.from_file) | Load a `Stimulus` from a YAML metadata file. |
+| [from_ontology](#tvbo.behaviour.perturbation.StimulusBehaviour.from_ontology) | Construct a `Stimulus` from an ontology class or its label. |
+| [get_expression](#tvbo.behaviour.perturbation.StimulusBehaviour.get_expression) | Generate a sympy expression for the equation using metadata. |
+| [plot](#tvbo.behaviour.perturbation.StimulusBehaviour.plot) | Plot the stimulus time course. |
+| [render_code](#tvbo.behaviour.perturbation.StimulusBehaviour.render_code) | Render the stimulus to backend source code. |
+
+##### execute { #tvbo.behaviour.perturbation.StimulusBehaviour.execute }
+
+```python
+behaviour.perturbation.StimulusBehaviour.execute(
+    format='tvb',
+    connectivity=None,
+    region_indices=None,
+    weighting=None,
+    **kwargs,
+)
+```
+
+Build an executable stimulus for the requested backend.
+
+For `"tvb"`, evaluates the rendered stimulus equation, resolves a connectivity (creating a single-region one when needed) and a per-region weighting, and returns a TVB `StimuliRegion`. For `"python"`/`"jax"`, returns a callable stimulus function built from the symbolic equation, or from an audio file when the stimulus is defined by a `dataLocation`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name           | Type   | Description                                                                                   | Default   |
+|----------------|--------|-----------------------------------------------------------------------------------------------|-----------|
+| format         |        | Target backend: `"tvb"`, `"python"`, or `"jax"`.                                              | `'tvb'`   |
+| connectivity   |        | Connectivity for the TVB `StimuliRegion`; a one-region connectivity is created when omitted.  | `None`    |
+| region_indices |        | Indices of the stimulated regions; when omitted, a random permutation of all regions is used. | `None`    |
+| weighting      |        | Per-region weights; defaults to 1 on `region_indices` and 0 elsewhere.                        | `None`    |
+| **kwargs       |        | Extra values forwarded to code rendering or audio loading (e.g. `sampling_rate`, `duration`). | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                            |
+|--------|--------|------------------------------------------------------------------------|
+|        |        | A TVB `StimuliRegion` for `"tvb"`, or a callable stimulus function for |
+|        |        | `"python"`/`"jax"`.                                                    |
+
+##### from_datamodel { #tvbo.behaviour.perturbation.StimulusBehaviour.from_datamodel }
+
+```python
+behaviour.perturbation.StimulusBehaviour.from_datamodel(instance)
+```
+
+Copy a datamodel `Stimulus`'s fields into a new one.
+
+##### from_file { #tvbo.behaviour.perturbation.StimulusBehaviour.from_file }
+
+```python
+behaviour.perturbation.StimulusBehaviour.from_file(filepath)
+```
+
+Load a `Stimulus` from a YAML metadata file.
+
+##### from_ontology { #tvbo.behaviour.perturbation.StimulusBehaviour.from_ontology }
+
+```python
+behaviour.perturbation.StimulusBehaviour.from_ontology(ontoclass)
+```
+
+Construct a `Stimulus` from an ontology class or its label.
+
+When given a string, searches the ontology for a stimulus class with that label, raising if none is found and warning if several match, then converts the resolved class to metadata via [`class2metadata`](#tvbo.classes.perturbation.class2metadata).
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                 | Default    |
+|-----------|--------|-------------------------------------------------------------|------------|
+| ontoclass |        | A stimulus label to look up, or an ontology stimulus class. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                     |
+|--------|--------|-------------------------------------------------|
+|        |        | A `Stimulus` populated from the ontology class. |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                   |
+|--------|------------|-----------------------------------------------|
+|        | ValueError | If no stimulus class matches the given label. |
+
+##### get_expression { #tvbo.behaviour.perturbation.StimulusBehaviour.get_expression }
+
+```python
+behaviour.perturbation.StimulusBehaviour.get_expression()
+```
+
+Generate a sympy expression for the equation using metadata.
+
+The one place a stimulus is parsed: the equation's parameters shadow the SymPy builtins they collide with, and `t` is the time symbol whichever spelling the metadata used — a right-hand side or a list of conditional branches.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                            |
+|--------|--------|------------------------------------------------------------------------|
+| tuple  | tuple  | ``(expression, parameters)`` — the symbolic expression of the equation |
+|        | tuple  | (or ``None``) and the resolved parameter substitution dict.            |
+
+##### plot { #tvbo.behaviour.perturbation.StimulusBehaviour.plot }
+
+```python
+behaviour.perturbation.StimulusBehaviour.plot(
+    duration=1000,
+    dt=0.1,
+    ax=None,
+    plot_onset=True,
+    cut_transient=0,
+    **kwargs,
+)
+```
+
+Plot the stimulus time course.
+
+Evaluates the python stimulus function over `[cut_transient, duration]` at step `dt` and draws it, optionally marking the `onset` parameter with a vertical line.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                                                                          | Default   |
+|---------------|--------|------------------------------------------------------------------------------------------------------|-----------|
+| duration      |        | End of the time window in milliseconds.                                                              | `1000`    |
+| dt            |        | Sampling step in milliseconds.                                                                       | `0.1`     |
+| ax            |        | Existing matplotlib axes to draw on; a new figure is created and returned when omitted.              | `None`    |
+| plot_onset    |        | Whether to mark the `onset` parameter with a vertical line.                                          | `True`    |
+| cut_transient |        | Start of the time window in milliseconds.                                                            | `0`       |
+| **kwargs      |        | Extra keyword arguments forwarded to `ax.plot` (plus `sampling_rate`, used for stimulus evaluation). | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                  |
+|--------|--------|------------------------------------------------------------------------------|
+|        |        | The created matplotlib figure when `ax` was not supplied; otherwise nothing. |
+
+##### render_code { #tvbo.behaviour.perturbation.StimulusBehaviour.render_code }
+
+```python
+behaviour.perturbation.StimulusBehaviour.render_code(format='tvb', **kwargs)
+```
+
+Render the stimulus to backend source code.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                    | Default   |
+|----------|--------|----------------------------------------------------------------------------------------------------------------|-----------|
+| format   |        | Target backend: `"tvb"` for a TVB stimulus equation, or `"python"`/`"jax"` for a standalone stimulus function. | `'tvb'`   |
+| **kwargs |        | Extra values forwarded to the template.                                                                        | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                            |
+|--------|--------|----------------------------------------|
+|        |        | The formatted source code as a string. |

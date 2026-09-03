@@ -1,0 +1,330 @@
+# ontology_api { #tvbo.api.ontology_api }
+
+`api.ontology_api`
+
+Read the ontology as graph data a front end can render.
+
+`OntologyAPI` searches for terms and walks a node's children or parents, accumulating what it visits into a `{"nodes", "links"}` structure. The module-level graph and world are built once at import.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [G](#tvbo.api.ontology_api.G) |  |
+| [db_studies](#tvbo.api.ontology_api.db_studies) |  |
+| [onto](#tvbo.api.ontology_api.onto) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [OntologyAPI](#tvbo.api.ontology_api.OntologyAPI) | Query the ontology and build graph data for the front end. |
+
+### OntologyAPI { #tvbo.api.ontology_api.OntologyAPI }
+
+```python
+api.ontology_api.OntologyAPI()
+```
+
+Query the ontology and build graph data for the front end.
+
+Wraps the module-level ontology graph and exposes methods to search for terms and to expand a node's children or parents, accumulating the visited nodes and edges into a `{"nodes", "links"}` structure suitable for serialisation to a UI.
+
+#### Attributes {.doc-section .doc-section-attributes}
+
+| Name   | Type   | Description                                                    |
+|--------|--------|----------------------------------------------------------------|
+| edges  |        | Set of `(source, target, type)` triplets between node storids. |
+| nodes  |        | Mapping of storid to a node dictionary (see `ontoclass2dict`). |
+| graph  |        | Latest assembled graph with `"nodes"` and `"links"` lists.     |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [add_children](#tvbo.api.ontology_api.OntologyAPI.add_children) | Add a node's children and required nodes, then refresh the graph. |
+| [add_parents](#tvbo.api.ontology_api.OntologyAPI.add_parents) | Add a node's parent nodes, then refresh the graph. |
+| [configure_simulation_experiment](#tvbo.api.ontology_api.OntologyAPI.configure_simulation_experiment) | Build `self.experiment` from a front-end metadata dictionary. |
+| [export_experiment](#tvbo.api.ontology_api.OntologyAPI.export_experiment) | Render the configured experiment into *directory*. |
+| [get_child_connections](#tvbo.api.ontology_api.OntologyAPI.get_child_connections) | A node's children and the edges reaching them, adding both to the held graph. |
+| [get_export_formats](#tvbo.api.ontology_api.OntologyAPI.get_export_formats) | Return supported export format descriptors for UI dropdowns. |
+| [get_parent_connections](#tvbo.api.ontology_api.OntologyAPI.get_parent_connections) | A node's direct parents and the edges reaching them, adding both to the held graph. |
+| [print_triplets](#tvbo.api.ontology_api.OntologyAPI.print_triplets) | Print each accumulated edge as a subject-predicate-object triplet. |
+| [query_nodes](#tvbo.api.ontology_api.OntologyAPI.query_nodes) | Replace the held graph with the matches for *query_str* and their interrelationships. |
+| [search_by_term](#tvbo.api.ontology_api.OntologyAPI.search_by_term) | Every node whose label or definition contains *term*. |
+| [update_graph](#tvbo.api.ontology_api.OntologyAPI.update_graph) | Rebuild the serialisable graph from the current nodes and edges. |
+| [update_interrelationships](#tvbo.api.ontology_api.OntologyAPI.update_interrelationships) | Merge every ontology edge that runs between two nodes already held. |
+
+##### add_children { #tvbo.api.ontology_api.OntologyAPI.add_children }
+
+```python
+api.ontology_api.OntologyAPI.add_children(node_id)
+```
+
+Add a node's children and required nodes, then refresh the graph.
+
+Inserts every successor of `node_id` in the ontology graph into `self.nodes`, and adds each entity referenced by the node's `requires` property together with a `"requires"` edge. Finally rebuilds the graph via `update_graph`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                               | Default    |
+|---------|--------|-------------------------------------------|------------|
+| node_id |        | Storid of the node whose children to add. | _required_ |
+
+##### add_parents { #tvbo.api.ontology_api.OntologyAPI.add_parents }
+
+```python
+api.ontology_api.OntologyAPI.add_parents(node_id)
+```
+
+Add a node's parent nodes, then refresh the graph.
+
+Inserts every predecessor of `node_id` in the ontology graph into `self.nodes` and rebuilds the graph via `update_graph`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                              | Default    |
+|---------|--------|------------------------------------------|------------|
+| node_id |        | Storid of the node whose parents to add. | _required_ |
+
+##### configure_simulation_experiment { #tvbo.api.ontology_api.OntologyAPI.configure_simulation_experiment }
+
+```python
+api.ontology_api.OntologyAPI.configure_simulation_experiment(metadata)
+```
+
+Build `self.experiment` from a front-end metadata dictionary.
+
+Dynamics and coupling arrive as bare names, so they are resolved through `Dynamics.from_db` and `Coupling.from_db` — the experiment needs their equations, parameters and state variables, not just a label. The legacy `model` and `connectivity` keys are accepted as aliases for `dynamics` and `network`. A coupling named at the top level is placed on the network it acts over, which is where the schema declares one.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                                                                                                                                                                                                                                 | Default    |
+|----------|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| metadata |        | The configuration, for example  ```python {     "dynamics": "Generic2dOscillator",     "network": {         "coupling": {"long_range": {"iri": "tvbo:Linear"}},         "parcellation": {"atlas": {"name": "DesikanKilliany"}},         "tractogram": {"name": "dTOR"},     },     "integration": {"method": "Heun"}, } ``` | _required_ |
+
+##### export_experiment { #tvbo.api.ontology_api.OntologyAPI.export_experiment }
+
+```python
+api.ontology_api.OntologyAPI.export_experiment(
+    format,
+    directory,
+    metadata_only=True,
+    **kwargs,
+)
+```
+
+Render the configured experiment into *directory*.
+
+A thin wrapper around `SimulationExperiment.save`; format resolution — canonical key, aliases and extension — lives in `tvbo.export.registry`.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name          | Type   | Description                                                 | Default    |
+|---------------|--------|-------------------------------------------------------------|------------|
+| format        | str    | Export format name or alias.                                | _required_ |
+| directory     | str    | Where to write; created if absent.                          | _required_ |
+| metadata_only | bool   | Write the specification alone, without the network payload. | `True`     |
+| **kwargs      |        | Forwarded to `SimulationExperiment.save`.                   | `{}`       |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                    |
+|--------|--------|------------------------------------------------|
+|        | dict   | `{"format", "files"}` naming what was written. |
+
+##### get_child_connections { #tvbo.api.ontology_api.OntologyAPI.get_child_connections }
+
+```python
+api.ontology_api.OntologyAPI.get_child_connections(node_id)
+```
+
+A node's children and the edges reaching them, adding both to the held graph.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                   | Default    |
+|---------|--------|-------------------------------|------------|
+| node_id |        | Storid of the node to expand. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                       |
+|--------|--------|-------------------------------------------------------------------|
+|        |        | `{"nodes", "links"}` for the children alone, not the whole graph. |
+
+##### get_export_formats { #tvbo.api.ontology_api.OntologyAPI.get_export_formats }
+
+```python
+api.ontology_api.OntologyAPI.get_export_formats()
+```
+
+Return supported export format descriptors for UI dropdowns.
+
+##### get_parent_connections { #tvbo.api.ontology_api.OntologyAPI.get_parent_connections }
+
+```python
+api.ontology_api.OntologyAPI.get_parent_connections(node_id)
+```
+
+A node's direct parents and the edges reaching them, adding both to the held graph.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                   | Default    |
+|---------|--------|-------------------------------|------------|
+| node_id |        | Storid of the node to expand. | _required_ |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                      |
+|--------|--------|------------------------------------------------------------------|
+|        |        | `{"nodes", "links"}` for the parents alone, not the whole graph. |
+
+##### print_triplets { #tvbo.api.ontology_api.OntologyAPI.print_triplets }
+
+```python
+api.ontology_api.OntologyAPI.print_triplets()
+```
+
+Print each accumulated edge as a subject-predicate-object triplet.
+
+Resolves the source and target storids of every edge in `self.edges` back to their ontology entities and prints them alongside the edge type. Intended for interactive debugging.
+
+##### query_nodes { #tvbo.api.ontology_api.OntologyAPI.query_nodes }
+
+```python
+api.ontology_api.OntologyAPI.query_nodes(query_str='noise')
+```
+
+Replace the held graph with the matches for *query_str* and their interrelationships.
+
+Discards whatever was accumulated before, so the graph describes this query alone.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description               | Default   |
+|-----------|--------|---------------------------|-----------|
+| query_str |        | Label text to search for. | `'noise'` |
+
+##### search_by_term { #tvbo.api.ontology_api.OntologyAPI.search_by_term }
+
+```python
+api.ontology_api.OntologyAPI.search_by_term(term='JansenRit', node2str=True)
+```
+
+Every node whose label or definition contains *term*.
+
+A term that is all digits is read as a storid and looked up directly.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                      | Default       |
+|----------|--------|--------------------------------------------------|---------------|
+| term     |        | Search text, or a storid.                        | `'JansenRit'` |
+| node2str |        | Unused; kept for the front end's call signature. | `True`        |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                          |
+|--------|--------|--------------------------------------|
+|        |        | The matching nodes, keyed by storid. |
+
+##### update_graph { #tvbo.api.ontology_api.OntologyAPI.update_graph }
+
+```python
+api.ontology_api.OntologyAPI.update_graph()
+```
+
+Rebuild the serialisable graph from the current nodes and edges.
+
+Refreshes interrelationships via `update_interrelationships`, then assembles `self.graph` with a `"nodes"` list of node dictionaries and a `"links"` list of `{"source", "target", "type"}` edge dictionaries.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                     |
+|--------|--------|---------------------------------|
+|        |        | The assembled graph dictionary. |
+
+##### update_interrelationships { #tvbo.api.ontology_api.OntologyAPI.update_interrelationships }
+
+```python
+api.ontology_api.OntologyAPI.update_interrelationships()
+```
+
+Merge every ontology edge that runs between two nodes already held.
+
+Takes the subgraph induced by the storids in `self.nodes` and adds its `(source, target, type)` edges to `self.edges`.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [label2symbol](#tvbo.api.ontology_api.label2symbol) | Render an ontology node's symbol as LaTeX, falling back to its label. |
+| [ontoclass2dict](#tvbo.api.ontology_api.ontoclass2dict) | One ontology class as the JSON-serialisable node the front end expects. |
+| [uid2int](#tvbo.api.ontology_api.uid2int) | The first value of a UID annotation as an integer, or 0 when it carries none. |
+
+### label2symbol { #tvbo.api.ontology_api.label2symbol }
+
+```python
+api.ontology_api.label2symbol(node, delimiter='')
+```
+
+Render an ontology node's symbol as LaTeX, falling back to its label.
+
+If the node carries a non-empty `symbol` annotation, it is parsed with SymPy and rendered as LaTeX, optionally wrapped in `delimiter` on either side. Otherwise the node's suffix-stripped label is returned.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                                                                                 | Default    |
+|-----------|--------|-----------------------------------------------------------------------------------------------------------------------------|------------|
+| node      |        | Ontology class or individual to render.                                                                                     | _required_ |
+| delimiter |        | String placed on both sides of the LaTeX symbol, e.g. `"$"` to produce inline math. Ignored when falling back to the label. | `''`       |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                    |
+|--------|--------|----------------------------------------------------------------|
+|        |        | The LaTeX symbol (wrapped in `delimiter`) or the node's label. |
+
+### ontoclass2dict { #tvbo.api.ontology_api.ontoclass2dict }
+
+```python
+api.ontology_api.ontoclass2dict(ontoclass)
+```
+
+One ontology class as the JSON-serialisable node the front end expects.
+
+A journal article is described by its title; anything else by its description, falling back to the first sentence of its definition.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                    | Default    |
+|-----------|--------|--------------------------------|------------|
+| ontoclass |        | The ontology class to convert. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                                          |
+|--------|--------|------------------------------------------------------------------------------------------------------|
+|        |        | The node dictionary, keyed by storid and carrying its label, symbol, type, parents and requirements. |
+
+### uid2int { #tvbo.api.ontology_api.uid2int }
+
+```python
+api.ontology_api.uid2int(uid)
+```
+
+The first value of a UID annotation as an integer, or 0 when it carries none.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                 | Default    |
+|--------|--------|-----------------------------|------------|
+| uid    |        | The UID annotation to read. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                      |
+|--------|--------|--------------------------------------------------|
+|        |        | The integer value, or 0 for an empty annotation. |

@@ -1,0 +1,80 @@
+# Enum: ImagingModality 
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ImagingModality](https://w3id.org/tvbo/enum/ImagingModality)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| BOLD | None | Blood Oxygen Level Dependent signal |
+| EEG | None | Electroencephalography |
+| MEG | None | Magnetoencephalography |
+| SEEG | None | Stereoelectroencephalography |
+| IEEG | None | Intracranial Electroencephalography |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [imaging_modality](../slots/imaging_modality.qmd) | Type of imaging modality (BOLD, EEG, MEG, etc |
+| [modality](../slots/modality.qmd) | Imaging modality or simulation output type |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ImagingModality
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  BOLD:
+    text: BOLD
+    description: Blood Oxygen Level Dependent signal.
+  EEG:
+    text: EEG
+    description: Electroencephalography.
+  MEG:
+    text: MEG
+    description: Magnetoencephalography.
+  SEEG:
+    text: SEEG
+    description: Stereoelectroencephalography.
+  IEEG:
+    text: IEEG
+    description: Intracranial Electroencephalography.
+
+```
+</details>
+
+</div>

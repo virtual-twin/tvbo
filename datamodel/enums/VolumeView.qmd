@@ -1,0 +1,70 @@
+# Enum: VolumeView 
+
+
+
+
+_Which anatomical plane a labelled volume is projected along._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/VolumeView](https://w3id.org/tvbo/enum/VolumeView)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| sagittal | None | Along the left-right axis |
+| coronal | None | Along the front-back axis |
+| horizontal | None | Along the top-bottom axis |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: VolumeView
+description: Which anatomical plane a labelled volume is projected along.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  sagittal:
+    text: sagittal
+    description: Along the left-right axis.
+  coronal:
+    text: coronal
+    description: Along the front-back axis.
+  horizontal:
+    text: horizontal
+    description: Along the top-bottom axis.
+
+```
+</details>
+
+</div>

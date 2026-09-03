@@ -1,0 +1,98 @@
+# Slot: modality 
+
+
+_Imaging modality or simulation output type._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/modality](https://w3id.org/tvbo/slot/modality)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ImagingModality](../enums/ImagingModality.qmd) |
+| Domain Of | [TimeSeries](../classes/TimeSeries.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [TimeSeries](../classes/TimeSeries.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:modality |
+| native | tvbo:modality |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: modality
+description: Imaging modality or simulation output type.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: TimeSeries
+domain_of:
+- TimeSeries
+range: ImagingModality
+
+```
+</details></div>

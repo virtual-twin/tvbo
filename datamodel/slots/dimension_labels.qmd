@@ -1,0 +1,103 @@
+# Slot: dimension_labels 
+
+
+_Ordered labels for the matrix columns (dim-1) when the matrix is non-square.  Row labels (dim-0) are the parent Network's node labels.  Stored as HDF5 dimension scales in the companion file._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/dimension_labels](https://w3id.org/tvbo/slot/dimension_labels)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Edge](../classes/Edge.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Edge](../classes/Edge.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:dimension_labels |
+| native | tvbo:dimension_labels |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: dimension_labels
+description: Ordered labels for the matrix columns (dim-1) when the matrix is non-square.  Row
+  labels (dim-0) are the parent Network's node labels.  Stored as HDF5 dimension scales
+  in the companion file.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Edge
+domain_of:
+- Edge
+range: string
+required: false
+multivalued: true
+
+```
+</details></div>

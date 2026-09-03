@@ -1,0 +1,95 @@
+# Slot: cell 
+
+
+_What every cell of a `grid` is: the kind they all draw, and the opts they share. Each entry in `layers:` then fills one cell with this template, which is why a grid of twenty surfaces needs the surface declared once. Its `bounds` stay unset — the grid positions its cells._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/cell](https://w3id.org/tvbo/slot/cell)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+| [Inset](../classes/Inset.qmd) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, ann... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Inset](../classes/Inset.qmd) |
+| Domain Of | [Panel](../classes/Panel.qmd), [Inset](../classes/Inset.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:cell |
+| native | tvbo:cell |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: cell
+description: 'What every cell of a `grid` is: the kind they all draw, and the opts
+  they share. Each entry in `layers:` then fills one cell with this template, which
+  is why a grid of twenty surfaces needs the surface declared once. Its `bounds` stay
+  unset — the grid positions its cells.'
+from_schema: https://w3id.org/tvbo/figure
+domain_of:
+- Panel
+- Inset
+range: Inset
+inlined: true
+
+```
+</details></div>

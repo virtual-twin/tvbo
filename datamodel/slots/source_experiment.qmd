@@ -1,0 +1,77 @@
+# Slot: source_experiment 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/source_experiment](https://w3id.org/tvbo/slot/source_experiment)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [InitialState](../classes/InitialState.qmd) | How to obtain the starting equilibrium or periodic orbit for continuation |  no  |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [InitialState](../classes/InitialState.qmd), [TimeSeries](../classes/TimeSeries.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:source_experiment |
+| native | tvbo:source_experiment |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: source_experiment
+domain_of:
+- InitialState
+- TimeSeries
+range: string
+
+```
+</details></div>

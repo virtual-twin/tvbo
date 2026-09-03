@@ -1,0 +1,109 @@
+# Slot: analyses 
+
+
+_Analyses of this study's results, each persisted as its own container and so bindable by a figure or a later analysis exactly like a run. These take the ``Analysis`` form that invokes a ``callable`` over ``arguments`` (the ``type``/``target``/``wrt`` form analyses a solve and belongs on an ``Observation`` instead), and each needs a unique ``name`` — it keys the container. An argument's ``used:`` DataRef both records what was consumed and orders the run: ``tvbo run`` executes the analyses around the experiments — one an experiment consumes first, one consuming an experiment after — and then renders the figures._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/analyses](https://w3id.org/tvbo/slot/analyses)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Analysis](../classes/Analysis.qmd) |
+| Domain Of | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:analyses |
+| native | tvbo:analyses |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: analyses
+description: 'Analyses of this study''s results, each persisted as its own container
+  and so bindable by a figure or a later analysis exactly like a run. These take the
+  ``Analysis`` form that invokes a ``callable`` over ``arguments`` (the ``type``/``target``/``wrt``
+  form analyses a solve and belongs on an ``Observation`` instead), and each needs
+  a unique ``name`` — it keys the container. An argument''s ``used:`` DataRef both
+  records what was consumed and orders the run: ``tvbo run`` executes the analyses
+  around the experiments — one an experiment consumes first, one consuming an experiment
+  after — and then renders the figures.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationStudy
+domain_of:
+- SimulationStudy
+range: Analysis
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

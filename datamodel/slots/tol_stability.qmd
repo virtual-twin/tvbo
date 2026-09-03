@@ -1,0 +1,98 @@
+# Slot: tol_stability 
+
+
+_Tolerance on real part of eigenvalue for stability boundary._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/tol_stability](https://w3id.org/tvbo/slot/tol_stability)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Continuation](../classes/Continuation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Continuation](../classes/Continuation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:tol_stability |
+| native | tvbo:tol_stability |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: tol_stability
+description: Tolerance on real part of eigenvalue for stability boundary.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Continuation
+domain_of:
+- Continuation
+range: float
+
+```
+</details></div>

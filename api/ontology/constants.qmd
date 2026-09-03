@@ -1,0 +1,20 @@
+# constants { #tvbo.ontology.constants }
+
+`ontology.constants`
+
+Constants.
+
+This module contains the constants used in the project.
+| Variable | Description |
+|----------|----------|
+| ROOT_DIR | Package directory |
+| DATA_DIR | Data directory |
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [DATA_DIR](#tvbo.ontology.constants.DATA_DIR) |  |
+| [ONTO_DIR](#tvbo.ontology.constants.ONTO_DIR) |  |
+| [ROOT_DIR](#tvbo.ontology.constants.ROOT_DIR) |  |
+| [SC_DIR](#tvbo.ontology.constants.SC_DIR) |  |

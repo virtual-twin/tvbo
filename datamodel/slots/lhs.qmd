@@ -1,0 +1,99 @@
+# Slot: lhs 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/lhs](https://w3id.org/tvbo/slot/lhs)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Equation](../classes/Equation.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Equation](../classes/Equation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Equation](../classes/Equation.qmd) |
+
+
+
+
+
+
+
+
+
+## Aliases
+
+
+* lefthandside
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:lhs |
+| native | tvbo:lhs |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: lhs
+from_schema: https://w3id.org/tvbo
+aliases:
+- lefthandside
+rank: 1000
+owner: Equation
+domain_of:
+- Equation
+range: string
+
+```
+</details></div>

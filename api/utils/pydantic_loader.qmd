@@ -1,0 +1,102 @@
+# pydantic_loader { #tvbo.utils.pydantic_loader }
+
+`utils.pydantic_loader`
+
+Pydantic loader / validator for TVBO YAML — the trustworthy validation path.
+
+TVBO authors write experiments in a human-friendly YAML dialect where collections are *keyed dicts* and the key doubles as the member's identifier::
+
+    parameters:
+      a: {value: 0.27}        # name == "a"
+      b: {value: 0.108}       # name == "b"
+
+The LinkML runtime loader injects that key into each member's identifier slot (``name``) automatically. The generated Pydantic datamodel (:mod:`tvbo.datamodel.pydantic`) does **not** — it expects ``name`` to be present inside every member — so validating raw TVBO YAML against the Pydantic models fails with a flood of ``name Field required`` errors that are purely an artefact of the keyed-dict convention, not real schema violations.
+
+This module performs exactly that key→identifier normalization and then validates with the strict (``extra="forbid"``) Pydantic models, giving callers a single, trustworthy "is this a valid TVBO object?" entry point. The YAML preprocessing for ``<<:`` merge keys and ``!include`` directives is delegated to :mod:`tvbo.utils.yaml_loader` so there is one implementation of those idioms.
+
+Typical use::
+
+    from tvbo.utils import pydantic_loader
+
+    exp = pydantic_loader.load("experiment.yaml")          # -> SimulationExperiment
+    exp = pydantic_loader.loads(yaml_text)                 # from a string
+    exp = pydantic_loader.validate(some_dict)              # from an already-parsed dict
+    yaml_text = pydantic_loader.dump(exp)                  # canonical YAML round-trip
+
+All three loaders raise :class:`pydantic.ValidationError` on genuinely invalid input, so they are real validators rather than lenient coercers.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [DEFAULT_TARGET](#tvbo.utils.pydantic_loader.DEFAULT_TARGET) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [dump](#tvbo.utils.pydantic_loader.dump) | Serialise a validated model (or plain dict) to canonical TVBO YAML. |
+| [load](#tvbo.utils.pydantic_loader.load) | Load YAML from a path / stream / string and validate it. |
+| [loads](#tvbo.utils.pydantic_loader.loads) | Parse a YAML string (with ``<<:`` / ``!include`` support) and validate it. |
+| [normalize](#tvbo.utils.pydantic_loader.normalize) | Return a copy of ``data`` with keyed-dict keys injected as identifiers. |
+| [validate](#tvbo.utils.pydantic_loader.validate) | Validate an already-parsed ``dict`` and return a model instance. |
+
+### dump { #tvbo.utils.pydantic_loader.dump }
+
+```python
+utils.pydantic_loader.dump(obj, *, exclude_none=True, sort_keys=False)
+```
+
+Serialise a validated model (or plain dict) to canonical TVBO YAML.
+
+### load { #tvbo.utils.pydantic_loader.load }
+
+```python
+utils.pydantic_loader.load(
+    source,
+    target_class=None,
+    *,
+    drop_unknown=False,
+    **kwargs,
+)
+```
+
+Load YAML from a path / stream / string and validate it.
+
+``!include`` paths are resolved relative to ``source``'s directory when it is a path, matching :func:`tvbo.utils.yaml_loader.load`. ``drop_unknown`` is forwarded to :func:`validate`; the remaining ``kwargs`` go to the YAML loader.
+
+### loads { #tvbo.utils.pydantic_loader.loads }
+
+```python
+utils.pydantic_loader.loads(
+    source,
+    target_class=None,
+    *,
+    drop_unknown=False,
+    **kwargs,
+)
+```
+
+Parse a YAML string (with ``<<:`` / ``!include`` support) and validate it.
+
+``drop_unknown`` is forwarded to :func:`validate` (see its docstring); the remaining ``kwargs`` go to the YAML loader.
+
+### normalize { #tvbo.utils.pydantic_loader.normalize }
+
+```python
+utils.pydantic_loader.normalize(data, target_class=None)
+```
+
+Return a copy of ``data`` with keyed-dict keys injected as identifiers.
+
+Pure data transformation — performs no validation. Useful when a caller wants the normalized dict (e.g. to merge with other state) without building a model instance.
+
+### validate { #tvbo.utils.pydantic_loader.validate }
+
+```python
+utils.pydantic_loader.validate(data, target_class=None, *, drop_unknown=False)
+```
+
+Validate an already-parsed ``dict`` and return a model instance.
+
+Raises :class:`pydantic.ValidationError` if ``data`` does not conform. With ``drop_unknown=True``, keys not declared by the schema are discarded before validation instead of being rejected — used by the TVBO platform's database export to ignore Odoo-only fields (e.g. portal ``visibility``/``owner``) while hand-authored input still rejects unknown keys.

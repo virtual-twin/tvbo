@@ -1,0 +1,82 @@
+# Slot: algorithm 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/algorithm](https://w3id.org/tvbo/slot/algorithm)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Digest](../classes/Digest.qmd) | One checksum of an artifact, keyed by the function that produced it |  no  |
+| [OptimizationStage](../classes/OptimizationStage.qmd) | A single stage in a multi-stage optimization workflow |  no  |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+| [AlgorithmInclude](../classes/AlgorithmInclude.qmd) | Reference to an included algorithm with optional argument overrides |  no  |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Digest](../classes/Digest.qmd), [OptimizationStage](../classes/OptimizationStage.qmd), [AlgorithmInclude](../classes/AlgorithmInclude.qmd), [Continuation](../classes/Continuation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:algorithm |
+| native | tvbo:algorithm |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: algorithm
+domain_of:
+- Digest
+- OptimizationStage
+- AlgorithmInclude
+- Continuation
+range: string
+
+```
+</details></div>

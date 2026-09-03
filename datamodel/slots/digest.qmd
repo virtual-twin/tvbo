@@ -1,0 +1,106 @@
+# Slot: digest 
+
+
+_Checksums of the artifact itself, keyed by function name. BEP028's ``Digest``, and distinct from ``experiment_yaml_hash``, which digests the spec that produced the artifact rather than the artifact._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/digest](https://w3id.org/tvbo/slot/digest)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Digest](../classes/Digest.qmd) |
+| Domain Of | [Provenance](../classes/Provenance.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Provenance](../classes/Provenance.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:digest |
+| native | tvbo:digest |
+| exact | prov:value |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: digest
+description: Checksums of the artifact itself, keyed by function name. BEP028's ``Digest``,
+  and distinct from ``experiment_yaml_hash``, which digests the spec that produced
+  the artifact rather than the artifact.
+from_schema: https://w3id.org/tvbo
+exact_mappings:
+- prov:value
+rank: 1000
+owner: Provenance
+domain_of:
+- Provenance
+range: Digest
+multivalued: true
+inlined: true
+
+```
+</details></div>

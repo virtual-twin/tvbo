@@ -1,0 +1,96 @@
+# Slot: righthandside 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/righthandside](https://w3id.org/tvbo/slot/righthandside)
+Alias: rhs
+
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Equation](../classes/Equation.qmd) |  |  no  |
+| [TemporalApplicableEquation](../classes/TemporalApplicableEquation.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Equation](../classes/Equation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Equation](../classes/Equation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:righthandside |
+| native | tvbo:righthandside |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: righthandside
+from_schema: https://w3id.org/tvbo
+rank: 1000
+alias: rhs
+owner: Equation
+domain_of:
+- Equation
+range: string
+
+```
+</details></div>

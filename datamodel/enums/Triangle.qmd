@@ -1,0 +1,76 @@
+# Enum: Triangle 
+
+
+
+
+_Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as one image. The conventional way to show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for the drawn halves: with the matrix convention (row 0 at top, set invert_y) 'upper' is the top-right triangle._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/Triangle](https://w3id.org/tvbo/enum/Triangle)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| lower | None | The triangle below the diagonal |
+| upper | None | The triangle above the diagonal |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [triangle](../slots/triangle.qmd) | Fill only this triangle of a square matrix, masking the other half so a sibli... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: Triangle
+description: 'Which half of a square matrix a layer fills, leaving the other half
+  to a sibling layer, so two quantities read as one image. The conventional way to
+  show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for
+  the drawn halves: with the matrix convention (row 0 at top, set invert_y) ''upper''
+  is the top-right triangle.'
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  lower:
+    text: lower
+    description: The triangle below the diagonal.
+  upper:
+    text: upper
+    description: The triangle above the diagonal.
+
+```
+</details>
+
+</div>

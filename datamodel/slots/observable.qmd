@@ -1,0 +1,100 @@
+# Slot: observable 
+
+
+_Observable to compute at each point. Use function: obs_name for simple observation, or function: func_name + arguments for FunctionCall._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/observable](https://w3id.org/tvbo/slot/observable)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [FunctionCall](../classes/FunctionCall.qmd) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:observable |
+| native | tvbo:observable |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: observable
+description: 'Observable to compute at each point. Use function: obs_name for simple
+  observation, or function: func_name + arguments for FunctionCall.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Exploration
+domain_of:
+- Exploration
+range: FunctionCall
+inlined: true
+
+```
+</details></div>

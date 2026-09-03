@@ -1,0 +1,98 @@
+# Slot: intensity_projection 
+
+
+_How voxels collapse along the view axis (`absmax` by default)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/intensity_projection](https://w3id.org/tvbo/slot/intensity_projection)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Volume](../classes/Volume.qmd) | A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Volume](../classes/Volume.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Volume](../classes/Volume.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:intensity_projection |
+| native | tvbo:intensity_projection |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: intensity_projection
+description: How voxels collapse along the view axis (`absmax` by default).
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Volume
+domain_of:
+- Volume
+range: string
+
+```
+</details></div>

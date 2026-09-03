@@ -1,0 +1,102 @@
+# Slot: units 
+
+
+_How this tool spells the units TVBO declares. Only units the tool has its own name for appear; anything absent is emitted unitless._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/units](https://w3id.org/tvbo/software/slot/units)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ToolUnit](../classes/ToolUnit.qmd) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:units |
+| native | tvbo_sw:units |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: units
+description: How this tool spells the units TVBO declares. Only units the tool has
+  its own name for appear; anything absent is emitted unitless.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: ToolUnit
+multivalued: true
+inlined: true
+
+```
+</details></div>

@@ -1,0 +1,94 @@
+# Slot: clinical_scores 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/clinical_scores](https://w3id.org/tvbo/dbs/slot/clinical_scores)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DBSDataset](../classes/DBSDataset.qmd) | Collection of data related to a specific DBS study |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ClinicalScore](../classes/ClinicalScore.qmd) |
+| Domain Of | [DBSDataset](../classes/DBSDataset.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DBSDataset](../classes/DBSDataset.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:clinical_scores |
+| native | tvbo_dbs:clinical_scores |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: clinical_scores
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: DBSDataset
+domain_of:
+- DBSDataset
+range: ClinicalScore
+multivalued: true
+
+```
+</details></div>

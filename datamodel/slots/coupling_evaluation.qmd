@@ -1,0 +1,106 @@
+# Slot: coupling_evaluation 
+
+
+_Backend-neutral numerical treatment of the network coupling term across the stages of a multi-stage integrator (Heun, RK4, ...): re-evaluated at every stage (per_stage — standard ODE accuracy) or computed once per step and held constant across stages (per_step — a TVB-style efficiency shortcut). Single- stage methods (Euler) and always-recompute solvers (diffrax) ignore it. per_stage is required to match reference integrators for stiff / chaotic / multistable systems, where the frozen- coupling error can select a different trajectory or attractor. See CouplingStageEvaluation._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/coupling_evaluation](https://w3id.org/tvbo/slot/coupling_evaluation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [CouplingStageEvaluation](../enums/CouplingStageEvaluation.qmd) |
+| Domain Of | [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(per_step)` |
+| Owner | [Integrator](../classes/Integrator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:coupling_evaluation |
+| native | tvbo:coupling_evaluation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: coupling_evaluation
+description: 'Backend-neutral numerical treatment of the network coupling term across
+  the stages of a multi-stage integrator (Heun, RK4, ...): re-evaluated at every stage
+  (per_stage — standard ODE accuracy) or computed once per step and held constant
+  across stages (per_step — a TVB-style efficiency shortcut). Single- stage methods
+  (Euler) and always-recompute solvers (diffrax) ignore it. per_stage is required
+  to match reference integrators for stiff / chaotic / multistable systems, where
+  the frozen- coupling error can select a different trajectory or attractor. See CouplingStageEvaluation.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(per_step)
+owner: Integrator
+domain_of:
+- Integrator
+range: CouplingStageEvaluation
+
+```
+</details></div>

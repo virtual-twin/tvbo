@@ -1,0 +1,49 @@
+# utils { #tvbo.templates.pde.utils }
+
+`templates.pde.utils`
+
+Resolve ``field_dynamics`` into the assembly plan the FEM template emits.
+
+The PDE backend used to read only ``operators[].coefficient``, sum them into one scalar and assemble ``M + dt*D*K`` — so the ``equation.rhs`` an author wrote was decorative, and a reader could not tell which of the two descriptions ran. Everything here exists to make the declared equation *be* the executed operator.
+
+A field system is lowered to the block form
+
+    M du/dt = A u + M f(u, t)
+
+with one block row per state variable. ``A`` collects every term that is LINEAR in the state variables (mass and stiffness blocks, assembled once); ``f`` collects whatever remains, evaluated at the current state each step. That split is what lets an implicit scheme run: the linear part is solved implicitly and is unconditionally stable, while a nonlinear reaction term stays explicit (IMEX). Callers get told which terms went where.
+
+Recognised operators inside an RHS: ``laplacian(v)``, ``div(c*grad(v))`` and bare state variables. A coefficient may be a scalar parameter or a per-vertex field, which is what makes a spatially varying propagation scale expressible.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [FieldPlanError](#tvbo.templates.pde.utils.FieldPlanError) | A field system that cannot be lowered to the block form above. |
+
+### FieldPlanError { #tvbo.templates.pde.utils.FieldPlanError }
+
+```python
+templates.pde.utils.FieldPlanError()
+```
+
+A field system that cannot be lowered to the block form above.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [field_assembly_plan](#tvbo.templates.pde.utils.field_assembly_plan) | Everything the FEM template needs, resolved from the experiment datamodel. |
+
+### field_assembly_plan { #tvbo.templates.pde.utils.field_assembly_plan }
+
+```python
+templates.pde.utils.field_assembly_plan(experiment)
+```
+
+Everything the FEM template needs, resolved from the experiment datamodel.
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type           | Description                                                                                                                                   |
+|--------|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+|        | FieldPlanError | when the declared system cannot be lowered — an explicit failure in place of the old behaviour, which silently ignored the equation entirely. |

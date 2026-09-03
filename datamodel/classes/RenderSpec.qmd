@@ -1,0 +1,353 @@
+# Class: RenderSpec 
+
+
+_A headless-browser capture recipe turning an `image` panel's HTML/URL `source` into the static file placed at its `path`. Mirrors one shot of code/capture-screenshots.py so a screenshot of the live platform (or any HTML render) is reproducible from the spec, not hand-captured. Only the `source` needs committing alongside the rendered `path`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/RenderSpec](https://w3id.org/tvbo/class/RenderSpec)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class RenderSpec
+    click RenderSpec href "./RenderSpec.html"
+      RenderSpec : clip
+        
+          
+    
+        
+        
+        RenderSpec --> "*" Float : clip
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      RenderSpec : device_scale_factor
+        
+          
+    
+        
+        
+        RenderSpec --> "0..1" Float : device_scale_factor
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      RenderSpec : format
+        
+          
+    
+        
+        
+        RenderSpec --> "0..1" String : format
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      RenderSpec : height
+        
+          
+    
+        
+        
+        RenderSpec --> "0..1" Integer : height
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      RenderSpec : wait_selector
+        
+          
+    
+        
+        
+        RenderSpec --> "0..1" String : wait_selector
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      RenderSpec : warmup
+        
+          
+    
+        
+        
+        RenderSpec --> "0..1" Float : warmup
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      RenderSpec : width
+        
+          
+    
+        
+        
+        RenderSpec --> "0..1" Integer : width
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [width](../slots/width.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Viewport width in CSS pixels | direct |
+| [height](../slots/height.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Viewport height in CSS pixels | direct |
+| [device_scale_factor](../slots/device_scale_factor.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Device pixel ratio; 2-3 renders a crisp raster at print resolution (the brows... | direct |
+| [wait_selector](../slots/wait_selector.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | CSS selector to wait for before capturing, so the shot is taken only once the... | direct |
+| [warmup](../slots/warmup.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Extra settle time in seconds after load / wait_selector, for late layout or a... | direct |
+| [clip](../slots/clip.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | [x, y, width, height] in CSS pixels to crop the capture to a region of the pa... | direct |
+| [format](../slots/format.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Capture output format (png/pdf/svg); unset defers to the panel path's extensi... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [capture](../slots/capture.qmd) | range | [RenderSpec](../classes/RenderSpec.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:RenderSpec |
+| native | tvbo:RenderSpec |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: RenderSpec
+description: A headless-browser capture recipe turning an `image` panel's HTML/URL
+  `source` into the static file placed at its `path`. Mirrors one shot of code/capture-screenshots.py
+  so a screenshot of the live platform (or any HTML render) is reproducible from the
+  spec, not hand-captured. Only the `source` needs committing alongside the rendered
+  `path`.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  width:
+    name: width
+    description: Viewport width in CSS pixels.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Figure
+    - Colorbar
+    - Rule
+    - RenderSpec
+    range: integer
+  height:
+    name: height
+    description: Viewport height in CSS pixels. Unset lets the page's own content
+      height decide (full-page capture).
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Figure
+    - RenderSpec
+    range: integer
+  device_scale_factor:
+    name: device_scale_factor
+    description: Device pixel ratio; 2-3 renders a crisp raster at print resolution
+      (the browser analogue of dpi).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - RenderSpec
+    range: float
+  wait_selector:
+    name: wait_selector
+    description: CSS selector to wait for before capturing, so the shot is taken only
+      once the content that matters has rendered.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - RenderSpec
+    range: string
+  warmup:
+    name: warmup
+    description: Extra settle time in seconds after load / wait_selector, for late
+      layout or animation.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - RenderSpec
+    - ClassReference
+    - UpdateRule
+    range: float
+  clip:
+    name: clip
+    description: '[x, y, width, height] in CSS pixels to crop the capture to a region
+      of the page; unset captures the whole viewport.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - RenderSpec
+    range: float
+    multivalued: true
+  format:
+    name: format
+    description: Capture output format (png/pdf/svg); unset defers to the panel path's
+      extension.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: RenderSpec
+description: A headless-browser capture recipe turning an `image` panel's HTML/URL
+  `source` into the static file placed at its `path`. Mirrors one shot of code/capture-screenshots.py
+  so a screenshot of the live platform (or any HTML render) is reproducible from the
+  spec, not hand-captured. Only the `source` needs committing alongside the rendered
+  `path`.
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  width:
+    name: width
+    description: Viewport width in CSS pixels.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: RenderSpec
+    domain_of:
+    - Figure
+    - Colorbar
+    - Rule
+    - RenderSpec
+    range: integer
+  height:
+    name: height
+    description: Viewport height in CSS pixels. Unset lets the page's own content
+      height decide (full-page capture).
+    from_schema: https://w3id.org/tvbo/figure
+    owner: RenderSpec
+    domain_of:
+    - Figure
+    - RenderSpec
+    range: integer
+  device_scale_factor:
+    name: device_scale_factor
+    description: Device pixel ratio; 2-3 renders a crisp raster at print resolution
+      (the browser analogue of dpi).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: RenderSpec
+    domain_of:
+    - RenderSpec
+    range: float
+  wait_selector:
+    name: wait_selector
+    description: CSS selector to wait for before capturing, so the shot is taken only
+      once the content that matters has rendered.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: RenderSpec
+    domain_of:
+    - RenderSpec
+    range: string
+  warmup:
+    name: warmup
+    description: Extra settle time in seconds after load / wait_selector, for late
+      layout or animation.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: RenderSpec
+    domain_of:
+    - RenderSpec
+    - ClassReference
+    - UpdateRule
+    range: float
+  clip:
+    name: clip
+    description: '[x, y, width, height] in CSS pixels to crop the capture to a region
+      of the page; unset captures the whole viewport.'
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: RenderSpec
+    domain_of:
+    - RenderSpec
+    range: float
+    multivalued: true
+  format:
+    name: format
+    description: Capture output format (png/pdf/svg); unset defers to the panel path's
+      extension.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: RenderSpec
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: string
+
+```
+</details></div>

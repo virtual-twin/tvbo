@@ -1,0 +1,79 @@
+# Enum: BidsDatasetType 
+
+
+
+
+_BIDS ``DatasetType``: how a dataset is to be interpreted. ``study`` has been in the released standard since BIDS 1.10.1 and is the type a simulation study takes._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_study:enum/BidsDatasetType](https://w3id.org/tvbo/study/enum/BidsDatasetType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| raw | None | Unprocessed acquired data |
+| derivative | None | Data computed from another dataset |
+| study | None | A dataset that organises the material of one study: its inputs under ``source... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [dataset_type](../slots/dataset_type.qmd) | BIDS ``DatasetType`` this layout realises, written into the dataset's ``datas... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: BidsDatasetType
+description: 'BIDS ``DatasetType``: how a dataset is to be interpreted. ``study``
+  has been in the released standard since BIDS 1.10.1 and is the type a simulation
+  study takes.'
+from_schema: https://w3id.org/tvbo/study
+permissible_values:
+  raw:
+    text: raw
+    description: Unprocessed acquired data.
+  derivative:
+    text: derivative
+    description: Data computed from another dataset.
+  study:
+    text: study
+    description: 'A dataset that organises the material of one study: its inputs under
+      ``sourcedata/``, its outputs under ``derivatives/``, its prose under ``docs/``.'
+
+```
+</details>
+
+</div>

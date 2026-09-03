@@ -1,0 +1,5 @@
+# tvbo_study 
+
+General-purpose classes for multi-subject, multi-session study metadata. Defines Subject, Session, and Dataset for workflow orchestration, and StudyLayout for the directory structure of a BIDS study dataset. Domain-specific schemas (e.g., tvb_dbs) extend these with specialized attributes.
+
+URI: https://w3id.org/tvbo/study

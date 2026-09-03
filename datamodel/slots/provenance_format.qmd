@@ -1,0 +1,104 @@
+# Slot: provenance_format 
+
+
+_Serialization of the ``prov/`` records: ``yaml`` (the default, and the form every other tvbo record takes) or ``json`` (what BEP028 currently names). One file per record in one format, never both — two serializations of one record are two things that can disagree. Declared in the spec rather than configured per machine, because two people running one recipe must get the same provenance._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/provenance_format](https://w3id.org/tvbo/slot/provenance_format)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ProvenanceFormat](../enums/ProvenanceFormat.qmd) |
+| Domain Of | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(yaml)` |
+| Owner | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:provenance_format |
+| native | tvbo:provenance_format |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: provenance_format
+description: 'Serialization of the ``prov/`` records: ``yaml`` (the default, and the
+  form every other tvbo record takes) or ``json`` (what BEP028 currently names). One
+  file per record in one format, never both — two serializations of one record are
+  two things that can disagree. Declared in the spec rather than configured per machine,
+  because two people running one recipe must get the same provenance.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(yaml)
+owner: WorkflowConfig
+domain_of:
+- WorkflowConfig
+range: ProvenanceFormat
+
+```
+</details></div>

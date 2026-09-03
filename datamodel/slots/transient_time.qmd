@@ -1,0 +1,109 @@
+# Slot: transient_time 
+
+
+_Length of the leading settling window, prepended to `duration`. It marks part of ONE integration — never a separate simulation: the backend integrates `transient_time + duration` in a single scan and the marked head is cut where the run is consumed (observations, analyses, plots, saved data), so the settle is in-band for any observation kernel that needs warm-up. Time is measured from the START of the measured window: the settle carries non-positive timestamps and ends at 0, the measured window opens one step later, and a declared event `t0` is relative to measurement, never to the scan. A settle that a fit reuses across many candidate evaluations is NOT this slot — that is a seed, declared as `initial_state.method: time_integration` with its own `duration`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/transient_time](https://w3id.org/tvbo/slot/transient_time)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `float(0)` |
+| Owner | [Integrator](../classes/Integrator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:transient_time |
+| native | tvbo:transient_time |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: transient_time
+description: 'Length of the leading settling window, prepended to `duration`. It marks
+  part of ONE integration — never a separate simulation: the backend integrates `transient_time
+  + duration` in a single scan and the marked head is cut where the run is consumed
+  (observations, analyses, plots, saved data), so the settle is in-band for any observation
+  kernel that needs warm-up. Time is measured from the START of the measured window:
+  the settle carries non-positive timestamps and ends at 0, the measured window opens
+  one step later, and a declared event `t0` is relative to measurement, never to the
+  scan. A settle that a fit reuses across many candidate evaluations is NOT this slot
+  — that is a seed, declared as `initial_state.method: time_integration` with its
+  own `duration`.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: float(0)
+owner: Integrator
+domain_of:
+- Integrator
+range: float
+
+```
+</details></div>

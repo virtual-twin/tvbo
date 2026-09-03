@@ -1,0 +1,100 @@
+# Slot: sigma 
+
+
+_Observation-noise scale of the likelihood. May deliberately differ from the data's generative noise — it sets how tightly the likelihood constrains the (possibly degenerate) parameter ridge._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/sigma](https://w3id.org/tvbo/slot/sigma)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Likelihood](../classes/Likelihood.qmd) | Observation model for Bayesian inference: p(data | sim(theta)) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Likelihood](../classes/Likelihood.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Likelihood](../classes/Likelihood.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:sigma |
+| native | tvbo:sigma |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sigma
+description: Observation-noise scale of the likelihood. May deliberately differ from
+  the data's generative noise — it sets how tightly the likelihood constrains the
+  (possibly degenerate) parameter ridge.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Likelihood
+domain_of:
+- Likelihood
+range: float
+
+```
+</details></div>

@@ -1,0 +1,71 @@
+# Enum: RuleOrientation 
+
+
+
+
+_Which way a reference line runs._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/RuleOrientation](https://w3id.org/tvbo/enum/RuleOrientation)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| horizontal | None | Constant y, at a single value |
+| vertical | None | Constant x, at a single value |
+| diagonal | None | Slope and intercept — the identity line `[1, 0]` a target-versus-simulated pa... |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: RuleOrientation
+description: Which way a reference line runs.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  horizontal:
+    text: horizontal
+    description: Constant y, at a single value.
+  vertical:
+    text: vertical
+    description: Constant x, at a single value.
+  diagonal:
+    text: diagonal
+    description: Slope and intercept — the identity line `[1, 0]` a target-versus-simulated
+      panel is read against.
+
+```
+</details>
+
+</div>

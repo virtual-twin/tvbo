@@ -1,0 +1,94 @@
+# Slot: optional 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_sw:slot/optional](https://w3id.org/tvbo/software/slot/optional)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | An individual software requirement binding a package to a version constraint ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `False` |
+| Owner | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_sw:optional |
+| native | tvbo_sw:optional |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: optional
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+ifabsent: 'False'
+owner: SoftwareRequirement
+domain_of:
+- SoftwareRequirement
+range: boolean
+
+```
+</details></div>

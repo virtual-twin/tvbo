@@ -1,0 +1,93 @@
+# Slot: requirements 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/requirements](https://w3id.org/tvbo/slot/requirements)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Function](../classes/Function.qmd) | A function with explicit input -> transformation -> output flow |  no  |
+| [PDESolver](../classes/PDESolver.qmd) | Numerical solver for a PDE: the time-integration algorithm, tolerances and st... |  no  |
+| [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | A reproducible software environment aggregating one or more SoftwareRequireme... |  no  |
+| [LossFunction](../classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |  no  |
+| [WorkflowConfig](../classes/WorkflowConfig.qmd) | Declarative orchestration for rendering a parameter sweep into a distributed,... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |
+| Domain Of | [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd), [Function](../classes/Function.qmd), [WorkflowConfig](../classes/WorkflowConfig.qmd), [PDESolver](../classes/PDESolver.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:requirements |
+| native | tvbo:requirements |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: requirements
+from_schema: https://w3id.org/tvbo
+rank: 1000
+domain_of:
+- SoftwareEnvironment
+- Function
+- WorkflowConfig
+- PDESolver
+range: SoftwareRequirement
+multivalued: true
+
+```
+</details></div>

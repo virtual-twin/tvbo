@@ -1,0 +1,77 @@
+# Slot: time 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/time](https://w3id.org/tvbo/slot/time)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd), [TimeSeries](../classes/TimeSeries.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:time |
+| native | tvbo:time |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: time
+domain_of:
+- WorkflowEngineConfig
+- TimeSeries
+range: string
+
+```
+</details></div>

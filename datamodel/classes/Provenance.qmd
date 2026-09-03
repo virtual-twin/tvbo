@@ -1,0 +1,535 @@
+# Class: Provenance 
+
+
+_W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable on any entity (Network, TimeSeries, Dynamics, ...), which is why it holds no identity of its own: the parent supplies that. The identified ``prov:Entity`` a standalone provenance record names is ``ResultEntity``, which carries one of these._
+
+_Carried by the frozen spec beside a result container, this is the whole record of the run: ``activities`` says what was executed and when, ``environment`` says on what machine and against which package versions, and ``digest`` checksums what came out. None of that is derivable from a recipe, which is why it is recorded — and all of it travels with the artifact it describes rather than in a parallel directory that has to be kept in step._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Provenance](https://w3id.org/tvbo/Provenance)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Provenance
+    click Provenance href "./Provenance.html"
+      Provenance : activities
+        
+          
+    
+        
+        
+        Provenance --> "*" Activity : activities
+        click Activity href "./Activity.html"
+    
+
+        
+      Provenance : date_created
+        
+          
+    
+        
+        
+        Provenance --> "0..1" String : date_created
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Provenance : derived_from
+        
+          
+    
+        
+        
+        Provenance --> "0..1" String : derived_from
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Provenance : digest
+        
+          
+    
+        
+        
+        Provenance --> "*" Digest : digest
+        click Digest href "./Digest.html"
+    
+
+        
+      Provenance : environment
+        
+          
+    
+        
+        
+        Provenance --> "0..1" SoftwareEnvironment : environment
+        click SoftwareEnvironment href "./SoftwareEnvironment.html"
+    
+
+        
+      Provenance : experiment_yaml_hash
+        
+          
+    
+        
+        
+        Provenance --> "0..1" String : experiment_yaml_hash
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Provenance : generated_by
+        
+          
+    
+        
+        
+        Provenance --> "0..1" String : generated_by
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Provenance : inputs
+        
+          
+    
+        
+        
+        Provenance --> "*" ReferenceFingerprint : inputs
+        click ReferenceFingerprint href "./ReferenceFingerprint.html"
+    
+
+        
+      Provenance : license
+        
+          
+    
+        
+        
+        Provenance --> "0..1" String : license
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Provenance : outputs
+        
+          
+    
+        
+        
+        Provenance --> "*" String : outputs
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Provenance : references
+        
+          
+    
+        
+        
+        Provenance --> "*" String : references
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Provenance](https://w3id.org/tvbo/Provenance) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [derived_from](../slots/derived_from.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [references](../slots/references.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [environment](../slots/environment.qmd) | 0..1 <br/> [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) | The machine and the resolved package set the run actually loaded, carried in ... | direct |
+| [date_created](../slots/date_created.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | ISO 8601 (prov:generatedAtTime) | direct |
+| [outputs](../slots/outputs.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The data variables the container actually holds, read off it when the record ... | direct |
+| [license](../slots/license.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [generated_by](../slots/generated_by.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Software/agent identifier: the prov:Agent this artifact is attributed to | direct |
+| [experiment_yaml_hash](../slots/experiment_yaml_hash.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | SHA-256 hex digest of the normalised experiment YAML that produced this artif... | direct |
+| [digest](../slots/digest.qmd) | * <br/> [Digest](../classes/Digest.qmd) | Checksums of the artifact itself, keyed by function name | direct |
+| [activities](../slots/activities.qmd) | * <br/> [Activity](../classes/Activity.qmd) | The runs that produced this artifact, serialized to BEP028's activity record | direct |
+| [inputs](../slots/inputs.qmd) | * <br/> [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd) | Per-input fingerprints for cache invalidation | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | [provenance](../slots/provenance.qmd) | range | [Provenance](../classes/Provenance.qmd) |
+| [ResultEntity](../classes/ResultEntity.qmd) | [provenance](../slots/provenance.qmd) | range | [Provenance](../classes/Provenance.qmd) |
+| [ExperimentResultSidecar](../classes/ExperimentResultSidecar.qmd) | [provenance](../slots/provenance.qmd) | range | [Provenance](../classes/Provenance.qmd) |
+| [Phenotype](../classes/Phenotype.qmd) | [provenance](../slots/provenance.qmd) | range | [Provenance](../classes/Provenance.qmd) |
+| [Network](../classes/Network.qmd) | [provenance](../slots/provenance.qmd) | range | [Provenance](../classes/Provenance.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [provenance](../slots/provenance.qmd) | range | [Provenance](../classes/Provenance.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Provenance |
+| native | tvbo:Provenance |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Provenance
+description: 'W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable
+  on any entity (Network, TimeSeries, Dynamics, ...), which is why it holds no identity
+  of its own: the parent supplies that. The identified ``prov:Entity`` a standalone
+  provenance record names is ``ResultEntity``, which carries one of these.
+
+  Carried by the frozen spec beside a result container, this is the whole record of
+  the run: ``activities`` says what was executed and when, ``environment`` says on
+  what machine and against which package versions, and ``digest`` checksums what came
+  out. None of that is derivable from a recipe, which is why it is recorded — and
+  all of it travels with the artifact it describes rather than in a parallel directory
+  that has to be kept in step.'
+from_schema: https://w3id.org/tvbo
+slots:
+- derived_from
+- references
+- environment
+slot_usage:
+  environment:
+    name: environment
+    description: 'The machine and the resolved package set the run actually loaded,
+      carried in full rather than by name: this record travels with one container''s
+      sidecar, so a reference to an environment defined elsewhere would point outside
+      the only file a reader has.'
+    inlined: true
+attributes:
+  date_created:
+    name: date_created
+    description: ISO 8601 (prov:generatedAtTime)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - SimulationTool
+    - Provenance
+    range: string
+  outputs:
+    name: outputs
+    description: The data variables the container actually holds, read off it when
+      the record is written rather than predicted from the spec, so a run that recorded
+      less than it declared is visible here. The one fact in this record that the
+      recipe beside it cannot supply.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Provenance
+    - ResultEntity
+    range: string
+    multivalued: true
+  license:
+    name: license
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - CommonCoordinateSpace
+    - SoftwarePackage
+    - SoftwareRequirement
+    - Provenance
+    range: string
+  generated_by:
+    name: generated_by
+    description: 'Software/agent identifier: the prov:Agent this artifact is attributed
+      to.'
+    from_schema: https://w3id.org/tvbo
+    close_mappings:
+    - prov:wasAttributedTo
+    rank: 1000
+    domain_of:
+    - Provenance
+    range: string
+  experiment_yaml_hash:
+    name: experiment_yaml_hash
+    description: SHA-256 hex digest of the normalised experiment YAML that produced
+      this artifact. Used by the cross-experiment cache (see :class:`SimulationStudy.from_file`)
+      to detect when a cached upstream result has gone stale because the experiment's
+      spec was edited. Computed as ``hashlib.sha256(yaml.safe_dump(normalized_yaml).encode()).hexdigest()``
+      over the fully resolved (post-``!include``) experiment block.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Provenance
+    range: string
+  digest:
+    name: digest
+    description: Checksums of the artifact itself, keyed by function name. BEP028's
+      ``Digest``, and distinct from ``experiment_yaml_hash``, which digests the spec
+      that produced the artifact rather than the artifact.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:value
+    rank: 1000
+    domain_of:
+    - Provenance
+    range: Digest
+    multivalued: true
+    inlined: true
+  activities:
+    name: activities
+    description: The runs that produced this artifact, serialized to BEP028's activity
+      record. Each names the command, the software that carried it out and what it
+      consumed.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:wasGeneratedBy
+    rank: 1000
+    domain_of:
+    - Provenance
+    range: Activity
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  inputs:
+    name: inputs
+    description: Per-input fingerprints for cache invalidation. Each entry records
+      the IRI + dotted-field path of an ``aux_data`` reference plus the (mtime, size,
+      sha256) of the underlying file at the time the artifact was produced. A downstream
+      cache hit requires every fingerprint to match the current file state.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Provenance
+    range: ReferenceFingerprint
+    multivalued: true
+    inlined_as_list: true
+class_uri: tvbo:Provenance
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Provenance
+description: 'W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable
+  on any entity (Network, TimeSeries, Dynamics, ...), which is why it holds no identity
+  of its own: the parent supplies that. The identified ``prov:Entity`` a standalone
+  provenance record names is ``ResultEntity``, which carries one of these.
+
+  Carried by the frozen spec beside a result container, this is the whole record of
+  the run: ``activities`` says what was executed and when, ``environment`` says on
+  what machine and against which package versions, and ``digest`` checksums what came
+  out. None of that is derivable from a recipe, which is why it is recorded — and
+  all of it travels with the artifact it describes rather than in a parallel directory
+  that has to be kept in step.'
+from_schema: https://w3id.org/tvbo
+slot_usage:
+  environment:
+    name: environment
+    description: 'The machine and the resolved package set the run actually loaded,
+      carried in full rather than by name: this record travels with one container''s
+      sidecar, so a reference to an environment defined elsewhere would point outside
+      the only file a reader has.'
+    inlined: true
+attributes:
+  date_created:
+    name: date_created
+    description: ISO 8601 (prov:generatedAtTime)
+    from_schema: https://w3id.org/tvbo
+    owner: Provenance
+    domain_of:
+    - SimulationTool
+    - Provenance
+    range: string
+  outputs:
+    name: outputs
+    description: The data variables the container actually holds, read off it when
+      the record is written rather than predicted from the spec, so a run that recorded
+      less than it declared is visible here. The one fact in this record that the
+      recipe beside it cannot supply.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Provenance
+    domain_of:
+    - Provenance
+    - ResultEntity
+    range: string
+    multivalued: true
+  license:
+    name: license
+    from_schema: https://w3id.org/tvbo
+    owner: Provenance
+    domain_of:
+    - CommonCoordinateSpace
+    - SoftwarePackage
+    - SoftwareRequirement
+    - Provenance
+    range: string
+  generated_by:
+    name: generated_by
+    description: 'Software/agent identifier: the prov:Agent this artifact is attributed
+      to.'
+    from_schema: https://w3id.org/tvbo
+    close_mappings:
+    - prov:wasAttributedTo
+    rank: 1000
+    owner: Provenance
+    domain_of:
+    - Provenance
+    range: string
+  experiment_yaml_hash:
+    name: experiment_yaml_hash
+    description: SHA-256 hex digest of the normalised experiment YAML that produced
+      this artifact. Used by the cross-experiment cache (see :class:`SimulationStudy.from_file`)
+      to detect when a cached upstream result has gone stale because the experiment's
+      spec was edited. Computed as ``hashlib.sha256(yaml.safe_dump(normalized_yaml).encode()).hexdigest()``
+      over the fully resolved (post-``!include``) experiment block.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Provenance
+    domain_of:
+    - Provenance
+    range: string
+  digest:
+    name: digest
+    description: Checksums of the artifact itself, keyed by function name. BEP028's
+      ``Digest``, and distinct from ``experiment_yaml_hash``, which digests the spec
+      that produced the artifact rather than the artifact.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:value
+    rank: 1000
+    owner: Provenance
+    domain_of:
+    - Provenance
+    range: Digest
+    multivalued: true
+    inlined: true
+  activities:
+    name: activities
+    description: The runs that produced this artifact, serialized to BEP028's activity
+      record. Each names the command, the software that carried it out and what it
+      consumed.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:wasGeneratedBy
+    rank: 1000
+    owner: Provenance
+    domain_of:
+    - Provenance
+    range: Activity
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  inputs:
+    name: inputs
+    description: Per-input fingerprints for cache invalidation. Each entry records
+      the IRI + dotted-field path of an ``aux_data`` reference plus the (mtime, size,
+      sha256) of the underlying file at the time the artifact was produced. A downstream
+      cache hit requires every fingerprint to match the current file state.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Provenance
+    domain_of:
+    - Provenance
+    range: ReferenceFingerprint
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  derived_from:
+    name: derived_from
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: prov:wasDerivedFrom
+    owner: Provenance
+    domain_of:
+    - Provenance
+    - SimulationStudy
+    range: string
+  references:
+    name: references
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: Provenance
+    domain_of:
+    - Provenance
+    - Observation
+    - Dynamics
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+    multivalued: true
+  environment:
+    name: environment
+    description: 'The machine and the resolved package set the run actually loaded,
+      carried in full rather than by name: this record travels with one container''s
+      sidecar, so a reference to an environment defined elsewhere would point outside
+      the only file a reader has.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Provenance
+    domain_of:
+    - Provenance
+    - Observation
+    - SimulationExperiment
+    - PDESolver
+    range: SoftwareEnvironment
+    inlined: true
+class_uri: tvbo:Provenance
+
+```
+</details></div>

@@ -1,0 +1,109 @@
+# Slot: producer 
+
+
+_HOW to compute this value, when it is derived rather than obtained — the callable that produces it, its arguments, and (via `output:`) which entry to take from a callable returning several named arrays. The callable resolves against the recipe's `code_source`. Use instead of `source:` for a value that is a deterministic function of the spec's own inputs (a mesh operator, a template matrix): declaring the producer keeps the spec the single source of truth, where pointing at a pre-built file would let the two drift apart silently — and would need a prep step run by hand before the spec could execute. The result is cached and invalidated by the artifact fingerprint, so it is computed once rather than per run. On a `Parameter` it produces the value; on an `Edge` it produces the whole template matrix, which is what lets a connectome or a discrete differential operator be declared rather than pre-built. Mutually exclusive with `value:`/`source:`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/producer](https://w3id.org/tvbo/slot/producer)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [FunctionCall](../classes/FunctionCall.qmd) |
+| Domain Of | [Edge](../classes/Edge.qmd), [Parameter](../classes/Parameter.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:producer |
+| native | tvbo:producer |
+| close | prov:wasGeneratedBy |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: producer
+description: 'HOW to compute this value, when it is derived rather than obtained —
+  the callable that produces it, its arguments, and (via `output:`) which entry to
+  take from a callable returning several named arrays. The callable resolves against
+  the recipe''s `code_source`. Use instead of `source:` for a value that is a deterministic
+  function of the spec''s own inputs (a mesh operator, a template matrix): declaring
+  the producer keeps the spec the single source of truth, where pointing at a pre-built
+  file would let the two drift apart silently — and would need a prep step run by
+  hand before the spec could execute. The result is cached and invalidated by the
+  artifact fingerprint, so it is computed once rather than per run. On a `Parameter`
+  it produces the value; on an `Edge` it produces the whole template matrix, which
+  is what lets a connectome or a discrete differential operator be declared rather
+  than pre-built. Mutually exclusive with `value:`/`source:`.'
+from_schema: https://w3id.org/tvbo
+close_mappings:
+- prov:wasGeneratedBy
+rank: 1000
+domain_of:
+- Edge
+- Parameter
+range: FunctionCall
+required: false
+inlined: true
+
+```
+</details></div>

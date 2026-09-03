@@ -1,0 +1,89 @@
+# Enum: InitialStateMethod 
+
+
+
+
+_Strategy for obtaining the starting equilibrium or periodic orbit._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/InitialStateMethod](https://w3id.org/tvbo/enum/InitialStateMethod)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| time_integration | None | Integrate the ODE forward until convergence (robust, default) |
+| newton | None | Use Newton's method to find the nearest fixed point |
+| given | None | Use the model's default initial values directly |
+| from_branch | None | Start from a point on a previously computed branch |
+| from_working_point | None | Ramp a parameter quasi-statically (warm-start / from_previous) to a target va... |
+| from_experiment | None | Seed from the settled endpoint state of another already-run experiment in the... |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: InitialStateMethod
+description: Strategy for obtaining the starting equilibrium or periodic orbit.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  time_integration:
+    text: time_integration
+    description: Integrate the ODE forward until convergence (robust, default).
+  newton:
+    text: newton
+    description: Use Newton's method to find the nearest fixed point.
+  given:
+    text: given
+    description: Use the model's default initial values directly.
+  from_branch:
+    text: from_branch
+    description: Start from a point on a previously computed branch.
+  from_working_point:
+    text: from_working_point
+    description: Ramp a parameter quasi-statically (warm-start / from_previous) to
+      a target value (see InitialState.ramp) and start from the endpoint state — reach
+      a working point on the solution branch before the run.
+  from_experiment:
+    text: from_experiment
+    description: Seed from the settled endpoint state of another already-run experiment
+      in the study (referenced by InitialState.source_experiment). Reuses a working
+      point that experiment already reached instead of recomputing it — the cross-experiment
+      counterpart of from_working_point (which recomputes the ramp inline). source_point
+      selects which settled point of the source run (default 'endpoint').
+
+```
+</details>
+
+</div>

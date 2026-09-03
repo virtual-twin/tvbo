@@ -1,0 +1,669 @@
+# Class: GraphGenerator 
+
+
+_Backend-agnostic graph generator specification.  Captures the mathematical family and its parameter declarations so that each backend can emit the correct constructor call (Graphs.jl, NetworkX, etc.) via per-backend ``bindings``; derived generators may also carry a symbolic ``procedure``.  The number of nodes is always taken from Network.number_of_nodes._
+
+__
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:GraphGenerator](https://w3id.org/tvbo/GraphGenerator)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class GraphGenerator
+    click GraphGenerator href "./GraphGenerator.html"
+      GraphGenerator : bindings
+        
+          
+    
+        
+        
+        GraphGenerator --> "*" Binding : bindings
+        click Binding href "./Binding.html"
+    
+
+        
+      GraphGenerator : builder
+        
+          
+    
+        
+        
+        GraphGenerator --> "0..1" Callable : builder
+        click Callable href "./Callable.html"
+    
+
+        
+      GraphGenerator : description
+        
+          
+    
+        
+        
+        GraphGenerator --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      GraphGenerator : directed
+        
+          
+    
+        
+        
+        GraphGenerator --> "0..1" Boolean : directed
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      GraphGenerator : iri
+        
+          
+    
+        
+        
+        GraphGenerator --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      GraphGenerator : name
+        
+          
+    
+        
+        
+        GraphGenerator --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      GraphGenerator : parameters
+        
+          
+    
+        
+        
+        GraphGenerator --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      GraphGenerator : procedure
+        
+          
+    
+        
+        
+        GraphGenerator --> "0..1" Procedure : procedure
+        click Procedure href "./Procedure.html"
+    
+
+        
+      GraphGenerator : seed
+        
+          
+    
+        
+        
+        GraphGenerator --> "0..1" Integer : seed
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      GraphGenerator : type
+        
+          
+    
+        
+        
+        GraphGenerator --> "0..1" String : type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:GraphGenerator](https://w3id.org/tvbo/GraphGenerator) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | direct |
+| [type](../slots/type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional graph family name | direct |
+| [seed](../slots/seed.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Random seed for reproducible graph generation | direct |
+| [directed](../slots/directed.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether to generate a directed graph | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) | Generator parameters keyed by name (e | direct |
+| [bindings](../slots/bindings.qmd) | * <br/> [Binding](../classes/Binding.qmd) | Per-backend construction bindings, keyed by backend id (e | direct |
+| [procedure](../slots/procedure.qmd) | 0..1 <br/> [Procedure](../classes/Procedure.qmd) | Optional symbolic procedure for derived generators (e | direct |
+| [builder](../slots/builder.qmd) | 0..1 <br/> [Callable](../classes/Callable.qmd) | Optional Python callable that builds the network at YAML load time | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [graph_generator](../slots/graph_generator.qmd) | range | [GraphGenerator](../classes/GraphGenerator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:GraphGenerator |
+| native | tvbo:GraphGenerator |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: GraphGenerator
+description: 'Backend-agnostic graph generator specification.  Captures the mathematical
+  family and its parameter declarations so that each backend can emit the correct
+  constructor call (Graphs.jl, NetworkX, etc.) via per-backend ``bindings``; derived
+  generators may also carry a symbolic ``procedure``.  The number of nodes is always
+  taken from Network.number_of_nodes.
+
+  '
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+- iri
+attributes:
+  type:
+    name: type
+    description: 'Optional graph family name.  Use a StandardGraphType value for automatic
+      backend mapping, or any custom string for documentation purposes.  When absent,
+      the backend ``bindings`` determine construction directly.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  seed:
+    name: seed
+    description: Random seed for reproducible graph generation.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - GraphGenerator
+    - Distribution
+    - Noise
+    - Inference
+    range: integer
+  directed:
+    name: directed
+    description: Whether to generate a directed graph.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(false)
+    domain_of:
+    - GraphGenerator
+    - Edge
+    - Partition
+    range: boolean
+  parameters:
+    name: parameters
+    description: 'Generator parameters keyed by name (e.g. n, k, p, seed). A curated
+      entry *declares* each parameter''s interface via the general ``Parameter`` slots
+      — ``datatype`` (its type), ``default`` (fallback when absent) and ``required``
+      — while a concrete experiment supplies the same key by ``value``. Builder (Callable)
+      generators receive the resolved values as keyword arguments; declarative library
+      generators pass them positionally via the per-backend ``bindings`` map. The
+      number of nodes is always taken from Network.number_of_nodes.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  bindings:
+    name: bindings
+    description: 'Per-backend construction bindings, keyed by backend id (e.g. python,
+      julia, networkx).  Each names the native library, callable and the ordered parameter
+      names to pass.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - GraphGenerator
+    range: Binding
+    multivalued: true
+    inlined: true
+  procedure:
+    name: procedure
+    description: 'Optional symbolic procedure for derived generators (e.g. null-model
+      shuffles): ordered steps and named outputs, each carrying an Equation.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - GraphGenerator
+    range: Procedure
+    inlined: true
+  builder:
+    name: builder
+    description: 'Optional Python callable that builds the network at YAML load time.
+      When set, ``Network._resolve`` imports ``<module>.<name>`` and invokes it with
+      the ``parameters`` block as keyword arguments. The callable must return either
+      a ``Network`` instance or a tuple ``(weights, lengths, node_params)``. Use the
+      existing ``Callable`` slots (``name`` is the function name, ``module`` is its
+      dotted module path). Reuses the same idiom as TVB monitor class references;
+      no free ``module:function`` strings.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - GraphGenerator
+    - ExplorationAxis
+    range: Callable
+    inlined: true
+class_uri: tvbo:GraphGenerator
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: GraphGenerator
+description: 'Backend-agnostic graph generator specification.  Captures the mathematical
+  family and its parameter declarations so that each backend can emit the correct
+  constructor call (Graphs.jl, NetworkX, etc.) via per-backend ``bindings``; derived
+  generators may also carry a symbolic ``procedure``.  The number of nodes is always
+  taken from Network.number_of_nodes.
+
+  '
+from_schema: https://w3id.org/tvbo
+attributes:
+  type:
+    name: type
+    description: 'Optional graph family name.  Use a StandardGraphType value for automatic
+      backend mapping, or any custom string for documentation purposes.  When absent,
+      the backend ``bindings`` determine construction directly.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    owner: GraphGenerator
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  seed:
+    name: seed
+    description: Random seed for reproducible graph generation.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: GraphGenerator
+    domain_of:
+    - GraphGenerator
+    - Distribution
+    - Noise
+    - Inference
+    range: integer
+  directed:
+    name: directed
+    description: Whether to generate a directed graph.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(false)
+    owner: GraphGenerator
+    domain_of:
+    - GraphGenerator
+    - Edge
+    - Partition
+    range: boolean
+  parameters:
+    name: parameters
+    description: 'Generator parameters keyed by name (e.g. n, k, p, seed). A curated
+      entry *declares* each parameter''s interface via the general ``Parameter`` slots
+      — ``datatype`` (its type), ``default`` (fallback when absent) and ``required``
+      — while a concrete experiment supplies the same key by ``value``. Builder (Callable)
+      generators receive the resolved values as keyword arguments; declarative library
+      generators pass them positionally via the per-backend ``bindings`` map. The
+      number of nodes is always taken from Network.number_of_nodes.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    owner: GraphGenerator
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  bindings:
+    name: bindings
+    description: 'Per-backend construction bindings, keyed by backend id (e.g. python,
+      julia, networkx).  Each names the native library, callable and the ordered parameter
+      names to pass.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: GraphGenerator
+    domain_of:
+    - GraphGenerator
+    range: Binding
+    multivalued: true
+    inlined: true
+  procedure:
+    name: procedure
+    description: 'Optional symbolic procedure for derived generators (e.g. null-model
+      shuffles): ordered steps and named outputs, each carrying an Equation.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: GraphGenerator
+    domain_of:
+    - GraphGenerator
+    range: Procedure
+    inlined: true
+  builder:
+    name: builder
+    description: 'Optional Python callable that builds the network at YAML load time.
+      When set, ``Network._resolve`` imports ``<module>.<name>`` and invokes it with
+      the ``parameters`` block as keyword arguments. The callable must return either
+      a ``Network`` instance or a tuple ``(weights, lengths, node_params)``. Use the
+      existing ``Callable`` slots (``name`` is the function name, ``module`` is its
+      dotted module path). Reuses the same idiom as TVB monitor class references;
+      no free ``module:function`` strings.
+
+      '
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: GraphGenerator
+    domain_of:
+    - GraphGenerator
+    - ExplorationAxis
+    range: Callable
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: GraphGenerator
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: GraphGenerator
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: GraphGenerator
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+class_uri: tvbo:GraphGenerator
+
+```
+</details></div>

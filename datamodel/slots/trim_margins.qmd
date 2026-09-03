@@ -1,0 +1,101 @@
+# Slot: trim_margins 
+
+
+_Trim surrounding whitespace from the saved figure (default true). Trimming re-crops to the drawn content, so the saved aspect can differ from width/height; set false to preserve the declared width×height proportions exactly, e.g. to match an original figure. Renders as bbox_inches='tight' on a matplotlib backend._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/trim_margins](https://w3id.org/tvbo/slot/trim_margins)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:trim_margins |
+| native | tvbo:trim_margins |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: trim_margins
+description: Trim surrounding whitespace from the saved figure (default true). Trimming
+  re-crops to the drawn content, so the saved aspect can differ from width/height;
+  set false to preserve the declared width×height proportions exactly, e.g. to match
+  an original figure. Renders as bbox_inches='tight' on a matplotlib backend.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: boolean
+
+```
+</details></div>

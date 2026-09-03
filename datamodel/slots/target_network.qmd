@@ -1,0 +1,103 @@
+# Slot: target_network 
+
+
+_Path or name of the Network whose nodes define the target endpoints (e.g. the columns of a non-square projection matrix such as a gain matrix region → EEG sensors). Also accepts the relative-path sentinel `parent` / `parent/parent` for cross-scale signal flow up the Node.subnetwork hierarchy. One mechanism handles both projection matrices (absolute IRI) and multi-scale boundaries (sentinel)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/target_network](https://w3id.org/tvbo/slot/target_network)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Edge](../classes/Edge.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Edge](../classes/Edge.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:target_network |
+| native | tvbo:target_network |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_network
+description: Path or name of the Network whose nodes define the target endpoints (e.g.
+  the columns of a non-square projection matrix such as a gain matrix region → EEG
+  sensors). Also accepts the relative-path sentinel `parent` / `parent/parent` for
+  cross-scale signal flow up the Node.subnetwork hierarchy. One mechanism handles
+  both projection matrices (absolute IRI) and multi-scale boundaries (sentinel).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Edge
+domain_of:
+- Edge
+range: string
+required: false
+
+```
+</details></div>

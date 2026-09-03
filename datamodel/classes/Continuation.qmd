@@ -1,0 +1,1047 @@
+# Class: Continuation 
+
+
+_Complete specification of a numerical continuation / bifurcation analysis. All universal solver settings live directly here. Toolkit-specific string options go in the options slot. When used inside a BranchSwitch, only explicitly set attributes override the parent's values._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Continuation](https://w3id.org/tvbo/Continuation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Continuation
+    click Continuation href "./Continuation.html"
+      Continuation : algorithm
+        
+          
+    
+        
+        
+        Continuation --> "0..1" ContinuationAlgorithm : algorithm
+        click ContinuationAlgorithm href "../../enums/ContinuationAlgorithm.html"
+    
+
+        
+      Continuation : bothside
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Boolean : bothside
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Continuation : branches
+        
+          
+    
+        
+        
+        Continuation --> "*" BranchSwitch : branches
+        click BranchSwitch href "./BranchSwitch.html"
+    
+
+        
+      Continuation : description
+        
+          
+    
+        
+        
+        Continuation --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Continuation : detect_bifurcation
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Integer : detect_bifurcation
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Continuation : detect_fold
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Boolean : detect_fold
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Continuation : ds
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Float : ds
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Continuation : ds_max
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Float : ds_max
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Continuation : ds_min
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Float : ds_min
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Continuation : dynamics
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Dynamics : dynamics
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      Continuation : execution
+        
+          
+    
+        
+        
+        Continuation --> "0..1" ExecutionConfig : execution
+        click ExecutionConfig href "./ExecutionConfig.html"
+    
+
+        
+      Continuation : free_parameters
+        
+          
+    
+        
+        
+        Continuation --> "*" Parameter : free_parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Continuation : initial_state
+        
+          
+    
+        
+        
+        Continuation --> "0..1" InitialState : initial_state
+        click InitialState href "./InitialState.html"
+    
+
+        
+      Continuation : label
+        
+          
+    
+        
+        
+        Continuation --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Continuation : max_bisection_steps
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Integer : max_bisection_steps
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Continuation : max_steps
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Integer : max_steps
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Continuation : n_inversion
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Integer : n_inversion
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Continuation : name
+        
+          
+    
+        
+        
+        Continuation --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Continuation : nev
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Integer : nev
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Continuation : newton_max_iterations
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Integer : newton_max_iterations
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Continuation : newton_tol
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Float : newton_tol
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Continuation : options
+        
+          
+    
+        
+        
+        Continuation --> "*" Option : options
+        click Option href "./Option.html"
+    
+
+        
+      Continuation : software
+        
+          
+    
+        
+        
+        Continuation --> "0..1" SoftwareRequirement : software
+        click SoftwareRequirement href "./SoftwareRequirement.html"
+    
+
+        
+      Continuation : tol_stability
+        
+          
+    
+        
+        
+        Continuation --> "0..1" Float : tol_stability
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Continuation](https://w3id.org/tvbo/Continuation) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [dynamics](../slots/dynamics.qmd) | 0..1 <br/> [Dynamics](../classes/Dynamics.qmd) | Reference to the dynamical system model (by name) | direct |
+| [free_parameters](../slots/free_parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) | Parameters to vary | direct |
+| [ds](../slots/ds.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Initial arc-length step size | direct |
+| [ds_min](../slots/ds_min.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Minimum adaptive step size | direct |
+| [ds_max](../slots/ds_max.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Maximum adaptive step size | direct |
+| [max_steps](../slots/max_steps.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Maximum continuation steps | direct |
+| [newton_tol](../slots/newton_tol.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Absolute tolerance for Newton corrector convergence | direct |
+| [newton_max_iterations](../slots/newton_max_iterations.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Maximum Newton corrector iterations per step | direct |
+| [nev](../slots/nev.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of eigenvalues to compute | direct |
+| [tol_stability](../slots/tol_stability.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Tolerance on real part of eigenvalue for stability boundary | direct |
+| [detect_bifurcation](../slots/detect_bifurcation.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Bifurcation detection level | direct |
+| [detect_fold](../slots/detect_fold.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Enable fold (limit point) detection | direct |
+| [n_inversion](../slots/n_inversion.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of eigenvalue sign inversions to flag a bifurcation | direct |
+| [max_bisection_steps](../slots/max_bisection_steps.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Maximum bisection steps for bifurcation point localization | direct |
+| [algorithm](../slots/algorithm.qmd) | 0..1 <br/> [ContinuationAlgorithm](../enums/ContinuationAlgorithm.qmd) | Predictor-corrector algorithm | direct |
+| [initial_state](../slots/initial_state.qmd) | 0..1 <br/> [InitialState](../classes/InitialState.qmd) | How to obtain the initial equilibrium | direct |
+| [branches](../slots/branches.qmd) | * <br/> [BranchSwitch](../classes/BranchSwitch.qmd) | Child branches to continue from detected bifurcation points (PO from Hopf, fo... | direct |
+| [bothside](../slots/bothside.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Continue in both directions from the starting point | direct |
+| [execution](../slots/execution.qmd) | 0..1 <br/> [ExecutionConfig](../classes/ExecutionConfig.qmd) | Per-analysis execution configuration | direct |
+| [software](../slots/software.qmd) | 0..1 <br/> [SoftwareRequirement](../classes/SoftwareRequirement.qmd) | Backend engine (BifurcationKit, AUTO-07p, MatCont, etc | direct |
+| [options](../slots/options.qmd) | * <br/> [Option](../classes/Option.qmd) | Toolkit-specific string options (tangent method, solver name, etc | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | [continuation](../slots/continuation.qmd) | range | [Continuation](../classes/Continuation.qmd) |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [continuations](../slots/continuations.qmd) | range | [Continuation](../classes/Continuation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Continuation |
+| native | tvbo:Continuation |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Continuation
+description: Complete specification of a numerical continuation / bifurcation analysis.
+  All universal solver settings live directly here. Toolkit-specific string options
+  go in the options slot. When used inside a BranchSwitch, only explicitly set attributes
+  override the parent's values.
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- label
+- description
+attributes:
+  dynamics:
+    name: dynamics
+    description: Reference to the dynamical system model (by name). Resolved from
+      the experiment's dynamics dict at runtime.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    inlined: false
+  free_parameters:
+    name: free_parameters
+    description: Parameters to vary. First parameter is primary (codim-1); second
+      enables codim-2 continuation. Each Parameter has name + domain (Range with lo/hi
+      bounds).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - OptimizationStage
+    - Continuation
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  ds:
+    name: ds
+    description: Initial arc-length step size.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: float
+  ds_min:
+    name: ds_min
+    description: Minimum adaptive step size.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: float
+  ds_max:
+    name: ds_max
+    description: Maximum adaptive step size.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: float
+  max_steps:
+    name: max_steps
+    description: Maximum continuation steps.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: integer
+  newton_tol:
+    name: newton_tol
+    description: Absolute tolerance for Newton corrector convergence.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: float
+  newton_max_iterations:
+    name: newton_max_iterations
+    description: Maximum Newton corrector iterations per step.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: integer
+  nev:
+    name: nev
+    description: Number of eigenvalues to compute. Must be >= number of state variables
+      for reliable Hopf detection.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: integer
+  tol_stability:
+    name: tol_stability
+    description: Tolerance on real part of eigenvalue for stability boundary.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: float
+  detect_bifurcation:
+    name: detect_bifurcation
+    description: Bifurcation detection level. 0 = off, 1 = eigenvalues only, 2 = detect,
+      3 = locate precisely.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: integer
+  detect_fold:
+    name: detect_fold
+    description: Enable fold (limit point) detection.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: boolean
+  n_inversion:
+    name: n_inversion
+    description: Number of eigenvalue sign inversions to flag a bifurcation. Must
+      be even. Higher = fewer false positives.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: integer
+  max_bisection_steps:
+    name: max_bisection_steps
+    description: Maximum bisection steps for bifurcation point localization.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: integer
+  algorithm:
+    name: algorithm
+    description: Predictor-corrector algorithm.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(PALC)
+    domain_of:
+    - Digest
+    - OptimizationStage
+    - AlgorithmInclude
+    - Continuation
+    range: ContinuationAlgorithm
+  initial_state:
+    name: initial_state
+    description: 'How to obtain the initial equilibrium. Default: time integration
+      to steady state.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    - SimulationExperiment
+    range: InitialState
+    inlined: true
+  branches:
+    name: branches
+    description: Child branches to continue from detected bifurcation points (PO from
+      Hopf, fold continuation, etc.).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Continuation
+    range: BranchSwitch
+    multivalued: true
+    inlined: true
+  bothside:
+    name: bothside
+    description: Continue in both directions from the starting point.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - BranchSwitch
+    - Continuation
+    range: boolean
+  execution:
+    name: execution
+    description: Per-analysis execution configuration.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  software:
+    name: software
+    description: Backend engine (BifurcationKit, AUTO-07p, MatCont, etc.).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Callable
+    - Continuation
+    - SimulationExperiment
+    range: SoftwareRequirement
+    inlined: true
+  options:
+    name: options
+    description: Toolkit-specific string options (tangent method, solver name, etc.).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Discretization
+    - BranchSwitch
+    - Continuation
+    - WorkflowEngineConfig
+    range: Option
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+class_uri: tvbo:Continuation
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Continuation
+description: Complete specification of a numerical continuation / bifurcation analysis.
+  All universal solver settings live directly here. Toolkit-specific string options
+  go in the options slot. When used inside a BranchSwitch, only explicitly set attributes
+  override the parent's values.
+from_schema: https://w3id.org/tvbo
+attributes:
+  dynamics:
+    name: dynamics
+    description: Reference to the dynamical system model (by name). Resolved from
+      the experiment's dynamics dict at runtime.
+    from_schema: https://w3id.org/tvbo
+    owner: Continuation
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    inlined: false
+  free_parameters:
+    name: free_parameters
+    description: Parameters to vary. First parameter is primary (codim-1); second
+      enables codim-2 continuation. Each Parameter has name + domain (Range with lo/hi
+      bounds).
+    from_schema: https://w3id.org/tvbo
+    owner: Continuation
+    domain_of:
+    - OptimizationStage
+    - Continuation
+    range: Parameter
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  ds:
+    name: ds
+    description: Initial arc-length step size.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: float
+  ds_min:
+    name: ds_min
+    description: Minimum adaptive step size.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: float
+  ds_max:
+    name: ds_max
+    description: Maximum adaptive step size.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: float
+  max_steps:
+    name: max_steps
+    description: Maximum continuation steps.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: integer
+  newton_tol:
+    name: newton_tol
+    description: Absolute tolerance for Newton corrector convergence.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: float
+  newton_max_iterations:
+    name: newton_max_iterations
+    description: Maximum Newton corrector iterations per step.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: integer
+  nev:
+    name: nev
+    description: Number of eigenvalues to compute. Must be >= number of state variables
+      for reliable Hopf detection.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: integer
+  tol_stability:
+    name: tol_stability
+    description: Tolerance on real part of eigenvalue for stability boundary.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: float
+  detect_bifurcation:
+    name: detect_bifurcation
+    description: Bifurcation detection level. 0 = off, 1 = eigenvalues only, 2 = detect,
+      3 = locate precisely.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: integer
+  detect_fold:
+    name: detect_fold
+    description: Enable fold (limit point) detection.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: boolean
+  n_inversion:
+    name: n_inversion
+    description: Number of eigenvalue sign inversions to flag a bifurcation. Must
+      be even. Higher = fewer false positives.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: integer
+  max_bisection_steps:
+    name: max_bisection_steps
+    description: Maximum bisection steps for bifurcation point localization.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: integer
+  algorithm:
+    name: algorithm
+    description: Predictor-corrector algorithm.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: string(PALC)
+    owner: Continuation
+    domain_of:
+    - Digest
+    - OptimizationStage
+    - AlgorithmInclude
+    - Continuation
+    range: ContinuationAlgorithm
+  initial_state:
+    name: initial_state
+    description: 'How to obtain the initial equilibrium. Default: time integration
+      to steady state.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    - SimulationExperiment
+    range: InitialState
+    inlined: true
+  branches:
+    name: branches
+    description: Child branches to continue from detected bifurcation points (PO from
+      Hopf, fold continuation, etc.).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Continuation
+    domain_of:
+    - Continuation
+    range: BranchSwitch
+    multivalued: true
+    inlined: true
+  bothside:
+    name: bothside
+    description: Continue in both directions from the starting point.
+    from_schema: https://w3id.org/tvbo
+    owner: Continuation
+    domain_of:
+    - BranchSwitch
+    - Continuation
+    range: boolean
+  execution:
+    name: execution
+    description: Per-analysis execution configuration.
+    from_schema: https://w3id.org/tvbo
+    owner: Continuation
+    domain_of:
+    - Analysis
+    - Optimization
+    - Exploration
+    - Inference
+    - Algorithm
+    - Continuation
+    - SimulationExperiment
+    range: ExecutionConfig
+    inlined: true
+  software:
+    name: software
+    description: Backend engine (BifurcationKit, AUTO-07p, MatCont, etc.).
+    from_schema: https://w3id.org/tvbo
+    owner: Continuation
+    domain_of:
+    - Callable
+    - Continuation
+    - SimulationExperiment
+    range: SoftwareRequirement
+    inlined: true
+  options:
+    name: options
+    description: Toolkit-specific string options (tangent method, solver name, etc.).
+    from_schema: https://w3id.org/tvbo
+    owner: Continuation
+    domain_of:
+    - Discretization
+    - BranchSwitch
+    - Continuation
+    - WorkflowEngineConfig
+    range: Option
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Continuation
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Continuation
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Continuation
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Continuation
+
+```
+</details></div>

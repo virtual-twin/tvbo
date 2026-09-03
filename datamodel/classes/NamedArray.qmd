@@ -1,0 +1,543 @@
+# Class: NamedArray 
+
+
+_A named numeric array. Used as a sidecar slot value where a schema-typed object (e.g. ``ExperimentResult.parameters``) holds multiple arrays addressable by name (``w_LRE``, ``w_FFI``, ``J_i``, ...). The actual numeric data lives in the companion ``.h5`` at ``parameters/<name>``; the YAML carries only the descriptor._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:NamedArray](https://w3id.org/tvbo/NamedArray)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class NamedArray
+    click NamedArray href "./NamedArray.html"
+      NamedArray : description
+        
+          
+    
+        
+        
+        NamedArray --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      NamedArray : dtype
+        
+          
+    
+        
+        
+        NamedArray --> "0..1" String : dtype
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      NamedArray : name
+        
+          
+    
+        
+        
+        NamedArray --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      NamedArray : shape
+        
+          
+    
+        
+        
+        NamedArray --> "*" Integer : shape
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      NamedArray : unit
+        
+          
+    
+        
+        
+        NamedArray --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:NamedArray](https://w3id.org/tvbo/NamedArray) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Field name; matches the h5 dataset path under ``parameters/`` | direct |
+| [shape](../slots/shape.qmd) | * <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Array dimensions | direct |
+| [dtype](../slots/dtype.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Numpy dtype string, recording what the companion actually holds | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional unit annotation (e | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:NamedArray |
+| native | tvbo:NamedArray |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: NamedArray
+description: A named numeric array. Used as a sidecar slot value where a schema-typed
+  object (e.g. ``ExperimentResult.parameters``) holds multiple arrays addressable
+  by name (``w_LRE``, ``w_FFI``, ``J_i``, ...). The actual numeric data lives in the
+  companion ``.h5`` at ``parameters/<name>``; the YAML carries only the descriptor.
+from_schema: https://w3id.org/tvbo
+attributes:
+  name:
+    name: name
+    description: Field name; matches the h5 dataset path under ``parameters/``.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  shape:
+    name: shape
+    description: Array dimensions.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Parameter
+    - FreeParameter
+    - NDArray
+    range: integer
+    multivalued: true
+  dtype:
+    name: dtype
+    description: Numpy dtype string, recording what the companion actually holds.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Edge
+    - NDArray
+    range: string
+  unit:
+    name: unit
+    description: Optional unit annotation (e.g. 'nA').
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:NamedArray
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: NamedArray
+description: A named numeric array. Used as a sidecar slot value where a schema-typed
+  object (e.g. ``ExperimentResult.parameters``) holds multiple arrays addressable
+  by name (``w_LRE``, ``w_FFI``, ``J_i``, ...). The actual numeric data lives in the
+  companion ``.h5`` at ``parameters/<name>``; the YAML carries only the descriptor.
+from_schema: https://w3id.org/tvbo
+attributes:
+  name:
+    name: name
+    description: Field name; matches the h5 dataset path under ``parameters/``.
+    from_schema: https://w3id.org/tvbo
+    owner: NamedArray
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  shape:
+    name: shape
+    description: Array dimensions.
+    from_schema: https://w3id.org/tvbo
+    owner: NamedArray
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Parameter
+    - FreeParameter
+    - NDArray
+    range: integer
+    multivalued: true
+  dtype:
+    name: dtype
+    description: Numpy dtype string, recording what the companion actually holds.
+    from_schema: https://w3id.org/tvbo
+    owner: NamedArray
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Edge
+    - NDArray
+    range: string
+  unit:
+    name: unit
+    description: Optional unit annotation (e.g. 'nA').
+    from_schema: https://w3id.org/tvbo
+    owner: NamedArray
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    owner: NamedArray
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:NamedArray
+
+```
+</details></div>

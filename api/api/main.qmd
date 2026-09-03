@@ -1,0 +1,212 @@
+# main { #tvbo.api.main }
+
+`api.main`
+
+FastAPI application exposing the TVBO ontology and simulation experiment endpoints.
+
+Defines the top-level `app`, wires in the network, dynamics, and experiment sub-routers, and provides ontology search/query endpoints plus routes to configure and run [`SimulationExperiment`](/api/classes/experiment.qmd) instances.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [api](#tvbo.api.main.api) |  |
+| [app](#tvbo.api.main.app) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [RunExperimentRequest](#tvbo.api.main.RunExperimentRequest) | Request payload for running a simulation. |
+| [RunExperimentResponse](#tvbo.api.main.RunExperimentResponse) | Response payload with simulation results. |
+| [SimulationMetadata](#tvbo.api.main.SimulationMetadata) | Legacy request payload describing a simulation configuration. |
+
+### RunExperimentRequest { #tvbo.api.main.RunExperimentRequest }
+
+```python
+api.main.RunExperimentRequest()
+```
+
+Request payload for running a simulation.
+
+### RunExperimentResponse { #tvbo.api.main.RunExperimentResponse }
+
+```python
+api.main.RunExperimentResponse()
+```
+
+Response payload with simulation results.
+
+### SimulationMetadata { #tvbo.api.main.SimulationMetadata }
+
+```python
+api.main.SimulationMetadata()
+```
+
+Legacy request payload describing a simulation configuration.
+
+Retained for backwards compatibility with clients that submit the model, connectivity, coupling, and integration blocks separately rather than as a single experiment dictionary.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name         | Type   | Description                                  | Default    |
+|--------------|--------|----------------------------------------------|------------|
+| model        |        | Dynamics/model configuration block.          | _required_ |
+| connectivity |        | Optional network connectivity configuration. | _required_ |
+| coupling     |        | Optional coupling configuration.             | _required_ |
+| integration  |        | Optional integration scheme configuration.   | _required_ |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [configure_experiment](#tvbo.api.main.configure_experiment) | Configure a simulation experiment from legacy metadata. |
+| [get_child_connections](#tvbo.api.main.get_child_connections) | Return the child connections of an ontology node. |
+| [get_parent_connections](#tvbo.api.main.get_parent_connections) | Return the parent connections of an ontology node. |
+| [health](#tvbo.api.main.health) | Report service liveness for health checks. |
+| [query_nodes](#tvbo.api.main.query_nodes) | Query the ontology for nodes matching a term. |
+| [root](#tvbo.api.main.root) | Return the API name and version at the root endpoint. |
+| [run_experiment](#tvbo.api.main.run_experiment) | Run a simulation experiment and return the results. |
+| [search](#tvbo.api.main.search) | Search the ontology for entries matching a term. |
+
+### configure_experiment { #tvbo.api.main.configure_experiment }
+
+```python
+api.main.configure_experiment(metadata=Body(...))
+```
+
+Configure a simulation experiment from legacy metadata.
+
+Passes the submitted metadata to the ontology API to set up a simulation experiment.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type               | Description                              | Default     |
+|----------|--------------------|------------------------------------------|-------------|
+| metadata | SimulationMetadata | Legacy simulation configuration payload. | `Body(...)` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                |
+|--------|--------|------------------------------------------------------------|
+|        |        | A confirmation message that the experiment was configured. |
+
+### get_child_connections { #tvbo.api.main.get_child_connections }
+
+```python
+api.main.get_child_connections(node_id=Path(..., description='Node ID'))
+```
+
+Return the child connections of an ontology node.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                                          | Default                            |
+|---------|--------|------------------------------------------------------|------------------------------------|
+| node_id | int    | Identifier of the node whose children are requested. | `Path(..., description='Node ID')` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                       |
+|--------|--------|---------------------------------------------------|
+|        |        | The connections from the node to its child nodes. |
+
+### get_parent_connections { #tvbo.api.main.get_parent_connections }
+
+```python
+api.main.get_parent_connections(node_id=Path(..., description='Node ID'))
+```
+
+Return the parent connections of an ontology node.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name    | Type   | Description                                         | Default                            |
+|---------|--------|-----------------------------------------------------|------------------------------------|
+| node_id | int    | Identifier of the node whose parents are requested. | `Path(..., description='Node ID')` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                        |
+|--------|--------|----------------------------------------------------|
+|        |        | The connections from the node to its parent nodes. |
+
+### health { #tvbo.api.main.health }
+
+```python
+api.main.health()
+```
+
+Report service liveness for health checks.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                               |
+|--------|--------|-------------------------------------------|
+|        |        | A mapping with a `status` of `"healthy"`. |
+
+### query_nodes { #tvbo.api.main.query_nodes }
+
+```python
+api.main.query_nodes(
+    query_str=Query(..., description='Term to query in ontology'),
+)
+```
+
+Query the ontology for nodes matching a term.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                    | Default                                               |
+|-----------|--------|--------------------------------|-------------------------------------------------------|
+| query_str | str    | Term to query in the ontology. | `Query(..., description='Term to query in ontology')` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                            |
+|--------|--------|----------------------------------------|
+|        |        | The ontology nodes matching the query. |
+
+### root { #tvbo.api.main.root }
+
+```python
+api.main.root()
+```
+
+Return the API name and version at the root endpoint.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                  |
+|--------|--------|--------------------------------------------------------------|
+|        |        | A mapping with the API `message` label and `version` string. |
+
+### run_experiment { #tvbo.api.main.run_experiment }
+
+```python
+api.main.run_experiment(request=Body(...))
+```
+
+Run a simulation experiment and return the results.
+
+The experiment dict should match the YAML schema and is passed directly to SimulationExperiment for initialization.
+
+### search { #tvbo.api.main.search }
+
+```python
+api.main.search(term=Query(..., description='Ontology term to search for'))
+```
+
+Search the ontology for entries matching a term.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                  | Default                                                 |
+|--------|--------|------------------------------|---------------------------------------------------------|
+| term   | str    | Ontology term to search for. | `Query(..., description='Ontology term to search for')` |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                     |
+|--------|--------|-------------------------------------------------|
+|        |        | The ontology search results for the given term. |

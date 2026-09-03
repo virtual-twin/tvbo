@@ -1,0 +1,92 @@
+# Slot: type 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/type](https://w3id.org/tvbo/slot/type)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Activity](../classes/Activity.qmd) | One thing that was done: a solve, a fit, an analysis, a render |  no  |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | Backend-agnostic graph generator specification |  no  |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | A single named step (or output) in a Procedure: one typed operation producing... |  no  |
+| [File](../classes/File.qmd) |  |  no  |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [Aggregation](../classes/Aggregation.qmd) | Specifies how to aggregate values across a dimension |  no  |
+| [TuningObjective](../classes/TuningObjective.qmd) | Defines what the tuning algorithm optimizes for |  no  |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+| [Study](../classes/Study.qmd) | Bibliographic anchor for a source publication, identified by its citation key... |  no  |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Activity](../classes/Activity.qmd), [GraphGenerator](../classes/GraphGenerator.qmd), [ProcedureStep](../classes/ProcedureStep.qmd), [File](../classes/File.qmd), [Analysis](../classes/Analysis.qmd), [Aggregation](../classes/Aggregation.qmd), [TuningObjective](../classes/TuningObjective.qmd), [Algorithm](../classes/Algorithm.qmd), [Study](../classes/Study.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:type |
+| native | tvbo:type |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: type
+domain_of:
+- Activity
+- GraphGenerator
+- ProcedureStep
+- File
+- Analysis
+- Aggregation
+- TuningObjective
+- Algorithm
+- Study
+range: string
+
+```
+</details></div>

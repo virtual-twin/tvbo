@@ -1,0 +1,98 @@
+# Slot: simulation_period 
+
+
+_Duration of each simulation step (e.g., one BOLD TR)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/simulation_period](https://w3id.org/tvbo/slot/simulation_period)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Algorithm](../classes/Algorithm.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:simulation_period |
+| native | tvbo:simulation_period |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: simulation_period
+description: Duration of each simulation step (e.g., one BOLD TR)
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Algorithm
+domain_of:
+- Algorithm
+range: float
+
+```
+</details></div>

@@ -1,0 +1,103 @@
+# Slot: class_reference 
+
+
+_Direct class reference (alternative to pipeline). Use for external library classes like tvboptim.Bold, custom monitors, or any callable class. The class is instantiated with constructor_args and called with call_args. Example: {name: Bold, module: tvboptim.observations.tvb_monitors.bold, constructor_args: [{name: period, value: 1000.0}]}_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/class_reference](https://w3id.org/tvbo/slot/class_reference)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ClassReference](../classes/ClassReference.qmd) |
+| Domain Of | [Observation](../classes/Observation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Observation](../classes/Observation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:class_reference |
+| native | tvbo:class_reference |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: class_reference
+description: 'Direct class reference (alternative to pipeline). Use for external library
+  classes like tvboptim.Bold, custom monitors, or any callable class. The class is
+  instantiated with constructor_args and called with call_args. Example: {name: Bold,
+  module: tvboptim.observations.tvb_monitors.bold, constructor_args: [{name: period,
+  value: 1000.0}]}'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Observation
+domain_of:
+- Observation
+range: ClassReference
+inlined: true
+
+```
+</details></div>

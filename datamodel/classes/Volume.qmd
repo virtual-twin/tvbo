@@ -1,0 +1,356 @@
+# Class: Volume 
+
+
+_A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, same layer and same colour scale, with the geometry coming from an atlas instead of a mesh. Values are placed BY LABEL through the atlas crosswalk, never by array position._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Volume](https://w3id.org/tvbo/class/Volume)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Volume
+    click Volume href "./Volume.html"
+      ColorScale <|-- Volume
+        click ColorScale href "./ColorScale.html"
+      
+      Volume : atlas
+        
+          
+    
+        
+        
+        Volume --> "0..1" String : atlas
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Volume : colormap
+        
+          
+    
+        
+        
+        Volume --> "0..1" String : colormap
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Volume : image
+        
+          
+    
+        
+        
+        Volume --> "0..1" String : image
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Volume : intensity_projection
+        
+          
+    
+        
+        
+        Volume --> "0..1" String : intensity_projection
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Volume : percentile
+        
+          
+    
+        
+        
+        Volume --> "0..1" Float : percentile
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Volume : symmetric
+        
+          
+    
+        
+        
+        Volume --> "0..1" Boolean : symmetric
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Volume : view
+        
+          
+    
+        
+        
+        Volume --> "0..1" VolumeView : view
+        click VolumeView href "../../enums/VolumeView.html"
+    
+
+        
+      Volume : vmax
+        
+          
+    
+        
+        
+        Volume --> "0..1" Float : vmax
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Volume : vmin
+        
+          
+    
+        
+        
+        Volume --> "0..1" Float : vmin
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [ColorScale](../classes/ColorScale.qmd)
+    * **Volume**
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [atlas](../slots/atlas.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The curated atlas whose segmentation the values are painted into | direct |
+| [image](../slots/image.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | A `dseg` segmentation file, for a parcellation nobody has curated | direct |
+| [view](../slots/view.qmd) | 0..1 <br/> [VolumeView](../enums/VolumeView.qmd) | Which plane the volume is projected along | direct |
+| [intensity_projection](../slots/intensity_projection.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | How voxels collapse along the view axis (`absmax` by default) | direct |
+| [colormap](../slots/colormap.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`, or... | [ColorScale](../classes/ColorScale.qmd) |
+| [vmin](../slots/vmin.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale starts at | [ColorScale](../classes/ColorScale.qmd) |
+| [vmax](../slots/vmax.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale ends at | [ColorScale](../classes/ColorScale.qmd) |
+| [symmetric](../slots/symmetric.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Centre the limits on zero, so zero is the map's midpoint | [ColorScale](../classes/ColorScale.qmd) |
+| [percentile](../slots/percentile.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Clip the limit to this percentile of the values (100 = no clipping), so one o... | [ColorScale](../classes/ColorScale.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [volume](../slots/volume.qmd) | range | [Volume](../classes/Volume.qmd) |
+| [Inset](../classes/Inset.qmd) | [volume](../slots/volume.qmd) | range | [Volume](../classes/Volume.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Volume |
+| native | tvbo:Volume |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Volume
+description: 'A labelled-volume panel''s geometry: the volumetric counterpart of `Surface`,
+  same layer and same colour scale, with the geometry coming from an atlas instead
+  of a mesh. Values are placed BY LABEL through the atlas crosswalk, never by array
+  position.'
+from_schema: https://w3id.org/tvbo/figure
+is_a: ColorScale
+attributes:
+  atlas:
+    name: atlas
+    description: The curated atlas whose segmentation the values are painted into.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Surface
+    - Volume
+    - Parcellation
+    - BidsEntities
+    range: string
+  image:
+    name: image
+    description: A `dseg` segmentation file, for a parcellation nobody has curated.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Volume
+    range: string
+  view:
+    name: view
+    description: Which plane the volume is projected along.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Surface
+    - Volume
+    range: VolumeView
+  intensity_projection:
+    name: intensity_projection
+    description: How voxels collapse along the view axis (`absmax` by default).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Volume
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Volume
+description: 'A labelled-volume panel''s geometry: the volumetric counterpart of `Surface`,
+  same layer and same colour scale, with the geometry coming from an atlas instead
+  of a mesh. Values are placed BY LABEL through the atlas crosswalk, never by array
+  position.'
+from_schema: https://w3id.org/tvbo/figure
+is_a: ColorScale
+attributes:
+  atlas:
+    name: atlas
+    description: The curated atlas whose segmentation the values are painted into.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Volume
+    domain_of:
+    - Surface
+    - Volume
+    - Parcellation
+    - BidsEntities
+    range: string
+  image:
+    name: image
+    description: A `dseg` segmentation file, for a parcellation nobody has curated.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Volume
+    domain_of:
+    - Volume
+    range: string
+  view:
+    name: view
+    description: Which plane the volume is projected along.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Volume
+    domain_of:
+    - Surface
+    - Volume
+    range: VolumeView
+  intensity_projection:
+    name: intensity_projection
+    description: How voxels collapse along the view axis (`absmax` by default).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Volume
+    domain_of:
+    - Volume
+    range: string
+  colormap:
+    name: colormap
+    description: The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`,
+      or one a project added) or a name the backend knows. Unset takes the theme's
+      `sequential`, or its `diverging` where the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Volume
+    domain_of:
+    - Style
+    - ColorScale
+    range: string
+  vmin:
+    name: vmin
+    description: The value the scale starts at. A declared end is honoured as given;
+      the other is still derived from the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Volume
+    domain_of:
+    - ColorScale
+    range: float
+  vmax:
+    name: vmax
+    description: The value the scale ends at. See `vmin`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Volume
+    domain_of:
+    - ColorScale
+    range: float
+  symmetric:
+    name: symmetric
+    description: Centre the limits on zero, so zero is the map's midpoint. What a
+      field of signed deviations needs — read on an off-centre scale it is misleading
+      in a way no axis label catches.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Volume
+    domain_of:
+    - ColorScale
+    range: boolean
+  percentile:
+    name: percentile
+    description: Clip the limit to this percentile of the values (100 = no clipping),
+      so one outlier region cannot wash the whole map out. Applies whether or not
+      the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Volume
+    domain_of:
+    - ColorScale
+    range: float
+
+```
+</details></div>

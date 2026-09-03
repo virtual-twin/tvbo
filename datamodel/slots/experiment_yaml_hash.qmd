@@ -1,0 +1,102 @@
+# Slot: experiment_yaml_hash 
+
+
+_SHA-256 hex digest of the normalised experiment YAML that produced this artifact. Used by the cross-experiment cache (see :class:`SimulationStudy.from_file`) to detect when a cached upstream result has gone stale because the experiment's spec was edited. Computed as ``hashlib.sha256(yaml.safe_dump(normalized_yaml).encode()).hexdigest()`` over the fully resolved (post-``!include``) experiment block._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/experiment_yaml_hash](https://w3id.org/tvbo/slot/experiment_yaml_hash)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Provenance](../classes/Provenance.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Provenance](../classes/Provenance.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:experiment_yaml_hash |
+| native | tvbo:experiment_yaml_hash |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: experiment_yaml_hash
+description: SHA-256 hex digest of the normalised experiment YAML that produced this
+  artifact. Used by the cross-experiment cache (see :class:`SimulationStudy.from_file`)
+  to detect when a cached upstream result has gone stale because the experiment's
+  spec was edited. Computed as ``hashlib.sha256(yaml.safe_dump(normalized_yaml).encode()).hexdigest()``
+  over the fully resolved (post-``!include``) experiment block.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Provenance
+domain_of:
+- Provenance
+range: string
+
+```
+</details></div>

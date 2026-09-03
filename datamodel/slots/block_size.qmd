@@ -1,0 +1,77 @@
+# Slot: block_size 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/block_size](https://w3id.org/tvbo/slot/block_size)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+| [Integrator](../classes/Integrator.qmd) | Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, tr... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Exploration](../classes/Exploration.qmd), [Integrator](../classes/Integrator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:block_size |
+| native | tvbo:block_size |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: block_size
+domain_of:
+- Exploration
+- Integrator
+range: string
+
+```
+</details></div>

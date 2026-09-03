@@ -1,0 +1,108 @@
+# Slot: weight_parameter 
+
+
+_Per-node stimulus weighting supplied as a Parameter, so a DERIVED weighting carries its provenance instead of being inlined as a list of numbers. Use it when the weighting is measured or computed rather than hand-listed: `source:` + `measure:` names the stored array, `producer:` names the call that builds it (an ROI mask projected through a basis, a retinotopic map, a measured stimulation field). This is the same provenance triple every other external array uses, so a spatial stimulus pattern is described by where it came from rather than by a literal a reader cannot check. Resolved at load time into the per-node `weights`, aligned with `nodes` exactly as a literal weighting is; mutually exclusive with `weight_distribution`, and a literal `weights` wins over both._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/weight_parameter](https://w3id.org/tvbo/slot/weight_parameter)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Parameter](../classes/Parameter.qmd) |
+| Domain Of | [Event](../classes/Event.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Event](../classes/Event.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:weight_parameter |
+| native | tvbo:weight_parameter |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: weight_parameter
+description: 'Per-node stimulus weighting supplied as a Parameter, so a DERIVED weighting
+  carries its provenance instead of being inlined as a list of numbers. Use it when
+  the weighting is measured or computed rather than hand-listed: `source:` + `measure:`
+  names the stored array, `producer:` names the call that builds it (an ROI mask projected
+  through a basis, a retinotopic map, a measured stimulation field). This is the same
+  provenance triple every other external array uses, so a spatial stimulus pattern
+  is described by where it came from rather than by a literal a reader cannot check.
+  Resolved at load time into the per-node `weights`, aligned with `nodes` exactly
+  as a literal weighting is; mutually exclusive with `weight_distribution`, and a
+  literal `weights` wins over both.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Event
+domain_of:
+- Event
+range: Parameter
+inlined: true
+
+```
+</details></div>

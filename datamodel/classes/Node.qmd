@@ -1,0 +1,700 @@
+# Class: Node 
+
+
+_A node in a network with its own dynamics and properties_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Node](https://w3id.org/tvbo/Node)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Node
+    click Node href "./Node.html"
+      Node : alternateName
+        
+          
+    
+        
+        
+        Node --> "*" String : alternateName
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Node : description
+        
+          
+    
+        
+        
+        Node --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Node : dynamics
+        
+          
+    
+        
+        
+        Node --> "0..1" Dynamics : dynamics
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      Node : events
+        
+          
+    
+        
+        
+        Node --> "*" Event : events
+        click Event href "./Event.html"
+    
+
+        
+      Node : id
+        
+          
+    
+        
+        
+        Node --> "1" Integer : id
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Node : label
+        
+          
+    
+        
+        
+        Node --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Node : parameters
+        
+          
+    
+        
+        
+        Node --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Node : position
+        
+          
+    
+        
+        
+        Node --> "0..1" Coordinate : position
+        click Coordinate href "./Coordinate.html"
+    
+
+        
+      Node : record
+        
+          
+    
+        
+        
+        Node --> "0..1" Boolean : record
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Node : region
+        
+          
+    
+        
+        
+        Node --> "0..1" String : region
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Node : size
+        
+          
+    
+        
+        
+        Node --> "0..1" Integer : size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Node : state
+        
+          
+    
+        
+        
+        Node --> "*" StateValue : state
+        click StateValue href "./StateValue.html"
+    
+
+        
+      Node : subnetwork
+        
+          
+    
+        
+        
+        Node --> "0..1" Network : subnetwork
+        click Network href "./Network.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Node](https://w3id.org/tvbo/Node) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [alternateName](../slots/alternateName.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Enter any alternate names, including abbreviations, for this entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [record](../slots/record.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether to include this element in simulation output files | direct |
+| [id](../slots/id.qmd) | 1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Unique node identifier | direct |
+| [size](../slots/size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of identical cells this node represents as a population | direct |
+| [dynamics](../slots/dynamics.qmd) | 0..1 <br/> [Dynamics](../classes/Dynamics.qmd) | Dynamics model governing this node's behavior | direct |
+| [position](../slots/position.qmd) | 0..1 <br/> [Coordinate](../classes/Coordinate.qmd) | Spatial coordinates (x, y, z) of the node | direct |
+| [region](../slots/region.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Brain region or anatomical label | direct |
+| [state](../slots/state.qmd) | * <br/> [StateValue](../classes/StateValue.qmd) | Per-node initial state variable values, keyed by state variable name | direct |
+| [events](../slots/events.qmd) | * <br/> [Event](../classes/Event.qmd) | Events attached to this node (e | direct |
+| [subnetwork](../slots/subnetwork.qmd) | 0..1 <br/> [Network](../classes/Network.qmd) | Optional finer-scale Network that "lives inside" this Node (network-of-networ... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [nodes](../slots/nodes.qmd) | range | [Node](../classes/Node.qmd) |
+| [Network](../classes/Network.qmd) | [node_template](../slots/node_template.qmd) | range | [Node](../classes/Node.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Node |
+| native | tvbo:Node |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Node
+description: A node in a network with its own dynamics and properties
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- alternateName
+- description
+- parameters
+- record
+slot_usage:
+  record:
+    name: record
+    ifabsent: 'True'
+attributes:
+  id:
+    name: id
+    description: Unique node identifier
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    domain_of:
+    - Node
+    - SimulationExperiment
+    range: integer
+    required: true
+  size:
+    name: size
+    description: 'Number of identical cells this node represents as a population.
+      The default (1) is a single unit; size>1 makes the node a population of N cells
+      sharing this node''s dynamics, addressed by index 0..N-1 when a connectivity
+      rule on an incident Edge is expanded. Maps to a NeuroML <population size="N">.
+      Backend-independent: it states the population''s cardinality, not a storage
+      layout.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(1)
+    domain_of:
+    - Annotation
+    - ReferenceFingerprint
+    - Node
+    - Sample
+    range: integer
+  dynamics:
+    name: dynamics
+    description: Dynamics model governing this node's behavior. Can be a reference
+      (by name) or inline definition. If not provided, uses experiment's dynamics.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    required: false
+    inlined: false
+  position:
+    name: position
+    description: Spatial coordinates (x, y, z) of the node
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Node
+    range: Coordinate
+    inlined: true
+  region:
+    name: region
+    description: Brain region or anatomical label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Node
+    - SpatialDomain
+    range: string
+  state:
+    name: state
+    description: Per-node initial state variable values, keyed by state variable name.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Node
+    - Reducer
+    range: StateValue
+    multivalued: true
+    inlined: true
+  events:
+    name: events
+    description: Events attached to this node (e.g., threshold-based state changes).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Node
+    - Edge
+    - Dynamics
+    - SimulationExperiment
+    range: Event
+    multivalued: true
+    inlined: true
+  subnetwork:
+    name: subnetwork
+    description: 'Optional finer-scale Network that "lives inside" this Node (network-of-networks
+      / multi-scale primitive). The subnetwork''s nodes map (one-to-many) to this
+      single parent Node. Cross-scale signal flow is declared as ordinary Edges in
+      the subnetwork''s `edges` list, using `source_network` / `target_network` with
+      the `parent` sentinel to traverse up the hierarchy. The subnetwork may carry
+      its own `graph_generator` (discrete sub-network — reservoir, spiking population,
+      jaxley compartments) and/or `mesh` (continuous surface field) — one unified
+      slot for reservoirs-per-region, spiking-populations-per-region, cells-per-region,
+      and surface-mesh-patches-per-region. Recursive: a subnetwork''s Nodes can themselves
+      carry subnetworks.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Node
+    range: Network
+    required: false
+    inlined: true
+class_uri: tvbo:Node
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Node
+description: A node in a network with its own dynamics and properties
+from_schema: https://w3id.org/tvbo
+slot_usage:
+  record:
+    name: record
+    ifabsent: 'True'
+attributes:
+  id:
+    name: id
+    description: Unique node identifier
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Node
+    domain_of:
+    - Node
+    - SimulationExperiment
+    range: integer
+    required: true
+  size:
+    name: size
+    description: 'Number of identical cells this node represents as a population.
+      The default (1) is a single unit; size>1 makes the node a population of N cells
+      sharing this node''s dynamics, addressed by index 0..N-1 when a connectivity
+      rule on an incident Edge is expanded. Maps to a NeuroML <population size="N">.
+      Backend-independent: it states the population''s cardinality, not a storage
+      layout.'
+    from_schema: https://w3id.org/tvbo
+    ifabsent: integer(1)
+    owner: Node
+    domain_of:
+    - Annotation
+    - ReferenceFingerprint
+    - Node
+    - Sample
+    range: integer
+  dynamics:
+    name: dynamics
+    description: Dynamics model governing this node's behavior. Can be a reference
+      (by name) or inline definition. If not provided, uses experiment's dynamics.
+    from_schema: https://w3id.org/tvbo
+    owner: Node
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    required: false
+    inlined: false
+  position:
+    name: position
+    description: Spatial coordinates (x, y, z) of the node
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Node
+    domain_of:
+    - Node
+    range: Coordinate
+    inlined: true
+  region:
+    name: region
+    description: Brain region or anatomical label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Node
+    domain_of:
+    - Node
+    - SpatialDomain
+    range: string
+  state:
+    name: state
+    description: Per-node initial state variable values, keyed by state variable name.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Node
+    domain_of:
+    - Node
+    - Reducer
+    range: StateValue
+    multivalued: true
+    inlined: true
+  events:
+    name: events
+    description: Events attached to this node (e.g., threshold-based state changes).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Node
+    domain_of:
+    - Node
+    - Edge
+    - Dynamics
+    - SimulationExperiment
+    range: Event
+    multivalued: true
+    inlined: true
+  subnetwork:
+    name: subnetwork
+    description: 'Optional finer-scale Network that "lives inside" this Node (network-of-networks
+      / multi-scale primitive). The subnetwork''s nodes map (one-to-many) to this
+      single parent Node. Cross-scale signal flow is declared as ordinary Edges in
+      the subnetwork''s `edges` list, using `source_network` / `target_network` with
+      the `parent` sentinel to traverse up the hierarchy. The subnetwork may carry
+      its own `graph_generator` (discrete sub-network — reservoir, spiking population,
+      jaxley compartments) and/or `mesh` (continuous surface field) — one unified
+      slot for reservoirs-per-region, spiking-populations-per-region, cells-per-region,
+      and surface-mesh-patches-per-region. Recursive: a subnetwork''s Nodes can themselves
+      carry subnetworks.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Node
+    domain_of:
+    - Node
+    range: Network
+    required: false
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Node
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  alternateName:
+    name: alternateName
+    description: Enter any alternate names, including abbreviations, for this entity.
+    from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+    slot_uri: atom:atlas/hasName
+    owner: Node
+    domain_of:
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - Node
+    range: string
+    multivalued: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Node
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Node
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  record:
+    name: record
+    description: Whether to include this element in simulation output files. Applicable
+      to state variables (default true), derived variables (default false), and network
+      nodes (default true). On an observation it forces (true) or suppresses (false)
+      persistence in the result; left unset, a terminal observation (one not consumed
+      by another observation or a loss) is recorded and an intermediate one is not.
+      Set false to suppress recording.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'True'
+    owner: Node
+    domain_of:
+    - Node
+    - Observation
+    - StateVariable
+    - DerivedVariable
+    - Exploration
+    range: boolean
+class_uri: tvbo:Node
+
+```
+</details></div>

@@ -1,0 +1,104 @@
+# Slot: figures 
+
+
+_Declarative Figure specs rendered from this study's experiment results — closes the replication loop (a study is its experiments plus the figures that read them)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/figures](https://w3id.org/tvbo/slot/figures)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Figure](../classes/Figure.qmd) |
+| Domain Of | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:figures |
+| native | tvbo:figures |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: figures
+description: Declarative Figure specs rendered from this study's experiment results
+  — closes the replication loop (a study is its experiments plus the figures that
+  read them).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationStudy
+domain_of:
+- SimulationStudy
+range: Figure
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

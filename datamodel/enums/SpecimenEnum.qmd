@@ -1,0 +1,70 @@
+# Enum: SpecimenEnum 
+
+
+
+
+_A set of permissible types for specimens used in brain atlas creation._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [atom:enum/SpecimenEnum](http://uri.interlex.org/tgbugs/uris/readable/enum/SpecimenEnum)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| Subject | None |  |
+| SubjectGroup | None |  |
+| TissueSample | None |  |
+| TissueSampleCollection | None |  |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SpecimenEnum
+description: A set of permissible types for specimens used in brain atlas creation.
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+permissible_values:
+  Subject:
+    text: Subject
+  SubjectGroup:
+    text: SubjectGroup
+  TissueSample:
+    text: TissueSample
+  TissueSampleCollection:
+    text: TissueSampleCollection
+
+```
+</details>
+
+</div>

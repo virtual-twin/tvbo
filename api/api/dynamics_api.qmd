@@ -1,0 +1,39 @@
+# dynamics_api { #tvbo.api.dynamics_api }
+
+`api.dynamics_api`
+
+Dynamics model API — serves neural mass models from the tvbo database.
+
+## Endpoints {.doc-section .doc-section-endpoints}
+
+GET /api/v1/dynamics              — list available models (filterable) GET /api/v1/dynamics/{id}/sidecar — LinkML-valid YAML or JSON
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [MODEL_DIR](#tvbo.api.dynamics_api.MODEL_DIR) |  |
+| [router](#tvbo.api.dynamics_api.router) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [get_sidecar](#tvbo.api.dynamics_api.get_sidecar) | Download full LinkML-valid model definition (YAML or JSON). |
+| [list_dynamics](#tvbo.api.dynamics_api.list_dynamics) | List available dynamics models. |
+
+### get_sidecar { #tvbo.api.dynamics_api.get_sidecar }
+
+```python
+api.dynamics_api.get_sidecar(model_id, format=Query('yaml'))
+```
+
+Download full LinkML-valid model definition (YAML or JSON).
+
+### list_dynamics { #tvbo.api.dynamics_api.list_dynamics }
+
+```python
+api.dynamics_api.list_dynamics(system_type=Query(None), name=Query(None))
+```
+
+List available dynamics models.

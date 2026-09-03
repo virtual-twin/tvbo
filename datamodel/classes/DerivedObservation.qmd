@@ -1,0 +1,807 @@
+# Class: DerivedObservation 
+
+
+_Observation derived from one or more other observations. Examples: - fc (from bold) - single source transformation - fc_corr (from fc and fc_target) - multi-source comparison Unlike regular Observations, these don't generate monitor classes but are computed from existing observation values._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:DerivedObservation](https://w3id.org/tvbo/DerivedObservation)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DerivedObservation
+    click DerivedObservation href "./DerivedObservation.html"
+      Observation <|-- DerivedObservation
+        click Observation href "./Observation.html"
+      
+      DerivedObservation : acronym
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" String : acronym
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedObservation : aggregation
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" AggregationType : aggregation
+        click AggregationType href "../../enums/AggregationType.html"
+    
+
+        
+      DerivedObservation : class_reference
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" ClassReference : class_reference
+        click ClassReference href "./ClassReference.html"
+    
+
+        
+      DerivedObservation : data_source
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" DataSource : data_source
+        click DataSource href "./DataSource.html"
+    
+
+        
+      DerivedObservation : description
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedObservation : downsample_period
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" Float : downsample_period
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      DerivedObservation : environment
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" SoftwareEnvironment : environment
+        click SoftwareEnvironment href "./SoftwareEnvironment.html"
+    
+
+        
+      DerivedObservation : equation
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      DerivedObservation : imaging_modality
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" ImagingModality : imaging_modality
+        click ImagingModality href "../../enums/ImagingModality.html"
+    
+
+        
+      DerivedObservation : label
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedObservation : name
+        
+          
+    
+        
+        
+        DerivedObservation --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedObservation : parameters
+        
+          
+    
+        
+        
+        DerivedObservation --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      DerivedObservation : period
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" Float : period
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      DerivedObservation : pipeline
+        
+          
+    
+        
+        
+        DerivedObservation --> "*" FunctionCall : pipeline
+        click FunctionCall href "./FunctionCall.html"
+    
+
+        
+      DerivedObservation : skip_t
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" Integer : skip_t
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      DerivedObservation : source
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" StateVariable : source
+        click StateVariable href "./StateVariable.html"
+    
+
+        
+      DerivedObservation : source_observations
+        
+          
+    
+        
+        
+        DerivedObservation --> "1..*" Observation : source_observations
+        click Observation href "./Observation.html"
+    
+
+        
+      DerivedObservation : tail_samples
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" Integer : tail_samples
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      DerivedObservation : time_scale
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" UnitEnum : time_scale
+        click UnitEnum href "../../enums/UnitEnum.html"
+    
+
+        
+      DerivedObservation : voi
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" Integer : voi
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      DerivedObservation : warmup_source
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" String : warmup_source
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedObservation : window_size
+        
+          
+    
+        
+        
+        DerivedObservation --> "0..1" Integer : window_size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [Observation](../classes/Observation.qmd)
+    * **DerivedObservation**
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:DerivedObservation](https://w3id.org/tvbo/DerivedObservation) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [source_observations](../slots/source_observations.qmd) | 1..* <br/> [Observation](../classes/Observation.qmd) | One or more observations to derive from | direct |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | [Observation](../classes/Observation.qmd) |
+| [acronym](../slots/acronym.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Observation](../classes/Observation.qmd) |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Observation](../classes/Observation.qmd) |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Observation](../classes/Observation.qmd) |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | [Observation](../classes/Observation.qmd) |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | [Observation](../classes/Observation.qmd) |
+| [environment](../slots/environment.qmd) | 0..1 <br/> [SoftwareEnvironment](../classes/SoftwareEnvironment.qmd) |  | [Observation](../classes/Observation.qmd) |
+| [time_scale](../slots/time_scale.qmd) | 0..1 <br/> [UnitEnum](../enums/UnitEnum.qmd) | Time unit for the integration / simulation | [Observation](../classes/Observation.qmd) |
+| [source](../slots/source.qmd) | 0..1 <br/> [StateVariable](../classes/StateVariable.qmd) | State variable to observe (e | [Observation](../classes/Observation.qmd) |
+| [period](../slots/period.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Sampling period for monitors (ms) | [Observation](../classes/Observation.qmd) |
+| [downsample_period](../slots/downsample_period.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Intermediate downsampling period (ms) | [Observation](../classes/Observation.qmd) |
+| [voi](../slots/voi.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Variable of interest index (which state variable to monitor) | [Observation](../classes/Observation.qmd) |
+| [imaging_modality](../slots/imaging_modality.qmd) | 0..1 <br/> [ImagingModality](../enums/ImagingModality.qmd) | Type of imaging modality (BOLD, EEG, MEG, etc | [Observation](../classes/Observation.qmd) |
+| [warmup_source](../slots/warmup_source.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Reference to transient simulation result for history initialization (e | [Observation](../classes/Observation.qmd) |
+| [data_source](../slots/data_source.qmd) | 0..1 <br/> [DataSource](../classes/DataSource.qmd) | Load data from external source (file, database, API) | [Observation](../classes/Observation.qmd) |
+| [skip_t](../slots/skip_t.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of samples to skip at the start (transient removal) | [Observation](../classes/Observation.qmd) |
+| [tail_samples](../slots/tail_samples.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of samples from the end to use | [Observation](../classes/Observation.qmd) |
+| [aggregation](../slots/aggregation.qmd) | 0..1 <br/> [AggregationType](../enums/AggregationType.qmd) | How to aggregate over time | [Observation](../classes/Observation.qmd) |
+| [window_size](../slots/window_size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of samples for windowed aggregation | [Observation](../classes/Observation.qmd) |
+| [pipeline](../slots/pipeline.qmd) | * <br/> [FunctionCall](../classes/FunctionCall.qmd) | Ordered sequence of Functions | [Observation](../classes/Observation.qmd) |
+| [class_reference](../slots/class_reference.qmd) | 0..1 <br/> [ClassReference](../classes/ClassReference.qmd) | Direct class reference (alternative to pipeline) | [Observation](../classes/Observation.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) | [derived_observations](../slots/derived_observations.qmd) | range | [DerivedObservation](../classes/DerivedObservation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:DerivedObservation |
+| native | tvbo:DerivedObservation |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DerivedObservation
+description: 'Observation derived from one or more other observations. Examples: -
+  fc (from bold) - single source transformation - fc_corr (from fc and fc_target)
+  - multi-source comparison Unlike regular Observations, these don''t generate monitor
+  classes but are computed from existing observation values.'
+from_schema: https://w3id.org/tvbo
+is_a: Observation
+attributes:
+  source_observations:
+    name: source_observations
+    description: One or more observations to derive from. For transformations (e.g.,
+      fc from bold), use single source. For comparisons (e.g., fc_corr from fc and
+      fc_target), use multiple sources. Order may matter for asymmetric operations.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - DerivedObservation
+    range: Observation
+    required: true
+    multivalued: true
+    inlined: false
+    minimum_cardinality: 1
+class_uri: tvbo:DerivedObservation
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DerivedObservation
+description: 'Observation derived from one or more other observations. Examples: -
+  fc (from bold) - single source transformation - fc_corr (from fc and fc_target)
+  - multi-source comparison Unlike regular Observations, these don''t generate monitor
+  classes but are computed from existing observation values.'
+from_schema: https://w3id.org/tvbo
+is_a: Observation
+attributes:
+  source_observations:
+    name: source_observations
+    description: One or more observations to derive from. For transformations (e.g.,
+      fc from bold), use single source. For comparisons (e.g., fc_corr from fc and
+      fc_target), use multiple sources. Order may matter for asymmetric operations.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - DerivedObservation
+    range: Observation
+    required: true
+    multivalued: true
+    inlined: false
+    minimum_cardinality: 1
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: DerivedObservation
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Event
+    - Tractogram
+    - GraphGenerator
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    range: string
+    required: true
+  acronym:
+    name: acronym
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: skos:notation
+    owner: DerivedObservation
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - Observation
+    - Function
+    - FunctionCall
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: DerivedObservation
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: DerivedObservation
+    domain_of:
+    - Dataset
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - Network
+    - GraphGenerator
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - UpdateRule
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:Equation
+    owner: DerivedObservation
+    domain_of:
+    - Stimulus
+    - Event
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - Case
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    range: Equation
+    inlined: true
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - TemporalApplicableEquation
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  environment:
+    name: environment
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    - SimulationExperiment
+    - PDESolver
+    range: SoftwareEnvironment
+  time_scale:
+    name: time_scale
+    description: Time unit for the integration / simulation. Determines the physical
+      time meaning of one model time-step.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: ms
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    - Integrator
+    range: UnitEnum
+  source:
+    name: source
+    description: State variable to observe (e.g., S_e for excitatory activity). For
+      observations derived from other observations, use DerivedObservation.
+    from_schema: https://w3id.org/tvbo
+    owner: DerivedObservation
+    domain_of:
+    - Edge
+    - Observation
+    - Dynamics
+    - CouplingInput
+    range: StateVariable
+    inlined: false
+  period:
+    name: period
+    description: 'Sampling period for monitors (ms). For BOLD: TR in ms.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    range: float
+  downsample_period:
+    name: downsample_period
+    description: 'Intermediate downsampling period (ms). For BOLD: typically matches
+      dt.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    range: float
+  voi:
+    name: voi
+    description: 'Variable of interest index (which state variable to monitor). Default:
+      0.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    range: integer
+  imaging_modality:
+    name: imaging_modality
+    description: Type of imaging modality (BOLD, EEG, MEG, etc.)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    range: ImagingModality
+  warmup_source:
+    name: warmup_source
+    description: Reference to transient simulation result for history initialization
+      (e.g., 'result_init').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    - ClassReference
+    range: string
+  data_source:
+    name: data_source
+    description: Load data from external source (file, database, API). When specified,
+      this observation represents empirical/external data rather than simulated data.
+      Enables unified treatment of all data.
+    from_schema: https://w3id.org/tvbo
+    owner: DerivedObservation
+    domain_of:
+    - Parcellation
+    - Tractogram
+    - Observation
+    range: DataSource
+    inlined: true
+  skip_t:
+    name: skip_t
+    description: 'Number of samples to skip at the start (transient removal). For
+      FC: typically 10-20 TRs.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    range: integer
+  tail_samples:
+    name: tail_samples
+    description: 'Number of samples from the end to use. Takes the last N samples
+      before aggregation. E.g., tail_samples: 500 means use data[-500:].'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    range: integer
+  aggregation:
+    name: aggregation
+    description: How to aggregate over time
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    - Coupling
+    range: AggregationType
+  window_size:
+    name: window_size
+    description: Number of samples for windowed aggregation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    range: integer
+  pipeline:
+    name: pipeline
+    description: Ordered sequence of Functions. Each step has a unique `name` (used
+      to key step outputs) and transforms input -> output. List form preserves execution
+      order.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    range: FunctionCall
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  class_reference:
+    name: class_reference
+    description: 'Direct class reference (alternative to pipeline). Use for external
+      library classes like tvboptim.Bold, custom monitors, or any callable class.
+      The class is instantiated with constructor_args and called with call_args. Example:
+      {name: Bold, module: tvboptim.observations.tvb_monitors.bold, constructor_args:
+      [{name: period, value: 1000.0}]}'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedObservation
+    domain_of:
+    - Observation
+    range: ClassReference
+    inlined: true
+class_uri: tvbo:DerivedObservation
+
+```
+</details></div>

@@ -1,0 +1,104 @@
+# Slot: procedure 
+
+
+_Optional symbolic procedure for derived generators (e.g. null-model shuffles): ordered steps and named outputs, each carrying an Equation._
+
+__
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/procedure](https://w3id.org/tvbo/slot/procedure)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | Backend-agnostic graph generator specification |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Procedure](../classes/Procedure.qmd) |
+| Domain Of | [GraphGenerator](../classes/GraphGenerator.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [GraphGenerator](../classes/GraphGenerator.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:procedure |
+| native | tvbo:procedure |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: procedure
+description: 'Optional symbolic procedure for derived generators (e.g. null-model
+  shuffles): ordered steps and named outputs, each carrying an Equation.
+
+  '
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: GraphGenerator
+domain_of:
+- GraphGenerator
+range: Procedure
+inlined: true
+
+```
+</details></div>

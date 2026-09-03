@@ -1,0 +1,100 @@
+# Slot: inner_iterations 
+
+
+_For mode=nested only: number of inner-loop iterations to run per outer iteration. Defaults to the included algorithm's own n_iterations. A small value (e.g. 5-10) is usually enough to correct the drift introduced by one outer step._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/inner_iterations](https://w3id.org/tvbo/slot/inner_iterations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [AlgorithmInclude](../classes/AlgorithmInclude.qmd) | Reference to an included algorithm with optional argument overrides |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [AlgorithmInclude](../classes/AlgorithmInclude.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [AlgorithmInclude](../classes/AlgorithmInclude.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:inner_iterations |
+| native | tvbo:inner_iterations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: inner_iterations
+description: 'For mode=nested only: number of inner-loop iterations to run per outer
+  iteration. Defaults to the included algorithm''s own n_iterations. A small value
+  (e.g. 5-10) is usually enough to correct the drift introduced by one outer step.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: AlgorithmInclude
+domain_of:
+- AlgorithmInclude
+range: integer
+
+```
+</details></div>

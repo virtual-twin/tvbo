@@ -1,0 +1,100 @@
+# Slot: font_size 
+
+
+_Base font size in points (physical: 1 pt = 1/72 inch). The real text size, unchanged by figure size or dpi; set it (or the width) so labels are legible at print size._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/font_size](https://w3id.org/tvbo/slot/font_size)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:font_size |
+| native | tvbo:font_size |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: font_size
+description: 'Base font size in points (physical: 1 pt = 1/72 inch). The real text
+  size, unchanged by figure size or dpi; set it (or the width) so labels are legible
+  at print size.'
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: float
+
+```
+</details></div>

@@ -1,0 +1,77 @@
+# Slot: stages 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/stages](https://w3id.org/tvbo/slot/stages)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Optimization](../classes/Optimization.qmd), [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:stages |
+| native | tvbo:stages |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: stages
+domain_of:
+- Optimization
+- Algorithm
+range: string
+
+```
+</details></div>

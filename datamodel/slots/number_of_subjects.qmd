@@ -1,0 +1,98 @@
+# Slot: number_of_subjects 
+
+
+_Number of subjects in the tractography dataset_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/number_of_subjects](https://w3id.org/tvbo/slot/number_of_subjects)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Tractogram](../classes/Tractogram.qmd) | Reference to tractography/diffusion MRI data used to derive structural connec... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Tractogram](../classes/Tractogram.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Tractogram](../classes/Tractogram.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:number_of_subjects |
+| native | tvbo:number_of_subjects |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: number_of_subjects
+description: Number of subjects in the tractography dataset
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Tractogram
+domain_of:
+- Tractogram
+range: integer
+
+```
+</details></div>

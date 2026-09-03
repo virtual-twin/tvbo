@@ -1,0 +1,60 @@
+# dynamics_layout { #tvbo.plot.dynamics_layout }
+
+`plot.dynamics_layout`
+
+Declarative layout composition for Dynamics plotting.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [plot_dynamics_layout](#tvbo.plot.dynamics_layout.plot_dynamics_layout) | Compose multiple dynamics-related panels via ``subplot_mosaic``. |
+| [render_dynamics_panel](#tvbo.plot.dynamics_layout.render_dynamics_panel) | Render a single dynamics panel onto an axes according to its kind. |
+
+### plot_dynamics_layout { #tvbo.plot.dynamics_layout.plot_dynamics_layout }
+
+```python
+plot.dynamics_layout.plot_dynamics_layout(
+    dynamics,
+    layout=None,
+    panels=None,
+    figsize=None,
+    subplot_kwargs=None,
+    fig=None,
+    axes=None,
+)
+```
+
+Compose multiple dynamics-related panels via ``subplot_mosaic``.
+
+### render_dynamics_panel { #tvbo.plot.dynamics_layout.render_dynamics_panel }
+
+```python
+plot.dynamics_layout.render_dynamics_panel(dynamics, panel, ax, cache)
+```
+
+Render a single dynamics panel onto an axes according to its kind.
+
+Dispatches on `panel["kind"]` (default `"timeseries"`): standard plot kinds are drawn with `plot_dynamics`, `"bifurcation"`/`"continuation"` run a continuation and plot the result, and `"parameter_sweep_timeseries"` (or `"timeseries_parameter_sweep"`) overlays trajectories across a parameter range.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                                                                                                                                                                           | Default    |
+|----------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| dynamics |        | The `Dynamics` model to render; copied before running so the original is left unmodified.                                                                                                             | _required_ |
+| panel    |        | Panel specification mapping. Recognized keys include `kind`, `dims`/`VOI`, `run`, `plot`, and `format`, plus kind-specific keys such as `parameter`, `values`, and `from_panel` for parameter sweeps. | _required_ |
+| ax       |        | The Matplotlib axes to draw the panel on.                                                                                                                                                             | _required_ |
+| cache    |        | Mapping of previously rendered panel names to their results, used to resolve continuation parameters referenced via `from_panel`.                                                                     | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                             |
+|--------|--------|-------------------------------------------------------------------------|
+|        |        | The continuation/bifurcation result object for those kinds (so later    |
+|        |        | panels can reference it), or `None` for plot and parameter-sweep kinds. |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                        |
+|--------|------------|----------------------------------------------------|
+|        | ValueError | If `kind` is not one of the supported panel kinds. |

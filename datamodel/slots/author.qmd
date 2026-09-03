@@ -1,0 +1,89 @@
+# Slot: author 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:creator](http://purl.org/dc/terms/creator)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BrainAtlas](../classes/BrainAtlas.qmd) | A schema for representing a version of a brain atlas |  no  |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [BrainAtlas](../classes/BrainAtlas.qmd), [SimulationTool](../classes/SimulationTool.qmd) |
+| Slot URI | [dcterms:creator](http://purl.org/dc/terms/creator) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://openminds.ebrains.eu/sands/BrainAtlas
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:creator |
+| native | atom:author |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: author
+from_schema: https://openminds.ebrains.eu/sands/BrainAtlas
+slot_uri: dcterms:creator
+domain_of:
+- BrainAtlas
+- SimulationTool
+range: string
+multivalued: true
+
+```
+</details></div>

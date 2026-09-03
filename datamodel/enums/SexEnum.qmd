@@ -1,0 +1,70 @@
+# Enum: SexEnum 
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_study:enum/SexEnum](https://w3id.org/tvbo/study/enum/SexEnum)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| male | None | Male |
+| female | None | Female |
+| other | None | Other or not reported |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [sex](../slots/sex.qmd) | Biological sex |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SexEnum
+from_schema: https://w3id.org/tvbo/study
+permissible_values:
+  male:
+    text: male
+    description: Male
+  female:
+    text: female
+    description: Female
+  other:
+    text: other
+    description: Other or not reported
+
+```
+</details>
+
+</div>

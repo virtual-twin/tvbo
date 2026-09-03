@@ -1,0 +1,98 @@
+# Slot: bids_version 
+
+
+_BIDS version the layout was written against._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_study:slot/bids_version](https://w3id.org/tvbo/study/slot/bids_version)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StudyLayout](../classes/StudyLayout.qmd) | Directory layout of a study dataset, and the single ground truth for it |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [StudyLayout](../classes/StudyLayout.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [StudyLayout](../classes/StudyLayout.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_study:bids_version |
+| native | tvbo_study:bids_version |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: bids_version
+description: BIDS version the layout was written against.
+from_schema: https://w3id.org/tvbo/study
+rank: 1000
+owner: StudyLayout
+domain_of:
+- StudyLayout
+range: string
+
+```
+</details></div>

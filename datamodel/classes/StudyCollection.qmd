@@ -1,0 +1,795 @@
+# Class: StudyCollection 
+
+
+_The whole manuscript as one runnable specification: a study that aggregates the member studies a paper reports (``members``) and also owns the paper's own demonstration experiments, analyses and figures (the SimulationStudy slots it inherits). ``tvbo run`` walks the members and the owned content, emits every reported number to a results manifest (``results``) and every figure with its composed caption, then packages the lot as a COMBINE/OMEX archive (``archive``) — so the paper becomes an instance of the reproducibility it argues for. A Study-of-studies, which no SimulationStudy is (``experiments`` ranges over experiments, not studies); legitimized by COMBINE/OMEX, SED-ML and the ISA ``Investigation`` top-level container it parallels._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:StudyCollection](https://w3id.org/tvbo/StudyCollection)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class StudyCollection
+    click StudyCollection href "./StudyCollection.html"
+      SimulationStudy <|-- StudyCollection
+        click SimulationStudy href "./SimulationStudy.html"
+      
+      StudyCollection : analyses
+        
+          
+    
+        
+        
+        StudyCollection --> "*" Analysis : analyses
+        click Analysis href "./Analysis.html"
+    
+
+        
+      StudyCollection : archive
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" ArchiveConfig : archive
+        click ArchiveConfig href "./ArchiveConfig.html"
+    
+
+        
+      StudyCollection : authors
+        
+          
+    
+        
+        
+        StudyCollection --> "*" String : authors
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : citekey
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" String : citekey
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : code_source
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" CodeSource : code_source
+        click CodeSource href "./CodeSource.html"
+    
+
+        
+      StudyCollection : derived_from
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" String : derived_from
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : description
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : doi
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" String : doi
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : figures
+        
+          
+    
+        
+        
+        StudyCollection --> "*" Figure : figures
+        click Figure href "./Figure.html"
+    
+
+        
+      StudyCollection : key
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" String : key
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : label
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : members
+        
+          
+    
+        
+        
+        StudyCollection --> "*" StudyMember : members
+        click StudyMember href "./StudyMember.html"
+    
+
+        
+      StudyCollection : model
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" Dynamics : model
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      StudyCollection : references
+        
+          
+    
+        
+        
+        StudyCollection --> "*" String : references
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : results
+        
+          
+    
+        
+        
+        StudyCollection --> "*" ResultBinding : results
+        click ResultBinding href "./ResultBinding.html"
+    
+
+        
+      StudyCollection : sample
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" Sample : sample
+        click Sample href "./Sample.html"
+    
+
+        
+      StudyCollection : simulation_experiments
+        
+          
+    
+        
+        
+        StudyCollection --> "*" SimulationExperiment : simulation_experiments
+        click SimulationExperiment href "./SimulationExperiment.html"
+    
+
+        
+      StudyCollection : title
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" String : title
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : type
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" String : type
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      StudyCollection : workflow
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" WorkflowConfig : workflow
+        click WorkflowConfig href "./WorkflowConfig.html"
+    
+
+        
+      StudyCollection : year
+        
+          
+    
+        
+        
+        StudyCollection --> "0..1" Integer : year
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [Study](../classes/Study.qmd)
+    * [SimulationStudy](../classes/SimulationStudy.qmd)
+        * **StudyCollection**
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:StudyCollection](https://w3id.org/tvbo/StudyCollection) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [members](../slots/members.qmd) | * <br/> [StudyMember](../classes/StudyMember.qmd) | The member studies this collection aggregates, each a reference to a study re... | direct |
+| [results](../slots/results.qmd) | * <br/> [ResultBinding](../classes/ResultBinding.qmd) | The named numbers the prose cites, each keyed by the manuscript token that st... | direct |
+| [archive](../slots/archive.qmd) | 0..1 <br/> [ArchiveConfig](../classes/ArchiveConfig.qmd) | How to package the run into a COMBINE/OMEX archive — the single supplementary... | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [derived_from](../slots/derived_from.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [model](../slots/model.qmd) | 0..1 <br/> [Dynamics](../classes/Dynamics.qmd) |  | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [references](../slots/references.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [key](../slots/key.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Deprecated alias of the inherited ``citekey``; retained for back-compatibilit... | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [sample](../slots/sample.qmd) | 0..1 <br/> [Sample](../classes/Sample.qmd) |  | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [workflow](../slots/workflow.qmd) | 0..1 <br/> [WorkflowConfig](../classes/WorkflowConfig.qmd) | Study-wide default orchestration for rendering its experiments' sweeps into d... | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [simulation_experiments](../slots/simulation_experiments.qmd) | * <br/> [SimulationExperiment](../classes/SimulationExperiment.qmd) |  | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [analyses](../slots/analyses.qmd) | * <br/> [Analysis](../classes/Analysis.qmd) | Analyses of this study's results, each persisted as its own container and so ... | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [figures](../slots/figures.qmd) | * <br/> [Figure](../classes/Figure.qmd) | Declarative Figure specs rendered from this study's experiment results — clos... | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [code_source](../slots/code_source.qmd) | 0..1 <br/> [CodeSource](../classes/CodeSource.qmd) | Where this study's callable code lives — the builders and transform/observati... | [SimulationStudy](../classes/SimulationStudy.qmd) |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Study](../classes/Study.qmd) |
+| [citekey](../slots/citekey.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | BibTeX citation key; the join key into references | [Study](../classes/Study.qmd) |
+| [type](../slots/type.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Publication type (article, book, inproceedings, …) | [Study](../classes/Study.qmd) |
+| [title](../slots/title.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Study](../classes/Study.qmd) |
+| [authors](../slots/authors.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Author display strings (full detail in references | [Study](../classes/Study.qmd) |
+| [year](../slots/year.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |  | [Study](../classes/Study.qmd) |
+| [doi](../slots/doi.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Study](../classes/Study.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:StudyCollection |
+| native | tvbo:StudyCollection |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: StudyCollection
+description: 'The whole manuscript as one runnable specification: a study that aggregates
+  the member studies a paper reports (``members``) and also owns the paper''s own
+  demonstration experiments, analyses and figures (the SimulationStudy slots it inherits).
+  ``tvbo run`` walks the members and the owned content, emits every reported number
+  to a results manifest (``results``) and every figure with its composed caption,
+  then packages the lot as a COMBINE/OMEX archive (``archive``) — so the paper becomes
+  an instance of the reproducibility it argues for. A Study-of-studies, which no SimulationStudy
+  is (``experiments`` ranges over experiments, not studies); legitimized by COMBINE/OMEX,
+  SED-ML and the ISA ``Investigation`` top-level container it parallels.'
+from_schema: https://w3id.org/tvbo
+is_a: SimulationStudy
+attributes:
+  members:
+    name: members
+    description: The member studies this collection aggregates, each a reference to
+      a study recipe (``recipe``) plus whether it is ``optional`` (skipped unless
+      requested, for runs too heavy to recompute per build). ``tvbo run`` executes
+      each member's own experiments, analyses and figures; the ``figures``/``analyses``
+      inherited here are instead the paper-native demos that belong to no member.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - StudyCollection
+    range: StudyMember
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  results:
+    name: results
+    description: The named numbers the prose cites, each keyed by the manuscript token
+      that stands in for it (``key``) and bound either to a computed value (``used:``
+      a DataRef into a member's or its own analysis) or to an authored constant quoted
+      from prior work (``value`` + ``source``). ``tvbo run`` collects these into a
+      results manifest the document reads, so no reported figure is transcribed by
+      hand and a stale or missing key fails the build rather than printing a wrong
+      number.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - StudyCollection
+    range: ResultBinding
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  archive:
+    name: archive
+    description: How to package the run into a COMBINE/OMEX archive — the single supplementary
+      artifact from which every figure, number and caption regenerates. Unset means
+      no archive is emitted.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - StudyCollection
+    range: ArchiveConfig
+    inlined: true
+class_uri: tvbo:StudyCollection
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: StudyCollection
+description: 'The whole manuscript as one runnable specification: a study that aggregates
+  the member studies a paper reports (``members``) and also owns the paper''s own
+  demonstration experiments, analyses and figures (the SimulationStudy slots it inherits).
+  ``tvbo run`` walks the members and the owned content, emits every reported number
+  to a results manifest (``results``) and every figure with its composed caption,
+  then packages the lot as a COMBINE/OMEX archive (``archive``) — so the paper becomes
+  an instance of the reproducibility it argues for. A Study-of-studies, which no SimulationStudy
+  is (``experiments`` ranges over experiments, not studies); legitimized by COMBINE/OMEX,
+  SED-ML and the ISA ``Investigation`` top-level container it parallels.'
+from_schema: https://w3id.org/tvbo
+is_a: SimulationStudy
+attributes:
+  members:
+    name: members
+    description: The member studies this collection aggregates, each a reference to
+      a study recipe (``recipe``) plus whether it is ``optional`` (skipped unless
+      requested, for runs too heavy to recompute per build). ``tvbo run`` executes
+      each member's own experiments, analyses and figures; the ``figures``/``analyses``
+      inherited here are instead the paper-native demos that belong to no member.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - StudyCollection
+    range: StudyMember
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  results:
+    name: results
+    description: The named numbers the prose cites, each keyed by the manuscript token
+      that stands in for it (``key``) and bound either to a computed value (``used:``
+      a DataRef into a member's or its own analysis) or to an authored constant quoted
+      from prior work (``value`` + ``source``). ``tvbo run`` collects these into a
+      results manifest the document reads, so no reported figure is transcribed by
+      hand and a stale or missing key fails the build rather than printing a wrong
+      number.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - StudyCollection
+    range: ResultBinding
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  archive:
+    name: archive
+    description: How to package the run into a COMBINE/OMEX archive — the single supplementary
+      artifact from which every figure, number and caption regenerates. Unset means
+      no archive is emitted.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - StudyCollection
+    range: ArchiveConfig
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: StudyCollection
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - StudyMember
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  derived_from:
+    name: derived_from
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: prov:wasDerivedFrom
+    owner: StudyCollection
+    domain_of:
+    - Provenance
+    - SimulationStudy
+    range: string
+  model:
+    name: model
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - Electrode
+    - SimulationExperiment
+    - SimulationStudy
+    range: Dynamics
+  references:
+    name: references
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:references
+    owner: StudyCollection
+    domain_of:
+    - Provenance
+    - Observation
+    - Dynamics
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+    multivalued: true
+  key:
+    name: key
+    description: Deprecated alias of the inherited ``citekey``; retained for back-compatibility
+      with existing tooling.
+    from_schema: https://w3id.org/tvbo
+    owner: StudyCollection
+    domain_of:
+    - DataSource
+    - SimulationStudy
+    - ResultBinding
+    range: string
+  sample:
+    name: sample
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - SimulationStudy
+    range: Sample
+  workflow:
+    name: workflow
+    description: Study-wide default orchestration for rendering its experiments' sweeps
+      into distributed workflows (Slurm/Snakemake/Nextflow). Individual experiments
+      refine it via ``workflow_overrides``.
+    from_schema: https://w3id.org/tvbo
+    owner: StudyCollection
+    domain_of:
+    - DistributionConfig
+    - SimulationExperiment
+    - SimulationStudy
+    range: WorkflowConfig
+    inlined: true
+  simulation_experiments:
+    name: simulation_experiments
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    alias: experiments
+    owner: StudyCollection
+    domain_of:
+    - SimulationStudy
+    range: SimulationExperiment
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  analyses:
+    name: analyses
+    description: 'Analyses of this study''s results, each persisted as its own container
+      and so bindable by a figure or a later analysis exactly like a run. These take
+      the ``Analysis`` form that invokes a ``callable`` over ``arguments`` (the ``type``/``target``/``wrt``
+      form analyses a solve and belongs on an ``Observation`` instead), and each needs
+      a unique ``name`` — it keys the container. An argument''s ``used:`` DataRef
+      both records what was consumed and orders the run: ``tvbo run`` executes the
+      analyses around the experiments — one an experiment consumes first, one consuming
+      an experiment after — and then renders the figures.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - SimulationStudy
+    range: Analysis
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  figures:
+    name: figures
+    description: Declarative Figure specs rendered from this study's experiment results
+      — closes the replication loop (a study is its experiments plus the figures that
+      read them).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - SimulationStudy
+    range: Figure
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  code_source:
+    name: code_source
+    description: 'Where this study''s callable code lives — the builders and transform/observation
+      callables it references by bare ``module:`` name. Decouples the specification
+      from its code: a local directory (relative to the recipe YAML or absolute) or
+      a git repository fetched and cached at load time. When absent, the conventional
+      ``<recipe-dir>/code/`` is used.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - SimulationStudy
+    range: CodeSource
+    inlined: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: StudyCollection
+    domain_of:
+    - Dataset
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  citekey:
+    name: citekey
+    description: BibTeX citation key; the join key into references.bib for full bibliographic
+      detail. A study is identified by its key/citekey and described by its title
+      — no ``name`` needed.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - Study
+    range: string
+  type:
+    name: type
+    description: Publication type (article, book, inproceedings, …).
+    from_schema: https://w3id.org/tvbo
+    owner: StudyCollection
+    domain_of:
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: string
+  title:
+    name: title
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:title
+    owner: StudyCollection
+    domain_of:
+    - Study
+    range: string
+  authors:
+    name: authors
+    description: Author display strings (full detail in references.bib).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: StudyCollection
+    domain_of:
+    - Study
+    range: string
+    multivalued: true
+  year:
+    name: year
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:issued
+    owner: StudyCollection
+    domain_of:
+    - Study
+    range: integer
+  doi:
+    name: doi
+    from_schema: https://w3id.org/tvbo
+    slot_uri: bibo:doi
+    owner: StudyCollection
+    domain_of:
+    - SoftwarePackage
+    - Study
+    range: string
+class_uri: tvbo:StudyCollection
+
+```
+</details></div>

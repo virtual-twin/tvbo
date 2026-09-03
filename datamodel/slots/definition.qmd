@@ -1,0 +1,97 @@
+# Slot: definition 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [skos:definition](http://www.w3.org/2004/02/skos/core#definition)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Equation](../classes/Equation.qmd) |  |  no  |
+| [StateVariable](../classes/StateVariable.qmd) |  |  no  |
+| [Parameter](../classes/Parameter.qmd) |  |  no  |
+| [Function](../classes/Function.qmd) | A function with explicit input -> transformation -> output flow |  no  |
+| [DifferentialOperator](../classes/DifferentialOperator.qmd) |  |  no  |
+| [LossFunction](../classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |  no  |
+| [DerivedParameter](../classes/DerivedParameter.qmd) |  |  no  |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Equation](../classes/Equation.qmd), [StateVariable](../classes/StateVariable.qmd), [Parameter](../classes/Parameter.qmd), [Function](../classes/Function.qmd), [DifferentialOperator](../classes/DifferentialOperator.qmd) |
+| Slot URI | [skos:definition](http://www.w3.org/2004/02/skos/core#definition) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | skos:definition |
+| native | tvbo:definition |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: definition
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: skos:definition
+domain_of:
+- Equation
+- StateVariable
+- Parameter
+- Function
+- DifferentialOperator
+range: string
+
+```
+</details></div>

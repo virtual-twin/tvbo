@@ -1,0 +1,301 @@
+# Class: Contact 
+
+
+_Individual contact on a DBS electrode._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:class/Contact](https://w3id.org/tvbo/dbs/class/Contact)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Contact
+    click Contact href "./Contact.html"
+      Contact : contact_id
+        
+          
+    
+        
+        
+        Contact --> "0..1" Integer : contact_id
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Contact : coordinate
+        
+          
+    
+        
+        
+        Contact --> "0..1" Coordinate : coordinate
+        click Coordinate href "./Coordinate.html"
+    
+
+        
+      Contact : label
+        
+          
+    
+        
+        
+        Contact --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [contact_id](../slots/contact_id.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Identifier (e | direct |
+| [coordinate](../slots/coordinate.qmd) | 0..1 <br/> [Coordinate](../classes/Coordinate.qmd) | 3D coordinate of the contact center in the defined coordinate space | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Optional human-readable label (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Electrode](../classes/Electrode.qmd) | [contacts](../slots/contacts.qmd) | range | [Contact](../classes/Contact.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:Contact |
+| native | tvbo_dbs:Contact |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Contact
+description: Individual contact on a DBS electrode.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  contact_id:
+    name: contact_id
+    description: Identifier (e.g., 0, 1, 2)
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    slot_uri: dcterms:identifier
+    domain_of:
+    - Contact
+    range: integer
+  coordinate:
+    name: coordinate
+    description: 3D coordinate of the contact center in the defined coordinate space
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - Contact
+    range: Coordinate
+  label:
+    name: label
+    description: Optional human-readable label (e.g., "1a")
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: rdfs:label
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Contact
+description: Individual contact on a DBS electrode.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  contact_id:
+    name: contact_id
+    description: Identifier (e.g., 0, 1, 2)
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Contact
+    domain_of:
+    - Contact
+    range: integer
+  coordinate:
+    name: coordinate
+    description: 3D coordinate of the contact center in the defined coordinate space
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: Contact
+    domain_of:
+    - Contact
+    range: Coordinate
+  label:
+    name: label
+    description: Optional human-readable label (e.g., "1a")
+    from_schema: https://w3id.org/tvbo/dbs
+    slot_uri: rdfs:label
+    owner: Contact
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+
+```
+</details></div>

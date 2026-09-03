@@ -1,0 +1,103 @@
+# Slot: record 
+
+
+_Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). On an observation it forces (true) or suppresses (false) persistence in the result; left unset, a terminal observation (one not consumed by another observation or a loss) is recorded and an intermediate one is not. Set false to suppress recording._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/record](https://w3id.org/tvbo/slot/record)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Node](../classes/Node.qmd) | A node in a network with its own dynamics and properties |  yes  |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+| [StateVariable](../classes/StateVariable.qmd) |  |  yes  |
+| [DerivedVariable](../classes/DerivedVariable.qmd) |  |  yes  |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Node](../classes/Node.qmd), [Observation](../classes/Observation.qmd), [StateVariable](../classes/StateVariable.qmd), [DerivedVariable](../classes/DerivedVariable.qmd), [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:record |
+| native | tvbo:record |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: record
+description: Whether to include this element in simulation output files. Applicable
+  to state variables (default true), derived variables (default false), and network
+  nodes (default true). On an observation it forces (true) or suppresses (false) persistence
+  in the result; left unset, a terminal observation (one not consumed by another observation
+  or a loss) is recorded and an intermediate one is not. Set false to suppress recording.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+domain_of:
+- Node
+- Observation
+- StateVariable
+- DerivedVariable
+- Exploration
+range: boolean
+
+```
+</details></div>

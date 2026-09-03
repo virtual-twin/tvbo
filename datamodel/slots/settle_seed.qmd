@@ -1,0 +1,111 @@
+# Slot: settle_seed 
+
+
+_Seed for the noise the settle integrates, when the settle runs as its own scan. Absent -- the default -- leaves the settle on whatever stream its solver hands it, which is what an unmodified upstream warm start does; the backend is not silently given a different draw than the reference implementation it is checked against. Present means the settle uses exactly this seed. Both interesting cases are then sayable: equal to `seed` puts the two scans on one stream, and different from it decorrelates them. Equal is not neutral -- where the two scans take the same number of steps a shorter draw is a prefix of a longer one, so the measured noise repeats the settle's sample for sample, and corr(settle, measured) on demeaned fluctuations is +0.49 against -0.01 decorrelated. Its effect on the reported statistics was null everywhere it was measured (FC bias below 0.03 sigma, no trend), so this slot exists to make the choice visible and reproducible rather than because either answer is known to be wrong._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/settle_seed](https://w3id.org/tvbo/slot/settle_seed)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Noise](../classes/Noise.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Noise](../classes/Noise.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:settle_seed |
+| native | tvbo:settle_seed |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: settle_seed
+description: 'Seed for the noise the settle integrates, when the settle runs as its
+  own scan. Absent -- the default -- leaves the settle on whatever stream its solver
+  hands it, which is what an unmodified upstream warm start does; the backend is not
+  silently given a different draw than the reference implementation it is checked
+  against. Present means the settle uses exactly this seed. Both interesting cases
+  are then sayable: equal to `seed` puts the two scans on one stream, and different
+  from it decorrelates them. Equal is not neutral -- where the two scans take the
+  same number of steps a shorter draw is a prefix of a longer one, so the measured
+  noise repeats the settle''s sample for sample, and corr(settle, measured) on demeaned
+  fluctuations is +0.49 against -0.01 decorrelated. Its effect on the reported statistics
+  was null everywhere it was measured (FC bias below 0.03 sigma, no trend), so this
+  slot exists to make the choice visible and reproducible rather than because either
+  answer is known to be wrong.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Noise
+domain_of:
+- Noise
+range: integer
+required: false
+
+```
+</details></div>

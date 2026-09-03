@@ -1,0 +1,90 @@
+# Enum: BidsDirectoryStatus 
+
+
+
+
+_A directory's standing with the BIDS standard, which is what decides whether it needs a ``.bidsignore`` entry._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_study:enum/BidsDirectoryStatus](https://w3id.org/tvbo/study/enum/BidsDirectoryStatus)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| sanctioned | None | Named in the released BIDS ``rules/directories |
+| proposed | None | Named only by a BEP still under review, so a released validator does not know... |
+| nested_dataset | None | A BIDS dataset in its own right, carrying its own ``dataset_description |
+| unsanctioned | None | Outside the BIDS vocabulary |
+| hidden | None | Dot-prefixed, so validators skip it by convention and no `` |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [bids](../slots/bids.qmd) | Standing with the BIDS standard |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: BidsDirectoryStatus
+description: A directory's standing with the BIDS standard, which is what decides
+  whether it needs a ``.bidsignore`` entry.
+from_schema: https://w3id.org/tvbo/study
+permissible_values:
+  sanctioned:
+    text: sanctioned
+    description: Named in the released BIDS ``rules/directories.yaml`` for this ``DatasetType``.
+      Needs no ``.bidsignore`` entry.
+  proposed:
+    text: proposed
+    description: Named only by a BEP still under review, so a released validator does
+      not know it. Ignored until the BEP merges, which ``expires_with`` records.
+  nested_dataset:
+    text: nested_dataset
+    description: A BIDS dataset in its own right, carrying its own ``dataset_description.json``
+      and validated as that type.
+  unsanctioned:
+    text: unsanctioned
+    description: Outside the BIDS vocabulary. Must be listed in ``.bidsignore``, and
+      ``expires_with`` must say what would retire the entry.
+  hidden:
+    text: hidden
+    description: Dot-prefixed, so validators skip it by convention and no ``.bidsignore``
+      entry is needed.
+
+```
+</details>
+
+</div>

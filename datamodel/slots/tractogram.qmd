@@ -1,0 +1,99 @@
+# Slot: tractogram 
+
+
+_Reference to tractography data_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/tractogram](https://w3id.org/tvbo/slot/tractogram)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Tractogram](../classes/Tractogram.qmd) |
+| Domain Of | [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Network](../classes/Network.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:tractogram |
+| native | tvbo:tractogram |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: tractogram
+description: Reference to tractography data
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Network
+domain_of:
+- Network
+range: Tractogram
+inlined: true
+
+```
+</details></div>

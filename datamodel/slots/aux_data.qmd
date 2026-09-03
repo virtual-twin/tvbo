@@ -1,0 +1,104 @@
+# Slot: aux_data 
+
+
+_Ordered list of auxiliary inputs the observation pipeline consumes. Examples: a Surface mesh's faces array, an empirical FC matrix on a reference Network, or another Observation's output. Resolved load-time eagerly; rendered code is self-contained._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/aux_data](https://w3id.org/tvbo/slot/aux_data)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Reference](../classes/Reference.qmd) |
+| Domain Of | [Observation](../classes/Observation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Observation](../classes/Observation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:aux_data |
+| native | tvbo:aux_data |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: aux_data
+description: 'Ordered list of auxiliary inputs the observation pipeline consumes.
+  Examples: a Surface mesh''s faces array, an empirical FC matrix on a reference Network,
+  or another Observation''s output. Resolved load-time eagerly; rendered code is self-contained.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Observation
+domain_of:
+- Observation
+range: Reference
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

@@ -1,0 +1,5 @@
+# tvbo_units 
+
+Controlled vocabulary of physical units (UnitEnum) used across the TVB-O schema. Each is mapped to QUDT, from which its dimension vector and SI multiplier are vendored; a tool's own name for a dimension belongs to that tool, and is recorded on its SimulationTool entry.
+
+URI: https://w3id.org/tvbo/units

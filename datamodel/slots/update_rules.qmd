@@ -1,0 +1,104 @@
+# Slot: update_rules 
+
+
+_How parameters are updated each iteration. When using 'includes', update_rules are inherited from included algorithms._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/update_rules](https://w3id.org/tvbo/slot/update_rules)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [UpdateRule](../classes/UpdateRule.qmd) |
+| Domain Of | [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Algorithm](../classes/Algorithm.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:update_rules |
+| native | tvbo:update_rules |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: update_rules
+description: How parameters are updated each iteration. When using 'includes', update_rules
+  are inherited from included algorithms.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Algorithm
+domain_of:
+- Algorithm
+range: UpdateRule
+required: false
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

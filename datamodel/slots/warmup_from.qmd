@@ -1,0 +1,101 @@
+# Slot: warmup_from 
+
+
+_Previous stage to initialize from. Final values from that stage become initial values for this stage._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/warmup_from](https://w3id.org/tvbo/slot/warmup_from)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [OptimizationStage](../classes/OptimizationStage.qmd) | A single stage in a multi-stage optimization workflow |  no  |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [OptimizationStage](../classes/OptimizationStage.qmd) |
+| Domain Of | [OptimizationStage](../classes/OptimizationStage.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [OptimizationStage](../classes/OptimizationStage.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:warmup_from |
+| native | tvbo:warmup_from |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: warmup_from
+description: Previous stage to initialize from. Final values from that stage become
+  initial values for this stage.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: OptimizationStage
+domain_of:
+- OptimizationStage
+range: OptimizationStage
+inlined: false
+
+```
+</details></div>

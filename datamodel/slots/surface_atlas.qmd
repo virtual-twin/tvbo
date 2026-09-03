@@ -1,0 +1,99 @@
+# Slot: surface_atlas 
+
+
+_The atlas to read vertex labels from, where it differs from the one the values are keyed by._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/surface_atlas](https://w3id.org/tvbo/slot/surface_atlas)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Surface](../classes/Surface.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Surface](../classes/Surface.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:surface_atlas |
+| native | tvbo:surface_atlas |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: surface_atlas
+description: The atlas to read vertex labels from, where it differs from the one the
+  values are keyed by.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Surface
+domain_of:
+- Surface
+range: string
+
+```
+</details></div>

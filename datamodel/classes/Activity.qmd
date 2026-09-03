@@ -1,0 +1,566 @@
+# Class: Activity 
+
+
+_One thing that was done: a solve, a fit, an analysis, a render. The PROV complement of ``Provenance``, which describes an artifact — an artifact is ``prov:wasGeneratedBy`` an Activity, and an Activity ``prov:used`` the artifacts and environment it consumed. Slot names follow BEP028's activity record (``Id``, ``Label``, ``Command``, ``AssociatedWith``, ``Used``, ``StartedAtTime``, ``EndedAtTime``) so a record in that vocabulary serializes to it without a translation table._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [prov:Activity](http://www.w3.org/ns/prov#Activity)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Activity
+    click Activity href "./Activity.html"
+      Activity : associated_with
+        
+          
+    
+        
+        
+        Activity --> "*" SoftwarePackage : associated_with
+        click SoftwarePackage href "./SoftwarePackage.html"
+    
+
+        
+      Activity : command
+        
+          
+    
+        
+        
+        Activity --> "0..1" String : command
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Activity : description
+        
+          
+    
+        
+        
+        Activity --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Activity : ended_at
+        
+          
+    
+        
+        
+        Activity --> "0..1" String : ended_at
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Activity : iri
+        
+          
+    
+        
+        
+        Activity --> "0..1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Activity : name
+        
+          
+    
+        
+        
+        Activity --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Activity : started_at
+        
+          
+    
+        
+        
+        Activity --> "0..1" String : started_at
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Activity : type
+        
+          
+    
+        
+        
+        Activity --> "*" Uriorcurie : type
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      Activity : used
+        
+          
+    
+        
+        
+        Activity --> "*" Uriorcurie : used
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [prov:Activity](http://www.w3.org/ns/prov#Activity) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [iri](../slots/iri.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Optional stable IRI (or compact URI) for this entity in an external ontology ... | direct |
+| [command](../slots/command.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The command performed, parameters included | direct |
+| [associated_with](../slots/associated_with.qmd) | * <br/> [SoftwarePackage](../classes/SoftwarePackage.qmd) | The software that carried the activity out (BEP028 ``AssociatedWith``) | direct |
+| [used](../slots/used.qmd) | * <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | IRIs of the inputs, outputs and environment the activity consumed (BEP028 ``U... | direct |
+| [started_at](../slots/started_at.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | ISO 8601 start time | direct |
+| [ended_at](../slots/ended_at.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | ISO 8601 end time | direct |
+| [type](../slots/type.qmd) | * <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | Controlled-vocabulary terms narrowing what kind of activity this was | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | [activities](../slots/activities.qmd) | range | [Activity](../classes/Activity.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | prov:Activity |
+| native | tvbo:Activity |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Activity
+description: 'One thing that was done: a solve, a fit, an analysis, a render. The
+  PROV complement of ``Provenance``, which describes an artifact — an artifact is
+  ``prov:wasGeneratedBy`` an Activity, and an Activity ``prov:used`` the artifacts
+  and environment it consumed. Slot names follow BEP028''s activity record (``Id``,
+  ``Label``, ``Command``, ``AssociatedWith``, ``Used``, ``StartedAtTime``, ``EndedAtTime``)
+  so a record in that vocabulary serializes to it without a translation table.'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+- iri
+attributes:
+  command:
+    name: command
+    description: The command performed, parameters included. Null for something done
+      by hand, which BEP028 reads as a manual step and asks a ``description`` for.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Activity
+    range: string
+  associated_with:
+    name: associated_with
+    description: The software that carried the activity out (BEP028 ``AssociatedWith``).
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:wasAssociatedWith
+    rank: 1000
+    domain_of:
+    - Activity
+    range: SoftwarePackage
+    multivalued: true
+    inlined: false
+  used:
+    name: used
+    description: IRIs of the inputs, outputs and environment the activity consumed
+      (BEP028 ``Used``).
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:used
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: uriorcurie
+    multivalued: true
+  started_at:
+    name: started_at
+    description: ISO 8601 start time.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:startedAtTime
+    rank: 1000
+    domain_of:
+    - Activity
+    range: string
+  ended_at:
+    name: ended_at
+    description: ISO 8601 end time.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:endedAtTime
+    rank: 1000
+    domain_of:
+    - Activity
+    range: string
+  type:
+    name: type
+    description: Controlled-vocabulary terms narrowing what kind of activity this
+      was.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:type
+    rank: 1000
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: uriorcurie
+    multivalued: true
+class_uri: prov:Activity
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Activity
+description: 'One thing that was done: a solve, a fit, an analysis, a render. The
+  PROV complement of ``Provenance``, which describes an artifact — an artifact is
+  ``prov:wasGeneratedBy`` an Activity, and an Activity ``prov:used`` the artifacts
+  and environment it consumed. Slot names follow BEP028''s activity record (``Id``,
+  ``Label``, ``Command``, ``AssociatedWith``, ``Used``, ``StartedAtTime``, ``EndedAtTime``)
+  so a record in that vocabulary serializes to it without a translation table.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  command:
+    name: command
+    description: The command performed, parameters included. Null for something done
+      by hand, which BEP028 reads as a manual step and asks a ``description`` for.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Activity
+    domain_of:
+    - Activity
+    range: string
+  associated_with:
+    name: associated_with
+    description: The software that carried the activity out (BEP028 ``AssociatedWith``).
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:wasAssociatedWith
+    rank: 1000
+    owner: Activity
+    domain_of:
+    - Activity
+    range: SoftwarePackage
+    multivalued: true
+    inlined: false
+  used:
+    name: used
+    description: IRIs of the inputs, outputs and environment the activity consumed
+      (BEP028 ``Used``).
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:used
+    owner: Activity
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: uriorcurie
+    multivalued: true
+  started_at:
+    name: started_at
+    description: ISO 8601 start time.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:startedAtTime
+    rank: 1000
+    owner: Activity
+    domain_of:
+    - Activity
+    range: string
+  ended_at:
+    name: ended_at
+    description: ISO 8601 end time.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:endedAtTime
+    rank: 1000
+    owner: Activity
+    domain_of:
+    - Activity
+    range: string
+  type:
+    name: type
+    description: Controlled-vocabulary terms narrowing what kind of activity this
+      was.
+    from_schema: https://w3id.org/tvbo
+    exact_mappings:
+    - prov:type
+    rank: 1000
+    owner: Activity
+    domain_of:
+    - Activity
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Analysis
+    - Aggregation
+    - TuningObjective
+    - Algorithm
+    - Study
+    range: uriorcurie
+    multivalued: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Activity
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Activity
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  iri:
+    name: iri
+    description: Optional stable IRI (or compact URI) for this entity in an external
+      ontology or knowledge base. Used to load metadata from an external source; not
+      required when the entity is fully self-contained (equations, parameters, etc.
+      defined in the file itself).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Activity
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+class_uri: prov:Activity
+
+```
+</details></div>

@@ -1,0 +1,577 @@
+# Class: Phenotype 
+
+
+_Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales, demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the measure list; the h5 carries ``measures/<name>`` 1-D float arrays of length ``len(subjects)``._
+
+_Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html) and with NIDM's ``nidm:Phenotype`` concept. Per-measure metadata can optionally carry Cognitive Atlas (https://www.cognitiveatlas.org/) ``cogat:Task`` and ``cogat:Concept`` IRIs via ``measure_specs``._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Phenotype](https://w3id.org/tvbo/Phenotype)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Phenotype
+    click Phenotype href "./Phenotype.html"
+      Phenotype : category
+        
+          
+    
+        
+        
+        Phenotype --> "0..1" String : category
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Phenotype : cohort
+        
+          
+    
+        
+        
+        Phenotype --> "0..1" String : cohort
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Phenotype : data_file
+        
+          
+    
+        
+        
+        Phenotype --> "1" String : data_file
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Phenotype : dataset_id
+        
+          
+    
+        
+        
+        Phenotype --> "1" String : dataset_id
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Phenotype : description
+        
+          
+    
+        
+        
+        Phenotype --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Phenotype : label
+        
+          
+    
+        
+        
+        Phenotype --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Phenotype : measure_specs
+        
+          
+    
+        
+        
+        Phenotype --> "*" MeasureSpec : measure_specs
+        click MeasureSpec href "./MeasureSpec.html"
+    
+
+        
+      Phenotype : measures
+        
+          
+    
+        
+        
+        Phenotype --> "*" String : measures
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Phenotype : provenance
+        
+          
+    
+        
+        
+        Phenotype --> "0..1" Provenance : provenance
+        click Provenance href "./Provenance.html"
+    
+
+        
+      Phenotype : subjects
+        
+          
+    
+        
+        
+        Phenotype --> "1..*" String : subjects
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Phenotype](https://w3id.org/tvbo/Phenotype) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [provenance](../slots/provenance.qmd) | 0..1 <br/> [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance for this entity — what it was derived from, whi... | direct |
+| [dataset_id](../slots/dataset_id.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Unique identifier for this phenotype bundle | direct |
+| [subjects](../slots/subjects.qmd) | 1..* <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Ordered list of subject IDs (e | direct |
+| [measures](../slots/measures.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Names of the measures present in the h5 companion (one ``measures/<name>`` da... | direct |
+| [measure_specs](../slots/measure_specs.qmd) | * <br/> [MeasureSpec](../classes/MeasureSpec.qmd) | Optional per-measure metadata (Cognitive Atlas IRIs, units, description) | direct |
+| [category](../slots/category.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Coarse classification of the phenotype bundle, used for filtering in larger s... | direct |
+| [data_file](../slots/data_file.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path to the h5 companion (relative to the yaml) | direct |
+| [cohort](../slots/cohort.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Cohort label (e | direct |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Phenotype |
+| native | tvbo:Phenotype |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Phenotype
+description: 'Per-subject phenotype table (BIDS ``phenotype/`` directory convention).
+  Carries cognitive scores, clinical scales, demographic variables, behavioral task
+  outputs, physiological measures, or any other per-subject numeric measurement bundle
+  for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject
+  studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A,
+  g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the
+  measure list; the h5 carries ``measures/<name>`` 1-D float arrays of length ``len(subjects)``.
+
+  Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html)
+  and with NIDM''s ``nidm:Phenotype`` concept. Per-measure metadata can optionally
+  carry Cognitive Atlas (https://www.cognitiveatlas.org/) ``cogat:Task`` and ``cogat:Concept``
+  IRIs via ``measure_specs``.'
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+- provenance
+attributes:
+  dataset_id:
+    name: dataset_id
+    description: Unique identifier for this phenotype bundle.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    domain_of:
+    - Dataset
+    - Phenotype
+    range: string
+    required: true
+  subjects:
+    name: subjects
+    description: Ordered list of subject IDs (e.g. HCP-YA 6-digit IDs). Each ``measures/<name>``
+      array in the h5 companion is indexed by this order.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Dataset
+    - Phenotype
+    range: string
+    required: true
+    multivalued: true
+  measures:
+    name: measures
+    description: 'Names of the measures present in the h5 companion (one ``measures/<name>``
+      dataset per name). Example: ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR, CardSort_Unadj,
+      ProcSpeed_Unadj]``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Phenotype
+    range: string
+    multivalued: true
+  measure_specs:
+    name: measure_specs
+    description: Optional per-measure metadata (Cognitive Atlas IRIs, units, description).
+      When present, each entry's ``name`` must match an entry in ``measures``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Phenotype
+    range: MeasureSpec
+    multivalued: true
+    inlined_as_list: true
+  category:
+    name: category
+    description: 'Coarse classification of the phenotype bundle, used for filtering
+      in larger study libraries. Canonical values: ``cognitive`` (intelligence / memory
+      / attention scores), ``clinical`` (UPDRS, MMSE, …), ``behavioral`` (raw task
+      outputs), ``demographic``, ``physiological``, ``derived`` (composite scores
+      like g-factor or brain-age). Free string — extend as needed.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(cognitive)
+    domain_of:
+    - Phenotype
+    range: string
+  data_file:
+    name: data_file
+    description: Path to the h5 companion (relative to the yaml).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    range: string
+    required: true
+  cohort:
+    name: cohort
+    description: Cohort label (e.g. 'HCPYA', 'PPMI').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Phenotype
+    - BidsEntities
+    range: string
+class_uri: tvbo:Phenotype
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Phenotype
+description: 'Per-subject phenotype table (BIDS ``phenotype/`` directory convention).
+  Carries cognitive scores, clinical scales, demographic variables, behavioral task
+  outputs, physiological measures, or any other per-subject numeric measurement bundle
+  for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject
+  studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A,
+  g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the
+  measure list; the h5 carries ``measures/<name>`` 1-D float arrays of length ``len(subjects)``.
+
+  Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html)
+  and with NIDM''s ``nidm:Phenotype`` concept. Per-measure metadata can optionally
+  carry Cognitive Atlas (https://www.cognitiveatlas.org/) ``cogat:Task`` and ``cogat:Concept``
+  IRIs via ``measure_specs``.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  dataset_id:
+    name: dataset_id
+    description: Unique identifier for this phenotype bundle.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Phenotype
+    domain_of:
+    - Dataset
+    - Phenotype
+    range: string
+    required: true
+  subjects:
+    name: subjects
+    description: Ordered list of subject IDs (e.g. HCP-YA 6-digit IDs). Each ``measures/<name>``
+      array in the h5 companion is indexed by this order.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Phenotype
+    domain_of:
+    - Dataset
+    - Phenotype
+    range: string
+    required: true
+    multivalued: true
+  measures:
+    name: measures
+    description: 'Names of the measures present in the h5 companion (one ``measures/<name>``
+      dataset per name). Example: ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR, CardSort_Unadj,
+      ProcSpeed_Unadj]``.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Phenotype
+    domain_of:
+    - Phenotype
+    range: string
+    multivalued: true
+  measure_specs:
+    name: measure_specs
+    description: Optional per-measure metadata (Cognitive Atlas IRIs, units, description).
+      When present, each entry's ``name`` must match an entry in ``measures``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Phenotype
+    domain_of:
+    - Phenotype
+    range: MeasureSpec
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  category:
+    name: category
+    description: 'Coarse classification of the phenotype bundle, used for filtering
+      in larger study libraries. Canonical values: ``cognitive`` (intelligence / memory
+      / attention scores), ``clinical`` (UPDRS, MMSE, …), ``behavioral`` (raw task
+      outputs), ``demographic``, ``physiological``, ``derived`` (composite scores
+      like g-factor or brain-age). Free string — extend as needed.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(cognitive)
+    owner: Phenotype
+    domain_of:
+    - Phenotype
+    range: string
+  data_file:
+    name: data_file
+    description: Path to the h5 companion (relative to the yaml).
+    from_schema: https://w3id.org/tvbo
+    owner: Phenotype
+    domain_of:
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    range: string
+    required: true
+  cohort:
+    name: cohort
+    description: Cohort label (e.g. 'HCPYA', 'PPMI').
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Phenotype
+    domain_of:
+    - Phenotype
+    - BidsEntities
+    range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Phenotype
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Phenotype
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  provenance:
+    name: provenance
+    description: W3C PROV-O aligned provenance for this entity — what it was derived
+      from, which agent produced it, and when.
+    from_schema: https://w3id.org/tvbo
+    close_mappings:
+    - prov:wasGeneratedBy
+    rank: 1000
+    owner: Phenotype
+    domain_of:
+    - Figure
+    - ResultEntity
+    - ExperimentResultSidecar
+    - Phenotype
+    - Network
+    - SimulationExperiment
+    range: Provenance
+    inlined: true
+class_uri: tvbo:Phenotype
+
+```
+</details></div>

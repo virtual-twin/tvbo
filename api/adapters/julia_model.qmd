@@ -1,0 +1,110 @@
+# julia_model { #tvbo.adapters.julia_model }
+
+`adapters.julia_model`
+
+Prepared codegen context for the Julia model templates.
+
+The Julia backends (DifferentialEquations.jl, NetworkDynamics.jl, ModelingToolkit.jl) share the same *metadata → Julia* translation logic: which state variables/parameters become symbols, which optional packages are needed, how conditional derived variables fold into ``ifelse``, and how multi-mode models lay their state out along a mode axis.
+
+This module owns that logic so the Mako templates stay slim — they only emit syntax from the dict returned by :func:`build_model_context` (and the small helpers here).
+Mirrors the "resolve in Python, not Mako" convention used by the other adapters.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [JULIA_SOLVER_PACKAGES](#tvbo.adapters.julia_model.JULIA_SOLVER_PACKAGES) |  |
+| [JULIA_SPECIAL_FUNCTIONS](#tvbo.adapters.julia_model.JULIA_SPECIAL_FUNCTIONS) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [build_model_context](#tvbo.adapters.julia_model.build_model_context) | Build the full DifferentialEquations.jl model-function context. |
+| [equation_rhs_text](#tvbo.adapters.julia_model.equation_rhs_text) | Concatenated text of every SV / derived-variable / derived-parameter equation. |
+| [julia_ode_package](#tvbo.adapters.julia_model.julia_ode_package) | OrdinaryDiffEq sub-package providing ``solver_method`` (default: umbrella). |
+| [make_renderer](#tvbo.adapters.julia_model.make_renderer) | Return a renderer bound to this model's symbol table. |
+| [needs_nanmath](#tvbo.adapters.julia_model.needs_nanmath) | True if any equation contains a ``Piecewise``. |
+| [needs_special_functions](#tvbo.adapters.julia_model.needs_special_functions) | True if any equation calls a SpecialFunctions.jl function (erf, gamma, …). |
+| [parse_namespace](#tvbo.adapters.julia_model.parse_namespace) | How this model's equations parse, as keyword arguments for `parse_eq`. |
+| [symbol_names](#tvbo.adapters.julia_model.symbol_names) | Return ``(sv, params, coupling, derived_vars, derived_params)`` name lists. |
+
+### build_model_context { #tvbo.adapters.julia_model.build_model_context }
+
+```python
+adapters.julia_model.build_model_context(model, network=None, constraints=None)
+```
+
+Build the full DifferentialEquations.jl model-function context.
+
+Everything the ``tvbo-julia-model.jl.mako`` / ``tvbo-julia-ODEProblem.jl.mako`` templates need is pre-rendered here so those templates only emit syntax.
+
+Multi-mode models (``number_of_modes > 1``) lay each state variable out as a contiguous length-n_modes block, so the dfun operates on per-mode vectors and writes vector slices (``dx[lo:hi] .= …``); scalar models keep the flat layout.
+
+When ``network`` is supplied (a multi-node ``Network``), the model is emitted as a coupled network: the state is laid out as ``n_nodes`` blocks per state variable, each long-range coupling term becomes a connectivity matvec (``c = W · s_coupling``) evaluated once per step, and the per-node scalar RHS runs inside a ``for i in 1:N`` loop — reusing the single-node equation emission verbatim (no vectorised broadcasting). This is the vector field a whole-brain equilibrium/periodic-orbit continuation (e.g. Deco 2014 Fig 2c) continues in G.
+
+### equation_rhs_text { #tvbo.adapters.julia_model.equation_rhs_text }
+
+```python
+adapters.julia_model.equation_rhs_text(model)
+```
+
+Concatenated text of every SV / derived-variable / derived-parameter equation.
+
+Used to sniff which optional Julia packages the emitted model needs. Resolved through the parser rather than read off `.rhs`, because an equation stated purely as conditional branches has no `rhs` to read: the sniff would see `"None"`, miss the `Piecewise` it contains, and emit a model that uses NaNMath without importing it.
+
+### julia_ode_package { #tvbo.adapters.julia_model.julia_ode_package }
+
+```python
+adapters.julia_model.julia_ode_package(solver_method)
+```
+
+OrdinaryDiffEq sub-package providing ``solver_method`` (default: umbrella).
+
+### make_renderer { #tvbo.adapters.julia_model.make_renderer }
+
+```python
+adapters.julia_model.make_renderer(model, fmt='julia')
+```
+
+Return a renderer bound to this model's symbol table.
+
+Takes an `Equation` as readily as an expression or a string, resolving it through the one parser, so a caller never has to know whether the equation states itself as a right-hand side or as conditional branches. Reaching for `.rhs` at the call site works only for the first kind and yields `None` for the second.
+
+### needs_nanmath { #tvbo.adapters.julia_model.needs_nanmath }
+
+```python
+adapters.julia_model.needs_nanmath(model)
+```
+
+True if any equation contains a ``Piecewise``.
+
+The Julia printer routes domain-restricted powers inside Piecewise branches through NaNMath (NaN instead of DomainError, matching numpy/JAX), so those models must ``import NaNMath``.
+
+### needs_special_functions { #tvbo.adapters.julia_model.needs_special_functions }
+
+```python
+adapters.julia_model.needs_special_functions(model)
+```
+
+True if any equation calls a SpecialFunctions.jl function (erf, gamma, …).
+
+### parse_namespace { #tvbo.adapters.julia_model.parse_namespace }
+
+```python
+adapters.julia_model.parse_namespace(model)
+```
+
+How this model's equations parse, as keyword arguments for `parse_eq`.
+
+Both flavours of model reach this adapter, the runtime `Dynamics` in `tvbo.classes` and the generated one a heterogeneous node's inline dynamics is, and both carry the symbolic layer, so each is parsed against the table its own equations were.
+
+### symbol_names { #tvbo.adapters.julia_model.symbol_names }
+
+```python
+adapters.julia_model.symbol_names(model)
+```
+
+Return ``(sv, params, coupling, derived_vars, derived_params)`` name lists.
+
+These are exactly the names the Julia expression printer must treat as bare symbols rather than trying to resolve.

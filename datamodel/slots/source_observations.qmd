@@ -1,0 +1,107 @@
+# Slot: source_observations 
+
+
+_One or more observations to derive from. For transformations (e.g., fc from bold), use single source. For comparisons (e.g., fc_corr from fc and fc_target), use multiple sources. Order may matter for asymmetric operations._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/source_observations](https://w3id.org/tvbo/slot/source_observations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DerivedObservation](../classes/DerivedObservation.qmd) | Observation derived from one or more other observations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Observation](../classes/Observation.qmd) |
+| Domain Of | [DerivedObservation](../classes/DerivedObservation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+| Multivalued | Yes |
+| Minimum Cardinality | 1 |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DerivedObservation](../classes/DerivedObservation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:source_observations |
+| native | tvbo:source_observations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: source_observations
+description: One or more observations to derive from. For transformations (e.g., fc
+  from bold), use single source. For comparisons (e.g., fc_corr from fc and fc_target),
+  use multiple sources. Order may matter for asymmetric operations.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: DerivedObservation
+domain_of:
+- DerivedObservation
+range: Observation
+required: true
+multivalued: true
+inlined: false
+minimum_cardinality: 1
+
+```
+</details></div>

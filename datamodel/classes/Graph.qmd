@@ -1,0 +1,579 @@
+# Class: Graph 
+
+
+_A node-link panel's graph and how it is drawn: the connectome the model actually ran on, with a state living on it. The geometry is the network's own — one marker per region at its anatomical centre — and a layer supplies one value per region, placed by label._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Graph](https://w3id.org/tvbo/class/Graph)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Graph
+    click Graph href "./Graph.html"
+      ColorScale <|-- Graph
+        click ColorScale href "./ColorScale.html"
+      
+      Graph : color
+        
+          
+    
+        
+        
+        Graph --> "0..1" String : color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Graph : colormap
+        
+          
+    
+        
+        
+        Graph --> "0..1" String : colormap
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Graph : connectome
+        
+          
+    
+        
+        
+        Graph --> "0..1" String : connectome
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Graph : edge_alpha
+        
+          
+    
+        
+        
+        Graph --> "0..1" Float : edge_alpha
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Graph : edge_color
+        
+          
+    
+        
+        
+        Graph --> "0..1" String : edge_color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Graph : edge_percentile
+        
+          
+    
+        
+        
+        Graph --> "0..1" Float : edge_percentile
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Graph : edge_width
+        
+          
+    
+        
+        
+        Graph --> "0..1" Float : edge_width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Graph : labels
+        
+          
+    
+        
+        
+        Graph --> "0..1" Boolean : labels
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Graph : node_edge_color
+        
+          
+    
+        
+        
+        Graph --> "0..1" String : node_edge_color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Graph : node_edge_width
+        
+          
+    
+        
+        
+        Graph --> "0..1" Float : node_edge_width
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Graph : node_size
+        
+          
+    
+        
+        
+        Graph --> "0..1" Float : node_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Graph : percentile
+        
+          
+    
+        
+        
+        Graph --> "0..1" Float : percentile
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Graph : projection
+        
+          
+    
+        
+        
+        Graph --> "0..1" Projection : projection
+        click Projection href "../../enums/Projection.html"
+    
+
+        
+      Graph : symmetric
+        
+          
+    
+        
+        
+        Graph --> "0..1" Boolean : symmetric
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Graph : vmax
+        
+          
+    
+        
+        
+        Graph --> "0..1" Float : vmax
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Graph : vmin
+        
+          
+    
+        
+        
+        Graph --> "0..1" Float : vmin
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [ColorScale](../classes/ColorScale.qmd)
+    * **Graph**
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [connectome](../slots/connectome.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The network whose nodes and edges are drawn, as a curated IRI (`tvbo:DesikanK... | direct |
+| [projection](../slots/projection.qmd) | 0..1 <br/> [Projection](../enums/Projection.qmd) | Which plane the region centres flatten onto | direct |
+| [labels](../slots/labels.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Annotate each node with its region name | direct |
+| [color](../slots/color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | One flat colour for every node, for a panel whose subject is the network rath... | direct |
+| [node_size](../slots/node_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Marker size for the regions | direct |
+| [node_edge_color](../slots/node_edge_color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Outline colour of the region markers | direct |
+| [node_edge_width](../slots/node_edge_width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Outline weight of the region markers | direct |
+| [edge_color](../slots/edge_color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Colour of the connections that survive `edge_percentile` | direct |
+| [edge_alpha](../slots/edge_alpha.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Opacity of those connections | direct |
+| [edge_width](../slots/edge_width.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Base line weight of the connections; the drawn widths scale with the weight, ... | direct |
+| [edge_percentile](../slots/edge_percentile.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Keep only edges above this percentile of the weights | direct |
+| [colormap](../slots/colormap.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`, or... | [ColorScale](../classes/ColorScale.qmd) |
+| [vmin](../slots/vmin.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale starts at | [ColorScale](../classes/ColorScale.qmd) |
+| [vmax](../slots/vmax.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | The value the scale ends at | [ColorScale](../classes/ColorScale.qmd) |
+| [symmetric](../slots/symmetric.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Centre the limits on zero, so zero is the map's midpoint | [ColorScale](../classes/ColorScale.qmd) |
+| [percentile](../slots/percentile.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Clip the limit to this percentile of the values (100 = no clipping), so one o... | [ColorScale](../classes/ColorScale.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [network](../slots/network.qmd) | range | [Graph](../classes/Graph.qmd) |
+| [Inset](../classes/Inset.qmd) | [network](../slots/network.qmd) | range | [Graph](../classes/Graph.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Graph |
+| native | tvbo:Graph |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Graph
+description: 'A node-link panel''s graph and how it is drawn: the connectome the model
+  actually ran on, with a state living on it. The geometry is the network''s own —
+  one marker per region at its anatomical centre — and a layer supplies one value
+  per region, placed by label.'
+from_schema: https://w3id.org/tvbo/figure
+is_a: ColorScale
+attributes:
+  connectome:
+    name: connectome
+    description: 'The network whose nodes and edges are drawn, as a curated IRI (`tvbo:DesikanKilliany`)
+      or a path beside the study. Required: the panel draws the network, not the result.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Surface
+    - Graph
+    range: string
+  projection:
+    name: projection
+    description: Which plane the region centres flatten onto.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Graph
+    range: Projection
+  labels:
+    name: labels
+    description: Annotate each node with its region name. Off by default — 87 names
+      on one panel is a block of text, not a figure.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Graph
+    - Legend
+    range: boolean
+  color:
+    name: color
+    description: One flat colour for every node, for a panel whose subject is the
+      network rather than a state on it.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  node_size:
+    name: node_size
+    description: Marker size for the regions.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Graph
+    range: float
+  node_edge_color:
+    name: node_edge_color
+    description: Outline colour of the region markers.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Graph
+    range: string
+  node_edge_width:
+    name: node_edge_width
+    description: Outline weight of the region markers.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Graph
+    range: float
+  edge_color:
+    name: edge_color
+    description: Colour of the connections that survive `edge_percentile`.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Surface
+    - Graph
+    range: string
+  edge_alpha:
+    name: edge_alpha
+    description: Opacity of those connections.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Graph
+    range: float
+  edge_width:
+    name: edge_width
+    description: Base line weight of the connections; the drawn widths scale with
+      the weight, so a strong connection reads as strong.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Surface
+    - Graph
+    range: float
+  edge_percentile:
+    name: edge_percentile
+    description: Keep only edges above this percentile of the weights. A dense connectome
+      drawn whole is a filled square, not a graph.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Graph
+    range: float
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Graph
+description: 'A node-link panel''s graph and how it is drawn: the connectome the model
+  actually ran on, with a state living on it. The geometry is the network''s own —
+  one marker per region at its anatomical centre — and a layer supplies one value
+  per region, placed by label.'
+from_schema: https://w3id.org/tvbo/figure
+is_a: ColorScale
+attributes:
+  connectome:
+    name: connectome
+    description: 'The network whose nodes and edges are drawn, as a curated IRI (`tvbo:DesikanKilliany`)
+      or a path beside the study. Required: the panel draws the network, not the result.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Graph
+    domain_of:
+    - Surface
+    - Graph
+    range: string
+  projection:
+    name: projection
+    description: Which plane the region centres flatten onto.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - Graph
+    range: Projection
+  labels:
+    name: labels
+    description: Annotate each node with its region name. Off by default — 87 names
+      on one panel is a block of text, not a figure.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - Graph
+    - Legend
+    range: boolean
+  color:
+    name: color
+    description: One flat colour for every node, for a panel whose subject is the
+      network rather than a state on it.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Graph
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  node_size:
+    name: node_size
+    description: Marker size for the regions.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - Graph
+    range: float
+  node_edge_color:
+    name: node_edge_color
+    description: Outline colour of the region markers.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - Graph
+    range: string
+  node_edge_width:
+    name: node_edge_width
+    description: Outline weight of the region markers.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - Graph
+    range: float
+  edge_color:
+    name: edge_color
+    description: Colour of the connections that survive `edge_percentile`.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Graph
+    domain_of:
+    - Surface
+    - Graph
+    range: string
+  edge_alpha:
+    name: edge_alpha
+    description: Opacity of those connections.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - Graph
+    range: float
+  edge_width:
+    name: edge_width
+    description: Base line weight of the connections; the drawn widths scale with
+      the weight, so a strong connection reads as strong.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Graph
+    domain_of:
+    - Surface
+    - Graph
+    range: float
+  edge_percentile:
+    name: edge_percentile
+    description: Keep only edges above this percentile of the weights. A dense connectome
+      drawn whole is a filled square, not a graph.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - Graph
+    range: float
+  colormap:
+    name: colormap
+    description: The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`,
+      or one a project added) or a name the backend knows. Unset takes the theme's
+      `sequential`, or its `diverging` where the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Graph
+    domain_of:
+    - Style
+    - ColorScale
+    range: string
+  vmin:
+    name: vmin
+    description: The value the scale starts at. A declared end is honoured as given;
+      the other is still derived from the data.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - ColorScale
+    range: float
+  vmax:
+    name: vmax
+    description: The value the scale ends at. See `vmin`.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - ColorScale
+    range: float
+  symmetric:
+    name: symmetric
+    description: Centre the limits on zero, so zero is the map's midpoint. What a
+      field of signed deviations needs — read on an off-centre scale it is misleading
+      in a way no axis label catches.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - ColorScale
+    range: boolean
+  percentile:
+    name: percentile
+    description: Clip the limit to this percentile of the values (100 = no clipping),
+      so one outlier region cannot wash the whole map out. Applies whether or not
+      the scale is centred.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Graph
+    domain_of:
+    - ColorScale
+    range: float
+
+```
+</details></div>

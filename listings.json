@@ -2,9 +2,23 @@
   {
     "listing": "/examples/index.html",
     "items": [
+      "/examples/bifurcation/01-LinearStability.html",
+      "/examples/bifurcation/02-PhasePortrait2D.html",
+      "/examples/bifurcation/03-SaddleNode.html",
+      "/examples/bifurcation/04-Pitchfork.html",
+      "/examples/bifurcation/05-Hysteresis.html",
+      "/examples/bifurcation/06-Hopf.html",
+      "/examples/fitting/Bayesian_tvboptim.html",
+      "/examples/fitting/Hopf_Pareto_tvboptim.html",
+      "/examples/fitting/Delay_Speed_Synchronization_tvboptim.html",
       "/examples/dynamics_from_db.html",
+      "/examples/fitting/EI_Tuning_tvboptim.html",
+      "/examples/fitting/JR_tvboptim.html",
       "/examples/network_from_db.html",
-      "/examples/create_network.html"
+      "/examples/PDESimulation.html",
+      "/examples/fitting/RWW_tvboptim.html",
+      "/examples/create_network.html",
+      "/examples/fitting/TBPTT_tvboptim.html"
     ]
   }
 ]

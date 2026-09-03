@@ -1,0 +1,100 @@
+# Slot: ode_solver 
+
+
+_ODE solver for flow-based methods (shooting, poincaré). Specifies algorithm (e.g. Vern9, Rodas5) and tolerances. Not needed for collocation or trapezoid._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/ode_solver](https://w3id.org/tvbo/slot/ode_solver)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Discretization](../classes/Discretization.qmd) | Discretization method for boundary value problems in continuation (periodic o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Solver](../classes/Solver.qmd) |
+| Domain Of | [Discretization](../classes/Discretization.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Discretization](../classes/Discretization.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ode_solver |
+| native | tvbo:ode_solver |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ode_solver
+description: ODE solver for flow-based methods (shooting, poincaré). Specifies algorithm
+  (e.g. Vern9, Rodas5) and tolerances. Not needed for collocation or trapezoid.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Discretization
+domain_of:
+- Discretization
+range: Solver
+inlined: true
+
+```
+</details></div>

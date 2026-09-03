@@ -1,0 +1,102 @@
+# Slot: parallel_mode 
+
+
+_How trial-axis parallelism is realised at codegen time. ``vmap`` batches all trials in parallel (fast, peak memory ~n_trials × per-trial working set). ``lax_map`` runs them sequentially via ``jax.lax.map`` (slower, peak memory bounded by one trial). ``pmap`` shards across devices for multi-GPU. ``auto`` (default) picks ``vmap`` when the estimated batched memory fits, ``lax_map`` otherwise._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/parallel_mode](https://w3id.org/tvbo/slot/parallel_mode)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ParallelMode](../enums/ParallelMode.qmd) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:parallel_mode |
+| native | tvbo:parallel_mode |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: parallel_mode
+description: How trial-axis parallelism is realised at codegen time. ``vmap`` batches
+  all trials in parallel (fast, peak memory ~n_trials × per-trial working set). ``lax_map``
+  runs them sequentially via ``jax.lax.map`` (slower, peak memory bounded by one trial).
+  ``pmap`` shards across devices for multi-GPU. ``auto`` (default) picks ``vmap``
+  when the estimated batched memory fits, ``lax_map`` otherwise.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Exploration
+domain_of:
+- Exploration
+range: ParallelMode
+
+```
+</details></div>

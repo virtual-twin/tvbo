@@ -1,0 +1,7 @@
+# parse { #tvbo.parse }
+
+`parse`
+
+TVB-O Parse.
+
+This module provides functions for parsing different types of data to extract model components and metadata.

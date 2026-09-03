@@ -1,0 +1,115 @@
+# Enum: PhysicalDimension 
+
+
+
+
+_Physical dimension categories for LEMS and dimensional analysis. Each dimension decomposes into SI base dimensions (M, L, T, I, K, N)._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_units:enum/PhysicalDimension](https://w3id.org/tvbo/units/enum/PhysicalDimension)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| none | None | Dimensionless |
+| time | None | Time [T] |
+| per_time | None | Inverse time [T⁻¹] |
+| voltage | None | Voltage [M L² T⁻³ I⁻¹] |
+| current | None | Electric current [I] |
+| capacitance | None | Capacitance [M⁻¹ L⁻² T⁴ I²] |
+| conductance | None | Conductance [M⁻¹ L⁻² T³ I²] |
+| resistance | None | Resistance [M L² T⁻³ I⁻²] |
+| charge | None | Electric charge [T I] |
+| concentration | None | Concentration [L⁻³ N] |
+| substance | None | Amount of substance [N] |
+| length | None | Length [L] |
+| volume | None | Volume [L³] |
+| temperature | None | Temperature [K] |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/units
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: PhysicalDimension
+description: Physical dimension categories for LEMS and dimensional analysis. Each
+  dimension decomposes into SI base dimensions (M, L, T, I, K, N).
+from_schema: https://w3id.org/tvbo/units
+permissible_values:
+  none:
+    text: none
+    description: Dimensionless
+  time:
+    text: time
+    description: Time [T]
+  per_time:
+    text: per_time
+    description: Inverse time [T⁻¹]
+  voltage:
+    text: voltage
+    description: Voltage [M L² T⁻³ I⁻¹]
+  current:
+    text: current
+    description: Electric current [I]
+  capacitance:
+    text: capacitance
+    description: Capacitance [M⁻¹ L⁻² T⁴ I²]
+  conductance:
+    text: conductance
+    description: Conductance [M⁻¹ L⁻² T³ I²]
+  resistance:
+    text: resistance
+    description: Resistance [M L² T⁻³ I⁻²]
+  charge:
+    text: charge
+    description: Electric charge [T I]
+  concentration:
+    text: concentration
+    description: Concentration [L⁻³ N]
+  substance:
+    text: substance
+    description: Amount of substance [N]
+  length:
+    text: length
+    description: Length [L]
+  volume:
+    text: volume
+    description: Volume [L³]
+  temperature:
+    text: temperature
+    description: Temperature [K]
+
+```
+</details>
+
+</div>

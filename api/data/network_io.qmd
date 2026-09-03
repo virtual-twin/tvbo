@@ -1,0 +1,117 @@
+# network_io { #tvbo.data.network_io }
+
+`data.network_io`
+
+High-level Network I/O. Dispatches by companion file extension.
+
+## Supported companion formats {.doc-section .doc-section-supported-companion-formats}
+
+.h5 / .hdf5  — HDF5 (default, best compression)
+.zarr/        — Zarr (cloud-native, S3-compatible)
+.csv          — CSV legacy (one file = one matrix = first template edge)
+
+YAML sidecars are loaded via linkml_runtime.loaders.yaml_loader — the same loader used by Dynamics, Coupling, and SimulationExperiment. This ensures schema validation and proper nested object construction. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
+
+See §12.2 of the tvbo HDF5 format proposal v0.7.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [EMBEDDED_METADATA_ATTR](#tvbo.data.network_io.EMBEDDED_METADATA_ATTR) | Root attribute holding a self-describing companion's own sidecar, as JSON. |
+| [RELMAT_PATTERNS](#tvbo.data.network_io.RELMAT_PATTERNS) |  |
+| [SCHEMA_VERSION](#tvbo.data.network_io.SCHEMA_VERSION) |  |
+| [SENSOR_PATTERNS](#tvbo.data.network_io.SENSOR_PATTERNS) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [load_network](#tvbo.data.network_io.load_network) | Load a tvbo Network from a sidecar, or from a self-describing companion. |
+| [read_embedded_metadata](#tvbo.data.network_io.read_embedded_metadata) | The sidecar dict embedded in a self-describing companion, or ``None``. |
+| [save_network](#tvbo.data.network_io.save_network) | Save a tvbo Network as sidecar + binary companion. |
+| [write_embedded_metadata](#tvbo.data.network_io.write_embedded_metadata) | Embed a sidecar dict into a companion so the file needs no sidecar. |
+
+### load_network { #tvbo.data.network_io.load_network }
+
+```python
+data.network_io.load_network(path)
+```
+
+Load a tvbo Network from a sidecar, or from a self-describing companion.
+
+Uses linkml yaml_loader or json_loader to construct a schema-validated Network instance directly — same pattern as Dynamics.from_file().
+
+Two layouts are accepted:
+
+- **sidecar + companion** — a ``.yaml``/``.json`` metadata file whose ``data_file``
+  names the binary beside it;
+- **single self-describing file** — a ``.h5``/``.zarr`` carrying its own sidecar in
+  the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is its own array store, so one path is the whole Network.
+
+Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.matrix("weight")).
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+path : str or Path
+    Path to a YAML/JSON sidecar, or to a self-describing ``.h5``/``.zarr``.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+Network
+    Fully constructed tvbo.Network with lazy array references.
+
+### read_embedded_metadata { #tvbo.data.network_io.read_embedded_metadata }
+
+```python
+data.network_io.read_embedded_metadata(path)
+```
+
+The sidecar dict embedded in a self-describing companion, or ``None``.
+
+``None`` covers every "this is not a self-describing binary" case — a YAML/JSON sidecar path, a companion written without the attribute, an unreadable or non-JSON payload — so callers can treat it as a plain feature probe.
+
+### save_network { #tvbo.data.network_io.save_network }
+
+```python
+data.network_io.save_network(
+    network,
+    yaml_path,
+    binary_format='h5',
+    sidecar_format='yaml',
+)
+```
+
+Save a tvbo Network as sidecar + binary companion.
+
+Uses LinkML yaml_dumper or json_dumper for schema-valid sidecar output — no manual field unpacking or yaml.dump() calls.
+
+The generic canonical keys `weight` and `length` that `from_matrix` produces are remapped onto the edge names the sidecar declares, because they are only two of arbitrarily many edge attributes a sidecar may bundle (`weight_NMF_*`, `fc`, `local_connectivity`). Two guards keep that from doing harm: an array already named by a template edge is left alone, so a directly-named `length` edge is never renamed away; and where no template edge matches, the generic key stays, since the loader resolves `weight`/`length` directly and renaming on a guess would misplace the matrix.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+network : Network
+    Network instance to save.
+yaml_path : str or Path
+    Output path for sidecar (extension overridden by sidecar_format).
+binary_format : str
+    "h5" (default), "zarr", or "csv".
+sidecar_format : str
+    "yaml" (default) or "json".
+
+### write_embedded_metadata { #tvbo.data.network_io.write_embedded_metadata }
+
+```python
+data.network_io.write_embedded_metadata(companion_path, meta)
+```
+
+Embed a sidecar dict into a companion so the file needs no sidecar.
+
+The dict is stored as JSON under the ``metadata`` root attribute; ``data_file`` is dropped because a self-describing file *is* its own array store.
+:func:`load_network` reads it back, so one path is the whole Network.

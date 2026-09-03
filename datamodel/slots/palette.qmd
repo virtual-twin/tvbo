@@ -1,0 +1,103 @@
+# Slot: palette 
+
+
+_The categorical hues, reached into only where a panel separates conditions. Ordered, and named by index from zero (`palette.0` is the first), so inserting a hue recolours every figure that names one after it._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/palette](https://w3id.org/tvbo/slot/palette)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Palette](../classes/Palette.qmd) | A project's colours, named by role |  no  |
+| [Theme](../classes/Theme.qmd) | A project's whole look in one declarable object: its colours (inherited from ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Palette](../classes/Palette.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Palette](../classes/Palette.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:palette |
+| native | tvbo:palette |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: palette
+description: The categorical hues, reached into only where a panel separates conditions.
+  Ordered, and named by index from zero (`palette.0` is the first), so inserting a
+  hue recolours every figure that names one after it.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Palette
+domain_of:
+- Palette
+range: string
+multivalued: true
+
+```
+</details></div>

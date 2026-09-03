@@ -1,0 +1,99 @@
+# Slot: measure_type 
+
+
+_Sub-type within the phenotype (e.g. 'raw', 'unadjusted', 'age-corrected', 'derived', 'RT', 'accuracy')._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/measure_type](https://w3id.org/tvbo/slot/measure_type)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [MeasureSpec](../classes/MeasureSpec.qmd) | Metadata for one phenotype measure |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [MeasureSpec](../classes/MeasureSpec.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [MeasureSpec](../classes/MeasureSpec.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:measure_type |
+| native | tvbo:measure_type |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: measure_type
+description: Sub-type within the phenotype (e.g. 'raw', 'unadjusted', 'age-corrected',
+  'derived', 'RT', 'accuracy').
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: MeasureSpec
+domain_of:
+- MeasureSpec
+range: string
+
+```
+</details></div>

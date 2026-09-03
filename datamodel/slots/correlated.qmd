@@ -1,0 +1,103 @@
+# Slot: correlated  <span style="color: red;"><strong> (DEPRECATED) </strong></span> 
+
+
+_Deprecated. Whether the noise is correlated, without saying across which axis or by how much. Use `covariance` + `correlated_over`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/correlated](https://w3id.org/tvbo/slot/correlated)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Noise](../classes/Noise.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Noise](../classes/Noise.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:correlated |
+| native | tvbo:correlated |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: correlated
+description: Deprecated. Whether the noise is correlated, without saying across which
+  axis or by how much. Use `covariance` + `correlated_over`.
+deprecated: Superseded by `covariance` + `correlated_over`. A bare boolean never identified
+  a process — it said neither which axis was correlated nor how strongly — so no backend
+  could act on it. Read and ignored, so recipes carrying it keep loading; delete it,
+  and declare `covariance` if the noise really is correlated.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Noise
+domain_of:
+- Noise
+range: boolean
+
+```
+</details></div>

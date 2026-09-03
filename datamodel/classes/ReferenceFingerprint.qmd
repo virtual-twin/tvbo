@@ -1,0 +1,304 @@
+# Class: ReferenceFingerprint 
+
+
+_Cache-invalidation fingerprint for one ``aux_data`` reference. Captures enough about the upstream artifact that a downstream cache can decide cheaply (via mtime + size) whether to trust the cached result, falling back to a hash recompute on mismatch._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:ReferenceFingerprint](https://w3id.org/tvbo/ReferenceFingerprint)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class ReferenceFingerprint
+    click ReferenceFingerprint href "./ReferenceFingerprint.html"
+      ReferenceFingerprint : field
+        
+          
+    
+        
+        
+        ReferenceFingerprint --> "0..1" String : field
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ReferenceFingerprint : hash
+        
+          
+    
+        
+        
+        ReferenceFingerprint --> "0..1" String : hash
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      ReferenceFingerprint : iri
+        
+          
+    
+        
+        
+        ReferenceFingerprint --> "1" Uriorcurie : iri
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      ReferenceFingerprint : mtime
+        
+          
+    
+        
+        
+        ReferenceFingerprint --> "0..1" Float : mtime
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      ReferenceFingerprint : size
+        
+          
+    
+        
+        
+        ReferenceFingerprint --> "0..1" Integer : size
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:ReferenceFingerprint](https://w3id.org/tvbo/ReferenceFingerprint) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [iri](../slots/iri.qmd) | 1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | IRI of the referenced artifact (Network, ExperimentResult, BehavioralData,  | direct |
+| [field](../slots/field.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Dotted-path subkey within the referenced entity (optional) | direct |
+| [mtime](../slots/mtime.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | File modification time at fingerprinting (POSIX timestamp) | direct |
+| [size](../slots/size.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | File size in bytes at fingerprinting | direct |
+| [hash](../slots/hash.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | SHA-256 hex digest of the file at fingerprinting (recomputed lazily when mtim... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | [inputs](../slots/inputs.qmd) | range | [ReferenceFingerprint](../classes/ReferenceFingerprint.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ReferenceFingerprint |
+| native | tvbo:ReferenceFingerprint |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: ReferenceFingerprint
+description: Cache-invalidation fingerprint for one ``aux_data`` reference. Captures
+  enough about the upstream artifact that a downstream cache can decide cheaply (via
+  mtime + size) whether to trust the cached result, falling back to a hash recompute
+  on mismatch.
+from_schema: https://w3id.org/tvbo
+attributes:
+  iri:
+    name: iri
+    description: IRI of the referenced artifact (Network, ExperimentResult, BehavioralData,
+      ...).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+    required: true
+  field:
+    name: field
+    description: Dotted-path subkey within the referenced entity (optional).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ReferenceFingerprint
+    - Reference
+    range: string
+  mtime:
+    name: mtime
+    description: File modification time at fingerprinting (POSIX timestamp).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - ReferenceFingerprint
+    range: float
+  size:
+    name: size
+    description: File size in bytes at fingerprinting.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Annotation
+    - ReferenceFingerprint
+    - Node
+    - Sample
+    range: integer
+  hash:
+    name: hash
+    description: SHA-256 hex digest of the file at fingerprinting (recomputed lazily
+      when mtime/size differ).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - SoftwareRequirement
+    - ReferenceFingerprint
+    range: string
+class_uri: tvbo:ReferenceFingerprint
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: ReferenceFingerprint
+description: Cache-invalidation fingerprint for one ``aux_data`` reference. Captures
+  enough about the upstream artifact that a downstream cache can decide cheaply (via
+  mtime + size) whether to trust the cached result, falling back to a hash recompute
+  on mismatch.
+from_schema: https://w3id.org/tvbo
+attributes:
+  iri:
+    name: iri
+    description: IRI of the referenced artifact (Network, ExperimentResult, BehavioralData,
+      ...).
+    from_schema: https://w3id.org/tvbo
+    owner: ReferenceFingerprint
+    domain_of:
+    - DataRef
+    - Theme
+    - Parcellation
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - ReferenceFingerprint
+    - GraphGenerator
+    - Reference
+    - Observation
+    - Dynamics
+    - Function
+    - FunctionCall
+    - Coupling
+    range: uriorcurie
+    required: true
+  field:
+    name: field
+    description: Dotted-path subkey within the referenced entity (optional).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ReferenceFingerprint
+    domain_of:
+    - ReferenceFingerprint
+    - Reference
+    range: string
+  mtime:
+    name: mtime
+    description: File modification time at fingerprinting (POSIX timestamp).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: ReferenceFingerprint
+    domain_of:
+    - ReferenceFingerprint
+    range: float
+  size:
+    name: size
+    description: File size in bytes at fingerprinting.
+    from_schema: https://w3id.org/tvbo
+    owner: ReferenceFingerprint
+    domain_of:
+    - Annotation
+    - ReferenceFingerprint
+    - Node
+    - Sample
+    range: integer
+  hash:
+    name: hash
+    description: SHA-256 hex digest of the file at fingerprinting (recomputed lazily
+      when mtime/size differ).
+    from_schema: https://w3id.org/tvbo
+    owner: ReferenceFingerprint
+    domain_of:
+    - SoftwareRequirement
+    - ReferenceFingerprint
+    range: string
+class_uri: tvbo:ReferenceFingerprint
+
+```
+</details></div>

@@ -1,0 +1,99 @@
+# Slot: ha 
+
+
+_Horizontal alignment against (x, y) — left, center, right. Defaults to center._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/ha](https://w3id.org/tvbo/slot/ha)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Annotation](../classes/Annotation.qmd) | A positioned text label on a panel, in axes-fraction coordinates |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Annotation](../classes/Annotation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Annotation](../classes/Annotation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ha |
+| native | tvbo:ha |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ha
+description: Horizontal alignment against (x, y) — left, center, right. Defaults to
+  center.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Annotation
+domain_of:
+- Annotation
+range: string
+
+```
+</details></div>

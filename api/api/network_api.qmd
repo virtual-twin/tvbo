@@ -1,0 +1,52 @@
+# network_api { #tvbo.api.network_api }
+
+`api.network_api`
+
+Network retrieval API — serves normative connectomes from the tvbo database.
+
+## Endpoints {.doc-section .doc-section-endpoints}
+
+GET /api/v1/networks              — list available networks (filterable)
+GET /api/v1/networks/{id}/sidecar — LinkML-valid YAML or JSON sidecar
+GET /api/v1/networks/{id}/data    — binary companion file (HDF5 or CSV)
+
+See §12.8 of the tvbo HDF5 format proposal v0.7.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [NETWORK_DIR](#tvbo.api.network_api.NETWORK_DIR) |  |
+| [router](#tvbo.api.network_api.router) |  |
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [get_data](#tvbo.api.network_api.get_data) | Download binary companion file (HDF5). |
+| [get_sidecar](#tvbo.api.network_api.get_sidecar) | Download LinkML-valid sidecar (YAML or JSON). |
+| [list_networks](#tvbo.api.network_api.list_networks) | List available normative connectivity networks. |
+
+### get_data { #tvbo.api.network_api.get_data }
+
+```python
+api.network_api.get_data(network_id, format=Query('h5'))
+```
+
+Download binary companion file (HDF5).
+
+### get_sidecar { #tvbo.api.network_api.get_sidecar }
+
+```python
+api.network_api.get_sidecar(network_id, format=Query('yaml'))
+```
+
+Download LinkML-valid sidecar (YAML or JSON).
+
+### list_networks { #tvbo.api.network_api.list_networks }
+
+```python
+api.network_api.list_networks(atlas=Query(None), tractogram=Query(None))
+```
+
+List available normative connectivity networks.

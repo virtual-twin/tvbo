@@ -1,0 +1,982 @@
+# Class: DerivedParameter 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:DerivedParameter](https://w3id.org/tvbo/DerivedParameter)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class DerivedParameter
+    click DerivedParameter href "./DerivedParameter.html"
+      Parameter <|-- DerivedParameter
+        click Parameter href "./Parameter.html"
+      
+      DerivedParameter : comment
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : comment
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : datatype
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : datatype
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : default
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : default
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : definition
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : definition
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : description
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : distribution
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" Distribution : distribution
+        click Distribution href "./Distribution.html"
+    
+
+        
+      DerivedParameter : domain
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" Range : domain
+        click Range href "./Range.html"
+    
+
+        
+      DerivedParameter : element_domains
+        
+          
+    
+        
+        
+        DerivedParameter --> "*" Range : element_domains
+        click Range href "./Range.html"
+    
+
+        
+      DerivedParameter : equation
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" Equation : equation
+        click Equation href "./Equation.html"
+    
+
+        
+      DerivedParameter : explored_values
+        
+          
+    
+        
+        
+        DerivedParameter --> "*" Float : explored_values
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      DerivedParameter : free
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" Boolean : free
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      DerivedParameter : grounding
+        
+          
+    
+        
+        
+        DerivedParameter --> "*" Uriorcurie : grounding
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      DerivedParameter : heterogeneous
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" Boolean : heterogeneous
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      DerivedParameter : label
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : measure
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : measure
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : name
+        
+          
+    
+        
+        
+        DerivedParameter --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : producer
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" FunctionCall : producer
+        click FunctionCall href "./FunctionCall.html"
+    
+
+        
+      DerivedParameter : reported_optimum
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" Float : reported_optimum
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      DerivedParameter : required
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" Boolean : required
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      DerivedParameter : shape
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : shape
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : source
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" Uriorcurie : source
+        click Uriorcurie href "../http://www.w3.org/2001/XMLSchema#anyURI.html"
+    
+
+        
+      DerivedParameter : symbol
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : symbol
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : unit
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      DerivedParameter : used
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" DataRef : used
+        click DataRef href "./DataRef.html"
+    
+
+        
+      DerivedParameter : value
+        
+          
+    
+        
+        
+        DerivedParameter --> "0..1" ScalarValue : value
+        click ScalarValue href "./ScalarValue.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* [Parameter](../classes/Parameter.qmd)
+    * **DerivedParameter**
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:DerivedParameter](https://w3id.org/tvbo/DerivedParameter) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [symbol](../slots/symbol.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [equation](../slots/equation.qmd) | 0..1 <br/> [Equation](../classes/Equation.qmd) |  | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string)&nbsp;or&nbsp;<br />[UnitEnum](../enums/UnitEnum.qmd) | Physical unit of measurement | direct |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Parameter](../classes/Parameter.qmd) |
+| [definition](../slots/definition.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Parameter](../classes/Parameter.qmd) |
+| [value](../slots/value.qmd) | 0..1 <br/> [ScalarValue](../classes/ScalarValue.qmd) | Numeric, string, or boolean value, OR an array (nested list) for array-valued... | [Parameter](../classes/Parameter.qmd) |
+| [default](../slots/default.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Parameter](../classes/Parameter.qmd) |
+| [domain](../slots/domain.qmd) | 0..1 <br/> [Range](../classes/Range.qmd) |  | [Parameter](../classes/Parameter.qmd) |
+| [reported_optimum](../slots/reported_optimum.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) |  | [Parameter](../classes/Parameter.qmd) |
+| [grounding](../slots/grounding.qmd) | * <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that this enti... | [Parameter](../classes/Parameter.qmd) |
+| [producer](../slots/producer.qmd) | 0..1 <br/> [FunctionCall](../classes/FunctionCall.qmd) | HOW to compute this value, when it is derived rather than obtained — the call... | [Parameter](../classes/Parameter.qmd) |
+| [comment](../slots/comment.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Parameter](../classes/Parameter.qmd) |
+| [heterogeneous](../slots/heterogeneous.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | [Parameter](../classes/Parameter.qmd) |
+| [distribution](../slots/distribution.qmd) | 0..1 <br/> [Distribution](../classes/Distribution.qmd) | Distribution for heterogeneous per-node parameter sampling | [Parameter](../classes/Parameter.qmd) |
+| [source](../slots/source.qmd) | 0..1 <br/> [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) | WHERE this parameter's value comes from — a curated entity's IRI, or a path (... | [Parameter](../classes/Parameter.qmd) |
+| [measure](../slots/measure.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | WHICH array to select out of `source` | [Parameter](../classes/Parameter.qmd) |
+| [used](../slots/used.qmd) | 0..1 <br/> [DataRef](../classes/DataRef.qmd) | WHERE + WHICH + SLICE in one edge — this parameter's array sourced from anoth... | [Parameter](../classes/Parameter.qmd) |
+| [free](../slots/free.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |  | [Parameter](../classes/Parameter.qmd) |
+| [shape](../slots/shape.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | [Parameter](../classes/Parameter.qmd) |
+| [explored_values](../slots/explored_values.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) |  | [Parameter](../classes/Parameter.qmd) |
+| [element_domains](../slots/element_domains.qmd) | * <br/> [Range](../classes/Range.qmd) | Per-element domain overrides for heterogeneous parameters | [Parameter](../classes/Parameter.qmd) |
+| [datatype](../slots/datatype.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Declared value type of this parameter, given as a schema range name — a primi... | [Parameter](../classes/Parameter.qmd) |
+| [required](../slots/required.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether a value for this parameter must be supplied | [Parameter](../classes/Parameter.qmd) |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Dynamics](../classes/Dynamics.qmd) | [derived_parameters](../slots/derived_parameters.qmd) | range | [DerivedParameter](../classes/DerivedParameter.qmd) |
+| [PDE](../classes/PDE.qmd) | [derived_parameters](../slots/derived_parameters.qmd) | range | [DerivedParameter](../classes/DerivedParameter.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:DerivedParameter |
+| native | tvbo:DerivedParameter |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: DerivedParameter
+from_schema: https://w3id.org/tvbo
+is_a: Parameter
+slots:
+- name
+- symbol
+- description
+- equation
+- unit
+class_uri: tvbo:DerivedParameter
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: DerivedParameter
+from_schema: https://w3id.org/tvbo
+is_a: Parameter
+attributes:
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: DerivedParameter
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  symbol:
+    name: symbol
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - ToolUnit
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - DerivedParameter
+    - DerivedVariable
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: DerivedParameter
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  equation:
+    name: equation
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:Equation
+    owner: DerivedParameter
+    domain_of:
+    - Stimulus
+    - Event
+    - ProcedureStep
+    - Observation
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedParameter
+    - DerivedVariable
+    - Noise
+    - UpdateRule
+    - DifferentialOperator
+    - BoundaryCondition
+    range: Equation
+    inlined: true
+  unit:
+    name: unit
+    description: 'Physical unit of measurement. `UnitEnum` is the curated vocabulary
+      — each of its values is vendored from QUDT (`ontology/tvb-o-units.ttl`) and
+      can be reasoned about dimensionally. The range is deliberately open beyond it:
+      a unit nobody has curated yet is recorded as written and reported `uncurated`,
+      because a closed range forces the author to either misdeclare the quantity or
+      leave it undeclared, and both lose more than an unrecognised string does. An
+      uncurated unit carries no dimensional claim, so a check involving it reports
+      `underdetermined` rather than guessing. Promote one with `tvbo units add <unit>`,
+      which pulls its QUDT record into the vendored module — so every unit TVBO *reasons*
+      about stays authoritative, and only what it *records* is open.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: qudt:unit
+    owner: DerivedParameter
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+    any_of:
+    - range: UnitEnum
+    - range: string
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: DerivedParameter
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  definition:
+    name: definition
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: skos:definition
+    owner: DerivedParameter
+    domain_of:
+    - Equation
+    - StateVariable
+    - Parameter
+    - Function
+    - DifferentialOperator
+    range: string
+  value:
+    name: value
+    annotations:
+      simple_dict_value:
+        tag: simple_dict_value
+        value: true
+    description: Numeric, string, or boolean value, OR an array (nested list) for
+      array-valued constants such as mode-coupling coefficient matrices. ScalarValue
+      accepts any literal primitive type, allowing parameters to carry control flags
+      (e.g., booleans) or symbolic placeholders alongside numeric defaults.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: schema:value
+    owner: DerivedParameter
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: ScalarValue
+    any_of:
+    - range: ScalarValue
+  default:
+    name: default
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: schema:defaultValue
+    owner: DerivedParameter
+    domain_of:
+    - Parameter
+    range: string
+  domain:
+    name: domain
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - range
+    - boundaries
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - ClinicalScale
+    - ClinicalScore
+    - StateVariable
+    - Distribution
+    - Parameter
+    - ExplorationAxis
+    - FreeParameter
+    - PDE
+    range: Range
+  reported_optimum:
+    name: reported_optimum
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - Parameter
+    range: float
+  grounding:
+    name: grounding
+    description: 'External ontology IRIs (typically GO, ChEBI, UBERON, CL, MeSH) that
+      this entity is a surrogate / abstraction / model of. Realized as the `tvbo:surrogate_of`
+      object property, carried inline with the YAML data instance. Multiple IRIs allowed:
+      a single parameter may abstract several biological processes (e.g. a synaptic
+      conductance grounding both GO:0060079 (excitatory PSP) and GO:0007268 (chemical
+      synaptic transmission)).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: tvbo:surrogate_of
+    owner: DerivedParameter
+    domain_of:
+    - StateVariable
+    - Parameter
+    - DerivedVariable
+    range: uriorcurie
+    multivalued: true
+  producer:
+    name: producer
+    description: 'HOW to compute this value, when it is derived rather than obtained
+      — the callable that produces it, its arguments, and (via `output:`) which entry
+      to take from a callable returning several named arrays. The callable resolves
+      against the recipe''s `code_source`. Use instead of `source:` for a value that
+      is a deterministic function of the spec''s own inputs (a mesh operator, a template
+      matrix): declaring the producer keeps the spec the single source of truth, where
+      pointing at a pre-built file would let the two drift apart silently — and would
+      need a prep step run by hand before the spec could execute. The result is cached
+      and invalidated by the artifact fingerprint, so it is computed once rather than
+      per run. On a `Parameter` it produces the value; on an `Edge` it produces the
+      whole template matrix, which is what lets a connectome or a discrete differential
+      operator be declared rather than pre-built. Mutually exclusive with `value:`/`source:`.'
+    from_schema: https://w3id.org/tvbo
+    close_mappings:
+    - prov:wasGeneratedBy
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - Edge
+    - Parameter
+    range: FunctionCall
+    required: false
+    inlined: true
+  comment:
+    name: comment
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:comment
+    owner: DerivedParameter
+    domain_of:
+    - Parameter
+    - WorkflowEngineConfig
+    range: string
+  heterogeneous:
+    name: heterogeneous
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - Parameter
+    - FreeParameter
+    range: boolean
+  distribution:
+    name: distribution
+    description: Distribution for heterogeneous per-node parameter sampling. Implies
+      heterogeneous=true.
+    from_schema: https://w3id.org/tvbo
+    owner: DerivedParameter
+    domain_of:
+    - ProcedureStep
+    - StateVariable
+    - Parameter
+    - Noise
+    - Prior
+    - Coupling
+    range: Distribution
+    inlined: true
+  source:
+    name: source
+    description: 'WHERE this parameter''s value comes from — a curated entity''s IRI,
+      or a path (resolved against the declaring spec''s directory when relative, as
+      `Network.bids_dir` / `Network.data_file` are). The referent is typically a Network
+      with per-node parameters (dscalar pattern) or a binary store (HDF5, Zarr, TSV).
+      Combine with `measure:` to pick one array out of a source that holds several.
+      A sourced value is never inlined into generated code: it is resolved lazily
+      and the backend reads it from storage, so an array of any size costs nothing
+      in the spec or the emitted module. Mutually exclusive with `value:` (a YAML
+      literal, which IS materialised) and with `producer:` (bytes that are computed
+      rather than read). Distinct from the global `iri:` slot, which is reserved for
+      ontology grounding.'
+    from_schema: https://w3id.org/tvbo
+    owner: DerivedParameter
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: uriorcurie
+    required: false
+  measure:
+    name: measure
+    description: 'WHICH array to select out of `source`. The address space is the
+      source''s own: a per-node measure name for a Network (aligning with Network.structural_measures
+      / observational_measures), a dataset key for an HDF5/Zarr store, a recorded
+      measure for an experiment result. Omit when the source resolves to a single
+      array.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - Parameter
+    range: string
+    required: false
+  used:
+    name: used
+    description: WHERE + WHICH + SLICE in one edge — this parameter's array sourced
+      from another experiment's result (an operating point, a tuned ``estimate__<name>``
+      a fit persisted), a dataset, or a curated entity, PROV ``prov:used``. The full
+      cross-container form of which `source:`+`measure:` is the no-``sel``/no-``experiment``
+      shorthand; adds label ``reconcile`` and a swept-point ``sel``. Like `source:`
+      the array is resolved lazily and never inlined. An in-study ``experiment`` reference
+      also registers the workflow dependency. Mutually exclusive with `value:`/`source:`/`producer:`.
+    from_schema: https://w3id.org/tvbo
+    slot_uri: prov:used
+    owner: DerivedParameter
+    domain_of:
+    - Layer
+    - Annotation
+    - Activity
+    - Parameter
+    - Argument
+    - ResultBinding
+    range: DataRef
+    inlined: true
+  free:
+    name: free
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - Parameter
+    range: boolean
+  shape:
+    name: shape
+    from_schema: https://w3id.org/tvbo
+    owner: DerivedParameter
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Parameter
+    - FreeParameter
+    - NDArray
+    range: string
+  explored_values:
+    name: explored_values
+    from_schema: https://w3id.org/tvbo
+    owner: DerivedParameter
+    domain_of:
+    - Range
+    - Parameter
+    - ExplorationAxis
+    range: float
+    multivalued: true
+  element_domains:
+    name: element_domains
+    description: Per-element domain overrides for heterogeneous parameters. When specified,
+      element_domains[i] overrides domain for element i during exploration auto-expansion.
+      Length must match parameter shape (e.g., n_nodes for shape "(n_nodes,)"). If
+      not set, all elements share the same domain.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - Parameter
+    - ExplorationAxis
+    range: Range
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+  datatype:
+    name: datatype
+    description: Declared value type of this parameter, given as a schema range name
+      — a primitive (``integer``, ``float``, ``string``, ``uriorcurie``) or a class
+      (e.g. ``Distribution``). Documents the expected type when the parameter is a
+      *declaration* carrying no concrete ``value`` (e.g. a GraphGenerator's typed
+      argument interface). Distinct from ``domain`` (numeric bounds) and ``unit``.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - Parameter
+    range: string
+  required:
+    name: required
+    description: Whether a value for this parameter must be supplied. Optional parameters
+      (e.g. a generator's ``seed``) set this to false. Declaration metadata; unset
+      means unconstrained.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: DerivedParameter
+    domain_of:
+    - Parameter
+    range: boolean
+class_uri: tvbo:DerivedParameter
+
+```
+</details></div>

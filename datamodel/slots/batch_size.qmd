@@ -1,0 +1,78 @@
+# Slot: batch_size 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/batch_size](https://w3id.org/tvbo/slot/batch_size)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Dataset](../classes/Dataset.qmd) | A collection of subjects for a multi-subject study |  no  |
+| [DBSDataset](../classes/DBSDataset.qmd) | Collection of data related to a specific DBS study |  no  |
+| [ExecutionConfig](../classes/ExecutionConfig.qmd) | Configuration for computational execution (parallelization, precision, hardwa... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Dataset](../classes/Dataset.qmd), [ExecutionConfig](../classes/ExecutionConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:batch_size |
+| native | tvbo:batch_size |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: batch_size
+domain_of:
+- Dataset
+- ExecutionConfig
+range: string
+
+```
+</details></div>

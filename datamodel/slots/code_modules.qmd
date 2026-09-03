@@ -1,0 +1,104 @@
+# Slot: code_modules 
+
+
+_Importable module names whose import registers this figure's custom panels / transforms (via bsplot.register_panel / register_transform). The emitted plot.py imports them, so a study ships its bespoke figure code in its code_source instead of in core tvbo. The modules must be importable when the figure renders (loading the study puts its code/ dir on the path)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/code_modules](https://w3id.org/tvbo/slot/code_modules)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:code_modules |
+| native | tvbo:code_modules |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: code_modules
+description: Importable module names whose import registers this figure's custom panels
+  / transforms (via bsplot.register_panel / register_transform). The emitted plot.py
+  imports them, so a study ships its bespoke figure code in its code_source instead
+  of in core tvbo. The modules must be importable when the figure renders (loading
+  the study puts its code/ dir on the path).
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: string
+multivalued: true
+
+```
+</details></div>

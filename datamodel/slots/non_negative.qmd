@@ -1,0 +1,100 @@
+# Slot: non_negative 
+
+
+_All values >= 0_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/non_negative](https://w3id.org/tvbo/slot/non_negative)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Edge](../classes/Edge.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `boolean(true)` |
+| Owner | [Edge](../classes/Edge.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:non_negative |
+| native | tvbo:non_negative |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: non_negative
+description: All values >= 0
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: boolean(true)
+owner: Edge
+domain_of:
+- Edge
+range: boolean
+
+```
+</details></div>

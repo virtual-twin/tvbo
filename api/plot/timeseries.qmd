@@ -1,0 +1,102 @@
+# timeseries { #tvbo.plot.timeseries }
+
+`plot.timeseries`
+
+Time-series, EEG, and power-spectrum plotting for SimulationResult.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [plot_eeg](#tvbo.plot.timeseries.plot_eeg) | EEG-like stacked-channel plot. |
+| [plot_power_spectrum](#tvbo.plot.timeseries.plot_power_spectrum) | FFT power spectrum with frequency-band annotations. |
+| [plot_timeseries](#tvbo.plot.timeseries.plot_timeseries) | Default timeseries line plot with per-unit subplots. |
+
+### plot_eeg { #tvbo.plot.timeseries.plot_eeg }
+
+```python
+plot.timeseries.plot_eeg(
+    result,
+    VOI=None,
+    mode=0,
+    spacing=None,
+    normalize=False,
+    channel_labels=True,
+    ax=None,
+    linewidth=0.5,
+    **kwargs,
+)
+```
+
+EEG-like stacked-channel plot.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+result : SimulationResult
+    Must have ``.data`` (xr.DataArray with node dim).
+VOI : str, optional
+    Variable of interest.  Defaults to first variable.
+mode : int
+    Mode index.
+spacing : float, optional
+    Vertical spacing; auto-computed from data if None.
+normalize : bool
+    Z-score each channel before plotting.
+channel_labels : bool
+    Show region labels on y-axis.
+ax : matplotlib.axes.Axes, optional linewidth : float
+
+### plot_power_spectrum { #tvbo.plot.timeseries.plot_power_spectrum }
+
+```python
+plot.timeseries.plot_power_spectrum(
+    result,
+    VOI=None,
+    ROI='mean',
+    mode=0,
+    bands=None,
+    ax=None,
+    label='simulation',
+    **kwargs,
+)
+```
+
+FFT power spectrum with frequency-band annotations.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+result : SimulationResult
+VOI : str, optional
+    Variable of interest.
+ROI : str or int
+    'mean' or region index.
+mode : int bands : dict, optional ax : matplotlib.axes.Axes, optional
+
+### plot_timeseries { #tvbo.plot.timeseries.plot_timeseries }
+
+```python
+plot.timeseries.plot_timeseries(result, ax=None, **kwargs)
+```
+
+Default timeseries line plot with per-unit subplots.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+result : SimulationResult
+    Must have ``.data`` (xr.DataArray) and ``._units`` dict.
+ax : matplotlib.axes.Axes, optional
+    Target axes (single-panel only; ignored for multi-unit).
+**kwargs
+    Forwarded to ``ax.plot()``.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.figure.Figure or None

@@ -1,0 +1,99 @@
+# Slot: position 
+
+
+_Spatial coordinates (x, y, z) of the node_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/position](https://w3id.org/tvbo/slot/position)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Node](../classes/Node.qmd) | A node in a network with its own dynamics and properties |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Coordinate](../classes/Coordinate.qmd) |
+| Domain Of | [Node](../classes/Node.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Node](../classes/Node.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:position |
+| native | tvbo:position |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: position
+description: Spatial coordinates (x, y, z) of the node
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Node
+domain_of:
+- Node
+range: Coordinate
+inlined: true
+
+```
+</details></div>

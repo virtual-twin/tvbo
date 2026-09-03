@@ -1,0 +1,91 @@
+# Enum: EventType 
+
+
+
+
+_Type of event triggering mechanism._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/EventType](https://w3id.org/tvbo/enum/EventType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| continuous | None | Triggered when condition function crosses zero (root-finding) |
+| discrete | None | Triggered when condition function returns true (checked at each step) |
+| preset_time | None | Triggered at predetermined time points |
+| stimulus | None | Continuous time-dependent input signal (e |
+| stimulation | None | Synonym of 'stimulus' — a continuous time-dependent input signal injected int... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [event_type](../slots/event_type.qmd) | Type of event trigger mechanism |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: EventType
+description: Type of event triggering mechanism.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  continuous:
+    text: continuous
+    description: Triggered when condition function crosses zero (root-finding). Maps
+      to ContinuousCallback / ContinuousComponentCallback.
+  discrete:
+    text: discrete
+    description: Triggered when condition function returns true (checked at each step).
+      Maps to DiscreteCallback / DiscreteComponentCallback.
+  preset_time:
+    text: preset_time
+    description: Triggered at predetermined time points. Maps to PresetTimeCallback
+      / PresetTimeComponentCallback.
+  stimulus:
+    text: stimulus
+    description: Continuous time-dependent input signal (e.g., external current).
+      Legacy Stimulus behavior.
+  stimulation:
+    text: stimulation
+    description: Synonym of 'stimulus' — a continuous time-dependent input signal
+      injected into a target state variable across target regions. The codegen treats
+      'stimulation' and 'stimulus' identically.
+
+```
+</details>
+
+</div>

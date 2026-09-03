@@ -1,0 +1,411 @@
+# base { #tvbo.adapters.base }
+
+`adapters.base`
+
+Base adapter for processing SimulationExperiment metadata.
+
+Extracts Python logic from Mako templates into reusable, testable methods.
+Backend-specific adapters (NetworkDynamics, PyRates, etc.) inherit from BaseAdapter and override or extend as needed.
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [BaseAdapter](#tvbo.adapters.base.BaseAdapter) | Base class for backend adapters. |
+| [ContinuationAdapter](#tvbo.adapters.base.ContinuationAdapter) | A backend that renders one continuation at a time. |
+
+### BaseAdapter { #tvbo.adapters.base.BaseAdapter }
+
+```python
+adapters.base.BaseAdapter(experiment)
+```
+
+Base class for backend adapters.
+
+Provides shared metadata processing that all code-generation backends need:
+dynamics library, node-dynamics mapping, coupling resolution, graph info, initial state parsing, etc.
+
+A backend states what makes it different — its `TEMPLATE`, and a `prepare_context` override where the shared context will not do — rather than restating how rendering works. `render_code` is inherited from here by every adapter that renders one template from one context.
+
+#### Attributes
+
+| Name | Description |
+| --- | --- |
+| [TEMPLATE](#tvbo.adapters.base.BaseAdapter.TEMPLATE) | The Mako template this backend renders, relative to the template lookup root. |
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [build_dynamics_dict](#tvbo.adapters.base.BaseAdapter.build_dynamics_dict) | Build an ordered dict of all unique Dynamics models. |
+| [build_node_dynamics_map](#tvbo.adapters.base.BaseAdapter.build_node_dynamics_map) | Map each node id to its dynamics name. |
+| [build_weight_matrix](#tvbo.adapters.base.BaseAdapter.build_weight_matrix) | The dense weight matrix a template emits when it cannot name a graph generator. |
+| [canonical_integration_method](#tvbo.adapters.base.BaseAdapter.canonical_integration_method) | *method* under the curated integrator's own name, matched case-insensitively. |
+| [collect_all_distributions](#tvbo.adapters.base.BaseAdapter.collect_all_distributions) | Collect SV and parameter distributions from all dynamics. |
+| [collect_events](#tvbo.adapters.base.BaseAdapter.collect_events) | Collect all events from experiment, nodes, and edges. |
+| [get_coupling_observed](#tvbo.adapters.base.BaseAdapter.get_coupling_observed) | Extract observed (obsf/obssym) from coupling definitions. |
+| [get_coupling_vars](#tvbo.adapters.base.BaseAdapter.get_coupling_vars) | Get names of state variables marked as coupling variables. |
+| [get_default_coupling](#tvbo.adapters.base.BaseAdapter.get_default_coupling) | The coupling a backend applies where an edge names none — the first declared. |
+| [get_execution_info](#tvbo.adapters.base.BaseAdapter.get_execution_info) | Extract execution config (find_fixpoint, etc.). |
+| [get_integration_info](#tvbo.adapters.base.BaseAdapter.get_integration_info) | The window a backend integrates, and which part of it is settling rather than measurement. |
+| [get_network_info](#tvbo.adapters.base.BaseAdapter.get_network_info) | Extract network metadata: n_nodes, graph generator, edges, etc. |
+| [get_noise_sigmas](#tvbo.adapters.base.BaseAdapter.get_noise_sigmas) | Per-state-variable noise amplitude σ, ``0.0`` where none is declared. |
+| [get_outdim](#tvbo.adapters.base.BaseAdapter.get_outdim) | Coupling output dimension: number of coupling variables, or n_sv. |
+| [get_outsym_names](#tvbo.adapters.base.BaseAdapter.get_outsym_names) | Output symbol names for the edge model. |
+| [is_fixed_step](#tvbo.adapters.base.BaseAdapter.is_fixed_step) | Whether *method* advances by a supplied step rather than choosing its own. |
+| [is_heterogeneous](#tvbo.adapters.base.BaseAdapter.is_heterogeneous) | Check if the network has heterogeneous vertex types. |
+| [is_static](#tvbo.adapters.base.BaseAdapter.is_static) | Check if dynamics is a static model (no differential equations). |
+| [is_stochastic_dynamics](#tvbo.adapters.base.BaseAdapter.is_stochastic_dynamics) | Detect a stochastic system: any state variable with a positive noise amplitude. |
+| [parse_node_parameters](#tvbo.adapters.base.BaseAdapter.parse_node_parameters) | Parse per-node parameter overrides from a Node object. |
+| [prepare_context](#tvbo.adapters.base.BaseAdapter.prepare_context) | Build the full pre-computed context dict for template rendering. |
+| [refuse_network](#tvbo.adapters.base.BaseAdapter.refuse_network) | This adapter's :func:`refuse_network`: raise if the experiment declares a network the backend would integrate one node of. |
+| [refuse_unrenderable](#tvbo.adapters.base.BaseAdapter.refuse_unrenderable) | Raise where this backend's templates would drop part of the declaration and emit well-formed code for the rest. |
+| [render_code](#tvbo.adapters.base.BaseAdapter.render_code) | This experiment as backend source. |
+| [resolve_couplings](#tvbo.adapters.base.BaseAdapter.resolve_couplings) | The network's couplings, keyed by the role each plays in it. |
+
+##### build_dynamics_dict { #tvbo.adapters.base.BaseAdapter.build_dynamics_dict }
+
+```python
+adapters.base.BaseAdapter.build_dynamics_dict()
+```
+
+Build an ordered dict of all unique Dynamics models.
+
+Always includes the default model first, then any additional dynamics from the network's dynamics library (for heterogeneous networks).
+
+##### build_node_dynamics_map { #tvbo.adapters.base.BaseAdapter.build_node_dynamics_map }
+
+```python
+adapters.base.BaseAdapter.build_node_dynamics_map()
+```
+
+Map each node id to its dynamics name.
+
+Nodes without an explicit dynamics assignment use the default model.
+Returns {node_id: dynamics_name}.
+
+##### build_weight_matrix { #tvbo.adapters.base.BaseAdapter.build_weight_matrix }
+
+```python
+adapters.base.BaseAdapter.build_weight_matrix(edges_list, n_nodes, threshold=50)
+```
+
+The dense weight matrix a template emits when it cannot name a graph generator.
+
+Explicit edges are densified once there are more than *threshold* of them, below which a template lists them one by one. A network that carries its connectome as a matrix has no edge objects at all — every builder-generated one is like this — so the matrix is read from the network itself. Without that fallback the templates find no weights, no edges and no nameable generator, and the last branch of each builds an unweighted complete graph: the run succeeds and integrates a different network.
+
+##### canonical_integration_method { #tvbo.adapters.base.BaseAdapter.canonical_integration_method }
+
+```python
+adapters.base.BaseAdapter.canonical_integration_method(method, default='Tsit5')
+```
+
+*method* under the curated integrator's own name, matched case-insensitively.
+
+An unrecognised name is returned unchanged rather than replaced: a backend may legitimately name a solver TVB-O does not curate (``Tsit5``, ``TRBDF2``), and silently rewriting it would be worse than passing it through.
+
+##### collect_all_distributions { #tvbo.adapters.base.BaseAdapter.collect_all_distributions }
+
+```python
+adapters.base.BaseAdapter.collect_all_distributions(dynamics_dict)
+```
+
+Collect SV and parameter distributions from all dynamics.
+
+Returns {dyn_name: {'sv': [...], 'param': [...], 'has': bool, 'seed': int}}
+
+##### collect_events { #tvbo.adapters.base.BaseAdapter.collect_events }
+
+```python
+adapters.base.BaseAdapter.collect_events()
+```
+
+Collect all events from experiment, nodes, and edges.
+
+Returns a list of (event, source) tuples where source is one of:
+'experiment', 'node:{id}', 'edge:{idx}'.
+
+##### get_coupling_observed { #tvbo.adapters.base.BaseAdapter.get_coupling_observed }
+
+```python
+adapters.base.BaseAdapter.get_coupling_observed(all_couplings)
+```
+
+Extract observed (obsf/obssym) from coupling definitions.
+
+Returns {coupling_name: [DerivedVariable, ...]}.
+
+##### get_coupling_vars { #tvbo.adapters.base.BaseAdapter.get_coupling_vars }
+
+```python
+adapters.base.BaseAdapter.get_coupling_vars(dynamics)
+```
+
+Get names of state variables marked as coupling variables.
+
+##### get_default_coupling { #tvbo.adapters.base.BaseAdapter.get_default_coupling }
+
+```python
+adapters.base.BaseAdapter.get_default_coupling(all_couplings=None)
+```
+
+The coupling a backend applies where an edge names none — the first declared.
+
+##### get_execution_info { #tvbo.adapters.base.BaseAdapter.get_execution_info }
+
+```python
+adapters.base.BaseAdapter.get_execution_info()
+```
+
+Extract execution config (find_fixpoint, etc.).
+
+##### get_integration_info { #tvbo.adapters.base.BaseAdapter.get_integration_info }
+
+```python
+adapters.base.BaseAdapter.get_integration_info()
+```
+
+The window a backend integrates, and which part of it is settling rather than measurement.
+
+``duration`` is the MEASURED window and ``transient_time`` is prepended to it, so the total a backend integrates is ``transient_time + duration`` and raising the settle never silently shortens the data. Resolved once here, because the settle is a property of the experiment rather than of any one backend: every backend that needs it in steps wants the same ``round(transient_time / dt)``, and three copies of that arithmetic is how two of them came to disagree about what ``duration`` meant.
+
+``method`` is returned in the curated integrator's own spelling. Backends that emit the method name as an identifier -- every Julia template names the solver as a symbol -- cannot each carry their own casing table, and the declared name reaches here in whatever case it was written: the default is ``euler`` while the curated entry is ``Euler``, which lowered to an undefined Julia symbol in the NetworkDynamics and ModelingToolkit templates alike.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                                                                                                                                                                                                                                         |
+|--------|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | dict   | ``dt``, ``duration`` (measured), ``method`` (canonicalised), ``transient_time``, ``total_duration`` (``transient_time + duration``, the window to integrate), and the same split in integration steps as ``n_transient`` and ``n_measured`` -- the first of which is the cut index between the two. |
+
+##### get_network_info { #tvbo.adapters.base.BaseAdapter.get_network_info }
+
+```python
+adapters.base.BaseAdapter.get_network_info()
+```
+
+Extract network metadata: n_nodes, graph generator, edges, etc.
+
+``has_graph_generator`` is the question a template actually asks, resolved once here: can this generator be lowered to a constructor call in the generated code? Only a generator naming a curated ``type`` can, because the lowering reads that entry's ``bindings:`` block. A generator declared by a Python ``builder:`` has already run and left its result in the weight and length matrices, so a template that treats the bare presence of a generator as "emit a constructor call" raises on it instead of emitting the matrices it was handed.
+
+##### get_noise_sigmas { #tvbo.adapters.base.BaseAdapter.get_noise_sigmas }
+
+```python
+adapters.base.BaseAdapter.get_noise_sigmas(dynamics)
+```
+
+Per-state-variable noise amplitude σ, ``0.0`` where none is declared.
+
+##### get_outdim { #tvbo.adapters.base.BaseAdapter.get_outdim }
+
+```python
+adapters.base.BaseAdapter.get_outdim(dynamics)
+```
+
+Coupling output dimension: number of coupling variables, or n_sv.
+
+##### get_outsym_names { #tvbo.adapters.base.BaseAdapter.get_outsym_names }
+
+```python
+adapters.base.BaseAdapter.get_outsym_names(dynamics, outdim, coupling=None)
+```
+
+Output symbol names for the edge model.
+
+Uses coupling.outsym if available, otherwise generates from coupling variables or state variables.
+
+##### is_fixed_step { #tvbo.adapters.base.BaseAdapter.is_fixed_step }
+
+```python
+adapters.base.BaseAdapter.is_fixed_step(method)
+```
+
+Whether *method* advances by a supplied step rather than choosing its own.
+
+##### is_heterogeneous { #tvbo.adapters.base.BaseAdapter.is_heterogeneous }
+
+```python
+adapters.base.BaseAdapter.is_heterogeneous(
+    dynamics_dict=None,
+    node_dynamics_map=None,
+)
+```
+
+Check if the network has heterogeneous vertex types.
+
+##### is_static { #tvbo.adapters.base.BaseAdapter.is_static }
+
+```python
+adapters.base.BaseAdapter.is_static(dynamics)
+```
+
+Check if dynamics is a static model (no differential equations).
+
+##### is_stochastic_dynamics { #tvbo.adapters.base.BaseAdapter.is_stochastic_dynamics }
+
+```python
+adapters.base.BaseAdapter.is_stochastic_dynamics(dynamics_dict)
+```
+
+Detect a stochastic system: any state variable with a positive noise amplitude.
+
+##### parse_node_parameters { #tvbo.adapters.base.BaseAdapter.parse_node_parameters }
+
+```python
+adapters.base.BaseAdapter.parse_node_parameters(node)
+```
+
+Parse per-node parameter overrides from a Node object.
+
+Node.parameters is now a keyed dict {name: Parameter} (inlined).
+Returns {param_name: value}.
+
+##### prepare_context { #tvbo.adapters.base.BaseAdapter.prepare_context }
+
+```python
+adapters.base.BaseAdapter.prepare_context()
+```
+
+Build the full pre-computed context dict for template rendering.
+
+This is the main entry point: templates receive this dict instead of doing metadata processing themselves.
+
+The shape below is the shared one, not a contract every adapter keeps: a backend whose template needs something else entirely overrides this — `Brian2Adapter` returns a spiking build description — so a caller wanting *this* shape must build the adapter it belongs to rather than a bare `BaseAdapter`.
+
+##### refuse_network { #tvbo.adapters.base.BaseAdapter.refuse_network }
+
+```python
+adapters.base.BaseAdapter.refuse_network(reach)
+```
+
+This adapter's :func:`refuse_network`: raise if the experiment declares a network the backend would integrate one node of.
+
+##### refuse_unrenderable { #tvbo.adapters.base.BaseAdapter.refuse_unrenderable }
+
+```python
+adapters.base.BaseAdapter.refuse_unrenderable()
+```
+
+Raise where this backend's templates would drop part of the declaration and emit well-formed code for the rest.
+
+Accepts everything by default. A backend overrides it to name what its templates do not lower — a delayed coupling with no history path, a declared observation with no monitor path — because rendering is not evidence: code that compiles and then answers a different question is indistinguishable from support to every caller that does not already know the answer.
+
+##### render_code { #tvbo.adapters.base.BaseAdapter.render_code }
+
+```python
+adapters.base.BaseAdapter.render_code(**kwargs)
+```
+
+This experiment as backend source.
+
+###### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                                             | Default   |
+|----------|--------|---------------------------------------------------------|-----------|
+| **kwargs |        | Extra context, overriding the prepared context per key. | `{}`      |
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                  |
+|--------|--------|------------------------------------------------------------------------------|
+|        | str    | The rendered source, unformatted — normalising is the caller's step, and the |
+|        | str    | backends whose output is not Python have nothing to normalise it with.       |
+
+###### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type                | Description                            |
+|--------|---------------------|----------------------------------------|
+|        | NotImplementedError | If the adapter declares no `TEMPLATE`. |
+
+##### resolve_couplings { #tvbo.adapters.base.BaseAdapter.resolve_couplings }
+
+```python
+adapters.base.BaseAdapter.resolve_couplings()
+```
+
+The network's couplings, keyed by the role each plays in it.
+
+The one place a backend asks what couplings an experiment has, so that a template never derives it: a template that reads the model itself is a second answer to a question this class already answers, and the two drift. A backend needing them keyed differently overrides this and calls up — see ``TvboptimAdapter``.
+
+### ContinuationAdapter { #tvbo.adapters.base.ContinuationAdapter }
+
+```python
+adapters.base.ContinuationAdapter(experiment)
+```
+
+A backend that renders one continuation at a time.
+
+The bifurcation backends do not render a whole experiment: they take a `(dynamics, continuation)` pair, once per continuation the experiment declares. Each resolved that pair the same way, in three copies of the same twelve lines — so the resolution lives here and a backend states only what it does with the result.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [continuations](#tvbo.adapters.base.ContinuationAdapter.continuations) | Every continuation the experiment declares; empty when it declares none. |
+| [resolve_continuation](#tvbo.adapters.base.ContinuationAdapter.resolve_continuation) | *continuation* if the caller named one, else the experiment's first. |
+| [resolve_dynamics](#tvbo.adapters.base.ContinuationAdapter.resolve_dynamics) | The `Dynamics` *continuation* runs on. |
+
+##### continuations { #tvbo.adapters.base.ContinuationAdapter.continuations }
+
+```python
+adapters.base.ContinuationAdapter.continuations()
+```
+
+Every continuation the experiment declares; empty when it declares none.
+
+##### resolve_continuation { #tvbo.adapters.base.ContinuationAdapter.resolve_continuation }
+
+```python
+adapters.base.ContinuationAdapter.resolve_continuation(continuation=None)
+```
+
+*continuation* if the caller named one, else the experiment's first.
+
+`None` when the experiment declares none, which the caller reports in its own terms — there is no useful default for "continue what?".
+
+##### resolve_dynamics { #tvbo.adapters.base.ContinuationAdapter.resolve_dynamics }
+
+```python
+adapters.base.ContinuationAdapter.resolve_dynamics(continuation)
+```
+
+The `Dynamics` *continuation* runs on.
+
+A continuation may name its own, which is how a heterogeneous experiment picks one of the several its network holds; otherwise it runs on the experiment's. Naming one that resolves nowhere raises rather than silently falling back to the experiment's, since continuing a different model than the one asked for is the kind of wrong answer that looks like a right one.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [declared_node_count](#tvbo.adapters.base.declared_node_count) | How many nodes a network declares, whichever of the equivalent forms declared them. |
+| [dense_matrix](#tvbo.adapters.base.dense_matrix) | *network*'s edge matrix ``name`` as a dense array of ``dtype``, or ``None`` when it carries none. |
+| [refuse_network](#tvbo.adapters.base.refuse_network) | Raise where *backend* would accept a declared network and integrate one node of it. |
+
+### declared_node_count { #tvbo.adapters.base.declared_node_count }
+
+```python
+adapters.base.declared_node_count(network)
+```
+
+How many nodes a network declares, whichever of the equivalent forms declared them.
+
+A matrix-only or parcellation-only connectome must not read as a single node, so every form `to_yaml_with_network` accepts is consulted: an explicit count, explicit node objects, edges, a data file, a parcellation, or a weight matrix with more than one entry. A network declaring none of them, or no network at all, is one node.
+
+### dense_matrix { #tvbo.adapters.base.dense_matrix }
+
+```python
+adapters.base.dense_matrix(network, name, dtype=float)
+```
+
+*network*'s edge matrix ``name`` as a dense array of ``dtype``, or ``None`` when it carries none.
+
+`Network.matrix` returns a matrix in its stored format, which may be sparse. A backend that integrates a dense connectome — TVB, CUDA, a Julia literal, a plot — says so through this one call rather than converting on its own, so "dense, this dtype, or None" is spelled once. A backend that can take the stored form reads `matrix` directly.
+
+### refuse_network { #tvbo.adapters.base.refuse_network }
+
+```python
+adapters.base.refuse_network(experiment, backend, reach)
+```
+
+Raise where *backend* would accept a declared network and integrate one node of it.
+
+A backend whose emitted code carries no connectome returns a well-formed one-node trajectory for a network experiment, which no caller can tell from support; refusing is the contract the Brian2 and NetworkDynamics adapters already state for the forms they cannot lower. *reach* names what the backend does integrate, for the message.

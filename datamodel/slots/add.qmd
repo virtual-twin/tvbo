@@ -1,0 +1,102 @@
+# Slot: add 
+
+
+_Recurrence folding one arriving sample `v` into the state._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/add](https://w3id.org/tvbo/slot/add)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Reducer](../classes/Reducer.qmd) | A streaming reduction, authored as symbolic recurrences over its own state ra... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Assignment](../classes/Assignment.qmd) |
+| Domain Of | [Reducer](../classes/Reducer.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Reducer](../classes/Reducer.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:add |
+| native | tvbo:add |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: add
+description: Recurrence folding one arriving sample `v` into the state.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Reducer
+domain_of:
+- Reducer
+range: Assignment
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

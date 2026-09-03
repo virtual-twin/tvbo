@@ -1,0 +1,12 @@
+# datamodel { #tvbo.datamodel }
+
+`datamodel`
+
+TVB-O Data Model.
+
+Auto-generated from LinkML schema.
+
+## Usage {.doc-section .doc-section-usage}
+
+from tvbo.datamodel.schema import Dynamics, Parameter, Equation
+from tvbo.datamodel.pydantic import Dynamics as PydanticDynamics

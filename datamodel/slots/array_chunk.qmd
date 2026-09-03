@@ -1,0 +1,107 @@
+# Slot: array_chunk 
+
+
+_Overrides ``distribute.chunk`` for this engine only: the number of array-task shards to split the vectorized sweep across._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/array_chunk](https://w3id.org/tvbo/slot/array_chunk)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) | Execution directives for a workflow engine |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [WorkflowEngineConfig](../classes/WorkflowEngineConfig.qmd) |
+
+
+### Value Constraints
+
+| Property | Value |
+| --- | --- |
+| Minimum Value | 1 |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:array_chunk |
+| native | tvbo:array_chunk |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: array_chunk
+description: 'Overrides ``distribute.chunk`` for this engine only: the number of array-task
+  shards to split the vectorized sweep across.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: WorkflowEngineConfig
+domain_of:
+- WorkflowEngineConfig
+range: integer
+minimum_value: 1
+
+```
+</details></div>

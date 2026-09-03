@@ -1,0 +1,395 @@
+# Class: Callable 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Callable](https://w3id.org/tvbo/Callable)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Callable
+    click Callable href "./Callable.html"
+      Callable <|-- ClassReference
+        click ClassReference href "./ClassReference.html"
+      
+      Callable : description
+        
+          
+    
+        
+        
+        Callable --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Callable : module
+        
+          
+    
+        
+        
+        Callable --> "0..1" String : module
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Callable : name
+        
+          
+    
+        
+        
+        Callable --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Callable : software
+        
+          
+    
+        
+        
+        Callable --> "0..1" SoftwareRequirement : software
+        click SoftwareRequirement href "./SoftwareRequirement.html"
+    
+
+        
+      Callable : traceable
+        
+          
+    
+        
+        
+        Callable --> "0..1" Boolean : traceable
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      
+```
+
+
+
+
+
+## Inheritance
+* **Callable**
+    * [ClassReference](../classes/ClassReference.qmd)
+
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Callable](https://w3id.org/tvbo/Callable) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [module](../slots/module.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [software](../slots/software.qmd) | 0..1 <br/> [SoftwareRequirement](../classes/SoftwareRequirement.qmd) |  | direct |
+| [traceable](../slots/traceable.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether this callable can be traced by an array-programming backend (jit/vmap... | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | [builder](../slots/builder.qmd) | range | [Callable](../classes/Callable.qmd) |
+| [Analysis](../classes/Analysis.qmd) | [callable](../slots/callable.qmd) | range | [Callable](../classes/Callable.qmd) |
+| [Function](../classes/Function.qmd) | [callable](../slots/callable.qmd) | range | [Callable](../classes/Callable.qmd) |
+| [LossFunction](../classes/LossFunction.qmd) | [callable](../slots/callable.qmd) | range | [Callable](../classes/Callable.qmd) |
+| [FunctionCall](../classes/FunctionCall.qmd) | [callable](../slots/callable.qmd) | range | [Callable](../classes/Callable.qmd) |
+| [DataSource](../classes/DataSource.qmd) | [loader](../slots/loader.qmd) | range | [Callable](../classes/Callable.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Callable |
+| native | tvbo:Callable |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Callable
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+attributes:
+  module:
+    name: module
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Callable
+    range: string
+  software:
+    name: software
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Callable
+    - Continuation
+    - SimulationExperiment
+    range: SoftwareRequirement
+    inlined: true
+  traceable:
+    name: traceable
+    description: Whether this callable can be traced by an array-programming backend
+      (jit/vmap under JAX), asserted by the recipe rather than inferred from the module
+      name. A backend that batches a parameter grid must know whether an observation's
+      callable survives tracing; without this it can only guess from the import root,
+      which makes every study-local callable untraceable however it is written. Set
+      it true only for a callable written against the backend's array API -- a host
+      NumPy/SciPy callable declared traceable fails inside the trace, with the tracer
+      error naming this claim as its cause. Unset means "infer", preserving the import-root
+      default.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Callable
+    range: boolean
+class_uri: tvbo:Callable
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Callable
+from_schema: https://w3id.org/tvbo
+attributes:
+  module:
+    name: module
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Callable
+    domain_of:
+    - Callable
+    range: string
+  software:
+    name: software
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Callable
+    domain_of:
+    - Callable
+    - Continuation
+    - SimulationExperiment
+    range: SoftwareRequirement
+    inlined: true
+  traceable:
+    name: traceable
+    description: Whether this callable can be traced by an array-programming backend
+      (jit/vmap under JAX), asserted by the recipe rather than inferred from the module
+      name. A backend that batches a parameter grid must know whether an observation's
+      callable survives tracing; without this it can only guess from the import root,
+      which makes every study-local callable untraceable however it is written. Set
+      it true only for a callable written against the backend's array API -- a host
+      NumPy/SciPy callable declared traceable fails inside the trace, with the tracer
+      error naming this claim as its cause. Unset means "infer", preserving the import-root
+      default.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Callable
+    domain_of:
+    - Callable
+    range: boolean
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Callable
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Callable
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+class_uri: tvbo:Callable
+
+```
+</details></div>

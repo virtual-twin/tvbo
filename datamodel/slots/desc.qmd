@@ -1,0 +1,99 @@
+# Slot: desc 
+
+
+_BIDS desc- entity (e.g., FCavg, SC), for disambiguating derived data variants_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/desc](https://w3id.org/tvbo/slot/desc)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BidsEntities](../classes/BidsEntities.qmd) | BIDS filename entities (BEP017-aligned) for provenance and data discovery |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [BidsEntities](../classes/BidsEntities.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [BidsEntities](../classes/BidsEntities.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:desc |
+| native | tvbo:desc |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: desc
+description: BIDS desc- entity (e.g., FCavg, SC), for disambiguating derived data
+  variants
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: BidsEntities
+domain_of:
+- BidsEntities
+range: string
+
+```
+</details></div>

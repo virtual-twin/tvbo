@@ -1,0 +1,109 @@
+# Slot: members 
+
+
+_Other studies this one aggregates, each a reference to a study recipe (``recipe``) plus whether it is ``optional`` (skipped unless requested, for runs too heavy to recompute per build). A study with members is a study-of-studies — a whole manuscript as one runnable specification — and recursion comes through the pointer: a member's own recipe may declare members of its own. ``tvbo run`` executes each member's experiments, analyses and figures, then the owning study's own, which are the paper-native demos belonging to no member. Legitimized by COMBINE/OMEX, SED-ML and the ISA ``Investigation`` top-level container it parallels._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/members](https://w3id.org/tvbo/slot/members)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [StudyMember](../classes/StudyMember.qmd) |
+| Domain Of | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:members |
+| native | tvbo:members |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: members
+description: 'Other studies this one aggregates, each a reference to a study recipe
+  (``recipe``) plus whether it is ``optional`` (skipped unless requested, for runs
+  too heavy to recompute per build). A study with members is a study-of-studies —
+  a whole manuscript as one runnable specification — and recursion comes through the
+  pointer: a member''s own recipe may declare members of its own. ``tvbo run`` executes
+  each member''s experiments, analyses and figures, then the owning study''s own,
+  which are the paper-native demos belonging to no member. Legitimized by COMBINE/OMEX,
+  SED-ML and the ISA ``Investigation`` top-level container it parallels.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: SimulationStudy
+domain_of:
+- SimulationStudy
+range: StudyMember
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

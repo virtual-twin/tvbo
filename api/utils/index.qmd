@@ -1,0 +1,466 @@
+# utils { #tvbo.utils }
+
+`utils`
+
+Utilities Module for TVB-O.
+
+Core utilities: ``Bunch`` container, PyTree formatting, YAML I/O, and metadata traversal helpers.
+
+Plotting utilities (colors, colormaps, ``multiview``) have moved to ``tvbo.plot.utils`` and are re-exported here for backward compatibility.
+
+Analysis functions (``per_window_fc``, ``ttest_correlation_strength``) have moved to ``tvbo.analysis``.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [INTEGRATION_METHODS](#tvbo.utils.INTEGRATION_METHODS) | Every integration method tvbo accepts, and the extra spellings that name it. |
+| [ROOT_DIR](#tvbo.utils.ROOT_DIR) |  |
+| [cm](#tvbo.utils.cm) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Bunch](#tvbo.utils.Bunch) | Dictionary with attribute access and optional JAX PyTree support. |
+
+### Bunch { #tvbo.utils.Bunch }
+
+```python
+utils.Bunch()
+```
+
+Dictionary with attribute access and optional JAX PyTree support.
+
+Extends dict to allow both ``bunch["key"]`` and ``bunch.key`` access.
+If JAX is installed, registered as a PyTree via ``register_pytree_node_class`` with deterministic (sorted-key) traversal order.
+
+Based on scikit-learn's ``sklearn.utils.Bunch``.
+
+#### See Also {.doc-section .doc-section-see-also}
+
+https://scikit-learn.org/stable/modules/generated/sklearn.utils.Bunch.html
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [copy](#tvbo.utils.Bunch.copy) | Return a shallow copy as a new `Bunch`. |
+| [tree_flatten](#tvbo.utils.Bunch.tree_flatten) | Flatten the `Bunch` into JAX pytree (children, aux_data). |
+| [tree_unflatten](#tvbo.utils.Bunch.tree_unflatten) | Reconstruct a `Bunch` from JAX pytree aux_data and children. |
+
+##### copy { #tvbo.utils.Bunch.copy }
+
+```python
+utils.Bunch.copy()
+```
+
+Return a shallow copy as a new `Bunch`.
+
+###### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                     |
+|--------|--------|-----------------------------------------------------------------|
+|        |        | A `Bunch` containing the same key/value pairs as this instance. |
+
+##### tree_flatten { #tvbo.utils.Bunch.tree_flatten }
+
+```python
+utils.Bunch.tree_flatten()
+```
+
+Flatten the `Bunch` into JAX pytree (children, aux_data).
+
+Keys are sorted so traversal order is deterministic across calls.
+
+##### tree_unflatten { #tvbo.utils.Bunch.tree_unflatten }
+
+```python
+utils.Bunch.tree_unflatten(aux_data, children)
+```
+
+Reconstruct a `Bunch` from JAX pytree aux_data and children.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [add_to_parameters_collection](#tvbo.utils.add_to_parameters_collection) | Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level. |
+| [as_list](#tvbo.utils.as_list) | Normalize a keyed-dict-or-list collection to a list of its members. |
+| [bind_function_arguments](#tvbo.utils.bind_function_arguments) | Pair a model function's declared arguments with one call site's actual arguments. |
+| [deep_merge](#tvbo.utils.deep_merge) | Recursively merge ``override`` onto ``base``, returning a new dict. |
+| [domain_enforcement](#tvbo.utils.domain_enforcement) | Normalise a state-variable domain's enforcement mode to a plain string. |
+| [edge_label](#tvbo.utils.edge_label) | Canonical ``Network.matrix()`` label for a network reference, else ``None``. |
+| [edge_param](#tvbo.utils.edge_param) | A named quantity off an ``Edge``: its ``parameters`` entry, else its own slot. |
+| [format_pytree_as_string](#tvbo.utils.format_pytree_as_string) | Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters. |
+| [from_yaml](#tvbo.utils.from_yaml) | Load a LinkML datamodel object from a YAML file. |
+| [initial_value](#tvbo.utils.initial_value) | The initial value a state variable declares, else *default*. |
+| [integration_method](#tvbo.utils.integration_method) | The canonical name of a declared integration method. Raises on a spelling tvbo does not know. |
+| [is_array_valued](#tvbo.utils.is_array_valued) | Return True if a parameter value is an array constant rather than a scalar. |
+| [keyed_items](#tvbo.utils.keyed_items) | A keyed collection's ``(key, member)`` pairs, whichever shape holds it. |
+| [network_couplings](#tvbo.utils.network_couplings) | *network*'s couplings, keyed by the role each fills. |
+| [noise_sigma](#tvbo.utils.noise_sigma) | The noise standard deviation σ off a declared ``Noise``, or ``None``. |
+| [normalize_params](#tvbo.utils.normalize_params) | Normalize a ``parameters`` collection to a flat ``{name: param}`` dict. |
+| [numbered_print](#tvbo.utils.numbered_print) | Print `text` with each line prefixed by a zero-padded line number. |
+| [parameter_number](#tvbo.utils.parameter_number) | A parameter's declared value as plain numbers, uniform sequences collapsed. |
+| [pretty_print_pytree](#tvbo.utils.pretty_print_pytree) | Prints a pretty formatted representation of a JAX pytree structure. |
+| [register_recipe_code_paths](#tvbo.utils.register_recipe_code_paths) | Make a recipe's callable code importable — the ``code/`` convention, or a declared :class:`CodeSource` (a local directory or a git repository). |
+| [sanitize_name](#tvbo.utils.sanitize_name) | Sanitise a name into a filesystem- and rule-safe token (keep alnum, ``_``, ``-``). |
+| [to_yaml](#tvbo.utils.to_yaml) | Dump a LinkML datamodel object to YAML. |
+| [transform_target](#tvbo.utils.transform_target) | The edge attribute a ``transforms:`` entry rewrites, or ``None``. |
+| [traverse_metadata](#tvbo.utils.traverse_metadata) | Recursively traverses the attributes of a metadata object, calling a callback on each Parameter. |
+
+### add_to_parameters_collection { #tvbo.utils.add_to_parameters_collection }
+
+```python
+utils.add_to_parameters_collection(key, value, path, parameters)
+```
+
+Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level.
+
+A Parameter may carry both a scalar ``value`` AND a nested ``distribution`` (e.g.
+``omega_mean_hz = 10 Hz + Normal(mean, std)``): its scalar and the distribution's sub-parameters navigate through the same name. The two must coexist rather than overwrite — a scalar already stored at a name is preserved under a reserved ``value`` key when that name has to become a sub-Bunch, and a scalar written onto a name that is already a sub-Bunch is stored under ``value`` instead of clobbering the sub-tree.
+
+### as_list { #tvbo.utils.as_list }
+
+```python
+utils.as_list(obj)
+```
+
+Normalize a keyed-dict-or-list collection to a list of its members.
+
+TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by each member's identifier, but may also appear as plain lists. Returns the member values in either case (``None`` -> ``[]``).
+
+A scalar becomes a one-element list. Strings especially: they are iterable, so ``list("/data")`` would silently yield one entry *per character* — which is how a single ``--set container_binds=/data/cephfs-1`` turned into a bind of ``/,d,a,t,a,…``. No caller ever wants a string split into characters. A bare ``JsonObj`` — the shape an assigned collection slot takes — is iterable over its *keys* for the same reason, and is read through :mod:`jsonasobj2` instead; the test is on the exact type, since every LinkML entity subclasses ``JsonObj`` and a lone one is a scalar here.
+
+### bind_function_arguments { #tvbo.utils.bind_function_arguments }
+
+```python
+utils.bind_function_arguments(func_name, formal, actual)
+```
+
+Pair a model function's declared arguments with one call site's actual arguments.
+
+A mismatch names the function and both arities. `arguments:` is an optional slot, so a schema-legal recipe can declare a function whose declaration and calls disagree; the two failure modes either side of this are both unhelpful. Silently truncating (a bare `zip`) inlines a body with a formal symbol left unbound, which surfaces much later as a wrong equation. Raising `zip()`'s own message names neither the function nor the recipe, and in the NeuroML path it fires inside a sympy replace callback, so the traceback is all sympy internals.
+
+Returns `{formal: actual}`, keyed by whatever the caller passed as *formal* — names or `Symbol`s alike.
+
+### deep_merge { #tvbo.utils.deep_merge }
+
+```python
+utils.deep_merge(base, override)
+```
+
+Recursively merge ``override`` onto ``base``, returning a new dict.
+
+Nested dicts are merged key-by-key, so an override can replace a single leaf while inheriting its siblings from ``base`` — e.g. ``{parameters: {a: {value:
+1}}}`` overrides only ``a.value`` and keeps every other parameter from ``base``. Any key whose two sides are not both dicts is taken from ``override``. Neither input is mutated.
+
+This is the field-level precedence used when a spec sourced by ``iri`` is refined by inline metadata: the inline value supervenes and the source (registry entry / ontology default) fills the gaps.
+
+### domain_enforcement { #tvbo.utils.domain_enforcement }
+
+```python
+utils.domain_enforcement(domain)
+```
+
+Normalise a state-variable domain's enforcement mode to a plain string.
+
+Returns one of ``'none'`` (default — descriptive metadata only), ``'clamp'`` (hard-clip to [lo, hi]) or ``'wrap'`` (periodic). Accepts a Range/domain object (reads its ``enforce`` slot), a bare ``DomainEnforcement`` value, or ``None``. Normalises across both generated representations of the enum — the pydantic ``(str, Enum)`` (compare via ``.value``) and the gen-python permissible value (compare via ``str()``) — so callers can simply test ``domain_enforcement(sv.domain) == 'clamp'``.
+
+### edge_label { #tvbo.utils.edge_label }
+
+```python
+utils.edge_label(ref)
+```
+
+Canonical ``Network.matrix()`` label for a network reference, else ``None``.
+
+The one resolver for every way a recipe can point at a connectome matrix, so a transform equation, an observation source and an exploration axis cannot mean different matrices by the same name. Accepts the fully-qualified form (``network.weight``, ``network.edges.length``), the explicit ``edges.<label>`` form (any label), and the bare ``weight(s)``/``length(s)`` shortcut. Returns ``None`` for anything that is not a connectome-matrix reference (state variables, ``network.observations.*``, ...), which callers route through their normal path.
+
+### edge_param { #tvbo.utils.edge_param }
+
+```python
+utils.edge_param(edge, name, default=None)
+```
+
+A named quantity off an ``Edge``: its ``parameters`` entry, else its own slot.
+
+``weight``/``delay``/``distance`` are both first-class ``Edge`` slots and valid entries in the generic ``parameters`` collection, so a recipe may spell either. ``parameters`` wins when both are set. This is the single reader every backend goes through, so one recipe cannot mean different connectomes on different backends. Returns the value verbatim (no coercion), or *default*.
+
+### format_pytree_as_string { #tvbo.utils.format_pytree_as_string }
+
+```python
+utils.format_pytree_as_string(
+    pytree,
+    name='root',
+    prefix='',
+    is_last=False,
+    show_numerical_only=False,
+    is_root=True,
+    hide_none=False,
+    show_array_values=False,
+)
+```
+
+Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name                | Type   | Description                                                       | Default    |
+|---------------------|--------|-------------------------------------------------------------------|------------|
+| pytree              | Any    | The pytree to format.                                             | _required_ |
+| name                | str    | The name of the current node.                                     | `'root'`   |
+| prefix              | str    | Current line prefix.                                              | `''`       |
+| is_last             | bool   | Whether the current node is the last child of its parent.         | `False`    |
+| show_numerical_only | bool   | If True, only show arrays and numerical types (float, int, etc.). | `False`    |
+| is_root             | bool   | Whether this node is the root of the tree.                        | `True`     |
+| hide_none           | bool   | If True, fields with None values will be hidden.                  | `False`    |
+| show_array_values   | bool   | If True, print full array values instead of summaries.            | `False`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                        |
+|--------|--------|----------------------------------------------------|
+| str    | str    | The formatted string representation of the pytree. |
+
+### from_yaml { #tvbo.utils.from_yaml }
+
+```python
+utils.from_yaml(filepath, cls)
+```
+
+Load a LinkML datamodel object from a YAML file.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type   | Description                         | Default    |
+|----------|--------|-------------------------------------|------------|
+| filepath | str    | Path to the YAML file.              | _required_ |
+| cls      | type   | The datamodel class to instantiate. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                                |
+|--------|--------|----------------------------------------------------------------------------|
+| object | object | An instance of the datamodel class populated with data from the YAML file. |
+
+### initial_value { #tvbo.utils.initial_value }
+
+```python
+utils.initial_value(sv, default=0.1)
+```
+
+The initial value a state variable declares, else *default*.
+
+``StateVariable.initial_value`` has no schema default: undeclared is ``None`` and means "the spec did not say", which is what makes the fallback the caller's to name.
+A model state starts at the generic 0.1; an observation reduction's accumulator starts at its reduction identity ``0.0``, which is a different question and so is passed explicitly.
+
+The slot used to carry ``ifabsent: float(0.1)``, which materialised 0.1 for every state variable. That made "undeclared" unrepresentable — every consumer's own ``is None`` fallback was unreachable, and a reduction observer could not distinguish a declared 0.1 from a spec that said nothing.
+
+### integration_method { #tvbo.utils.integration_method }
+
+```python
+utils.integration_method(method, *, strict=True)
+```
+
+The canonical name of a declared integration method. Raises on a spelling tvbo does not know.
+
+A recipe writes ``rk4``, ``RungeKutta4thOrder`` or ``runge_kutta`` and means one method; the ontology that holds its update expression and the adapter that picks a backend solver each need the one name. Reading the spelling through here is what stops the two from answering differently — the failure this replaces was a recipe that ran correctly on tvboptim, which knew ``rk4``, and died in the tvb template on ``'NoneType' object has no attribute 'equation'``, because the ontology did not and left the update expression unfilled.
+
+An unrecognised spelling raises rather than resolving to a default: silently integrating by a scheme the recipe did not ask for changes the numbers it reports. ``strict=False`` answers ``None`` for it instead, which is what a caller that only wants to look the method up needs: ``Integrator.method`` is an open vocabulary for a backend that supplies its own solver — a NetworkDynamics.jl recipe naming ``AutoTsit5`` hands that string to Julia's ``solve`` and is not a mistake — so failing to recognise a spelling may not be an error at the point of the lookup.
+
+### is_array_valued { #tvbo.utils.is_array_valued }
+
+```python
+utils.is_array_valued(value)
+```
+
+Return True if a parameter value is an array constant rather than a scalar.
+
+Array-valued parameters (e.g. mode-coupling matrices, Gaussian-quadrature vectors) are stored as nested lists/tuples in YAML or as ``np.ndarray`` when set programmatically. Scalar-only call sites (``float(p.value)`` substitution, sympy ``subs``) must skip them. Single source of truth so list/tuple *and* ndarray are treated consistently everywhere.
+
+### keyed_items { #tvbo.utils.keyed_items }
+
+```python
+utils.keyed_items(collection, kind='collection')
+```
+
+A keyed collection's ``(key, member)`` pairs, whichever shape holds it.
+
+The generated dataclasses wrap a keyed collection in a ``JsonObj`` when it is assigned, and a ``JsonObj`` has no ``.items``; the Pydantic models keep a plain dict. The schema also allows the list spelling, whose members carry their own ``name``. Anything else raises: a reader that answers "nothing here" for a shape it did not recognise reports an empty collection as an empty *result*, which is how an unchecked ``from_datamodel`` load went unchecked.
+
+The ``JsonObj`` test is on the exact type, because every LinkML entity subclasses it: a lone ``Coupling`` read as a collection would answer with its own 22 field names, which is a shape mismatch reported as data rather than as an error.
+
+### network_couplings { #tvbo.utils.network_couplings }
+
+```python
+utils.network_couplings(network)
+```
+
+*network*'s couplings, keyed by the role each fills.
+
+A coupling acts over a connectivity, so this slot is the only place one is declared and every backend reads it through here. Assigning a mapping to a keyed multivalued slot leaves a ``JsonObj`` on the generated dataclass — no ``.values()``, no ``.items()`` — so a reader that reaches for either sees a coupling on one form of the record and an ``AttributeError`` on the other.
+
+### noise_sigma { #tvbo.utils.noise_sigma }
+
+```python
+utils.noise_sigma(noise)
+```
+
+The noise standard deviation σ off a declared ``Noise``, or ``None``.
+
+The one reader for every spelling the schema allows, so a recipe cannot mean a different amplitude on different backends. Each spelling has exactly one meaning:
+
+* ``parameters: {sigma: {value: s}}`` → ``s``. Wins whenever present.
+* ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. The dispersion spelling
+  (``D = σ²/2``) — what a TVB import writes.
+
+Returns ``None`` when the noise declares no amplitude at all (and for a missing ``Noise``), leaving "absent" distinguishable from an explicit zero.
+
+### normalize_params { #tvbo.utils.normalize_params }
+
+```python
+utils.normalize_params(params)
+```
+
+Normalize a ``parameters`` collection to a flat ``{name: param}`` dict.
+
+Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node and dynamics parameter collections alike.
+
+A bare ``JsonObj`` — what an assigned collection slot holds — has no ``.items``, and iterating it yields its *keys*; it is read through :mod:`jsonasobj2` instead. The test is on the exact type, because every LinkML entity subclasses ``JsonObj`` and a single ``Parameter`` read that way would answer with its own field names.
+
+### numbered_print { #tvbo.utils.numbered_print }
+
+```python
+utils.numbered_print(text)
+```
+
+Print `text` with each line prefixed by a zero-padded line number.
+
+Line numbers start at 1 and are padded to the width of the largest number so the printed numbers stay aligned.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                     | Default    |
+|--------|--------|---------------------------------|------------|
+| text   |        | The multi-line string to print. | _required_ |
+
+### parameter_number { #tvbo.utils.parameter_number }
+
+```python
+utils.parameter_number(value)
+```
+
+A parameter's declared value as plain numbers, uniform sequences collapsed.
+
+``Parameter.value`` is scalar for most models, one entry per mode for a multi-mode one, and a matrix for a mode-coupled one (``ReducedSetHindmarshRose``'s ``A_ik``), so it nests to arbitrary depth. A sequence whose entries are all equal collapses to the scalar it means; anything else keeps its shape, because reducing a genuinely heterogeneous value to its first entry would silently change the model.
+
+Backends that can only emit scalars use this to decide, rather than each deciding differently — or, as the PyRates emitter did, calling ``float()`` and raising.
+
+### pretty_print_pytree { #tvbo.utils.pretty_print_pytree }
+
+```python
+utils.pretty_print_pytree(
+    pytree,
+    name='root',
+    prefix='',
+    show_numerical_only=False,
+    hide_none=False,
+)
+```
+
+Prints a pretty formatted representation of a JAX pytree structure.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name                | Type   | Description                                                       | Default    |
+|---------------------|--------|-------------------------------------------------------------------|------------|
+| pytree              | Any    | The pytree to print.                                              | _required_ |
+| name                | str    | The name of the current node.                                     | `'root'`   |
+| prefix              | str    | Current line prefix.                                              | `''`       |
+| show_numerical_only | bool   | If True, only show arrays and numerical types (float, int, etc.). | `False`    |
+| hide_none           | bool   | If True, fields with None values will be hidden.                  | `False`    |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description   |
+|--------|--------|---------------|
+|        | None   | None          |
+
+### register_recipe_code_paths { #tvbo.utils.register_recipe_code_paths }
+
+```python
+utils.register_recipe_code_paths(source_file, code_source=None)
+```
+
+Make a recipe's callable code importable — the ``code/`` convention, or a declared :class:`CodeSource` (a local directory or a git repository).
+
+A recipe references custom builders and analysis callables by bare module name (e.g. ``module: taher2019_analysis``); their directory must be on ``sys.path`` for ``import`` to resolve them. Resolution:
+
+1. **Explicit ``code_source``** (a ``CodeSource`` or dict on the study) — decouples the specification from where its code lives:
+     * ``path`` — a directory (relative to the recipe YAML, or absolute); or
+     * ``git`` — a repository shallow-cloned and cached under
+       ``~/.cache/tvbo/code_sources/<url+ref hash>``, checked out at ``ref``.
+   An optional ``subdir`` narrows which directory of the source is used.
+2. **Convention** (no ``code_source``) — the ``code/`` subdir beside the recipe YAML.
+
+Registering at load time, once and left in place (callables resolve lazily during a run), lets ``tvbo run`` / ``tvbo workflow`` and notebooks load a recipe without a ``PYTHONPATH`` prefix. The dir goes to the front of ``sys.path`` (matching ``PYTHONPATH``) and is skipped when already present.
+Returns the paths newly inserted.
+
+### sanitize_name { #tvbo.utils.sanitize_name }
+
+```python
+utils.sanitize_name(name)
+```
+
+Sanitise a name into a filesystem- and rule-safe token (keep alnum, ``_``, ``-``).
+
+### to_yaml { #tvbo.utils.to_yaml }
+
+```python
+utils.to_yaml(obj, filepath=None)
+```
+
+Dump a LinkML datamodel object to YAML.
+
+- If filepath is provided, write YAML to that file and return the path.
+- If filepath is None, return the YAML string.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name     | Type        | Description                    | Default    |
+|----------|-------------|--------------------------------|------------|
+| obj      | object      | Datamodel object to serialize. | _required_ |
+| filepath | str \| None | Optional path to write YAML.   | `None`     |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                |
+|--------|--------|------------------------------------------------------------|
+| str    | str    | File path when written to disk, otherwise the YAML string. |
+
+### transform_target { #tvbo.utils.transform_target }
+
+```python
+utils.transform_target(func)
+```
+
+The edge attribute a ``transforms:`` entry rewrites, or ``None``.
+
+A transform's identifier *is* its target, so a recipe spells it ``target:`` — the schema declares that an alias of ``name``, which LinkML requires to stay the identifier. Reading it through here says which of the two meanings a call site wants, since ``name: weight`` beside ``rhs: weight / max(weight)`` otherwise reads as if the two were different things.
+
+### traverse_metadata { #tvbo.utils.traverse_metadata }
+
+```python
+utils.traverse_metadata(
+    metadata,
+    target_instance=None,
+    path=None,
+    callback=None,
+    callback_kwargs=None,
+    keys_to_exclude=(),
+)
+```
+
+Recursively traverses the attributes of a metadata object, calling a callback on each Parameter.

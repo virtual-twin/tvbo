@@ -1,0 +1,82 @@
+# Slot: title 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/title](https://w3id.org/tvbo/slot/title)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+| [Inset](../classes/Inset.qmd) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, ann... |  no  |
+| [Legend](../classes/Legend.qmd) | A panel's key: whether it is drawn, where it sits, and the three things a fig... |  no  |
+| [Study](../classes/Study.qmd) | Bibliographic anchor for a source publication, identified by its citation key... |  no  |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Panel](../classes/Panel.qmd), [Inset](../classes/Inset.qmd), [Legend](../classes/Legend.qmd), [Study](../classes/Study.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:title |
+| native | tvbo:title |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: title
+domain_of:
+- Panel
+- Inset
+- Legend
+- Study
+range: string
+
+```
+</details></div>

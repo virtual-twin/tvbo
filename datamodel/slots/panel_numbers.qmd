@@ -1,0 +1,99 @@
+# Slot: panel_numbers 
+
+
+_Draw automatic panel letters (a, b, ...). Independent of auto_format so a study can keep its own tick styling and still get numbered panels._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/panel_numbers](https://w3id.org/tvbo/slot/panel_numbers)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:panel_numbers |
+| native | tvbo:panel_numbers |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: panel_numbers
+description: Draw automatic panel letters (a, b, ...). Independent of auto_format
+  so a study can keep its own tick styling and still get numbered panels.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: boolean
+
+```
+</details></div>

@@ -1,0 +1,92 @@
+# Enum: SweepSeeding 
+
+
+
+
+_How each point of a parameter sweep (Exploration) obtains its initial state. Determines whether the sweep points are independent (and therefore parallelisable) or whether the trajectory follows a solution branch as the swept parameter is changed quasi-statically. The latter is forward-time-integration branch following — distinct from numerical continuation of equilibria (the Continuation class), which tracks branches with a Newton corrector rather than by simulation._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/SweepSeeding](https://w3id.org/tvbo/enum/SweepSeeding)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| independent | None | Points are order-independent and may be evaluated in parallel (see parallel_m... |
+| from_previous | None | Each point is seeded from the final state of the preceding point, so the traj... |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [sweep_seeding](../slots/sweep_seeding.qmd) | How each sweep point's initial state is obtained |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: SweepSeeding
+description: How each point of a parameter sweep (Exploration) obtains its initial
+  state. Determines whether the sweep points are independent (and therefore parallelisable)
+  or whether the trajectory follows a solution branch as the swept parameter is changed
+  quasi-statically. The latter is forward-time-integration branch following — distinct
+  from numerical continuation of equilibria (the Continuation class), which tracks
+  branches with a Newton corrector rather than by simulation.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  independent:
+    text: independent
+    description: 'Points are order-independent and may be evaluated in parallel (see
+      parallel_mode). Default. Independent of each OTHER, which is not the same as
+      each cold-starting: where the experiment declares a transient, the settle is
+      integrated once and every point opens from the state it reached, so what is
+      shared between points is a settled state rather than a running trajectory. That
+      is sound while the swept parameter does not change the approach, and unsound
+      wherever the sweep crosses a bifurcation, since a point then inherits an attractor
+      it would not have reached on its own. A settle per point would make the name
+      literal and is not what the emitter does today; read this as the guarantee it
+      gives rather than the one the word suggests.'
+  from_previous:
+    text: from_previous
+    description: Each point is seeded from the final state of the preceding point,
+      so the trajectory follows the solution branch as the swept parameter changes
+      quasi-statically. Forces sequential, order-dependent execution (emitted as a
+      scan, not a vmap). Used to reach a working point by slowly ramping a parameter
+      (e.g. global coupling) and, with sweep_direction, to expose hysteresis / multistability.
+      Sweep-granularity analogue of InitialStateMethod.from_branch.
+
+```
+</details>
+
+</div>

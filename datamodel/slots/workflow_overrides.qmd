@@ -1,0 +1,102 @@
+# Slot: workflow_overrides 
+
+
+_Per-figure HPC/workflow resource refinement (reuses WorkflowConfig, same pattern as SimulationExperiment.workflow_overrides); lets a heavy render request its own resources when figures are emitted as workflow jobs. The figure's Layer.used edges become the render rule's input dependencies._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/workflow_overrides](https://w3id.org/tvbo/slot/workflow_overrides)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [WorkflowConfig](../classes/WorkflowConfig.qmd) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:workflow_overrides |
+| native | tvbo:workflow_overrides |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: workflow_overrides
+description: Per-figure HPC/workflow resource refinement (reuses WorkflowConfig, same
+  pattern as SimulationExperiment.workflow_overrides); lets a heavy render request
+  its own resources when figures are emitted as workflow jobs. The figure's Layer.used
+  edges become the render rule's input dependencies.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: WorkflowConfig
+inlined: true
+
+```
+</details></div>

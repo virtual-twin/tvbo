@@ -1,0 +1,157 @@
+# direct_ontology_api { #tvbo.api.direct_ontology_api }
+
+`api.direct_ontology_api`
+
+Direct RDF/SPARQL-based ontology API.
+
+Efficient access to the TVB ontology using direct owlready2 SPARQL queries.
+Enables schema ↔ ontology interlinking via class URIs.
+
+No fallbacks - fails fast on unexpected data.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [CURIE_PREFIXES](#tvbo.api.direct_ontology_api.CURIE_PREFIXES) |  |
+| [TYPE_MAPPING](#tvbo.api.direct_ontology_api.TYPE_MAPPING) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [DirectOntologyAPI](#tvbo.api.direct_ontology_api.DirectOntologyAPI) | Direct RDF/SPARQL-based ontology API. |
+
+### DirectOntologyAPI { #tvbo.api.direct_ontology_api.DirectOntologyAPI }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI()
+```
+
+Direct RDF/SPARQL-based ontology API.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [enrich_database_item](#tvbo.api.direct_ontology_api.DirectOntologyAPI.enrich_database_item) | Enrich database item with ontology information. |
+| [get_by_curie](#tvbo.api.direct_ontology_api.DirectOntologyAPI.get_by_curie) | Get entity by CURIE (e.g., 'tvbo:Equation'). |
+| [get_by_iri](#tvbo.api.direct_ontology_api.DirectOntologyAPI.get_by_iri) | Get entity by IRI. Returns None if not found. |
+| [get_by_storid](#tvbo.api.direct_ontology_api.DirectOntologyAPI.get_by_storid) | Get entity by storage ID. |
+| [get_children](#tvbo.api.direct_ontology_api.DirectOntologyAPI.get_children) | Get child classes/instances via direct RDF access. |
+| [get_class_hierarchy](#tvbo.api.direct_ontology_api.DirectOntologyAPI.get_class_hierarchy) | Get the full ontology graph for visualization. |
+| [get_parents](#tvbo.api.direct_ontology_api.DirectOntologyAPI.get_parents) | Get parent classes via direct RDF access. |
+| [get_relationships](#tvbo.api.direct_ontology_api.DirectOntologyAPI.get_relationships) | Get all relationships (both directions). |
+| [get_schema_ontology_link](#tvbo.api.direct_ontology_api.DirectOntologyAPI.get_schema_ontology_link) | Get ontology concept linked to a schema class. |
+| [search](#tvbo.api.direct_ontology_api.DirectOntologyAPI.search) | Search ontology via SPARQL. |
+| [sparql](#tvbo.api.direct_ontology_api.DirectOntologyAPI.sparql) | Execute SPARQL query against the generated ontology world. |
+
+##### enrich_database_item { #tvbo.api.direct_ontology_api.DirectOntologyAPI.enrich_database_item }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.enrich_database_item(item, type_name)
+```
+
+Enrich database item with ontology information.
+
+##### get_by_curie { #tvbo.api.direct_ontology_api.DirectOntologyAPI.get_by_curie }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.get_by_curie(curie)
+```
+
+Get entity by CURIE (e.g., 'tvbo:Equation').
+
+##### get_by_iri { #tvbo.api.direct_ontology_api.DirectOntologyAPI.get_by_iri }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.get_by_iri(iri)
+```
+
+Get entity by IRI. Returns None if not found.
+
+##### get_by_storid { #tvbo.api.direct_ontology_api.DirectOntologyAPI.get_by_storid }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.get_by_storid(storid)
+```
+
+Get entity by storage ID.
+
+##### get_children { #tvbo.api.direct_ontology_api.DirectOntologyAPI.get_children }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.get_children(storid)
+```
+
+Get child classes/instances via direct RDF access.
+
+##### get_class_hierarchy { #tvbo.api.direct_ontology_api.DirectOntologyAPI.get_class_hierarchy }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.get_class_hierarchy()
+```
+
+Get the full ontology graph for visualization.
+
+Includes both classes (the system scaffold: Dynamics, Coupling, Parameter, …) and individuals (the domain entities: JansenRit, its parameters, …), since the generated ontology models domain entities as individuals. ``is_a`` links a node to its superclass (for a class) or its asserted type (for an individual) — both are ThingClasses. Deeper object-property edges (hasParameter, …) are surfaced on demand via ``get_children`` / ``get_parents`` rather than inlined here.
+
+##### get_parents { #tvbo.api.direct_ontology_api.DirectOntologyAPI.get_parents }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.get_parents(storid)
+```
+
+Get parent classes via direct RDF access.
+
+##### get_relationships { #tvbo.api.direct_ontology_api.DirectOntologyAPI.get_relationships }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.get_relationships(storid)
+```
+
+Get all relationships (both directions).
+
+##### get_schema_ontology_link { #tvbo.api.direct_ontology_api.DirectOntologyAPI.get_schema_ontology_link }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.get_schema_ontology_link(
+    schema_class_name,
+)
+```
+
+Get ontology concept linked to a schema class.
+
+##### search { #tvbo.api.direct_ontology_api.DirectOntologyAPI.search }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.search(
+    term,
+    limit=100,
+    exact_match=False,
+)
+```
+
+Search ontology via SPARQL.
+
+##### sparql { #tvbo.api.direct_ontology_api.DirectOntologyAPI.sparql }
+
+```python
+api.direct_ontology_api.DirectOntologyAPI.sparql(query_string, flatten=True)
+```
+
+Execute SPARQL query against the generated ontology world.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [get_direct_ontology_api](#tvbo.api.direct_ontology_api.get_direct_ontology_api) | Get or create singleton. |
+
+### get_direct_ontology_api { #tvbo.api.direct_ontology_api.get_direct_ontology_api }
+
+```python
+api.direct_ontology_api.get_direct_ontology_api()
+```
+
+Get or create singleton.

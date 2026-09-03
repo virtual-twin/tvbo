@@ -1,0 +1,1201 @@
+# Class: Edge 
+
+
+_An edge in a network. Three modes: explicit (source+target set, scalar parameters in YAML), template (no source/target, N×N matrix measure in HDF5), or produced (a `producer:` computes the whole matrix from the spec's own inputs, so no pre-built file is needed). All coexist in the same edges list._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Edge](https://w3id.org/tvbo/Edge)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Edge
+    click Edge href "./Edge.html"
+      Edge : allow_self_connections
+        
+          
+    
+        
+        
+        Edge --> "0..1" Boolean : allow_self_connections
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Edge : connectivity
+        
+          
+    
+        
+        
+        Edge --> "0..1" ConnectivityRule : connectivity
+        click ConnectivityRule href "../../enums/ConnectivityRule.html"
+    
+
+        
+      Edge : coupling
+        
+          
+    
+        
+        
+        Edge --> "0..1" Coupling : coupling
+        click Coupling href "./Coupling.html"
+    
+
+        
+      Edge : delay
+        
+          
+    
+        
+        
+        Edge --> "0..1" Float : delay
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Edge : description
+        
+          
+    
+        
+        
+        Edge --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Edge : dimension_labels
+        
+          
+    
+        
+        
+        Edge --> "*" String : dimension_labels
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Edge : directed
+        
+          
+    
+        
+        
+        Edge --> "0..1" Boolean : directed
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Edge : distance
+        
+          
+    
+        
+        
+        Edge --> "0..1" Float : distance
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Edge : dtype
+        
+          
+    
+        
+        
+        Edge --> "0..1" String : dtype
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Edge : dynamics
+        
+          
+    
+        
+        
+        Edge --> "0..1" Dynamics : dynamics
+        click Dynamics href "./Dynamics.html"
+    
+
+        
+      Edge : events
+        
+          
+    
+        
+        
+        Edge --> "*" Event : events
+        click Event href "./Event.html"
+    
+
+        
+      Edge : format
+        
+          
+    
+        
+        
+        Edge --> "0..1" SparseFormat : format
+        click SparseFormat href "../../enums/SparseFormat.html"
+    
+
+        
+      Edge : label
+        
+          
+    
+        
+        
+        Edge --> "0..1" String : label
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Edge : non_negative
+        
+          
+    
+        
+        
+        Edge --> "0..1" Boolean : non_negative
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Edge : parameters
+        
+          
+    
+        
+        
+        Edge --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      Edge : producer
+        
+          
+    
+        
+        
+        Edge --> "0..1" FunctionCall : producer
+        click FunctionCall href "./FunctionCall.html"
+    
+
+        
+      Edge : source
+        
+          
+    
+        
+        
+        Edge --> "0..1" Integer : source
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Edge : source_network
+        
+          
+    
+        
+        
+        Edge --> "0..1" String : source_network
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Edge : source_var
+        
+          
+    
+        
+        
+        Edge --> "0..1" String : source_var
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Edge : target
+        
+          
+    
+        
+        
+        Edge --> "0..1" Integer : target
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Edge : target_network
+        
+          
+    
+        
+        
+        Edge --> "0..1" String : target_network
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Edge : target_var
+        
+          
+    
+        
+        
+        Edge --> "0..1" String : target_var
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Edge : unit
+        
+          
+    
+        
+        
+        Edge --> "0..1" String : unit
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Edge : valid_diagonal
+        
+          
+    
+        
+        
+        Edge --> "0..1" Boolean : valid_diagonal
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Edge : weight
+        
+          
+    
+        
+        
+        Edge --> "0..1" Float : weight
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Edge : weighted
+        
+          
+    
+        
+        
+        Edge --> "0..1" Boolean : weighted
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Edge](https://w3id.org/tvbo/Edge) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [label](../slots/label.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [producer](../slots/producer.qmd) | 0..1 <br/> [FunctionCall](../classes/FunctionCall.qmd) | HOW to compute this value, when it is derived rather than obtained — the call... | direct |
+| [source](../slots/source.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Source node ID (set for explicit edges, absent for template edges) | direct |
+| [target](../slots/target.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Target node ID (set for explicit edges, absent for template edges) | direct |
+| [weight](../slots/weight.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Connection weight (explicit edges) | direct |
+| [delay](../slots/delay.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Conduction delay (explicit edges, ms) | direct |
+| [distance](../slots/distance.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Edge length / tract distance (explicit edges, mm) | direct |
+| [unit](../slots/unit.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Unit for matrix values (template edges only) | direct |
+| [format](../slots/format.qmd) | 0..1 <br/> [SparseFormat](../enums/SparseFormat.qmd) | Storage format in HDF5 (template edges only) | direct |
+| [dtype](../slots/dtype.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Data type the matrix is stored as in the companion file (template edges only)... | direct |
+| [weighted](../slots/weighted.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Matrix entries carry weights (not just 0/1) | direct |
+| [valid_diagonal](../slots/valid_diagonal.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Self-connections are meaningful | direct |
+| [non_negative](../slots/non_negative.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | All values >= 0 | direct |
+| [source_var](../slots/source_var.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Output variable from source node to use (e | direct |
+| [target_var](../slots/target_var.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Input variable on target node to connect to (e | direct |
+| [coupling](../slots/coupling.qmd) | 0..1 <br/> [Coupling](../classes/Coupling.qmd) | Coupling function for this edge, named by reference into 'network | direct |
+| [directed](../slots/directed.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether the edge is directed | direct |
+| [connectivity](../slots/connectivity.qmd) | 0..1 <br/> [ConnectivityRule](../enums/ConnectivityRule.qmd) | Connectivity rule for a population-level Edge | direct |
+| [allow_self_connections](../slots/allow_self_connections.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | For a self-projection (source and target are the same population) expanded un... | direct |
+| [source_network](../slots/source_network.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path or name of the Network whose nodes define the source endpoints of this E... | direct |
+| [target_network](../slots/target_network.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Path or name of the Network whose nodes define the target endpoints (e | direct |
+| [dimension_labels](../slots/dimension_labels.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Ordered labels for the matrix columns (dim-1) when the matrix is non-square | direct |
+| [dynamics](../slots/dynamics.qmd) | 0..1 <br/> [Dynamics](../classes/Dynamics.qmd) | Dynamics model for this edge | direct |
+| [events](../slots/events.qmd) | * <br/> [Event](../classes/Event.qmd) | Events attached to this edge (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Network](../classes/Network.qmd) | [edges](../slots/edges.qmd) | range | [Edge](../classes/Edge.qmd) |
+| [Network](../classes/Network.qmd) | [edge_template](../slots/edge_template.qmd) | range | [Edge](../classes/Edge.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Edge |
+| native | tvbo:Edge |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Edge
+description: 'An edge in a network. Three modes: explicit (source+target set, scalar
+  parameters in YAML), template (no source/target, N×N matrix measure in HDF5), or
+  produced (a `producer:` computes the whole matrix from the spec''s own inputs, so
+  no pre-built file is needed). All coexist in the same edges list.'
+from_schema: https://w3id.org/tvbo
+slots:
+- label
+- description
+- parameters
+- producer
+attributes:
+  source:
+    name: source
+    description: Source node ID (set for explicit edges, absent for template edges)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: integer
+    required: false
+  target:
+    name: target
+    description: Target node ID (set for explicit edges, absent for template edges)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Edge
+    - Analysis
+    - Assignment
+    range: integer
+    required: false
+  weight:
+    name: weight
+    description: Connection weight (explicit edges)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Edge
+    range: float
+  delay:
+    name: delay
+    description: Conduction delay (explicit edges, ms)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Edge
+    range: float
+  distance:
+    name: distance
+    description: Edge length / tract distance (explicit edges, mm)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Edge
+    range: float
+  unit:
+    name: unit
+    description: Unit for matrix values (template edges only)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  format:
+    name: format
+    description: Storage format in HDF5 (template edges only)
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: SparseFormat
+  dtype:
+    name: dtype
+    description: 'Data type the matrix is stored as in the companion file (template
+      edges only), e.g. ''float32''. Absent — the default — stores it as computed,
+      so a read returns what was written. Set it only to narrow deliberately: halving
+      a measured connectome''s file is a fair trade against its own measurement error,
+      silently halving a computed operator is not.'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Edge
+    - NDArray
+    range: string
+    required: false
+  weighted:
+    name: weighted
+    description: Matrix entries carry weights (not just 0/1)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    domain_of:
+    - Edge
+    range: boolean
+  valid_diagonal:
+    name: valid_diagonal
+    description: Self-connections are meaningful
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(false)
+    domain_of:
+    - Edge
+    range: boolean
+  non_negative:
+    name: non_negative
+    description: All values >= 0
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    domain_of:
+    - Edge
+    range: boolean
+  source_var:
+    name: source_var
+    description: Output variable from source node to use (e.g., 'x_out'). If not specified,
+      uses first output variable from source dynamics. The alias `source_variable`
+      is accepted (harmonized with the `*_variable` spelling used elsewhere, e.g.
+      the stimulus event's `target_variable`).
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - source_variable
+    rank: 1000
+    domain_of:
+    - Edge
+    range: string
+  target_var:
+    name: target_var
+    description: Input variable on target node to connect to (e.g., 'c_in'). If not
+      specified, uses first coupling input from target dynamics. The alias `target_variable`
+      is accepted.
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - target_variable
+    rank: 1000
+    domain_of:
+    - Edge
+    range: string
+  coupling:
+    name: coupling
+    description: Coupling function for this edge, named by reference into 'network.coupling'
+      or defined inline. If not provided, the edge takes the network's coupling.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Network
+    - Edge
+    range: Coupling
+    required: false
+    inlined: false
+  directed:
+    name: directed
+    description: Whether the edge is directed. If false, represents a symmetric/bidirectional
+      connection.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: 'False'
+    domain_of:
+    - GraphGenerator
+    - Edge
+    - Partition
+    range: boolean
+  connectivity:
+    name: connectivity
+    description: Connectivity rule for a population-level Edge. When set, this Edge
+      is a projection between the source and target population nodes (see Node.size);
+      the backend expands it into the individual cell-to-cell connections (e.g. all_to_all
+      -> size_src x size_tgt connections) so the user never enumerates them. When
+      unset, the Edge is a single explicit connection between the source and target
+      node indices (the original per-cell edge semantics).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Edge
+    - SimulationExperiment
+    range: ConnectivityRule
+    required: false
+  allow_self_connections:
+    name: allow_self_connections
+    description: For a self-projection (source and target are the same population)
+      expanded under a connectivity rule, whether to include the diagonal i->i self
+      connections. Ignored when the source and target populations differ.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    domain_of:
+    - Edge
+    range: boolean
+  source_network:
+    name: source_network
+    description: 'Path or name of the Network whose nodes define the source endpoints
+      of this Edge. Symmetric counterpart to `target_network`. Together they let an
+      Edge bridge any two Networks: both unset (within-Network edge), one set (this
+      Network ↔ the named one), or both set (peer-to-peer projection between two other
+      Networks). Accepts either an absolute IRI (peer Network) or the relative-path
+      sentinel `parent` / `parent/parent` (cross-scale up/down via the Node.subnetwork
+      hierarchy).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Edge
+    range: string
+    required: false
+  target_network:
+    name: target_network
+    description: Path or name of the Network whose nodes define the target endpoints
+      (e.g. the columns of a non-square projection matrix such as a gain matrix region
+      → EEG sensors). Also accepts the relative-path sentinel `parent` / `parent/parent`
+      for cross-scale signal flow up the Node.subnetwork hierarchy. One mechanism
+      handles both projection matrices (absolute IRI) and multi-scale boundaries (sentinel).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Edge
+    range: string
+    required: false
+  dimension_labels:
+    name: dimension_labels
+    description: Ordered labels for the matrix columns (dim-1) when the matrix is
+      non-square.  Row labels (dim-0) are the parent Network's node labels.  Stored
+      as HDF5 dimension scales in the companion file.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Edge
+    range: string
+    required: false
+    multivalued: true
+  dynamics:
+    name: dynamics
+    description: Dynamics model for this edge. When specified, the edge has its own
+      state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics
+      class as nodes — state_variables define edge states, derived_variables define
+      observables, output defines what is visible for plotting/analysis. The coupling_function
+      on Coupling still defines how vertex outputs map to edge outputs for aggregation
+      at vertices.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    required: false
+    inlined: false
+  events:
+    name: events
+    description: Events attached to this edge (e.g., threshold-based line tripping).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Node
+    - Edge
+    - Dynamics
+    - SimulationExperiment
+    range: Event
+    multivalued: true
+    inlined: true
+class_uri: tvbo:Edge
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Edge
+description: 'An edge in a network. Three modes: explicit (source+target set, scalar
+  parameters in YAML), template (no source/target, N×N matrix measure in HDF5), or
+  produced (a `producer:` computes the whole matrix from the spec''s own inputs, so
+  no pre-built file is needed). All coexist in the same edges list.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  source:
+    name: source
+    description: Source node ID (set for explicit edges, absent for template edges)
+    from_schema: https://w3id.org/tvbo
+    owner: Edge
+    domain_of:
+    - Panel
+    - Edge
+    - Observation
+    - Dynamics
+    - Parameter
+    - CouplingInput
+    - Likelihood
+    - ResultBinding
+    range: integer
+    required: false
+  target:
+    name: target
+    description: Target node ID (set for explicit edges, absent for template edges)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    - Analysis
+    - Assignment
+    range: integer
+    required: false
+  weight:
+    name: weight
+    description: Connection weight (explicit edges)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    range: float
+  delay:
+    name: delay
+    description: Conduction delay (explicit edges, ms)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    range: float
+  distance:
+    name: distance
+    description: Edge length / tract distance (explicit edges, mm)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    range: float
+  unit:
+    name: unit
+    description: Unit for matrix values (template edges only)
+    from_schema: https://w3id.org/tvbo
+    owner: Edge
+    domain_of:
+    - CommonCoordinateSpace
+    - ToolUnit
+    - MeasureSpec
+    - NamedArray
+    - Edge
+    - Observation
+    - StateVariable
+    - Parameter
+    - Argument
+    - DerivedParameter
+    - DerivedVariable
+    - ExplorationAxis
+    - Integrator
+    - TimeSeries
+    - NDArray
+    - SpatialField
+    range: string
+  format:
+    name: format
+    description: Storage format in HDF5 (template edges only)
+    from_schema: https://w3id.org/tvbo
+    owner: Edge
+    domain_of:
+    - Figure
+    - Animation
+    - RenderSpec
+    - Matrix
+    - Edge
+    - DataSource
+    - ResultBinding
+    - ArchiveConfig
+    range: SparseFormat
+  dtype:
+    name: dtype
+    description: 'Data type the matrix is stored as in the companion file (template
+      edges only), e.g. ''float32''. Absent — the default — stores it as computed,
+      so a read returns what was written. Set it only to narrow deliberately: halving
+      a measured connectome''s file is a fair trade against its own measurement error,
+      silently halving a computed operator is not.'
+    from_schema: https://w3id.org/tvbo
+    owner: Edge
+    domain_of:
+    - Matrix
+    - CachedArray
+    - NamedArray
+    - Edge
+    - NDArray
+    range: string
+    required: false
+  weighted:
+    name: weighted
+    description: Matrix entries carry weights (not just 0/1)
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    owner: Edge
+    domain_of:
+    - Edge
+    range: boolean
+  valid_diagonal:
+    name: valid_diagonal
+    description: Self-connections are meaningful
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(false)
+    owner: Edge
+    domain_of:
+    - Edge
+    range: boolean
+  non_negative:
+    name: non_negative
+    description: All values >= 0
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    owner: Edge
+    domain_of:
+    - Edge
+    range: boolean
+  source_var:
+    name: source_var
+    description: Output variable from source node to use (e.g., 'x_out'). If not specified,
+      uses first output variable from source dynamics. The alias `source_variable`
+      is accepted (harmonized with the `*_variable` spelling used elsewhere, e.g.
+      the stimulus event's `target_variable`).
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - source_variable
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    range: string
+  target_var:
+    name: target_var
+    description: Input variable on target node to connect to (e.g., 'c_in'). If not
+      specified, uses first coupling input from target dynamics. The alias `target_variable`
+      is accepted.
+    from_schema: https://w3id.org/tvbo
+    aliases:
+    - target_variable
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    range: string
+  coupling:
+    name: coupling
+    description: Coupling function for this edge, named by reference into 'network.coupling'
+      or defined inline. If not provided, the edge takes the network's coupling.
+    from_schema: https://w3id.org/tvbo
+    owner: Edge
+    domain_of:
+    - Network
+    - Edge
+    range: Coupling
+    required: false
+    inlined: false
+  directed:
+    name: directed
+    description: Whether the edge is directed. If false, represents a symmetric/bidirectional
+      connection.
+    from_schema: https://w3id.org/tvbo
+    ifabsent: 'False'
+    owner: Edge
+    domain_of:
+    - GraphGenerator
+    - Edge
+    - Partition
+    range: boolean
+  connectivity:
+    name: connectivity
+    description: Connectivity rule for a population-level Edge. When set, this Edge
+      is a projection between the source and target population nodes (see Node.size);
+      the backend expands it into the individual cell-to-cell connections (e.g. all_to_all
+      -> size_src x size_tgt connections) so the user never enumerates them. When
+      unset, the Edge is a single explicit connection between the source and target
+      node indices (the original per-cell edge semantics).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    - SimulationExperiment
+    range: ConnectivityRule
+    required: false
+  allow_self_connections:
+    name: allow_self_connections
+    description: For a self-projection (source and target are the same population)
+      expanded under a connectivity rule, whether to include the diagonal i->i self
+      connections. Ignored when the source and target populations differ.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: boolean(true)
+    owner: Edge
+    domain_of:
+    - Edge
+    range: boolean
+  source_network:
+    name: source_network
+    description: 'Path or name of the Network whose nodes define the source endpoints
+      of this Edge. Symmetric counterpart to `target_network`. Together they let an
+      Edge bridge any two Networks: both unset (within-Network edge), one set (this
+      Network ↔ the named one), or both set (peer-to-peer projection between two other
+      Networks). Accepts either an absolute IRI (peer Network) or the relative-path
+      sentinel `parent` / `parent/parent` (cross-scale up/down via the Node.subnetwork
+      hierarchy).'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    range: string
+    required: false
+  target_network:
+    name: target_network
+    description: Path or name of the Network whose nodes define the target endpoints
+      (e.g. the columns of a non-square projection matrix such as a gain matrix region
+      → EEG sensors). Also accepts the relative-path sentinel `parent` / `parent/parent`
+      for cross-scale signal flow up the Node.subnetwork hierarchy. One mechanism
+      handles both projection matrices (absolute IRI) and multi-scale boundaries (sentinel).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    range: string
+    required: false
+  dimension_labels:
+    name: dimension_labels
+    description: Ordered labels for the matrix columns (dim-1) when the matrix is
+      non-square.  Row labels (dim-0) are the parent Network's node labels.  Stored
+      as HDF5 dimension scales in the companion file.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    range: string
+    required: false
+    multivalued: true
+  dynamics:
+    name: dynamics
+    description: Dynamics model for this edge. When specified, the edge has its own
+      state variables and ODE (EdgeModel with f in ND.jl). Uses the same Dynamics
+      class as nodes — state_variables define edge states, derived_variables define
+      observables, output defines what is visible for plotting/analysis. The coupling_function
+      on Coupling still defines how vertex outputs map to edge outputs for aggregation
+      at vertices.
+    from_schema: https://w3id.org/tvbo
+    owner: Edge
+    domain_of:
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Continuation
+    - SimulationExperiment
+    range: Dynamics
+    required: false
+    inlined: false
+  events:
+    name: events
+    description: Events attached to this edge (e.g., threshold-based line tripping).
+    from_schema: https://w3id.org/tvbo
+    owner: Edge
+    domain_of:
+    - Node
+    - Edge
+    - Dynamics
+    - SimulationExperiment
+    range: Event
+    multivalued: true
+    inlined: true
+  label:
+    name: label
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: rdfs:label
+    owner: Edge
+    domain_of:
+    - ParcellationTerminology
+    - Subject
+    - Session
+    - Dataset
+    - Contact
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Inset
+    - Layer
+    - Colorbar
+    - Rule
+    - Equation
+    - Stimulus
+    - Event
+    - Parcellation
+    - Tractogram
+    - Matrix
+    - Phenotype
+    - Network
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - Function
+    - FunctionCall
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - AlgorithmStage
+    - TuningObjective
+    - Continuation
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - SimulationStudy
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - DifferentialOperator
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    range: string
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: Edge
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+  producer:
+    name: producer
+    description: 'HOW to compute this value, when it is derived rather than obtained
+      — the callable that produces it, its arguments, and (via `output:`) which entry
+      to take from a callable returning several named arrays. The callable resolves
+      against the recipe''s `code_source`. Use instead of `source:` for a value that
+      is a deterministic function of the spec''s own inputs (a mesh operator, a template
+      matrix): declaring the producer keeps the spec the single source of truth, where
+      pointing at a pre-built file would let the two drift apart silently — and would
+      need a prep step run by hand before the spec could execute. The result is cached
+      and invalidated by the artifact fingerprint, so it is computed once rather than
+      per run. On a `Parameter` it produces the value; on an `Edge` it produces the
+      whole template matrix, which is what lets a connectome or a discrete differential
+      operator be declared rather than pre-built. Mutually exclusive with `value:`/`source:`.'
+    from_schema: https://w3id.org/tvbo
+    close_mappings:
+    - prov:wasGeneratedBy
+    rank: 1000
+    owner: Edge
+    domain_of:
+    - Edge
+    - Parameter
+    range: FunctionCall
+    required: false
+    inlined: true
+class_uri: tvbo:Edge
+
+```
+</details></div>

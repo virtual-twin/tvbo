@@ -1,0 +1,157 @@
+# schematic { #tvbo.plot.schematic }
+
+`plot.schematic`
+
+Population-schematic diagrams for neural-mass / mean-field / spiking models.
+
+Renders the excitatory/inhibitory **population circuit** of a model: population nodes plus
+**typed, signed** connections — synapse type (NMDA / AMPA / GABA / …) sets the line colour,
+biophysical sign sets the terminal (excitatory ``▶``, inhibitory ``●``) — within a population, between populations, as recurrent self-loops, and across ``n_areas`` coupled areas. It is the standing "what is this model" diagram every recipe wants (Deco 2014 Fig. 1a/2a, Jansen-Rit, …).
+
+**Rendering backend = graphviz layout + matplotlib draw.** graphviz (the ``dot`` engine) solves
+node placement and edge-spline routing — its strength — and matplotlib draws the result with full styling control: crisp custom arrowheads, endpoints snapped to node edges, small compact self-loops, neuron-dot population glyphs, and publication typography. This beats either alone (graphviz styling is rigid; hand-placed matplotlib arrows don't route cleanly).
+
+Two entry points:
+
+* **Declarative** — build ``Population`` / ``Connection`` objects → ``PopulationSchematic``.
+* **Model-derived** — ``PopulationSchematic.from_dynamics(dynamics)`` reads a tvbo ``Dynamics``:
+  populations are its state variables (``S_E`` → ``E``); connections are recovered by expanding the derived variables into each state variable's dfun and classifying every cross-population term by the **sign** of its coefficient and the **synapse** named in the multiplying parameter.
+
+Flexible layout/style, all via ``plot(...)`` keywords:
+
+* ``layout``: ``"stacked"`` (E-row over I-row, the DMF look) · ``"mirror"`` (``[I E]…[E I]``, the
+  paired-area spiking look) · ``"row"`` (single rank).
+* ``glyph``: ``"circle"`` · ``"neurons"`` (dotted population = spiking) · a callable.
+* ``self_loop``, ``coupling_blob``, ``ellipsis``, ``legend``/``legend_labels``, ``synapse_colors``,
+  ``node_size``, ``ranksep``/``nodesep`` — all tunable.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [SYNAPSE_COLORS](#tvbo.plot.schematic.SYNAPSE_COLORS) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [Connection](#tvbo.plot.schematic.Connection) | Directed connection ``source → target``. |
+| [Population](#tvbo.plot.schematic.Population) | One neural population (a node). ``sign`` = ``"excitatory"`` (open node) / ``"inhibitory"`` (filled). ``label`` is the glyph inside the node (defaults to ``name``). |
+| [PopulationSchematic](#tvbo.plot.schematic.PopulationSchematic) | A renderable population circuit: populations + typed/signed connections over N areas. |
+
+### Connection { #tvbo.plot.schematic.Connection }
+
+```python
+plot.schematic.Connection(
+    source,
+    target,
+    synapse=None,
+    sign='excitatory',
+    scope='local',
+    label=None,
+    recurrent=None,
+)
+```
+
+Directed connection ``source → target``.
+
+``synapse`` (NMDA/AMPA/GABA) sets colour; ``sign`` (``excitatory`` ▶ / ``inhibitory`` ●) sets the terminal; ``scope`` is ``"local"`` (within an area) or ``"long_range"`` (between adjacent areas). ``recurrent`` (self-loop) is inferred from ``source == target`` when omitted.
+
+### Population { #tvbo.plot.schematic.Population }
+
+```python
+plot.schematic.Population(name, sign='excitatory', label=None)
+```
+
+One neural population (a node). ``sign`` = ``"excitatory"`` (open node) / ``"inhibitory"`` (filled). ``label`` is the glyph inside the node (defaults to ``name``).
+
+### PopulationSchematic { #tvbo.plot.schematic.PopulationSchematic }
+
+```python
+plot.schematic.PopulationSchematic(populations, connections, n_areas=1)
+```
+
+A renderable population circuit: populations + typed/signed connections over N areas.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [from_dynamics](#tvbo.plot.schematic.PopulationSchematic.from_dynamics) | Derive the schematic from a :class:`Dynamics`, reading populations off its state variables and connections off its equations. |
+| [plot](#tvbo.plot.schematic.PopulationSchematic.plot) | Render the schematic onto ``ax`` (created if ``None``). Returns the axis. |
+
+##### from_dynamics { #tvbo.plot.schematic.PopulationSchematic.from_dynamics }
+
+```python
+plot.schematic.PopulationSchematic.from_dynamics(
+    dynamics,
+    n_areas=1,
+    long_range_synapse='AMPA',
+    synapse_map=None,
+    coupling_symbols=('c_glob', 'coupling', 'gx', 'local_coupling'),
+)
+```
+
+Derive the schematic from a :class:`Dynamics`, reading populations off its state variables and connections off its equations.
+
+*coupling_symbols* names the symbols that mark a long-range input, which becomes a connection carrying *long_range_synapse*; *synapse_map* overrides the synapse inferred for a given connection.
+
+##### plot { #tvbo.plot.schematic.PopulationSchematic.plot }
+
+```python
+plot.schematic.PopulationSchematic.plot(
+    ax=None,
+    layout='stacked',
+    glyph='circle',
+    node_size=0.7,
+    self_loop=(0.62, 0.55),
+    coupling_blob=False,
+    ellipsis=None,
+    legend=True,
+    legend_labels=None,
+    legend_loc='below',
+    synapse_colors=None,
+    fontsize=None,
+    ranksep=1.15,
+    nodesep=1.0,
+    hide=None,
+    long_range_targets=None,
+    fill_width=2.6,
+    fit='tight',
+    figsize=(7.8, 4.0),
+)
+```
+
+Render the schematic onto ``ax`` (created if ``None``). Returns the axis.
+
+``layout`` ∈ {stacked, mirror, row}; ``glyph`` ∈ {circle, neurons} or a ``callable(ax, x, y, r, sign, label)``; ``self_loop`` = ``(height, width)`` or ``None``;
+``coupling_blob`` shades a blob between the inner excitatory nodes (mirror layout);
+``ellipsis`` draws ``…`` on both ends (defaults to True for stacked with N>1);
+``legend_labels`` overrides the synapse legend text (e.g. ``{"AMPA": "AMPA, NMDA"}``).
+
+Hiding connections (declare in the figure caption when you do):
+``hide`` — a predicate ``callable(Connection) -> bool`` to drop any connection; and ``long_range_targets`` — a convenience restricting long-range projections to those target populations (e.g. ``["E"]`` = E→E only, no FFI, for the spiking Fig 1a view).
+
+Width control (two independent knobs):
+``fill_width`` (float, default 2.6) stretches the circuit horizontally to at least this width:height aspect (how wide the circuit spreads; ``None``/0 disables); and ``fit`` controls how the axes box maps to that circuit — ``"tight"`` shrinks the box to the circuit (minimal whitespace, panels may differ in width) · ``"width"`` keeps the box's given width and pads the data limits (panels in a mosaic column stay the SAME width) · a ``float`` forces that exact width:height box aspect. Circles stay round in all.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [plot_population_schematic](#tvbo.plot.schematic.plot_population_schematic) | Convenience: derive a schematic from ``dynamics`` and render it (see ``PopulationSchematic``). |
+
+### plot_population_schematic { #tvbo.plot.schematic.plot_population_schematic }
+
+```python
+plot.schematic.plot_population_schematic(
+    dynamics=None,
+    ax=None,
+    n_areas=1,
+    long_range_synapse='AMPA',
+    synapse_map=None,
+    **plot_kwargs,
+)
+```
+
+Convenience: derive a schematic from ``dynamics`` and render it (see ``PopulationSchematic``).

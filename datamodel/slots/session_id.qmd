@@ -1,0 +1,104 @@
+# Slot: session_id 
+
+
+_BIDS session identifier (without 'ses-' prefix). Examples: 'baseline', '6month', 'pre', 'post'._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [dcterms:identifier](http://purl.org/dc/terms/identifier)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Session](../classes/Session.qmd) | A data collection session for a subject |  no  |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Session](../classes/Session.qmd), [TimeSeries](../classes/TimeSeries.qmd) |
+| Slot URI | [dcterms:identifier](http://purl.org/dc/terms/identifier) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Identifier | Yes |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/study
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | dcterms:identifier |
+| native | tvbo_study:session_id |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: session_id
+description: 'BIDS session identifier (without ''ses-'' prefix). Examples: ''baseline'',
+  ''6month'', ''pre'', ''post''.'
+from_schema: https://w3id.org/tvbo/study
+slot_uri: dcterms:identifier
+identifier: true
+domain_of:
+- Session
+- TimeSeries
+range: string
+required: true
+
+```
+</details></div>

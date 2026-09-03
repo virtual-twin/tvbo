@@ -1,0 +1,80 @@
+# Slot: function 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/function](https://w3id.org/tvbo/slot/function)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [Distribution](../classes/Distribution.qmd) | A probability distribution for sampling parameters or initial conditions |  no  |
+| [FunctionCall](../classes/FunctionCall.qmd) | Invocation of a function in a pipeline |  no  |
+| [Noise](../classes/Noise.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Distribution](../classes/Distribution.qmd), [FunctionCall](../classes/FunctionCall.qmd), [Noise](../classes/Noise.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:function |
+| native | tvbo:function |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: function
+domain_of:
+- Distribution
+- FunctionCall
+- Noise
+range: string
+
+```
+</details></div>

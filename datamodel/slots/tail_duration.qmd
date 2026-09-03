@@ -1,0 +1,102 @@
+# Slot: tail_duration 
+
+
+_Length of the trailing window as a duration, in the same time unit as the integration step. Converted to a sample count against this observation's own sample period (its `period`/`downsample_period`, else the integration `step_size`), so the window stays the same length of simulated time at any step. Mutually exclusive with `tail_samples`._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/tail_duration](https://w3id.org/tvbo/slot/tail_duration)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Observation](../classes/Observation.qmd) | Unified class for all observation/measurement specifications |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Observation](../classes/Observation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Observation](../classes/Observation.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:tail_duration |
+| native | tvbo:tail_duration |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: tail_duration
+description: Length of the trailing window as a duration, in the same time unit as
+  the integration step. Converted to a sample count against this observation's own
+  sample period (its `period`/`downsample_period`, else the integration `step_size`),
+  so the window stays the same length of simulated time at any step. Mutually exclusive
+  with `tail_samples`.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Observation
+domain_of:
+- Observation
+range: float
+
+```
+</details></div>

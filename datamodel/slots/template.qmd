@@ -1,0 +1,81 @@
+# Slot: template 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/template](https://w3id.org/tvbo/slot/template)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [StudyFile](../classes/StudyFile.qmd) | One file a study layout accounts for |  no  |
+| [LayoutTemplateVariant](../classes/LayoutTemplateVariant.qmd) | One variant's seed for a file the record already accounts for |  no  |
+| [Surface](../classes/Surface.qmd) | A cortical surface panel's geometry and how a field is painted on it |  no  |
+| [BidsEntities](../classes/BidsEntities.qmd) | BIDS filename entities (BEP017-aligned) for provenance and data discovery |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [StudyFile](../classes/StudyFile.qmd), [LayoutTemplateVariant](../classes/LayoutTemplateVariant.qmd), [Surface](../classes/Surface.qmd), [BidsEntities](../classes/BidsEntities.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:template |
+| native | tvbo:template |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: template
+domain_of:
+- StudyFile
+- LayoutTemplateVariant
+- Surface
+- BidsEntities
+range: string
+
+```
+</details></div>

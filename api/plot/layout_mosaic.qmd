@@ -1,0 +1,68 @@
+# layout_mosaic { #tvbo.plot.layout_mosaic }
+
+`plot.layout_mosaic`
+
+Reusable subplot_mosaic helpers for declarative panel layouts.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [default_layout](#tvbo.plot.layout_mosaic.default_layout) | Return a compact default layout string from panel keys. |
+| [finish_panel](#tvbo.plot.layout_mosaic.finish_panel) | Apply common axis-level decorations from panel config. |
+| [prepare_mosaic](#tvbo.plot.layout_mosaic.prepare_mosaic) | Prepare figure + axes mapping for mosaic rendering. |
+
+### default_layout { #tvbo.plot.layout_mosaic.default_layout }
+
+```python
+plot.layout_mosaic.default_layout(panels)
+```
+
+Return a compact default layout string from panel keys.
+
+### finish_panel { #tvbo.plot.layout_mosaic.finish_panel }
+
+```python
+plot.layout_mosaic.finish_panel(ax, panel)
+```
+
+Apply common axis-level decorations from panel config.
+
+### prepare_mosaic { #tvbo.plot.layout_mosaic.prepare_mosaic }
+
+```python
+plot.layout_mosaic.prepare_mosaic(
+    layout=None,
+    panels=None,
+    fig=None,
+    axes=None,
+    figsize=None,
+    subplot_kwargs=None,
+)
+```
+
+Prepare figure + axes mapping for mosaic rendering.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+layout : str | list[list[str]] | None
+    subplot_mosaic layout specification.
+panels : dict | None
+    Panel config keyed by mosaic labels.
+fig : matplotlib.figure.Figure | None
+    Existing figure to render into.
+axes : dict[str, matplotlib.axes.Axes] | None
+    Existing axes mapping keyed by panel labels.
+figsize : tuple | None
+    Figure size used only when creating a new figure.
+subplot_kwargs : dict | None
+    Forwarded to ``subplot_mosaic`` when axes are created.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+tuple
+    ``(figure, axes_mapping, created_axes)``.

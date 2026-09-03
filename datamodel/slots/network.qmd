@@ -1,0 +1,84 @@
+# Slot: network 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/network](https://w3id.org/tvbo/slot/network)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Subject](../classes/Subject.qmd) | A participant in a study |  no  |
+| [Session](../classes/Session.qmd) | A data collection session for a subject |  no  |
+| [DBSSubject](../classes/DBSSubject.qmd) | Human or animal subject receiving DBS |  no  |
+| [Panel](../classes/Panel.qmd) | One cell of the figure |  no  |
+| [Inset](../classes/Inset.qmd) | A sub-axes that draws exactly as a panel does — same kinds, layers, opts, ann... |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Subject](../classes/Subject.qmd), [Session](../classes/Session.qmd), [Panel](../classes/Panel.qmd), [Inset](../classes/Inset.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:network |
+| native | tvbo:network |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: network
+domain_of:
+- Subject
+- Session
+- Panel
+- Inset
+- SimulationExperiment
+range: string
+
+```
+</details></div>

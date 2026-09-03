@@ -1,0 +1,104 @@
+# Slot: includes 
+
+
+_Include update rules from other algorithms with optional argument overrides. Unlike depends_on (sequential), includes means combined execution. Example: includes: [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/includes](https://w3id.org/tvbo/slot/includes)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [AlgorithmInclude](../classes/AlgorithmInclude.qmd) |
+| Domain Of | [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Algorithm](../classes/Algorithm.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:includes |
+| native | tvbo:includes |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: includes
+description: 'Include update rules from other algorithms with optional argument overrides.
+  Unlike depends_on (sequential), includes means combined execution. Example: includes:
+  [{algorithm: fic, arguments: [{name: eta, value: 0.1}]}]'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Algorithm
+domain_of:
+- Algorithm
+range: AlgorithmInclude
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

@@ -1,0 +1,108 @@
+# networkdynamics { #tvbo.adapters.networkdynamics }
+
+`adapters.networkdynamics`
+
+NetworkDynamics.jl backend adapter for SimulationExperiment.
+
+Uses pyjulia (tvbo.adapters.julia) to execute generated Julia code and return full Julia objects alongside a TVBO TimeSeries.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [REQUIRED_PACKAGES](#tvbo.adapters.networkdynamics.REQUIRED_PACKAGES) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [NetworkDynamicsAdapter](#tvbo.adapters.networkdynamics.NetworkDynamicsAdapter) | Adapter for running SimulationExperiment via NetworkDynamics.jl (pyjulia). |
+
+### NetworkDynamicsAdapter { #tvbo.adapters.networkdynamics.NetworkDynamicsAdapter }
+
+```python
+adapters.networkdynamics.NetworkDynamicsAdapter(experiment)
+```
+
+Adapter for running SimulationExperiment via NetworkDynamics.jl (pyjulia).
+
+Inherits metadata processing from BaseAdapter. The prepare_context() method pre-computes all template variables so Mako templates stay clean.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [build_node_positions](#tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.build_node_positions) | Build ``(n_t, n_nodes, n_cv)`` position array from simulation data. |
+| [get_fixed_nodes](#tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.get_fixed_nodes) | Return set of node IDs with static dynamics (no state variables). |
+| [get_initial_positions](#tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.get_initial_positions) | Extract initial (x, y, …) positions for ALL nodes from YAML. |
+| [get_node_metadata](#tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.get_node_metadata) | Extract per-node metadata: dynamics name, parameters, type. |
+| [refuse_unrenderable](#tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.refuse_unrenderable) | Raise where the emitted Julia would quietly integrate something other than what was declared. |
+| [run](#tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.run) | Run simulation using NetworkDynamics.jl. |
+
+##### build_node_positions { #tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.build_node_positions }
+
+```python
+adapters.networkdynamics.NetworkDynamicsAdapter.build_node_positions(ts, ctx)
+```
+
+Build ``(n_t, n_nodes, n_cv)`` position array from simulation data.
+
+For free nodes: positions come from the coupling-variable columns of the properly shaped ``(time, variable, node)`` DataArray.
+For fixed nodes: positions are constant (from YAML parameters).
+
+##### get_fixed_nodes { #tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.get_fixed_nodes }
+
+```python
+adapters.networkdynamics.NetworkDynamicsAdapter.get_fixed_nodes()
+```
+
+Return set of node IDs with static dynamics (no state variables).
+
+##### get_initial_positions { #tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.get_initial_positions }
+
+```python
+adapters.networkdynamics.NetworkDynamicsAdapter.get_initial_positions()
+```
+
+Extract initial (x, y, …) positions for ALL nodes from YAML.
+
+For free (dynamic) nodes: positions come from per-node ``state`` overrides (legacy ``initial_state`` arrays are also supported), at the indices marked ``coupling_variable=True``.
+For static (fixed) nodes: positions come from node parameter values (in parameter-definition order).
+
+Returns shape ``(n_nodes, n_coupling_vars)``.
+
+##### get_node_metadata { #tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.get_node_metadata }
+
+```python
+adapters.networkdynamics.NetworkDynamicsAdapter.get_node_metadata()
+```
+
+Extract per-node metadata: dynamics name, parameters, type.
+
+Returns ``{node_id: {'dynamics': str, 'params': dict, 'static': bool}}``.
+
+##### refuse_unrenderable { #tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.refuse_unrenderable }
+
+```python
+adapters.networkdynamics.NetworkDynamicsAdapter.refuse_unrenderable()
+```
+
+Raise where the emitted Julia would quietly integrate something other than what was declared.
+
+The edge and experiment templates carry no delay path, so a delayed coupling is not lowered — it is dropped, and the run returns a well-formed trajectory of the undelayed network. They carry no observation path either, so a declared monitor is dropped the same way and the result arrives with an empty ``observations``. Refusing is the same contract the Brian2 adapter states for the forms it cannot lower: a clear error beats a plausible answer to a different question.
+
+##### run { #tvbo.adapters.networkdynamics.NetworkDynamicsAdapter.run }
+
+```python
+adapters.networkdynamics.NetworkDynamicsAdapter.run(**kwargs)
+```
+
+Run simulation using NetworkDynamics.jl.
+
+
+
+###### Returns: {.doc-section .doc-section-returns}
+
+ExperimentResult
+    Simulation results with named dimensions and coordinates.
+    Extra attributes: ``sol``, ``graph``, ``edge_data``, ``vertex_data``.

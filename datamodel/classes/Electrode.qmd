@@ -1,0 +1,438 @@
+# Class: Electrode 
+
+
+_Implanted DBS electrode and contact geometry._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:class/Electrode](https://w3id.org/tvbo/dbs/class/Electrode)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Electrode
+    click Electrode href "./Electrode.html"
+      Electrode : contacts
+        
+          
+    
+        
+        
+        Electrode --> "*" Contact : contacts
+        click Contact href "./Contact.html"
+    
+
+        
+      Electrode : coordinate_space
+        
+          
+    
+        
+        
+        Electrode --> "0..1" CommonCoordinateSpace : coordinate_space
+        click CommonCoordinateSpace href "./CommonCoordinateSpace.html"
+    
+
+        
+      Electrode : electrode_id
+        
+          
+    
+        
+        
+        Electrode --> "0..1" String : electrode_id
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Electrode : head
+        
+          
+    
+        
+        
+        Electrode --> "0..1" Coordinate : head
+        click Coordinate href "./Coordinate.html"
+    
+
+        
+      Electrode : hemisphere
+        
+          
+    
+        
+        
+        Electrode --> "0..1" String : hemisphere
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Electrode : manufacturer
+        
+          
+    
+        
+        
+        Electrode --> "0..1" String : manufacturer
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Electrode : model
+        
+          
+    
+        
+        
+        Electrode --> "0..1" String : model
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Electrode : recon_path
+        
+          
+    
+        
+        
+        Electrode --> "0..1" String : recon_path
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Electrode : tail
+        
+          
+    
+        
+        
+        Electrode --> "0..1" Coordinate : tail
+        click Coordinate href "./Coordinate.html"
+    
+
+        
+      Electrode : target_structure
+        
+          
+    
+        
+        
+        Electrode --> "0..1" ParcellationEntity : target_structure
+        click ParcellationEntity href "./ParcellationEntity.html"
+    
+
+        
+      Electrode : trajectory
+        
+          
+    
+        
+        
+        Electrode --> "*" Coordinate : trajectory
+        click Coordinate href "./Coordinate.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [electrode_id](../slots/electrode_id.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Unique identifier for this electrode | direct |
+| [manufacturer](../slots/manufacturer.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [model](../slots/model.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [hemisphere](../slots/hemisphere.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Hemisphere of electrode (left/right) | direct |
+| [contacts](../slots/contacts.qmd) | * <br/> [Contact](../classes/Contact.qmd) | List of physical contacts along the electrode | direct |
+| [head](../slots/head.qmd) | 0..1 <br/> [Coordinate](../classes/Coordinate.qmd) |  | direct |
+| [tail](../slots/tail.qmd) | 0..1 <br/> [Coordinate](../classes/Coordinate.qmd) |  | direct |
+| [trajectory](../slots/trajectory.qmd) | * <br/> [Coordinate](../classes/Coordinate.qmd) | The planned trajectory for electrode implantation | direct |
+| [target_structure](../slots/target_structure.qmd) | 0..1 <br/> [ParcellationEntity](../classes/ParcellationEntity.qmd) | Anatomical target structure from a brain atlas | direct |
+| [coordinate_space](../slots/coordinate_space.qmd) | 0..1 <br/> [CommonCoordinateSpace](../classes/CommonCoordinateSpace.qmd) | Coordinate space used for implantation planning | direct |
+| [recon_path](../slots/recon_path.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [StimulationSetting](../classes/StimulationSetting.qmd) | [electrode_reference](../slots/electrode_reference.qmd) | range | [Electrode](../classes/Electrode.qmd) |
+| [DBSProtocol](../classes/DBSProtocol.qmd) | [electrodes](../slots/electrodes.qmd) | range | [Electrode](../classes/Electrode.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:Electrode |
+| native | tvbo_dbs:Electrode |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Electrode
+description: Implanted DBS electrode and contact geometry.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  electrode_id:
+    name: electrode_id
+    description: Unique identifier for this electrode
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    slot_uri: dcterms:identifier
+    domain_of:
+    - Electrode
+    range: string
+  manufacturer:
+    name: manufacturer
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - Electrode
+    range: string
+  model:
+    name: model
+    from_schema: https://w3id.org/tvbo/dbs
+    domain_of:
+    - Electrode
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+  hemisphere:
+    name: hemisphere
+    description: Hemisphere of electrode (left/right)
+    from_schema: https://w3id.org/tvbo/dbs
+    ifabsent: left
+    domain_of:
+    - ParcellationEntity
+    - Electrode
+    range: string
+  contacts:
+    name: contacts
+    description: List of physical contacts along the electrode
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - Electrode
+    range: Contact
+    multivalued: true
+  head:
+    name: head
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - Electrode
+    range: Coordinate
+  tail:
+    name: tail
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - Electrode
+    range: Coordinate
+  trajectory:
+    name: trajectory
+    description: The planned trajectory for electrode implantation
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - Electrode
+    range: Coordinate
+    multivalued: true
+  target_structure:
+    name: target_structure
+    description: Anatomical target structure from a brain atlas
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - Electrode
+    range: ParcellationEntity
+  coordinate_space:
+    name: coordinate_space
+    description: Coordinate space used for implantation planning
+    from_schema: https://w3id.org/tvbo/dbs
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  recon_path:
+    name: recon_path
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    domain_of:
+    - Electrode
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Electrode
+description: Implanted DBS electrode and contact geometry.
+from_schema: https://w3id.org/tvbo/dbs
+attributes:
+  electrode_id:
+    name: electrode_id
+    description: Unique identifier for this electrode
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    slot_uri: dcterms:identifier
+    owner: Electrode
+    domain_of:
+    - Electrode
+    range: string
+  manufacturer:
+    name: manufacturer
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: Electrode
+    domain_of:
+    - Electrode
+    range: string
+  model:
+    name: model
+    from_schema: https://w3id.org/tvbo/dbs
+    owner: Electrode
+    domain_of:
+    - Electrode
+    - SimulationExperiment
+    - SimulationStudy
+    range: string
+  hemisphere:
+    name: hemisphere
+    description: Hemisphere of electrode (left/right)
+    from_schema: https://w3id.org/tvbo/dbs
+    ifabsent: left
+    owner: Electrode
+    domain_of:
+    - ParcellationEntity
+    - Electrode
+    range: string
+  contacts:
+    name: contacts
+    description: List of physical contacts along the electrode
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: Electrode
+    domain_of:
+    - Electrode
+    range: Contact
+    multivalued: true
+  head:
+    name: head
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: Electrode
+    domain_of:
+    - Electrode
+    range: Coordinate
+  tail:
+    name: tail
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: Electrode
+    domain_of:
+    - Electrode
+    range: Coordinate
+  trajectory:
+    name: trajectory
+    description: The planned trajectory for electrode implantation
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: Electrode
+    domain_of:
+    - Electrode
+    range: Coordinate
+    multivalued: true
+  target_structure:
+    name: target_structure
+    description: Anatomical target structure from a brain atlas
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: Electrode
+    domain_of:
+    - Electrode
+    range: ParcellationEntity
+  coordinate_space:
+    name: coordinate_space
+    description: Coordinate space used for implantation planning
+    from_schema: https://w3id.org/tvbo/dbs
+    owner: Electrode
+    domain_of:
+    - DBSDataset
+    - DBSSubject
+    - Electrode
+    - EField
+    - Network
+    - SpatialDomain
+    - Mesh
+    range: CommonCoordinateSpace
+  recon_path:
+    name: recon_path
+    from_schema: https://w3id.org/tvbo/dbs
+    rank: 1000
+    owner: Electrode
+    domain_of:
+    - Electrode
+    range: string
+
+```
+</details></div>

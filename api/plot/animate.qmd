@@ -1,0 +1,161 @@
+# animate { #tvbo.plot.animate }
+
+`plot.animate`
+
+Animation utilities for SimulationResult.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [animate_multi](#tvbo.plot.animate.animate_multi) | Compose multiple animation panels into a single FuncAnimation. |
+| [animate_network](#tvbo.plot.animate.animate_network) | Animate time-series on a graph layout (nodes colored by state value). |
+| [animate_phase](#tvbo.plot.animate.animate_phase) | Animate phase-space trajectory with a trailing tail. |
+| [animate_timeseries](#tvbo.plot.animate.animate_timeseries) | Animate evolving time-series traces (no graph layout needed). |
+
+### animate_multi { #tvbo.plot.animate.animate_multi }
+
+```python
+plot.animate.animate_multi(
+    result,
+    panels,
+    interval=50,
+    figsize=None,
+    max_points=200,
+    save=None,
+    fps=20,
+)
+```
+
+Compose multiple animation panels into a single FuncAnimation.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+result : SimulationResult panels : list of str
+    Panel type names (e.g. ['pendulum_bob', 'timeseries']).
+interval : int
+    Milliseconds between frames.
+figsize : tuple, optional max_points : int
+    Maximum time points per panel (downsampled for performance).
+save : str, optional
+    If given, save the animation to this path (e.g. 'anim.gif').
+fps : int
+    Frames per second when saving.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.animation.FuncAnimation
+
+### animate_network { #tvbo.plot.animate.animate_network }
+
+```python
+plot.animate.animate_network(
+    result,
+    state=None,
+    interval=50,
+    cmap='viridis',
+    node_size=120,
+    figsize=None,
+    format=None,
+)
+```
+
+Animate time-series on a graph layout (nodes colored by state value).
+
+Supports the ``.sel(variable='V').animate()`` pattern: if the variable dimension is already selected, animates that variable.  With no selection all variables are shown (one row per variable).
+
+Graph data is resolved in order:
+1. ``result.graph`` / ``result._extras['graph']`` (explicitly attached) 2. Experiment metadata via ``result._source.source.network``
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+result : SimulationResult
+    Simulation result, ideally linked to an experiment with a network.
+state : int, str or None
+    *Deprecated* — prefer ``.sel(variable=...)``.  If given, selects a
+    single variable by index or name.
+interval : int
+    Milliseconds between frames.
+cmap : str
+    Matplotlib colormap.
+node_size : int
+    Scatter point size.
+figsize : tuple, optional
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.animation.FuncAnimation
+
+### animate_phase { #tvbo.plot.animate.animate_phase }
+
+```python
+plot.animate.animate_phase(
+    result,
+    x_var=None,
+    y_var=None,
+    region=0,
+    mode=0,
+    interval=50,
+    trail=200,
+    figsize=(6, 5),
+)
+```
+
+Animate phase-space trajectory with a trailing tail.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+result : SimulationResult x_var, y_var : str, optional region, mode : int interval : int trail : int
+    Number of trailing points.
+figsize : tuple
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.animation.FuncAnimation
+
+### animate_timeseries { #tvbo.plot.animate.animate_timeseries }
+
+```python
+plot.animate.animate_timeseries(
+    result,
+    state=None,
+    interval=50,
+    cmap=None,
+    figsize=None,
+)
+```
+
+Animate evolving time-series traces (no graph layout needed).
+
+Supports ``.sel(variable='V').animate(type='timeseries')``.
+With no selection, all variables are shown (one panel per variable).
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+result : SimulationResult state : int, str or None
+    If given, selects a single variable by index or name.
+interval : int
+    Milliseconds between frames.
+cmap : str
+    Matplotlib colormap.
+figsize : tuple, optional
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+matplotlib.animation.FuncAnimation

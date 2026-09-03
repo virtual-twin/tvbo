@@ -1,0 +1,192 @@
+# experiment_result_io { #tvbo.data.experiment_result_io }
+
+`data.experiment_result_io`
+
+Sidecar I/O + cross-experiment cache for :class:`ExperimentResult`.
+
+Lets downstream experiments depend on an upstream experiment's fitted parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``, ``J_i`` via an ``aux_data: Reference``) without recomputing on every notebook re-execution.
+
+
+
+## Layout {.doc-section .doc-section-layout}
+
+
+::
+
+    reference/exp_<id>_seed<seed>.yaml          (descriptor + provenance)
+    reference/exp_<id>_seed<seed>.h5
+    └── parameters/
+        ├── w_LRE     (n_nodes, n_nodes)
+        ├── w_FFI     (n_nodes, n_nodes)
+        ├── J_i       (n_nodes,)
+        └── ...
+
+Each array is stored at the precision it was computed at, which is the precision the descriptor's ``parameters[].dtype`` reports.
+
+
+
+## Cache invalidation {.doc-section .doc-section-cache-invalidation}
+
+
+- ``provenance.experiment_yaml_hash`` — SHA-256 of the normalised YAML
+  that produced this sidecar.
+- ``provenance.inputs`` — for each ``aux_data`` reference, a
+  ``ReferenceFingerprint`` ``{iri, field, mtime, size, hash}``.
+
+A cache hit requires both:
+
+1. Current experiment YAML hash matches ``provenance.experiment_yaml_hash``.
+2. For each input fingerprint, the underlying file's ``(mtime, size)`` matches (fast path). On mismatch, recompute the sha256; if THAT matches, still a hit (handles ``touch`` and rename-in-place).
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [SEPARATOR](#tvbo.data.experiment_result_io.SEPARATOR) | What :meth:`ExperimentResult.save` puts between the segments of an output's path. |
+| [STRUCTURAL_PREFIXES](#tvbo.data.experiment_result_io.STRUCTURAL_PREFIXES) | The path segments the writer emits as structure that a recipe also declares, and which therefore take the recipe's spelling. |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [CacheStatus](#tvbo.data.experiment_result_io.CacheStatus) | Reason a cache entry was accepted or rejected. |
+
+### CacheStatus { #tvbo.data.experiment_result_io.CacheStatus }
+
+```python
+data.experiment_result_io.CacheStatus()
+```
+
+Reason a cache entry was accepted or rejected.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [check_cache](#tvbo.data.experiment_result_io.check_cache) | Decide whether a cached ExperimentResult sidecar is still valid. |
+| [file_fingerprint](#tvbo.data.experiment_result_io.file_fingerprint) | Return ``{mtime, size, hash}`` for a file. |
+| [hash_yaml](#tvbo.data.experiment_result_io.hash_yaml) | Stable SHA-256 hex digest of a Python-side YAML representation. |
+| [load_sidecar](#tvbo.data.experiment_result_io.load_sidecar) | Load an ExperimentResult sidecar. |
+| [result_tree](#tvbo.data.experiment_result_io.result_tree) | A container's flat data-variables as the nested shape the recipe declares them in. |
+| [save_sidecar](#tvbo.data.experiment_result_io.save_sidecar) | Write an ExperimentResult sidecar (yaml descriptor + h5 companion). |
+
+### check_cache { #tvbo.data.experiment_result_io.check_cache }
+
+```python
+data.experiment_result_io.check_cache(
+    sidecar_yaml,
+    expected_yaml_hash,
+    input_paths=None,
+)
+```
+
+Decide whether a cached ExperimentResult sidecar is still valid.
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+sidecar_yaml
+    Path to the candidate ``.yaml`` descriptor.
+expected_yaml_hash
+    Hash of the *current* experiment YAML. If this differs from the
+    sidecar's recorded ``experiment_yaml_hash``, cache miss.
+input_paths
+    ``{ref_iri_or_field: path}`` mapping each input fingerprint's
+    identifier to its current on-disk path. For each fingerprint in
+    the sidecar, the matching ``path`` is fingerprinted and compared.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+status
+    One of :class:`CacheStatus` constants.
+detail
+    Human-readable detail (or ``None`` on hit).
+
+### file_fingerprint { #tvbo.data.experiment_result_io.file_fingerprint }
+
+```python
+data.experiment_result_io.file_fingerprint(path)
+```
+
+Return ``{mtime, size, hash}`` for a file.
+
+The hash is the file content's SHA-256. mtime is the POSIX timestamp.
+
+### hash_yaml { #tvbo.data.experiment_result_io.hash_yaml }
+
+```python
+data.experiment_result_io.hash_yaml(normalized_dict)
+```
+
+Stable SHA-256 hex digest of a Python-side YAML representation.
+
+Uses ``yaml.safe_dump(sort_keys=True)`` so the digest only depends on semantic content, not key ordering.
+
+### load_sidecar { #tvbo.data.experiment_result_io.load_sidecar }
+
+```python
+data.experiment_result_io.load_sidecar(yaml_path)
+```
+
+Load an ExperimentResult sidecar.
+
+
+
+#### Returns: {.doc-section .doc-section-returns}
+
+parameters
+    ``{name: ndarray}`` — eagerly loaded numeric arrays.
+descriptor
+    The parsed yaml descriptor (provenance + metadata).
+
+### result_tree { #tvbo.data.experiment_result_io.result_tree }
+
+```python
+data.experiment_result_io.result_tree(dataset)
+```
+
+A container's flat data-variables as the nested shape the recipe declares them in.
+
+:meth:`ExperimentResult.save` writes every output as one data-variable named by its path with :data:`SEPARATOR` between the segments, so ``optimizations.spectral_gradient_fit.observations.peak_frequencies`` arrives as ``optimization__spectral_gradient_fit__observation__peak_frequencies``. This inverts that, restoring each structural segment (:data:`STRUCTURAL_PREFIXES`) to the recipe's own spelling.
+
+The result is an :class:`xarray.DataTree` — a group per path, a variable per output — so the container stays an xarray object all the way down: ``tree.optimizations.spectral_gradient_fit.observations.peak_frequencies`` and ``tree["optimizations/spectral_gradient_fit"]`` both reach it, ``.sel`` applies across the whole tree, and it writes back out with ``to_netcdf``. The container's coordinates are hoisted to the root, where every group inherits them, so node labels are declared once for the run rather than repeated on each output.
+
+A tree is what the container should have been written as in the first place: netCDF has groups, and encoding the hierarchy into the variable name is what makes this function necessary. An output that is both a value and a group is refused rather than resolved — the two cannot share a name, and inventing a place for one of them hides the collision instead of reporting it.
+
+### save_sidecar { #tvbo.data.experiment_result_io.save_sidecar }
+
+```python
+data.experiment_result_io.save_sidecar(
+    parameters,
+    yaml_path,
+    experiment_yaml_hash,
+    inputs=None,
+    extra_metadata=None,
+    provenance_comment=None,
+)
+```
+
+Write an ExperimentResult sidecar (yaml descriptor + h5 companion).
+
+
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+parameters
+    ``{name: ndarray}`` — the fitted parameter arrays to cache.
+yaml_path
+    Target ``.yaml`` path. ``.h5`` companion sits next to it (same
+    stem).
+experiment_yaml_hash
+    SHA-256 hex digest of the producing experiment's normalised
+    YAML (see :func:`hash_yaml`).
+inputs
+    List of ``ReferenceFingerprint`` dicts for each ``aux_data``
+    reference the producing experiment consumed.
+extra_metadata
+    Free-form dict merged into the yaml under ``metadata:``.
+provenance_comment
+    Optional ``#``-prefixed block prepended to the yaml.

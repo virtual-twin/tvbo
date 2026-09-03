@@ -1,0 +1,83 @@
+# Enum: DomainEnforcement 
+
+
+
+
+_Whether and how a state variable's ``domain`` constrains the trajectory during integration. Default ``none`` means the domain is descriptive metadata only (expected range, plot limits, initial- condition sampling support) and never alters the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap`` opt in to active enforcement using the domain's ``lo``/``hi``._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/DomainEnforcement](https://w3id.org/tvbo/enum/DomainEnforcement)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| none | None | Metadata only; the trajectory is never constrained (default) |
+| clamp | None | Hard-clip every integration step to [lo, hi] |
+| wrap | None | Periodic wrap into [lo, hi) — e |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [enforce](../slots/enforce.qmd) | For a state-variable ``domain``: whether/how to enforce the range during inte... |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: DomainEnforcement
+description: Whether and how a state variable's ``domain`` constrains the trajectory
+  during integration. Default ``none`` means the domain is descriptive metadata only
+  (expected range, plot limits, initial- condition sampling support) and never alters
+  the dynamics — so declaring a domain is side-effect free. ``clamp`` and ``wrap``
+  opt in to active enforcement using the domain's ``lo``/``hi``.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  none:
+    text: none
+    description: Metadata only; the trajectory is never constrained (default).
+  clamp:
+    text: clamp
+    description: Hard-clip every integration step to [lo, hi].
+  wrap:
+    text: wrap
+    description: Periodic wrap into [lo, hi) — e.g. a phase variable on [0, 2π). The
+      recorded timeseries stays within the range while remaining continuous mod (hi
+      - lo)."
+
+```
+</details>
+
+</div>

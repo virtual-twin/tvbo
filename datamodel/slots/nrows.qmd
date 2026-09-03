@@ -1,0 +1,99 @@
+# Slot: nrows 
+
+
+_Rows to fill. Unset holds every cell, so declaring only `ncols` wraps rather than drops; an explicit value still crops the extras, deliberately._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/nrows](https://w3id.org/tvbo/slot/nrows)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Grid](../classes/Grid.qmd) | How a `grid` panel tiles its cells, and what the strips around them are label... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) |
+| Domain Of | [Grid](../classes/Grid.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Grid](../classes/Grid.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:nrows |
+| native | tvbo:nrows |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: nrows
+description: Rows to fill. Unset holds every cell, so declaring only `ncols` wraps
+  rather than drops; an explicit value still crops the extras, deliberately.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Grid
+domain_of:
+- Grid
+range: integer
+
+```
+</details></div>

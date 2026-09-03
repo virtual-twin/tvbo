@@ -1,0 +1,77 @@
+# Slot: nodes 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/nodes](https://w3id.org/tvbo/slot/nodes)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+| [Network](../classes/Network.qmd) | Network specification with nodes, edges, and reusable coupling configurations |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Event](../classes/Event.qmd), [Network](../classes/Network.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:nodes |
+| native | tvbo:nodes |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: nodes
+domain_of:
+- Event
+- Network
+range: string
+
+```
+</details></div>

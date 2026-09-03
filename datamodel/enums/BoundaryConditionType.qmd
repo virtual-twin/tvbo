@@ -1,0 +1,71 @@
+# Enum: BoundaryConditionType 
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/BoundaryConditionType](https://w3id.org/tvbo/enum/BoundaryConditionType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| Dirichlet | None |  |
+| Neumann | None |  |
+| Robin | None |  |
+| Periodic | None |  |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [bc_type](../slots/bc_type.qmd) |  |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: BoundaryConditionType
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  Dirichlet:
+    text: Dirichlet
+  Neumann:
+    text: Neumann
+  Robin:
+    text: Robin
+  Periodic:
+    text: Periodic
+
+```
+</details>
+
+</div>

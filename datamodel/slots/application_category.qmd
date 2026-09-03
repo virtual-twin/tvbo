@@ -1,0 +1,100 @@
+# Slot: application_category 
+
+
+_High-level category (e.g., simulation, analysis, specification)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:applicationCategory](http://schema.org/applicationCategory)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+| Slot URI | [schema:applicationCategory](http://schema.org/applicationCategory) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:applicationCategory |
+| native | tvbo_sw:application_category |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: application_category
+description: High-level category (e.g., simulation, analysis, specification).
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+slot_uri: schema:applicationCategory
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: string
+
+```
+</details></div>

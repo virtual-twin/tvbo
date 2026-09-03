@@ -1,0 +1,99 @@
+# Slot: metric 
+
+
+_Metric equation for matching (e.g., correlation, rmse)_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/metric](https://w3id.org/tvbo/slot/metric)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [TuningObjective](../classes/TuningObjective.qmd) | Defines what the tuning algorithm optimizes for |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Equation](../classes/Equation.qmd) |
+| Domain Of | [TuningObjective](../classes/TuningObjective.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [TuningObjective](../classes/TuningObjective.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:metric |
+| native | tvbo:metric |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: metric
+description: Metric equation for matching (e.g., correlation, rmse)
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: TuningObjective
+domain_of:
+- TuningObjective
+range: Equation
+inlined: true
+
+```
+</details></div>

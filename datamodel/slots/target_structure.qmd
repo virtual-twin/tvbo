@@ -1,0 +1,98 @@
+# Slot: target_structure 
+
+
+_Anatomical target structure from a brain atlas_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/target_structure](https://w3id.org/tvbo/dbs/slot/target_structure)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Electrode](../classes/Electrode.qmd) | Implanted DBS electrode and contact geometry |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [ParcellationEntity](../classes/ParcellationEntity.qmd) |
+| Domain Of | [Electrode](../classes/Electrode.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Electrode](../classes/Electrode.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:target_structure |
+| native | tvbo_dbs:target_structure |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: target_structure
+description: Anatomical target structure from a brain atlas
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: Electrode
+domain_of:
+- Electrode
+range: ParcellationEntity
+
+```
+</details></div>

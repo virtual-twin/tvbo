@@ -1,0 +1,177 @@
+# registry { #tvbo.export.registry }
+
+`export.registry`
+
+Export-format registry.
+
+Single source of truth for *all* SimulationExperiment export backends:
+serialisation formats (YAML, openMINDS), reports (markdown, PDF), and code generators (TVB, JAX, tvboptim, Julia, NeuroML/LEMS, …).
+
+A backend self-registers an :class:`ExportFormat` describing:
+
+* canonical key + aliases  (resolution)
+* human label, file extension, MIME type   (UI / API)
+* a renderer callable                       (dispatch)
+* optional flags                            (``supports_with_data``, …)
+
+Adding a new backend = importing this module and calling :func:`register` once. Dispatch (`SimulationExperiment.render`), discovery (`/api/v1/experiments/formats`, OntologyAPI), and the extension/UI dropdown all light up automatically.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [Importer](#tvbo.export.registry.Importer) |  |
+| [Renderer](#tvbo.export.registry.Renderer) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [ExportFormat](#tvbo.export.registry.ExportFormat) | Descriptor for an export backend. |
+
+### ExportFormat { #tvbo.export.registry.ExportFormat }
+
+```python
+export.registry.ExportFormat(
+    key,
+    label,
+    extension,
+    media_type,
+    renderer,
+    aliases=(),
+    supports_with_data=False,
+    description='',
+    importer=None,
+    extensions=(),
+    language='',
+)
+```
+
+Descriptor for an export backend.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [to_public_dict](#tvbo.export.registry.ExportFormat.to_public_dict) | Serialisable view (without the renderer callable). |
+
+##### to_public_dict { #tvbo.export.registry.ExportFormat.to_public_dict }
+
+```python
+export.registry.ExportFormat.to_public_dict()
+```
+
+Serialisable view (without the renderer callable).
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [has](#tvbo.export.registry.has) | Report whether a format is registered under the given key or alias. |
+| [keys](#tvbo.export.registry.keys) | Return a view of every registered key and alias. |
+| [list_format_dicts](#tvbo.export.registry.list_format_dicts) | Public dict view of all formats — for API/UI dropdowns. |
+| [list_formats](#tvbo.export.registry.list_formats) | Return all registered formats (deduplicated, ordered by canonical key). |
+| [load](#tvbo.export.registry.load) | Resolve *fmt_key* and invoke its importer on *path*. |
+| [register](#tvbo.export.registry.register) | Register *fmt* under its canonical key and all aliases. |
+| [render](#tvbo.export.registry.render) | Resolve *fmt_key*, invoke its renderer, prune its dead imports, and format it. |
+| [resolve](#tvbo.export.registry.resolve) | Look up an :class:`ExportFormat` by canonical key or alias. |
+| [resolve_by_extension](#tvbo.export.registry.resolve_by_extension) | Look up a format by file suffix (e.g. ``'.yaml'``, ``'.nml'``). |
+
+### has { #tvbo.export.registry.has }
+
+```python
+export.registry.has(key)
+```
+
+Report whether a format is registered under the given key or alias.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name   | Type   | Description                                                   | Default    |
+|--------|--------|---------------------------------------------------------------|------------|
+| key    | str    | Canonical key or alias to check (matched case-insensitively). | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                      |
+|--------|--------|------------------------------------------------------------------|
+|        | bool   | `True` if a format is registered under `key`, otherwise `False`. |
+
+### keys { #tvbo.export.registry.keys }
+
+```python
+export.registry.keys()
+```
+
+Return a view of every registered key and alias.
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type            | Description                                                       |
+|--------|-----------------|-------------------------------------------------------------------|
+|        | Iterable\[str\] | A view over all lookup keys, including canonical keys and aliases |
+|        | Iterable\[str\] | (all lowercased). The same format may appear under several keys.  |
+
+### list_format_dicts { #tvbo.export.registry.list_format_dicts }
+
+```python
+export.registry.list_format_dicts()
+```
+
+Public dict view of all formats — for API/UI dropdowns.
+
+### list_formats { #tvbo.export.registry.list_formats }
+
+```python
+export.registry.list_formats()
+```
+
+Return all registered formats (deduplicated, ordered by canonical key).
+
+### load { #tvbo.export.registry.load }
+
+```python
+export.registry.load(fmt_key, path, **kwargs)
+```
+
+Resolve *fmt_key* and invoke its importer on *path*.
+
+Raises ``ValueError`` if the format has no importer registered.
+
+### register { #tvbo.export.registry.register }
+
+```python
+export.registry.register(fmt, *, overwrite=False)
+```
+
+Register *fmt* under its canonical key and all aliases.
+
+Raises ``ValueError`` if a key is already taken (unless ``overwrite``).
+
+### render { #tvbo.export.registry.render }
+
+```python
+export.registry.render(experiment, fmt_key, **kwargs)
+```
+
+Resolve *fmt_key*, invoke its renderer, prune its dead imports, and format it.
+
+All three happen here rather than in each renderer so that every backend — including the ones that render through an adapter and never touch the template helpers — is held to the same house style. Pruning precedes formatting because it edits statements and black only edits layout. See :mod:`tvbo.codegen.prune` and :mod:`tvbo.codegen.style`.
+
+### resolve { #tvbo.export.registry.resolve }
+
+```python
+export.registry.resolve(key)
+```
+
+Look up an :class:`ExportFormat` by canonical key or alias.
+
+### resolve_by_extension { #tvbo.export.registry.resolve_by_extension }
+
+```python
+export.registry.resolve_by_extension(suffix)
+```
+
+Look up a format by file suffix (e.g. ``'.yaml'``, ``'.nml'``).
+
+Raises ``ValueError`` if no format claims the suffix or if multiple formats claim it ambiguously.

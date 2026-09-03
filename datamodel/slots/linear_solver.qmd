@@ -1,0 +1,100 @@
+# Slot: linear_solver 
+
+
+_Linear solver for the Newton bordered system. E.g. COPBLS (collocation), MatrixBLS (shooting/poincaré)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/linear_solver](https://w3id.org/tvbo/slot/linear_solver)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Discretization](../classes/Discretization.qmd) | Discretization method for boundary value problems in continuation (periodic o... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Solver](../classes/Solver.qmd) |
+| Domain Of | [Discretization](../classes/Discretization.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Discretization](../classes/Discretization.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:linear_solver |
+| native | tvbo:linear_solver |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: linear_solver
+description: Linear solver for the Newton bordered system. E.g. COPBLS (collocation),
+  MatrixBLS (shooting/poincaré).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Discretization
+domain_of:
+- Discretization
+range: Solver
+inlined: true
+
+```
+</details></div>

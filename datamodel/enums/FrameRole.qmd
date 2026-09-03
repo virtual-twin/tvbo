@@ -1,0 +1,77 @@
+# Enum: FrameRole 
+
+
+
+
+_What a layer does while a figure animates. Read only under `Figure.animation`; a still figure ignores it. Unset, a layer whose data carries the animated dimension is sliced and one that does not is static, which is the reading that needs no annotation in the common case._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/FrameRole](https://w3id.org/tvbo/enum/FrameRole)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| slice | None | Redraw the layer at the current frame's position along the animated dimension... |
+| static | None | Draw the layer whole in every frame — the full trace a cursor sweeps across, ... |
+| cursor | None | Draw a rule at the current frame's coordinate value rather than at the data |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: FrameRole
+description: What a layer does while a figure animates. Read only under `Figure.animation`;
+  a still figure ignores it. Unset, a layer whose data carries the animated dimension
+  is sliced and one that does not is static, which is the reading that needs no annotation
+  in the common case.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  slice:
+    text: slice
+    description: Redraw the layer at the current frame's position along the animated
+      dimension — the moving quantity itself.
+  static:
+    text: static
+    description: Draw the layer whole in every frame — the full trace a cursor sweeps
+      across, or a fixed reference the moving quantity is read against.
+  cursor:
+    text: cursor
+    description: Draw a rule at the current frame's coordinate value rather than at
+      the data. What marks *now* on a panel that shows the whole time course, so a
+      reader can see which instant the other panels are at.
+
+```
+</details>
+
+</div>

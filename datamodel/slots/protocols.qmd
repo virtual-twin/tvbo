@@ -1,0 +1,100 @@
+# Slot: protocols 
+
+
+_All DBS protocols assigned to this subject._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo_dbs:slot/protocols](https://w3id.org/tvbo/dbs/slot/protocols)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DBSSubject](../classes/DBSSubject.qmd) | Human or animal subject receiving DBS |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [DBSProtocol](../classes/DBSProtocol.qmd) |
+| Domain Of | [DBSSubject](../classes/DBSSubject.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [DBSSubject](../classes/DBSSubject.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/dbs
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo_dbs:protocols |
+| native | tvbo_dbs:protocols |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: protocols
+description: All DBS protocols assigned to this subject.
+from_schema: https://w3id.org/tvbo/dbs
+rank: 1000
+owner: DBSSubject
+domain_of:
+- DBSSubject
+range: DBSProtocol
+multivalued: true
+
+```
+</details></div>

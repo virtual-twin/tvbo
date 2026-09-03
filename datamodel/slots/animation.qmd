@@ -1,0 +1,104 @@
+# Slot: animation 
+
+
+_Turns the figure into a movie over one dimension of its data instead of a still. Every other field keeps its meaning — the mosaic, the panels, the sizing and the styling are the frame; the animation only says which dimension advances and how fast. Declaring it is what makes a figure whose subject is a *process* show the process rather than a snapshot of it, without a second, hand-written plotting path._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/animation](https://w3id.org/tvbo/slot/animation)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Figure](../classes/Figure.qmd) | A publication figure, a mosaic of panels rendered from result containers |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Animation](../classes/Animation.qmd) |
+| Domain Of | [Figure](../classes/Figure.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Figure](../classes/Figure.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:animation |
+| native | tvbo:animation |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: animation
+description: Turns the figure into a movie over one dimension of its data instead
+  of a still. Every other field keeps its meaning — the mosaic, the panels, the sizing
+  and the styling are the frame; the animation only says which dimension advances
+  and how fast. Declaring it is what makes a figure whose subject is a *process* show
+  the process rather than a snapshot of it, without a second, hand-written plotting
+  path.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Figure
+domain_of:
+- Figure
+range: Animation
+inlined: true
+
+```
+</details></div>

@@ -1,0 +1,77 @@
+# Slot: requires 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/requires](https://w3id.org/tvbo/slot/requires)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [UpdateRule](../classes/UpdateRule.qmd) | Defines how a parameter is updated based on observables |  no  |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [UpdateRule](../classes/UpdateRule.qmd), [SimulationStudy](../classes/SimulationStudy.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:requires |
+| native | tvbo:requires |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: requires
+domain_of:
+- UpdateRule
+- SimulationStudy
+range: string
+
+```
+</details></div>

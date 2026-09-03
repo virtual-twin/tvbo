@@ -1,0 +1,104 @@
+# Slot: associated_with 
+
+
+_The software that carried the activity out (BEP028 ``AssociatedWith``)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/associated_with](https://w3id.org/tvbo/slot/associated_with)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Activity](../classes/Activity.qmd) | One thing that was done: a solve, a fit, an analysis, a render |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SoftwarePackage](../classes/SoftwarePackage.qmd) |
+| Domain Of | [Activity](../classes/Activity.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Activity](../classes/Activity.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:associated_with |
+| native | tvbo:associated_with |
+| exact | prov:wasAssociatedWith |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: associated_with
+description: The software that carried the activity out (BEP028 ``AssociatedWith``).
+from_schema: https://w3id.org/tvbo
+exact_mappings:
+- prov:wasAssociatedWith
+rank: 1000
+owner: Activity
+domain_of:
+- Activity
+range: SoftwarePackage
+multivalued: true
+inlined: false
+
+```
+</details></div>

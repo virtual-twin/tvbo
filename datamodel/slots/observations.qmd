@@ -1,0 +1,77 @@
+# Slot: observations 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/observations](https://w3id.org/tvbo/slot/observations)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Algorithm](../classes/Algorithm.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:observations |
+| native | tvbo:observations |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: observations
+domain_of:
+- Algorithm
+- SimulationExperiment
+range: string
+
+```
+</details></div>

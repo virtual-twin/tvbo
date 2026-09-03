@@ -1,0 +1,30 @@
+# experiment_layout { #tvbo.plot.experiment_layout }
+
+`plot.experiment_layout`
+
+Declarative and auto-configured layout composition for Experiment plotting.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [plot_experiment_layout](#tvbo.plot.experiment_layout.plot_experiment_layout) | Compose integration, continuation, exploration, or dynamics panels. |
+
+### plot_experiment_layout { #tvbo.plot.experiment_layout.plot_experiment_layout }
+
+```python
+plot.experiment_layout.plot_experiment_layout(
+    experiment,
+    layout=None,
+    panels=None,
+    figsize=None,
+    subplot_kwargs=None,
+    run_kwargs=None,
+    fig=None,
+    axes=None,
+)
+```
+
+Compose integration, continuation, exploration, or dynamics panels.
+
+If panels are not provided, they are inferred from a single experiment run.

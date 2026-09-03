@@ -1,0 +1,102 @@
+# Enum: ProcedureStepType 
+
+
+
+
+_The operation a ProcedureStep performs. `equation` is the general case (author-written algebra over previously-named intermediates); the others are named graph-construction operations whose options are fields rather than call syntax, so each lowers to a backend-native primitive without an expression string having to survive a parser._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ProcedureStepType](https://w3id.org/tvbo/enum/ProcedureStepType)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| equation | None | Evaluate `equation |
+| pairwise_distance | None | Distance matrix between the rows of the positions named by `of` (euclidean) |
+| distribution_pdf | None | Evaluate `distribution`'s density at the positions named by `of` — a spatial ... |
+| sample | None | A random matrix drawn from `distribution` — the draw itself, e |
+| stochastic_mask | None | Boolean connection mask: compare the quantity named by `of` against a draw fr... |
+| normalize | None | Divide the intermediate named by `of` by its sum along `axis` (axis 0 gives u... |
+| minmax_rescale | None | Affinely rescale the intermediate named by `of` from its own min/max onto `ta... |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ProcedureStepType
+description: The operation a ProcedureStep performs. `equation` is the general case
+  (author-written algebra over previously-named intermediates); the others are named
+  graph-construction operations whose options are fields rather than call syntax,
+  so each lowers to a backend-native primitive without an expression string having
+  to survive a parser.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  equation:
+    text: equation
+    description: Evaluate `equation.rhs` over previously-named intermediates and the
+      generator's parameters. The default.
+  pairwise_distance:
+    text: pairwise_distance
+    description: Distance matrix between the rows of the positions named by `of` (euclidean).
+      `diagonal` optionally overwrites the self-distance, e.g. to infinity so a decaying
+      distance kernel evaluates to zero there and no node connects to itself.
+  distribution_pdf:
+    text: distribution_pdf
+    description: Evaluate `distribution`'s density at the positions named by `of`
+      — a spatial field (e.g. a Gaussian sink/source whose difference forms an in-strength
+      gradient).
+  sample:
+    text: sample
+    description: A random matrix drawn from `distribution` — the draw itself, e.g.
+      the substrate of a random reservoir. Distinct from `stochastic_mask`, which
+      compares a draw and yields a boolean.
+  stochastic_mask:
+    text: stochastic_mask
+    description: 'Boolean connection mask: compare the quantity named by `of` against
+      a draw from `distribution` using `comparison`. The declarative form of a distance-dependent
+      connection probability.'
+  normalize:
+    text: normalize
+    description: Divide the intermediate named by `of` by its sum along `axis` (axis
+      0 gives uniform in-strength).
+  minmax_rescale:
+    text: minmax_rescale
+    description: Affinely rescale the intermediate named by `of` from its own min/max
+      onto `target_range`.
+
+```
+</details>
+
+</div>

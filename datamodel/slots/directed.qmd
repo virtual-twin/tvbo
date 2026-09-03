@@ -1,0 +1,79 @@
+# Slot: directed 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/directed](https://w3id.org/tvbo/slot/directed)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [GraphGenerator](../classes/GraphGenerator.qmd) | Backend-agnostic graph generator specification |  no  |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+| [Partition](../classes/Partition.qmd) | A grouped streaming reduction over a node partition (e |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [GraphGenerator](../classes/GraphGenerator.qmd), [Edge](../classes/Edge.qmd), [Partition](../classes/Partition.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:directed |
+| native | tvbo:directed |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: directed
+domain_of:
+- GraphGenerator
+- Edge
+- Partition
+range: string
+
+```
+</details></div>

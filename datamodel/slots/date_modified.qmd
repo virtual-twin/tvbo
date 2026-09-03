@@ -1,0 +1,100 @@
+# Slot: date_modified 
+
+
+_Date of the most recent release or significant update._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [schema:dateModified](http://schema.org/dateModified)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [SimulationTool](../classes/SimulationTool.qmd) | A software tool for computational neuroscience simulation, analysis, or model... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:date](http://www.w3.org/2001/XMLSchema#date) |
+| Domain Of | [SimulationTool](../classes/SimulationTool.qmd) |
+| Slot URI | [schema:dateModified](http://schema.org/dateModified) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [SimulationTool](../classes/SimulationTool.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/software
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | schema:dateModified |
+| native | tvbo_sw:date_modified |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: date_modified
+description: Date of the most recent release or significant update.
+from_schema: https://w3id.org/tvbo/software
+rank: 1000
+slot_uri: schema:dateModified
+owner: SimulationTool
+domain_of:
+- SimulationTool
+range: date
+
+```
+</details></div>

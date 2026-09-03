@@ -1,0 +1,79 @@
+# Slot: depends_on 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/depends_on](https://w3id.org/tvbo/slot/depends_on)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+| [Inference](../classes/Inference.qmd) | Bayesian inference of model parameters from an observation, via MCMC |  no  |
+| [Algorithm](../classes/Algorithm.qmd) | A complete specification of an iterative parameter tuning algorithm |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Optimization](../classes/Optimization.qmd), [Inference](../classes/Inference.qmd), [Algorithm](../classes/Algorithm.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:depends_on |
+| native | tvbo:depends_on |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: depends_on
+domain_of:
+- Optimization
+- Inference
+- Algorithm
+range: string
+
+```
+</details></div>

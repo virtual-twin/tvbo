@@ -1,0 +1,417 @@
+# Enum: UnitEnum 
+
+
+
+
+_Physical units of measurement for model parameters, state variables, and integration settings. Uses conventional abbreviations as values, mapped to the QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo_units:enum/UnitEnum](https://w3id.org/tvbo/units/enum/UnitEnum)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| s | qudt:SEC | Second |
+| ms | qudt:MilliSEC | Millisecond |
+| us | qudt:MicroSEC | Microsecond |
+| ns | qudt:NanoSEC | Nanosecond |
+| min | qudt:MIN | Minute (60 s) |
+| h | qudt:HR | Hour (3600 s) |
+| day | qudt:DAY | Day (86400 s) |
+| year | qudt:YR | Julian year (365 |
+| per_s | qudt:PER-SEC | Per second (s⁻¹) |
+| per_ms | qudt:PER-MilliSEC | Per millisecond (ms⁻¹) |
+| Hz | qudt:HZ | Hertz (s⁻¹) |
+| kHz | qudt:KiloHZ | Kilohertz |
+| V | qudt:V | Volt |
+| mV | qudt:MilliV | Millivolt |
+| per_mV | None | Reciprocal millivolt (mV⁻¹) |
+| mV_per_ms | None | Millivolt per millisecond |
+| mV_per_s | None | Millivolt per second |
+| A | qudt:A | Ampere |
+| nA | qudt:NanoA | Nanoampere |
+| pA | qudt:PicoA | Picoampere |
+| uA_per_cm2 | None | Microampere per square centimetre (current density) |
+| pF | qudt:PicoFARAD | Picofarad |
+| nF | qudt:NanoFARAD | Nanofarad |
+| uF_per_cm2 | None | Microfarad per square centimetre (specific capacitance) |
+| nS | qudt:NanoS | Nanosiemens |
+| uS | qudt:MicroS | Microsiemens |
+| pS | qudt:PicoS | Picosiemens |
+| S_per_cm2 | None | Siemens per square centimetre (conductance density) |
+| mS_per_cm2 | None | Millisiemens per square centimetre (conductance density) |
+| S_per_m2 | None | Siemens per square metre (conductance density, SI) |
+| nS_per_mV | None | Nanosiemens per millivolt |
+| per_nC | None | Reciprocal nanocoulomb (nC⁻¹) |
+| per_pC | None | Reciprocal picocoulomb (pC⁻¹) |
+| mol_per_m3 | qudt:MOL-PER-M3 | Mole per cubic metre (mol/m³), which is millimolar exactly: one mM is one mmo... |
+| mol_per_cm3 | None | Mole per cubic centimetre (mol/cm³) |
+| mmol_per_m3 | qudt:MilliMOL-PER-M3 | Millimole per cubic metre (mmol/m³), a thousandth of mM |
+| mol_per_m_per_A_per_s | None | Mole per metre per ampere per second (concentration-current coupling) |
+| um3 | qudt:MicroM3 | Cubic micrometre (µm³) |
+| m | qudt:M | Metre |
+| mm | qudt:MilliM | Millimetre |
+| cm | qudt:CentiM | Centimetre |
+| km | qudt:KiloM | Kilometre |
+| per_mm2 | None | Per square millimetre (mm⁻²) |
+| per_m2 | qudt:PER-M2 | Per square metre (m⁻²) |
+| m_per_s | qudt:M-PER-SEC | Metre per second |
+| mm_per_ms | None | Millimetre per millisecond (= m/s) |
+| Hz_per_nA | None | Hertz per nanoampere (neural gain) |
+| S_per_m | qudt:S-PER-M | Siemens per metre (conductivity) |
+| H_per_m | qudt:H-PER-M | Henry per metre (permeability) |
+| ohm | qudt:OHM | Ohm (Ω) |
+| Mohm | None | Megaohm (MΩ) |
+| kohm_cm | None | Kilo-ohm centimetre (axial resistivity) |
+| degC | qudt:DEG_C | Degree Celsius |
+| rad_per_ms | None | Radian per millisecond |
+| dimensionless | qudt:UNITLESS | Dimensionless (unitless) |
+| percent | qudt:PERCENT | Percent (%) |
+| arbitrary_unit | None | Arbitrary units (a |
+| kg | qudt:KiloGM | Kilogram |
+| kg_per_s | None | Kilogram per second |
+| kg_m2 | qudt:KiloGM-M2 | Kilogram metre squared (moment of inertia) |
+| m_per_s2 | qudt:M-PER-SEC2 | Metre per second squared (acceleration) |
+| N_per_m | qudt:N-PER-M | Newton per metre (spring constant) |
+| rad | qudt:RAD | Radian |
+| rad_per_s | qudt:RAD-PER-SEC | Radian per second (angular velocity) |
+| s2 | qudt:SEC2 | Second squared (inertia constant) |
+| W | qudt:W | Watt (power) |
+| MW | qudt:MegaW | Megawatt (10⁶ W); grid real/net power |
+| per_unit | None | Per-unit (dimensionless power-systems convention) |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [time_unit](../slots/time_unit.qmd) | Unit of every time-valued number in this scope — the step size, any period, a... |
+| [distance_unit](../slots/distance_unit.qmd) | Unit for distances/lengths in the network |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/units
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: UnitEnum
+description: Physical units of measurement for model parameters, state variables,
+  and integration settings. Uses conventional abbreviations as values, mapped to the
+  QUDT ontology (http://qudt.org/vocab/unit/) with UO cross-references where available.
+from_schema: https://w3id.org/tvbo/units
+permissible_values:
+  s:
+    text: s
+    description: Second
+    meaning: qudt:SEC
+    exact_mappings:
+    - UO:0000010
+  ms:
+    text: ms
+    description: Millisecond
+    meaning: qudt:MilliSEC
+    exact_mappings:
+    - UO:0000028
+  us:
+    text: us
+    description: Microsecond
+    meaning: qudt:MicroSEC
+    exact_mappings:
+    - UO:0000029
+  ns:
+    text: ns
+    description: Nanosecond
+    meaning: qudt:NanoSEC
+  min:
+    text: min
+    description: Minute (60 s)
+    meaning: qudt:MIN
+  h:
+    text: h
+    description: Hour (3600 s)
+    meaning: qudt:HR
+  day:
+    text: day
+    description: Day (86400 s)
+    meaning: qudt:DAY
+  year:
+    text: year
+    description: Julian year (365.25 d)
+    meaning: qudt:YR
+  per_s:
+    text: per_s
+    description: Per second (s⁻¹)
+    meaning: qudt:PER-SEC
+  per_ms:
+    text: per_ms
+    description: Per millisecond (ms⁻¹)
+    meaning: qudt:PER-MilliSEC
+  Hz:
+    text: Hz
+    description: Hertz (s⁻¹)
+    meaning: qudt:HZ
+    exact_mappings:
+    - UO:0000106
+  kHz:
+    text: kHz
+    description: Kilohertz
+    meaning: qudt:KiloHZ
+  V:
+    text: V
+    description: Volt
+    meaning: qudt:V
+    exact_mappings:
+    - UO:0000218
+  mV:
+    text: mV
+    description: Millivolt
+    meaning: qudt:MilliV
+    exact_mappings:
+    - UO:0000247
+  per_mV:
+    text: per_mV
+    description: Reciprocal millivolt (mV⁻¹)
+  mV_per_ms:
+    text: mV_per_ms
+    description: Millivolt per millisecond
+  mV_per_s:
+    text: mV_per_s
+    description: Millivolt per second
+  A:
+    text: A
+    description: Ampere
+    meaning: qudt:A
+    exact_mappings:
+    - UO:0000011
+  nA:
+    text: nA
+    description: Nanoampere
+    meaning: qudt:NanoA
+  pA:
+    text: pA
+    description: Picoampere
+    meaning: qudt:PicoA
+    exact_mappings:
+    - UO:0010054
+  uA_per_cm2:
+    text: uA_per_cm2
+    description: Microampere per square centimetre (current density)
+  pF:
+    text: pF
+    description: Picofarad
+    meaning: qudt:PicoFARAD
+  nF:
+    text: nF
+    description: Nanofarad
+    meaning: qudt:NanoFARAD
+  uF_per_cm2:
+    text: uF_per_cm2
+    description: Microfarad per square centimetre (specific capacitance)
+  nS:
+    text: nS
+    description: Nanosiemens
+    meaning: qudt:NanoS
+  uS:
+    text: uS
+    description: Microsiemens
+    meaning: qudt:MicroS
+  pS:
+    text: pS
+    description: Picosiemens
+    meaning: qudt:PicoS
+  S_per_cm2:
+    text: S_per_cm2
+    description: Siemens per square centimetre (conductance density)
+  mS_per_cm2:
+    text: mS_per_cm2
+    description: Millisiemens per square centimetre (conductance density)
+  S_per_m2:
+    text: S_per_m2
+    description: Siemens per square metre (conductance density, SI)
+  nS_per_mV:
+    text: nS_per_mV
+    description: Nanosiemens per millivolt
+  per_nC:
+    text: per_nC
+    description: Reciprocal nanocoulomb (nC⁻¹)
+  per_pC:
+    text: per_pC
+    description: Reciprocal picocoulomb (pC⁻¹)
+  mol_per_m3:
+    text: mol_per_m3
+    description: 'Mole per cubic metre (mol/m³), which is millimolar exactly: one
+      mM is one mmol per litre and a litre is 10⁻³ m³.'
+    meaning: qudt:MOL-PER-M3
+    aliases:
+    - mM
+  mol_per_cm3:
+    text: mol_per_cm3
+    description: Mole per cubic centimetre (mol/cm³)
+  mmol_per_m3:
+    text: mmol_per_m3
+    description: Millimole per cubic metre (mmol/m³), a thousandth of mM
+    meaning: qudt:MilliMOL-PER-M3
+  mol_per_m_per_A_per_s:
+    text: mol_per_m_per_A_per_s
+    description: Mole per metre per ampere per second (concentration-current coupling)
+  um3:
+    text: um3
+    description: Cubic micrometre (µm³)
+    meaning: qudt:MicroM3
+  m:
+    text: m
+    description: Metre
+    meaning: qudt:M
+    exact_mappings:
+    - UO:0000008
+  mm:
+    text: mm
+    description: Millimetre
+    meaning: qudt:MilliM
+    exact_mappings:
+    - UO:0000016
+  cm:
+    text: cm
+    description: Centimetre
+    meaning: qudt:CentiM
+    exact_mappings:
+    - UO:0000015
+  km:
+    text: km
+    description: Kilometre
+    meaning: qudt:KiloM
+  per_mm2:
+    text: per_mm2
+    description: Per square millimetre (mm⁻²). The unit of a Laplace-Beltrami eigenvalue
+      and of Gaussian curvature.
+  per_m2:
+    text: per_m2
+    description: Per square metre (m⁻²)
+    meaning: qudt:PER-M2
+  m_per_s:
+    text: m_per_s
+    description: Metre per second
+    meaning: qudt:M-PER-SEC
+  mm_per_ms:
+    text: mm_per_ms
+    description: Millimetre per millisecond (= m/s)
+  Hz_per_nA:
+    text: Hz_per_nA
+    description: Hertz per nanoampere (neural gain)
+  S_per_m:
+    text: S_per_m
+    description: Siemens per metre (conductivity)
+    meaning: qudt:S-PER-M
+  H_per_m:
+    text: H_per_m
+    description: Henry per metre (permeability)
+    meaning: qudt:H-PER-M
+  ohm:
+    text: ohm
+    description: Ohm (Ω)
+    meaning: qudt:OHM
+  Mohm:
+    text: Mohm
+    description: Megaohm (MΩ)
+  kohm_cm:
+    text: kohm_cm
+    description: Kilo-ohm centimetre (axial resistivity)
+  degC:
+    text: degC
+    description: Degree Celsius
+    meaning: qudt:DEG_C
+  rad_per_ms:
+    text: rad_per_ms
+    description: Radian per millisecond
+  dimensionless:
+    text: dimensionless
+    description: Dimensionless (unitless)
+    meaning: qudt:UNITLESS
+    exact_mappings:
+    - UO:0000186
+  percent:
+    text: percent
+    description: Percent (%)
+    meaning: qudt:PERCENT
+  arbitrary_unit:
+    text: arbitrary_unit
+    description: Arbitrary units (a.u.)
+  kg:
+    text: kg
+    description: Kilogram
+    meaning: qudt:KiloGM
+    exact_mappings:
+    - UO:0000009
+  kg_per_s:
+    text: kg_per_s
+    description: Kilogram per second
+  kg_m2:
+    text: kg_m2
+    description: Kilogram metre squared (moment of inertia)
+    meaning: qudt:KiloGM-M2
+  m_per_s2:
+    text: m_per_s2
+    description: Metre per second squared (acceleration)
+    meaning: qudt:M-PER-SEC2
+  N_per_m:
+    text: N_per_m
+    description: Newton per metre (spring constant)
+    meaning: qudt:N-PER-M
+  rad:
+    text: rad
+    description: Radian
+    meaning: qudt:RAD
+    exact_mappings:
+    - UO:0000123
+  rad_per_s:
+    text: rad_per_s
+    description: Radian per second (angular velocity)
+    meaning: qudt:RAD-PER-SEC
+  s2:
+    text: s2
+    description: Second squared (inertia constant)
+    meaning: qudt:SEC2
+  W:
+    text: W
+    description: Watt (power)
+    meaning: qudt:W
+  MW:
+    text: MW
+    description: Megawatt (10⁶ W); grid real/net power
+    meaning: qudt:MegaW
+  per_unit:
+    text: per_unit
+    description: Per-unit (dimensionless power-systems convention)
+
+```
+</details>
+
+</div>

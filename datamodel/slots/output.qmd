@@ -1,0 +1,85 @@
+# Slot: output 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/output](https://w3id.org/tvbo/slot/output)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DataRef](../classes/DataRef.qmd) | A pointer to one labelled array in a result container, dataset, or curated en... |  no  |
+| [Procedure](../classes/Procedure.qmd) | Symbolic procedure: an ordered list of steps producing named outputs |  no  |
+| [Analysis](../classes/Analysis.qmd) | A quantity obtained by ANALYZING something — a model, its solve, a derived lo... |  no  |
+| [Dynamics](../classes/Dynamics.qmd) |  |  no  |
+| [Function](../classes/Function.qmd) | A function with explicit input -> transformation -> output flow |  no  |
+| [LossFunction](../classes/LossFunction.qmd) | A loss function for optimization with optional aggregation |  no  |
+| [FunctionCall](../classes/FunctionCall.qmd) | Invocation of a function in a pipeline |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [DataRef](../classes/DataRef.qmd), [Procedure](../classes/Procedure.qmd), [Dynamics](../classes/Dynamics.qmd), [Function](../classes/Function.qmd), [FunctionCall](../classes/FunctionCall.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:output |
+| native | tvbo:output |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: output
+domain_of:
+- DataRef
+- Procedure
+- Dynamics
+- Function
+- FunctionCall
+range: string
+
+```
+</details></div>

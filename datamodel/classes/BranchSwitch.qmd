@@ -1,0 +1,534 @@
+# Class: BranchSwitch 
+
+
+_Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says: "from which special point on the parent branch, continue what kind of object, with what settings." Override parent solver settings via the inline continuation field — only explicitly set attributes take effect; everything else is inherited from the parent Continuation._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:BranchSwitch](https://w3id.org/tvbo/BranchSwitch)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class BranchSwitch
+    click BranchSwitch href "./BranchSwitch.html"
+      BranchSwitch : bothside
+        
+          
+    
+        
+        
+        BranchSwitch --> "0..1" Boolean : bothside
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      BranchSwitch : continuation
+        
+          
+    
+        
+        
+        BranchSwitch --> "0..1" Continuation : continuation
+        click Continuation href "./Continuation.html"
+    
+
+        
+      BranchSwitch : delta_p
+        
+          
+    
+        
+        
+        BranchSwitch --> "0..1" Float : delta_p
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      BranchSwitch : description
+        
+          
+    
+        
+        
+        BranchSwitch --> "0..1" String : description
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BranchSwitch : discretization
+        
+          
+    
+        
+        
+        BranchSwitch --> "0..1" Discretization : discretization
+        click Discretization href "./Discretization.html"
+    
+
+        
+      BranchSwitch : name
+        
+          
+    
+        
+        
+        BranchSwitch --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      BranchSwitch : options
+        
+          
+    
+        
+        
+        BranchSwitch --> "*" Option : options
+        click Option href "./Option.html"
+    
+
+        
+      BranchSwitch : parameters
+        
+          
+    
+        
+        
+        BranchSwitch --> "*" Parameter : parameters
+        click Parameter href "./Parameter.html"
+    
+
+        
+      BranchSwitch : source_point
+        
+          
+    
+        
+        
+        BranchSwitch --> "0..1" String : source_point
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:BranchSwitch](https://w3id.org/tvbo/BranchSwitch) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Globally unique identifier for the entity | direct |
+| [description](../slots/description.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [parameters](../slots/parameters.qmd) | * <br/> [Parameter](../classes/Parameter.qmd) |  | direct |
+| [source_point](../slots/source_point.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Which bifurcation point to start from | direct |
+| [delta_p](../slots/delta_p.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Initial parameter offset from the bifurcation point | direct |
+| [continuation](../slots/continuation.qmd) | 0..1 <br/> [Continuation](../classes/Continuation.qmd) | Override solver settings for this branch | direct |
+| [discretization](../slots/discretization.qmd) | 0..1 <br/> [Discretization](../classes/Discretization.qmd) | Discretization method for the branch solution | direct |
+| [bothside](../slots/bothside.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Continue branch in both directions | direct |
+| [options](../slots/options.qmd) | * <br/> [Option](../classes/Option.qmd) | Toolkit-specific string options for this branch (linear solver, etc | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Continuation](../classes/Continuation.qmd) | [branches](../slots/branches.qmd) | range | [BranchSwitch](../classes/BranchSwitch.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:BranchSwitch |
+| native | tvbo:BranchSwitch |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: BranchSwitch
+description: 'Specification for switching from a detected bifurcation point to a new
+  branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says:
+  "from which special point on the parent branch, continue what kind of object, with
+  what settings." Override parent solver settings via the inline continuation field
+  — only explicitly set attributes take effect; everything else is inherited from
+  the parent Continuation.'
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+- description
+- parameters
+attributes:
+  source_point:
+    name: source_point
+    description: 'Which bifurcation point to start from. Syntax: - ''hopf:-1'' = last
+      Hopf (default) - ''hopf:all'' = all Hopf points - ''hopf:1'' = first Hopf -
+      ''fold:2'' = second fold - integer = specific special point index'
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - InitialState
+    - BranchSwitch
+    range: string
+  delta_p:
+    name: delta_p
+    description: Initial parameter offset from the bifurcation point.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BranchSwitch
+    range: float
+  continuation:
+    name: continuation
+    description: Override solver settings for this branch. Uses the same Continuation
+      type — only explicitly set attributes override the parent's values.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BranchSwitch
+    range: Continuation
+    inlined: true
+  discretization:
+    name: discretization
+    description: Discretization method for the branch solution. Required for periodic
+      orbit branches (Hopf → PO). Not needed for codim-2 branches (fold/Hopf continuation).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BranchSwitch
+    - PDESolver
+    range: Discretization
+    inlined: true
+  bothside:
+    name: bothside
+    description: Continue branch in both directions.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - BranchSwitch
+    - Continuation
+    range: boolean
+  options:
+    name: options
+    description: Toolkit-specific string options for this branch (linear solver, etc.).
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Discretization
+    - BranchSwitch
+    - Continuation
+    - WorkflowEngineConfig
+    range: Option
+    multivalued: true
+    inlined: true
+class_uri: tvbo:BranchSwitch
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: BranchSwitch
+description: 'Specification for switching from a detected bifurcation point to a new
+  branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says:
+  "from which special point on the parent branch, continue what kind of object, with
+  what settings." Override parent solver settings via the inline continuation field
+  — only explicitly set attributes take effect; everything else is inherited from
+  the parent Continuation.'
+from_schema: https://w3id.org/tvbo
+attributes:
+  source_point:
+    name: source_point
+    description: 'Which bifurcation point to start from. Syntax: - ''hopf:-1'' = last
+      Hopf (default) - ''hopf:all'' = all Hopf points - ''hopf:1'' = first Hopf -
+      ''fold:2'' = second fold - integer = specific special point index'
+    from_schema: https://w3id.org/tvbo
+    owner: BranchSwitch
+    domain_of:
+    - InitialState
+    - BranchSwitch
+    range: string
+  delta_p:
+    name: delta_p
+    description: Initial parameter offset from the bifurcation point.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BranchSwitch
+    domain_of:
+    - BranchSwitch
+    range: float
+  continuation:
+    name: continuation
+    description: Override solver settings for this branch. Uses the same Continuation
+      type — only explicitly set attributes override the parent's values.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BranchSwitch
+    domain_of:
+    - BranchSwitch
+    range: Continuation
+    inlined: true
+  discretization:
+    name: discretization
+    description: Discretization method for the branch solution. Required for periodic
+      orbit branches (Hopf → PO). Not needed for codim-2 branches (fold/Hopf continuation).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BranchSwitch
+    domain_of:
+    - BranchSwitch
+    - PDESolver
+    range: Discretization
+    inlined: true
+  bothside:
+    name: bothside
+    description: Continue branch in both directions.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BranchSwitch
+    domain_of:
+    - BranchSwitch
+    - Continuation
+    range: boolean
+  options:
+    name: options
+    description: Toolkit-specific string options for this branch (linear solver, etc.).
+    from_schema: https://w3id.org/tvbo
+    owner: BranchSwitch
+    domain_of:
+    - Discretization
+    - BranchSwitch
+    - Continuation
+    - WorkflowEngineConfig
+    range: Option
+    multivalued: true
+    inlined: true
+  name:
+    name: name
+    description: Globally unique identifier for the entity.
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: BranchSwitch
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+  description:
+    name: description
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    slot_uri: dcterms:description
+    owner: BranchSwitch
+    domain_of:
+    - CommonCoordinateSpace
+    - Dataset
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Panel
+    - Equation
+    - Stimulus
+    - Event
+    - Tractogram
+    - Matrix
+    - ResultEntity
+    - Activity
+    - Phenotype
+    - MeasureSpec
+    - NamedArray
+    - Network
+    - GraphGenerator
+    - ProcedureStep
+    - File
+    - Node
+    - Edge
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - RandomStream
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - ExplorationAxis
+    - FreeParameter
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - AlgorithmStage
+    - TuningObjective
+    - Algorithm
+    - BranchSwitch
+    - Continuation
+    - Integrator
+    - Coupling
+    - RegionMapping
+    - SimulationExperiment
+    - Study
+    - ResultBinding
+    - TimeSeries
+    - NDArray
+    - SpatialDomain
+    - Mesh
+    - SpatialField
+    - FieldStateVariable
+    - BoundaryCondition
+    - PDESolver
+    - PDE
+    - Reducer
+    range: string
+  parameters:
+    name: parameters
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: BranchSwitch
+    domain_of:
+    - Equation
+    - Stimulus
+    - Event
+    - ExperimentResultSidecar
+    - Network
+    - GraphGenerator
+    - Node
+    - Edge
+    - Observation
+    - Analysis
+    - Dynamics
+    - Distribution
+    - Noise
+    - Exploration
+    - Discretization
+    - BranchSwitch
+    - Integrator
+    - Coupling
+    - PDE
+    range: Parameter
+    multivalued: true
+    inlined: true
+class_uri: tvbo:BranchSwitch
+
+```
+</details></div>

@@ -1,0 +1,100 @@
+# Slot: produced_by 
+
+
+_The experiment or analysis that computed it, by IRI (``tvbo:exp/<study>/exp-<id>``, ``tvbo:ana/<study>/<name>``) — the same scope grammar a ``DataRef`` resolves through, so a record and a reference name the producer the one way._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/produced_by](https://w3id.org/tvbo/slot/produced_by)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ResultEntity](../classes/ResultEntity.qmd) | One persisted result container, described |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:anyURI](http://www.w3.org/2001/XMLSchema#anyURI) |
+| Domain Of | [ResultEntity](../classes/ResultEntity.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ResultEntity](../classes/ResultEntity.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:produced_by |
+| native | tvbo:produced_by |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: produced_by
+description: The experiment or analysis that computed it, by IRI (``tvbo:exp/<study>/exp-<id>``,
+  ``tvbo:ana/<study>/<name>``) — the same scope grammar a ``DataRef`` resolves through,
+  so a record and a reference name the producer the one way.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ResultEntity
+domain_of:
+- ResultEntity
+range: uriorcurie
+
+```
+</details></div>

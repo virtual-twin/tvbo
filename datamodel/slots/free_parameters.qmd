@@ -1,0 +1,78 @@
+# Slot: free_parameters 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/free_parameters](https://w3id.org/tvbo/slot/free_parameters)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [OptimizationStage](../classes/OptimizationStage.qmd) | A single stage in a multi-stage optimization workflow |  no  |
+| [Optimization](../classes/Optimization.qmd) | Configuration for parameter optimization |  no  |
+| [Continuation](../classes/Continuation.qmd) | Complete specification of a numerical continuation / bifurcation analysis |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [OptimizationStage](../classes/OptimizationStage.qmd), [Continuation](../classes/Continuation.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:free_parameters |
+| native | tvbo:free_parameters |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: free_parameters
+domain_of:
+- OptimizationStage
+- Continuation
+range: string
+
+```
+</details></div>

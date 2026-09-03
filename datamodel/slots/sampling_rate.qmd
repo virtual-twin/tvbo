@@ -1,0 +1,77 @@
+# Slot: sampling_rate 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/sampling_rate](https://w3id.org/tvbo/slot/sampling_rate)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+| [TimeSeries](../classes/TimeSeries.qmd) | Time series data from simulations or measurements |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Event](../classes/Event.qmd), [TimeSeries](../classes/TimeSeries.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:sampling_rate |
+| native | tvbo:sampling_rate |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sampling_rate
+domain_of:
+- Event
+- TimeSeries
+range: string
+
+```
+</details></div>

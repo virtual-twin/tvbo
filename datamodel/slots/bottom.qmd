@@ -1,0 +1,99 @@
+# Slot: bottom 
+
+
+_Strip reserved at the bottom for the cells' tick labels or a shared axis label._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/bottom](https://w3id.org/tvbo/slot/bottom)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Grid](../classes/Grid.qmd) | How a `grid` panel tiles its cells, and what the strips around them are label... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Grid](../classes/Grid.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Grid](../classes/Grid.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:bottom |
+| native | tvbo:bottom |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: bottom
+description: Strip reserved at the bottom for the cells' tick labels or a shared axis
+  label.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Grid
+domain_of:
+- Grid
+range: float
+
+```
+</details></div>

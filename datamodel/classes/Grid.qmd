@@ -1,0 +1,600 @@
+# Class: Grid 
+
+
+_How a `grid` panel tiles its cells, and what the strips around them are labelled with. Rows and columns are labelled ONCE, at the left and the top — the whole reason a paper's composite panel is one lettered panel rather than n of them._
+
+__
+
+_The reserved label strips are taken out of the drawable area, so declaring one shrinks the cells to make room instead of being drawn over them. The axis labels the cells SHARE are the panel's own `xlabel`/`ylabel`, one word at two levels, not slots of this object._
+
+__
+
+_A directive that varies down the rows or across the columns is still written as `row.<name>` / `col.<name>` in `opts`: it supplies one value per row or column of ANY directive, so it cannot be a fixed slot of anything._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Grid](https://w3id.org/tvbo/class/Grid)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Grid
+    click Grid href "./Grid.html"
+      Grid : between
+        
+          
+    
+        
+        
+        Grid --> "*" String : between
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Grid : bottom
+        
+          
+    
+        
+        
+        Grid --> "0..1" Float : bottom
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Grid : col_label_pad
+        
+          
+    
+        
+        
+        Grid --> "0..1" Float : col_label_pad
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Grid : col_label_size
+        
+          
+    
+        
+        
+        Grid --> "0..1" Float : col_label_size
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Grid : col_labels
+        
+          
+    
+        
+        
+        Grid --> "*" String : col_labels
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Grid : hspace
+        
+          
+    
+        
+        
+        Grid --> "0..1" Float : hspace
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Grid : left
+        
+          
+    
+        
+        
+        Grid --> "0..1" Float : left
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Grid : ncols
+        
+          
+    
+        
+        
+        Grid --> "0..1" Integer : ncols
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Grid : nrows
+        
+          
+    
+        
+        
+        Grid --> "0..1" Integer : nrows
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Grid : right
+        
+          
+    
+        
+        
+        Grid --> "0..1" Float : right
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Grid : row_label_rotation
+        
+          
+    
+        
+        
+        Grid --> "0..1" Float : row_label_rotation
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Grid : row_labels
+        
+          
+    
+        
+        
+        Grid --> "*" String : row_labels
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Grid : top
+        
+          
+    
+        
+        
+        Grid --> "0..1" Float : top
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Grid : trailing
+        
+          
+    
+        
+        
+        Grid --> "0..1" String : trailing
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Grid : wspace
+        
+          
+    
+        
+        
+        Grid --> "0..1" Float : wspace
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [ncols](../slots/ncols.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Cells per row | direct |
+| [nrows](../slots/nrows.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Rows to fill | direct |
+| [left](../slots/left.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Strip reserved at the left for the row labels, as a fraction of the panel | direct |
+| [right](../slots/right.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Strip reserved at the right — what cells carrying their ticks on that side ne... | direct |
+| [top](../slots/top.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Strip reserved at the top for the column labels | direct |
+| [bottom](../slots/bottom.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Strip reserved at the bottom for the cells' tick labels or a shared axis labe... | direct |
+| [wspace](../slots/wspace.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Gap between columns, as a fraction of the panel | direct |
+| [hspace](../slots/hspace.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Gap between rows, in the same fraction | direct |
+| [col_labels](../slots/col_labels.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | One heading per column, written just above the cells rather than at the panel... | direct |
+| [row_labels](../slots/row_labels.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | One heading per row, in the reserved left strip | direct |
+| [col_label_size](../slots/col_label_size.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Type size of the column headings | direct |
+| [col_label_pad](../slots/col_label_pad.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Gap between a column heading and the cells under it | direct |
+| [row_label_rotation](../slots/row_label_rotation.qmd) | 0..1 <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Rotation of the row headings, in degrees | direct |
+| [between](../slots/between.qmd) | * <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Text written in the gap BEFORE each cell, which is what turns a row of maps i... | direct |
+| [trailing](../slots/trailing.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Text written after the last cell, closing such an equation | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Panel](../classes/Panel.qmd) | [grid](../slots/grid.qmd) | range | [Grid](../classes/Grid.qmd) |
+| [Inset](../classes/Inset.qmd) | [grid](../slots/grid.qmd) | range | [Grid](../classes/Grid.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Grid |
+| native | tvbo:Grid |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Grid
+description: 'How a `grid` panel tiles its cells, and what the strips around them
+  are labelled with. Rows and columns are labelled ONCE, at the left and the top —
+  the whole reason a paper''s composite panel is one lettered panel rather than n
+  of them.
+
+
+  The reserved label strips are taken out of the drawable area, so declaring one shrinks
+  the cells to make room instead of being drawn over them. The axis labels the cells
+  SHARE are the panel''s own `xlabel`/`ylabel`, one word at two levels, not slots
+  of this object.
+
+
+  A directive that varies down the rows or across the columns is still written as
+  `row.<name>` / `col.<name>` in `opts`: it supplies one value per row or column of
+  ANY directive, so it cannot be a fixed slot of anything.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  ncols:
+    name: ncols
+    description: Cells per row. Unset puts every cell in one row.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: integer
+  nrows:
+    name: nrows
+    description: Rows to fill. Unset holds every cell, so declaring only `ncols` wraps
+      rather than drops; an explicit value still crops the extras, deliberately.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: integer
+  left:
+    name: left
+    description: Strip reserved at the left for the row labels, as a fraction of the
+      panel.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: float
+  right:
+    name: right
+    description: Strip reserved at the right — what cells carrying their ticks on
+      that side need, or their labels are drawn over the panel next door.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: float
+  top:
+    name: top
+    description: Strip reserved at the top for the column labels.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: float
+  bottom:
+    name: bottom
+    description: Strip reserved at the bottom for the cells' tick labels or a shared
+      axis label.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: float
+  wspace:
+    name: wspace
+    description: Gap between columns, as a fraction of the panel. A value approaching
+      the cell width collapses the cells rather than separating them.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: float
+  hspace:
+    name: hspace
+    description: Gap between rows, in the same fraction.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: float
+  col_labels:
+    name: col_labels
+    description: One heading per column, written just above the cells rather than
+      at the panel's own top, so it keeps reading as belonging to its column.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: string
+    multivalued: true
+  row_labels:
+    name: row_labels
+    description: One heading per row, in the reserved left strip.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: string
+    multivalued: true
+  col_label_size:
+    name: col_label_size
+    description: Type size of the column headings.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: float
+  col_label_pad:
+    name: col_label_pad
+    description: Gap between a column heading and the cells under it.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: float
+  row_label_rotation:
+    name: row_label_rotation
+    description: Rotation of the row headings, in degrees.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: float
+  between:
+    name: between
+    description: Text written in the gap BEFORE each cell, which is what turns a row
+      of maps into a paper's decomposition equation.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: string
+    multivalued: true
+  trailing:
+    name: trailing
+    description: Text written after the last cell, closing such an equation.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Grid
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Grid
+description: 'How a `grid` panel tiles its cells, and what the strips around them
+  are labelled with. Rows and columns are labelled ONCE, at the left and the top —
+  the whole reason a paper''s composite panel is one lettered panel rather than n
+  of them.
+
+
+  The reserved label strips are taken out of the drawable area, so declaring one shrinks
+  the cells to make room instead of being drawn over them. The axis labels the cells
+  SHARE are the panel''s own `xlabel`/`ylabel`, one word at two levels, not slots
+  of this object.
+
+
+  A directive that varies down the rows or across the columns is still written as
+  `row.<name>` / `col.<name>` in `opts`: it supplies one value per row or column of
+  ANY directive, so it cannot be a fixed slot of anything.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  ncols:
+    name: ncols
+    description: Cells per row. Unset puts every cell in one row.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: integer
+  nrows:
+    name: nrows
+    description: Rows to fill. Unset holds every cell, so declaring only `ncols` wraps
+      rather than drops; an explicit value still crops the extras, deliberately.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: integer
+  left:
+    name: left
+    description: Strip reserved at the left for the row labels, as a fraction of the
+      panel.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: float
+  right:
+    name: right
+    description: Strip reserved at the right — what cells carrying their ticks on
+      that side need, or their labels are drawn over the panel next door.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: float
+  top:
+    name: top
+    description: Strip reserved at the top for the column labels.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: float
+  bottom:
+    name: bottom
+    description: Strip reserved at the bottom for the cells' tick labels or a shared
+      axis label.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: float
+  wspace:
+    name: wspace
+    description: Gap between columns, as a fraction of the panel. A value approaching
+      the cell width collapses the cells rather than separating them.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: float
+  hspace:
+    name: hspace
+    description: Gap between rows, in the same fraction.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: float
+  col_labels:
+    name: col_labels
+    description: One heading per column, written just above the cells rather than
+      at the panel's own top, so it keeps reading as belonging to its column.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: string
+    multivalued: true
+  row_labels:
+    name: row_labels
+    description: One heading per row, in the reserved left strip.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: string
+    multivalued: true
+  col_label_size:
+    name: col_label_size
+    description: Type size of the column headings.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: float
+  col_label_pad:
+    name: col_label_pad
+    description: Gap between a column heading and the cells under it.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: float
+  row_label_rotation:
+    name: row_label_rotation
+    description: Rotation of the row headings, in degrees.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: float
+  between:
+    name: between
+    description: Text written in the gap BEFORE each cell, which is what turns a row
+      of maps into a paper's decomposition equation.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: string
+    multivalued: true
+  trailing:
+    name: trailing
+    description: Text written after the last cell, closing such an equation.
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Grid
+    domain_of:
+    - Grid
+    range: string
+
+```
+</details></div>

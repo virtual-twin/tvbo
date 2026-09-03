@@ -1,0 +1,176 @@
+# templater { #tvbo.codegen.templater }
+
+`codegen.templater`
+
+Shared codegen helpers the Mako templates and the export registry read.
+
+Answers the questions a backend asks about a model before emitting it — which observations are derived, which equations read the integrator's time symbol, which base parameters a derived-parameter block consumes — plus the one namespace generated modules are `exec`-ed into and the formatting entry point every component-level render routes through.
+
+## Attributes
+
+| Name | Description |
+| --- | --- |
+| [CODE_FORMATS](#tvbo.codegen.templater.CODE_FORMATS) | Every component-level code format: template, output language and entry point. |
+| [exec_globals](#tvbo.codegen.templater.exec_globals) | Globals a generated module is `exec`-ed into, shared so one render's imports serve the next. |
+| [logger](#tvbo.codegen.templater.logger) |  |
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [CodeFormat](#tvbo.codegen.templater.CodeFormat) | How one component-level code format is rendered, formatted and re-entered. |
+
+### CodeFormat { #tvbo.codegen.templater.CodeFormat }
+
+```python
+codegen.templater.CodeFormat(
+    template='',
+    language='',
+    entry='',
+    unnamed_entry='dfun',
+    render_kwargs=(),
+)
+```
+
+How one component-level code format is rendered, formatted and re-entered.
+
+A component format renders a single `Dynamics` rather than a whole experiment, so it names no :class:`~tvbo.export.registry.ExportFormat` and declares itself here instead. `template` is the Mako template that emits it, or empty for the formats an adapter builds. `entry` is the module-level name the emitted code binds its callable to; empty means the template names it after the model, falling back to `unnamed_entry` for a model with no name of its own. `language` selects the normaliser in :func:`format_code`, is empty for output returned verbatim, and is what says whether the output can be executed at all.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [canonical_observation_ref](#tvbo.codegen.templater.canonical_observation_ref) | Rewrite ``observations.<name>`` to the bare ``<name>`` a pipeline argument resolves. |
+| [code_format](#tvbo.codegen.templater.code_format) | The :class:`CodeFormat` declared for *format*, or ``None`` if it declares none. |
+| [entry_point_name](#tvbo.codegen.templater.entry_point_name) | The name generated code for *format* binds its callable to. |
+| [format_code](#tvbo.codegen.templater.format_code) | Format generated *code* for the backend named by *format*. |
+| [get_integrator_info](#tvbo.codegen.templater.get_integrator_info) | Collect scheme metadata for an integrator into a dict. |
+| [is_derived](#tvbo.codegen.templater.is_derived) | Return True if ``obs`` derives from other observations in ``experiment``. |
+| [source_language](#tvbo.codegen.templater.source_language) | Return the output language of *format*, or ``""`` when it emits none. |
+| [source_observations](#tvbo.codegen.templater.source_observations) | Return the source names of ``obs`` that resolve to other observations. |
+| [time_dependent_equations](#tvbo.codegen.templater.time_dependent_equations) | Names whose equation reads the time symbol ``t``, sorted. |
+
+### canonical_observation_ref { #tvbo.codegen.templater.canonical_observation_ref }
+
+```python
+codegen.templater.canonical_observation_ref(value, observation_names)
+```
+
+Rewrite ``observations.<name>`` to the bare ``<name>`` a pipeline argument resolves.
+
+``observations.<name>`` is how the spec names an observation from a loss, an exploration builder and a study analysis, so a pipeline argument accepts the same spelling rather than a second one. Anything that is not that spelling — a literal, ``network.observations.<measure>``, a name no observation carries — is returned unchanged, and a trailing ``.<key>`` is preserved so ``observations.psd.frequencies`` still reaches a named output.
+
+### code_format { #tvbo.codegen.templater.code_format }
+
+```python
+codegen.templater.code_format(format)
+```
+
+The :class:`CodeFormat` declared for *format*, or ``None`` if it declares none.
+
+### entry_point_name { #tvbo.codegen.templater.entry_point_name }
+
+```python
+codegen.templater.entry_point_name(model, format)
+```
+
+The name generated code for *format* binds its callable to.
+
+The template and [`Dynamics.execute`](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.execute) read this one declaration — including the fallback for a model with no name of its own — so handing a rendered dfun to a custom JAX or NumPy workflow never depends on guessing which name the template chose.
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type       | Description                                                                                                                                                                                                                                                             |
+|--------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        | ValueError | If *format* is not declared, or emits something other than Python. A Julia module or a YAML document has no Python callable to bind, and `exec`-ing one raises `SyntaxError` from inside the generated text rather than naming the format that could never have worked. |
+
+### format_code { #tvbo.codegen.templater.format_code }
+
+```python
+codegen.templater.format_code(code, format='python', use_black=True)
+```
+
+Format generated *code* for the backend named by *format*.
+
+Component-level renders (a Dynamics, a Coupling, an Observation) come through here; whole-experiment renders are formatted by :func:`tvbo.export.registry.render`. Both resolve the language the same way and both route to :mod:`tvbo.codegen.style`, so they cannot drift apart.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name      | Type   | Description                                                          | Default    |
+|-----------|--------|----------------------------------------------------------------------|------------|
+| code      | str    | Source code string to format                                         | _required_ |
+| format    | str    | Backend key or component-level alias (python, jax, numpy, tvboptim…) | `'python'` |
+| use_black | bool   | Set False to return *code* untouched                                 | `True`     |
+
+#### Raises {.doc-section .doc-section-raises}
+
+| Name   | Type                                    | Description                            |
+|--------|-----------------------------------------|----------------------------------------|
+|        | tvbo.codegen.style.GeneratedSourceError | *code* does not parse as its language. |
+
+### get_integrator_info { #tvbo.codegen.templater.get_integrator_info }
+
+```python
+codegen.templater.get_integrator_info(integrator)
+```
+
+Collect scheme metadata for an integrator into a dict.
+
+#### Parameters {.doc-section .doc-section-parameters}
+
+| Name       | Type   | Description                                      | Default    |
+|------------|--------|--------------------------------------------------|------------|
+| integrator |        | Ontology integrator class describing the scheme. | _required_ |
+
+#### Returns {.doc-section .doc-section-returns}
+
+| Name   | Type   | Description                                                              |
+|--------|--------|--------------------------------------------------------------------------|
+|        |        | A dict with the integrator `class_name`, the number of derivative stages |
+|        |        | `n_dx`, its `intermediate_steps`, and the `dX_expr` update expression    |
+|        |        | (`None` when unset).                                                     |
+
+### is_derived { #tvbo.codegen.templater.is_derived }
+
+```python
+codegen.templater.is_derived(obs, experiment)
+```
+
+Return True if ``obs`` derives from other observations in ``experiment``.
+
+An Observation is derived when any item in its multivalued ``source`` slot names ANOTHER observation in the same experiment. Source entries may be bare strings, objects with a ``name`` attribute, or inlined Observation/StateVariable instances.
+
+A SELF-reference (an observation whose ``source`` names itself — e.g. an observation ``r_A`` with ``source: [r_A]`` that simply observes the model variable ``r_A``) is NOT derived: an observation cannot derive from itself.
+Without this exclusion such observations are mis-routed to the derived path, where they have no pipeline and are never computed, so the generated ``observations.r_A = _all_obs.r_A`` extraction raises AttributeError.
+
+### source_language { #tvbo.codegen.templater.source_language }
+
+```python
+codegen.templater.source_language(format)
+```
+
+Return the output language of *format*, or ``""`` when it emits none.
+
+A backend declares its language once: component formats on their :data:`CODE_FORMATS` entry, experiment-level export backends on their :class:`~tvbo.export.registry.ExportFormat`.
+
+### source_observations { #tvbo.codegen.templater.source_observations }
+
+```python
+codegen.templater.source_observations(obs, experiment)
+```
+
+Return the source names of ``obs`` that resolve to other observations.
+
+A filtered view of ``obs.source`` keeping only entries whose name matches a key in ``experiment.observations``.
+
+### time_dependent_equations { #tvbo.codegen.templater.time_dependent_equations }
+
+```python
+codegen.templater.time_dependent_equations(model)
+```
+
+Names whose equation reads the time symbol ``t``, sorted.
+
+A backend whose derivative signature carries no time — TVB's ``Model.dfun`` — cannot express these, and emitting the term anyway yields an unbound name. The equations are the ground truth rather than the ``autonomous`` slot, which is author-declared and can disagree with them.
+
+A model that declares a symbol of its own named ``t`` — a time constant, a threshold — reads no time at all: there the name means that symbol, and flagging it would block a valid autonomous export.

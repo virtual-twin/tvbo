@@ -1,0 +1,279 @@
+# Class: Encoding 
+
+
+_Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel may later accept a scale object without breaking this string form._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:class/Encoding](https://w3id.org/tvbo/class/Encoding)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Encoding
+    click Encoding href "./Encoding.html"
+      Encoding : color
+        
+          
+    
+        
+        
+        Encoding --> "0..1" String : color
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Encoding : detail
+        
+          
+    
+        
+        
+        Encoding --> "0..1" String : detail
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Encoding : x
+        
+          
+    
+        
+        
+        Encoding --> "0..1" String : x
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Encoding : y
+        
+          
+    
+        
+        
+        Encoding --> "0..1" String : y
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Encoding : z
+        
+          
+    
+        
+        
+        Encoding --> "0..1" String : z
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [x](../slots/x.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [y](../slots/y.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) |  | direct |
+| [z](../slots/z.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Depth channel for a line3d panel (the third phase-space axis); ignored by 2-D... | direct |
+| [color](../slots/color.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Dim/coord/var whose values SEPARATE the marks by colour — a field name, never... | direct |
+| [detail](../slots/detail.qmd) | 0..1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Non-visual grouping dim (e | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Layer](../classes/Layer.qmd) | [encoding](../slots/encoding.qmd) | range | [Encoding](../classes/Encoding.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Encoding |
+| native | tvbo:Encoding |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Encoding
+description: 'Map visual channels to container dims/coords/vars, by NAME (keyed, never
+  positional). Common case: {x: time, y: rate}. A channel may later accept a scale
+  object without breaking this string form.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  x:
+    name: x
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: string
+  y:
+    name: y
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: string
+  z:
+    name: z
+    description: Depth channel for a line3d panel (the third phase-space axis); ignored
+      by 2-D kinds.
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - Coordinate
+    - Encoding
+    range: string
+  color:
+    name: color
+    description: 'Dim/coord/var whose values SEPARATE the marks by colour — a field
+      name, never a colour. `color: node` draws one line per node from the cycler;
+      to fix a mark''s colour, use `Style.color`.'
+    from_schema: https://w3id.org/tvbo/figure
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  detail:
+    name: detail
+    description: Non-visual grouping dim (e.g. the hue/iterate dim).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    domain_of:
+    - Encoding
+    range: string
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Encoding
+description: 'Map visual channels to container dims/coords/vars, by NAME (keyed, never
+  positional). Common case: {x: time, y: rate}. A channel may later accept a scale
+  object without breaking this string form.'
+from_schema: https://w3id.org/tvbo/figure
+attributes:
+  x:
+    name: x
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Encoding
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: string
+  y:
+    name: y
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Encoding
+    domain_of:
+    - Coordinate
+    - Encoding
+    - Annotation
+    - Matrix
+    range: string
+  z:
+    name: z
+    description: Depth channel for a line3d panel (the third phase-space axis); ignored
+      by 2-D kinds.
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Encoding
+    domain_of:
+    - Coordinate
+    - Encoding
+    range: string
+  color:
+    name: color
+    description: 'Dim/coord/var whose values SEPARATE the marks by colour — a field
+      name, never a colour. `color: node` draws one line per node from the cycler;
+      to fix a mark''s colour, use `Style.color`.'
+    from_schema: https://w3id.org/tvbo/figure
+    owner: Encoding
+    domain_of:
+    - ParcellationEntity
+    - Encoding
+    - Annotation
+    - Style
+    - Surface
+    - Graph
+    - Rule
+    - Region
+    range: string
+  detail:
+    name: detail
+    description: Non-visual grouping dim (e.g. the hue/iterate dim).
+    from_schema: https://w3id.org/tvbo/figure
+    rank: 1000
+    owner: Encoding
+    domain_of:
+    - Encoding
+    range: string
+
+```
+</details></div>

@@ -1,0 +1,101 @@
+# Slot: gather 
+
+
+_Observer parameter ``(n_groups, n)`` of node indices selecting each group's nodes out of the whole-source signal; its leading axis is the group count._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/gather](https://w3id.org/tvbo/slot/gather)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Partition](../classes/Partition.qmd) | A grouped streaming reduction over a node partition (e |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Partition](../classes/Partition.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Required | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Partition](../classes/Partition.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:gather |
+| native | tvbo:gather |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: gather
+description: Observer parameter ``(n_groups, n)`` of node indices selecting each group's
+  nodes out of the whole-source signal; its leading axis is the group count.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: Partition
+domain_of:
+- Partition
+range: string
+required: true
+
+```
+</details></div>

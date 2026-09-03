@@ -1,0 +1,73 @@
+# Enum: ContinuationAlgorithm 
+
+
+
+
+_Predictor-corrector algorithm for numerical continuation._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/ContinuationAlgorithm](https://w3id.org/tvbo/enum/ContinuationAlgorithm)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| PALC | None | Pseudo-arclength continuation (default) |
+| MoorePenrose | None | Moore-Penrose continuation |
+| Natural | None | Natural parameter continuation |
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ContinuationAlgorithm
+description: Predictor-corrector algorithm for numerical continuation.
+from_schema: https://w3id.org/tvbo
+rank: 1000
+permissible_values:
+  PALC:
+    text: PALC
+    description: Pseudo-arclength continuation (default). Uses weighted dot product
+      constraint.
+  MoorePenrose:
+    text: MoorePenrose
+    description: Moore-Penrose continuation.
+  Natural:
+    text: Natural
+    description: Natural parameter continuation. Simple parameter stepping, no arc-length
+      constraint.
+
+```
+</details>
+
+</div>

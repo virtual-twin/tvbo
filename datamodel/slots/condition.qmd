@@ -1,0 +1,79 @@
+# Slot: condition 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/condition](https://w3id.org/tvbo/slot/condition)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Session](../classes/Session.qmd) | A data collection session for a subject |  no  |
+| [ConditionalBlock](../classes/ConditionalBlock.qmd) | A single condition and its corresponding equation segment |  no  |
+| [Event](../classes/Event.qmd) | A discrete or continuous event that modifies the system during simulation |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Session](../classes/Session.qmd), [ConditionalBlock](../classes/ConditionalBlock.qmd), [Event](../classes/Event.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:condition |
+| native | tvbo:condition |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: condition
+domain_of:
+- Session
+- ConditionalBlock
+- Event
+range: string
+
+```
+</details></div>

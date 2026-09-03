@@ -1,0 +1,88 @@
+# Slot: derived_from 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [prov:wasDerivedFrom](http://www.w3.org/ns/prov#wasDerivedFrom)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Provenance](../classes/Provenance.qmd) | W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable o... |  no  |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Provenance](../classes/Provenance.qmd), [SimulationStudy](../classes/SimulationStudy.qmd) |
+| Slot URI | [prov:wasDerivedFrom](http://www.w3.org/ns/prov#wasDerivedFrom) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | prov:wasDerivedFrom |
+| native | tvbo:derived_from |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: derived_from
+from_schema: https://w3id.org/tvbo
+rank: 1000
+slot_uri: prov:wasDerivedFrom
+domain_of:
+- Provenance
+- SimulationStudy
+range: string
+
+```
+</details></div>

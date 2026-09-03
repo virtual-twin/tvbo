@@ -1,0 +1,77 @@
+# Slot: connectivity 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/connectivity](https://w3id.org/tvbo/slot/connectivity)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Edge](../classes/Edge.qmd) | An edge in a network |  no  |
+| [SimulationExperiment](../classes/SimulationExperiment.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Edge](../classes/Edge.qmd), [SimulationExperiment](../classes/SimulationExperiment.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:connectivity |
+| native | tvbo:connectivity |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: connectivity
+domain_of:
+- Edge
+- SimulationExperiment
+range: string
+
+```
+</details></div>

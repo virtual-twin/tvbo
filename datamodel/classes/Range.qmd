@@ -1,0 +1,387 @@
+# Class: Range 
+
+
+_Specifies a range for array generation, parameter bounds, or grid exploration._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Range](https://w3id.org/tvbo/Range)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Range
+    click Range href "./Range.html"
+      Range : element
+        
+          
+    
+        
+        
+        Range --> "0..1" Integer : element
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Range : enforce
+        
+          
+    
+        
+        
+        Range --> "0..1" DomainEnforcement : enforce
+        click DomainEnforcement href "../../enums/DomainEnforcement.html"
+    
+
+        
+      Range : explored_values
+        
+          
+    
+        
+        
+        Range --> "*" Float : explored_values
+        click Float href "../http://www.w3.org/2001/XMLSchema#float.html"
+    
+
+        
+      Range : hi
+        
+          
+    
+        
+        
+        Range --> "0..1" ScalarValue : hi
+        click ScalarValue href "./ScalarValue.html"
+    
+
+        
+      Range : lo
+        
+          
+    
+        
+        
+        Range --> "0..1" ScalarValue : lo
+        click ScalarValue href "./ScalarValue.html"
+    
+
+        
+      Range : log_scale
+        
+          
+    
+        
+        
+        Range --> "0..1" Boolean : log_scale
+        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
+    
+
+        
+      Range : n
+        
+          
+    
+        
+        
+        Range --> "0..1" Integer : n
+        click Integer href "../http://www.w3.org/2001/XMLSchema#integer.html"
+    
+
+        
+      Range : step
+        
+          
+    
+        
+        
+        Range --> "0..1" ScalarValue : step
+        click ScalarValue href "./ScalarValue.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Range](https://w3id.org/tvbo/Range) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [enforce](../slots/enforce.qmd) | 0..1 <br/> [DomainEnforcement](../enums/DomainEnforcement.qmd) | For a state-variable ``domain``: whether/how to enforce the range during inte... | direct |
+| [lo](../slots/lo.qmd) | 0..1 <br/> [ScalarValue](../classes/ScalarValue.qmd) | Lower bound or starting value | direct |
+| [hi](../slots/hi.qmd) | 0..1 <br/> [ScalarValue](../classes/ScalarValue.qmd) | Upper bound or stopping value | direct |
+| [step](../slots/step.qmd) | 0..1 <br/> [ScalarValue](../classes/ScalarValue.qmd) | Step size | direct |
+| [n](../slots/n.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Number of points (alternative to step for grid exploration) | direct |
+| [log_scale](../slots/log_scale.qmd) | 0..1 <br/> [xsd:boolean](http://www.w3.org/2001/XMLSchema#boolean) | Whether to use logarithmic spacing | direct |
+| [explored_values](../slots/explored_values.qmd) | * <br/> [xsd:float](http://www.w3.org/2001/XMLSchema#float) | Explicit explored values for this element | direct |
+| [element](../slots/element.qmd) | 0..1 <br/> [xsd:integer](http://www.w3.org/2001/XMLSchema#integer) | Element/node index this range applies to | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [ProcedureStep](../classes/ProcedureStep.qmd) | [target_range](../slots/target_range.qmd) | range | [Range](../classes/Range.qmd) |
+| [Observation](../classes/Observation.qmd) | [histogram](../slots/histogram.qmd) | range | [Range](../classes/Range.qmd) |
+| [Analysis](../classes/Analysis.qmd) | [time_range](../slots/time_range.qmd) | range | [Range](../classes/Range.qmd) |
+| [StateVariable](../classes/StateVariable.qmd) | [domain](../slots/domain.qmd) | range | [Range](../classes/Range.qmd) |
+| [Distribution](../classes/Distribution.qmd) | [domain](../slots/domain.qmd) | range | [Range](../classes/Range.qmd) |
+| [Parameter](../classes/Parameter.qmd) | [domain](../slots/domain.qmd) | range | [Range](../classes/Range.qmd) |
+| [Parameter](../classes/Parameter.qmd) | [element_domains](../slots/element_domains.qmd) | range | [Range](../classes/Range.qmd) |
+| [Function](../classes/Function.qmd) | [time_range](../slots/time_range.qmd) | range | [Range](../classes/Range.qmd) |
+| [LossFunction](../classes/LossFunction.qmd) | [time_range](../slots/time_range.qmd) | range | [Range](../classes/Range.qmd) |
+| [FunctionCall](../classes/FunctionCall.qmd) | [time_range](../slots/time_range.qmd) | range | [Range](../classes/Range.qmd) |
+| [DerivedParameter](../classes/DerivedParameter.qmd) | [domain](../slots/domain.qmd) | range | [Range](../classes/Range.qmd) |
+| [DerivedParameter](../classes/DerivedParameter.qmd) | [element_domains](../slots/element_domains.qmd) | range | [Range](../classes/Range.qmd) |
+| [ExplorationAxis](../classes/ExplorationAxis.qmd) | [domain](../slots/domain.qmd) | range | [Range](../classes/Range.qmd) |
+| [ExplorationAxis](../classes/ExplorationAxis.qmd) | [element_domains](../slots/element_domains.qmd) | range | [Range](../classes/Range.qmd) |
+| [FreeParameter](../classes/FreeParameter.qmd) | [domain](../slots/domain.qmd) | range | [Range](../classes/Range.qmd) |
+| [UpdateRule](../classes/UpdateRule.qmd) | [bounds](../slots/bounds.qmd) | range | [Range](../classes/Range.qmd) |
+| [FieldStateVariable](../classes/FieldStateVariable.qmd) | [domain](../slots/domain.qmd) | range | [Range](../classes/Range.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Range |
+| native | tvbo:Range |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Range
+description: Specifies a range for array generation, parameter bounds, or grid exploration.
+from_schema: https://w3id.org/tvbo
+attributes:
+  enforce:
+    name: enforce
+    description: 'For a state-variable ``domain``: whether/how to enforce the range
+      during integration (none/clamp/wrap). Ignored for parameter, distribution and
+      grid ranges. See DomainEnforcement.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(none)
+    domain_of:
+    - Range
+    range: DomainEnforcement
+  lo:
+    name: lo
+    description: Lower bound or starting value. Can be a number or argument name.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Range
+    range: ScalarValue
+  hi:
+    name: hi
+    description: Upper bound or stopping value. Can be a number or argument name.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Range
+    range: ScalarValue
+  step:
+    name: step
+    description: 'Step size. Can be: number, argument name, or expression.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Range
+    range: ScalarValue
+  n:
+    name: n
+    description: Number of points (alternative to step for grid exploration).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Range
+    range: integer
+  log_scale:
+    name: log_scale
+    description: Whether to use logarithmic spacing.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    domain_of:
+    - Range
+    range: boolean
+  explored_values:
+    name: explored_values
+    description: Explicit explored values for this element. When set on an element_domain
+      entry, overrides the parent parameter's explored_values for this specific element.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Range
+    - Parameter
+    - ExplorationAxis
+    range: float
+    multivalued: true
+  element:
+    name: element
+    description: 'Element/node index this range applies to. Used in element_domains
+      to explicitly link a domain to a specific element of a heterogeneous parameter
+      (e.g., element: 0 for node 0). Required when used in element_domains to avoid
+      ambiguous positional indexing.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    domain_of:
+    - Range
+    range: integer
+class_uri: tvbo:Range
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Range
+description: Specifies a range for array generation, parameter bounds, or grid exploration.
+from_schema: https://w3id.org/tvbo
+attributes:
+  enforce:
+    name: enforce
+    description: 'For a state-variable ``domain``: whether/how to enforce the range
+      during integration (none/clamp/wrap). Ignored for parameter, distribution and
+      grid ranges. See DomainEnforcement.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: string(none)
+    owner: Range
+    domain_of:
+    - Range
+    range: DomainEnforcement
+  lo:
+    name: lo
+    description: Lower bound or starting value. Can be a number or argument name.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Range
+    domain_of:
+    - Range
+    range: ScalarValue
+  hi:
+    name: hi
+    description: Upper bound or stopping value. Can be a number or argument name.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Range
+    domain_of:
+    - Range
+    range: ScalarValue
+  step:
+    name: step
+    description: 'Step size. Can be: number, argument name, or expression.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Range
+    domain_of:
+    - Range
+    range: ScalarValue
+  n:
+    name: n
+    description: Number of points (alternative to step for grid exploration).
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Range
+    domain_of:
+    - Range
+    range: integer
+  log_scale:
+    name: log_scale
+    description: Whether to use logarithmic spacing.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    ifabsent: 'False'
+    owner: Range
+    domain_of:
+    - Range
+    range: boolean
+  explored_values:
+    name: explored_values
+    description: Explicit explored values for this element. When set on an element_domain
+      entry, overrides the parent parameter's explored_values for this specific element.
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Range
+    domain_of:
+    - Range
+    - Parameter
+    - ExplorationAxis
+    range: float
+    multivalued: true
+  element:
+    name: element
+    description: 'Element/node index this range applies to. Used in element_domains
+      to explicitly link a domain to a specific element of a heterogeneous parameter
+      (e.g., element: 0 for node 0). Required when used in element_domains to avoid
+      ambiguous positional indexing.'
+    from_schema: https://w3id.org/tvbo
+    rank: 1000
+    owner: Range
+    domain_of:
+    - Range
+    range: integer
+class_uri: tvbo:Range
+
+```
+</details></div>

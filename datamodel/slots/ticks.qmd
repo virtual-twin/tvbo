@@ -1,0 +1,101 @@
+# Slot: ticks 
+
+
+_The values to mark. A declared tick list is the paper's own; unset lets the backend choose._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/ticks](https://w3id.org/tvbo/slot/ticks)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Colorbar](../classes/Colorbar.qmd) | The colour scale a panel prints beside its field |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:float](http://www.w3.org/2001/XMLSchema#float) |
+| Domain Of | [Colorbar](../classes/Colorbar.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [Colorbar](../classes/Colorbar.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:ticks |
+| native | tvbo:ticks |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: ticks
+description: The values to mark. A declared tick list is the paper's own; unset lets
+  the backend choose.
+from_schema: https://w3id.org/tvbo/figure
+rank: 1000
+owner: Colorbar
+domain_of:
+- Colorbar
+range: float
+multivalued: true
+
+```
+</details></div>

@@ -1,0 +1,103 @@
+# Slot: constructor_args 
+
+
+_Arguments passed to __init__ when instantiating the class. Example: period=1000.0, downsample_period=4.0 for Bold monitor._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/constructor_args](https://w3id.org/tvbo/slot/constructor_args)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [ClassReference](../classes/ClassReference.qmd) | Reference to a class that can be instantiated and called |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [Argument](../classes/Argument.qmd) |
+| Domain Of | [ClassReference](../classes/ClassReference.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+| Multivalued | Yes |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [ClassReference](../classes/ClassReference.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:constructor_args |
+| native | tvbo:constructor_args |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: constructor_args
+description: 'Arguments passed to __init__ when instantiating the class. Example:
+  period=1000.0, downsample_period=4.0 for Bold monitor.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: ClassReference
+domain_of:
+- ClassReference
+range: Argument
+multivalued: true
+inlined: true
+inlined_as_list: true
+
+```
+</details></div>

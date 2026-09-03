@@ -1,0 +1,26 @@
+# import_ { #tvbo.cli.import_ }
+
+`cli.import_`
+
+``tvbo import`` — load a foreign file via the registry's importer dispatch.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [import_](#tvbo.cli.import_.import_) | Load a foreign file via the registry's importer dispatch. |
+
+### import_ { #tvbo.cli.import_.import_ }
+
+```python
+cli.import_.import_(
+    path=typer.Argument(..., exists=True, readable=True, help='Input file.'),
+    format=typer.Option(None, '--format', help='Force a format key (otherwise inferred from extension).'),
+    output=typer.Option(None, '-o', '--output', help='If given, save the loaded object as YAML to this path.'),
+)
+```
+
+Load a foreign file via the registry's importer dispatch.
+
+Picks an importer by `--format` if given, otherwise by file extension.
+Optionally re-saves the loaded object as canonical TVBO YAML.

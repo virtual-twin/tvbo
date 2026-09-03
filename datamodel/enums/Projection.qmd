@@ -1,0 +1,76 @@
+# Enum: Projection 
+
+
+
+
+_Which anatomical plane a network's region centres flatten onto._
+
+
+
+<div data-search-exclude markdown="1">
+
+URI: [tvbo:enum/Projection](https://w3id.org/tvbo/enum/Projection)
+
+## Permissible Values
+| Value | Meaning | Description |
+| --- | --- | --- |
+| axial | None | Seen from above — the default, and what most connectome figures print |
+| coronal | None | Seen from the front |
+| sagittal | None | Seen from the side |
+
+
+
+
+## Slots
+
+| Name | Description |
+| ---  | --- |
+| [projection](../slots/projection.qmd) | Which plane the region centres flatten onto |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo/figure
+
+
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: Projection
+description: Which anatomical plane a network's region centres flatten onto.
+from_schema: https://w3id.org/tvbo/figure
+permissible_values:
+  axial:
+    text: axial
+    description: Seen from above — the default, and what most connectome figures print.
+  coronal:
+    text: coronal
+    description: Seen from the front.
+  sagittal:
+    text: sagittal
+    description: Seen from the side.
+
+```
+</details>
+
+</div>

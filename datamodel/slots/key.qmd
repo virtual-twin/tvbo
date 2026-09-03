@@ -1,0 +1,79 @@
+# Slot: key 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/key](https://w3id.org/tvbo/slot/key)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [DataSource](../classes/DataSource.qmd) | Specification for loading external/empirical data |  no  |
+| [SimulationStudy](../classes/SimulationStudy.qmd) |  |  no  |
+| [ResultBinding](../classes/ResultBinding.qmd) | One entry in a study's results manifest: a manuscript key bound to the value ... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [DataSource](../classes/DataSource.qmd), [SimulationStudy](../classes/SimulationStudy.qmd), [ResultBinding](../classes/ResultBinding.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:key |
+| native | tvbo:key |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: key
+domain_of:
+- DataSource
+- SimulationStudy
+- ResultBinding
+range: string
+
+```
+</details></div>

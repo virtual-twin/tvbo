@@ -1,0 +1,79 @@
+# Slot: values 
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/values](https://w3id.org/tvbo/slot/values)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Matrix](../classes/Matrix.qmd) | Adjacency matrix of a network |  no  |
+| [BrainRegionSeries](../classes/BrainRegionSeries.qmd) | A series whose values represent latitude |  no  |
+| [SpatialField](../classes/SpatialField.qmd) |  |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [Matrix](../classes/Matrix.qmd), [BrainRegionSeries](../classes/BrainRegionSeries.qmd), [SpatialField](../classes/SpatialField.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:values |
+| native | tvbo:values |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: values
+domain_of:
+- Matrix
+- BrainRegionSeries
+- SpatialField
+range: string
+
+```
+</details></div>

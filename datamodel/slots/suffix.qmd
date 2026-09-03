@@ -1,0 +1,98 @@
+# Slot: suffix 
+
+
+_BIDS suffix (e.g., relmat), the trailing name component before the extension_
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/suffix](https://w3id.org/tvbo/slot/suffix)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [BidsEntities](../classes/BidsEntities.qmd) | BIDS filename entities (BEP017-aligned) for provenance and data discovery |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [BidsEntities](../classes/BidsEntities.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [BidsEntities](../classes/BidsEntities.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:suffix |
+| native | tvbo:suffix |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: suffix
+description: BIDS suffix (e.g., relmat), the trailing name component before the extension
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: BidsEntities
+domain_of:
+- BidsEntities
+range: string
+
+```
+</details></div>

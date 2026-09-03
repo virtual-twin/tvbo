@@ -1,0 +1,104 @@
+# Slot: sweep_direction 
+
+
+_Order in which a branch-following axis (sweep_seeding: from_previous) is traversed: 'up' increases the parameter once, 'down' decreases it once, 'bidirectional' increases then decreases over the same values and records both branches — a hysteresis loop where they differ. Ignored when sweep_seeding is 'independent'. Applies to a single swept axis._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/sweep_direction](https://w3id.org/tvbo/slot/sweep_direction)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [Exploration](../classes/Exploration.qmd) | Parameter space exploration (grid search, sweep) |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [SweepDirection](../enums/SweepDirection.qmd) |
+| Domain Of | [Exploration](../classes/Exploration.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| If Absent | `string(up)` |
+| Owner | [Exploration](../classes/Exploration.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:sweep_direction |
+| native | tvbo:sweep_direction |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: sweep_direction
+description: 'Order in which a branch-following axis (sweep_seeding: from_previous)
+  is traversed: ''up'' increases the parameter once, ''down'' decreases it once, ''bidirectional''
+  increases then decreases over the same values and records both branches — a hysteresis
+  loop where they differ. Ignored when sweep_seeding is ''independent''. Applies to
+  a single swept axis.'
+from_schema: https://w3id.org/tvbo
+rank: 1000
+ifabsent: string(up)
+owner: Exploration
+domain_of:
+- Exploration
+range: SweepDirection
+
+```
+</details></div>

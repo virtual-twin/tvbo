@@ -1,0 +1,99 @@
+# Slot: subdir 
+
+
+_Subdirectory within the source to place on the import path (defaults to the source root)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:slot/subdir](https://w3id.org/tvbo/slot/subdir)
+<!-- no inheritance hierarchy -->
+
+
+
+
+
+## Applicable Classes
+
+| Name | Description | Modifies Slot |
+| --- | --- | --- |
+| [CodeSource](../classes/CodeSource.qmd) | Location of a recipe's callable code so the specification is decoupled from w... |  no  |
+
+
+
+
+
+
+## Properties
+
+### Type and Range
+
+| Property | Value |
+| --- | --- |
+| Range | [xsd:string](http://www.w3.org/2001/XMLSchema#string) |
+| Domain Of | [CodeSource](../classes/CodeSource.qmd) |
+
+### Cardinality and Requirements
+
+| Property | Value |
+| --- | --- |
+### Slot Characteristics
+
+| Property | Value |
+| --- | --- |
+| Owner | [CodeSource](../classes/CodeSource.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:subdir |
+| native | tvbo:subdir |
+
+
+
+
+## LinkML Source
+
+<details>
+```yaml
+name: subdir
+description: Subdirectory within the source to place on the import path (defaults
+  to the source root).
+from_schema: https://w3id.org/tvbo
+rank: 1000
+owner: CodeSource
+domain_of:
+- CodeSource
+range: string
+
+```
+</details></div>

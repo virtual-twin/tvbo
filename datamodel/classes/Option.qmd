@@ -1,0 +1,253 @@
+# Class: Option 
+
+
+_A toolkit-specific key-value option (string name + string value). Used for backend settings that are not universal numeric parameters (e.g., solver name, tangent method, jacobian type)._
+
+
+
+<div data-search-exclude markdown="1">
+
+
+
+URI: [tvbo:Option](https://w3id.org/tvbo/Option)
+
+
+
+
+
+```{mermaid}
+ classDiagram
+    class Option
+    click Option href "./Option.html"
+      Option : name
+        
+          
+    
+        
+        
+        Option --> "1" String : name
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      Option : value
+        
+          
+    
+        
+        
+        Option --> "1" String : value
+        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
+    
+
+        
+      
+```
+
+
+
+
+<!-- no inheritance hierarchy -->
+
+## Class Properties
+
+| Property | Value |
+| --- | --- |
+| Class URI | [tvbo:Option](https://w3id.org/tvbo/Option) |
+
+
+## Slots
+
+| Name | Cardinality and Range | Description | Inheritance |
+| ---  | --- | --- | --- |
+| [name](../slots/name.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Option name (key) | direct |
+| [value](../slots/value.qmd) | 1 <br/> [xsd:string](http://www.w3.org/2001/XMLSchema#string) | Option value | direct |
+
+
+
+
+
+## Usages
+
+| used by | used in | type | used |
+| ---  | --- | --- | --- |
+| [Discretization](../classes/Discretization.qmd) | [options](../slots/options.qmd) | range | [Option](../classes/Option.qmd) |
+| [BranchSwitch](../classes/BranchSwitch.qmd) | [options](../slots/options.qmd) | range | [Option](../classes/Option.qmd) |
+| [Continuation](../classes/Continuation.qmd) | [options](../slots/options.qmd) | range | [Option](../classes/Option.qmd) |
+
+
+
+
+
+
+
+
+
+
+
+
+## Identifier and Mapping Information
+
+
+
+
+
+### Schema Source
+
+
+* from schema: https://w3id.org/tvbo
+
+
+
+
+## Mappings
+
+| Mapping Type | Mapped Value |
+| ---  | ---  |
+| self | tvbo:Option |
+| native | tvbo:Option |
+
+
+
+
+
+
+## LinkML Source
+
+<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
+
+### Direct
+
+<details>
+```yaml
+name: Option
+description: A toolkit-specific key-value option (string name + string value). Used
+  for backend settings that are not universal numeric parameters (e.g., solver name,
+  tangent method, jacobian type).
+from_schema: https://w3id.org/tvbo
+slots:
+- name
+slot_usage:
+  name:
+    name: name
+    description: Option name (key).
+    required: true
+attributes:
+  value:
+    name: value
+    description: Option value.
+    from_schema: https://w3id.org/tvbo
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: string
+    required: true
+class_uri: tvbo:Option
+
+```
+</details>
+
+### Induced
+
+<details>
+```yaml
+name: Option
+description: A toolkit-specific key-value option (string name + string value). Used
+  for backend settings that are not universal numeric parameters (e.g., solver name,
+  tangent method, jacobian type).
+from_schema: https://w3id.org/tvbo
+slot_usage:
+  name:
+    name: name
+    description: Option name (key).
+    required: true
+attributes:
+  value:
+    name: value
+    description: Option value.
+    from_schema: https://w3id.org/tvbo
+    owner: Option
+    domain_of:
+    - Digest
+    - StateValue
+    - Parameter
+    - Argument
+    - Option
+    - EnvironmentVariable
+    - SchedulerDirective
+    - ResultBinding
+    range: string
+    required: true
+  name:
+    name: name
+    description: Option name (key).
+    from_schema: https://w3id.org/tvbo/common
+    slot_uri: schema:name
+    identifier: true
+    owner: Option
+    domain_of:
+    - BrainAtlas
+    - CommonCoordinateSpace
+    - ParcellationEntity
+    - StudyLayout
+    - StudyTemplate
+    - StudyDirectory
+    - StudyFile
+    - DBSProtocol
+    - ClinicalScale
+    - ClinicalScore
+    - SoftwarePackage
+    - SoftwareRequirement
+    - SoftwareEnvironment
+    - Figure
+    - Event
+    - Tractogram
+    - ResultEntity
+    - Activity
+    - CachedArray
+    - MeasureSpec
+    - NamedArray
+    - GraphGenerator
+    - Binding
+    - ProcedureStep
+    - File
+    - StateValue
+    - Observation
+    - Dynamics
+    - StateVariable
+    - Distribution
+    - Parameter
+    - CouplingInput
+    - Argument
+    - Function
+    - FunctionCall
+    - Callable
+    - DerivedParameter
+    - DerivedVariable
+    - DataSource
+    - OptimizationStage
+    - Exploration
+    - Inference
+    - Prior
+    - Likelihood
+    - UpdateRule
+    - Algorithm
+    - Option
+    - BranchSwitch
+    - Continuation
+    - Coupling
+    - EnvironmentVariable
+    - SchedulerDirective
+    - Reducer
+    range: string
+    required: true
+class_uri: tvbo:Option
+
+```
+</details></div>
