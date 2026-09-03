@@ -1697,7 +1697,8 @@ def _container_path(iri, base_dir: Path) -> str:
     if not iri:
         return ""
     from tvbo.adapters.bids import entity_value
-    from tvbo.data.dataref import experiment_id as _experiment_id, iri_scope
+    from tvbo.data.dataref import experiment_id as _experiment_id
+    from tvbo.data.dataref import iri_scope
     from tvbo.utils.study_layout import is_network_companion, sibling_study_root, study_path
 
     # An IRI naming a study names a container in THAT study's results, not in the referring study's: `tvbo:exp/Jansen1995/exp-1` read from the manuscript root must not find the root's own exp-1.

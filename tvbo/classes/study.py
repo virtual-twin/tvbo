@@ -411,7 +411,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         nested_results = {}
         for label, nested in self.nested_studies():
             recipe = Path(getattr(nested, "_source_file", None) or spec)
-            nested_results[label] = nested._collect(nested_root(base, recipe_dir, recipe) or recipe.resolve().parent)
+            nested_results[label] = nested._collect(nested_root(base, recipe_dir, label) or recipe.resolve().parent)
         return self._collect(base, studies=nested_results)
 
     def _collect(self, base: Path, studies=None) -> "StudyResult":

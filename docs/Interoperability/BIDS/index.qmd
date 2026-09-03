@@ -39,7 +39,7 @@ All three are still drafts. Everything below is generated from the layout record
     references.bib
     report.pdf                  rendered from `report.qmd`, so it is a product like any other
     .quarto/                    quarto's own cache for this project, rewritten on every render
-    figures/                    render target for the declarative figures, named as the study names them
+    figures/                    render target for the declarative figures, each named `fig-<id>_desc-<descriptor>` -- the identifier the document prints and a camelCase descriptor -- so a figure's record, the script that draws it, its image and its caption all carry one name
       scripts/                  the plotting script each figure generates, kept beside what it renders
     notes/                      the gap register and open threads, kept local so a note can be blunt
   derivatives/                  nested derivative datasets

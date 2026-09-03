@@ -90,7 +90,7 @@ jobs:
             - name: Docs — every citation resolves
               run: cd docs && python scripts/check_citations.py
 
-            - name: Docs — pages declaring `native: true` draw nothing by hand
+            - name: "Docs — pages declaring `native: true` draw nothing by hand"
               run: cd docs && python scripts/check_native_pages.py
 
             - name: Mypy — type check (non-blocking)

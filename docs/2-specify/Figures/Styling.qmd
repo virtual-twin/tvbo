@@ -32,7 +32,7 @@ Because these are declared, a figure states its print size rather than inheritin
 figures:
   - name: Fig2
     layout: "ab/cc"
-    width: 180          # mm — a two-column journal figure
+    width: 180          # mm, a two-column journal figure
     height: 120
     font_size: 8
     spines: open
@@ -103,7 +103,7 @@ colormaps:
   eeg: cividis
 ```
 
-A layer then names the key — `style: {colormap: meg}` — and anything the theme did not declare falls through to the backend's own registry, so `inferno`, `coolwarm` and `parula` still work. A key that shadows a registered colormap name is refused at load rather than silently redirecting every use of it.
+A layer then names the key (`style: {colormap: meg}`), and anything the theme did not declare falls through to the backend's own registry, so `inferno`, `coolwarm` and `parula` still work. A key that shadows a registered colormap name is refused at load rather than silently redirecting every use of it.
 
 A mark that names no scale is not left to matplotlib's default: it takes `sequential`, or `diverging` when its limits are centred, because a map of signed deviations read on a one-directional ramp is misleading in a way no axis label catches.
 

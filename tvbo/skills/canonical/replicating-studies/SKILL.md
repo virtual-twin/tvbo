@@ -556,7 +556,7 @@ Everything in this section is generated from `schema/study_layout.yaml` and from
     report.pdf                  rendered from `report.qmd`, so it is a product like any other
     report_internal.pdf         rendered from `report_internal.qmd`, which draws the paper's own figures beside ours
     .quarto/                    quarto's own cache for this project, rewritten on every render
-    figures/                    render target for the declarative figures, named as the study names them
+    figures/                    render target for the declarative figures, each named `fig-<id>_desc-<descriptor>` -- the identifier the document prints and a camelCase descriptor -- so a figure's record, the script that draws it, its image and its caption all carry one name
       scripts/                  the plotting script each figure generates, kept beside what it renders
     analysis/                   what the reproduction claims and how it is checked: the target values, the figure inventory, the backend comparison, the adherence scorecard
       targets.md                every quantity the reproduction commits to, with the published value beside it and a fidelity tier

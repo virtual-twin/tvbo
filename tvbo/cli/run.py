@@ -656,12 +656,12 @@ def _has_nested(obj) -> bool:
     return bool(as_list(getattr(obj, "studies", None)))
 
 
-def nested_root(base: Path, recipe_dir: Path, recipe: Path) -> Path | None:
-    """Where the study whose recipe is *recipe* writes, for a tree writing into *base*.
+def nested_root(base: Path, recipe_dir: Path, label: str) -> Path | None:
+    """Where the study the tree knows as *label* writes, for a tree writing into *base*.
 
-    ``None`` — the study's own directory — whenever the run has not been redirected, which is the CLI's behaviour and keeps a nested study's results in its own layout. A redirected run gives each study a subdirectory named for its recipe, so a run that must not write into the source tree does not write into a nested study's either.
+    ``None`` — the study's own directory — whenever the run has not been redirected, which is the CLI's behaviour and keeps a nested study's results in its own layout. A redirected run gives each study a subdirectory named for its label, so a run that must not write into the source tree does not write into a nested study's either. The label rather than the recipe stem, because a sub-study written inline has no recipe of its own and inherits the holding study's: naming the directory after that would land every inline sub-study of one recipe in a single directory, each overwriting the last.
     """
-    return None if Path(base) == Path(recipe_dir) else Path(base) / Path(recipe).stem
+    return None if Path(base) == Path(recipe_dir) else Path(base) / label
 
 
 def _tree_to_run(inv, skip: tuple) -> tuple[list, list[str]]:
@@ -744,7 +744,7 @@ def _run_tree(
         source = getattr(nested, "_source_file", None) or spec
         _common.info(f"=== study: {label} ({source}) ===")
         if not _run_whole_study(
-            nested, str(source), None, backend=backend, figures=figures, base=nested_root(base, recipe_dir, Path(source))
+            nested, str(source), None, backend=backend, figures=figures, base=nested_root(base, recipe_dir, label)
         ):
             failed.append(label)
 

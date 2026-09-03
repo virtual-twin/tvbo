@@ -180,7 +180,6 @@ def study_names(root: Path | str, layout: StudyLayout | None = None) -> set[str]
     return names
 
 
-@cache
 def sibling_study_root(name: str, inside: Path | str) -> Path | None:
     """The root of the study called *name*, resolved from a path inside the tree that holds it.
 
@@ -189,15 +188,22 @@ def sibling_study_root(name: str, inside: Path | str) -> Path | None:
     Returns ``None`` when *inside* is not part of a study dataset at all: there is then no tree for the name to be resolved within and none for it to contradict, so the caller reads its own results exactly as it did before study segments meant anything.
 
     Raises on no match within a real tree, and on an ambiguous one. Both are cases where continuing would bind the reference to *a* container rather than to the one it names, and a figure drawn from the wrong study's run is the failure this whole path exists to prevent.
+
+    The answer is memoised per referring study rather than per path: every file in one study resolves a name identically, so the recursive scan runs once for a study that asks a hundred times, and two studies can no longer read each other's answer the way caching the raw path allowed. ``sibling_study_root.cache_clear()`` drops it, which a caller needs only when the tree itself changes under a live process.
     """
-    start = Path(inside).resolve()
     try:
-        own = study_root(start)
+        own = study_root(Path(inside).resolve())
     except FileNotFoundError:
         return None
+    return _sibling_study_root(name, own)
+
+
+@cache
+def _sibling_study_root(name: str, own: Path) -> Path:
+    """The study called *name* within the tree holding *own*, which is the whole of the resolution that depends on the filesystem."""
     if name in study_names(own):
         return own
-    outer = outermost_study_root(start)
+    outer = outermost_study_root(own)
     marker = file_relpath("dataset_description")
     matches = sorted(
         {d.parent for d in outer.rglob(marker) if name in study_names(d.parent)},
@@ -213,6 +219,10 @@ def sibling_study_root(name: str, inside: Path | str) -> Path | None:
         listed = ", ".join(str(m.relative_to(outer)) for m in matches)
         raise FileNotFoundError(f"cross-study reference names study {name!r}, which matches more than one member: {listed}.")
     return matches[0]
+
+
+sibling_study_root.cache_clear = _sibling_study_root.cache_clear
+"""The memo lives on the private worker, so the public name carries the hook a caller reaches for."""
 
 
 def file_relpath(

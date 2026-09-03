@@ -423,13 +423,14 @@ SKILLS = Path(__file__).resolve().parent.parent / "tvbo" / "skills" / "canonical
 
 FREE_FORM = (
     "code/",
+    "spec/",
     "sourcedata/original_study/",
     "sourcedata/templates/",
     "docs/analysis/",
     "docs/notes/",
     "docs/figures/scripts/",
 )
-"""Directories the record declares but whose CONTENTS it does not: a study names its own files there."""
+"""Directories the record declares but whose CONTENTS it does not: a study names its own files there. `spec/` belongs here for the same reason `code/` does — the record states the fragment naming convention (`model-<name>_dynamics.yaml`) and leaves every actual name to the study."""
 
 RETIRED = ("output", "input", "report", "results", "figures", "docs/_figures")
 """Layout paths that no longer exist. A skill naming one is telling an agent to write where nothing reads."""
@@ -437,8 +438,8 @@ RETIRED = ("output", "input", "report", "results", "figures", "docs/_figures")
 _RETIRED = re.compile(r"(?<![\w/.-])(" + "|".join(re.escape(r) for r in RETIRED) + r")/")
 """Anchored at a path boundary, so `docs/figures/` is not read as the retired top-level `figures/`."""
 
-NOT_A_STUDY_PATH = ("docs/Interoperability/", "docs/CLI/", "docs/Replication/", "spec/<")
-"""Paths that collide with a study path by name only: this repository's own documentation, and the nested `spec/<experiment>/experiment.yaml` an emitted kit carries. A study's own `spec/` holds flat entity-named fragments, so a placeholder directly after `spec/` can only be a kit's."""
+NOT_A_STUDY_PATH = ("docs/Interoperability/", "docs/CLI/", "docs/Replication/")
+"""Paths that collide with a study path by name only: this repository's own documentation."""
 
 
 def _skill_prose() -> list[tuple[str, int, str]]:
@@ -484,10 +485,15 @@ def test_no_skill_names_a_path_the_record_retired():
 def test_every_study_path_a_skill_names_is_one_the_record_declares(record):
     """The skills may describe the layout, but only in the record's own terms.
 
-    Anything the record governs is spliced into a skill by ``tvbo study layout --sync``; a path typed into prose beside it is a second copy, and the two diverge the first time a directory moves.
+    Anything the record governs is spliced into a skill by ``tvbo study layout --sync``; a path typed into prose beside it is a second copy, and the two diverge the first time a directory moves. The record's own terms include the rules its ``.gitignore`` writer emits, so prose may name ``sourcedata/*`` — that string is generated from the record and moves with it.
     """
     known = {rel for rel, _ in layout_rules.walk(record, layout_rules.ANY_TEMPLATE)}
     known |= {rel for rel, _ in layout_rules.iter_files(record, layout_rules.ANY_TEMPLATE)}
+    known |= {
+        line.lstrip("!").rstrip("/")
+        for line in layout_rules.gitignore_lines(record, layout_rules.ANY_TEMPLATE)
+        if line and not line.startswith("#")
+    }
     roots = sorted({rel.split("/")[0] for rel in known})
     offenders = []
     for rel, n, line in _skill_prose():

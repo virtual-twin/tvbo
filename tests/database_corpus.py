@@ -28,6 +28,7 @@ TARGETS = {
     "graph_generators": "GraphGenerator",
     "coordinate_spaces": "CommonCoordinateSpace",
     "reducers": "Reducer",
+    "themes": "Theme",
 }
 
 

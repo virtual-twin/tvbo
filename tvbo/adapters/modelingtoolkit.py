@@ -124,7 +124,9 @@ class ModelingToolkitAdapter(BaseAdapter):
         # Pure MTK: single model, n_nodes=1 typically u shape from MTK: (n_unknowns, n_t) n_unknowns may differ from n_sv if mtkcompile introduced auxiliary variables (e.g., higher-order ODE lowering)
         n_unknowns = u.shape[0] if u.ndim == 2 else 1
         try:
-            state_labels = [_mtk_to_python_name(str(s).replace("(t)", "")) for s in list(run_julia_code("string.(unknowns(sys))"))]
+            state_labels = [
+                _mtk_to_python_name(str(s).replace("(t)", "")) for s in list(run_julia_code("string.(unknowns(sys))"))
+            ]
         except Exception:
             state_labels = [f"x_{i}" for i in range(n_unknowns)]
         if u.ndim == 2 and n_nodes == 1 and sorted(state_labels) == sorted(sv_names):
