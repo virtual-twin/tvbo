@@ -19,8 +19,6 @@ from collections.abc import Callable
 import sympy
 from sympy import Eq, IndexedBase, Lambda, Symbol, lambdify
 
-from tvbo.parse.symbols import BUILTIN_SHADOW
-
 
 class FunctionBehaviour:
     """Everything a declared function does, on both generated forms."""
@@ -186,6 +184,8 @@ class FunctionBehaviour:
 
         Its own parameters, plus its arguments as `IndexedBase` so an argument can be indexed in the body. Shared by every caller that parses this equation, so a function's rendered graph cannot resolve a name differently from its equation.
         """
+        from tvbo.parse.symbols import BUILTIN_SHADOW
+
         return BUILTIN_SHADOW.extend(
             {str(p): p for p in self.get_parameters(key_as_symbol=True)},
             {str(a): IndexedBase(a) for a in self.arguments},
@@ -443,6 +443,8 @@ class FunctionBehaviour:
         Returns:
             The created figure when `ax` is not provided, otherwise `None`.
         """
+        import matplotlib.pyplot as plt
+
         if edge_kwargs is None:
             edge_kwargs = {}
         if node_kwargs is None:

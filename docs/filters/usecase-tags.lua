@@ -51,10 +51,10 @@ function Pandoc(doc)
   for _, entry in ipairs(entries) do items[#items + 1] = item(entry) end
 
   local html = string.format(
-    '<aside class="tvbo-usecases"><h2 class="tvbo-usecases__head">' ..
+    '<div class="tvbo-usecases"><h2 class="tvbo-usecases__head">' ..
     '<i class="fa-solid fa-flask-vial" aria-hidden="true"></i>Used in published replications</h2>' ..
     '<p class="tvbo-usecases__lede">%d peer-reviewed %s whose TVB-O recipe writes what this page documents.</p>' ..
-    '<ul>%s</ul></aside>',
+    '<ul>%s</ul></div>',
     #entries, #entries == 1 and "study" or "studies", table.concat(items, ""))
 
   table.insert(doc.blocks, pandoc.RawBlock("html", html))
