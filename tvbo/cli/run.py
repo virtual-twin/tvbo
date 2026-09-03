@@ -468,9 +468,9 @@ def study_path_for(role: str, base: Path) -> Path:
 
 
 def _provenance_root(spec: str, out_dir: Path | None) -> Path:
-    """The root whose ``prov/`` holds this run's records.
+    """The root a recorded ``used:`` edge names its containers relative to.
 
-    The STUDY the spec belongs to, even when ``-o`` sends the data elsewhere: provenance describes what this study did, and following the data out of the study would scatter it wherever a caller happened to point. A spec that is in no study — a curated experiment run straight out of the installed database — has no such ``prov/``, so its records follow the results instead of being written into whatever directory the file happens to sit in. *out_dir* is ``-o`` as the caller gave it, not the directory it resolves to: the question is whether the results were redirected, and a resolved default answers that yes every time.
+    The STUDY the spec belongs to, even when ``-o`` sends the data elsewhere: both ends of an edge have to spell a container identically, and the study is the frame the reader resolves them in. A spec that is in no study — a curated experiment run straight out of the installed database — has no such root, so the results themselves are the frame instead of whatever directory the file happens to sit in. *out_dir* is ``-o`` as the caller gave it, not the directory it resolves to: the question is whether the results were redirected, and a resolved default answers that yes every time.
     """
     from tvbo.utils.study_layout import study_root
 
@@ -481,20 +481,16 @@ def _provenance_root(spec: str, out_dir: Path | None) -> Path:
         return Path(out_dir).resolve() if out_dir is not None else base
 
 
-def _provenance_ctx(spec: str, obj, out_dir: Path | None = None) -> dict | None:
-    """How this run records what it did, or ``None`` unless the study asks for it.
+def _provenance_ctx(spec: str, obj, out_dir: Path | None = None) -> dict:
+    """What this run needs in hand to record itself beside each container it writes.
 
-    Off unless ``workflow.emit_provenance`` is explicitly true: the ``prov/`` records serialize a BEP that is not merged, and a recipe already states what each result was derived from through its ``used:`` edges, so writing them by default duplicated the spec's own account in thousands of files.
+    Always built. The record goes into the container's own sidecar, which is a product of the run and never tracked, so remembering what happened costs one key in a file the run was writing anyway — there is nothing for a study to switch off.
     """
     from tvbo.data import provenance
 
-    workflow = getattr(obj, "workflow", None)
-    if getattr(workflow, "emit_provenance", None) is not True:
-        return None
     return {
         "study_root": _provenance_root(spec, out_dir),
         "study": str(getattr(obj, "citekey", None) or getattr(obj, "key", None) or Path(spec).stem),
-        "fmt": str(getattr(workflow, "provenance_format", None) or "yaml"),
         "started_at": provenance.now(),
         "requires": tuple(getattr(obj, "requires", None) or ()),
     }
@@ -512,13 +508,11 @@ def _emit_provenance(ctx: dict | None, container: Path, produced_by: str, output
     try:
         provenance.emit(
             container=Path(container),
-            study_root=ctx["study_root"],
             produced_by=produced_by,
             outputs=outputs,
             used=used,
             started_at=ctx.get("started_at"),
             requires=ctx.get("requires", ()),
-            fmt=ctx["fmt"],
         )
     except Exception as e:  # noqa: BLE001 — the result stands; only its record is missing
         _common.warn(f"provenance for {Path(container).name} not written ({type(e).__name__}: {e})")
@@ -1092,7 +1086,7 @@ def _exec_one(experiment, backend: str, out_dir: Path, kwargs: dict) -> None:
 
 
 def _record_run(ctx: dict | None, experiment, saved) -> None:
-    """Describe the container this run just wrote, in the study's own ``prov/``.
+    """Describe the container this run just wrote, in that container's own sidecar.
 
     The written paths are the authority on which file to describe — a run that shards, fans over subjects, or writes nothing at all is then recorded as what it actually produced rather than as what the stem predicted.
     """

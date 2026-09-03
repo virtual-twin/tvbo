@@ -53,6 +53,19 @@ def _seed(dest: Path, template: str, study: str) -> None:
     dest.write_text(text, encoding="utf-8")
 
 
+def _checked_templates(template, record) -> tuple[str, ...]:
+    """*template* as the record's own kinds, or a usage error naming the ones it declares.
+
+    A name is matched against the record, never registered by being typed, so an undeclared one selects no entry and would otherwise scaffold, render or validate the general study and report success.
+    """
+    from tvbo.utils import study_layout as _layout
+
+    try:
+        return _layout.check_templates(template, record)
+    except KeyError as exc:
+        raise typer.BadParameter(exc.args[0]) from exc
+
+
 @app.command("init")
 def init(
     name: str = typer.Argument(..., help="Study name; also the dataset name and the entry recipe's stem."),
@@ -61,7 +74,7 @@ def init(
         [],
         "--template",
         "-t",
-        help="Layout variant to include, e.g. `replication`. Repeatable; omit for the general layout.",
+        help="Study kind to include, one the layout record declares. Repeatable; omit for the general study.",
     ),
     force: bool = typer.Option(False, "--force", help="Overwrite files that already exist."),
     slim: bool = typer.Option(
@@ -78,12 +91,12 @@ def init(
 
     Every directory, both ignore files and every ``dataset_description.json`` are derived from the record, so a study's shape is never typed out a second time. An empty directory gets a ``.gitkeep`` only when it is tracked; an untracked one is left for the run to create.
 
-    ``--template`` selects a layout variant. A variant both adds entries of its own and may supersede the seed of one every study has, since the same file needs different starting text once the variant says what kind of study this is: without one the study gets a report of its own results, and with ``-t replication`` it gets the report, the scorecard and the copyright-safe figure split a replication needs.
+    ``--template`` selects a study kind the record declares. A kind both adds entries of its own and may supersede the seed of one every study has, since the same file needs different starting text once the kind is known: with no template the study reports its own results, ``-t replication`` adds the scorecard and the copyright-safe figure split a reproduction needs, and ``-t collection`` gives a study that nests other studies the document and the results manifest in place of a single report. A name the record does not declare is rejected rather than quietly selecting nothing.
 
     ``--slim`` writes only what a human authors (:data:`SLIM_ROLES`), for a study that demonstrates something rather than being archived.
     """
     record = layout_rules.load_layout()
-    templates = tuple(template)
+    templates = _checked_templates(template, record)
     root = (parent / name).resolve()
     root.mkdir(parents=True, exist_ok=True)
 
@@ -164,7 +177,7 @@ def show_layout(
     ``--sync`` is how documentation stops restating the layout: a file carrying the layout markers gets the current tree written into them, so a tree in prose can no longer fall behind the record.
     """
     record = layout_rules.load_layout()
-    templates = tuple(template)
+    templates = _checked_templates(template, record)
     if sync:
         for dest in sync:
             if not dest.is_file():

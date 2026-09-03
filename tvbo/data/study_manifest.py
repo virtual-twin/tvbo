@@ -19,8 +19,10 @@ from typing import Any
 
 from tvbo.data.dataref import resolve_dataref
 from tvbo.utils import as_list
+from tvbo.utils.study_layout import file_relpath
 
-MANIFEST_NAME = "manuscript_results.yml"
+MANIFEST_NAME = file_relpath("results_manifest")
+"""Name the layout record gives the manifest, so the emitter and the record cannot disagree about it."""
 
 
 def _scalar(da: Any) -> Any:

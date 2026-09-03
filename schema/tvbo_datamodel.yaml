@@ -152,15 +152,6 @@ slots:
             Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). On an observation it forces (true) or suppresses (false) persistence in the result; left unset, a terminal observation (one not consumed by another observation or a loss) is recorded and an intermediate one is not. Set false to suppress recording.
 
 enums:
-    ProvenanceFormat:
-        description: >-
-            How the ``prov/`` records are serialized. BEP028 names JSON; YAML is the form every other tvbo record takes and the one this study proposes.
-        permissible_values:
-            yaml:
-                description: "One ``.yaml`` per record (the default)."
-            json:
-                description: "One ``.json`` per record, as BEP028 currently names them."
-
     AlgorithmCompositionMode:
         description: >-
             How an included algorithm is composed with the outer algorithm. Determines whether the inner algorithm's update rules are merged into the same loop (combined) or run as a converging inner loop on each outer iteration (nested).
@@ -883,13 +874,26 @@ classes:
         class_uri: tvbo:Provenance
         description: >-
             W3C PROV-O aligned provenance ABOUT the artifact that carries it — reusable on any entity (Network, TimeSeries, Dynamics, ...), which is why it holds no identity of its own: the parent supplies that. The identified ``prov:Entity`` a standalone provenance record names is ``ResultEntity``, which carries one of these.
+
+            Carried by the frozen spec beside a result container, this is the whole record of the run: ``activities`` says what was executed and when, ``environment`` says on what machine and against which package versions, and ``digest`` checksums what came out. None of that is derivable from a recipe, which is why it is recorded — and all of it travels with the artifact it describes rather than in a parallel directory that has to be kept in step.
         slots:
             - derived_from
             - references
+            - environment
+        slot_usage:
+            environment:
+                inlined: true
+                description: >-
+                    The machine and the resolved package set the run actually loaded, carried in full rather than by name: this record travels with one container's sidecar, so a reference to an environment defined elsewhere would point outside the only file a reader has.
         attributes:
             date_created:
                 range: string
                 description: "ISO 8601 (prov:generatedAtTime)"
+            outputs:
+                multivalued: true
+                range: string
+                description: >-
+                    The data variables the container actually holds, read off it when the record is written rather than predicted from the spec, so a run that recorded less than it declared is visible here. The one fact in this record that the recipe beside it cannot supply.
             license:
                 range: string
             generated_by:
@@ -960,7 +964,7 @@ classes:
     Activity:
         class_uri: prov:Activity
         description: >-
-            One thing that was done: a solve, a fit, an analysis, a render. The PROV complement of ``Provenance``, which describes an artifact — an artifact is ``prov:wasGeneratedBy`` an Activity, and an Activity ``prov:used`` the artifacts and environment it consumed. Slot names follow BEP028's activity record (``Id``, ``Label``, ``Command``, ``AssociatedWith``, ``Used``, ``StartedAtTime``, ``EndedAtTime``) so a ``prov/`` record serializes to it without a translation table.
+            One thing that was done: a solve, a fit, an analysis, a render. The PROV complement of ``Provenance``, which describes an artifact — an artifact is ``prov:wasGeneratedBy`` an Activity, and an Activity ``prov:used`` the artifacts and environment it consumed. Slot names follow BEP028's activity record (``Id``, ``Label``, ``Command``, ``AssociatedWith``, ``Used``, ``StartedAtTime``, ``EndedAtTime``) so a record in that vocabulary serializes to it without a translation table.
         slots:
             - name
             - description
@@ -3877,15 +3881,6 @@ classes:
                 range: string
                 description: >-
                     Random-seed policy across shards. ``deterministic`` (the default when unset) derives each task's seed from its shard index so the fan-out is reproducible.
-            emit_provenance:
-                range: boolean
-                description: >-
-                    Whether a run writes the ``prov/`` records (BEP028's activity, entity, environment and software sets). Unset means disabled, and it applies to any run, not only a workflow kit: BEP028 is not merged, and a recipe already records what each result was derived from through its ``used:`` edges, so the records restate the spec's own account across thousands of files. Set it true where an external consumer needs the BEP028 serialization. Named apart from the ``provenance`` slot carrying PROV-O metadata (Network, Figure, ...): LinkML maps every slot of a given name onto one property, so a boolean here and a ``Provenance`` object there would make ``tvbo:provenance`` both an owl:DatatypeProperty and an owl:ObjectProperty — not OWL-DL.
-            provenance_format:
-                range: ProvenanceFormat
-                ifabsent: string(yaml)
-                description: >-
-                    Serialization of the ``prov/`` records: ``yaml`` (the default, and the form every other tvbo record takes) or ``json`` (what BEP028 currently names). One file per record in one format, never both — two serializations of one record are two things that can disagree. Declared in the spec rather than configured per machine, because two people running one recipe must get the same provenance.
             chunk:
                 range: integer
                 minimum_value: 1
@@ -3919,6 +3914,7 @@ classes:
         tree_root: true
         class_uri: tvbo:Simulation
         slots:
+            - provenance
             - model
             - references
             - part

@@ -7,10 +7,23 @@ description: >-
   contents from it, `tvbo validate study` checks a study against it, and the documentation
   renders its tree from it. Nothing restates the layout.
 
-  One record covers every kind of study. An entry marked `in_templates` belongs only to the
-  named `tvbo study init --template` variants; everything unmarked is part of any study.
+  One record covers every kind of study. The unmarked entries are that study; an entry marked
+  `in_templates` belongs only to the named `tvbo study init --template` kinds, which `templates`
+  declares.
 dataset_type: study
 bids_version: 1.11.1
+
+templates:
+  replication:
+    description: >-
+      Reproduces published work. Adds the material it is checked against (`sourcedata/original_study/`),
+      the internal report that places the paper's figures beside ours, and the claims the reproduction
+      commits to, so the verdict is read from written criteria rather than asserted.
+  collection:
+    description: >-
+      A study of studies: it nests the studies a document reports and owns the document itself. Adds
+      the document in place of one study's report, and the results manifest carrying the numbers the
+      prose quotes, so the build never transcribes a value by hand.
 
 files:
   - name: dataset_description.json
@@ -22,7 +35,7 @@ files:
     role: readme
     level: required
     template: README.md.tmpl
-    template_variants: {replication: README.replication.md.tmpl}
+    template_variants: {replication: README.replication.md.tmpl, collection: README.collection.md.tmpl}
     description: What the study does, and how to run it.
   - name: CITATION.cff
     role: citation
@@ -32,6 +45,7 @@ files:
     role: recipe
     level: required
     template: recipe.yaml.tmpl
+    template_variants: {collection: recipe.collection.yaml.tmpl}
     bids: unsanctioned
     expires_with: >-
       BEP034+, which would sanction a recipe at the study root. A named entry rather than a
@@ -39,6 +53,18 @@ files:
     description: >-
       The entry recipe: the one specification a run is given. Includes the fragments under
       `spec/`, so the output root resolves to this file's own directory.
+  - name: manuscript_results.yml
+    role: results_manifest
+    in_templates: [collection]
+    generated: true
+    bids: unsanctioned
+    expires_with: >-
+      A BEP sanctioning derived values at a dataset root. None is under review: BIDS carries
+      data, and this file carries the numbers a document quotes.
+    description: >-
+      The study's `results:` bindings, resolved to values. Committed, because the document
+      reads it through Quarto `metadata-files` and a build checkout has no run containers to
+      resolve against. Emitted by a run that nests studies; a study reporting nothing has none.
   - name: .gitignore
     role: gitignore
     generated: true
@@ -110,14 +136,26 @@ subdirs:
     files:
       - name: report.qmd
         level: recommended
+        not_in_templates: [collection]
         template: report.qmd.tmpl
         template_variants: {replication: report.replication.qmd.tmpl}
         description: The report, every number computed from the run.
       - name: _quarto.yml
         template: _quarto.yml.tmpl
-        template_variants: {replication: _quarto.replication.yml.tmpl}
+        template_variants: {replication: _quarto.replication.yml.tmpl, collection: _quarto.collection.yml.tmpl}
       - name: references.bib
         level: recommended
+      - name: manuscript.qmd
+        level: required
+        template: manuscript.qmd.tmpl
+        in_templates: [collection]
+        description: >-
+          The document, in place of one study's report: a spine of `{{< include >}}` lines over
+          `sections/`, quoting every number from the results manifest rather than from the prose.
+      - name: manuscript.pdf
+        tracked: none
+        in_templates: [collection]
+        description: Rendered from `manuscript.qmd`, so it is a product like any other.
       - name: report_internal.qmd
         template: report_internal.qmd.tmpl
         in_templates: [replication]
@@ -126,6 +164,7 @@ subdirs:
           since the composite embeds copyrighted material.
       - name: report.pdf
         tracked: none
+        not_in_templates: [collection]
         description: >-
           Rendered from `report.qmd`, so it is a product like any other. Shareable as a file
           without being carried in the history.
@@ -157,10 +196,11 @@ subdirs:
             description: The plotting script each figure generates, kept beside what it renders.
       - name: analysis
         role: analysis
-        in_templates: [replication]
         description: >-
-          What the reproduction claims and how it is checked: the target values, the figure
-          inventory, the backend comparison, the adherence scorecard.
+          What the study commits to and how it is checked, written down before the run rather than
+          read off it: a preregistration for a study proposing something of its own, and for a
+          reproduction the target values, the figure inventory and the backend comparison whose
+          three files below carry it.
         files:
           - name: targets.md
             level: required
@@ -181,6 +221,28 @@ subdirs:
             description: >-
               Why this backend was chosen, from the targets' feature needs rather than by default,
               and what the alternatives could not do.
+      - name: sections
+        role: manuscript_sections
+        in_templates: [collection]
+        description: >-
+          One file per section of the document, included by `manuscript.qmd` in the order it names
+          them. Split so a section can be rewritten without touching the rest, and so the order
+          lives in one place rather than being implied by the prose.
+        files:
+          - name: _introduction.qmd
+            template: sections/_introduction.qmd.tmpl
+            description: What the collection asks, and what is at stake in the answer.
+          - name: _methods.qmd
+            template: sections/_methods.qmd.tmpl
+            description: >-
+              Only what holds across the members: each nested study states its own model, network
+              and protocol in its own report.
+          - name: _results.qmd
+            template: sections/_results.qmd.tmpl
+            description: One subsection per claim, every number quoted from the results manifest.
+          - name: _discussion.qmd
+            template: sections/_discussion.qmd.tmpl
+            description: What the collection establishes, and what it does not.
       - name: notes
         role: notes
         tracked: none
@@ -214,23 +276,6 @@ subdirs:
             description: >-
               Declares the derivative type, the generating tool, and the source dataset,
               which is the study root two levels up.
-
-  - name: prov
-    role: provenance
-    bids: proposed
-    expires_with: >-
-      BEP028, which adds `prov/` to the study root and names the records
-      `prov-<label>_{act,ent,env,soft}.json`. The remaining gap is the extension: these are
-      written as YAML by default, which BEP028 does not yet accept, and as JSON on request.
-    description: >-
-      What was run, when, in what environment, by what software, over what inputs. Written only
-      where a study sets `workflow.emit_provenance` true, because BEP028 is not merged and a
-      recipe already states what each result was derived from through its `used:` edges -- so by
-      default these records would restate the spec's own account across thousands of files.
-      Tracked when present, unlike everything else a run produces: it is small, and a record no
-      one can read without re-running the study cannot be cited or reviewed. Serialized from
-      the datamodel's own provenance classes, so the records cannot drift from the metadata a
-      run already carries.
 
   - name: logs
     role: logs

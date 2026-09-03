@@ -1,6 +1,6 @@
-"""A run records what it did in its study — and when it has no study, beside its results.
+"""The frame a run names its recorded inputs in: its study, and when it has no study, its results.
 
-`tvbo run tvbo/database/experiments/<X>.yaml -o <somewhere>` used to write `prov-exp<N>_*.yaml` into the installed database, because the record followed the spec's own directory whether or not that directory was a study. Four test modules then failed on files no one had added.
+A `used:` edge is only an edge if both ends spell the container the same way, so the frame has to be the study rather than the directory the spec happens to sit in. `tvbo run tvbo/database/experiments/<X>.yaml -o <somewhere>` once resolved it to the installed database, which made every recorded input a path no reader of the results could follow.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ def _study(root: Path) -> Path:
 
 
 def test_a_study_keeps_its_own_prov_even_when_the_data_goes_elsewhere(tmp_path):
-    """The documented rule: provenance describes what the STUDY did, so `-o` must not scatter it."""
+    """The documented rule: a recorded input is named relative to the STUDY, so `-o` must not move the frame."""
     study = _study(tmp_path / "study")
     (study / "recipe.yaml").write_text("tvbo_class: tvbo:SimulationStudy\n")
     assert _provenance_root(str(study / "recipe.yaml"), tmp_path / "elsewhere") == study
@@ -34,7 +34,7 @@ def test_a_spec_below_the_root_still_records_in_the_study(tmp_path):
 
 
 def test_a_spec_in_no_study_records_beside_its_results(tmp_path):
-    """A curated experiment run out of the database has no `prov/` of its own; writing one into the database mutates an installed package."""
+    """A curated experiment run out of the database is in no study, so the results it wrote are the only frame its inputs can be named in."""
     database = tmp_path / "database" / "experiments"
     database.mkdir(parents=True)
     (database / "Curated.yaml").write_text("id: 8\n")

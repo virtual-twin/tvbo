@@ -11,12 +11,13 @@ A resolver asks for a *role*, never for a literal path::
 
 Moving or renaming a directory is then a one-line edit to the record.
 
-One record covers every kind of study: an entry carrying ``in_templates`` belongs only to the named ``tvbo study init --template`` variants, so ``templates=("replication",)`` selects the replication layout out of the same tree the general one comes from.
+One record covers every kind of study: an entry carrying ``in_templates`` belongs only to the named ``tvbo study init --template`` kinds and one carrying ``not_in_templates`` to every kind but those, so ``templates=("replication",)`` selects the replication layout out of the same tree the general one comes from. The kinds themselves are declared in the record's ``templates:``, which is what :func:`check_templates` matches a requested name against.
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from functools import cache, lru_cache
 from pathlib import Path
 from typing import Any
@@ -56,10 +57,12 @@ Role lookup uses this. ``in_templates`` says whether ``tvbo study init`` CREATES
 def _selected(entry: StudyDirectory | StudyFile, templates: tuple[str, ...] | None) -> bool:
     """True when ``entry`` belongs to a study built with ``templates``.
 
-    An entry with no ``in_templates`` is part of every study. One that names templates is included only when a requested template is among them, or when ``templates`` is :data:`ANY_TEMPLATE`.
+    An entry with no ``in_templates`` is part of every study. One that names templates is included only when a requested template is among them, or when ``templates`` is :data:`ANY_TEMPLATE`. ``not_in_templates`` is the complement, for an entry every kind has except the one that replaces it.
     """
     if templates is ANY_TEMPLATE:
         return True
+    if any(str(t) in templates for t in entry.not_in_templates or []):
+        return False
     named = [str(t) for t in entry.in_templates or []]
     return not named or any(t in named for t in templates)
 
@@ -79,6 +82,23 @@ def walk(layout: StudyLayout | None = None, templates: tuple[str, ...] | None = 
 
     descend("", layout.subdirs)
     return found
+
+
+def template_names(layout: StudyLayout | None = None) -> list[str]:
+    """The study kinds the record declares, in the order it names them."""
+    return list((layout or load_layout()).templates or {})
+
+
+def check_templates(templates: Iterable[str], layout: StudyLayout | None = None) -> tuple[str, ...]:
+    """*templates*, or raise naming the kinds the record does declare.
+
+    A template name is matched, never registered: an undeclared one selects no entry, so without this a typo scaffolds the general study and reports success.
+    """
+    known = template_names(layout)
+    unknown = [t for t in templates if t not in known]
+    if unknown:
+        raise KeyError(f"No study template named {', '.join(repr(t) for t in unknown)} in the layout record. Declared templates: {', '.join(known)}")
+    return tuple(templates)
 
 
 def template_for(entry, templates: tuple[str, ...] | None = ()) -> str | None:
@@ -255,12 +275,16 @@ def _generated_header(templates: tuple[str, ...] = ()) -> str:
 
 
 def templates_of(text: str) -> tuple[str, ...]:
-    """The templates a generated ignore file was written for, read back from its header."""
-    head = text.splitlines()[0] if text else ""
-    if "(template: " not in head:
-        return ()
-    named = head.split("(template: ", 1)[1].split(")", 1)[0]
-    return tuple(t.strip() for t in named.split(",") if t.strip())
+    """The templates a generated ignore file was written for, read back from its header.
+
+    Found anywhere in the file, not only on the first line: a project may keep its own rules above the generated ones, and then the header that says what kind of study this is sits in the middle of the file rather than at the top. Keyed on the same :data:`SOURCE_NAME` :func:`_generated_header` writes, so the reader cannot look for a string the writer no longer emits.
+    """
+    marker = SOURCE_NAME
+    for line in text.splitlines():
+        if marker in line and "(template: " in line:
+            named = line.split("(template: ", 1)[1].split(")", 1)[0]
+            return tuple(t.strip() for t in named.split(",") if t.strip())
+    return ()
 
 
 def interpolate(name: str, study: str | None) -> str:

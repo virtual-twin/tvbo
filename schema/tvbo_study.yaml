@@ -225,6 +225,19 @@ classes:
         inlined: true
         inlined_as_list: true
         description: "Files at the dataset root."
+      templates:
+        multivalued: true
+        inlined: true
+        range: StudyTemplate
+        description: >-
+          The kinds of study this record covers, keyed by the name ``tvbo study init --template`` takes. An entry's ``in_templates`` names one of these, so a template that nothing declares is a typo rather than a silently empty variant.
+
+  StudyTemplate:
+    description: >-
+      One kind of study the layout accounts for. A template is a *specialisation*: it names the entries a kind adds to the study every kind already shares, and nothing else. The general study is therefore not a template and names none — a kind earns an entry here only once some directory or file genuinely belongs to it and not to the rest.
+    slots:
+      - name
+      - description
 
   StudyDirectory:
     description: >-
@@ -277,6 +290,12 @@ classes:
           Init templates that include this directory. Absent means every study gets it, so
           one record covers the general layout and its specialisations without a second copy
           of the tree to keep in step.
+      not_in_templates:
+        multivalued: true
+        range: string
+        description: >-
+          Init templates that do *not* get this directory, though every other kind does. The
+          complement of ``in_templates``, for a directory one kind replaces rather than adds to.
       files:
         multivalued: true
         range: StudyFile
@@ -332,6 +351,11 @@ classes:
         range: string
         description: >-
           Init templates that include this file. Absent means every study gets it.
+      not_in_templates:
+        multivalued: true
+        range: string
+        description: >-
+          Init templates that do *not* get this file, though every other kind does. The complement of ``in_templates``, for a file the general study has and one kind replaces rather than adds to: a collection's document stands in for a single study's report, so naming the kinds that keep the report would leave every kind added later to be edited in here as well.
       template_variants:
         multivalued: true
         inlined: true
@@ -456,6 +480,8 @@ enums:
         description: "Report sources: the prose, its bibliography and its render config."
       analysis:
         description: "Analysis definitions the report and figures read."
+      manuscript_sections:
+        description: "The document's sections, one file each, included by the document in the order it names them."
       figures:
         description: "Rendered figures cleared for publication."
       figure_scripts:
@@ -471,8 +497,6 @@ enums:
         description: "Grouping directory for the nested derivative datasets."
       results:
         description: "Result containers a run and its analyses write, and figures read."
-      provenance:
-        description: "Provenance records for what was run, in what environment, by what software."
       logs:
         description: "Run logs."
       build:
@@ -505,3 +529,5 @@ enums:
         description: "``.gitignore``, generated from the layout's ``tracked`` fields."
       bidsignore:
         description: "``.bidsignore``, generated from the layout's ``bids`` fields."
+      results_manifest:
+        description: "The resolved ``results:`` bindings, emitted for the document to read."

@@ -248,13 +248,14 @@ def study(
     """
     import json
 
+    from tvbo.cli.study import _checked_templates
     from tvbo.utils import study_layout as layout_rules
 
     record = layout_rules.load_layout()
     root = path.resolve()
     name = root.name
     problems: list[str] = []
-    templates = tuple(template) or _templates_of(root, name, record)
+    templates = _checked_templates(template, record) or _templates_of(root, name, record)
 
     for rel, directory in layout_rules.walk(record, templates):
         if str(directory.level) == "required" and not (root / rel).is_dir():

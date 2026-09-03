@@ -108,7 +108,6 @@ class WorkflowPlan:
     container_args: str | None
     retries: int
     rng: str
-    provenance: bool
 
     vectorize_axes: list[SweepAxis] = field(default_factory=list)
     workflow_axes: list[SweepAxis] = field(default_factory=list)
@@ -770,7 +769,6 @@ def plan(
         container_args=(spec.get("container_args") or None),
         retries=int(spec.get("retries") or 0),
         rng=str(spec.get("rng") or "deterministic"),
-        provenance=bool(spec.get("emit_provenance", False)),
         vectorize_axes=vectorize,
         workflow_axes=workflow,
         cohort_subjects=cohort_subjects,
@@ -796,7 +794,7 @@ def workflow_config_from_spec(spec: dict) -> Any:
     if not spec:
         return None
     wc = dm.WorkflowConfig()
-    for key in ("out_dir", "container", "container_binds", "container_args", "retries", "rng", "emit_provenance", "chunk"):
+    for key in ("out_dir", "container", "container_binds", "container_args", "retries", "rng", "chunk"):
         if spec.get(key) is not None:
             setattr(wc, key, spec[key])
     dist = spec.get("distribute")
