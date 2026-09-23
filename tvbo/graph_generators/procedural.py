@@ -78,7 +78,10 @@ def _ref(name: Any, env: Mapping[str, sp.Expr], step: str, field: str) -> sp.Exp
 
 
 def _number(value: Any, step: str, field: str) -> sp.Expr:
-    """Coerce a scalar field to a SymPy number, accepting `inf` for an open bound."""
+    """Coerce a scalar field to a SymPy number, accepting `inf` for an open bound.
+
+    A string is read as a number literal and nothing else: ``sympify`` would parse it as an expression, where ``E`` is Euler's number and ``I`` the imaginary unit.
+    """
     if isinstance(value, str):
         token = value.strip().lower()
         if token in ("inf", "+inf", "infinity"):
@@ -86,9 +89,17 @@ def _number(value: Any, step: str, field: str) -> sp.Expr:
         if token in ("-inf", "-infinity"):
             return -sp.oo
     try:
-        return sp.sympify(value)
+        return _literal(value) if isinstance(value, str) else sp.sympify(value)
     except (TypeError, ValueError) as exc:
         raise ProceduralError(f"step {step!r}: field {field!r} must be a number, got {value!r}.") from exc
+
+
+def _literal(token: str) -> sp.Expr:
+    """The number a string denotes — an integer, else a float — raising ``ValueError`` for anything an expression parser would have to evaluate."""
+    try:
+        return sp.Integer(int(token))
+    except ValueError:
+        return sp.Float(float(token))
 
 
 def _dist_name(spec: Any) -> str:

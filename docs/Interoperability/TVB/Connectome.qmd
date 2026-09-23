@@ -215,8 +215,8 @@ print(f"Parent link: {surface_net.parent_network is not None}")
 ```{python}
 #| label: fig-mesh
 #| fig-cap: "TVB default cortical surface coloured by region assignment"
-vertices = surface_net._mesh_vertices
-triangles = surface_net._mesh_elements
+vertices = surface_net.array("mesh/vertices")
+triangles = surface_net.array("mesh/elements")
 region_ids = surface_net.node_mapping_data.astype(float)
 
 fig, axes = plt.subplots(1, 2, figsize=(10, 5))
@@ -255,11 +255,11 @@ for f in sorted(surf_dir.iterdir()):
 reloaded_surf = Network.from_file(surf_dir / "surface.yaml")
 
 print(f"Reloaded: {reloaded_surf.number_of_nodes} nodes")
-print(f"Mesh vertices: {reloaded_surf._mesh_vertices.shape}")
-print(f"Mesh triangles: {reloaded_surf._mesh_elements.shape}")
+print(f"Mesh vertices: {reloaded_surf.array('mesh/vertices').shape}")
+print(f"Mesh triangles: {reloaded_surf.array('mesh/elements').shape}")
 
-np.testing.assert_allclose(reloaded_surf._mesh_vertices, vertices)
-np.testing.assert_allclose(reloaded_surf._mesh_elements, triangles)
+np.testing.assert_allclose(reloaded_surf.array("mesh/vertices"), vertices)
+np.testing.assert_allclose(reloaded_surf.array("mesh/elements"), triangles)
 print("✓ Mesh data survives HDF5 round-trip")
 ```
 

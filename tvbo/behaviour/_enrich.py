@@ -140,6 +140,9 @@ class IriEnrichable:
 
 
 def _slots(cls) -> tuple[str, ...]:
-    """*cls*'s schema slots, whichever generated form it is."""
-    fields = getattr(cls, "__dataclass_fields__", None)
-    return tuple(fields) if fields is not None else tuple(cls.model_fields)
+    """*cls*'s schema slots, whichever generated form it is — the dataclass's fields proper, not the ``ClassVar`` metadata (``class_class_uri`` and kin) that ``__dataclass_fields__`` lists beside them, and nothing at all for a class that is neither generated form, so a caller handed a plain mapping reads no slots rather than meeting an ``AttributeError``."""
+    import dataclasses
+
+    if dataclasses.is_dataclass(cls):
+        return tuple(field.name for field in dataclasses.fields(cls))
+    return tuple(getattr(cls, "model_fields", ()))

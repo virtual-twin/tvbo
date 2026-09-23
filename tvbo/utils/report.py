@@ -1204,14 +1204,32 @@ def coupling_prose(experiments, equations=None):
     return "\n\n".join(b for b in blocks if b)
 
 
-def event_table(events, derivative_notation="dot"):
+def symbol_scope(model=None):
+    """The parser namespace for *model*'s expressions: its own symbol table over the builtin shadow, or the shadow alone when there is no model to ask.
+
+    A report typesets text the model wrote, and a parse without the model's names reads ``E`` as Euler's number and ``I`` as the imaginary unit. The event and symbol tables parse through a scope from here; `model_functions` declares its vocabulary to `parse_eq` directly.
+    """
+    from tvbo.parse.symbols import BUILTIN_SHADOW
+
+    system = getattr(model, "symbolic_system", None)
+    return BUILTIN_SHADOW if system is None else BUILTIN_SHADOW.extend(system.scope())
+
+
+def _parse(text, scope=None):
+    """*text* parsed in *scope* — any mapping of names, the builtin shadow when none is given. `parse_eq` copies the mapping before SymPy writes into it, so a caller's scope is never mutated."""
+    from tvbo.parse.expression import parse_eq
+    from tvbo.parse.symbols import BUILTIN_SHADOW
+
+    return parse_eq(str(text), local_dict=BUILTIN_SHADOW if scope is None else scope)
+
+
+def event_table(events, derivative_notation="dot", scope=None):
     """Markdown table of a model's events (spike conditions, stimuli, resets).
 
-    An event is part of the model's definition — a stimulus protocol is not decoration — so it belongs in the report beside the state equations. Its condition and effect are rendered symbolically like every other equation.
+    An event is part of the model's definition — a stimulus protocol is not decoration — so it belongs in the report beside the state equations. Its condition and effect are rendered symbolically like every other equation, parsed in *scope* — the owning model's, from `symbol_scope` — or in the builtin shadow when none is given.
 
     A continuous event may declare ``affect_negative``, a separate effect for the downcrossing; it gets its own column, which drops out for the usual case where one effect serves both crossings.
     """
-    from sympy import sympify
 
     def _expr(obj, *names):
         for n in names:
@@ -1222,7 +1240,7 @@ def event_table(events, derivative_notation="dot"):
             if rhs in (None, ""):
                 continue
             try:
-                return f"${equation_latex(sympify(str(rhs)), derivative_notation)}$"
+                return f"${equation_latex(_parse(rhs, scope), derivative_notation)}$"
             except Exception:
                 return f"`{rhs}`"
         return ""
@@ -1685,6 +1703,7 @@ def symbol_table(model, swept=None, couplings=()):
                 unit_text(slot(p, "unit")),
             ]
         )
+    scope = symbol_scope(model)
     for name, dp in name_items(slot(model, "derived_parameters", {})):
         rhs = slot(slot(dp, "equation"), "rhs", "")
         rows.append(
@@ -1692,7 +1711,7 @@ def symbol_table(model, swept=None, couplings=()):
                 f"${display_symbol(dp, name)}$",
                 "derived",
                 _meaning(dp, name),
-                f"${_safe_latex(rhs)}$" if rhs != "" else "",
+                f"${_safe_latex(rhs, scope)}$" if rhs != "" else "",
                 unit_text(slot(dp, "unit")),
             ]
         )
@@ -1717,12 +1736,10 @@ def symbol_table(model, swept=None, couplings=()):
     return table_or_prose(["Symbol", "Kind", "Meaning", "Value", "Unit"], rows, aligns=["l", "l", "l", "r", "l"])
 
 
-def _safe_latex(expression):
-    """A derived parameter's right-hand side as LaTeX, falling back to its source text."""
-    from sympy import sympify
-
+def _safe_latex(expression, scope=None):
+    """A derived parameter's right-hand side as LaTeX, parsed in *scope* (the builtin shadow when none is given), falling back to its source text."""
     try:
-        return equation_latex(sympify(str(expression)))
+        return equation_latex(_parse(expression, scope))
     except Exception:
         return str(expression)
 

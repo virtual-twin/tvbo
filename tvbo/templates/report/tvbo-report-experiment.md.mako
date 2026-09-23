@@ -409,7 +409,7 @@ out_names = [n for n in out_names if n not in dvars]
 % if events:
 **Events**
 
-${report.event_table(events, derivative_notation)}
+${report.event_table(events, derivative_notation, report.symbol_scope(model))}
 
 % endif
 % endif

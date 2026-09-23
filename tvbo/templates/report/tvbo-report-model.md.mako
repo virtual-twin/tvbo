@@ -18,7 +18,7 @@ Order (mirrors a typical "Model" methods sub-section):
   8. References
 </%doc>
 <%
-from sympy import latex, Eq, sympify, Symbol, Derivative
+from sympy import latex, Eq, Symbol, Derivative
 from tvbo.utils import report
 
 derivative_notation = context.get('derivative_notation', 'd')
@@ -84,7 +84,8 @@ functions = _equations['functions']
 
 outputs = list(model.output or [])
 
-# Rendered from the model's own event declarations, so the report is complete for a spiking model too.
+# Rendered from the model's own event declarations, so the report is complete for a spiking model too; parsed in the model's scope, so a state variable named E or I reads as the author's symbol.
+_scope = report.symbol_scope(model)
 events_lines = []
 for _en, _ev in (getattr(model, 'events', None) or {}).items():
     _cond = _slot(_slot(_ev, 'condition', None), 'rhs', None)
@@ -92,7 +93,7 @@ for _en, _ev in (getattr(model, 'events', None) or {}).items():
     _parts = []
     if _present(_cond):
         try:
-            _c = latex(sympify(str(_cond), strict=False), symbol_names=symbol_names)
+            _c = latex(_scope.parse(str(_cond)), symbol_names=symbol_names)
         except Exception:
             _c = str(_cond)
         _parts.append(f"when ${_c}$")
@@ -105,7 +106,7 @@ for _en, _ev in (getattr(model, 'events', None) or {}).items():
         _l, _r = _stmt.split('=', 1)
         try:
             _updates.append(f"{latex(Symbol(_l.strip()), symbol_names=symbol_names)} \\leftarrow "
-                            f"{latex(sympify(_r, strict=False), symbol_names=symbol_names)}")
+                            f"{latex(_scope.parse(_r), symbol_names=symbol_names)}")
         except Exception:
             _updates.append(_stmt)
     if _updates:

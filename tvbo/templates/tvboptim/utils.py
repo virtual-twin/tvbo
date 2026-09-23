@@ -261,15 +261,13 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> tuple[lis
 def _state_recomputable_derived(model: Any) -> set[str]:
     """Names of derived variables recomputable from the recorded state alone.
 
-    Each derived variable's expression is fully expanded — via sympy substitution, in dependency order, so a variable is substituted into only after it has itself been expanded — down to its primitive symbols. A variable is state-recomputable iff every remaining symbol is one the post-solve realignment binds from the recorded state: a state variable, a non-stochastic parameter, a derived parameter, or ``t``.
+    Each derived variable's expression — as the model's symbolic layer parsed it, in the model's own scope — is fully expanded via sympy substitution, in dependency order, so a variable is substituted into only after it has itself been expanded — down to its primitive symbols. A variable is state-recomputable iff every remaining symbol is one the post-solve realignment binds from the recorded state: a state variable, a non-stochastic parameter, a derived parameter, or ``t``.
 
-    A whitelist, not a coupling-name blacklist: coupling inputs surface as their per-key symbols (an ``EIBLinearCoupling`` unpacks to ``c_lre`` / ``c_ffi``), not under the coupling's declared name, so a blacklist would miss them. Time-varying (stochastic) parameters are excluded too — the realignment cannot resolve them host-side. Conservative: an unparseable expression, a forward reference, or a cyclic one leaves an unexpanded derived-variable symbol behind and so falls out as *not* recomputable, without a hand-rolled traversal or cycle guard.
+    A whitelist, not a coupling-name blacklist: coupling inputs surface as their per-key symbols (an ``EIBLinearCoupling`` unpacks to ``c_lre`` / ``c_ffi``), not under the coupling's declared name, so a blacklist would miss them. Time-varying (stochastic) parameters are excluded too — the realignment cannot resolve them host-side. Conservative: a variable the symbolic layer holds no equation for is not recomputable, and a forward reference or a cyclic one leaves an unexpanded derived-variable symbol behind and so falls out as *not* recomputable, without a hand-rolled traversal or cycle guard.
 
     Shared by :func:`state_only_recorded_aux` and :func:`state_only_derived_var_names` so the two never disagree on which auxiliaries are recomputable from the state.
     """
     import sympy as sp
-
-    from tvbo.classes.equation import sympify as _sympify
 
     dvars = model.in_dependency_order("derived_variables")
     if not dvars:
@@ -287,21 +285,19 @@ def _state_recomputable_derived(model: Any) -> set[str]:
     safe |= set(dparams.keys())
     safe.add("t")
 
-    expanded: dict[str, Any] = {}  # name -> fully-expanded expr, or None if unparseable
-    for name, dv in dvars.items():
-        eq = getattr(dv, "equation", None)
-        rhs = getattr(eq, "rhs", None) if eq is not None else None
-        try:
-            expr = _sympify(str(rhs)) if rhs is not None else None
-        except Exception:
-            expr = None
-        if expr is not None:
-            subs = {sp.Symbol(n): x for n, x in expanded.items() if x is not None and sp.Symbol(n) in expr.free_symbols}
-            if subs:
-                expr = expr.subs(subs)
+    parsed = model.symbolic_system.form(notation="symbol")["derived-variables"]
+    expanded: dict[str, Any] = {}
+    for name in dvars:
+        equation = parsed.get(str(name))
+        if equation is None:
+            continue
+        expr = equation.rhs
+        subs = {sp.Symbol(n): x for n, x in expanded.items() if sp.Symbol(n) in expr.free_symbols}
+        if subs:
+            expr = expr.subs(subs)
         expanded[name] = expr
 
-    return {name for name, expr in expanded.items() if expr is not None and {str(s) for s in expr.free_symbols} <= safe}
+    return {name for name, expr in expanded.items() if {str(s) for s in expr.free_symbols} <= safe}
 
 
 def state_only_derived_var_names(model: Any) -> list[str]:

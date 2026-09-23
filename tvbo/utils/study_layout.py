@@ -97,7 +97,9 @@ def check_templates(templates: Iterable[str], layout: StudyLayout | None = None)
     known = template_names(layout)
     unknown = [t for t in templates if t not in known]
     if unknown:
-        raise KeyError(f"No study template named {', '.join(repr(t) for t in unknown)} in the layout record. Declared templates: {', '.join(known)}")
+        raise KeyError(
+            f"No study template named {', '.join(repr(t) for t in unknown)} in the layout record. Declared templates: {', '.join(known)}"
+        )
     return tuple(templates)
 
 

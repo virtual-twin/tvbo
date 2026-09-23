@@ -109,7 +109,10 @@ def test_every_named_template_exists(record):
 def test_every_template_an_entry_names_is_one_the_record_declares(record):
     """An undeclared name selects nothing, so a typo would scaffold the general study and report success."""
     declared = set(layout_rules.template_names(record))
-    entries = [*layout_rules.walk(record, layout_rules.ANY_TEMPLATE), *layout_rules.iter_files(record, layout_rules.ANY_TEMPLATE)]
+    entries = [
+        *layout_rules.walk(record, layout_rules.ANY_TEMPLATE),
+        *layout_rules.iter_files(record, layout_rules.ANY_TEMPLATE),
+    ]
     for rel, entry in entries:
         named = {str(t) for t in (entry.in_templates or [])} | {str(t) for t in (entry.not_in_templates or [])}
         named |= {str(k) for k in (getattr(entry, "template_variants", None) or {})}

@@ -12,41 +12,32 @@ A noise process is declared once and read by every backend, so ``sigma`` and ``n
 
 from __future__ import annotations
 
+from typing import ClassVar
+
+from tvbo.behaviour._runtime import RuntimeAttributes
 from tvbo.utils.pytree import Pytree, static_spec
 
 
-class NoiseBehaviour(Pytree):
+class NoiseBehaviour(RuntimeAttributes, Pytree):
     """Everything a declared noise process does, on both generated forms.
 
     A JAX leaf as well as a record: a runtime per-state ``sigma_vec`` is the one child, so a sweep can `vmap` over it while the declared spec stays static metadata.
     """
 
-    LEAVES = ("sigma_vec",)
+    LEAVES: ClassVar[tuple[str, ...]] = ("sigma_vec",)
     """The runtime per-state sigma vector, exposed as the single array child so it can participate in `vmap` batching."""
 
-    def __post_init__(self, *args, **kwargs):
-        """The dataclass form's construction hook."""
-        self._fill_default_equation()
-        super().__post_init__(*args, **kwargs)
+    @property
+    def sigma_vec(self):
+        """The per-state sigma a run is using, or ``None`` before one sets it.
 
-    def model_post_init(self, context, /):
-        """The Pydantic form's construction hook."""
-        super().model_post_init(context)
-        self._fill_default_equation()
-
-    def _fill_default_equation(self) -> None:
-        r"""Give a noise that declares no equation the standard form of its own type.
-
-        Gaussian/white noise is $\sqrt{dt}\,\sigma\,\xi$ and an Ornstein-Uhlenbeck process is $-N/\tau + \sigma\,\xi$; a record naming a type and no equation means the standard one, and writing it out is what lets every backend read the process from the record alone.
+        Runtime state, not a slot: a record declares its sigma as a parameter, and this is the vector a solver builds from it and may `vmap` over. Held under a leading underscore so the dumpers hide it by rule — assigned as a plain attribute it is an array in the record, which the YAML dumper cannot represent at all.
         """
-        if self.equation:
-            return
-        from tvbo.datamodel.schema import Equation
+        return getattr(self, "_sigma_vec", None)
 
-        if self.noise_type in ("gaussian", "white"):
-            self.equation = Equation(lhs="N", rhs="sqrt(dt) * sigma * xi")
-        elif self.noise_type in ("ou", "ornstein-uhlenbeck"):
-            self.equation = Equation(lhs="dN/dt", rhs="-N/tau + sigma * xi")
+    @sigma_vec.setter
+    def sigma_vec(self, value):
+        object.__setattr__(self, "_sigma_vec", value)
 
     def _pytree_static(self) -> str:
         """The declared spec as canonical JSON, without the runtime leaves."""
@@ -54,7 +45,10 @@ class NoiseBehaviour(Pytree):
 
     @classmethod
     def _pytree_build(cls, static, leaves):
-        """The record again, with its runtime sigma vector reattached."""
+        """The record again, with its runtime sigma vector reattached.
+
+        Reattached through the `sigma_vec` property, which holds it as runtime state rather than a slot: the Pydantic form declares no such field and would refuse it, leaving that form flattenable and never unflattenable.
+        """
         import json
 
         obj = cls(**json.loads(static))
@@ -67,20 +61,57 @@ class NoiseBehaviour(Pytree):
         params = getattr(self, "parameters", None)
         return params if isinstance(params, dict) else (params or {})
 
+    STANDARD_EQUATIONS: ClassVar[dict[str, tuple[str, str]]] = {
+        "gaussian": ("N", "sqrt(dt) * sigma * xi"),
+        "ou": ("dN/dt", "-N/tau + sigma * xi"),
+    }
+    """The process each canonical noise type names, as ``(lhs, rhs)``.
+
+    Derived rather than written into the record: a recipe stating ``noise_type: gaussian`` has said which process it means, and filling the slot on its behalf would put content into the published record that its author did not write.
+    """
+
+    _CANONICAL_TYPE: ClassVar[dict[str, str]] = {"white": "gaussian", "ornstein-uhlenbeck": "ou"}
+    """The other spellings a noise type is written under, each mapped onto the type it means."""
+
+    @property
+    def canonical_type(self) -> str | None:
+        """The declared noise type under its canonical spelling, ``None`` when none is declared."""
+        declared = str(self.noise_type or "").lower()
+        return self._CANONICAL_TYPE.get(declared, declared) or None
+
+    @property
+    def equation_of_record(self):
+        """The equation this noise runs, declared or standard.
+
+        A record that writes its own equation — one with a right-hand side — means that one; a record that only names a type means the standard form of that type. One reader, so a backend cannot integrate a different process from the one the record states.
+        """
+        if getattr(self.equation, "rhs", None):
+            return self.equation
+        standard = self.STANDARD_EQUATIONS.get(self.canonical_type)
+        if standard is None:
+            return None
+        from tvbo.datamodel.dialect import peer_module
+
+        lhs, rhs = standard
+        return peer_module(self).Equation(lhs=lhs, rhs=rhs)
+
     @property
     def symbolic(self):
-        r"""The symbolic noise term $\sqrt{dt}\,\sigma\,\xi$ for gaussian/white noise.
+        r"""The right-hand side of the process this noise runs, as a SymPy expression.
 
-        Returns `None` for noise types other than `gaussian`/`white`.
+        Read from `equation_of_record`, so it cannot disagree with it: $\sqrt{dt}\,\sigma\,\xi$ for gaussian/white noise, $-N/\tau + \sigma\,\xi$ for an Ornstein-Uhlenbeck process, the declared equation when the record writes one, and `None` when it names no process. ``dt`` and ``sigma`` carry their positivity, so a root over them simplifies.
         """
         import sympy as sp
 
+        from tvbo.parse.symbols import BUILTIN_SHADOW
+
+        equation = self.equation_of_record
+        if equation is None:
+            return None
         dt = sp.symbols("dt", real=True, positive=True)
         sigma_sym = sp.symbols("sigma", real=True, positive=True)
         xi = sp.symbols("xi", real=True)
-        if isinstance(self.noise_type, str) and self.noise_type.lower() in ("gaussian", "white"):
-            return sp.sqrt(dt) * sigma_sym * xi
-        return None
+        return BUILTIN_SHADOW.extend(dt=dt, sigma=sigma_sym, xi=xi).parse(str(equation.rhs))
 
     @property
     def nsig(self):

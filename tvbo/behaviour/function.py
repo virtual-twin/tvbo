@@ -69,14 +69,17 @@ class FunctionBehaviour:
 
     @classmethod
     def list_db(cls) -> list[str]:
-        """List available observation models in the tvbo database."""
+        """List the functions available in the tvbo database."""
         from tvbo.data.registry import list_entries
 
         return list_entries("Function")
 
     @property
-    def function(self):
-        """Access to the underlying callable function if available."""
+    def resolved_callable(self):
+        """The Python callable this function records, or ``None`` when it records only an equation.
+
+        Named for what it returns rather than ``function``, because a ``FunctionCall`` has a *slot* by that name holding the function it calls: one class with a property and another with a slot, both spelled ``function``, is a probe like ``hasattr(obj, "function")`` deciding the wrong way. Resolving reaches for the recorded module and qualname first, then re-executes the recorded source.
+        """
         # Preferred: resolve via recorded callable path (module + qualname)
         func = self._resolve_function_from_callable_path()
         if func is not None:
@@ -169,6 +172,8 @@ class FunctionBehaviour:
     def get_parameters(self, key_as_symbol=False):
         """Return the equation's parameters as a name-to-value mapping.
 
+        A function that declares none has none: an empty collection reads as ``{}`` on one generated form and ``None`` on the other, so both are read through here.
+
         Args:
             key_as_symbol: When `True`, use SymPy `Symbol` objects as keys
                 instead of plain parameter-name strings.
@@ -176,8 +181,17 @@ class FunctionBehaviour:
         Returns:
             Mapping from each parameter name (or `Symbol`) to its value.
         """
-        parameters = {Symbol(k) if key_as_symbol else k: v.value for k, v in self.equation.parameters.items()}
-        return parameters
+        from tvbo.utils import keyed_items
+
+        declared = keyed_items(getattr(self.equation, "parameters", None), "parameters")
+        return {Symbol(k) if key_as_symbol else k: v.value for k, v in declared}
+
+    @property
+    def argument_names(self) -> list[str]:
+        """The names of this function's formal arguments in declared order — empty on either generated form when it declares none, which is ``{}`` on one and ``None`` on the other."""
+        from tvbo.utils import keyed_items
+
+        return [str(name) for name, _ in keyed_items(getattr(self, "arguments", None), "arguments")]
 
     def symbol_scope(self):
         """The namespace this function's equation is parsed against.
@@ -188,7 +202,7 @@ class FunctionBehaviour:
 
         return BUILTIN_SHADOW.extend(
             {str(p): p for p in self.get_parameters(key_as_symbol=True)},
-            {str(a): IndexedBase(a) for a in self.arguments},
+            {a: IndexedBase(a) for a in self.argument_names},
         )
 
     def get_equation(self):
@@ -200,7 +214,7 @@ class FunctionBehaviour:
             A SymPy `Eq` relating the function call to its parsed expression.
         """
         expression = self.symbol_scope().parse(self.equation.rhs)
-        function = sympy.Function(self.acronym or self.name)(*(Symbol(a) for a in self.arguments))
+        function = sympy.Function(self.acronym or self.name)(*(Symbol(a) for a in self.argument_names))
         return Eq(function, expression)
 
     def get_symbolic_function(self):
@@ -284,7 +298,7 @@ class FunctionBehaviour:
         Returns:
             The rendered code for the equation's right-hand side.
         """
-        from tvbo.parse.expression import render_expression
+        from tvbo.codegen.code import render_expression
 
         return render_expression(self.get_equation().rhs, format=format, **kwargs)
 
@@ -359,8 +373,9 @@ class FunctionBehaviour:
         """
         if parameters is None:
             parameters = {}
-        if self.function:
-            return self.function
+        recorded = self.resolved_callable
+        if recorded is not None:
+            return recorded
 
         if format == "python":
             modules = "numpy"
@@ -375,7 +390,6 @@ class FunctionBehaviour:
         for p in parameters2pop:
             parameters.pop(p)
         parameters.update(self.get_parameters())
-        {str(k): v for k, v in parameters.items()}
         eq = equation.rhs
         if fill_in_parameters:
             eq = eq.subs(parameters)
@@ -418,14 +432,16 @@ class FunctionBehaviour:
         if plotting_kwargs is None:
             plotting_kwargs = {}
         function = self.execute(format=format)
-        args = self.arguments
+        from tvbo.utils import keyed_items
+
+        args = keyed_items(getattr(self, "arguments", None), "arguments")
         if len(args) == 1:
-            fin = kwargs.get(next(iter(args.values())).name)
+            name, argument = args[0]
+            fin = kwargs.get(str(name))
             plt.plot(fin, function(fin), **plotting_kwargs)
-            plt.xlabel(next(iter(self.arguments.values())).unit)
+            plt.xlabel(argument.unit)
         else:
             plt.plot(function(**{**kwargs, **self.get_parameters()}), **plotting_kwargs)
-        pass
 
     def plot_metadata_graph(self, ax=None, node_kwargs=None, edge_kwargs=None, edge_labels=True):
         """Draw a graph of the function's metadata.
@@ -485,7 +501,7 @@ class FunctionBehaviour:
             )
             G.add_edge(func_name, req, label="requires")
 
-        for arg in self.arguments:
+        for arg in self.argument_names:
             label = f"${arg}$"
             if not edge_labels:
                 label = f"argument:\n{label}"

@@ -9,8 +9,9 @@ import re
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pytest
 
-from tvbo.utils import Bunch
+from tvbo.utils import Bunch, to_yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[1] / "tvbo"
 
@@ -82,6 +83,21 @@ def test_a_simulation_state_carries_its_noise_sigma_as_a_leaf_and_nt_as_static()
         return jnp.arange(s.nt) * s.dt + jnp.sum(s.noise.sigma_vec)
 
     assert steps(state).shape == (50,), "nt is a Python int inside the trace"
+
+
+@pytest.mark.parametrize("form", ["schema", "pydantic"])
+def test_a_noise_round_trips_on_either_generated_form(form):
+    """A behaviour mixin registers BOTH generated forms, so both must come back — the Pydantic one declares no ``sigma_vec`` slot and refuses a plain assignment, which left it flattenable and never unflattenable."""
+    import importlib
+
+    Noise = importlib.import_module(f"tvbo.datamodel.{form}").Noise
+
+    noise = Noise(noise_type="gaussian", parameters={"sigma": {"value": 0.1}})
+    noise.sigma_vec = jnp.array([0.1, 0.2])
+    doubled = jax.tree_util.tree_map(lambda x: 2 * x, noise)
+    assert isinstance(doubled, Noise) and doubled.noise_type == "gaussian"
+    np.testing.assert_allclose(doubled.sigma_vec, [0.2, 0.4], rtol=1e-6)
+    assert "sigma_vec" not in to_yaml(doubled), "runtime state is not part of the record"
 
 
 def test_a_bunch_flattens_by_sorted_key_and_comes_back_a_bunch():

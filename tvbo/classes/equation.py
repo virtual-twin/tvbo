@@ -617,8 +617,8 @@ def get_symbolic_coupling(coupling_function) -> dict:
     fpost = ontology.intersection(coupling_function.subclasses(), ontology.onto.Fpost.descendants())
     fpre = ontology.intersection(coupling_function.subclasses(), ontology.onto.Fpre.descendants())
     # Create symbolic expressions for the pre and post functions
-    fpre = sympify_value(fpre[0]) if len(fpre) > 0 else sympify("x_j")
-    fpost = sympify_value(fpost[0]) if len(fpost) > 0 else sympify("gx")
+    fpre = sympify_value(fpre[0]) if len(fpre) > 0 else Symbol("x_j")
+    fpost = sympify_value(fpost[0]) if len(fpost) > 0 else Symbol("gx")
     return {"pre": fpre, "post": fpost}
 
 

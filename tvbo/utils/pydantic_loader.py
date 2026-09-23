@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import copy
 import re
-from functools import cache
 from typing import Any, Union, get_args, get_origin
 
 import yaml
@@ -84,7 +83,6 @@ def _first_model(annotation: Any) -> type[BaseModel] | None:
     return None
 
 
-@cache
 # Key -> identifier injection
 def _inject(model_cls: type[BaseModel], data: Any) -> Any:
     """Recursively inject keyed-dict keys into each member's identifier slot.

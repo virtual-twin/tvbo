@@ -122,7 +122,13 @@ class _Propagator:
         """The unit of *expression*, propagated from the declared ones around it.
 
         Declared quantities are recognised before the transcendental branch below: a state variable bound as ``Function(name)(t)`` is a *quantity*, not a function being applied, and reaching that branch would demand its argument ``t`` be dimensionless.
+
+        Takes a parsed expression, never its text: parsing here would have to guess a scope, and the guess SymPy makes reads a model's ``E`` as Euler's number and its ``I`` as the imaginary unit. Callers hand in what the model's own symbolic layer parsed.
         """
+        if isinstance(expression, str):
+            raise TypeError(
+                f"unit_of takes a parsed expression, not text ({expression!r}). Parse it in the model's scope first — `model.symbolic_system.scope()` — so its own names are not read as SymPy's."
+            )
         expression = sp.sympify(expression)
 
         if expression.is_number:

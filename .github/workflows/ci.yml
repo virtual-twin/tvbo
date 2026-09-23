@@ -20,6 +20,8 @@ permissions:
 # Shared environment variables for all jobs
 env:
     JAX_PLATFORMS: cpu
+    # A Network that enters a JAX transformation with nothing materialised is an error here, not a warning: the solver would read the connectome as a constant inside the trace.
+    TVBO_JAX_STRICT: "1"
     # Headless backend, so plotting tests render to an in-memory canvas rather than an interactive window.
     MPLBACKEND: Agg
     # uv: bytecode-compile installed wheels for faster cold starts

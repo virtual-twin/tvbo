@@ -394,6 +394,7 @@ class TestPytree:
             f"tvbo_class: tvbo:Network\nnumber_of_nodes: 50\ndata_file: {path.name}\nedges:\n  - label: gain\n    format: dense\n"
         )
         lazy = load_network(sidecar)
+        monkeypatch.delenv("TVBO_JAX_STRICT", raising=False)
         with pytest.warns(LazyMaterializationWarning, match="materialize"):
             jax.tree_util.tree_flatten(lazy)
         assert value_reads == []

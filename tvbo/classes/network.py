@@ -29,6 +29,7 @@ from tvbo.utils.pytree import static_spec
 _cfg_jax()
 
 
+from tvbo.behaviour._runtime import RuntimeAttributes
 from tvbo.data.registry import database_dir
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.utils import edge_param, keyed_items, transform_target
@@ -408,7 +409,7 @@ def _backfill_name_from_iri(obj: Any, nested_key: str | None = None) -> None:
 
 
 @register_pytree
-class Network(tvbo_datamodel.Network):
+class Network(RuntimeAttributes, tvbo_datamodel.Network):
     """A brain network: parcellation, connectome, per-node dynamics, and coupling.
 
     The spatial substrate of a `SimulationExperiment`. A `Network` ties an atlas/parcellation to a tractogram (structural connectivity matrix + optional path lengths) and, optionally, per-node `Dynamics` overrides and node-level coupling parameters.
@@ -1220,20 +1221,6 @@ class Network(tvbo_datamodel.Network):
         """Store `val` as the `global_coupling_strength` entry in the parameters dict."""
         self.parameters["global_coupling_strength"] = val
 
-    _INTERNAL_ATTRS = frozenset(
-        {
-            "_store",
-            "_arrays",
-            "_parent_network_obj",
-            "_node_template_spec",
-            "_edge_template_spec",
-            "_save_path",
-            "_orientations",
-            "_resolved",
-        }
-    )
-    """Runtime attributes the LinkML dumpers never see; ``_items`` hides every leading-underscore key regardless, so this names them rather than gates them."""
-
     @property
     def parent_network_obj(self) -> Optional["Network"]:
         """The parent Network object, if assigned via object reference.
@@ -1244,13 +1231,6 @@ class Network(tvbo_datamodel.Network):
             return object.__getattribute__(self, "_parent_network_obj")
         except AttributeError:
             return None
-
-    def _items(self):
-        # What the LinkML yaml_dumper / json_dumper / as_dict see. The resident arrays and the lazy store (``_arrays``, ``_store``) are runtime bookkeeping, never schema slots — and LinkML slot names are never underscore-prefixed — so every leading-underscore key is hidden by rule rather than by a denylist, and a new runtime attribute cannot reach yaml.SafeDumper as an ndarray it cannot represent. Bulk arrays belong in the binary companion via ``save_network``, referenced from the spec by ``data_file``.
-        for k, v in super()._items():
-            if k.startswith("_") or k in self._INTERNAL_ATTRS:
-                continue
-            yield k, v
 
     @classmethod
     def from_datamodel(cls, datamodel: tvbo_datamodel.Network) -> "Network":
@@ -2476,7 +2456,7 @@ class Network(tvbo_datamodel.Network):
                     sorted(available_atlases),
                 )
                 return {}
-            term = getattr(Atlas(resolved), "terminology", None)
+            term = getattr(Atlas.of(resolved), "terminology", None)
             return getattr(term, "entities", None) or {}
         except Exception as exc:  # noqa: BLE001 — aliases are optional; degrade but surface
             import logging
@@ -2853,7 +2833,7 @@ class Network(tvbo_datamodel.Network):
 
         parc = getattr(self, "parcellation", None)
         atlas_data = parc.atlas if parc and hasattr(parc, "atlas") else None  # type: ignore[attr-defined]
-        return Atlas(atlas_data)
+        return Atlas.of(atlas_data)
 
     def compute_delays(self, output_unit: str | None = None) -> np.ndarray | JaxArray:
         """Deprecated: use :meth:`calculate_delays` instead.

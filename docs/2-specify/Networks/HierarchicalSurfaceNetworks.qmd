@@ -97,9 +97,9 @@ mesh = tvbo_datamodel.Mesh(
     number_of_vertices=len(vertices),
     number_of_elements=len(triangles),
 )
-object.__setattr__(surface_net, '_mesh', mesh)
-object.__setattr__(surface_net, '_mesh_vertices', vertices)
-object.__setattr__(surface_net, '_mesh_elements', triangles)
+surface_net.mesh = mesh
+surface_net.set_array("mesh/vertices", vertices)
+surface_net.set_array("mesh/elements", triangles)
 
 # Link to parent SC network
 surface_net.set_node_mapping(

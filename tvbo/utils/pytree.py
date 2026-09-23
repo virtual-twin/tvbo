@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import functools
 import json
+from typing import ClassVar
 
 import numpy as np
 
@@ -65,10 +66,12 @@ class Pytree:
     `LEAVES` are the children, `STATIC` the metadata, and the class is rebuilt by handing both back to its constructor as keywords. A class whose leaves are not fixed attributes — a mapping, or a `Network` whose leaves are whatever it has materialised — inherits this and overrides the three hooks instead; it still registers itself by being a subclass. Registration is on the exact type, so a subclass of a pytree registers again, which is what JAX requires of it.
 
     Subclassing is the whole registration mechanism, so a generated class becomes a pytree by taking a behaviour mixin that inherits this, at the moment the class is created, rather than by a decorator some import has to reach first.
+
+    Both declarations are `ClassVar`s. A bare annotation here would be collected as a field by every generated Pydantic class that takes such a mixin, which would put ``LEAVES`` in the record's dump and accept it as input.
     """
 
-    LEAVES: tuple[str, ...] = ()
-    STATIC: tuple[str, ...] = ()
+    LEAVES: ClassVar[tuple[str, ...]] = ()
+    STATIC: ClassVar[tuple[str, ...]] = ()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

@@ -50,14 +50,13 @@ _SCALARS = (str, int, float, bool)
 def peer_module(instance):
     """The generated module *instance*'s class comes from.
 
-    A record is filled with members — an ``Equation``, a ``Parameter`` — and those have to
-    be of the same generated form as the record itself: the strict Pydantic models validate
-    on assignment and reject a LinkML dataclass where they want their own peer. Behaviour
-    that builds members reads the peer off the instance rather than importing one form,
-    which is what lets one implementation serve both.
+    A record is filled with members — an ``Equation``, a ``Parameter`` — and those have to be of the same generated form as the record itself: the strict Pydantic models validate on assignment and reject a LinkML dataclass where they want their own peer. Behaviour that builds members reads the peer off the instance rather than importing one form, which is what lets one implementation serve both. It is read off the first generated base rather than the instance's own class, so a runtime subclass defined elsewhere — the package's own wrapper pattern — builds its members in the form it extends.
     """
     import importlib
 
+    for base in type(instance).__mro__:
+        if base.__module__.startswith("tvbo.datamodel."):
+            return importlib.import_module(base.__module__)
     return importlib.import_module(type(instance).__module__)
 
 
@@ -222,6 +221,7 @@ def _keeps_iri_slot(cls_name: str) -> bool:
     return any(field.name == "iri" for field in dataclasses.fields(cls))
 
 
+@cache
 def identifier_field(model_cls) -> str | None:
     """Name of the slot a keyed collection's key maps onto, for a generated Pydantic model.
 

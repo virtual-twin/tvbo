@@ -672,14 +672,9 @@ def pretty_print_pytree(
 def record_dict(model) -> dict:
     """A generated Pydantic model as the mapping a record states it by.
 
-    The identifier first, then the schema's own slot order, which is the order the generated
-    class declares its fields in. A slot holding ``None`` or an empty collection is omitted:
-    a record states what it says, and a slot nobody wrote is not part of it. Nested models
-    recurse, a date becomes its ISO form, and every other value is passed through — an
-    ``inf`` bound stays ``inf`` rather than becoming the ``null`` a JSON round-trip makes of it.
+    The identifier first, then the schema's own slot order, which is the order the generated class declares its fields in. A slot holding ``None`` or an empty collection is omitted: a record states what it says, and a slot nobody wrote is not part of it. Nested models recurse, a date becomes its ISO form, and every other value is passed through — an ``inf`` bound stays ``inf`` rather than becoming the ``null`` a JSON round-trip makes of it.
 
-    The one place the Pydantic form of a record is turned into data, so `to_yaml` and any
-    other consumer cannot disagree about what the record says.
+    The one place the Pydantic form of a record is turned into data, so `to_yaml` and any other consumer cannot disagree about what the record says.
     """
     import datetime
     from enum import Enum
@@ -713,12 +708,24 @@ def record_dict(model) -> dict:
     return record
 
 
+def to_dict(obj) -> dict:
+    """A datamodel object as the mapping its record states, in either generated form.
+
+    The data `to_yaml` writes, before it is text: a Pydantic model through `record_dict`, a dataclass through the same pass LinkML's dumper applies before it serialises. One entry point, so a caller that needs the record as data — to add a file envelope, to write a companion beside it — does not serialise to YAML and parse it back.
+    """
+    from pydantic import BaseModel
+
+    if isinstance(obj, BaseModel):
+        return record_dict(obj)
+    from linkml_runtime.utils.formatutils import remove_empty_items
+
+    return remove_empty_items(obj, hide_protected_keys=True)
+
+
 def to_yaml(obj, filepath: str | None = None) -> str:
     """Dump a datamodel object to canonical TVBO YAML, in either generated form.
 
-    A dataclass goes through LinkML's dumper; a Pydantic model goes through `record_dict`.
-    One entry point for both, so the published record has one definition however the object
-    in hand was built, and a caller never has to know which generator produced it.
+    A dataclass goes through LinkML's dumper; a Pydantic model is dumped from `to_dict`, which is what states the record as data for both forms. One entry point, so the published record has one definition however the object in hand was built, and a caller never has to know which generator produced it.
 
     Args:
         obj (object): Datamodel object to serialize.
@@ -734,7 +741,7 @@ def to_yaml(obj, filepath: str | None = None) -> str:
 
         import yaml as _yaml
 
-        produced = _yaml.safe_dump(record_dict(obj), sort_keys=False, allow_unicode=True)
+        produced = _yaml.safe_dump(to_dict(obj), sort_keys=False, allow_unicode=True)
         if filepath:
             pathlib.Path(filepath).write_text(produced, encoding="utf-8")
             return filepath

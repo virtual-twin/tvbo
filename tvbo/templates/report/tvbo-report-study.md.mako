@@ -64,7 +64,7 @@ ${derived(family.base.model)}\
 ${functions(family.base.model)}\
 % if report.slot(family.base.model, 'events', None):
 
-${report.captioned(report.event_table(report.slot(family.base.model, 'events'), derivative_notation),
+${report.captioned(report.event_table(report.slot(family.base.model, 'events'), derivative_notation, report.symbol_scope(family.base.model)),
                    f"Events of the {family.label}: stimuli, resets and the conditions that fire them.",
                    f"events-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
 % endif

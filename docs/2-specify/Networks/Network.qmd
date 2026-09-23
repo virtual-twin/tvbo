@@ -650,12 +650,10 @@ print(f"Explicit edges: {sum(1 for e in net.edges if getattr(e, 'source', None) 
 Attach the subnetwork weight matrix and save. `Network.save()` writes the YAML sidecar and HDF5 companion automatically:
 
 ```{python}
-# Attach matrix (matches template edge label: weights)
-# Embed the 10×10 subnetwork into the full 12×12 node space
-# Nodes 0–1 are mean-field; nodes 2–11 are the spiking subnetwork
+# Embed the 10×10 subnetwork into the full 12×12 node space: nodes 0–1 are mean-field, nodes 2–11 are the spiking subnetwork
 W_full = np.zeros((12, 12))
 W_full[2:, 2:] = W_sub
-net._cached_weights = W_full
+net.set_matrix("weights", W_full)
 
 # Save → creates .yaml sidecar + .h5 companion
 net.save(tmpdir / "multiscale_cortex.yaml")

@@ -8,6 +8,7 @@ import dataclasses
 import logging
 import re
 from copy import deepcopy
+from typing import ClassVar
 
 import jax
 import jax.numpy as jnp
@@ -249,6 +250,18 @@ def _axis_points_are_arrays(a) -> bool:
     return a.dtype == object and a.size > 0 and np.asarray(a.flat[0]).ndim > 0
 
 
+def _nearest_index(cell, grid):
+    """Index of the grid point nearest each cell value, in O(cells x log points) time and O(cells) memory; a dense cells-by-points distance matrix is 21 GB for a 2.6-million-cell sweep over a 1000-seed axis."""
+    if len(grid) == 1:
+        return np.zeros(len(cell), dtype=int)
+    order = np.argsort(grid, kind="stable")
+    ordered = grid[order]
+    right = np.clip(np.searchsorted(ordered, cell), 1, len(ordered) - 1)
+    left = right - 1
+    take_left = np.abs(cell - ordered[left]) <= np.abs(ordered[right] - cell)
+    return order[np.where(take_left, left, right)]
+
+
 def _axis_positions(cell_vals, grid_vals, axis, name):
     """Index of each cell along one grid axis, matched by value.
 
@@ -266,7 +279,7 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
             f"materialised points are still in scope; they never reach the container."
         )
     if np.issubdtype(cell.dtype, np.number) and np.issubdtype(grid.dtype, np.number):
-        pos = np.abs(cell[:, None] - grid[None, :]).argmin(axis=1)
+        pos = _nearest_index(cell, grid)
         snapped = grid[pos]
         err = np.abs(np.asarray(cell, dtype=float) - np.asarray(snapped, dtype=float))
         tol = 1e-6 * np.maximum(np.abs(cell), np.abs(snapped))
@@ -3170,8 +3183,8 @@ class TimeSeries(Pytree):
     `sample_period` is a leaf, not metadata, because it may hold a tracer such as ``state.dt`` inside `jit`; so is the network, a pytree of its own.
     """
 
-    LEAVES = ("time", "data", "network", "sample_period")
-    STATIC = ("title", "labels_dimensions", "units")
+    LEAVES: ClassVar[tuple[str, ...]] = ("time", "data", "network", "sample_period")
+    STATIC: ClassVar[tuple[str, ...]] = ("title", "labels_dimensions", "units")
 
     def __init__(
         self,
@@ -4233,8 +4246,16 @@ class SimulationState(Pytree):
         self.monitor_parameters = monitor_parameters
         self.nt = nt
 
-    LEAVES = ("initial_conditions", "network", "dt", "noise", "parameters", "stimulus", "monitor_parameters")
-    STATIC = ("nt",)
+    LEAVES: ClassVar[tuple[str, ...]] = (
+        "initial_conditions",
+        "network",
+        "dt",
+        "noise",
+        "parameters",
+        "stimulus",
+        "monitor_parameters",
+    )
+    STATIC: ClassVar[tuple[str, ...]] = ("nt",)
     """``nt`` stays static so it is concrete where it sizes a scan or an ``arange`` under `jit`/`vmap`; everything else, the noise included, may be traced or batched."""
 
     def __repr__(self):

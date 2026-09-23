@@ -799,7 +799,7 @@ class TestAtlasAliases:
     def test_atlas_aliases_present_and_hemisphere_consistent(self, atlas, checks):
         from tvbo.classes.atlas import Atlas
 
-        ents = getattr(getattr(Atlas(atlas), "terminology", None), "entities", None) or {}
+        ents = getattr(getattr(Atlas.of(atlas), "terminology", None), "entities", None) or {}
         if not ents:
             pytest.skip(f"{atlas} atlas terminology not available")
         for canon, empirical in checks.items():
