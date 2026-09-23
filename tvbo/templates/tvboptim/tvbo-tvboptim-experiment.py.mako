@@ -1074,6 +1074,18 @@ for expl in exploration_list:
         _sp = getattr(_alg, 'simulation_period', None)
         if _sp is None:
             raise ValueError(f"Algorithm '{_alg_name}' requires 'simulation_period' in YAML")
+        # Every update rule's target with the coupling it lives on (None = dynamics), so each cell records the value its tuning reached.
+        _tgt_cp2k = {}
+        for _tck, _tco in ((getattr(getattr(experiment, 'network', None), 'coupling', None) or {}).items()):
+            for _tpn in ((getattr(_tco, 'parameters', None) or {}).keys()):
+                _tgt_cp2k[str(_tpn)] = _to_ci_key(_tck)
+        _tgt_algos = [_alg] + [_exp_algos.get(str(getattr(_inc, 'algorithm', _inc))) for _inc in (getattr(_alg, 'includes', None) or [])]
+        _targets = []
+        for _ta in [_a for _a in _tgt_algos if _a is not None]:
+            for _rule in (getattr(_ta, 'update_rules', None) or []):
+                _tpn = str(getattr(_rule.target_parameter, 'name', _rule.target_parameter))
+                if _tpn not in [_t[0] for _t in _targets]:
+                    _targets.append((_tpn, _tgt_cp2k.get(_tpn)))
         exp_info['algorithms'].append({
             'name': safe_name(_alg_name),
             'n_iterations': int(_nit),
@@ -1081,6 +1093,7 @@ for expl in exploration_list:
             'input_names': _alg_inp,
             'network_obs_inputs': _alg_netobs,
             'simulation_period': float(_sp),
+            'targets': _targets,
         })
 
     # Search strategy: 'grid' (default, exhaustive) or 'nsga2' (pymoo multi-objective).
@@ -1922,6 +1935,18 @@ def _realign_state_auxiliaries(sol, params):
     _base_bs = _base_plan['period_in_steps'] or streaming_block_size([])
     # Axis names for EVERY observation, from the reduction each one declares — independent of which reducers stream, so a materialised observer is labelled too.
     _obs_dims = observation_dims(experiment) or {}
+    # A tuned target an algorithm-wired exploration records per cell is per node or per edge as its parameter declares, which names its axes the way an observation's are named.
+    for _xi in explorations:
+        for _xa in _xi.get('algorithms', []):
+            for _tn, _tck in _xa.get('targets', []):
+                if _tck:
+                    _tco = next((_c for _k, _c in ((getattr(experiment.network, 'coupling', None) or {}).items()) if _to_ci_key(_k) == _tck), None)
+                    _tpo = ((getattr(_tco, 'parameters', None) or {}).get(_tn)) if _tco is not None else None
+                else:
+                    _tpo = (getattr(model, 'parameters', None) or {}).get(_tn)
+                _trank = str(getattr(_tpo, 'shape', '') or '').strip('()').count('n_nodes')
+                if _trank in (1, 2):
+                    _obs_dims.setdefault(f"algorithm_{_xa['name']}_{_tn}", ['node', 'node_j'][:_trank])
 %>
 # observation name -> the axis names its reduction declares (utils.reduction_dims).
 _OBSERVATION_DIMS = ${repr(_obs_dims)}
@@ -3543,8 +3568,21 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
                 if not _k.startswith('_'):
                     _ts.coupling[_cn][_k] = _ps.coupling[_cn][_k]
         _ts.initial_state.dynamics = _ps.initial_state.dynamics
+        # A swept stimulus parameter lives on the external inputs, so it is carried too; without it the tuning would run against the default drive.
+        for _en in (list(_ps.external.keys()) if getattr(_ps, 'external', None) is not None else []):
+            if getattr(_ts, 'external', None) is not None and _en in _ts.external:
+                for _k in _ps.external[_en].keys():
+                    if not _k.startswith('_'):
+                        _ts.external[_en][_k] = _ps.external[_en][_k]
+% for _nax in [ax for ax in expl['axes'] if ax.get('is_noise')]:
+        _ts.noise.${_nax['name']} = _ps.noise.${_nax['name']}   # a swept noise amplitude drives the tuning too, not only the measurement
+% endfor
         _algo_res_${_algo['name']} = run_${_algo['name']}(
+% if has_noise and any(ax.get('is_seed') for ax in expl['axes']):
+            _ts, _tune_model_fn_${_algo['name']}, jax.random.key(jnp.asarray(_ps.dynamics._noise_seed, dtype=jnp.uint32)),   # the cell's own seed drives the tuning noise too, so a seed axis is a real tuning ensemble
+% else:
             _ts, _tune_model_fn_${_algo['name']}, jax.random.key(${random_seed}),
+% endif
             n_iterations=${_algo['n_iterations']},
 % for _hp_name, _hp_val in _algo['hyperparams'].items():
             ${_hp_name}=${_hp_val},
@@ -3569,7 +3607,20 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
                 if not _k.startswith('_'):
                     _ps.coupling[_cn][_k] = _rs.coupling[_cn][_k]
 % endfor
-        return observable_fn(_ps)
+        _point_out = observable_fn(_ps)
+% if returns_bunch:
+        # The value each update rule reached at this cell, recorded beside the observations as `algorithm_<name>_<target>` (single underscores: a swept output's name may not carry the container's `__` separator).
+% for _algo in expl['algorithms']:
+% for _tn, _tck in _algo.get('targets', []):
+% if _tck:
+        _point_out['algorithm_${_algo['name']}_${_tn}'] = _ps.coupling['${_tck}']['${_tn}']
+% else:
+        _point_out['algorithm_${_algo['name']}_${_tn}'] = _ps.dynamics['${_tn}']
+% endif
+% endfor
+% endfor
+% endif
+        return _point_out
 
 % if has_axes:
 % if has_host_pipeline_obs or _rec_host:

@@ -1859,6 +1859,12 @@ class ${class_name}(AbstractMonitor):
     except (TypeError, ValueError):
         _decl_period = None
 %>
+% if tail_samples and not (_decl_period and _decl_period > float(dt)):
+        elif _time is not None and len(_time) > len(_final) > 1:
+            # A trailing window keeps the samples it cut, so it keeps their own time stamps.
+            _ts = _time[-len(_final):]
+            _out_dt = self.dt
+% endif
 % if _decl_period and _decl_period > float(dt):
         elif _time is not None and len(_time) > len(_final) > 1:
             # A sample that reports a period covers it, so it is stamped at the END of the period it covers: the first lands one whole period into the measured window, not on its first step. Verified against where a delta actually moves the output, not read off the emitting code.

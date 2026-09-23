@@ -133,6 +133,13 @@ def _numeric_text(text):
     return True
 
 
+def _ticks_in_scale(cb, ticks):
+    """The declared *ticks* that fall inside the bar's colour range; one outside it would stretch the bar's axis to reach it."""
+    lo, hi = sorted((float(cb.norm.vmin), float(cb.norm.vmax)))
+    tol = 1e-9 * max(hi - lo, 1.0)
+    return [t for t in ticks if lo - tol <= t <= hi + tol]
+
+
 def _format_colorbar(cb, decimals, declared=None):
     """Colourbar ticks that carry their own magnitude, dropping one that collides with a neighbour.
 
@@ -149,6 +156,8 @@ def _format_colorbar(cb, decimals, declared=None):
     because it crowds a neighbour would be the renderer overruling the spec. Their text is still
     written in full, which is the half of this pass that is about magnitude rather than about
     which marks appear.
+
+    A declared tick outside the bar's colour range is dropped rather than set: `set_ticks` would otherwise stretch the bar's axis to reach it, printing a number beside empty paper that labels a colour the field never takes.
     """
     bsplot.style.format_colorbar(cb, colorbar_decimals=decimals)
     ax = cb.ax
@@ -158,7 +167,7 @@ def _format_colorbar(cb, decimals, declared=None):
     vertical = str(getattr(cb, "orientation", "vertical")) != "horizontal"   # the bar's declared orientation, not its slot's shape
     axis, lim = (ax.yaxis, ax.get_ylim()) if vertical else (ax.xaxis, ax.get_xlim())
     if declared is not None:
-        axis.set_ticks(list(declared))
+        axis.set_ticks(_ticks_in_scale(cb, declared))
     ticks = list(axis.get_ticklocs())
     span = abs(lim[1] - lim[0]) or 1.0
     keep = [t for i, t in enumerate(ticks)
@@ -728,7 +737,7 @@ ${ind}    fig.set_layout_engine("tight")
     _cb.set_label(${repr(p['colorbar_label'])})
 % endif
 % if p['colorbar_ticks'] is not None:
-    _cb.set_ticks(${repr(p['colorbar_ticks'])})
+    _cb.set_ticks(_ticks_in_scale(_cb, ${repr(p['colorbar_ticks'])}))
 % endif
     _cb.outline.set_linewidth(0.5)
     _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}, ${repr(p['colorbar_ticks'])}))   # re-applied after the format pass

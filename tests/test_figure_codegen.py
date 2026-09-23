@@ -2,10 +2,8 @@
 
 Covers the two figure adapters:
 
-* ``tvbo.adapters.bsplot`` — resolves a declarative :class:`Figure` into a
-  codegen context (``build_context``), emits a self-contained ``plot.py`` (``render_code``), and emits + execs it under matplotlib Agg (``render``), plus the register/lookup API a study extends the engine through and the ``_container_path`` PROV resolver.
-* ``tvbo.adapters.figure_workflow`` — lowers a figure's PROV ``used`` edges into
-  a Snakemake render rule (``emit_figure_rules``).
+* ``tvbo.adapters.bsplot`` — resolves a declarative :class:`Figure` into a codegen context (``build_context``), emits a self-contained ``plot.py`` (``render_code``), and emits + execs it under matplotlib Agg (``render``), plus the register/lookup API a study extends the engine through and the ``_container_path`` PROV resolver.
+* ``tvbo.adapters.figure_workflow`` — lowers a figure's PROV ``used`` edges into a Snakemake render rule (``emit_figure_rules``).
 
 Figure objects are constructed inline. Tests that need experiment result containers point at the Taher2019 replication study and skip when it (or a specific container) is absent, so the suite is robust on a fresh checkout.
 """
@@ -1348,7 +1346,7 @@ def test_declared_colorbar_ticks_survive_the_shared_format_pass():
     ast.parse(code)
     assert "_COLORBAR_POST.append((_cb, None, [-0.3, 0.3, 0.9]))" in code
     body = code.split("def _format_colorbar(")[1].split("\ndef ")[0]
-    shared, restore = body.index("bsplot.style.format_colorbar("), body.index("axis.set_ticks(list(declared))")
+    shared, restore = body.index("bsplot.style.format_colorbar("), body.index("axis.set_ticks(_ticks_in_scale(cb, declared))")
     assert shared < restore, "the declared ticks must be re-applied AFTER the pass that overwrites them"
 
 

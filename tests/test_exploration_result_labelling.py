@@ -471,3 +471,17 @@ def test_point_indices_are_placed_through_the_ordinary_numeric_path():
 
     order = [2, 0, 4, 1, 3]
     assert list(_axis_positions(np.asarray(order), np.arange(5), "network.edges.length", "theta")) == order
+
+
+def test_axis_positions_matches_nearest_without_a_dense_distance_matrix():
+    """Nearest-value matching must agree with the brute-force argmin on an unsorted grid, and must scale to a sweep whose cells-by-points distance matrix would not fit in memory."""
+    from tvbo.data.types import _axis_positions
+
+    grid = np.array([0.3, -1.0, 2.5, 0.0, 7.0])
+    cells = np.array([0.3, 7.0, -1.0, 0.0, 2.5, 0.0])
+    brute = np.abs(cells[:, None] - grid[None, :]).argmin(axis=1)
+    assert list(_axis_positions(cells, grid, "model.c", "obs")) == list(brute)
+    assert list(_axis_positions(np.array([4.0, 4.0]), np.array([4.0]), "model.c", "obs")) == [0, 0]
+    seeds = np.arange(1000, dtype=float)
+    big = np.tile(seeds, 3000)  # 3e6 cells: a dense matrix would be 24 GB
+    assert np.array_equal(_axis_positions(big, seeds, "execution.random_seed", "obs"), big.astype(int))

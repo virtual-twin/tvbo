@@ -115,3 +115,13 @@ def test_tick_prune_stands_on_its_own(study):
     plain = bsplot.render(_figure(), str(study), str(study / "plain.png")).axes[0]
     pruned = bsplot.render(_figure(panel_slots={"tick_prune": "upper"}), str(study), str(study / "pruned.png")).axes[0]
     assert max(pruned.get_xticks()) < max(plain.get_xticks())
+
+
+def test_a_declared_tick_outside_the_scale_is_dropped_not_drawn_off_the_bar(study):
+    """A declared tick beyond the field's range must not stretch the bar's axis: it would print a number beside empty paper, labelling a colour the field never takes."""
+    spec = _figure()
+    spec.panels["a"].colorbar = P.Colorbar(ticks=[-0.8, 0.0, 0.2])
+    fig = bsplot.render(spec, str(study), str(study / "out.png"))
+    bar = next(ax for ax in fig.axes if ax.get_label() == "<colorbar>")
+    np.testing.assert_allclose(bar.get_yticks(), [0.0, 0.2])
+    np.testing.assert_allclose(sorted(bar.get_ylim()), [FIELD.min(), FIELD.max()])

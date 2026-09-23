@@ -1004,7 +1004,9 @@ def theme_spec(figure, base_dir) -> dict:
     from tvbo.plot import palette
     from tvbo.utils.yaml_loader import load_as_dict, strip_envelope
 
-    declared = {k: v for k, v in (_plain(getattr(figure, "theme", None)) or {}).items() if v is not None}
+    declared = {
+        k: v for k, v in (_plain(getattr(figure, "theme", None)) or {}).items() if v not in (None, [], {})
+    }  # an unset multivalued slot arrives empty, not None
     iri = declared.pop("iri", None) or (_SHIPPED_THEME if _names_shipped_palette(figure) or not declared else None)
     curated = {}
     if iri:

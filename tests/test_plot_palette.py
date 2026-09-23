@@ -203,3 +203,13 @@ def test_the_shipped_palette_layer_is_read_as_the_theme(tmp_path):
 
     assert [e["kind"] for e in _style_entries(Figure(), tmp_path)] == ["named"]
     assert bsplot.theme_spec(Figure(), tmp_path)["palette"] == palette.DEFAULT["palette"]
+
+
+def test_a_theme_stating_one_role_keeps_the_curated_cycle():
+    """A Theme object carries its unset multivalued slots as empty lists; those are not declarations and must not replace the curated palette."""
+    import tvbo.datamodel.pydantic as P
+
+    fig = P.Figure(name="t", theme=P.Theme(iri="tvbo:theme/default", ink="#000000"))
+    theme = bsplot.theme_spec(fig, ".")
+    assert theme["ink"] == "#000000"
+    assert theme["palette"] == palette.DEFAULT["palette"]
