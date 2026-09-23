@@ -271,7 +271,11 @@ class ${class_name}(DataInput):
     Source: ${data_location}  (sampling_rate=${sampling_rate}/ms, onset=${onset} ms, ${interp_kind})
 
     The samples go to tvboptim's DataInput, which builds the diffrax interpolation object once in prepare() and evaluates it inside the scan, so the declared interpolation is the one the solver runs. Outside the sampled span the stimulus is silent. `amplitude` (${amplitude}) scales it as a live config leaf, so a sweep or a gradient fit can write the drive's gain.
+
+    The interpolation kind is construction metadata, not a parameter: the solve snapshots every entry of `params` into the config it jits, and a string is not a valid JAX type there. It lives on the class and is lent to `params` for the length of prepare(), which is where DataInput reads it.
     """
+
+    INTERPOLATION = "${interp_kind}"
 
     def __init__(self, **kwargs):
         import numpy as _np
@@ -279,14 +283,24 @@ class ${class_name}(DataInput):
         _samples = _samples.reshape(-1) if _samples.ndim == 1 else _samples.reshape(_samples.shape[0], -1)
         _times = ${onset} + jnp.arange(_samples.shape[0], dtype=jnp.float32) / ${sampling_rate}
         super().__init__(times=_times, data=_samples, interpolation="${interp_kind}")
-        # DataInput carries the samples and the interpolation kind; `amplitude` rides beside them as a live config leaf, which is what lets a sweep or a gradient fit write the drive's gain.
+        # `amplitude` rides beside the samples as a live config leaf, which is what lets a sweep or a gradient fit write the drive's gain.
         _gain = Bunch(amplitude=${amplitude})
         _gain.update(kwargs)
         self.DEFAULT_PARAMS = Bunch(self.DEFAULT_PARAMS, **_gain)
         self.params = Bunch(self.params, **_gain)
+        self.DEFAULT_PARAMS.pop("interpolation_type")
+        self.params.pop("interpolation_type")
 
     def prepare(self, network, dt: float):
-        input_data, input_state = super().prepare(network, dt)
+        """Build the interpolator, then take the interpolation kind back out of `params`.
+
+        prepare() bakes the kind into the diffrax object, so nothing downstream reads it again; leaving it in `params` would put a string in the jitted solve config.
+        """
+        self.params.interpolation_type = self.INTERPOLATION
+        try:
+            input_data, input_state = super().prepare(network, dt)
+        finally:
+            self.params.pop("interpolation_type")
         % if has_spatial:
         _mask = jnp.zeros(network.graph.n_nodes)
         _regions = [${', '.join(str(r) for r in ev_regions)}]

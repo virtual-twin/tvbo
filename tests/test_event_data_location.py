@@ -5,6 +5,7 @@ An Event carrying a `dataLocation` is a waveform read from a file rather than an
 
 import copy
 
+import jax
 import numpy as np
 import pytest
 
@@ -74,6 +75,17 @@ def test_the_declared_interpolation_reaches_the_generated_input(waveform, interp
     assert f'interpolation="{interpolation}"' in code
     assert "jnp.interp(" not in code
     assert "from tvboptim.experimental.network_dynamics.external_input.data import DataInput" in code
+
+
+def test_the_interpolation_kind_is_not_a_live_parameter(waveform):
+    """Every parameter of an external input is snapshotted into the config the solve jits, and a string is not a valid JAX type there.
+
+    The runs below catch this end to end, but only against a backend that does not filter its own config snapshot first; this states the contract on the emitted class itself.
+    """
+    drive = _experiment(waveform).execute("tvboptim").driveInput()
+    assert "interpolation_type" not in drive.params
+    for value in drive.params.values():
+        jax.eval_shape(lambda item: item, value)
 
 
 def test_an_unsupported_interpolation_is_refused(waveform):
