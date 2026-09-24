@@ -1598,7 +1598,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.data import dataref as _dref
 
         out: dict = {}
-        for name, ev in (self.events.items() if getattr(self, "events", None) else []):
+        for name, ev in self.events.items() if getattr(self, "events", None) else []:
             params = dict(ev.parameters) if getattr(ev, "parameters", None) else {}
             ref = getattr(params.get("data"), "used", None)
             if ref is None:
@@ -1624,9 +1624,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def _random_seed_axis_length(self):
         """Number of seeds an exploration's ``execution.random_seed`` axis declares, or ``None`` without one."""
-        for expl in (self.explorations.values() if getattr(self, "explorations", None) else []):
+        for expl in self.explorations.values() if getattr(self, "explorations", None) else []:
             space = getattr(expl, "space", None)
-            for key, axis in (space.items() if hasattr(space, "items") else []):
+            for key, axis in space.items() if hasattr(space, "items") else []:
                 if str(getattr(axis, "parameter", None) or key) != "execution.random_seed":
                     continue
                 values = getattr(axis, "explored_values", None)

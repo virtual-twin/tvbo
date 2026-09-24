@@ -81,7 +81,9 @@ def test_each_seed_plays_its_own_trial(recordings):
     with xr.open_dataset(container, engine="h5netcdf") as ds:
         finals = np.asarray(ds["x_final"].transpose("execution.random_seed", ...).values).reshape(3, -1)
     for trial in range(3):
-        np.testing.assert_allclose(finals[trial, -2:], [N_STEPS * _level(1, trial, 2), N_STEPS * _level(1, trial, 0)], rtol=1e-4)
+        np.testing.assert_allclose(
+            finals[trial, -2:], [N_STEPS * _level(1, trial, 2), N_STEPS * _level(1, trial, 0)], rtol=1e-4
+        )
 
 
 def test_more_seeds_than_recorded_trials_is_refused(recordings):

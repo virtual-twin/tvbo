@@ -108,7 +108,12 @@ def _continuous_and_chunked(coupling_cls, noise, carry):
     pieces = []
     for k in range(N_CHUNKS):
         if noise:
-            state = eqx.tree_at(lambda s: s._internal.noise_samples, state, increments[k * CHUNK : (k + 1) * CHUNK], is_leaf=lambda x: x is None)
+            state = eqx.tree_at(
+                lambda s: s._internal.noise_samples,
+                state,
+                increments[k * CHUNK : (k + 1) * CHUNK],
+                is_leaf=lambda x: x is None,
+            )
         result = chunk_fn(state)
         pieces.append(np.asarray(result.ys))
         state = eqx.tree_at(lambda s: s.initial_state.dynamics, state, result.ys[-1][:2])
@@ -165,4 +170,4 @@ def test_carrying_the_history_changes_a_delayed_fic_eib_fit(tmp_path):
     """Guards the carry: the same seeded fit with the pre-fix loop, which restarted the delay lines every TR, ends elsewhere."""
     carried = _delayed_fic_eib_run(tmp_path, carry=True)
     restarted = _delayed_fic_eib_run(tmp_path, carry=False)
-    assert max(float(np.max(np.abs(a - b))) for a, b in zip(carried, restarted)) > 1e-8
+    assert max(float(np.max(np.abs(a - b))) for a, b in zip(carried, restarted, strict=True)) > 1e-8

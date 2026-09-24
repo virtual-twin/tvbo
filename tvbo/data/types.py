@@ -2374,9 +2374,15 @@ class ExperimentResult:
         # An analysis observation (a Fisher curve, a gradient) is a bare array with no dims, so it goes through _numeric_da rather than being dropped by the labelled-only guard.
         integ_obs = getattr(self.integration, "observations", None) if self.integration is not None else None
         # An observation declared `record: false` is an intermediate the recipe says not to store, on the base run's copy as on the declared one.
-        _unrecorded = {
-            str(n) for n, o in (getattr(self.source, "observations", None) or {}).items() if getattr(o, "record", None) is False
-        } if record_only else set()
+        _unrecorded = (
+            {
+                str(n)
+                for n, o in (getattr(self.source, "observations", None) or {}).items()
+                if getattr(o, "record", None) is False
+            }
+            if record_only
+            else set()
+        )
         if integ_obs and hasattr(integ_obs, "items"):
             for obs_name, obs in integ_obs.items():
                 if str(obs_name) in _unrecorded:

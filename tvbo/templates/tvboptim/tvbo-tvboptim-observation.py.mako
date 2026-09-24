@@ -653,18 +653,16 @@ ${render_recurrence_reduction(red, name, s_idx, dt)}\
 </%def>\
 <%def name="render_comoment_reduction(red, name, s_idx, dt)">\
 <%doc>
-    Cumulative co-moment FC reducer (a compute_fc pipeline marked reduce: streaming). Folds the whole post-transient window as a Welford co-moment (add-only, NO eviction — cumulative, not a sliding window), then reads the zero-diagonal Pearson correlation at finalize. Matrix-valued state: `comoment` is (n, n), `mean` is (n,), `count` a scalar. The `add` assignments and the Pearson `emit` are the declarative windowed_fc recipe already lowered to this backend (utils._resolve_fc_stream via resolve_streaming_reducer), so this partial only emits the block scaffolding — the accumulator math is the shared reducer spec, no FC logic baked here. Byte-identical to compute_fc(source, skip_t) to f64 summation order; the compute_fc skip_t adds to the transient `skip` so the same leading samples are dropped.
+    Cumulative co-moment FC reducer (a compute_fc pipeline marked reduce: streaming). Folds the whole post-transient window as a Welford co-moment (add-only, NO eviction — cumulative, not a sliding window), then reads the zero-diagonal Pearson correlation at finalize. Matrix-valued state: `comoment` is (n, n), `mean` is (n,), `count` a scalar. The Pearson `emit` is the declarative windowed_fc recipe already lowered to this backend (utils._resolve_fc_stream via resolve_streaming_reducer). A block folds in whole, not sample by sample: its accepted rows' mean and centred co-moment (one matmul) merge into the running state by the pairwise Welford update (Chan, Golub & LeVeque 1979), the batched form of the recipe's per-sample `add`. Per sample that is an O(n^2) outer product plus two O(n^2) selects, which on a 379-node network cost more than the integration step itself; per block it is one BLAS product. Equal to compute_fc(source, skip_t) to f64 rounding; the compute_fc skip_t adds to the transient `skip` so the same leading samples are dropped.
 </%doc>\
 <%
     _states = list(red['states'])          # ['count', 'mean', 'comoment']
-    _add = red['add']                      # [(lhs, jax_rhs), ...] sequential Welford update
     _emit = red['emit']                    # zero-diagonal Pearson correlation over comoment
     _skip_t = int(red.get('skip_t', 0))
     _acc = ", ".join(_states)
-    _acc0 = ", ".join("_%s0" % _s for _s in _states)
     # Keyed by state role, never position, so a reducer-spec reorder cannot silently mis-shape the accumulator.
     _INIT_SHAPE = {'count': 'jnp.array(0)', 'mean': 'jnp.zeros((n,))', 'comoment': 'jnp.zeros((n, n))'}
-    _missing = [_s for _s in _states if _s not in _INIT_SHAPE]
+    _missing = [_s for _s in _states if _s not in _INIT_SHAPE] + [_s for _s in _INIT_SHAPE if _s not in _states]
     if _missing:
         raise ValueError("co-moment reducer: no carry-init shape for state(s) %s" % _missing)
     _init_tuple = ", ".join(_INIT_SHAPE[_s] for _s in _states)
@@ -676,20 +674,21 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
         n = template.shape[-1]
         return (${_init_tuple}, jnp.array(0))
     def _update(acc, block):
-        def _step(carry, s_row):
-            ${_acc}, _gstep = carry
-            v = s_row[s_var]
-            _accept = _gstep >= _skip
-            # Commit only past `skip`, since a running correlation must not fold the dropped leading samples.
-            ${_acc0} = ${_acc}
-% for _lhs, _rhs in _add:
-            ${_lhs} = ${_rhs}
-% endfor
-% for _s in _states:
-            ${_s} = jnp.where(_accept, ${_s}, _${_s}0)
-% endfor
-            return (${_acc}, _gstep + 1), None
-        return jax.lax.scan(_step, acc, block)[0]
+        ${_acc}, _gstep = acc
+        x = block[:, s_var, :]
+        # Only rows past `skip` are folded, since a running correlation must not see the dropped leading samples.
+        _accept = (_gstep + jnp.arange(x.shape[0])) >= _skip
+        _w = _accept.astype(x.dtype)[:, None]
+        _m = jnp.sum(_accept)
+        _mf = _m.astype(x.dtype)
+        _block_mean = jnp.sum(_w * x, axis=0) / jnp.maximum(_mf, 1.0)
+        _xc = (x - _block_mean) * _w
+        _n1 = (count + _m).astype(x.dtype)
+        _delta = _block_mean - mean
+        mean = mean + _delta * _mf / jnp.maximum(_n1, 1.0)
+        comoment = comoment + _xc.T @ _xc + jnp.outer(_delta, _delta) * (count.astype(x.dtype) * _mf / jnp.maximum(_n1, 1.0))
+        count = count + _m
+        return (${_acc}, _gstep + x.shape[0])
     def _finalize(acc):
         ${_acc}, _gstep = acc
         return ${_emit}
