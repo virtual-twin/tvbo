@@ -312,7 +312,7 @@ def test_fc_reducer_matches_compute_fc():
 
 @pytest.mark.parametrize("block_size", [37, 64, 128, 199])
 def test_fc_reducer_is_block_decomposition_invariant(block_size):
-    """The grid path folds blocks; the cumulative co-moment must be bit-exact across any block boundary (Welford add is order-fixed for a fixed sample order)."""
+    """The grid path folds blocks; the cumulative co-moment must agree to f64 rounding across any block boundary (each block merges into the running state by the pairwise Welford update, so the split only moves rounding)."""
     red = resolve_reduction(_fc_observation(skip_t=20))
     factory = _emit_fc_reducer(red, s_idx=4)
     data = _trajectory(seed=17, T=400, n_states=5, n=8)
@@ -322,7 +322,7 @@ def test_fc_reducer_is_block_decomposition_invariant(block_size):
     acc = init(data[0], data.shape[0])
     for s in range(0, data.shape[0], block_size):
         acc = update(acc, data[s : s + block_size])
-    assert float(jnp.max(jnp.abs(finalize(acc) - single))) == 0.0
+    assert float(jnp.max(jnp.abs(finalize(acc) - single))) < 1e-14
 
 
 def test_fc_reducer_gradient_matches_compute_fc():

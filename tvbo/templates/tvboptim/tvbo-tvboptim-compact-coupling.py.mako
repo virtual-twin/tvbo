@@ -1,19 +1,20 @@
 <%doc>
 Compact delayed coupling: a concrete tvboptim DelayedCoupling that integrates over the connectome's nonzero edges.
 
-Emitted once into a generated module that defines any delayed coupling; every delayed coupling class the cfun template renders then inherits from it. Built only on tvboptim's public coupling contract (prepare / precompute / compute / pre / post and the roll history buffer), so it runs on the released tvboptim as well as a development checkout.
+Emitted once into a generated module that defines any delayed coupling; every delayed coupling class the cfun template renders then inherits from it. Built only on tvboptim's public coupling and graph contract (prepare / precompute / compute / pre / post, the roll history buffer, and a sparse graph's `edge_indices` and per-edge `data`), so it runs on the released tvboptim as well as a development checkout.
 </%doc>
 <%def name="render_compact_delayed_coupling()">\
 import equinox as _eqx
 import numpy as _np
+from tvboptim.experimental.network_dynamics.graph import SparseGraph as _SparseGraph
 
 
 class CompactDelayedCoupling(DelayedCoupling):
     """A DelayedCoupling that visits only the connectome's nonzero edges and sums them without a scatter.
 
-    The stock dense path gathers every one of the N^2 delayed source states each step, applies ``pre`` and weights to all of them, and reduces over the source axis, so a connectome with most entries zero pays for edges that carry nothing. Here the edges with nonzero weight at prepare() time are laid out as row-contiguous slots, padded per target to whole chunks of ``COMPACT_CHUNK``; each step reads its delayed states with one flat gather from the history buffer, applies ``pre`` and the weights per slot, and sums every chunk with a ones-contraction and every target's chunks with a small gather. The coupling is the stock one up to floating-point summation order.
+    The stock dense path gathers every one of the N^2 delayed source states each step, applies ``pre`` and weights to all of them, and reduces over the source axis, so a connectome with most entries zero pays for edges that carry nothing; the stock sparse path visits only the stored edges but reduces them with a scatter-add. Here the edges (a dense graph's nonzero entries at prepare() time, a sparse graph's stored ones) are laid out as row-contiguous slots, padded per target to whole chunks of ``COMPACT_CHUNK``; each step reads its delayed states with one flat gather from the history buffer, applies ``pre`` and the weights per slot, and sums every chunk with a ones-contraction and every target's chunks with a small gather. The coupling is the stock one up to floating-point summation order.
 
-    The nonzero pattern is fixed at prepare(), as a sparse graph's edge list is. Weights may change value on it (sweeps, fits, per-TR updates of edge parameters), and a weight that turns nonzero off it raises rather than being dropped. The gradient with respect to a structurally-zero weight is zero, as for a sparse graph. The compact path covers what tvbo emits, a dense delay graph read through the default roll buffer without interpolation or clamp warnings; any other configuration, or a nearly full graph, takes the stock path unchanged.
+    The edge list is fixed at prepare(), as a sparse graph's is. Weights may change value on it (sweeps, fits, per-TR updates of edge parameters); on a dense graph a weight that turns nonzero off it raises rather than being dropped, and a sparse graph cannot grow an entry. The gradient with respect to a structurally-zero weight is zero, as for a sparse graph. The compact path covers what tvbo emits, a delay graph, dense or sparse, read through the default roll buffer without interpolation or clamp warnings; any other configuration, or a nearly full graph, takes the stock path unchanged.
     """
 
     COMPACT_CHUNK = 32
@@ -32,13 +33,14 @@ class CompactDelayedCoupling(DelayedCoupling):
         ):
             return data, state
         try:
-            pattern = _np.asarray(weights) != 0
+            edges, off_pattern = _compact_edge_list(graph)
         except jax.errors.TracerArrayConversionError:
             return data, state
-        if pattern.mean() > self.COMPACT_MAX_DENSITY:
+        n_target, n_source = weights.shape
+        if edges.shape[0] > self.COMPACT_MAX_DENSITY * n_target * n_source:
             return data, state
         data = Bunch(data)
-        data._compact = _compact_edge_slots(pattern, self.COMPACT_CHUNK)
+        data._compact = _compact_edge_slots(edges, n_target, self.COMPACT_CHUNK, off_pattern)
         data._compact_dt = dt
         data._compact_newest, data._compact_channels, data._compact_sources = (
             state.history.shape[0] - 1,
@@ -53,22 +55,31 @@ class CompactDelayedCoupling(DelayedCoupling):
             return super().precompute(coupling_data, params, graph)
         data = Bunch(coupling_data)
         target, source = slots.target, slots.source
-        steps = jnp.clip(jnp.rint(graph.delays[target, source] / data._compact_dt).astype(jnp.int32), 0, data._compact_newest)
+        sparse = isinstance(graph, _SparseGraph)
+        if sparse:
+            delays = graph.delays.data[slots.edge]
+            slot_weights = jnp.where(slots.valid, graph.weights.data[slots.edge], 0.0)
+        else:
+            delays = graph.delays[target, source]
+            slot_weights = _eqx.error_if(
+                jnp.where(slots.valid, graph.weights[target, source], 0.0),
+                jnp.any((graph.weights != 0) & slots.off_pattern),
+                "A delayed coupling's weights gained a nonzero entry outside the pattern prepare() compacted; "
+                "prepare the network again on the new weights.",
+            )
+        steps = jnp.clip(jnp.rint(delays / data._compact_dt).astype(jnp.int32), 0, data._compact_newest)
         channel = jnp.arange(data._compact_channels)[:, None]
         data._compact_offsets = ((data._compact_newest - steps)[None, :] * data._compact_channels + channel) * data._compact_sources + source[None, :]
-        weights = graph.weights
-        slot_weights = jnp.where(slots.valid, weights[target, source], 0.0)
-        data._compact_weights = _eqx.error_if(
-            slot_weights,
-            jnp.any((weights != 0) & slots.off_pattern),
-            "A delayed coupling's weights gained a nonzero entry outside the pattern prepare() compacted; "
-            "prepare the network again on the new weights.",
-        )
+        data._compact_weights = slot_weights
         pre_params = Bunch(params)
         for name in self.EDGE_PARAMS:
             value = jnp.asarray(params[name])
-            value = value.reshape(weights.shape) if value.ndim == 1 else value
-            pre_params[name] = value[target, source]
+            if value.ndim == 2:
+                pre_params[name] = value[target, source]
+            elif sparse:
+                pre_params[name] = value[slots.edge]
+            else:
+                pre_params[name] = value.reshape(graph.weights.shape)[target, source]
         data._compact_pre_params = pre_params
         return data
 
@@ -88,33 +99,50 @@ class CompactDelayedCoupling(DelayedCoupling):
         return self.post(chunk_sums[:, slots.chunk_table].sum(axis=-1), local_states, params)
 
 
-def _compact_edge_slots(pattern, chunk):
-    """Row-contiguous slots for the nonzero entries of *pattern*, each target padded to whole chunks.
+def _compact_edge_list(graph):
+    """The graph's edges as a concrete ``(n_edges, 2)`` array of (target, source), in the order its per-edge data follows, and the entries a dense weight must keep at zero.
 
-    Returns a Bunch: ``target`` / ``source`` per slot (a padding slot points at its own row and source 0, so every read stays in bounds), ``valid`` (False on padding), ``chunk_table`` (each target's chunks, padded with the index of an extra all-zero chunk) and ``off_pattern`` (the entries a live weight must keep at zero).
+    A sparse graph's edges are its stored indices, which its ``weights.data`` and ``delays.data`` follow, and it has no off-pattern entries to guard (None). A dense graph's edges are the nonzero entries of its weight matrix at prepare() time, and every other entry must stay zero.
     """
-    n_target = pattern.shape[0]
-    counts = pattern.sum(axis=1)
+    if isinstance(graph, _SparseGraph):
+        return _np.asarray(graph.edge_indices), None
+    pattern = _np.asarray(graph.weights) != 0
+    return _np.argwhere(pattern), ~pattern
+
+
+def _compact_edge_slots(edges, n_target, chunk, off_pattern):
+    """Row-contiguous slots for *edges* (``(n_edges, 2)`` target/source pairs), each target padded to whole chunks.
+
+    Returns a Bunch: ``target`` / ``source`` / ``edge`` per slot (``edge`` indexes *edges*; a padding slot points at its own row, source 0 and edge 0, so every read stays in bounds), ``valid`` (False on padding), ``chunk_table`` (each target's chunks, padded with the index of an extra all-zero chunk) and, for a dense graph, ``off_pattern`` (the entries a live weight must keep at zero).
+    """
+    target_e = _np.asarray(edges[:, 0], dtype=_np.int64)
+    source_e = _np.asarray(edges[:, 1], dtype=_np.int64)
+    order = _np.argsort(target_e, kind="stable")
+    counts = _np.bincount(target_e, minlength=n_target)
     padded = -(-counts // chunk) * chunk
     n_slots = int(padded.sum())
+    first = _np.concatenate([[0], _np.cumsum(padded)[:-1]])
+    starts = _np.concatenate([[0], _np.cumsum(counts)[:-1]])
+    row = target_e[order]
+    slot = first[row] + _np.arange(order.size) - starts[row]
     target = _np.repeat(_np.arange(n_target), padded)
     source = _np.zeros(n_slots, dtype=_np.int64)
+    edge = _np.zeros(n_slots, dtype=_np.int64)
     valid = _np.zeros(n_slots, dtype=bool)
-    first = _np.concatenate([[0], _np.cumsum(padded)[:-1]])
-    for row in range(n_target):
-        cols = _np.nonzero(pattern[row])[0]
-        source[first[row] : first[row] + cols.size] = cols
-        valid[first[row] : first[row] + cols.size] = True
+    source[slot], edge[slot], valid[slot] = source_e[order], order, True
     per_target = padded // chunk
     width = max(1, int(per_target.max(initial=0)))
     first_chunk = _np.concatenate([[0], _np.cumsum(per_target)[:-1]])
     column = _np.arange(width)
     chunk_table = _np.where(column[None, :] < per_target[:, None], first_chunk[:, None] + column[None, :], n_slots // chunk)
-    return Bunch(
+    slots = Bunch(
         target=jnp.asarray(target, dtype=jnp.int32),
         source=jnp.asarray(source, dtype=jnp.int32),
+        edge=jnp.asarray(edge, dtype=jnp.int32),
         valid=jnp.asarray(valid),
         chunk_table=jnp.asarray(chunk_table, dtype=jnp.int32),
-        off_pattern=jnp.asarray(~pattern),
     )
+    if off_pattern is not None:
+        slots.off_pattern = jnp.asarray(off_pattern)
+    return slots
 </%def>

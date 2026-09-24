@@ -1,6 +1,6 @@
 """The CompactDelayedCoupling tvbo emits for delayed tvboptim couplings integrates the same network as tvboptim's stock DelayedCoupling.
 
-The class is rendered from its template def and executed on its own, exactly as a generated module defines it, then subclassed the way the cfun template subclasses it. Each test integrates one network twice, once through the stock dense path and once through the compact path, and compares the trajectories.
+The class is rendered from its template def and executed on its own, exactly as a generated module defines it, then subclassed the way the cfun template subclasses it. Each test integrates one network twice, once through tvboptim's stock path and once through the compact path, and compares the trajectories, on a dense delay graph and on a sparse one.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from tvboptim.experimental.network_dynamics import Network, prepare
 from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 from tvboptim.experimental.network_dynamics.coupling.base import DelayedCoupling
 from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
-from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
+from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph, SparseDelayGraph
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 from tvboptim.experimental.network_dynamics.solvers import BoundedSolver, Euler
 
@@ -87,12 +87,26 @@ def _connectome(n_nodes, density, max_delay_steps, seed=0):
     return (jnp.asarray(a) for a in (weights, delays, edge_a, edge_b))
 
 
-def _solve(coupling_cls, n_nodes=40, density=0.35, max_delay_steps=12, n_steps=300, noise=True, **coupling_kw):
+def _solve(
+    coupling_cls,
+    n_nodes=40,
+    density=0.35,
+    max_delay_steps=12,
+    n_steps=300,
+    noise=True,
+    sparse=False,
+    per_edge=False,
+    **coupling_kw,
+):
+    """A prepared network on a dense or a sparse delay graph, with the edge parameters as matrices or, on a sparse graph, per stored edge."""
     weights, delays, edge_a, edge_b = _connectome(n_nodes, density, max_delay_steps)
+    graph = SparseDelayGraph(weights, delays) if sparse else DenseDelayGraph(weights, delays)
+    if per_edge:
+        edge_a, edge_b = graph.gather_edges(edge_a), graph.gather_edges(edge_b)
     network = Network(
         TwoChannelEI(),
         {"eib": coupling_cls(wLRE=edge_a, wFFI=edge_b, **coupling_kw)},
-        DenseDelayGraph(weights, delays),
+        graph,
         noise=AdditiveNoise(sigma=0.01, apply_to=["S_e", "S_i"], key=jax.random.key(3)) if noise else None,
     )
     solver = BoundedSolver(Euler(), low=jnp.zeros((2, 1)), high=jnp.ones((2, 1)))
@@ -125,6 +139,30 @@ def test_compact_follows_live_weights_and_edge_parameters():
     compact_fn, compact_config = _solve(COMPACT_EIB)
     for config in (stock_config, compact_config):
         config.graph.weights = 1.7 * config.graph.weights
+        config.coupling.eib.wLRE = 0.5 * config.coupling.eib.wLRE
+    np.testing.assert_allclose(
+        jax.jit(compact_fn)(compact_config).ys, jax.jit(stock_fn)(stock_config).ys, rtol=1e-11, atol=1e-13
+    )
+
+
+@pytest.mark.parametrize("per_edge", [False, True], ids=["matrix-edge-params", "per-edge-params"])
+@pytest.mark.parametrize("noise", [False, True])
+def test_compact_matches_stock_on_a_sparse_delay_graph(noise, per_edge):
+    """On a sparse graph the compact path reads the stored edges with their own weights, delays and edge parameters, and integrates what the stock sparse path and the dense path integrate."""
+    stock, _ = _trajectory(STOCK_EIB, noise=noise, sparse=True, per_edge=per_edge)
+    compact, config = _trajectory(COMPACT_EIB, noise=noise, sparse=True, per_edge=per_edge)
+    dense, _ = _trajectory(STOCK_EIB, noise=noise)
+    assert "_compact" in config._internal.coupling.eib
+    assert "off_pattern" not in config._internal.coupling.eib._compact
+    assert np.ptp(stock) > 0.05
+    np.testing.assert_allclose(compact, stock, rtol=1e-11, atol=1e-13)
+    np.testing.assert_allclose(compact, dense, rtol=1e-11, atol=1e-13)
+
+
+def test_compact_follows_live_edge_parameters_on_a_sparse_graph():
+    stock_fn, stock_config = _solve(STOCK_EIB, sparse=True)
+    compact_fn, compact_config = _solve(COMPACT_EIB, sparse=True)
+    for config in (stock_config, compact_config):
         config.coupling.eib.wLRE = 0.5 * config.coupling.eib.wLRE
     np.testing.assert_allclose(
         jax.jit(compact_fn)(compact_config).ys, jax.jit(stock_fn)(stock_config).ys, rtol=1e-11, atol=1e-13
