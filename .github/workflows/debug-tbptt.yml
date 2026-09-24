@@ -1,0 +1,63 @@
+name: Debug tbptt hang
+
+# Throwaway, runs only when this file is pushed: reproduces the tvboptim-shard timeout of test_tbptt_motivation_sweep_records_diagnostics on the hosted runner, with native stack dumps when a test stalls.
+on:
+    push:
+        branches: [dev]
+        paths: [.github/workflows/debug-tbptt.yml]
+
+jobs:
+    repro:
+        name: tbptt (jax ${{ matrix.jax }})
+        runs-on: ubuntu-latest
+        timeout-minutes: 75
+        strategy:
+            fail-fast: false
+            matrix:
+                jax: ["0.11.1", "0.11.2"]
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  activate-environment: true
+            - name: Configure git for private repos
+              env:
+                  PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+              run: git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$PRIVATE_REPO_TOKEN"; }; f'
+            - name: Install
+              run: |
+                  uv pip install -e ".[all]" pytest pytest-timeout py-spy "jax==${{ matrix.jax }}" "jaxlib==${{ matrix.jax }}"
+                  sudo apt-get install -y -qq gdb > /dev/null
+            - name: Machine
+              run: |
+                  mkdir -p out
+                  { lscpu; nproc; free -g; python -c "import jax, jaxlib; print(jax.__version__, jaxlib.__version__, jax.devices())"; } | tee out/machine.txt
+            - name: Motivation test alone, then the tvboptim shard, dumping native stacks on a stall
+              run: |
+                  run() {
+                      label=$1; shift
+                      pytest -v --tb=short --durations=15 --timeout=900 --timeout-method=thread --override-ini="addopts=" "$@" > "out/$label.log" 2>&1 &
+                      pid=$!; last=""; still=0
+                      while kill -0 "$pid" 2>/dev/null; do
+                          sleep 30
+                          cur=$(tail -c 400 "out/$label.log" | md5sum)
+                          if [ "$cur" = "$last" ]; then still=$((still + 30)); else still=0; last=$cur; fi
+                          if [ "$still" -eq 150 ] || [ "$still" -eq 450 ]; then
+                              {
+                                  echo "== $label +${still}s $(date +%T) $(tail -1 "out/$label.log" | cut -c1-120)"
+                                  ps -o pid,pcpu,rss,nlwp,etime -p "$pid"; top -H -b -n 1 -p "$pid" | head -30; free -m
+                                  sudo "$(command -v py-spy)" dump --native --pid "$pid" 2>&1 | head -250
+                                  sudo timeout 180 gdb -p "$pid" -batch -ex "thread apply all bt 30" 2>&1 | grep -vE "^\[New LWP|^warning:" | head -800
+                              } >> out/stalls.txt 2>&1
+                          fi
+                      done
+                      wait "$pid"; echo "$label rc=$? $(grep -E ' (passed|failed)' "out/$label.log" | tail -1)" | tee -a out/summary.txt
+                  }
+                  run single tests/test_tvboptim_byte_identity.py::test_tbptt_motivation_sweep_records_diagnostics
+                  run shard tests/test_tvboptim_experiments.py tests/functional/test_simulation_backends_tvboptim.py tests/test_full_workflow_comparison.py tests/test_tvboptim_byte_identity.py tests/functional/test_observation_backend_consistency.py
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: tbptt-jax-${{ matrix.jax }}
+                  path: out/
