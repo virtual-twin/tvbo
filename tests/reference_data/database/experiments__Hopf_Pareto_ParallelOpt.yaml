@@ -727,7 +727,7 @@ explorations:
     objectives:
     - psd_mae
     - one_minus_fc
-    n_parallel: '8'
+    n_parallel: 8
     n_trials: 1
     sweep_seeding: independent
     sweep_direction: up

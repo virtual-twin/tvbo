@@ -5,7 +5,7 @@ version: 0.4.0
 description: Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
 title: The Virtual Brain Data Model
 license: https://spdx.org/licenses/EUPL-1.2
-created_on: '2024-01-01'
+created_on: '2024-01-01T00:00:00Z'
 prefixes:
     tvbo: https://w3id.org/tvbo/
     linkml: https://w3id.org/linkml/
@@ -578,7 +578,7 @@ classes:
                 description: "Number of points (alternative to step for grid exploration)."
             log_scale:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: "Whether to use logarithmic spacing."
             explored_values:
                 multivalued: true
@@ -635,7 +635,7 @@ classes:
                 description: Python code for the equation.
             latex:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
 
     ConditionalBlock:
         class_uri: tvbo:ConditionalBlock
@@ -1067,6 +1067,11 @@ classes:
         class_uri: tvbo:ExperimentResultSidecar
         description: >-
             Descriptor for a cached ``ExperimentResult``: the ``.h5`` companion holding the fitted parameter arrays, one ``CachedArray`` entry per array, and the provenance a downstream cache needs to decide whether the result is still valid. Written by ``tvbo.data.experiment_result_io.save_sidecar``, so it is generated rather than authored — but it is self-describing (it carries a ``tvbo_class`` envelope naming this class), which is what lets ``tvbo validate schema`` check a generated sidecar instead of falling back to some unrelated class and failing on its required slots.
+        mixins:
+            - Document
+        slot_usage:
+            tvbo_class:
+                equals_string: "tvbo:ExperimentResultSidecar"
         attributes:
             data_file:
                 range: string
@@ -1092,6 +1097,11 @@ classes:
             Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales, demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the measure list; the h5 carries ``measures/<name>`` 1-D float arrays of length ``len(subjects)``.
 
             Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html) and with NIDM's ``nidm:Phenotype`` concept. Per-measure metadata can optionally carry Cognitive Atlas (https://www.cognitiveatlas.org/) ``cogat:Task`` and ``cogat:Concept`` IRIs via ``measure_specs``.
+        mixins:
+            - Document
+        slot_usage:
+            tvbo_class:
+                equals_string: "tvbo:Phenotype"
         slots:
             - label
             - description
@@ -1225,6 +1235,11 @@ classes:
             - Graph
             - Connectivity
         description: "Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility)."
+        mixins:
+            - Document
+        slot_usage:
+            tvbo_class:
+                equals_string: "tvbo:Network"
         slots:
             - label
             - description
@@ -1530,7 +1545,7 @@ classes:
             - record
         slot_usage:
             record:
-                ifabsent: true
+                ifabsent: "true"
         attributes:
             id:
                 range: integer
@@ -1644,7 +1659,7 @@ classes:
                 inlined: false
             directed:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
             connectivity:
                 range: ConnectivityRule
@@ -1949,6 +1964,8 @@ classes:
             number_of_modes:
                 range: integer
                 ifabsent: integer(1)
+                description: >-
+                    Length of the mode axis every state variable carries (TVB's ``number_of_modes``): the same equations evaluated once per mode, the modes differing only through per-mode parameter vectors and mixing through mode-coupling matrices (``mode_dot``), as in the Stefanescu–Jirsa reduced sets. Distinct from ``components``, which nests different dynamics.
             local_coupling_term:
                 range: Parameter
             functions:
@@ -1958,12 +1975,12 @@ classes:
             stimulus:
                 range: Stimulus
                 inlined: true
-            modes:
+            components:
                 multivalued: true
                 range: Dynamics
                 inlined: true
-                aliases:
-                    - components
+                description: >-
+                    Named child dynamics this model is composed of, each with its own parameters, state and equations — NeuroML's nested components (a cell's ion channels, a channel's gates, a gate's rates), keyed by the child's name. Distinct from ``number_of_modes``, which replicates this model's own state along a mode axis.
             model_type:
                 range: ModelType
                 description: >-
@@ -1988,12 +2005,12 @@ classes:
                     Discrete state transitions intrinsic to the dynamical system, such as threshold-triggered resets in spiking neuron models. Unlike experiment-level events (stimulation, perturbation), these define the model's own discontinuous behavior.
             cse:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: >-
                     Code-generation hint (opt-in, backend-independent): eliminate common subexpressions. When true, the generator evaluates each repeated subexpression — including repeated calls to model-defined functions — once and reuses the result instead of re-emitting it at every occurrence. Purely a performance hint: results are numerically identical. A backend whose compiler already performs this elimination may honour it as a no-op. Off by default (expressions are emitted in flat form).
             compile:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: >-
                     Code-generation hint (opt-in, backend-independent): request that the generated dynamics be compiled to machine code rather than interpreted, where the target backend supports it. Purely a performance hint with no effect on results; a backend that is inherently compiled (or cannot compile) honours it as a no-op. Off by default. Independent of, and composable with, ``cse``.
 
@@ -2012,16 +2029,16 @@ classes:
             - grounding
         slot_usage:
             record:
-                ifabsent: true
+                ifabsent: "true"
         attributes:
             variable_of_interest:
                 range: boolean
-                ifabsent: true
+                ifabsent: "true"
                 deprecated: >-
                     Use 'record' instead. A state variable is recorded in the output when record=true (the default); set record=false to suppress it. 'variable_of_interest' is retained for backward compatibility and is ignored by the TVB/jax/rateml codegen.
             coupling_variable:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: >-
                     Whether this state variable is transmitted to connected nodes through the coupling function. In TVB terms, this determines the cvar indices (state variables extracted from history and fed into the coupling function). The coupling function may override this via its incoming_states attribute.
             equation_type:
@@ -2419,7 +2436,7 @@ classes:
             - grounding
         slot_usage:
             record:
-                ifabsent: false
+                ifabsent: "false"
 
     Surrogate:
         class_uri: tvbo:Surrogate
@@ -2447,7 +2464,7 @@ classes:
                   Exceedance direction: ``greater_equal`` (fraction of permutations whose statistic ≥ the observed) or ``less_equal`` (one-sided negative test).
             family_wise:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: >-
                   Apply a Westfall–Young family-wise (max-T) correction: collapse the permuted statistic to its extremum over the element axes, forming one family-wise null per permutation that every observed element is tested against. The extremum follows ``direction`` (``greater_equal`` → maximum, ``less_equal`` → minimum). Absent → the symmetric per-element test.
 
@@ -2512,11 +2529,11 @@ classes:
             gaussian:
                 range: boolean
                 description: "Indicates whether the noise is Gaussian"
-                ifabsent: false
+                ifabsent: "false"
             additive:
                 range: boolean
                 description: "Indicates whether the noise is additive"
-                ifabsent: true
+                ifabsent: "true"
             seed:
                 range: integer
                 ifabsent: integer(42)
@@ -2722,10 +2739,12 @@ classes:
                 description: >-
                     Names of observations to compute and record at EACH grid point, stacked over the sweep into one array per name. Entries may be derived observations (e.g. `loss`) or `analysis` diagnostics (e.g. `ad_gradient`, `fd_gradient`, `lyapunov`) — this is how a sweep of the diagnostics themselves is declared, replacing any per-point Python driver. Complementary to `observable` (a single scalar reduction); when both are absent the full observation Bunch is recorded.
             n_parallel:
+                range: ScalarValue
                 any_of:
                     - range: integer
                     - range: string
-                ifabsent: string(auto)
+                annotations:
+                    default: auto
                 description: >-
                     Grid batch size for parameter exploration — how many sweep cells the backend evaluates as one vectorised chunk. ``auto`` (the default) vectorises the grid, bounded by a cell-count cap (``min(grid_size, 64)``, env ``TVBO_NVMAP_AUTO_CAP``) and a working-memory budget (env ``TVBO_NVMAP_MEM_BUDGET_GB``, default 2 GB) estimated from the per-cell output and live state: fast on every backend, and the memory budget keeps a large-per-cell grid (e.g. a whole-brain delay network) from inflating peak memory. Vectorising still holds ``n_vmap`` cells at once, so auto uses more working memory than a sequential run — the budget bounds it. An integer fixes the chunk size and bypasses both bounds (``1`` = fully sequential, minimal memory; a larger value trades memory for fewer, wider batches). Backends translate this into their own execution primitive (e.g. tvboptim's vmap chunk width) without exposing any backend-specific names in the schema.
             block_size:
@@ -3500,7 +3519,7 @@ classes:
                     How the base solve draws its noise realization, and therefore WHICH realization it is: `fused` draws the whole [n_steps, ...] tensor in one call, `blocked` regenerates each block of `block_size` steps from (key, block_index). Those are different draws from the same seed, so the grain is a declared property of the integration rather than something inferred from how the run is consumed. An observable declared `reduce: streaming` folds block by block whatever this says, because a reduction has no trajectory to fold otherwise; declare `blocked` to put the whole run on that same grain.
             scipy_ode_base:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
             number_of_stages:
                 range: integer
                 ifabsent: integer(1)
@@ -3513,7 +3532,7 @@ classes:
                 inlined: true
             delayed:
                 range: boolean
-                ifabsent: true
+                ifabsent: "true"
             differentiation:
                 range: Differentiation
                 inlined: true
@@ -3567,7 +3586,7 @@ classes:
                 inlined: true
             sparse:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: "Whether the coupling uses sparse representations"
             pre_expression:
                 range: Equation
@@ -3591,16 +3610,16 @@ classes:
                     References to state variables from the local (target) node. Used by name in pre_expression.
             delayed:
                 range: boolean
-                ifabsent: true
+                ifabsent: "true"
                 description: "Whether coupling includes transmission delays"
             interpolate_delays:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: >-
                     For delayed coupling: read delayed states by linear interpolation between the two bracketing history time-steps instead of snapping each delay to the nearest integer step. Removes sub-step quantisation error and makes the coupling differentiable w.r.t. the continuous delay — hence w.r.t. conduction speed v (delay = tract_length / v) — so v can be gradient-optimised. Default false preserves exact nearest-step behaviour (tvboptim roll strategy).
             vectorized:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: >-
                     Opt in to the vectorized matmul fast path for a source-only coupling — one whose pre_expression depends only on source states (e.g. the angle-addition decomposition [sin(theta_j), cos(theta_j)]). The W-reduction then becomes a single ``pre @ weights`` matmul instead of materialising the dense per-edge tensor. ONLY valid for INSTANTANEOUS coupling on a SYMMETRIC connectome (W == Wᵀ): the matmul contracts W while the per-edge path contracts Wᵀ, so the two agree only when W is symmetric. Default false keeps the always-correct per-edge reduction (and delays are inherently per-edge, so this flag is ignored when delayed=true).
             symmetry:
@@ -3634,14 +3653,18 @@ classes:
                 description: "For hierarchical coupling: region-to-region connectivity with weights and delays"
                 inlined: true
             aggregation:
+                range: ScalarValue
                 any_of:
                     - range: string
                     - range: Function
+                      inlined: true
                 description: "For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custom Function"
             distribution:
+                range: ScalarValue
                 any_of:
                     - range: string
                     - range: Function
+                      inlined: true
                 description: "For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function"
 
     RegionMapping:
@@ -3707,7 +3730,7 @@ classes:
                     Experiment-global RNG seed (default 0). Governs every stochastic draw — additive noise, initial-condition and parameter distributions, and n_trials ensembles — unless a specific `Distribution.seed` overrides it for that distribution.
             find_fixpoint:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
                 description: >-
                     Whether to find a fixed point (steady state) before time integration. Used as initial condition for ODEProblem. Maps to NLsolve.fixpoint! in ND.jl or similar in other backends.
             system_size:
@@ -4382,7 +4405,7 @@ classes:
                 range: NDArray
             time_dependent:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
             initial_value:
                 description: >-
                     Constant initial value for the field. Absent means undeclared; see ``StateVariable.initial_value``.
@@ -4442,7 +4465,7 @@ classes:
                 range: Equation
             time_dependent:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
         slots:
             - label
             - description

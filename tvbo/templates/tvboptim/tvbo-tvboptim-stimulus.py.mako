@@ -147,7 +147,19 @@ def _time_axis_distribution(event):
     # instead of evaluating a symbolic equation.
     data_location = None if is_continuous else getattr(event, 'dataLocation', None)
     is_data = bool(data_location)
-    if is_subset and (is_continuous or is_data):
+    # Sourced data-driven stimulus: the samples are another run's recorded output, named by a `data` parameter's `used:` DataRef and injected at run time (never inlined), so a per-subject run plays its own subject's recording.
+    _data_param = None if is_continuous else ev_params.get('data')
+    is_sourced = _data_param is not None and getattr(_data_param, 'used', None) is not None
+    if _data_param is not None and not is_sourced:
+        raise ValueError(
+            f"event {ev_name!r} declares a `data` parameter without `used:`; a data-driven stimulus reads its "
+            f"samples either from `dataLocation` (a file) or from a `data` parameter sourcing another run's output."
+        )
+    if is_sourced and is_data:
+        raise ValueError(
+            f"event {ev_name!r} declares both `dataLocation` and a sourced `data` parameter; the samples must come from one."
+        )
+    if is_subset and (is_continuous or is_data or is_sourced):
         raise ValueError(
             f"event {ev_name!r} declares a `subset` weight_distribution, which is only "
             f"implemented for open-loop symbolic stimuli (event_type '{_ev_type}', "
@@ -174,6 +186,27 @@ def _time_axis_distribution(event):
                 f"`equation:` stimulus instead."
             )
         amplitude = float(ev_params['amplitude'].value) if ('amplitude' in ev_params and ev_params['amplitude'].value is not None) else 1.0
+    elif is_sourced:
+        sampling_rate = float(getattr(event, 'sampling_rate', None) or 1.0)
+        interp_kind = str(getattr(event, 'interpolation', None) or 'linear')
+        if interp_kind != 'linear':
+            raise ValueError(
+                f"event {ev_name!r} sources its samples from another run and declares interpolation {interp_kind!r}; "
+                f"a sourced stimulus interpolates linearly between recorded samples, and no other kind is implemented for it."
+            )
+        onset = float(ev_params['onset'].value) if ('onset' in ev_params and ev_params['onset'].value is not None) else 0.0
+        amplitude = float(ev_params['amplitude'].value) if ('amplitude' in ev_params and ev_params['amplitude'].value is not None) else 1.0
+        # `channel` maps each node to the recorded column it plays (per node, so it can be swept); `trial` picks the recorded trial and is written by the random-seed axis, not declared.
+        unsupported = sorted(k for k in ev_params if k not in ('data', 'onset', 'amplitude', 'channel'))
+        if unsupported:
+            raise ValueError(
+                f"event {ev_name!r} plays another run's recording and declares parameter(s) {', '.join(unsupported)}, "
+                f"which nothing in a sourced stimulus evaluates. It takes `data` (the recording), `channel` (the column "
+                f"each node plays), `onset` and `amplitude`."
+            )
+        _ch = ev_params.get('channel')
+        _ch_val = getattr(_ch, 'value', None) if _ch is not None else None
+        channel_default = None if _ch_val is None else [float(v) for v in (_ch_val if isinstance(_ch_val, (list, tuple)) else [_ch_val])]
     else:
         eq_rhs = str(event.equation.rhs) if event.equation else '0.0'
     # Per-step iid driver (symbolic branch only): an event parameter with
@@ -181,7 +214,7 @@ def _time_axis_distribution(event):
     # step (e.g. u ~ U(-1, 1)). Computed unconditionally; only consumed in the
     # non-data branch below.
     _stoch_pname, _stoch_info = (None, None) if is_continuous else _time_axis_distribution(event)
-    is_stochastic = (not is_data) and (not is_continuous) and _stoch_pname is not None
+    is_stochastic = (not is_data) and (not is_sourced) and (not is_continuous) and _stoch_pname is not None
     # The deterministic equation parameters exclude the stochastic one (it is
     # supplied by the pre-generated array, not a scalar DEFAULT_PARAM).
     det_params = {k: v for k, v in ev_params.items() if k != _stoch_pname}
@@ -262,6 +295,69 @@ class ${class_name}(AbstractExternalInput):
             cond_prev=_cond,
             step=input_state.step + 1.0,
         )
+% elif is_sourced:
+class ${class_name}(AbstractExternalInput):
+    """Data-driven external input played from another run's recording: ${ev_name}(t).
+
+    ${event.description or event.label or 'Sourced data-driven stimulus.'}
+
+    The samples are the run-time resolution of the `data` parameter's DataRef (sampling_rate=${sampling_rate}/ms, onset=${onset} ms, linear), injected by the caller rather than inlined, laid out (trial, sample, channel). Node k plays column `channel[k]` of trial `trial`; a random-seed axis writes `trial` per cell, so each seed of an ensemble plays its own recorded trial. `data`, `trial`, `channel` and `amplitude` are live config leaves. Outside the sampled span the stimulus is silent.
+    """
+
+    N_OUTPUT_DIMS = 1
+    TRIAL_BANK = True
+    ONSET = ${onset}
+    SAMPLING_RATE = ${sampling_rate}
+
+    def __init__(self, **kwargs):
+        _samples = _stimulus_samples(${repr(ev_name)})
+        _n_channels = _samples.shape[-1]
+        % if channel_default is not None:
+        _channel = jnp.asarray(${channel_default}, dtype=float)
+        % else:
+        _channel = None
+        % endif
+        self.DEFAULT_PARAMS = Bunch(data=_samples, trial=0.0, channel=_channel, amplitude=${amplitude})
+        super().__init__(**kwargs)
+
+    def prepare(self, network, dt: float):
+        _n = network.graph.n_nodes
+        _n_channels = self.params.data.shape[-1]
+        # Undeclared, the columns are the nodes themselves, or one column is broadcast to all of them.
+        if self.params.channel is None and _n_channels not in (1, _n):
+            raise ValueError(
+                "stimulus ${ev_name}: the recording has %d channels for %d nodes; declare `channel`, the column "
+                "each node plays." % (_n_channels, _n)
+            )
+        % if has_spatial:
+        _mask = jnp.zeros(_n)
+        _regions = [${', '.join(str(r) for r in ev_regions)}]
+        _weights = [${', '.join(str(float(w)) for w in ev_weighting) if ev_weighting else ', '.join('1.0' for _ in ev_regions)}]
+        for _r, _w in zip(_regions, _weights):
+            _mask = _mask.at[_r].set(_w)
+        % else:
+        _mask = jnp.ones(_n)
+        % endif
+        return Bunch(mask=_mask), Bunch()
+
+    def compute(self, t, state, input_data, input_state, params):
+        _data = params.data
+        _n_samples = _data.shape[1]
+        # A single recorded trial is played by every seed; a bank of them is indexed by the cell's trial.
+        _row = _data[0] if _data.shape[0] == 1 else jnp.take(_data, jnp.asarray(params.trial).astype(jnp.int32), axis=0)
+        _x = (t - self.ONSET) * self.SAMPLING_RATE
+        _i0 = jnp.clip(jnp.floor(_x), 0, _n_samples - 2).astype(jnp.int32)
+        _w = jnp.clip(_x - _i0, 0.0, 1.0)
+        if params.channel is None:
+            _ch = jnp.zeros(state.shape[1], dtype=jnp.int32) if _data.shape[-1] == 1 else jnp.arange(state.shape[1])
+        else:
+            _ch = jnp.asarray(params.channel).astype(jnp.int32)
+        _v = _row[_i0, _ch] * (1.0 - _w) + _row[_i0 + 1, _ch] * _w
+        _sounding = (_x >= 0.0) & (_x <= _n_samples - 1)
+        return (jnp.where(_sounding, _v, 0.0) * params.amplitude * input_data.mask)[None, :]
+
+    def update_state(self, input_data, input_state, new_state):
+        return input_state
 % elif is_data:
 class ${class_name}(DataInput):
     """Data-driven external input: ${ev_name}(t), interpolated from a file.
@@ -270,9 +366,9 @@ class ${class_name}(DataInput):
 
     Source: ${data_location}  (sampling_rate=${sampling_rate}/ms, onset=${onset} ms, ${interp_kind})
 
-    The samples go to tvboptim's DataInput, which builds the diffrax interpolation object once in prepare() and evaluates it inside the scan, so the declared interpolation is the one the solver runs. Outside the sampled span the stimulus is silent. `amplitude` (${amplitude}) scales it as a live config leaf, so a sweep or a gradient fit can write the drive's gain.
+    The samples go to tvboptim's DataInput, which interpolates them with diffrax inside the scan, so the declared interpolation is the one the solver runs. Outside the sampled span the stimulus is silent. `amplitude` (${amplitude}) scales it as a live config leaf, so a sweep or a gradient fit can write the drive's gain.
 
-    The interpolation kind is construction metadata, not a parameter: the solve snapshots every entry of `params` into the config it jits, and a string is not a valid JAX type there. It lives on the class and is lent to `params` for the length of prepare(), which is where DataInput reads it.
+    The interpolation kind is construction metadata, not a parameter: the solve snapshots every entry of `params` into the config it jits, and a string is not a valid JAX type there. It lives on the class and is lent to the base class only where a tvboptim release reads it off `params`: prepare() in 0.4, compute() in 0.5. A DataInput that keeps the kind as its own attribute reads neither, which is why the class drops it from `params` only when it is there.
     """
 
     INTERPOLATION = "${interp_kind}"
@@ -288,13 +384,13 @@ class ${class_name}(DataInput):
         _gain.update(kwargs)
         self.DEFAULT_PARAMS = Bunch(self.DEFAULT_PARAMS, **_gain)
         self.params = Bunch(self.params, **_gain)
-        self.DEFAULT_PARAMS.pop("interpolation_type")
-        self.params.pop("interpolation_type")
+        self.DEFAULT_PARAMS.pop("interpolation_type", None)
+        self.params.pop("interpolation_type", None)
 
     def prepare(self, network, dt: float):
-        """Build the interpolator, then take the interpolation kind back out of `params`.
+        """Lend the interpolation kind to `params` for the base class's prepare(), then take it back.
 
-        prepare() bakes the kind into the diffrax object, so nothing downstream reads it again; leaving it in `params` would put a string in the jitted solve config.
+        tvboptim 0.4's DataInput reads it there to build its interpolator; left in `params`, it would be a string in the jitted solve config.
         """
         self.params.interpolation_type = self.INTERPOLATION
         try:
@@ -317,7 +413,7 @@ class ${class_name}(DataInput):
 
     def compute(self, t, state, input_data, input_state, params):
         # An interpolation holds its endpoint value beyond the sampled span; the stimulus is silent there.
-        signal = super().compute(t, state, input_data, input_state, params)
+        signal = super().compute(t, state, input_data, input_state, Bunch(params, interpolation_type=self.INTERPOLATION))
         _sounding = (t >= input_data.t_lo) & (t <= input_data.t_hi)
         return jnp.where(_sounding, signal, 0.0) * params.amplitude * input_data.mask
 % else:

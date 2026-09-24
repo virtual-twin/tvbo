@@ -387,7 +387,7 @@ def _resolve_dynamics_aliases(d: dict) -> dict:
 
     Every construction path — ``Dynamics(**dict)``, ``from_file``, ``from_string`` and the network/experiment coercion helpers — funnels through here, so they apply identical conveniences and cannot drift.
 
-    It applies only what a class cannot: the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries`` gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}`` lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``), so clamping stays opt-in. Declared slot aliases — ``components`` → ``modes`` among them — are folded by the dialect at construction, at every nesting level, from the schema's own ``aliases:``.
+    It applies only what a class cannot: the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries`` gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}`` lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``), so clamping stays opt-in. Declared slot aliases — ``righthandside`` → ``rhs`` among them — are folded by the dialect at construction, at every nesting level, from the schema's own ``aliases:``.
 
     ``_normalize_loaded`` rebuilds mappings, so the normalized content is written back into ``d`` in place (``clear`` + ``update``) to honour the in-place contract the coercion callers rely on; ``d`` is also returned for convenience.
     """

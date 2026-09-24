@@ -31,9 +31,9 @@ classes:
   BrainAtlas:
     description: A schema for representing a version of a brain atlas.
     attributes:
-      - terminology:
-          range: ParcellationTerminology
-          description: "Add the parcellation terminology version used for this brain atlas version."
+      terminology:
+        range: ParcellationTerminology
+        description: "Add the parcellation terminology version used for this brain atlas version."
     slots:
       - coordinateSpace
       - name
@@ -75,21 +75,21 @@ classes:
       - atom:anatomicalLocation
       - atom:studyTarget
     attributes:
-      - relatedUBERONTerm:
-          range: string
-          description: "Add the related anatomical entity as defined by the UBERON ontology."
-      - originalLookupLabel:
-          range: integer
-          description: "Add the original label of this entity as defined in the parcellation terminology."
-      - hemisphere:
-          range: Hemisphere
-          description: "Add the hemisphere of this entity."
-      - center:
-          range: Coordinate
-          description: "Add the center coordinate of this entity."
-      - color:
-          range: string
-          description: "Add the color code used for visual representation of this entity."
+      relatedUBERONTerm:
+        range: string
+        description: "Add the related anatomical entity as defined by the UBERON ontology."
+      originalLookupLabel:
+        range: integer
+        description: "Add the original label of this entity as defined in the parcellation terminology."
+      hemisphere:
+        range: Hemisphere
+        description: "Add the hemisphere of this entity."
+      center:
+        range: Coordinate
+        description: "Add the center coordinate of this entity."
+      color:
+        range: string
+        description: "Add the color code used for visual representation of this entity."
     slots:
       - abbreviation
       - alternateName
@@ -103,10 +103,10 @@ classes:
   ParcellationTerminology:
     description: A schema for representing a parcellation terminology, which consists of parcellation entities.
     attributes:
-      - entities:
-          range: ParcellationEntity
-          multivalued: true
-          inlined: true
+      entities:
+        range: ParcellationEntity
+        multivalued: true
+        inlined: true
     slots:
       - label
       - dataLocation

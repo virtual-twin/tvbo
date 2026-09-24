@@ -70,7 +70,7 @@ def test_an_alias_is_scoped_to_the_class_that_declares_it():
 def test_a_user_key_that_collides_with_an_alias_is_left_alone():
     """The reason the fold is class-scoped rather than context-free.
 
-    ``dt`` aliases ``Integrator.step_size`` and ``components`` aliases ``Dynamics.modes``, but both are ordinary strings a recipe may use as a parameter name or a free-form key. A context-free rename silently rewrites those.
+    ``dt`` aliases ``Integrator.step_size`` and ``regions`` aliases ``Event.nodes``, but both are ordinary strings a recipe may use as a parameter name or a free-form key. A context-free rename silently rewrites those.
     """
     exp = SimulationExperiment.from_string(
         _BASE + "integration: {dt: 0.05}\nnetwork: {number_of_nodes: 1, nodes: [{id: 0}]}\n"

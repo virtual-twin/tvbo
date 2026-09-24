@@ -689,7 +689,7 @@ explorations:
     strategy: grid
     observable:
       function: peak_frequency
-    n_parallel: '1'
+    n_parallel: 1
     n_trials: 1
     sweep_seeding: independent
     sweep_direction: up

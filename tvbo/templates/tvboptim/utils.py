@@ -579,7 +579,8 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     edge_params = tuple(sorted(n for n in param_names if _shape_ndim(param_shapes.get(n)) == 2))
 
     class_name = coupling_key.replace(" ", "").replace("-", "")
-    base_class = "DelayedCoupling" if has_delay else "InstantaneousCoupling"
+    # A delayed coupling integrates over the connectome's nonzero edges (tvbo-tvboptim-compact-coupling.py.mako).
+    base_class = "CompactDelayedCoupling" if has_delay else "InstantaneousCoupling"
     interp_kw = (
         "history_interpolation='linear', " if (has_delay and bool(getattr(coupling, "interpolate_delays", False))) else ""
     )

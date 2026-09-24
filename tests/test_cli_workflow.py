@@ -1576,6 +1576,24 @@ def test_a_figure_whose_data_stayed_home_leaves_every_default_target(monkeypatch
     assert "/elsewhere/output/results/curves/result.h5" in aggregate, "say what it wants"
 
 
+def test_a_hyphenated_figure_id_emits_a_valid_rule_name(monkeypatch):
+    """A BIDS-style figure id such as `fig-02_desc-x` must not leak its hyphens into the rule name, which Snakemake parses as a Python identifier and rejects before any rule runs."""
+    import re
+
+    from tvbo.adapters import figure_workflow as fw
+
+    monkeypatch.setattr(fw, "_figure_inputs", lambda figure, base, keys: [{"value": "results/3/x.h5", "raw": False}])
+
+    class _Fig:
+        name, format, panels, workflow_overrides, code_modules = "fig-02_desc-frameworkSchematic", "png", [], None, []
+
+    text = fw.emit_figure_rules([_Fig()], base_dir=".", include_all=True)
+    names = re.findall(r"^rule (\S+):", text, flags=re.M)
+    assert "fig_fig_02_desc_frameworkSchematic" in names
+    assert all(n.isidentifier() for n in names), names
+    assert "figures/fig-02_desc-frameworkSchematic.png" in text, "the output file keeps the figure id"
+
+
 def test_the_kit_lists_the_input_files_it_names_but_does_not_carry(tmp_path: Path):
     """Producer-sourced inputs — a surface mesh, a parcellation — are read at run time and were never staged or even listed, so a kit landed on the cluster looking complete and failed on the first rule that opened one. The manifest turns that into an rsync list."""
     from tvbo.cli import workflow as workflow_cli

@@ -125,15 +125,14 @@ Some slots accept a second name:
 | `dt` | `step_size` (on any solver) |
 | `number_of_regions` | `number_of_nodes` |
 | `righthandside` / `lefthandside` | `rhs` / `lhs` |
-| `components` | `modes` (on a `Dynamics`) |
 | `optimization` / `inference` | `optimizations` / `inferences` |
 
 ```yaml
 integration: {method: heun, dt: 0.05}   # dt == step_size
 ```
 
-These are declared with LinkML's `aliases:`, which LinkML itself treats as documentation. Nothing resolves it, so a declared alias would otherwise be rejected.
-TVB-O resolves them **per class**, which is what makes a colliding name safe: a model parameter called `dt` stays a parameter, and a `components:` list under an unrelated block is left alone. Writing both spellings in one mapping warns and keeps the canonical one.
+These are declared with LinkML's `aliases:`, which LinkML itself treats as documentation. Nothing resolves it, so a declared alias would otherwise be rejected. TVB-O folds them when it loads a file; plain LinkML tools such as `linkml-validate` still reject them, so a file meant to validate outside TVB-O, and every curated record, writes the canonical name.
+TVB-O resolves them **per class**, which is what makes a colliding name safe: a model parameter called `dt` stays a parameter, and a `regions:` key outside an `Event` is left alone. Writing both spellings in one mapping warns and keeps the canonical one.
 
 ## Reusing values: `&`, `*` and `<<`
 

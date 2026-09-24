@@ -63,14 +63,16 @@ def _source_id_int(value) -> int:
     return int(eid)
 
 
-def locate_exp_container(results_root, source_id) -> Path:
-    """Path to experiment ``source_id``'s saved result container in ``results_root``.
+_SUBJECT_PREFIX = r"^sub-([A-Za-z0-9]+)_"
+"""The BIDS ``sub-<label>_`` entity a per-subject shard's file name starts with."""
 
-    Globs by the ``exp-<id>_`` file stem, skipping the ``*network*`` sidecar. The record puts every container flat in one directory, but the glob does not depend on that: the ``_`` boundary is what keeps ``exp-1`` from matching ``exp-10``. Raises when the source has not been run yet — the actionable "run experiment N first" error shared by every consumer.
 
-    Raises when the matches are DIFFERENT RUNS of the same experiment, because no rule here can say which one a spec meant. Taking the first sorted hit is the silent-wrong-answer version of that: a root holding a dozen retrieved kit archives beside the canonical result would bind whichever path sorts first, and a fit score an order of magnitude off reads as a finding rather than as a lookup error.
+def _exp_candidates(results_root, source_id) -> tuple[list[Path], bool]:
+    """Experiment ``source_id``'s saved containers under ``results_root``, and whether they are ONE per-subject cohort.
 
-    A per-subject COHORT is not that case. ``ExperimentResult._save_per_subject`` writes one ``sub-<id>_exp-<N>_…_result.h5`` shard per subject into a single directory, so the glob legitimately matches many files that differ only in their ``sub-`` entity; the first shard is returned. A cohort is recognised only when EVERY candidate carries a ``sub-`` entity, they collapse to one stem, and no name repeats: an aggregate container beside a shard collapses to that same stem while being a different run, and a repeated name is one shard copied into two directories.
+    Globs by the ``exp-<id>_`` file stem, skipping the ``*network*`` sidecar; the ``_`` boundary is what keeps ``exp-1`` from matching ``exp-10``. Raises when nothing is found (the actionable "run experiment N first" error every consumer shares) and when the matches are DIFFERENT RUNS of the same experiment, because no rule here can say which one a spec meant.
+
+    A per-subject COHORT is not that case: the fan-out writes one ``sub-<id>_exp-<N>_…_result.h5`` shard per subject into a single directory, so the glob legitimately matches many files that differ only in their ``sub-`` entity. A cohort is recognised only when EVERY candidate carries a ``sub-`` entity, they collapse to one stem, and no name repeats: an aggregate container beside a shard collapses to that same stem while being a different run, and a repeated name is one shard copied into two directories.
     """
     import re
 
@@ -84,7 +86,7 @@ def locate_exp_container(results_root, source_id) -> Path:
             f"in {root} (looked for 'exp-{source_id}_*result.h5'). Run experiment "
             f"{source_id} first so its result is available."
         )
-    subject_prefix = re.compile(r"^sub-[A-Za-z0-9]+_")
+    subject_prefix = re.compile(_SUBJECT_PREFIX)
     stems = {subject_prefix.sub("", p.name) for p in cands}
     is_cohort = (
         all(subject_prefix.match(p.name) for p in cands) and len(stems) == 1 and len({p.name for p in cands}) == len(cands)
@@ -100,7 +102,43 @@ def locate_exp_container(results_root, source_id) -> Path:
             f"the archived runs out of it). Picking one here would bind a figure or a warm "
             f"start to whichever path sorts first."
         )
+    return cands, is_cohort
+
+
+def locate_exp_container(results_root, source_id, subject=None) -> Path:
+    """Path to experiment ``source_id``'s saved result container in ``results_root``.
+
+    The candidates and their ambiguity rules are :func:`_exp_candidates`. A single run is returned whatever ``subject`` says: a group source (one container, no ``sub-`` entity) is shared by every subject that reads it, which is how a per-subject fit warm-starts from the group fit.
+
+    A per-subject cohort is answered per subject. With ``subject`` given, the shard carrying that ``sub-`` entity is returned, and its absence raises: a per-subject run reading another subject's shard is a plausible wrong answer that nothing downstream can detect. Without ``subject`` the first shard is returned, the whole-cohort read being :func:`cohort_shards`.
+    """
+    cands, is_cohort = _exp_candidates(results_root, source_id)
+    if subject is not None and is_cohort:
+        wanted = f"sub-{str(subject).removeprefix('sub-')}_"
+        own = [p for p in cands if p.name.startswith(wanted)]
+        if not own:
+            raise FileNotFoundError(
+                f"cross-experiment sourcing: experiment {source_id} is a per-subject cohort "
+                f"({len(cands)} shard(s) under {Path(results_root) if results_root else Path.cwd()}) "
+                f"with no shard for subject {str(subject)!r}. Run experiment {source_id} for this "
+                f"subject first; reading another subject's shard would silently mix subjects."
+            )
+        return own[0]
     return cands[0]
+
+
+def cohort_shards(results_root, source_id) -> dict[str, Path] | None:
+    """``{subject: shard}`` when experiment ``source_id`` is a per-subject cohort, else ``None``.
+
+    The whole-cohort read behind a DataRef that names a per-subject experiment from a context with no subject of its own (a study analysis): every shard, keyed by the ``sub-`` entity its name carries, in subject order.
+    """
+    import re
+
+    cands, is_cohort = _exp_candidates(results_root, source_id)
+    if not is_cohort:
+        return None
+    subject_prefix = re.compile(_SUBJECT_PREFIX)
+    return {subject_prefix.match(p.name).group(1): p for p in cands}
 
 
 def analysis_container_path(results_root, name) -> Path:
@@ -135,6 +173,25 @@ def sidecar_path(container) -> Path:
     return Path(container).with_suffix(".yaml")
 
 
+def source_producers(container) -> list[str]:
+    """The algorithms a result container's run declared, last-declared first, read from its sidecar.
+
+    A run with several algorithms records one copy of every observation per algorithm, and the last-declared one is where the run finished. A consumer that declares the same algorithms can name that order itself; one that declares none (a forward run warm-started from a fit) has only the source's own record to read it from. Empty when the sidecar is missing or declares no algorithms.
+    """
+    import yaml
+
+    side = sidecar_path(container)
+    if not side.is_file():
+        return []
+    try:
+        spec = yaml.safe_load(side.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError:
+        return []
+    algs = spec.get("algorithms") if isinstance(spec, dict) else None
+    names = list(algs.keys()) if isinstance(algs, dict) else [a.get("name") for a in algs or [] if isinstance(a, dict)]
+    return [str(n) for n in reversed(names) if n]
+
+
 def locate_analysis_container(results_root, name) -> Path:
     """Path to the container a study analysis named ``name`` writes in ``results_root``.
 
@@ -161,24 +218,24 @@ def is_local_ref(ref) -> bool:
     return not any(getattr(ref, w, None) for w in ("experiment", "analysis", "iri"))
 
 
-def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Path:
-    """Resolve a ``DataRef``'s WHERE to a result-container path.
+def _where(ref, results_root=None, fallback_experiment=None) -> tuple:
+    """A ``DataRef``'s WHERE, before any file is picked: ``("exp", root, id)``, ``("ana", root, name)`` or ``("path", path)``.
 
     Precedence ladder (matches the design's one rule): an explicit ``experiment`` id, an ``analysis`` name, or an ``iri`` naming an ``ana/<study>/<name>`` scope or carrying a trailing experiment number resolves against ``results_root``; a filesystem ``iri`` that exists is taken as-is (a curated / external container); a reference with no WHERE falls back to ``fallback_experiment`` (the enclosing ``initial_state.source_experiment``, so the warm-start ergonomic of naming the sibling once is preserved). Raises when none applies.
     """
     exp = getattr(ref, "experiment", None)
     if exp is not None:
-        return locate_exp_container(results_root, _source_id_int(exp))
+        return ("exp", results_root, _source_id_int(exp))
 
     ana = getattr(ref, "analysis", None)
     if ana is not None:
-        return locate_analysis_container(results_root, ana)
+        return ("ana", results_root, ana)
 
     iri = getattr(ref, "iri", None)
     if iri:
         p = Path(str(iri))
         if p.exists():
-            return p
+            return ("path", p)
         kind, owner, name = iri_scope(iri)
         # A reference naming a study names a container in THAT study's results; resolving its experiment number against the referring study's root is how a binding silently reads the wrong run.
         if owner and results_root is not None:
@@ -187,10 +244,10 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Pat
             owned = sibling_study_root(owner, results_root)
             results_root = study_path("results", root=owned) if owned else results_root
         if kind == "ana":
-            return locate_analysis_container(results_root, name)
+            return ("ana", results_root, name)
         eid = experiment_id(iri)
         if eid is not None:
-            return locate_exp_container(results_root, int(eid))
+            return ("exp", results_root, int(eid))
         raise FileNotFoundError(
             f"cross-experiment sourcing: could not resolve DataRef iri {iri!r} to a "
             "container (not an existing path, no `ana/<study>/<name>` scope, and no "
@@ -198,12 +255,25 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Pat
         )
 
     if fallback_experiment is not None:
-        return locate_exp_container(results_root, _source_id_int(fallback_experiment))
+        return ("exp", results_root, _source_id_int(fallback_experiment))
 
     raise ValueError(
         "cross-experiment sourcing: DataRef has neither 'experiment' nor 'iri' and no "
         "source_experiment fallback — a local reference must be resolved in-run, not here."
     )
+
+
+def locate_container(ref, *, results_root=None, fallback_experiment=None, subject=None) -> Path:
+    """Resolve a ``DataRef``'s WHERE (:func:`_where`) to a result-container path.
+
+    ``subject`` is the reading run's own subject: against a per-subject cohort it selects that subject's shard (:func:`locate_exp_container`), and it is inert for every other kind of container.
+    """
+    where = _where(ref, results_root, fallback_experiment)
+    if where[0] == "exp":
+        return locate_exp_container(where[1], where[2], subject=subject)
+    if where[0] == "ana":
+        return locate_analysis_container(where[1], where[2])
+    return where[1]
 
 
 # --------------------------------------------------------------------------- WHICH
@@ -383,6 +453,7 @@ def resolve_dataref(
     fallback_experiment=None,
     alias_map: Mapping[str, str] | None = None,
     model_labels: Sequence[str] | None = None,
+    subject=None,
 ):
     """Resolve a container-backed ``DataRef`` to a labelled :class:`xarray.DataArray`.
 
@@ -390,11 +461,41 @@ def resolve_dataref(
 
     An ``output`` naming a DataFrame-backed container as a whole returns the frame instead (:func:`as_table`). SLICE and RECONCILE do not apply to a table, so a reference that declares one of them against that shape raises rather than returning something the directive was never applied to.
 
+    A reference to a per-subject COHORT is read per subject. ``subject`` (the reading run's own, e.g. a per-subject experiment sourcing its fitted parameters) selects that subject's shard. Without one (a study analysis) the reference means the whole cohort: the selected array of every shard, stacked along a leading ``subject`` dimension whose coordinate is the ``sub-`` entity of each shard, so the reader never sees one subject posing as the cohort.
+
     For a *local* reference (no WHERE) raises via :func:`locate_container`; callers test :func:`is_local_ref` first and route those to the in-run resolver.
     """
     import xarray as xr
 
-    path = locate_container(ref, results_root=results_root, fallback_experiment=fallback_experiment)
+    if subject is None:
+        where = _where(ref, results_root, fallback_experiment)
+        shards = cohort_shards(where[1], where[2]) if where[0] == "exp" else None
+        if shards:
+            parts = [_read_one(xr, path, ref, stacking=True) for path in shards.values()]
+            da = xr.concat(parts, dim="subject", coords="minimal", compat="override", join="outer")
+            da = da.assign_coords(subject=list(shards))
+            return _finish(da, ref, alias_map, model_labels)
+
+    path = locate_container(ref, results_root=results_root, fallback_experiment=fallback_experiment, subject=subject)
+    out = _read_one(xr, path, ref)
+    if not isinstance(out, xr.DataArray):
+        return out
+    return _finish(out, ref, alias_map, model_labels)
+
+
+def _finish(da, ref, alias_map, model_labels):
+    """TRANSFORM then RECONCILE, the two steps a resolved array takes after it leaves its container."""
+    da = apply_transform(da, getattr(ref, "transform", None))
+    if reconcile_mode(ref) == "by_label" and alias_map is not None and model_labels is not None:
+        da = reconcile_by_label(da, alias_map, model_labels)
+    return da
+
+
+def _read_one(xr, path, ref, *, stacking=False):
+    """WHICH and SLICE on one container: the selected array loaded and detached, or a whole table.
+
+    A table cannot be stacked into a cohort, so a cohort read that meets one raises rather than returning one subject's table.
+    """
     ds = xr.open_dataset(path, engine="h5netcdf")
     try:
         output = getattr(ref, "output", None)
@@ -404,6 +505,11 @@ def resolve_dataref(
             table = as_table(ds, output)
             if table is None:
                 raise
+            if stacking:
+                raise ValueError(
+                    f"reference to output {output!r} of a per-subject cohort resolves to a whole table in "
+                    f"{path.name}, which cannot be stacked across subjects; name a single column in `output:`."
+                ) from None
             unapplied = [name for name in ("sel", "transform") if getattr(ref, name, None)]
             if reconcile_mode(ref) == "by_label":
                 unapplied.append("reconcile")
@@ -416,14 +522,9 @@ def resolve_dataref(
                 ) from None
             return table
         da = select_labeled(da, sel_dict(ref))
-        da = da.load()
+        return da.load()
     finally:
         ds.close()
-
-    da = apply_transform(da, getattr(ref, "transform", None))
-    if reconcile_mode(ref) == "by_label" and alias_map is not None and model_labels is not None:
-        da = reconcile_by_label(da, alias_map, model_labels)
-    return da
 
 
 def as_table(ds, output=None):

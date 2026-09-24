@@ -393,7 +393,7 @@ jobs:
           path: dist/*
           retention-days: 30
 
-  # `needs: manifest` guarantees the version image is pushed before docs-deploy pulls it — ordered, no race, no retry.
+  # `needs: manifest` guarantees the version image is pushed before docs-deploy pulls it; a pre-release tag (semver `-rc.N`) renders as a dry run and never replaces the live site.
   publish-docs:
     name: Publish docs
     needs: manifest
@@ -405,3 +405,4 @@ jobs:
     secrets: inherit
     with:
       tag: ${{ github.ref_name }}
+      publish: ${{ !contains(github.ref_name, '-') }}

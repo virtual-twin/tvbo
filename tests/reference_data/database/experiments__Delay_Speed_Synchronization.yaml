@@ -160,7 +160,7 @@ explorations:
     strategy: grid
     observable:
       function: order_parameter
-    n_parallel: '1'
+    n_parallel: 1
     n_trials: 1
     sweep_seeding: independent
     sweep_direction: up

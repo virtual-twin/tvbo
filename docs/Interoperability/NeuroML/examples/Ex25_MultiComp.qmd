@@ -42,13 +42,13 @@ network:
         condDensity: {value: 120.0, unit: mS_per_cm2}
         erev: {value: 50.0, unit: mV}
         ion: {label: na}
-      modes:
+      components:
         m:
           name: m
           iri: neuroml:gateHHrates
           parameters:
             instances: {value: 3}
-          modes:
+          components:
             forwardRate:
               name: forwardRate
               iri: neuroml:HHExpLinearRate
@@ -68,7 +68,7 @@ network:
           iri: neuroml:gateHHrates
           parameters:
             instances: {value: 1}
-          modes:
+          components:
             forwardRate:
               name: forwardRate
               iri: neuroml:HHExpRate
@@ -92,13 +92,13 @@ network:
         condDensity: {value: 360, unit: S_per_m2}
         erev: {value: -77, unit: mV}
         ion: {label: k}
-      modes:
+      components:
         n:
           name: n
           iri: neuroml:gateHHrates
           parameters:
             instances: {value: 4}
-          modes:
+          components:
             forwardRate:
               name: forwardRate
               iri: neuroml:HHExpLinearRate
@@ -123,7 +123,7 @@ network:
         initMembPotential: {value: -65, unit: mV}
         spikeThresh: {value: -20, unit: mV}
         resistivity: {value: 100, unit: kohm_cm}
-      modes:
+      components:
         # Channels (shared across all segments via channelDensity)
         passiveChan:
           name: passiveChan
@@ -142,13 +142,13 @@ network:
             condDensity: {value: 120.0, unit: mS_per_cm2}
             erev: {value: 50.0, unit: mV}
             ion: {label: na}
-          modes:
+          components:
             m:
               name: m
               iri: neuroml:gateHHrates
               parameters:
                 instances: {value: 3}
-              modes:
+              components:
                 forwardRate:
                   name: forwardRate
                   iri: neuroml:HHExpLinearRate
@@ -168,7 +168,7 @@ network:
               iri: neuroml:gateHHrates
               parameters:
                 instances: {value: 1}
-              modes:
+              components:
                 forwardRate:
                   name: forwardRate
                   iri: neuroml:HHExpRate
@@ -192,13 +192,13 @@ network:
             condDensity: {value: 360, unit: S_per_m2}
             erev: {value: -77, unit: mV}
             ion: {label: k}
-          modes:
+          components:
             n:
               name: n
               iri: neuroml:gateHHrates
               parameters:
                 instances: {value: 4}
-              modes:
+              components:
                 forwardRate:
                   name: forwardRate
                   iri: neuroml:HHExpLinearRate
@@ -315,7 +315,7 @@ network:
         tauRise: {value: 1e-3, unit: s}
         tauDecay: {value: 13.3333e-3, unit: s}
         erev: {value: 0, unit: V}
-      modes:
+      components:
         blockMechanism:
           name: blockMechanism
           iri: neuroml:voltageConcDepBlockMechanism

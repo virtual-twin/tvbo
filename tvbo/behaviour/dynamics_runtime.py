@@ -57,16 +57,6 @@ _pdm = _Lazy("tvbo.datamodel.pydantic")
 class DynamicsRuntime:
     """Construction, code generation, simulation, plotting and reporting for a model."""
 
-    @property
-    def components(self):
-        """Alias for ``modes`` — sub-dynamics contained in this model."""
-        return self.modes
-
-    @components.setter
-    def components(self, value):
-        """Set the sub-dynamics (`modes`) contained in this model."""
-        self.modes = value
-
     # Factory constructors
     @classmethod
     def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics):

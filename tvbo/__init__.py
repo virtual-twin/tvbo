@@ -46,7 +46,7 @@ __authors__ = [
     "Petra Ritter",
 ]
 
-__version__ = "1.0.0"
+__version__ = "1.0.0rc1"
 __maintainer__ = "Leon K. Martin (leon.martin@bih-charite.de)"
 __contact__ = "petra.ritter@charite.de"
 __status__ = "stable"

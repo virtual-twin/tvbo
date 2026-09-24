@@ -65,7 +65,7 @@ network:
         erev: {value: 0, unit: mV}
         tauRise: {value: 0.1, unit: ms}
         tauDecay: {value: 40, unit: ms}
-      modes:
+      components:
         plasticityMechanism:
           name: plasticityMechanism
           iri: neuroml:tsodyksMarkramDepMechanism
@@ -80,7 +80,7 @@ network:
         erev: {value: 0, unit: mV}
         tauRise: {value: 0.1, unit: ms}
         tauDecay: {value: 40, unit: ms}
-      modes:
+      components:
         plasticityMechanism:
           name: plasticityMechanism
           iri: neuroml:tsodyksMarkramDepFacMechanism

@@ -156,7 +156,7 @@ def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) 
     inputs = _figure_inputs(figure, base_dir, exp_plans_by_key)
     return {
         "name": name,
-        "rule_name": "fig_" + sanitize_name(name),
+        "rule_name": "fig_" + sanitize_name(name).replace("-", "_"),  # a Snakemake rule name must be a Python identifier
         "inputs": inputs,
         "kit_satisfiable": all(i["raw"] for i in inputs) and not _has_unresolved_used(figure, base_dir, exp_plans_by_key),
         "output": f"figures/{name}.{fmt}",

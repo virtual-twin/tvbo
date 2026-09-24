@@ -417,7 +417,7 @@ classes:
             is_accessible_for_free:
                 range: boolean
                 slot_uri: schema:isAccessibleForFree
-                ifabsent: true
+                ifabsent: "true"
                 description: "Whether the tool is free/open-source."
             # ── What TVBO can emit for this tool ──
             codegen_format:
@@ -482,7 +482,7 @@ classes:
                 ifabsent: "runtime"
             optional:
                 range: boolean
-                ifabsent: false
+                ifabsent: "false"
             hash:
                 range: string
                 description: "Build or artifact hash for exact reproducibility."

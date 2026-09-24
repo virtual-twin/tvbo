@@ -395,6 +395,10 @@ subset_mask_events = [ev for ev in stimulus_events
                       if getattr(ev, 'weight_distribution', None) is not None
                       and str(getattr(ev.weight_distribution, 'name', '') or '').lower() == 'subset']
 
+# A sourced data-driven stimulus plays one recorded trial per ensemble member: a random-seed axis or a trial ensemble writes state.external.<name>.trial.
+trial_bank_events = [ev for ev in stimulus_events
+                     if getattr((dict(ev.parameters) if getattr(ev, 'parameters', None) else {}).get('data'), 'used', None) is not None]
+
 
 # === Optimization metadata ===
 # Schema: experiment.optimizations is multivalued dict, opt.stages is inlined_as_list
@@ -1525,6 +1529,33 @@ _TVBO_DYNAMICS_CLS = ${dynamics_class}
 % endif
 
 
+_DELAY_SOURCE_STATES = {}
+"""Coupling-input name -> the state variables a delayed coupling transmits, filled by create_network(); _carry_delay_history() reads it to rebuild each history buffer."""
+
+
+def _carry_delay_history(state, result):
+    """Hand a finished solve's delay history on to the next one, so chained solves integrate one continuous run.
+
+    A prepared solve starts every delayed coupling from the history buffer in ``state.initial_state.coupling``, and returns only its trajectory. A loop that chains solves (one TR each) and carries only ``initial_state.dynamics`` would restart every delay line from that stale buffer. The buffer a continuous run would hold at this point is its old rows followed by the newly integrated rows of the transmitted states, truncated to its length, which is what this writes back (roll-ordered, oldest first). Raises when a transmitted state is not among the recorded variables, since the history cannot then be rebuilt.
+    """
+    _names = tuple(getattr(result, "variable_names", None) or ())
+    for _cn in list(state.initial_state.coupling.keys()):
+        _cs = state.initial_state.coupling[_cn]
+        if "history" not in _cs:
+            continue
+        if "write_idx" in _cs:
+            raise NotImplementedError(f"coupling {_cn!r}: carrying a delay history across chained solves supports the roll buffer only")
+        _sent = _DELAY_SOURCE_STATES.get(_cn)
+        if _sent is None or any(_v not in _names for _v in _sent):
+            raise ValueError(f"coupling {_cn!r}: cannot carry its delay history, the transmitted states {_sent} are not all recorded in {_names}")
+        if not _sent:
+            continue
+        _rows = result.data[:, jnp.asarray([_names.index(_v) for _v in _sent]), :]
+        _new = jnp.concatenate([_cs.history, _rows.astype(_cs.history.dtype)], axis=0)[-_cs.history.shape[0]:]
+        state = eqx.tree_at(lambda _s: _s.initial_state.coupling[_cn].history, state, _new)
+    return state
+
+
 def create_network(
     weights: jnp.ndarray,
     % if use_length_graph or weight_transform_needs_lengths:
@@ -1636,6 +1667,7 @@ def create_network(
 <%  c_class_name = func_name.replace(' ', '').replace('-', '') %>\
     coupling_dict['${ci_name}'] = ${c_class_name}(**dict(_${func_name}_params))
     % endfor
+    _DELAY_SOURCE_STATES.update({_k: list(getattr(_c, "SOURCE_STATE_NAMES", None) or _c.INCOMING_STATE_NAMES) for _k, _c in coupling_dict.items() if isinstance(_c, DelayedCoupling)})
 
     % if has_noise:
     % if noise_targets:
@@ -1844,6 +1876,19 @@ _BRANCH_SEED = None
 
 # Model-parameter values from the source run's operating point, keyed by parameter name, holding per-node vectors and per-edge matrices alike.
 _SEED_PARAMS = None
+
+# The recordings sourced data-driven stimuli play, keyed by event name and laid out (trial, sample, channel); injected by the caller, never inlined.
+_STIMULUS_DATA = None
+
+
+def _stimulus_samples(name):
+    """The recording stimulus ``name`` plays, as handed to run_experiment(stimulus_data=...)."""
+    if _STIMULUS_DATA is None or name not in _STIMULUS_DATA:
+        raise ValueError(
+            f"stimulus {name!r} plays another run's recording, which was not supplied. Experiment.run resolves the "
+            f"event's `data` DataRef and passes it as run_experiment(stimulus_data={{{name!r}: array}})."
+        )
+    return jnp.asarray(_STIMULUS_DATA[name])
 <%
     _seed_coupling_home = {}
     for _ck, _cobj in (all_couplings or {}).items():
@@ -2523,6 +2568,12 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
         if call is None:
             # An `equation` over other observations rather than a callable, rendered inline with each source bound to a local. Only a sole stage is expressed this way.
             _eq = getattr(stage, 'equation', None)
+            if _eq is not None and len(dobs.pipeline or []) > 1:
+                raise ValueError(
+                    f"observation {dobs_name!r}: an `equation` stage is rendered inline as the observation's whole value, so "
+                    f"it must be the pipeline's only stage; the other {len(dobs.pipeline) - 1} stage(s) would be dropped "
+                    f"without a word. Split it into two observations, the second sourcing the first."
+                )
             if _eq is not None and _first:
                 pipeline_equation = getattr(_eq, 'rhs', None)
                 pipeline_equation_params = dict(iter_parameter_values(getattr(_eq, 'parameters', None)))
@@ -3341,8 +3392,13 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % if has_noise and any(ax.get('is_seed') for ax in expl['axes']):
     ## config.noise.key is a live runtime leaf read per solve, so varying it per cell needs no re-prepare and composes with the vmap.
     _seed_base_fn = observable_fn
+<% _seed_vals = next((ax['values'] for ax in expl['axes'] if ax.get('is_seed')), []) %>\
     def observable_fn(s):
         s.noise.key = jax.random.key(jnp.asarray(s.dynamics._noise_seed, dtype=jnp.uint32))
+        % for _tev in trial_bank_events:
+        ## The cell's position along the seed axis is the recorded trial it plays, so seed i of the ensemble meets trial i of the recording.
+        s.external.${_tev.name}.trial = jnp.argmax(jnp.asarray(${list(_seed_vals)}) == jnp.asarray(s.dynamics._noise_seed)).astype(float)
+        % endfor
         return _seed_base_fn(s)
 % endif
 
@@ -3505,7 +3561,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             f"as a trial-only exploration (n_trials over solver noise) instead."
         )
 %>\
-% if expl.get('n_trials', 1) > 1 and not stochastic_param_info and not sv_distribution_info and (has_noise or subset_mask_events):
+% if expl.get('n_trials', 1) > 1 and not stochastic_param_info and not sv_distribution_info and (has_noise or subset_mask_events or trial_bank_events):
     # ${expl['n_trials']} trials differing through live state leaves, run host-side because a per-trial observable may end in numpy, each solve still jitted.
     _n_trials = ${expl['n_trials']}
 
@@ -3519,7 +3575,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             % if has_noise:
             s.noise.key = jax.random.fold_in(_base_key, _ti)
             % endif
-            % for _sev in subset_mask_events:
+            % for _sev in subset_mask_events + trial_bank_events:
             s.external.${_sev.name}.trial = float(_ti)
             % endfor
             return _base_trial_observable(s)
@@ -3530,7 +3586,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             % if has_noise:
             s.noise.key = _base_key
             % endif
-            % for _sev in subset_mask_events:
+            % for _sev in subset_mask_events + trial_bank_events:
             s.external.${_sev.name}.trial = 0.0
             % endfor
             pass
@@ -3886,7 +3942,8 @@ def run_experiment(
     branch_seed: optional whole recorded branch (InitialState.from_experiment,
     source_point='branch') a branch-restart exploration replays per cell.
     """
-    global _SEED_DYNAMICS, _SEED_PARAMS, _BRANCH_SEED
+    global _SEED_DYNAMICS, _SEED_PARAMS, _BRANCH_SEED, _STIMULUS_DATA
+    _STIMULUS_DATA = kwargs.pop("stimulus_data", None)
     _SEED_DYNAMICS = seed_dynamics
     _BRANCH_SEED = branch_seed
     _SEED_PARAMS = seed_params
@@ -4362,6 +4419,8 @@ def run_experiment(
                             if not key.startswith('_'):
                                 algo_state.coupling[coupling_name][key] = _source_state.coupling[coupling_name][key]
                 algo_state.initial_state.dynamics = _source_state.initial_state.dynamics
+                # A dependency's last TR left its delay lines filled, so the next algorithm continues them rather than restarting from the prepare-time buffer.
+                algo_state.initial_state.coupling = jax.tree_util.tree_map(lambda _own, _src: _src if jnp.shape(_own) == jnp.shape(_src) else _own, algo_state.initial_state.coupling, _source_state.initial_state.coupling)
 
                 # NOTE: Do NOT copy noise_samples - let prepare() create fresh noise.
                 # The algorithm loop will update noise with key=jax.random.key(seed) anyway.

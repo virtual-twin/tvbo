@@ -23,6 +23,10 @@ def _run_flags(ep):
 
 # key -> plan, so a from_experiment dependency can reference the source's output.
 _ep_by_key = {ep["key"]: ep for ep in exp_plans}
+
+def _subject_only(ep):
+    """Whether the rule fans over the dataset subjects and nothing else, one job per subject."""
+    return [a["parameter"] for a in ep["axes"]] == ["dataset.active_subject"]
 # Figures have their own rules but join the default target, so `tvbo workflow submit` renders them right after the grid.
 _figure_outputs = context.get('figure_outputs') or []
 
@@ -116,7 +120,8 @@ rule all:
 
 % for ep in exp_plans:
 rule ${ep["rule_name"]}:
-% if ep.get("depends_on"):
+## A source this kit does not produce has no rule to wait for; it is found on disk under OUT_DIR instead.
+% if any(_d in _ep_by_key for _d in ep.get("depends_on") or []):
     # A warm start's source result must exist first, so Snakemake orders that rule before this one.
     input:
 % for _dep in ep["depends_on"]:
@@ -125,6 +130,9 @@ rule ${ep["rule_name"]}:
 % for _r in _dep_cohort:
         f"{OUT_DIR}/${_dep}/${_r}",
 % endfor
+% elif _dep_ep and _subject_only(_dep_ep) and _subject_only(ep):
+        ## Both fan over subjects alone, so a subject's run waits for that subject's source result, not the whole cohort's.
+        f"{OUT_DIR}/${_dep}/${_cell_out(_dep_ep)}",
 % elif _dep_ep and _dep_ep["axes"]:
         expand(f"{OUT_DIR}/${_dep}/${_cell_out(_dep_ep)}", ${_expand_kwargs(_dep_ep)}),
 % elif _dep_ep:
@@ -219,6 +227,10 @@ rule ${ep["rule_name"]}:
 % for _flag in _run_flags(ep):
         "${_flag} "
 % endfor
+% if ep.get("depends_on"):
+        ## The sources' results live beside this rule's under OUT_DIR, not under its own output directory, which is where `tvbo run` looks by default.
+        f"--results-root {OUT_DIR} "
+% endif
 % if _cohort_out(ep):
         "-o $(dirname {output[0]})"
 % else:

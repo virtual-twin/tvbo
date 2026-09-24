@@ -821,7 +821,7 @@ def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude
     dynamics : Dynamics
         The dynamics node to render.
     key_name : str
-        Name of this node (parent's modes/components dict key). indent : int Current indentation (spaces). custom_types : dict or None Collector for custom ComponentType definitions {type_name: xml_str}. exclude_params : set or None Parameter names to skip (e.g. channelPopulation attrs).
+        Name of this node (parent's components dict key). indent : int Current indentation (spaces). custom_types : dict or None Collector for custom ComponentType definitions {type_name: xml_str}. exclude_params : set or None Parameter names to skip (e.g. channelPopulation attrs).
     """
     type_name = _nml_type_name(dynamics)
     if not type_name:
@@ -829,7 +829,7 @@ def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude
 
     pad = " " * indent
     params = dynamics.parameters
-    children = dynamics.modes
+    children = dynamics.components
     is_role = key_name in _NML_ROLE_SLOTS
     is_custom = _is_custom_nml_type(dynamics)
 
@@ -936,7 +936,7 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
         dyn_id = safe_id(dyn.name or "dynamics")
 
     params = dyn.parameters or {}
-    components = dyn.modes or {}
+    components = dyn.components or {}
 
     # ── Classify components by IRI type ──
     channels = {}
@@ -1234,7 +1234,7 @@ def _render_compound_input_children(dyn_obj, indent=8):
 
     Each child component (pulseGenerator, sineGenerator, etc.) is rendered as a self-closing XML element with its parameters as attributes.
     """
-    components = getattr(dyn_obj, "components", None) or dyn_obj.modes
+    components = dyn_obj.components
     if not components:
         return ""
     pad = " " * indent
@@ -1643,7 +1643,7 @@ def _build_hier_custom_context(experiment):
     channels = []
     channel_pops = []
 
-    for ch_key, ch_dyn in (dyn.modes or {}).items():
+    for ch_key, ch_dyn in (dyn.components or {}).items():
         ch_extends = _extends_base(getattr(ch_dyn, "iri", ""))
         if ch_extends is None:
             continue
@@ -1662,7 +1662,7 @@ def _build_hier_custom_context(experiment):
 
         # ── Process gates (Children of channel) ──
         gate_instances = []
-        for g_key, g_dyn in (ch_dyn.modes or {}).items():
+        for g_key, g_dyn in (ch_dyn.components or {}).items():
             g_extends = _extends_base(getattr(g_dyn, "iri", ""))
             if g_extends is None:
                 continue
@@ -1674,7 +1674,7 @@ def _build_hier_custom_context(experiment):
 
             # ── Process rates (Child of gate) ──
             rate_children = OrderedDict()
-            for r_key, r_dyn in (g_dyn.modes or {}).items():
+            for r_key, r_dyn in (g_dyn.components or {}).items():
                 r_extends = _extends_base(getattr(r_dyn, "iri", ""))
                 if r_extends is None:
                     continue

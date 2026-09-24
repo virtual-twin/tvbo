@@ -33,6 +33,7 @@ from tvbo.behaviour._runtime import RuntimeAttributes
 from tvbo.data.registry import database_dir
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.utils import edge_param, keyed_items, transform_target
+from tvbo.utils.source import current_source_dir
 from tvbo.utils.yaml_loader import resolve_edge_var_aliases
 
 # HDF5+YAML network files — resolved via registry (works for pip & editable installs)
@@ -466,13 +467,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         # Load edge_matrix_files into edges
         if has_edge_files and not has_edges:
             edge_files = kwargs["edge_matrix_files"]
-            # Resolve file path relative to YAML source
-            from tvbo.classes.experiment import SimulationExperiment
-
-            source_dir = None
-            pending = getattr(SimulationExperiment, "_pending_source_file", None)
-            if pending:
-                source_dir = os.path.dirname(pending)
+            source_dir = current_source_dir()
 
             emf = edge_files[0]
             fpath = str(emf)
@@ -541,7 +536,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         _et = kwargs.get("edge_template")
         _et_spec = _copy.deepcopy(_et) if isinstance(_et, dict) else None
 
-        # Resolve Dynamics slot aliases (components → modes) in network dynamics so the LinkML loader can construct Dynamics objects correctly.
+        # Apply the dict-level Dynamics conveniences to network dynamics so the LinkML loader can construct Dynamics objects correctly.
         _net_dynamics = kwargs.get("dynamics")
         if isinstance(_net_dynamics, dict):
             from tvbo.classes.dynamics import _resolve_dynamics_aliases
@@ -576,13 +571,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
             )
 
-        # Materialise connectivity from the declarative spec (parcellation, data_file, bids_dir, graph_generator). Idempotent; safe to call multiple times. See Network._resolve. Pick up the YAML source directory from the SimulationExperiment context (set by from_file) so relative paths resolve correctly even when Network is built as a kwarg inside SimulationExperiment.__init__.
-        from tvbo.classes.experiment import SimulationExperiment as _SE
-
-        _source_dir = None
-        _pending = getattr(_SE, "_pending_source_file", None)
-        if _pending:
-            _source_dir = os.path.dirname(_pending)
+        # Materialise connectivity from the declarative spec (parcellation, data_file, bids_dir, graph_generator), resolving relative paths against the recipe being loaded (`loading_from`) at whatever depth this Network is built. Idempotent; see Network._resolve.
+        _source_dir = current_source_dir()
         # Persist the source dir so lazily-applied callable transforms (resolved in _apply_transform long after load) can import modules beside the YAML.
         if _source_dir:
             self._source_dir = _source_dir

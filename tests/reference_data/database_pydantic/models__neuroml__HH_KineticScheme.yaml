@@ -31,7 +31,7 @@ description: 'Cell with HH Na channel and kinetic-scheme K channel, matching Neu
   '
 source: 'NeuroML2 example: Ex4_KS'
 number_of_modes: 1
-modes:
+components:
   na:
     name: na
     iri: neuroml:ionChannelHH
@@ -48,7 +48,7 @@ modes:
         value: 50
         description: nml:50mV
     number_of_modes: 1
-    modes:
+    components:
       m:
         name: m
         iri: neuroml:gateHHrates
@@ -57,7 +57,7 @@ modes:
             name: instances
             value: 3
         number_of_modes: 1
-        modes:
+        components:
           forwardRate:
             name: forwardRate
             iri: neuroml:HHExpLinearRate
@@ -112,7 +112,7 @@ modes:
             name: instances
             value: 1
         number_of_modes: 1
-        modes:
+        components:
           forwardRate:
             name: forwardRate
             iri: neuroml:HHExpRate
@@ -179,7 +179,7 @@ modes:
         value: -77
         description: nml:-77mV
     number_of_modes: 1
-    modes:
+    components:
       n:
         name: n
         iri: neuroml:gateKS
@@ -188,7 +188,7 @@ modes:
             name: instances
             value: 1
         number_of_modes: 1
-        modes:
+        components:
           c1:
             name: c1
             iri: neuroml:closedState

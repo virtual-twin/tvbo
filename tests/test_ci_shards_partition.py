@@ -44,6 +44,7 @@ def test_the_rest_shard_ignores_every_file_another_shard_names():
 ELSEWHERE = {
     "tests/test_docs.py": "the `docs` job renders the notebooks it drives",
     "tests/test_database_validation.py": "the `Schema validation` job runs it against the LinkML schema",
+    "tests/test_native_linkml.py": "the `Schema validation` job runs it with LinkML's own validator, which the test extras do not install",
 }
 """Files ``rest`` ignores that no other shard names, each with the job that does run them."""
 

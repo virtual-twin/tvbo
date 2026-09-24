@@ -1,6 +1,6 @@
 """A data-driven stimulus Event is interpolated the way it was declared, and its path is read relative to the spec.
 
-An Event carrying a `dataLocation` is a waveform read from a file rather than an equation evaluated at t: an acoustic drive, a measured stimulation field. The tvboptim codegen used to emit a bespoke class whose `compute` called `jnp.interp`, so a declared `interpolation: cubic` was accepted and never run. The samples now go to tvboptim's `DataInput`, which builds the diffrax interpolation object once and evaluates it inside the scan. The emitted class adds `amplitude` as a live leaf a sweep or a gradient fit can write; a parameter such a stimulus cannot evaluate raises instead of being dropped.
+An Event carrying a `dataLocation` is a waveform read from a file rather than an equation evaluated at t: an acoustic drive, a measured stimulation field. The tvboptim codegen used to emit a bespoke class whose `compute` called `jnp.interp`, so a declared `interpolation: cubic` was accepted and never run. The samples now go to tvboptim's `DataInput`, which interpolates them with diffrax inside the scan. The emitted class adds `amplitude` as a live leaf a sweep or a gradient fit can write; a parameter such a stimulus cannot evaluate raises instead of being dropped.
 """
 
 import copy

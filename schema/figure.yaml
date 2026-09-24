@@ -872,9 +872,13 @@ classes:
   Theme:
     description: "A project's whole look in one declarable object: its colours (inherited from `Palette`) and the geometry a style sheet used to own — tick shape, axis weight, line weights, legend, grid, font. Declared on a figure, it beats every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec, where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:theme/default`; a project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means to fix and nothing else."
     is_a: Palette
+    mixins:
+      - Document
     slots:
       - iri
     slot_usage:
+      tvbo_class:
+        equals_string: "tvbo:Theme"
       iri:
         description: "The curated theme this one starts from (`tvbo:theme/default`). Its slots are merged under this document's own, so a theme states only its differences."
     attributes:

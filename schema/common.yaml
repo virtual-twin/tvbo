@@ -17,6 +17,13 @@ imports:
     - linkml:types
 
 slots:
+    tvbo_class:
+        range: string
+        pattern: "^tvbo:[A-Z][A-Za-z0-9]*$"
+        description: "The class a file holds, as a CURIE (``tvbo:Network``) — the envelope `Document` declares."
+    schema_version:
+        range: string
+        description: "The schema version a file was written against — the envelope `Document` declares."
     name:
         slot_uri: schema:name
         range: string
@@ -68,6 +75,14 @@ enums:
                 description: "No reconciliation; the node sets are assumed identical."
 
 classes:
+    Document:
+        mixin: true
+        description: >-
+            The envelope of a record written as its own file. ``tvbo_class`` names the class the file holds and ``schema_version`` the schema it was written against; both are facts about the file, so TVBO's dialect drops them before construction and no object ever carries them. Declaring them here is what lets a third party validate a TVBO file with plain ``linkml-validate``. A class taking this mixin pins its own CURIE with ``slot_usage: {tvbo_class: {equals_string: ...}}``, so a file naming the wrong class is refused natively.
+        slots:
+            - tvbo_class
+            - schema_version
+
     DataRef:
         class_uri: prov:Entity
         description: >-
@@ -89,6 +104,7 @@ classes:
             - iri
         attributes:
             experiment:
+                range: ScalarValue
                 any_of:
                     - range: integer
                     - range: string

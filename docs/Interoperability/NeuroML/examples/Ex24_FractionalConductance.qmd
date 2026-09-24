@@ -263,7 +263,7 @@ integration:
   time_scale: ms
 """)
 print(f"Model: {exp.dynamics.name if exp.dynamics else 'network'}")
-print(f"Components: {list(exp.dynamics.modes.keys())}")
+print(f"Components: {list(exp.dynamics.components.keys())}")
 ```
 
 ## 2. Render LEMS XML

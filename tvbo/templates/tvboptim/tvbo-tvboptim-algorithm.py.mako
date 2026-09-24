@@ -490,6 +490,7 @@ def run_${algo_name}(
         key, subkey = jax.random.split(key)
         _wr = model_fn(state)
         state = eqx.tree_at(lambda s: s.initial_state.dynamics, state, _wr.data[-1][:${len(state_names)}])
+        state = _carry_delay_history(state, _wr)  # the next TR's delay lines continue from this one's
         if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
             state = eqx.tree_at(lambda s: s.noise.key, state, subkey)
         elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
@@ -1050,6 +1051,7 @@ def _${algo_name}_tuning_core_impl(
 % endfor
         result = model_fn(state)
         state = eqx.tree_at(lambda s: s.initial_state.dynamics, state, result.data[-1][:${len(state_names)}])
+        state = _carry_delay_history(state, result)  # the next TR's delay lines continue from this one's
         if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
             state = eqx.tree_at(lambda s: s.noise.key, state, subkey)
         elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:

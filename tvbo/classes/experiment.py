@@ -45,6 +45,7 @@ from tvbo.log import ensure_configured
 from tvbo.parse.symbols import assumptions_of, symbol_in
 from tvbo.run.graph import GraphRunner as _Network
 from tvbo.utils import Bunch, as_list, initial_value, keyed_items, network_couplings, normalize_params, traverse_metadata
+from tvbo.utils.source import current_source_file
 
 logger = logging.getLogger(__name__)
 
@@ -311,7 +312,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Pydantic v1
                 kwargs["network"] = net.dict(exclude_none=True)
 
-        # Resolve Dynamics slot aliases (e.g. components → modes) before the parent __post_init__ constructs the base-class Dynamics.
+        # Apply the dict-level Dynamics conveniences before the parent __post_init__ constructs the base-class Dynamics.
         dyn_kw = kwargs.get("dynamics")
         if isinstance(dyn_kw, dict):
             from tvbo.classes.dynamics import _resolve_dynamics_aliases
@@ -435,8 +436,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         _fill_network_couplings(self.network)
         # NOTE: coupling resolution (incoming_states / network.coupling seeding) is intentionally deferred to ``configure()`` so it runs lazily at the execution boundary across all backends and so the resolved state is observable in the spec only after the user explicitly prepared the experiment. See ``configure()``.
 
-        # Get source file path if loading from file (set by from_file classmethod)
-        self._source_file = getattr(self.__class__, "_pending_source_file", None)
+        self._source_file = current_source_file()
 
         # Materialise the network from its declarative spec. All branching lives in Network._resolve; this hook only supplies the YAML source directory for relative-path resolution.
         if self.network is not None and not getattr(self.network, "_resolved", False):
@@ -578,7 +578,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         _fill_network_couplings(obj.network)
         # Coupling resolution deferred to ``configure()`` (see __post_init__).
 
-        obj.__dict__["_source_file"] = getattr(cls, "_pending_source_file", None)
+        obj.__dict__["_source_file"] = current_source_file()
 
         # Materialise the network from its declarative spec (data_file, bids_dir, parcellation, graph_generator). All branching logic lives in Network._resolve; this hook only supplies the YAML source directory for relative-path resolution.
         net = obj.network
@@ -688,24 +688,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         Returns:
             A new `SimulationExperiment` populated from the file.
         """
-        from pathlib import Path
-
         import yaml
 
         from tvbo.utils import register_recipe_code_paths, yaml_loader
+        from tvbo.utils.source import loading_from
 
-        # Store source file path BEFORE loading so __init__ can use it
-        cls._pending_source_file = str(Path(filepath).resolve())
-        register_recipe_code_paths(cls._pending_source_file)
-        try:
+        with loading_from(filepath) as source_file:
+            register_recipe_code_paths(source_file)
             data_as_dict = yaml_loader.load_as_dict(filepath) or {}
             # Drop private/provenance keys (e.g. _source_file) — not schema slots, so a round-tripped render_yaml() spec reloads cleanly.
             if isinstance(data_as_dict, dict):
                 data_as_dict = {k: v for k, v in data_as_dict.items() if not str(k).startswith("_")}
             exp = yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
-            exp._source_file = cls._pending_source_file
-        finally:
-            cls._pending_source_file = None
+            exp._source_file = source_file
         return exp
 
     @classmethod
@@ -1316,11 +1311,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _locate_source_result(self, results_root, source_id):
         """Path to the ``from_experiment`` source run's saved result HDF5.
 
-        Delegates to the shared cross-experiment container locator (:func:`tvbo.data.dataref.locate_exp_container`) — globs ``results_root`` (or cwd) by the ``exp-<id>_`` stem, skipping the network sidecar, and raises if the source hasn't been run yet. Shared by the seed / branch / parameter resolvers and by every ``DataRef`` consumer, so all locate one code path.
+        Delegates to the shared cross-experiment container locator (:func:`tvbo.data.dataref.locate_exp_container`) — globs ``results_root`` (or cwd) by the ``exp-<id>_`` stem, skipping the network sidecar, and raises if the source hasn't been run yet. A per-subject source is read at this run's own active subject, so a per-subject experiment warm-starts from the same subject's shard. Shared by the seed / branch / parameter resolvers and by every ``DataRef`` consumer, so all locate one code path.
         """
         from tvbo.data import dataref as _dref
 
-        return _dref.locate_exp_container(results_root, source_id)
+        return _dref.locate_exp_container(results_root, source_id, subject=getattr(self, "_active_subject", None))
 
     def _resolve_from_experiment_seed(self, results_root=None):
         """Load the operating point for ``initial_state.method == from_experiment``.
@@ -1373,10 +1368,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     return d
             return da.dims[-1]
 
-        # Last-declared first: that is the algorithm whose endpoint the run actually finished at, and guessing would warm-start from an untuned state that looks tuned.
+        # Last-declared first: that is the algorithm whose endpoint the run actually finished at, and guessing would warm-start from an untuned state that looks tuned. A consumer that runs no algorithm of its own reads the order the source declared.
         algs = getattr(self, "algorithms", None)
         alg_names = list(algs.keys()) if hasattr(algs, "keys") else [getattr(a, "name", None) for a in (algs or [])]
         seed_producers = [str(a) for a in reversed(alg_names) if a]
+        if not seed_producers:
+            from tvbo.data import dataref as _dref
+
+            seed_producers = _dref.source_producers(src_h5)
 
         def _final_key(ds, sv):
             from tvbo.data import dataref as _dref
@@ -1557,7 +1556,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 continue
             amap, labels = _recon_ctx() if _dref.reconcile_mode(spec) == "by_label" else (None, None)
             da = _dref.resolve_dataref(
-                spec, results_root=results_root, fallback_experiment=fallback, alias_map=amap, model_labels=labels
+                spec,
+                results_root=results_root,
+                fallback_experiment=fallback,
+                alias_map=amap,
+                model_labels=labels,
+                subject=getattr(self, "_active_subject", None),
             )
             out[pname] = jnp.asarray(
                 _fit_declared_shape(np.asarray(da.values), declared_shapes.get(pname), pname, spec, n_nodes)
@@ -1583,6 +1587,55 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             finally:
                 ds.close()
         return out
+
+    def _resolve_stimulus_datarefs(self, results_root=None):
+        """Resolve each sourced data-driven stimulus's recording, keyed by event name, for the run.
+
+        A stimulus event whose ``data`` parameter carries a ``used:`` DataRef plays another run's recorded output instead of a file (``dataLocation``). The reference is resolved here, on the Python side where ``results_root`` and the active subject are known, so a per-subject run plays its own subject's recording, and handed to the generated run as ``stimulus_data`` rather than inlined into the code, which is what lets one rendered script serve every subject.
+
+        The recording is laid out ``(trial, sample, channel)``: size-one axes are dropped and the remaining ones kept in the order the source stored them, a leading trial axis first when there are three. A one- or two-axis recording is a single trial. Returns ``None`` when no stimulus sources its samples.
+        """
+        from tvbo.data import dataref as _dref
+
+        out: dict = {}
+        for name, ev in (self.events.items() if getattr(self, "events", None) else []):
+            params = dict(ev.parameters) if getattr(ev, "parameters", None) else {}
+            ref = getattr(params.get("data"), "used", None)
+            if ref is None:
+                continue
+            da = _dref.resolve_dataref(ref, results_root=results_root, subject=getattr(self, "_active_subject", None))
+            arr = np.asarray(da.values, dtype=float)
+            arr = arr.reshape([n for n in arr.shape if n != 1])
+            if arr.ndim > 3:
+                raise ValueError(
+                    f"stimulus {name!r}: its `data` reference resolves to an array of shape {da.shape} with "
+                    f"{arr.ndim} non-trivial axes; a recording to play is (trial, sample, channel) at most. Slice it "
+                    f"with the reference's `sel:`."
+                )
+            arr = arr.reshape((1,) * (3 - arr.ndim) + arr.shape) if arr.ndim < 3 else arr
+            n_seeds = self._random_seed_axis_length()
+            if n_seeds is not None and n_seeds > arr.shape[0] > 1:
+                raise ValueError(
+                    f"stimulus {name!r}: the random-seed axis has {n_seeds} members but the recording holds "
+                    f"{arr.shape[0]} trials, and seed i plays trial i. Record at least as many trials as seeds."
+                )
+            out[str(getattr(ev, "name", None) or name)] = arr
+        return out or None
+
+    def _random_seed_axis_length(self):
+        """Number of seeds an exploration's ``execution.random_seed`` axis declares, or ``None`` without one."""
+        for expl in (self.explorations.values() if getattr(self, "explorations", None) else []):
+            space = getattr(expl, "space", None)
+            for key, axis in (space.items() if hasattr(space, "items") else []):
+                if str(getattr(axis, "parameter", None) or key) != "execution.random_seed":
+                    continue
+                values = getattr(axis, "explored_values", None)
+                if values:
+                    return len(list(values))
+                dom = getattr(axis, "domain", None)
+                if dom is not None and getattr(dom, "n", None):
+                    return int(dom.n)
+        return None
 
     def _resolve_builder_datarefs(self, results_root=None):
         """Resolve exploration-builder ``Argument.used`` DataRefs to arrays, keyed for the run.
@@ -1615,7 +1668,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     if _dref.reconcile_mode(ref) == "by_label":
                         amap = self.network.region_alias_map()
                         labels = self._resolve_model_node_labels()
-                    da = _dref.resolve_dataref(ref, results_root=results_root, alias_map=amap, model_labels=labels)
+                    da = _dref.resolve_dataref(
+                        ref,
+                        results_root=results_root,
+                        alias_map=amap,
+                        model_labels=labels,
+                        subject=getattr(self, "_active_subject", None),
+                    )
                     out[f"{getattr(axis, 'parameter', '')}::{an}"] = np.asarray(da.values)
         return out or None
 
@@ -1725,6 +1784,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         ("sourced Parameter (used:/measure:)", self._resolve_from_experiment_params(results_root)),
                         ("initial_state.source_point='branch'", self._resolve_from_experiment_branch(results_root)),
                         ("ExplorationAxis.builder used:", self._resolve_builder_datarefs(results_root)),
+                        ("stimulus data used:", self._resolve_stimulus_datarefs(results_root)),
                     )
                     if seed is not None
                 ]
@@ -1792,6 +1852,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             _bdata = self._resolve_builder_datarefs(results_root)
             if _bdata is not None:
                 kwargs.setdefault("builder_data", _bdata)
+
+            _sdata = self._resolve_stimulus_datarefs(results_root)
+            if _sdata is not None:
+                kwargs.setdefault("stimulus_data", _sdata)
 
             # Run the experiment with optional per-step timing
             if benchmark:

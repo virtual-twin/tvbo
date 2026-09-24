@@ -46,9 +46,9 @@ def generate_datamodel(root: str | Path) -> None:
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
     _copy_records(root)
-    shortcuts, aliases, keyed = _dialect_tables(schema)
+    shortcuts, aliases, keyed, defaults = _dialect_tables(schema)
     mixins = _mixins(root, schema)
-    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed))
+    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed, defaults))
     _write(
         out_dir / "schema.py",
         _with_behaviour(PythonGenerator(str(schema)).serialize(), mixins) + _INSTALL_DIALECT,
@@ -74,14 +74,16 @@ def generate_datamodel(root: str | Path) -> None:
 _SEMANTIC_ALIASES = ("range", "boundaries")
 
 
-def _dialect_tables(schema: Path) -> tuple[dict, dict, dict]:
-    """``(scalar shortcuts, slot aliases, keyed collections)`` — the dialect, read off the schema.
+def _dialect_tables(schema: Path) -> tuple[dict, dict, dict, dict]:
+    """``(scalar shortcuts, slot aliases, keyed collections, slot defaults)`` — the dialect, read off the schema.
 
     LinkML treats ``aliases:`` as documentation — its loaders key on the canonical slot name, so a declared alias is inert and raises ``unexpected keyword argument``. Each class's ``__init__`` already receives exactly its own slots, which makes it the one place where an alias can be resolved without guessing whether a mapping is an instance or a keyed collection, and without a free-form key (a parameter named ``dt``) ever being mistaken for a slot. Every construction path — the LinkML loaders, ``cls(**data)``, nested and inlined members, subclasses — goes through it.
 
     It also applies LinkML's ``simple_dict_value`` annotation, which marks the slot a bare scalar stands for: ``omega: 0.0628`` means ``{value: 0.0628}`` and ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed collections (``inlined_as_simple_dict``) but ``linkml_runtime``'s dataclass loader does not implement it, so it is applied here — and extended to single-valued inlined slots, which the spec does not cover. Reference slots are skipped: their scalar is the target's *identifier*, not a value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``). Inlined-ness is asked of the schema (``is_inlined``) rather than read off ``slot.inlined``, because a class-ranged slot whose range has an identifier is a reference by default while leaving ``inlined`` unset — six such slots were being wrapped, and since the wrapper then had to fit a string-ranged slot it landed as the literal ``"JsonObj(value='x')"``.
 
-    Last, it records each keyed collection's identifier slot, so a member written under its key can be given the name the key already states. The generated dataclasses do that themselves in ``__post_init__``; the generated Pydantic models do not, and a curated entry spelled the way this project requires — ``TR: {value: 720.0}``, no redundant inner ``name`` — was accepted by one form and rejected by the other.
+    It records each keyed collection's identifier slot, so a member written under its key can be given the name the key already states. The generated dataclasses do that themselves in ``__post_init__``; the generated Pydantic models do not, and a curated entry spelled the way this project requires — ``TR: {value: 720.0}``, no redundant inner ``name`` — was accepted by one form and rejected by the other.
+
+    Last, it reads ``annotations.default``: the default of a slot whose range is a class. LinkML's ``ifabsent`` is processed only for type and enum ranges, so a slot that must accept an integer or a word (``n_parallel: 8`` or ``auto``) needs the class base range ``ScalarValue`` to validate natively, and can then state its default only this way. A slot declaring both is refused, so a default has one home.
     """
     from linkml_runtime.utils.schemaview import SchemaView
 
@@ -135,20 +137,32 @@ def _dialect_tables(schema: Path) -> tuple[dict, dict, dict]:
         amap = {a: c for a, c in amap.items() if a not in own}
         if amap:
             table[cls_name] = amap
-    return lifts, table, keyed
+
+    defaults: dict[str, dict[str, object]] = {}
+    for cls_name in view.all_classes():
+        declared = {}
+        for slot in view.class_induced_slots(cls_name):
+            if not (slot.annotations and "default" in slot.annotations):
+                continue
+            if slot.ifabsent is not None:
+                raise ValueError(f"{cls_name}.{slot.name} declares both `ifabsent` and `annotations.default`; keep one.")
+            declared[slot.name] = slot.annotations["default"].value
+        if declared:
+            defaults[cls_name] = declared
+    return lifts, table, keyed, defaults
 
 
-def _render_dialect_tables(shortcuts: dict, aliases: dict, keyed: dict) -> str:
+def _render_dialect_tables(shortcuts: dict, aliases: dict, keyed: dict, defaults: dict) -> str:
     """The dialect tables as their own module.
 
     Kept apart from ``schema.py`` so the Pydantic models can read them without importing the dataclasses: that import is the coupling the migration exists to remove, and it would be a cycle once ``schema.py`` installs the dialect from the same place.
     """
     return f'''"""Generated dialect tables — see :mod:`tvbo.datamodel.dialect`.
 
-``SCALAR_SHORTCUTS`` maps ``{{class: {{slot: (slot the bare scalar stands for,
-multivalued, keyed)}}}}``, from ``annotations.simple_dict_value`` on each range class.
+``SCALAR_SHORTCUTS`` maps ``{{class: {{slot: (slot the bare scalar stands for, multivalued, keyed)}}}}``, from ``annotations.simple_dict_value`` on each range class.
 ``SLOT_ALIASES`` maps ``{{class: {{alias: canonical slot}}}}`` from the schema's ``aliases:``.
 ``KEYED_COLLECTIONS`` maps ``{{class: {{slot: the member slot its key states}}}}``.
+``SLOT_DEFAULTS`` maps ``{{class: {{slot: default}}}}`` from ``annotations.default``, for slots whose class range ``ifabsent`` cannot serve.
 """
 
 SCALAR_SHORTCUTS = {shortcuts!r}
@@ -156,6 +170,8 @@ SCALAR_SHORTCUTS = {shortcuts!r}
 SLOT_ALIASES = {aliases!r}
 
 KEYED_COLLECTIONS = {keyed!r}
+
+SLOT_DEFAULTS = {defaults!r}
 '''
 
 

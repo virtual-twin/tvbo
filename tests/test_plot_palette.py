@@ -15,6 +15,7 @@ import yaml
 from tvbo.adapters import bsplot
 from tvbo.adapters.bsplot import _style_entries
 from tvbo.plot import palette
+from tvbo.utils.yaml_loader import ENVELOPE_KEYS
 
 
 def _schema() -> dict:
@@ -123,7 +124,7 @@ def test_a_theme_can_be_read_for_its_colours_without_its_geometry_being_a_typo()
 
 def test_the_geometry_tuple_is_exactly_what_the_theme_adds_to_a_palette():
     theme, pal = _schema()["$defs"]["Theme"]["properties"], _schema()["$defs"]["Palette"]["properties"]
-    assert set(palette.GEOMETRY) == set(theme) - set(pal) - {"iri"}, (
+    assert set(palette.GEOMETRY) == set(theme) - set(pal) - {"iri", *ENVELOPE_KEYS}, (
         "a Theme slot the colour reader does not know about is reported as a typo"
     )
 

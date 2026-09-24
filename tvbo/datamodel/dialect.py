@@ -25,7 +25,7 @@ from __future__ import annotations
 import warnings
 from functools import cache
 
-from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, SLOT_ALIASES
+from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, SLOT_ALIASES, SLOT_DEFAULTS
 
 __all__ = [
     "identifier_field",
@@ -129,12 +129,7 @@ def curated_entry(cls_name: str, name: str) -> dict | None:
     :func:`tvbo.utils.deep_merge`, which mutates neither side, and
     :meth:`IriEnrichable._from_database` only reads it into a constructor.
 
-    The entry's own ``iri`` is dropped: keeping it would make the expanded record ask to be
-    expanded again on every later construction, and a self-referential entry would not
-    terminate. So is its envelope: :func:`normalize` strips the recipe's own ``tvbo_class``
-    before expanding, and a curated record that carries one would put it back. Every network
-    sidecar in the database opens with ``tvbo_class: tvbo:Network``, so a recipe naming a
-    curated network by ``iri`` reached ``Network.__init__`` with a keyword it has no slot for.
+    The entry's own ``iri`` is dropped: keeping it would make the expanded record ask to be expanded again on every later construction, and a self-referential entry would not terminate. So is its envelope: :func:`normalize` strips the recipe's own ``tvbo_class`` before expanding, and a curated record that carries one would put it back. Every network sidecar in the database opens with ``tvbo_class: tvbo:Network``, so a recipe naming a curated network by ``iri`` would otherwise carry the curated file's envelope into the object built from the recipe.
     """
     import yaml
 
@@ -357,21 +352,15 @@ own class will, whichever spelling the record was written in.
 
 
 def normalize(cls_name: str, data: dict) -> dict:
-    """Fold *cls_name*'s dialect into *data*, in place: aliases, ``iri``, shortcuts, keys.
+    """Fold *cls_name*'s dialect into *data*, in place: aliases, ``iri``, defaults, shortcuts, keys.
 
-    Aliases fold first, so the recipe and the curated record are keyed alike before they
-    are merged and the shortcut pass can see every value under the name it looks for.
-    Lifting first left ``BoundaryCondition(value="0")`` — the older spelling of
-    ``equation`` — a bare string where the generated ``__post_init__`` wanted a mapping,
-    and it raised. Keying comes last, once every member is a mapping that can carry a name.
+    Aliases fold first, so the recipe and the curated record are keyed alike before they are merged and the shortcut pass can see every value under the name it looks for. Lifting first left ``BoundaryCondition(value="0")`` — the older spelling of ``equation`` — a bare string where the generated ``__post_init__`` wanted a mapping, and it raised. Keying comes last, once every member is a mapping that can carry a name.
 
-    The semantic folds come last, after keying, so a fold reads each collection under the
-    names the class will — a record spelling one as a list is not a different case to it.
-    The terse ``distribution`` lift follows the domain fold, since a clamp folded out of
-    ``boundaries`` can leave one behind for it to complete.
+    Schema-declared defaults (``SLOT_DEFAULTS``, for slots whose class range ``ifabsent`` cannot serve) fill after the ``iri`` expansion, so a curated record's own value is never overridden by the default, and before construction, so both generated forms record the default the schema states.
 
-    The document envelope goes first. ``tvbo_class`` states which class a *file* holds,
-    which is a fact about the file and never a slot, so every constructor route drops it.
+    The semantic folds come last, after keying, so a fold reads each collection under the names the class will — a record spelling one as a list is not a different case to it. The terse ``distribution`` lift follows the domain fold, since a clamp folded out of ``boundaries`` can leave one behind for it to complete.
+
+    The document envelope goes first. ``tvbo_class`` states which class a *file* holds, which is a fact about the file rather than the object: the schema declares it (the ``Document`` mixin) so plain LinkML can validate the file, and every constructor route drops it so no object carries it.
     """
     from tvbo.utils.yaml_loader import ENVELOPE_KEYS, _lift_one_distribution
 
@@ -380,6 +369,9 @@ def normalize(cls_name: str, data: dict) -> dict:
 
     fold_aliases(cls_name, data)
     expand_iri(cls_name, data)
+    for slot, default in SLOT_DEFAULTS.get(cls_name, {}).items():
+        if data.get(slot) is None:
+            data[slot] = default
 
     for slot, (target, multivalued, keyed) in SCALAR_SHORTCUTS.get(cls_name, {}).items():
         if data.get(slot) is not None:

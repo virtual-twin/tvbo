@@ -154,12 +154,11 @@ jobs:
                   uv pip install pytest pytest-xdist
                   pytest -v --tb=short tests/test_study_layout.py tests/test_workflow_kit_paths.py
 
-    # Every tvbo/database/ YAML against the LinkML schema — see "CI notes" in CONTRIBUTING.md.
+    # The schema and every tvbo/database/ YAML as LinkML's own tools read them, pinned to the build's LinkML; no `needs: lint`, so a lint failure cannot hide it — see "CI notes" in CONTRIBUTING.md.
     schema-validate:
-        name: Schema validation
-        needs: lint
+        name: Schema validation (native LinkML)
         runs-on: ubuntu-latest
-        timeout-minutes: 10
+        timeout-minutes: 15
         steps:
             - uses: actions/checkout@v6
             - uses: astral-sh/setup-uv@v8.1.0
@@ -173,10 +172,19 @@ jobs:
             - name: Install validation deps
               run: |
                   uv pip install \
-                      "linkml>=1.11.0" "linkml-runtime>=1.11.0" \
+                      "linkml==1.11.1" "linkml-runtime>=1.11.0" \
                       pyyaml pytest pytest-xdist
-            - name: Validate every database YAML against the LinkML schema
-              run: pytest -v --tb=short tests/test_database_validation.py
+            - name: Every generator accepts the schema
+              run: |
+                  gen-json-schema schema/tvbo_datamodel.yaml > /dev/null
+                  gen-python schema/tvbo_datamodel.yaml > /dev/null
+                  gen-pydantic schema/tvbo_datamodel.yaml > /dev/null
+            - name: Lint and validate natively
+              run: pytest -v --tb=short -n auto tests/test_native_linkml.py
+            - name: Validate every database YAML against the shipped JSON Schema
+              run: |
+                  uv run --isolated --no-project --python 3.12 --with "linkml==1.11.1" python hatch_build.py
+                  pytest -v --tb=short tests/test_database_validation.py
 
     # Builds tvb-o-struct.owl + tvb-o.shacl.ttl and uploads them for the reasoner job and external consumers.
     schema-artifacts:
@@ -406,6 +414,7 @@ jobs:
                           tests/
                           --ignore=tests/test_docs.py
                           --ignore=tests/test_database_validation.py
+                          --ignore=tests/test_native_linkml.py
                           --ignore=tests/test_model_loading.py
                           --ignore=tests/test_graph.py
                           --ignore=tests/test_package_structure.py

@@ -90,7 +90,7 @@ A dispatched run is the full thing, native backend shards and Julia included —
 
 **The lint job installs nothing,** which makes it fast and makes it the one job that sees the repo exactly as a fresh clone does — no `tvbo/datamodel/`, because that is generated. That matters for import sorting: ruff resolves first-party by path, so an unbuilt tree would sort `tvbo.datamodel.*` as third-party while a built one sorts it first-party. `known-first-party = ["tvbo"]` in `pyproject.toml` declares it instead, and must stay. To check a gate the way CI sees it rather than the way your built worktree does, lint an export: `git archive HEAD | tar -x -C "$(mktemp -d)"`.
 
-**Schema validation** runs on every PR because it is fast (~20 s) and needs only `linkml` + `pyyaml`, so schema/database drift surfaces without waiting for the full install matrix.
+**Schema validation** holds the schema and every `tvbo/database/` record to native LinkML, pinned to the build's `linkml==1.11.1`: every generator accepts the schema, `linkml-lint` reports no error, and each record passes LinkML's closed validator (the `linkml-validate` default) with no TVBO code in the loop (`tests/test_native_linkml.py`). It then regenerates the shipped JSON Schema and validates against that too, the path `tvbo validate schema` takes; the file is untracked, so a job that skips the regeneration skips every case. It needs only `linkml` + `pyyaml` and does not wait for `lint`, so a ruff failure cannot hide it.
 
 **Ontology reasoning** (ELK, and HermiT for full OWL-DL) runs ROBOT over the generated `tvb-o-struct.owl` to catch unsatisfiable classes and inverse/functional/cardinality regressions. It is `continue-on-error` while the generated ontology still has known cleanup pending.
 

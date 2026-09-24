@@ -346,15 +346,14 @@ class SimulationStudyBehaviour:
     def get_experiment(self, experiment_id):
         """Retrieve a single experiment by its declared id."""
         from tvbo.classes import experiment
+        from tvbo.utils.source import loading_from
 
         exps = getattr(self, "experiments", None) or []
         source_file = getattr(self, "_source_file", None)
         raw_experiments = getattr(self, "_raw_experiments", None) or {}
         for exp_dm in exps:
             if getattr(exp_dm, "id", None) == experiment_id:
-                if source_file:
-                    experiment.SimulationExperiment._pending_source_file = source_file
-                try:
+                with loading_from(source_file):
                     # Materialise through the YAML construction path so that iri-sourced components (dynamics, coupling) are merged from the registry — exactly as SimulationExperiment.from_file does. from_datamodel alone skips that resolution and would leave an iri-only dynamics unpopulated. Prefer the raw authored experiment dict (minimal, anchor-resolved) so the merge behaves identically to loading a standalone spec.
                     raw = raw_experiments.get(experiment_id)
                     if isinstance(raw, dict):
@@ -367,8 +366,6 @@ class SimulationStudyBehaviour:
                         exp = experiment.SimulationExperiment.from_string(yaml_dumper.dumps(exp_dm))
                     if source_file:
                         exp._source_file = source_file
-                finally:
-                    experiment.SimulationExperiment._pending_source_file = None
                 return exp
         available = [getattr(e, "id", None) for e in exps]
         raise KeyError(f"Experiment {experiment_id!r} not found. Available: {available}")

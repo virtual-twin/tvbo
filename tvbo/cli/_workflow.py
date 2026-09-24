@@ -740,6 +740,10 @@ def plan(
 
     for _cpl in network_couplings(getattr(experiment, "network", None)).values():
         _record_used_param_deps(getattr(_cpl, "parameters", None))
+    # A sourced data-driven stimulus plays another run's recording (Event.parameters.data → Parameter.used).
+    _events = getattr(experiment, "events", None)
+    for _ev in list(_events.values()) if hasattr(_events, "values") else _as_list(_events or []):
+        _record_used_param_deps(getattr(_ev, "parameters", None))
     # Exploration-builder arguments (ExplorationAxis.builder → Argument.used).
     _expls = getattr(experiment, "explorations", None)
     for _expl in list(_expls.values()) if hasattr(_expls, "values") else _as_list(_expls or []):

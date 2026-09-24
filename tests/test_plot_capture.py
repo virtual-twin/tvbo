@@ -3,6 +3,8 @@
 
 """The headless-capture recipe behind an ``image`` panel, tested without launching a browser."""
 
+import os
+
 import pytest
 
 from tvbo.adapters.bsplot import _recipe_dict
@@ -37,12 +39,15 @@ def test_a_local_source_resolves_against_the_spec_directory(tmp_path):
 
 
 def test_staleness_follows_the_source(tmp_path):
+    """Staleness compares modification times, so the test states them rather than racing the filesystem clock, whose tick can give a capture and a page edited right after it the same mtime."""
     source, out = tmp_path / "page.html", tmp_path / "shot.png"
     source.write_text("<p>hi</p>")
     assert is_stale(out, source), "a capture that was never taken is stale"
     out.write_bytes(b"png")
+    os.utime(source, (1000, 1000))
+    os.utime(out, (2000, 2000))
     assert not is_stale(out, source)
-    source.touch()
+    os.utime(source, (3000, 3000))
     assert is_stale(out, source), "editing the page must re-render the capture"
 
 

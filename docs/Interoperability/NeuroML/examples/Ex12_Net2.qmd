@@ -64,7 +64,7 @@ network:
         tauDecay: {value: 10, unit: ms}
         tauRise: {value: 1, unit: ms}
         erev: {value: 0, unit: mV}
-      modes:
+      components:
         blockMechanism:
           name: blockMechanism
           iri: neuroml:voltageConcDepBlockMechanism
