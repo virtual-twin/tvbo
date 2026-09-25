@@ -163,6 +163,25 @@ enums:
                 description: >-
                     The included algorithm runs as a full inner loop on EACH outer iteration, re-converging before the outer update rules are applied. Use when the inner algorithm maintains an invariant the outer one would otherwise perturb — e.g. FIC holding the E-I working point (mean S_e = 0.25) while EIB retunes per-edge coupling. The outer update's validity depends on that invariant, so the inner loop must re-settle it between every outer step.
 
+    SelectionMode:
+        description: >-
+            Whether the best iterate of an online tuning run is the one with the smallest or the largest criterion value.
+        permissible_values:
+            min:
+                description: "Keep the iterate with the smallest criterion value (an error such as an FC RMSE)."
+            max:
+                description: "Keep the iterate with the largest criterion value (a similarity such as an FC correlation)."
+
+    SelectionScope:
+        description: >-
+            Over which span of an online tuning run the best iterate is chosen.
+        permissible_values:
+            run:
+                description: "One best iterate over all stages jointly, restored after the last stage (the default)."
+            stage:
+                description: >-
+                    Each stage keeps its own best iterate and restores it before the next stage starts, so every stage restarts from the best state the previous one found; the run records one iteration and value per stage. This is the authors' released feedback-inhibition protocol, where each stage was a separate process that restarted from the previous stage's best checkpoint.
+
     ParallelMode:
         description: >-
             How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput: vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map`` (memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits and lax_map otherwise.
@@ -1569,6 +1588,14 @@ classes:
             region:
                 range: string
                 description: "Brain region or anatomical label"
+            hemisphere:
+                range: Hemisphere
+                description: >-
+                    The hemisphere this node lies in, the SANDS `Hemisphere` value `left` or `right`. Absent for a midline node or one whose side is not curated. A consumer that needs sides fails on an absent value rather than inferring one from the label.
+            homologue:
+                range: string
+                description: >-
+                    Label of this node's counterpart in the other hemisphere, so that a mirrored drive or readout is a declared permutation rather than a positional guess. Absent when the node has no homologue.
             state:
                 multivalued: true
                 range: StateValue
@@ -2147,6 +2174,13 @@ classes:
                 required: false
                 description: >-
                     WHICH array to select out of `source`. The address space is the source's own: a per-node measure name for a Network (aligning with Network.structural_measures / observational_measures), a dataset key for an HDF5/Zarr store, a recorded measure for an experiment result. Omit when the source resolves to a single array.
+            source_arguments:
+                multivalued: true
+                range: Argument
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Arguments handed to whatever resolves `source`, such as the normalisation or the conduction velocity a per-node measure is computed with. They travel with the parameter so a spec states not only where a value comes from but how it is derived, and a resolver refuses an argument it does not know.
             used:
                 range: DataRef
                 inlined: true
@@ -3077,6 +3111,30 @@ classes:
                 inlined: true
                 description: "Metric equation for matching (e.g., correlation, rmse)"
 
+    StateSelection:
+        class_uri: tvbo:StateSelection
+        description: >-
+            Which iterate of an online tuning run hands its parameters to the post-tuning evaluation and to the algorithms that depend on it. Absent, the final iterate does. Declared, the loop keeps the tuned parameters and the settled state of the iteration whose criterion was best, tracked across every stage jointly and restored after the last stage (or per stage under `scope: stage`); the run records the chosen iteration and its criterion value. This is the published feedback-inhibition simulator's practice of keeping the weights of the iteration with the lowest in-loop FC error rather than the last ones.
+        attributes:
+            criterion:
+                range: string
+                required: true
+                description: >-
+                    Name of the in-loop quantity to rank iterations by, one of the algorithm's `observations` or `functions` (e.g. an in-loop `fc_rmse` of the windowed FC against the target); its per-iteration mean is ranked, so a per-node value is averaged over nodes. It is measured on the parameters in effect during that iteration, so the kept snapshot is the one that produced it.
+            mode:
+                range: SelectionMode
+                ifabsent: string(min)
+                description: "Whether the smallest (min, the default) or the largest (max) criterion value is best."
+            from_iteration:
+                range: integer
+                ifabsent: integer(0)
+                description: >-
+                    First iteration eligible for selection, counted from the first tuning iteration after the observation window has filled; it continues across stages under `scope: run` and restarts with every stage under `scope: stage`. Use it to skip the iterations a still-settling window makes look good.
+            scope:
+                range: SelectionScope
+                ifabsent: string(run)
+                description: "Whether one best iterate is chosen over the whole run (run, the default) or one per stage, restored before the next stage starts (stage)."
+
     Algorithm:
         class_uri: tvbo:Algorithm
         description: >-
@@ -3168,6 +3226,11 @@ classes:
                 ifabsent: boolean(true)
                 description: >-
                     Materialise this algorithm's post-tuning evaluation: a simulation of the tuned model over the experiment's full duration, recorded as algorithm__<name>__<observation>. False keeps only the tuned parameters and state, which is all a dependency of another algorithm contributes - the algorithm that follows supersedes its observations - while the evaluation itself costs a complete run of the experiment's duration.
+            selection:
+                range: StateSelection
+                inlined: true
+                description: >-
+                    Optional best-iterate selection. Absent, the tuned state is the final iterate. Declared, the iterate with the best `criterion` (across all stages, or per stage under `scope: stage`) is restored before the post-tuning evaluation, and `<algorithm>__selected_iteration` / `<algorithm>__selected_value` record which one it was (one value per stage under `scope: stage`).
 
     # =============================================================================
     # Continuation & Bifurcation Analysis

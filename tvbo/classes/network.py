@@ -135,6 +135,14 @@ def normalized_graph_laplacian(M):
     return graph_laplacian(M / jnp.max(M))
 
 
+def max_row_sum_normalized(M):
+    """The weight matrix divided by its largest row sum, ``W / max(rowsum(W))``.
+
+    The normalisation the multiscale DBS network models used: the strongest total input any node receives becomes 1, so the global coupling ``G`` is expressed against the largest afferent load rather than against the largest single edge. Referenced via ``callable: {module: tvbo.classes.network, name: max_row_sum_normalized}``. A row sum is not expressible in the elementwise symbolic transform path, which is why this is a callable.
+    """
+    return M / jnp.max(M.sum(axis=1))
+
+
 try:
     from bids.layout import BIDSLayout  # noqa: F401  # optional dep probe
 

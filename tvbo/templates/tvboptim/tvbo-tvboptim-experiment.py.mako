@@ -17,7 +17,7 @@ from tvbo.templates.tvboptim.utils import (
     get_all_observations_from_algo, network_axis_leaf, network_leaf_is_matrix,
     initial_conditions_axis_sv, noise_axis_param,
     graph_selection, observation_dims, parameter_keypath,
-    has_host_pipeline, pipeline_stage_is_host, data_source_arrays,
+    has_host_pipeline, pipeline_stage_is_host, data_source_arrays, selection_settings,
 )
 import numpy as np
 import re
@@ -4464,6 +4464,10 @@ def run_experiment(
     # Algorithm.evaluate: False keeps only the tuned state, skipping a full-duration post-fold.
     _ev = getattr(algo, 'evaluate', None)
     algo_evaluate = True if _ev is None else bool(_ev)
+    # Algorithm.selection: the best iterate is carried from stage to stage and restored after the last one, or after every stage under scope: stage.
+    _sel_a = selection_settings(algo)
+    algo_sel_on = _sel_a is not None
+    algo_sel_per_stage = algo_sel_on and _sel_a['per_stage']
 
     # Own rules plus combined includes (a nested inner tunes inside the outer call, not across stages); each entry is (param_name, coupling_key or None), where None lives on state.dynamics.
     reset_targets = []
@@ -4556,6 +4560,9 @@ def run_experiment(
 % endif
                 _stage_state = algo_state
                 algo_result = None
+% if algo_sel_on:
+                _stage_selection = None   # best-iterate carry, handed from stage to stage
+% endif
                 _stage_post_fc = []   # per-stage post-tuning FC matrices (r-trajectory)
                 _stage_conv = []      # per-stage convergence Bunch (working-point trajectory)
 % if any_stage_resets:
@@ -4629,6 +4636,10 @@ def run_experiment(
 % endif
 % endif
                         monitors=_stage_monitors,
+% if algo_sel_on:
+                        selection=_stage_selection,
+                        restore_best=${'True' if algo_sel_per_stage else '(_si == len(_stage_defs) - 1)'},
+% endif
                         run_post_tuning=${algo_evaluate} and (_si == len(_stage_defs) - 1),   # Algorithm.evaluate, folded once after the last stage rather than per stage
 % if observation_ref:
                         observation_monitor=observations.${observation_ref},
@@ -4642,6 +4653,9 @@ def run_experiment(
 % endfor
 % endif
                     _stage_monitors = algo_result.get('monitors', _stage_monitors)
+% if algo_sel_on:
+                    _stage_selection = algo_result.get('selection', _stage_selection)
+% endif
                     try:
                         _pt = algo_result.post_tuning.observations
                         _stage_post_fc.append(_pt['fc'] if 'fc' in _pt else _pt.get('fc'))

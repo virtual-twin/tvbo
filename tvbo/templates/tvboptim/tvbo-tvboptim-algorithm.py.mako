@@ -6,7 +6,7 @@ from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, is_external_observation,
     get_include_info, get_all_observations_from_algo, get_all_hyperparams,
-    streaming_post_eval_plan,
+    streaming_post_eval_plan, selection_settings,
 )
 
 # Backend key this template targets — used for streaming-reducer registry lookups.
@@ -122,6 +122,15 @@ def get_nested_includes(algo, algorithms_dict, obs_dict):
             'external_inputs': get_external_inputs(inc_algo, obs_dict, algorithms_dict),
         })
     return result
+
+def get_tuned_targets(algo, algorithms_dict):
+    """Names of every parameter one iteration of *algo* writes, in first-seen order: its own and combined-include rules, then those of the nested inner loops it re-converges each iteration."""
+    names = [get_target_name(rule) for rule, _src, _ov in get_all_update_rules(algo, algorithms_dict)]
+    for inc in as_list(getattr(algo, 'includes', None)):
+        inner = algorithms_dict.get(get_include_info(inc)[0]) if _include_mode(inc) == 'nested' else None
+        if inner is not None:
+            names += get_tuned_targets(inner, algorithms_dict)
+    return list(dict.fromkeys(names))
 
 def get_external_inputs(algo, obs_dict, algorithms_dict=None):
     """Get observations that have external data_source or network.observations source."""
@@ -258,6 +267,21 @@ def obs_tail_start(obs_def):
     # Check for included algorithms
     included_algos = as_list(algo.includes)
     has_includes = len(included_algos) > 0
+
+    # Best-iterate selection (Algorithm.selection): ranks iterations by the per-iteration mean of an algorithm function or observation, and snapshots every target the iteration tunes, nested inner loops included.
+    _sel = selection_settings(algo)
+    sel_on = _sel is not None
+    if sel_on:
+        sel_criterion, sel_cmp, sel_from, sel_per_stage = _sel['criterion'], _sel['cmp'], _sel['from_iteration'], _sel['per_stage']
+        sel_elig = '_i' if sel_per_stage else '_sel_gi'
+        sel_init = 'jnp.inf' if sel_cmp == '<' else '-jnp.inf'
+        if sel_criterion in [get_func_name(fc) for fc in algo_functions]:
+            sel_expr = 'jnp.mean(jnp.asarray(_%s_val))' % sel_criterion
+        elif sel_criterion in simulated_observations:
+            sel_expr = 'jnp.mean(%s)' % sel_criterion
+        else:
+            raise ValueError(f"Algorithm '{algo.name}' selection.criterion '{sel_criterion}' is neither one of its functions {[get_func_name(fc) for fc in algo_functions]} nor one of its simulated observations {simulated_observations}.")
+        sel_targets = [(_tn, state_param_accessor(_tn)[len('state.'):]) for _tn in get_tuned_targets(algo, algorithms_dict)]
 %>
 
 <%
@@ -357,6 +381,10 @@ def run_${algo_name}(
     post_state: Any = None,
     run_post_tuning: bool = True,  # set False when called as a nested inner loop
     raw: bool = False,  # vmap-safe: skip pre_tuning sim + AlgorithmResult wrapping, return a Bunch of raw JAX arrays (for jax.vmap over a subject cohort)
+% if sel_on:
+    selection: dict = None,  # best-iterate carry from the previous stage; None starts fresh
+    restore_best: bool = True,  # restore the best iterate into the returned state; a scope-run caller passes False on every stage but the last
+% endif
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
     ${src_obs}_buffer: jnp.ndarray = None,  # Optional: passed from previous algorithm
@@ -599,6 +627,25 @@ def run_${algo_name}(
     _ws0 = jnp.asarray(int(window_size), jnp.int32)
     _use_ring = max_window_size is not None
 % endif
+% if sel_on:
+% if sel_per_stage:
+    # Every stage ranks its own iterations: the comparison restarts here, the earlier stages' records ride along, and the offset keeps the recorded index global.
+    _sel_stages = [] if selection is None else list(selection['stages'])
+    _sel_offset0 = jnp.asarray(0) if selection is None else selection['offset']
+    selection = None
+% endif
+    if selection is None:
+        # Seeded from the entry state so the carry has its shapes; iteration -1 means nothing eligible has been seen yet.
+        selection = {
+            'value': jnp.asarray(${sel_init}, dtype=jnp.result_type(float)),
+            'iteration': jnp.asarray(-1),
+            'offset': ${'_sel_offset0' if sel_per_stage else 'jnp.asarray(0)'},
+            'ic': state.initial_state,
+% for _tn, _path in sel_targets:
+            'p__${_tn}': state.${_path},
+% endfor
+        }
+% endif
     def _canon(_x):
         # Stripping weak_type lets a fresh first stage and the scan's own outputs share one jit specialization.
         _a = _x if hasattr(_x, "dtype") else jnp.asarray(_x)
@@ -634,6 +681,9 @@ def run_${algo_name}(
 % if use_maxwin:
         _canon_tree(_ws0),
 % endif
+% if sel_on:
+        _canon_tree(selection),
+% endif
         model_fn=_raw_model_fn,
         n_iterations=n_iterations,
         print_every=print_every,
@@ -644,6 +694,29 @@ def run_${algo_name}(
 % endif
     )
     state = _ls_final['state']
+% if sel_on:
+    _selection = dict(_ls_final['sel'])
+    _selection['offset'] = _selection['offset'] + n_iterations  # the next stage's iterations count on from here
+% if sel_per_stage:
+    _sel_stages.append((_selection['iteration'], _selection['value']))
+    _selection['stages'] = tuple(_sel_stages)
+    _selected_iteration = jnp.stack([_it for _it, _v in _sel_stages])
+    _selected_value = jnp.stack([_v for _it, _v in _sel_stages])
+% else:
+    _selected_iteration = _selection['iteration']
+    _selected_value = _selection['value']
+% endif
+    if restore_best:
+        # The best iterate replaces the final one; -1 (no eligible iteration) keeps the final iterate.
+        _sel_hit = _selection['iteration'] >= 0
+% for _tn, _path in sel_targets:
+        state = eqx.tree_at(lambda s: s.${_path}, state, jnp.where(_sel_hit, _selection['p__${_tn}'], state.${_path}))
+% endfor
+        state = eqx.tree_at(lambda s: s.initial_state, state,
+                            jax.tree_util.tree_map(lambda _b, _f: jnp.where(_sel_hit, _b, _f), _selection['ic'], state.initial_state))
+        if verbose:
+            logger.info(f"  ${algo_name}: restored iteration {int(_selection['iteration'])} (${sel_criterion}={float(_selection['value']):.6g}) as the tuned state" if int(_selection['iteration']) >= 0 else "  ${algo_name}: no iteration was eligible for selection, kept the final iterate")
+% endif
     # Tuning ends here; the scan dispatches asynchronously, so its output must land before the split from the full-duration eval below is honest.
     if verbose:
         jax.block_until_ready(state)
@@ -758,6 +831,11 @@ def run_${algo_name}(
             history=result_history,
             post_tuning_observations=post_tuning_observations,
             monitors=_monitors_out,
+% if sel_on:
+            selection=_selection,
+            selected_iteration=_selected_iteration,
+            selected_value=_selected_value,
+% endif
 % for obs in collectible_observations:
             ${obs}_buffer=_${obs}_buffer_out,
 % endfor
@@ -812,6 +890,11 @@ def run_${algo_name}(
         state_names=${state_names},
         # Additional fields for algorithm chaining
         monitors=_monitors_out,
+% if sel_on:
+        selection=_selection,
+        selected_iteration=_selected_iteration,
+        selected_value=_selected_value,
+% endif
 % for obs in collectible_observations:
         ${obs}_buffer=_${obs}_buffer_out,
 % endfor
@@ -856,6 +939,9 @@ def _${algo_name}_tuning_core_impl(
 % endif
 % if use_maxwin:
     ws0,
+% endif
+% if sel_on:
+    _sel_in,
 % endif
     model_fn,
     n_iterations,
@@ -1028,6 +1114,9 @@ def _${algo_name}_tuning_core_impl(
         _wptr = _ls['wptr']
 % if use_maxwin:
         _ws = _ls['ws']  # traced window length (masked ring); unused on the contiguous (use_ring=False) path
+% endif
+% if sel_on:
+        _sel = _ls['sel']
 % endif
         key, subkey = jax.random.split(key)
 % for ni in nested_includes:
@@ -1310,6 +1399,22 @@ def _${algo_name}_tuning_core_impl(
                 _rec_${target_name}_buf,
 % endfor
             ), _wptr))
+% if sel_on:
+
+        # Best-iterate selection: ${sel_criterion} was measured on the parameters in effect this iteration, so they and the settled state are its snapshot; the offset makes the index global across stages.
+        _sel_gi = _sel['offset'] + _i
+        _sel_crit = ${sel_expr}
+        _sel_better = (${sel_elig} >= ${sel_from}) & (_sel_crit ${sel_cmp} _sel['value'])
+        _sel = {
+            'value': jnp.where(_sel_better, _sel_crit, _sel['value']).astype(_sel['value'].dtype),
+            'iteration': jnp.where(_sel_better, _sel_gi, _sel['iteration']).astype(_sel['iteration'].dtype),
+            'offset': _sel['offset'],
+            'ic': jax.tree_util.tree_map(lambda _n, _o: jnp.where(_sel_better, _n, _o), state.initial_state, _sel['ic']),
+% for _tn, _path in sel_targets:
+            'p__${_tn}': jnp.where(_sel_better, state.${_path}, _sel['p__${_tn}']),
+% endfor
+        }
+% endif
 
         # NOW compute and apply update rules (after recording)
 % if 'update_every' in hyperparam_dict:
@@ -1461,6 +1566,9 @@ def _${algo_name}_tuning_core_impl(
 % if use_maxwin:
             'ws': _ws,
 % endif
+% if sel_on:
+            'sel': _sel,
+% endif
         }
         return _ls_out, _ys
 
@@ -1487,6 +1595,9 @@ def _${algo_name}_tuning_core_impl(
         'wptr': jnp.asarray(0),
 % if use_maxwin:
         'ws': ws0,
+% endif
+% if sel_on:
+        'sel': _sel_in,
 % endif
     }
     _ls_final, _ys_all = jax.lax.scan(_tuning_step, _ls_init, jnp.arange(n_iterations))
@@ -1557,6 +1668,9 @@ def run_cohort_${algo_name}(
     def _fit_one_subject(${', '.join('_lane_%d' % i for i in range(len(batched_inputs)))}, _skey):
         _st = algo_state
         _mon = None
+% if sel_on:
+        _sel = None
+% endif
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
         _buf_${src_obs} = None
@@ -1582,8 +1696,14 @@ def run_cohort_${algo_name}(
 % endif
                 monitors=_mon, raw=True, run_post_tuning=False, verbose=False,
                 save_every=save_every,
+% if sel_on:
+                selection=_sel, restore_best=${'True' if sel_per_stage else '(_si == len(_stage_defs) - 1)'},
+% endif
             )
             _st = _r.state
+% if sel_on:
+            _sel = _r.get('selection', _sel)
+% endif
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
             _buf_${src_obs} = _r.get('${src_obs}_buffer', _buf_${src_obs})

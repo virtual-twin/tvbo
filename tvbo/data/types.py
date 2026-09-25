@@ -2513,6 +2513,11 @@ class ExperimentResult:
                 da = _numeric_da(key, value, dims=_tracked_dims(shape, _declared_dims().get(str(track))))
                 if da is not None:
                     data_vars[key] = da
+            # A best-iterate selection (Algorithm.selection) records which iteration the tuned state came from and the criterion value that chose it; a scalar for the run, or one per stage under scope: stage.
+            for field in ("selected_iteration", "selected_value"):
+                da = _numeric_da(field, getattr(algo, "_extras", {}).get(field), dims=("stage",))
+                if da is not None:
+                    data_vars[f"algorithm__{_san(algo_name)}__{field}"] = da
 
         # Persist each tuned FREE parameter's fitted value as ``estimate__<param>`` so a from_experiment warm-start can reload it as a prior location (point prior). Kept on LABELLED node axes (``node`` for vectors, ``node_i``+``node_j`` for per-edge matrices) — the same convention FC matrices use — so the consumer reconciles by label with the existing `.sel` path, no bespoke reindex. Container-layer only (values already live in AlgorithmResult.state) → no codegen change; free params only, so it can't shadow a ``<sv>_final`` key; sourced from the algorithm that FITS each param (last-writer among fitting passes, see _algo_tuned_params).
         free_names = _free_param_names(self.source) if self.algorithms else set()
@@ -2690,12 +2695,12 @@ class ExperimentResult:
             if self._extras.get("synapse_state"):
                 _attrs["synapse_recorded"] = [_san(k) for k in self._extras["synapse_state"]]
             ds = xr.Dataset(data_vars, attrs=_attrs)
-            # A counting axis with no coordinate is written by h5netcdf as a zero-filled placeholder scale, so a reader that opens the file finds the axis named and its index gone. Numbering it here makes an optimizer's step and an algorithm's iteration selectable by name, as the continuation branch's own `step` already is.
+            # A counting axis with no coordinate is written by h5netcdf as a zero-filled placeholder scale, so a reader that opens the file finds the axis named and its index gone. Numbering it here makes an optimizer's step, an algorithm's iteration and a staged selection's stage selectable by name, as the continuation branch's own `step` already is.
             ds = ds.assign_coords(
                 {
                     dim: np.arange(size)
                     for dim, size in ds.sizes.items()
-                    if dim not in ds.coords and dim.rsplit("__", 1)[-1] in ("step", "iteration")
+                    if dim not in ds.coords and dim.rsplit("__", 1)[-1] in ("step", "iteration", "stage")
                 }
             )
             h5 = os.path.join(out_dir, f"{stem}.h5")

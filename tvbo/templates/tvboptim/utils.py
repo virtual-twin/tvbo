@@ -3646,6 +3646,22 @@ def get_include_info(inc: Any) -> tuple[str, dict]:
     return str(inc), {}
 
 
+def selection_settings(algo: Any) -> dict | None:
+    """``Algorithm.selection`` resolved for codegen, or None when the algorithm keeps its final iterate.
+
+    Returns the ``criterion`` name, the comparison ``cmp`` (``'<'`` keeps the smallest value, ``'>'`` the largest), the first eligible iteration ``from_iteration``, and ``per_stage``, true when every stage ranks and restores its own best iterate. Shared by the algorithm and experiment templates so the two cannot disagree on a default.
+    """
+    sel = getattr(algo, "selection", None)
+    if sel is None or not getattr(sel, "criterion", None):
+        return None
+    return {
+        "criterion": str(sel.criterion),
+        "cmp": ">" if str(getattr(sel, "mode", None) or "min") == "max" else "<",
+        "from_iteration": int(getattr(sel, "from_iteration", None) or 0),
+        "per_stage": str(getattr(sel, "scope", None) or "run") == "stage",
+    }
+
+
 def _include_is_nested(inc: Any) -> bool:
     """True if an AlgorithmInclude uses nested (inner-loop) composition.
 
