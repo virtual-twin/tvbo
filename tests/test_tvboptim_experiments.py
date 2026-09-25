@@ -1,12 +1,11 @@
-"""Test tvboptim experiment execution for all experiments in database/experiments."""
+"""Test tvboptim experiment execution for all experiments in database/experiments.
 
-import os
+The virtual CPU devices come from ``conftest``, which owns ``XLA_FLAGS`` for the whole run: a module that rewrote it at import would change the device count and drop conftest's other flags for every test collected after it.
+"""
 
 import pytest
 
 pytest.importorskip("tvboptim", reason="tvboptim not installed")
-
-os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
 
 from tvbo import SimulationExperiment, database_path
 from tvbo.utils import as_list

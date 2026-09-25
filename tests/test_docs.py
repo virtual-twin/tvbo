@@ -169,6 +169,18 @@ def _cell_error(path: Path) -> str:
     return ""
 
 
+def _cell_traceback(path: Path) -> str:
+    """The first failing cell's traceback as the kernel recorded it, stripped of terminal colour codes, or empty when every cell ran.
+
+    The ``EName: message`` of :func:`_cell_error` says what was raised but not where, and an exception raised inside a library (a graph that fails its own verification, a class called with arguments it does not take) cannot be located from its message alone.
+    """
+    for cell in _executed_cells(path):
+        for out in cell.get("outputs", []):
+            if out.get("output_type") == "error":
+                return re.sub(r"\x1b\[[0-9;]*m", "", "\n".join(out.get("traceback", []))).strip()
+    return ""
+
+
 def _cell_streams(path: Path) -> str:
     """The stdout and stderr the executed cells produced.
 
@@ -244,9 +256,11 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
         if cell_error or result.returncode != 0:
             error_msg = cell_error or (result.stderr.strip().split("\n")[-1] if result.stderr else "Unknown error")
             streams = _cell_streams(ipynb_path)
+            traceback = _cell_traceback(ipynb_path)
             pytest.fail(
                 f"Notebook execution failed: {error_msg}\n\nFull stderr:\n{result.stderr}"
                 + (f"\n\nCell output:\n{streams}" if streams else "")
+                + (f"\n\nCell traceback:\n{traceback}" if traceback else "")
             )
     finally:
         # Clean up generated notebook

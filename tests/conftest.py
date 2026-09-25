@@ -1,6 +1,6 @@
 """Early environment setup for the test suite, plus helpers shared across test modules.
 
-The environment part must run before any JAX import: it forces the CPU backend (jax-metal raises XLA errors on Apple Silicon) and sets up the virtual XLA devices the pmap tests need.
+The environment part must run before any JAX import: it forces the CPU backend (jax-metal raises XLA errors on Apple Silicon) and sets up the virtual XLA devices the pmap tests need, with XLA's Eigen intra-op threading off. The virtual devices execute at once on one shared intra-op pool, and XLA:CPU's multithreaded FFT parks a pool thread waiting on sub-tasks it queued in that same pool, so enough concurrent FFTs (a pmapped sweep computing BOLD or spectra) deadlock the process with every thread idle.
 
 It also hands each xdist worker its own ``TVB_USER_HOME``. TVB derives its storage from that variable — including the log folder it ``os.makedirs`` without ``exist_ok`` on import — so parallel workers otherwise race on that mkdir and the loser raises ``FileExistsError``.
 """
@@ -12,7 +12,7 @@ import pytest
 
 os.environ.setdefault("JAX_PLATFORMS", "cpu")
 n_devices = min(os.cpu_count() or 2, 8)
-os.environ.setdefault("XLA_FLAGS", f"--xla_force_host_platform_device_count={n_devices}")
+os.environ.setdefault("XLA_FLAGS", f"--xla_force_host_platform_device_count={n_devices} --xla_cpu_multi_thread_eigen=false")
 
 _tvb_worker = os.environ.get("PYTEST_XDIST_WORKER")
 if _tvb_worker:

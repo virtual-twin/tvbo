@@ -2223,7 +2223,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             from tvbo.utils import to_yaml as _to_yaml
 
             kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
-            clean = self.__class__.__bases__[0](**kwargs)
+            clean = tvbo_datamodel.Network(**kwargs)
             return _to_yaml(clean, filepath)
 
     # ---- JAX pytree: flatten/unflatten ----

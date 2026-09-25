@@ -236,6 +236,16 @@ edges:
             assert net2.number_of_regions == 3 or net2.number_of_nodes == 3
             assert net2.label is not None or True  # label may be None for synthetic
 
+    def test_to_yaml_writes_the_record_with_its_transforms(self):
+        """`to_yaml` serialises the datamodel record, whichever runtime bases the class lists first, and a transform lands in it."""
+        from tvbo import Network
+
+        net = Network.from_matrix(np.array([[0, 1, 2], [1, 0, 3], [2, 3, 0]], dtype="float64"))
+        net.normalize()
+        meta = _yaml_mod.safe_load(net.to_yaml())
+        assert meta["number_of_nodes"] == 3
+        assert meta["transforms"], "normalize() must be recorded in the YAML"
+
     def test_save_load_roundtrip_h5(self):
         """Save a Network as YAML+HDF5, reload, and compare."""
         from tvbo import Network
