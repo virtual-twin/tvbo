@@ -22,7 +22,7 @@ This replicates tvboptim's `Hopf_Pareto_ParallelOpt` workflow byte-identically (
 import os
 
 device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "8")
-os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={device_count}"
+os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={device_count} --xla_cpu_multi_thread_eigen=false"  # the devices share one XLA thread pool, where threaded FFTs can deadlock
 
 import jax
 

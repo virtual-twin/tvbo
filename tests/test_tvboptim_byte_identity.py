@@ -211,7 +211,7 @@ def _load_landscape(t1, transient):
 def test_rww_exploration_runs():
     exp = _load_landscape(2000.0, 500.0)
     exp.configure()
-    r = exp.run("tvboptim", mode="exploration", n_w=2, n_G=2, n_pmap=1)
+    r = exp.run("tvboptim", mode="exploration", n_w=2, n_G=2)
     grid = np.asarray(r.explorations.parameter_landscape.results)
     assert grid.size == 4, f"expected 2x2 grid, got {grid.shape}"
     assert np.all(np.isfinite(grid)), "exploration produced non-finite values"
@@ -655,7 +655,7 @@ def test_tbptt_gsweep_runs():
     exp.integration.transient_time = 300.0
     exp.observations["fc"].pipeline[0].arguments["skip_t"].value = 2
     exp.configure()
-    r = exp.run("tvboptim", mode="exploration", n_G=3, n_pmap=1)
+    r = exp.run("tvboptim", mode="exploration", n_G=3)
     grid = np.asarray(r.explorations.G_sweep.results)
     assert grid.size == 3, f"expected 3-point G sweep, got {grid.shape}"
     assert np.all(np.isfinite(grid)), "G sweep produced non-finite values"
@@ -671,7 +671,7 @@ def test_tbptt_motivation_sweep_records_diagnostics():
     exp.integration.transient_time = 300.0
     exp.observations["fc"].pipeline[0].arguments["skip_t"].value = 2
     exp.configure()
-    r = exp.run("tvboptim", mode="exploration", n_G=5, n_pmap=1)
+    r = exp.run("tvboptim", mode="exploration", n_G=5)
     obs = r.explorations.motivation_sweep.observations
     diag = {k: np.asarray(obs[k]).ravel() for k in ("loss", "ad_gradient", "fd_gradient", "lyapunov")}
     for k, v in diag.items():
