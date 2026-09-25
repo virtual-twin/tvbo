@@ -100,7 +100,7 @@ def resolve(cls_name: str, name: str) -> Path:
     """Resolve a short name to a database YAML file path.
 
     Tries exact top-level stem match first (fast path), then searches recursively by canonical `name:` field and file stem (case-insensitive).
-    For Network, also matches BIDS filenames containing the atlas name.
+    For Network, also matches BIDS filenames containing the atlas name, taking the first in sorted order when several do: for ``DesikanKilliany`` that is the HCPYA structural connectome, not the MEG or EEG projection networks filed under the same atlas.
     """
     if DATABASE_ROOT is None:
         raise RuntimeError(
@@ -128,9 +128,9 @@ def resolve(cls_name: str, name: str) -> Path:
         if p.stem == name or p.stem.lower() == name_lower:
             return p
 
-    # For networks: search by atlas name in BIDS filename
+    # Sorted: an atlas several networks share must resolve to the same file whatever order the filesystem lists them in.
     if cls_name == "Network":
-        for p in db_dir.rglob("*.yaml"):
+        for p in sorted(db_dir.rglob("*.yaml")):
             if f"atlas-{name}" in p.stem:
                 return p
 

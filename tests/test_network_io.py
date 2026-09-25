@@ -246,6 +246,17 @@ edges:
         assert meta["number_of_nodes"] == 3
         assert meta["transforms"], "normalize() must be recorded in the YAML"
 
+    @pytest.mark.parametrize("listing", [list, lambda paths: list(reversed(paths))], ids=["as-listed", "reversed"])
+    def test_an_atlas_name_resolves_to_its_connectome_in_any_directory_order(self, monkeypatch, listing):
+        """Several database networks share the DesikanKilliany atlas; the name must resolve to the structural connectome however the filesystem orders them, not to the 61-sensor EEG projection an ext4 runner listed first."""
+        from tvbo.data import registry
+
+        rglob = Path.rglob
+        monkeypatch.setattr(Path, "rglob", lambda self, pattern: iter(listing(sorted(rglob(self, pattern)))))
+        path = registry.resolve("Network", "DesikanKilliany")
+        assert path.stem.endswith("atlas-DesikanKilliany_desc-SC_relmat")
+        assert _yaml_mod.safe_load(path.read_text())["number_of_nodes"] == 87
+
     def test_save_load_roundtrip_h5(self):
         """Save a Network as YAML+HDF5, reload, and compare."""
         from tvbo import Network
