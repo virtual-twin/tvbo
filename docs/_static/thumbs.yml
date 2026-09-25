@@ -1,0 +1,14 @@
+# Which rendered figure stands in for a page on the overview cards. Keys are page paths, values the figure's label under that page's `_freeze` directory; `scripts/build_thumbnails.py` writes a downscaled copy to `_static/thumbs/`, and a row in a `::: {.cards}` table points its Cover column at that copy. A page with no entry gets its phase's icon tile instead.
+
+2-specify/Figures/Visualization: fig-network-output-1
+2-specify/Figures/Styling: fig-roles-output-1
+2-specify/RunningExample: fig-stage-5-output-1
+2-specify/ParameterExploration: fig-cells-output-1
+2-specify/Events: fig-stim-output-1
+2-specify/Networks/CouplingFunctions: fig-transfer-output-1
+examples/fitting/RWW_tvboptim: fig-rww-results-output-1
+examples/fitting/JR_tvboptim: fig-jr-results-output-1
+examples/fitting/EI_Tuning_tvboptim: fig-ei-tuning-results-output-1
+examples/fitting/Bayesian_tvboptim: fig-bayesian-output-1
+examples/fitting/Hopf_Pareto_tvboptim: fig-hopf-pareto-output-1
+examples/fitting/Delay_Speed_Synchronization_tvboptim: fig-delay-speed-output-1

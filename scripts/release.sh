@@ -33,7 +33,7 @@ valid_version() {
 # Highest of two versions per `sort -V` (semantic version sort).
 highest() { printf '%s\n%s\n' "$1" "$2" | sort -V | tail -1; }
 
-read_current() { grep '^__version__' "$INIT" | cut -d'"' -f2; }
+read_current() { make -s print-version; }
 
 set_version() {
 	# Portable in-place edit (BSD + GNU sed).

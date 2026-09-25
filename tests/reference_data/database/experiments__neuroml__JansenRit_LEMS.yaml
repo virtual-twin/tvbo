@@ -1,0 +1,32 @@
+id: 908
+part: main
+description: 'Export the Jansen-Rit model from the TVBO database as LEMS XML. 6 state
+  variables with derived variables.
+
+  '
+label: TVBO JansenRit as LEMS
+dynamics:
+  name: JansenRit
+  iri: tvbo:JansenRit
+  number_of_modes: 1
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: euler
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.1
+  time_unit: ms
+  duration: 2000.0
+  transient_time: 0.0
+  block_size: 1000
+  noise_draw: fused
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  graph_representation: auto
+  number_of_nodes: 1
+  distance_unit: mm

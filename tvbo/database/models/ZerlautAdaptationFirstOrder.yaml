@@ -400,230 +400,188 @@ derived_variables:
       lhs: lc_E
       rhs: local_coupling*E
       latex: false
-    conditional: false
   lc_I:
     equation:
       lhs: lc_I
       rhs: I*local_coupling
       latex: false
-    conditional: false
   Fe_ext:
     symbol: Fe_ext
     equation:
       lhs: Fe_ext
       rhs: Piecewise((0, K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0), (c_glob + lc_E + ou_drift*weight_noise, True))
       latex: false
-    conditional: true
-    cases:
-    - condition: K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0
-      equation:
-        lhs: Fe_ext
-        rhs: '0'
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: Fe_ext
-        rhs: c_glob + lc_E + ou_drift*weight_noise
-        latex: false
+      conditionals:
+      - condition: K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0
+        expression: '0'
+      - condition: 'True'
+        expression: c_glob + lc_E + ou_drift*weight_noise
   Fi_ext:
     equation:
       lhs: Fi_ext
       rhs: lc_I
       latex: false
-    conditional: false
   fe_e:
     equation:
       lhs: fe_e
       rhs: K_ext_e*(Fe_ext + external_input_ex_ex) + N_tot*p_connect_e*(1.0 - g)*(E + 1/1000000)
       latex: false
-    conditional: false
   fe_i:
     equation:
       lhs: fe_i
       rhs: K_ext_e*(Fe_ext + external_input_in_ex) + N_tot*p_connect_e*(1.0 - g)*(E + 1/1000000)
       latex: false
-    conditional: false
   fi_e:
     equation:
       lhs: fi_e
       rhs: K_ext_i*(Fi_ext + external_input_ex_in) + N_tot*g*p_connect_i*(I + 1/1000000)
       latex: false
-    conditional: false
   fi_i:
     equation:
       lhs: fi_i
       rhs: K_ext_i*(Fi_ext + external_input_in_in) + N_tot*g*p_connect_i*(I + 1/1000000)
       latex: false
-    conditional: false
   mu_Ge_e:
     equation:
       lhs: mu_Ge_e
       rhs: Q_e*fe_e*tau_e
       latex: false
-    conditional: false
   mu_Ge_i:
     equation:
       lhs: mu_Ge_i
       rhs: Q_e*fe_i*tau_e
       latex: false
-    conditional: false
   mu_Gi_e:
     equation:
       lhs: mu_Gi_e
       rhs: Q_i*fi_e*tau_i
       latex: false
-    conditional: false
   mu_Gi_i:
     equation:
       lhs: mu_Gi_i
       rhs: Q_i*fi_i*tau_i
       latex: false
-    conditional: false
   mu_G_e:
     equation:
       lhs: mu_G_e
       rhs: g_L + mu_Ge_e + mu_Gi_e
       latex: false
-    conditional: false
   mu_G_i:
     equation:
       lhs: mu_G_i
       rhs: g_L + mu_Ge_i + mu_Gi_i
       latex: false
-    conditional: false
   T_m_e:
     equation:
       lhs: T_m_e
       rhs: C_m/mu_G_e
       latex: false
-    conditional: false
   T_m_i:
     equation:
       lhs: T_m_i
       rhs: C_m/mu_G_i
       latex: false
-    conditional: false
   mu_V_e:
     equation:
       lhs: mu_V_e
       rhs: (E_L_e*g_L + E_e*mu_Ge_e + E_i*mu_Gi_e - W_e)/mu_G_e
       latex: false
-    conditional: false
   mu_V_i:
     equation:
       lhs: mu_V_i
       rhs: (E_L_i*g_L + E_e*mu_Ge_i + E_i*mu_Gi_i - W_i)/mu_G_i
       latex: false
-    conditional: false
   U_e_e:
     equation:
       lhs: U_e_e
       rhs: Q_e*(E_e - mu_V_e)/mu_G_e
       latex: false
-    conditional: false
   U_e_i:
     equation:
       lhs: U_e_i
       rhs: Q_e*(E_e - mu_V_i)/mu_G_i
       latex: false
-    conditional: false
   U_i_e:
     equation:
       lhs: U_i_e
       rhs: Q_i*(E_i - mu_V_e)/mu_G_e
       latex: false
-    conditional: false
   U_i_i:
     equation:
       lhs: U_i_i
       rhs: Q_i*(E_i - mu_V_i)/mu_G_i
       latex: false
-    conditional: false
   V_e:
     equation:
       lhs: V_e
       rhs: (-muV0 + mu_V_e)/DmuV0
       latex: false
-    conditional: false
   V_i:
     equation:
       lhs: V_i
       rhs: (-muV0 + mu_V_i)/DmuV0
       latex: false
-    conditional: false
   T_V_e:
     equation:
       lhs: T_V_e
       rhs: (U_e_e**2*fe_e*tau_e**2 + U_i_e**2*fi_e*tau_i**2)/(U_e_e**2*fe_e*tau_e**2/(T_m_e + tau_e) + U_i_e**2*fi_e*tau_i**2/(T_m_e + tau_i))
       latex: false
-    conditional: false
   T_V_i:
     equation:
       lhs: T_V_i
       rhs: (U_e_i**2*fe_i*tau_e**2 + U_i_i**2*fi_i*tau_i**2)/(U_e_i**2*fe_i*tau_e**2/(T_m_i + tau_e) + U_i_i**2*fi_i*tau_i**2/(T_m_i + tau_i))
       latex: false
-    conditional: false
   sigma_V_e:
     equation:
       lhs: sigma_V_e
       rhs: sqrt(U_e_e**2*fe_e*tau_e**2/(2.0*T_m_e + 2.0*tau_e) + U_i_e**2*fi_e*tau_i**2/(2.0*T_m_e + 2.0*tau_i))
       latex: false
-    conditional: false
   sigma_V_i:
     equation:
       lhs: sigma_V_i
       rhs: sqrt(U_e_i**2*fe_i*tau_e**2/(2.0*T_m_i + 2.0*tau_e) + U_i_i**2*fi_i*tau_i**2/(2.0*T_m_i + 2.0*tau_i))
       latex: false
-    conditional: false
   S_e:
     equation:
       lhs: S_e
       rhs: (-sV0 + sigma_V_e)/DsV0
       latex: false
-    conditional: false
   S_i:
     description: "Scaling of the remote input for the inhibitory population with\n        respect to the excitatory population."
     equation:
       lhs: S_i
       rhs: (-sV0 + sigma_V_i)/DsV0
       latex: false
-    conditional: false
   T_e:
     equation:
       lhs: T_e
       rhs: (-TvN0 + T_V_e*g_L/C_m)/DTvN0
       latex: false
-    conditional: false
   T_i:
     equation:
       lhs: T_i
       rhs: (-TvN0 + T_V_i*g_L/C_m)/DTvN0
       latex: false
-    conditional: false
   V_thre_e:
     equation:
       lhs: V_thre_e
       rhs: 1000.0*P0_e + 1000.0*P1_e*V_e + 1000.0*P2_e*S_e + 1000.0*P3_e*T_e + 1000.0*P4_e*V_e**2 + 1000.0*P5_e*S_e**2 + 1000.0*P6_e*T_e**2 + 1000.0*P7_e*S_e*V_e + 1000.0*P8_e*T_e*V_e + 1000.0*P9_e*S_e*T_e
       latex: false
-    conditional: false
   V_thre_i:
     equation:
       lhs: V_thre_i
       rhs: 1000.0*P0_i + 1000.0*P1_i*V_i + 1000.0*P2_i*S_i + 1000.0*P3_i*T_i + 1000.0*P4_i*V_i**2 + 1000.0*P5_i*S_i**2 + 1000.0*P6_i*T_i**2 + 1000.0*P7_i*S_i*V_i + 1000.0*P8_i*T_i*V_i + 1000.0*P9_i*S_i*T_i
       latex: false
-    conditional: false
   f_out_e:
     equation:
       lhs: f_out_e
       rhs: erfc(sqrt(2)*(V_thre_e - mu_V_e)/(2*sigma_V_e))/(2*T_V_e)
       latex: false
-    conditional: false
   f_out_i:
     equation:
       lhs: f_out_i
       rhs: erfc(sqrt(2)*(V_thre_i - mu_V_i)/(2*sigma_V_i))/(2*T_V_i)
       latex: false
-    conditional: false
 coupling_inputs:
   c_glob: {}
   local_coupling: {local: true}

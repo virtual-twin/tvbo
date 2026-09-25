@@ -33,7 +33,6 @@ derived_variables:
       lhs: mu
       rhs: (1 - exp(-r))/r
       latex: false
-    conditional: false
 description: |-
   Two-dimensional dissipative map exhibiting chaotic attractors for standard parameter
   sets; sometimes mischaracterized as the “simplest” strange attractor.

@@ -1,49 +1,44 @@
+<%doc>
+    A stimulus as a TVB Equation subclass.
+
+    An authored `pycode` is the escape hatch for an expression TVBO cannot print, so it is
+    consulted BEFORE parsing — parsing first would raise on exactly the equations it exists
+    for. TVB binds the stimulus argument as `var`, whatever the metadata calls time.
+</%doc>
 <%
 if 'experiment' in context.keys():
     stimulus = context['experiment'].stimulation
 else:
     stimulus = context['stimulus']
 
-from tvbo.classes.equation import (
-    conditionals2piecewise,
-    piecewise2numpy,
-    _clash1,
-    convert_ifelse_to_np_where,
-)
-from sympy import pycode, parse_expr, Symbol
+from sympy import Symbol
+from tvbo.codegen.code import get_printer
 
+stimulus_ident = stimulus.identifier
+stimulus_label = stimulus.label or stimulus_ident
 
-if stimulus.equation.pycode:
-    default_expression = stimulus.equation.pycode
-elif stimulus.equation.conditionals:
-    default_expression = convert_ifelse_to_np_where(
-        pycode(
-            conditionals2piecewise(stimulus.equation).subs("t", Symbol("var")),
-            fully_qualified_modules=False,
-        )
-    )
-else:
-    default_expression = pycode(
-        parse_expr(stimulus.equation.rhs, _clash1), fully_qualified_modules=False
-    )
+default_expression = stimulus.equation.pycode
+if not default_expression:
+    expression, _ = stimulus.get_expression()
+    default_expression = get_printer("tvb").doprint(expression.subs(Symbol("t"), Symbol("var")))
 %>
 ################################################################################
 from tvb.datatypes.equations import Equation, TemporalApplicableEquation
 from tvb.basic.neotraits.api import Attr, Final
 from numpy import where
 
-class ${stimulus.label +'Equation'}(TemporalApplicableEquation):
+class ${stimulus_ident + 'Equation'}(TemporalApplicableEquation):
     """
     This is a custom Equation class generated from a template.
     ${stimulus.description}
     """
     equation=Final(
-        label="${stimulus.label }",
+        label="${stimulus_label}",
         default="${default_expression}",
     )
 
     parameters=Attr(
         field_type=dict,
-        label="Parameters for ${stimulus.label }",
+        label="Parameters for ${stimulus_label}",
         default=lambda: ${{p.name: p.value for p in stimulus.parameters.values()}}
     )

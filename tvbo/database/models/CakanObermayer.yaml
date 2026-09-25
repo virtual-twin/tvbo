@@ -147,14 +147,12 @@ derived_variables:
       lhs: r_E
       rhs: r_max/(1 + exp(-k_phi*(mu_se - mu_th)))
       latex: false
-    conditional: false
   r_I:
     description: Inhibitory population firing rate (sigmoid stand-in for aLN Phi).
     equation:
       lhs: r_I
       rhs: r_max/(1 + exp(-k_phi*(mu_si - mu_th)))
       latex: false
-    conditional: false
 coupling_inputs:
   c_glob: {}
 state_variables:

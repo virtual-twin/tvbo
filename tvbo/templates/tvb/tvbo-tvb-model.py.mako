@@ -3,7 +3,8 @@
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%
 import numpy as np
-from tvbo.classes.equation import _clash1
+from tvbo.codegen.templater import time_dependent_equations
+from tvbo.templates.base.utils import get_func_name, is_local_coupling, referenced_parameters
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics
     standalone = False
@@ -16,16 +17,20 @@ render = lambda obj: model.render_equation(obj, format='numpy')
 ## When off, render_func_cse is None and function_def emits the flat form.
 render_cse = (lambda obj: model.render_equation_cse(obj, format='numpy')) if getattr(model, 'cse', False) else None
 
-# In TVB, local_coupling is a separate dfun argument, not part of the coupling array.
-# Coupling inputs are sourced from the YAML Dynamics (the ground truth), NOT the
-# ontology. A coupling input is local if flagged (local: true) or named by
-# convention ('local_coupling' or an 'lc_*' prefix, e.g. SupHopf's lc_0); every
-# other coupling input is a global term that enters the coupling array.
-def _is_local(name, ci):
-    return getattr(ci, 'local', False) or name == 'local_coupling' or name.startswith('lc_')
-global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not _is_local(k, v)}
+## In TVB, local_coupling is a separate dfun argument, not part of the coupling array.
+global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not is_local_coupling(k, v)}
 local_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k not in global_coupling_inputs}
 has_local_coupling = bool(local_coupling_inputs)
+
+# TVB's dfun takes no time argument, so a `t` term would emit an unbound name.
+_time_dependent = time_dependent_equations(model)
+if _time_dependent:
+    raise ValueError(
+        f"{model.name!r} is non-autonomous: the derivative(s) of "
+        f"{', '.join(_time_dependent)} depend on time. TVB's Model.dfun takes no time "
+        f"argument, so the TVB backend cannot express it — render to 'jax', 'tvboptim' "
+        f"or 'julia', which pass t, or move the time dependence into a stimulus."
+    )
 %>
 % if standalone:
 # Auto-generated standalone model file
@@ -35,7 +40,7 @@ from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
 from tvb.simulator.models.base import Model
 
 % endif
-class ${model.name}(Model):
+class ${get_func_name(model)}(Model):
 
     % for p in model.parameters.values():
     % if isinstance(p.value, (list, tuple)):
@@ -106,7 +111,7 @@ sv_boundaries = tvb_state_variable_boundaries(model)
     # default to record=true, derived variables to record=false — superseding the
     # deprecated `variable_of_interest` slot and the legacy `output` list.
     recorded_states = tuple(sv.name for sv in model.state_variables.values() if getattr(sv, 'record', True))
-    recorded_derived = tuple(dv.name for dv in model.derived_variables.values() if getattr(dv, 'record', False))
+    recorded_derived = tuple(dv.name for dv in model.in_dependency_order('derived_variables').values() if getattr(dv, 'record', False))
     if isinstance(model.output, dict):
         legacy_output = tuple(model.output.keys())
     elif model.output:
@@ -160,7 +165,7 @@ sv_boundaries = tvb_state_variable_boundaries(model)
         ${p} = self.${p}
     % endfor
 
-    % for dp in model.derived_parameters.values():
+    % for dp in model.in_dependency_order('derived_parameters').values():
         self.${dp.name} = ${dp.name} = ${render(dp)}
     % endfor
 % endif
@@ -201,7 +206,7 @@ sv_boundaries = tvb_state_variable_boundaries(model)
         ${sv} = state_variables[${list(model.state_variables.keys()).index(sv)}, :]
 % endfor
 
-% for p in model.parameters:
+% for p in referenced_parameters(model):
         ${p} = self.${p}
 % endfor
 
@@ -216,7 +221,7 @@ ${indented_fndef}
 % endfor
 % endif
 
-% for p in model.derived_parameters:
+% for p in model.in_dependency_order('derived_parameters'):
         ${p} = self.${p}
 % endfor
 
@@ -228,7 +233,7 @@ ${indented_fndef}
 
 ## Derived Variables
         # Derived Variables
-% for k,v in model.derived_variables.items():
+% for k,v in model.in_dependency_order('derived_variables').items():
         self.${k} = ${k} = ${render(v)}
 % endfor
 

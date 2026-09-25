@@ -15,9 +15,14 @@ _TVBO_MODEL_CLS = ${context['experiment'].dynamics.name}
 <%
 experiment = context['experiment']
 
+from tvbo.utils import initial_value as _initial_value
+
+_tvb_coupling = context['coupling']
+
+_n_reg = getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions
 initial_conditions = np.array([
-    np.full(((getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions),), v.initial_value)
-    if np.isscalar(v.initial_value) else v.initial_value
+    np.full((_n_reg,), _initial_value(v)) if np.isscalar(v.initial_value) or v.initial_value is None
+    else v.initial_value
     for k, v in experiment.dynamics.state_variables.items()
 ]).reshape(
     1,
@@ -31,7 +36,7 @@ initial_conditions = np.array([
     <%include file="/tvbo-tvb-stimulus_equation.py.mako" />
 %endif
 ######### Simulation #########
-def define_simulation(connectivity, simulation_length=${experiment.integration.duration}, initial_conditions=None, model_kwargs={}, coupling_kwargs={}, integration_kwargs={'dt':${experiment.integration.step_size}}, stimulus_kwargs={}):
+def define_simulation(connectivity, simulation_length=${settle['total_duration']}, initial_conditions=None, model_kwargs={}, coupling_kwargs={}, integration_kwargs={'dt':${settle['dt']}}, stimulus_kwargs={}):
 %if experiment.stimulation:
     from tvb.datatypes.patterns import StimuliRegion
     %if experiment.stimulation.weighting:
@@ -45,7 +50,7 @@ def define_simulation(connectivity, simulation_length=${experiment.integration.d
     simulator = Simulator(
         model=_TVBO_MODEL_CLS(**model_kwargs),
         connectivity=connectivity,
-        coupling=${'%s(**coupling_kwargs)' % experiment.coupling.name if experiment.coupling else 'Linear(**coupling_kwargs)'},
+        coupling=${'%s(**coupling_kwargs)' % _tvb_coupling.name if _tvb_coupling else 'Linear(**coupling_kwargs)'},
         conduction_speed=${experiment.network.conduction_speed.value},
         integrator=${experiment.integration.method + ('Stochastic' if (experiment.integration.noise or np.any(np.asarray(context['experiment'].noise_sigma_array)>0)) else '')}(${'noise=noise,' if (experiment.integration.noise or np.any(np.asarray(context['experiment'].noise_sigma_array)>0)) else ''}**integration_kwargs),
         monitors=monitors,
@@ -53,7 +58,7 @@ def define_simulation(connectivity, simulation_length=${experiment.integration.d
         initial_conditions=initial_conditions,
         %if experiment.stimulation:
         stimulus=StimuliRegion(
-                    temporal=${experiment.stimulation.label+'Equation'}(),
+                    temporal=${experiment.stimulation.identifier + 'Equation'}(),
                     connectivity=connectivity,
                     weight=weight,
                     **stimulus_kwargs
@@ -110,8 +115,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--simulation_length",
         type=float,
-        default=1000,
-        help="Simulation length for the TVB simulator. Default is 1000.",
+        default=${settle['total_duration']},
+        help="Total integrated length: the measured duration plus any declared settle.",
     )
     args = parser.parse_args()
 
@@ -123,7 +128,7 @@ if __name__ == "__main__":
 
     # Wrap in ExperimentResult for consistent access and export
     from tvbo.data.types import ExperimentResult
-    results = ExperimentResult.from_tvb(sim, raw)
+    results = ExperimentResult.from_tvb(sim, raw, transient_time=${settle['transient_time']})
     print(results)
 
     # Export BIDS-compatible output

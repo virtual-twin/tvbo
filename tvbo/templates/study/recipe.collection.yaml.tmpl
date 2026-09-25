@@ -1,0 +1,30 @@
+# The collection's entry recipe: `tvbo run <Study>.yaml` walks the nested studies depth first, then resolves `results:` into manuscript_results.yml.
+tvbo_class: tvbo:SimulationStudy
+
+citekey: <Study>
+title: "<Document title>"
+description: >-
+  What this collection reports, and what the studies under it are evidence for. Each nested study keeps its own claims in its own docs/analysis/; this file says what the document as a whole argues.
+
+# Each nested study is included by its own recipe, so it stays runnable on its own and its results land in its own layout rather than here.
+studies:
+  - !include <path/to/Study>/<Study>.yaml
+
+code_source: {path: code}
+
+# An analysis that spans the portfolio rather than one study: it reads the nested studies' containers and produces the numbers the document quotes.
+analyses:
+  - name: <name>
+    label: "<what it establishes, one line>"
+    description: >-
+      What this computes and from which studies, so a reader can tell what the number ranges over.
+    callable: {name: <function>, module: <module in code/>}
+
+# Every number the prose quotes, bound to a computed value. `tvbo verify` fails the build on a key the document never reads and on a key the run cannot resolve, so a stale figure cannot survive in the text.
+results:
+  - key: <key>
+    used:
+      iri: tvbo:ana/<Study>/<analysis>
+      output: <output name>
+    format: '{:d}'
+    description: <what the number is, in the terms the sentence quoting it uses>

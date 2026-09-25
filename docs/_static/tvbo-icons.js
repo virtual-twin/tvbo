@@ -122,6 +122,23 @@ window.TVBO_ICONS = {
     color: "#667eea",
   },
 
+  // ── How-To Guides ──
+  MultiScaleModelling: {
+    icon: "fa-solid fa-layer-group",
+    gradient: "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
+    color: "#30cfd0",
+  },
+  BuildConnectomeFromTractography: {
+    icon: "fa-solid fa-diagram-project",
+    gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+    color: "#43e97b",
+  },
+  Bayesian: {
+    icon: "fa-solid fa-percent",
+    gradient: "linear-gradient(135deg, #fc5c7d 0%, #6a82fb 100%)",
+    color: "#6a82fb",
+  },
+
   // ── Interoperability ──
   BIDS: {
     icon: "fa-solid fa-database",

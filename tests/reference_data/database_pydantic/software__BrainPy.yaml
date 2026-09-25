@@ -1,0 +1,51 @@
+name: BrainPy
+description: A flexible, efficient, and extensible framework for computational neuroscience
+  and brain-inspired computation built on JAX. Supports spiking, rate-based, and mean-field
+  models at all scales.
+homepage: https://brainpy.readthedocs.io
+license: Apache-2.0
+repository: https://github.com/brainpy/BrainPy
+doi: 10.7554/eLife.86365
+ecosystem:
+- pypi
+application_category: simulation
+scale:
+- channel
+- neuron
+- neural_mass
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+- neural_mass
+- mean_field
+tool_role:
+- framework
+programming_language:
+- Python
+runtime_platform:
+- JAX
+- XLA
+interoperates_with:
+- TVB
+- NEURON
+- NEST
+- Brian2
+date_created: '2021-01-01'
+development_status: active
+author:
+- Chaoming Wang
+- Si Wu
+maintainer:
+- Chaoming Wang
+funder:
+- NSFC
+- Peking University
+reference_publication: 10.7554/eLife.86365
+keywords:
+- JAX
+- brain dynamics
+- differentiable simulation
+- neural mass
+issue_tracker: https://github.com/brainpy/BrainPy/issues
+is_accessible_for_free: true

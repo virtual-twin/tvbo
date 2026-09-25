@@ -1,0 +1,42 @@
+name: OpenWorm
+description: An open science project to build a comprehensive computational model
+  of the C. elegans nematode, including its 302-neuron nervous system.
+homepage: http://openworm.org
+license: MIT
+repository: https://github.com/openworm/OpenWorm
+application_category: simulation
+scale:
+- neuron
+- network_system
+model_paradigm:
+- compartmental
+- spiking
+tool_role:
+- simulator
+programming_language:
+- Python
+- C++
+runtime_platform:
+- Python
+interoperates_with:
+- NEURON
+- NeuroML
+- c302
+date_created: '2011-01-01'
+development_status: active
+author:
+- Stephen Larson
+maintainer:
+- OpenWorm Foundation
+funder:
+- OpenWorm Foundation
+reference_publication: 10.1098/rstb.2017.0382
+keywords:
+- C. elegans
+- whole-organism simulation
+- open science
+- connectome
+same_as:
+- https://www.wikidata.org/entity/Q7097017
+issue_tracker: https://github.com/openworm/OpenWorm/issues
+is_accessible_for_free: true

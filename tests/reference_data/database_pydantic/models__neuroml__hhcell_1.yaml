@@ -1,0 +1,219 @@
+name: hhcell_1
+parameters:
+  C:
+    name: C
+    value: 10.0
+    unit: pF
+  g_Na:
+    name: g_Na
+    value: 1200.0
+    unit: nS
+  g_K:
+    name: g_K
+    value: 360.0
+    unit: nS
+  g_L:
+    name: g_L
+    value: 3.0
+    unit: nS
+  E_Na:
+    name: E_Na
+    value: 50.0
+    unit: mV
+  E_K:
+    name: E_K
+    value: -77.0
+    unit: mV
+  E_L:
+    name: E_L
+    value: -54.3
+    unit: mV
+  thresh:
+    name: thresh
+    value: 20.0
+    unit: mV
+  rate_am:
+    name: rate_am
+    value: 1.0
+    unit: per_ms
+  midpoint_am:
+    name: midpoint_am
+    value: -40.0
+    unit: mV
+  scale_am:
+    name: scale_am
+    value: 10.0
+    unit: mV
+  rate_bm:
+    name: rate_bm
+    value: 4.0
+    unit: per_ms
+  midpoint_bm:
+    name: midpoint_bm
+    value: -65.0
+    unit: mV
+  scale_bm:
+    name: scale_bm
+    value: -18.0
+    unit: mV
+  rate_ah:
+    name: rate_ah
+    value: 0.07
+    unit: per_ms
+  midpoint_ah:
+    name: midpoint_ah
+    value: -65.0
+    unit: mV
+  scale_ah:
+    name: scale_ah
+    value: -20.0
+    unit: mV
+  rate_bh:
+    name: rate_bh
+    value: 1.0
+    unit: per_ms
+  midpoint_bh:
+    name: midpoint_bh
+    value: -35.0
+    unit: mV
+  scale_bh:
+    name: scale_bh
+    value: 10.0
+    unit: mV
+  rate_an:
+    name: rate_an
+    value: 0.1
+    unit: per_ms
+  midpoint_an:
+    name: midpoint_an
+    value: -55.0
+    unit: mV
+  scale_an:
+    name: scale_an
+    value: 10.0
+    unit: mV
+  rate_bn:
+    name: rate_bn
+    value: 0.125
+    unit: per_ms
+  midpoint_bn:
+    name: midpoint_bn
+    value: -65.0
+    unit: mV
+  scale_bn:
+    name: scale_bn
+    value: -80.0
+    unit: mV
+source: 'NeuroML2 example: Ex3_Net'
+derived_variables:
+  alpha_m:
+    name: alpha_m
+    equation:
+      rhs: rate_am * (v - midpoint_am) / scale_am / (1 - exp(-(v - midpoint_am) /
+        scale_am))
+      latex: false
+    unit: per_ms
+    record: false
+  beta_m:
+    name: beta_m
+    equation:
+      rhs: rate_bm * exp((v - midpoint_bm) / scale_bm)
+      latex: false
+    unit: per_ms
+    record: false
+  alpha_h:
+    name: alpha_h
+    equation:
+      rhs: rate_ah * exp((v - midpoint_ah) / scale_ah)
+      latex: false
+    unit: per_ms
+    record: false
+  beta_h:
+    name: beta_h
+    equation:
+      rhs: rate_bh / (1 + exp(-(v - midpoint_bh) / scale_bh))
+      latex: false
+    unit: per_ms
+    record: false
+  alpha_n:
+    name: alpha_n
+    equation:
+      rhs: rate_an * (v - midpoint_an) / scale_an / (1 - exp(-(v - midpoint_an) /
+        scale_an))
+      latex: false
+    unit: per_ms
+    record: false
+  beta_n:
+    name: beta_n
+    equation:
+      rhs: rate_bn * exp((v - midpoint_bn) / scale_bn)
+      latex: false
+    unit: per_ms
+    record: false
+coupling_inputs:
+  I_syn:
+    name: I_syn
+    dimension: 1
+    local: false
+state_variables:
+  v:
+    name: v
+    equation:
+      rhs: (-g_Na * m**3 * h * (v - E_Na) - g_K * n**4 * (v - E_K) - g_L * (v - E_L)
+        + I_syn) / C
+      latex: false
+    unit: mV
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: -65.0
+  m:
+    name: m
+    equation:
+      rhs: alpha_m * (1 - m) - beta_m * m
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.05
+  h:
+    name: h
+    equation:
+      rhs: alpha_h * (1 - h) - beta_h * h
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.6
+  n:
+    name: n
+    equation:
+      rhs: alpha_n * (1 - n) - beta_n * n
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.32
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: true
+events:
+  spike:
+    name: spike
+    event_type: stimulus
+    condition:
+      rhs: v .gt. thresh
+      latex: false
+    sampling_rate: 1.0
+    interpolation: linear
+cse: false
+compile: false

@@ -1,0 +1,136 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: CoupledRoessler
+       Generated from TVBO Dynamics: CoupledRoessler
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="CoupledRoessler">
+
+    <!-- Parameters -->
+    <Parameter name="omega1" dimension="none"/>
+    <Parameter name="omega2" dimension="none"/>
+    <Parameter name="a" dimension="none"/>
+    <Parameter name="b" dimension="none"/>
+    <Parameter name="c" dimension="none"/>
+    <Parameter name="k1" dimension="none"/>
+    <Parameter name="k2" dimension="none"/>
+    <!-- Coupling inputs -->
+    <!-- Initial condition parameters -->
+    <Parameter name="x1_0" dimension="none"/>
+    <Parameter name="y1_0" dimension="none"/>
+    <Parameter name="z1_0" dimension="none"/>
+    <Parameter name="x2_0" dimension="none"/>
+    <Parameter name="y2_0" dimension="none"/>
+    <Parameter name="z2_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="x1" dimension="none"/>
+    <Exposure name="y1" dimension="none"/>
+    <Exposure name="z1" dimension="none"/>
+    <Exposure name="x2" dimension="none"/>
+    <Exposure name="y2" dimension="none"/>
+    <Exposure name="z2" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="x1" dimension="none" exposure="x1"/>
+      <StateVariable name="y1" dimension="none" exposure="y1"/>
+      <StateVariable name="z1" dimension="none" exposure="z1"/>
+      <StateVariable name="x2" dimension="none" exposure="x2"/>
+      <StateVariable name="y2" dimension="none" exposure="y2"/>
+      <StateVariable name="z2" dimension="none" exposure="z2"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="x1" value="(-z1 - omega1*y1) / SEC"/>
+      <TimeDerivative variable="y1" value="(a*y1 + k1*(y2 - y1) + omega1*x1) / SEC"/>
+      <TimeDerivative variable="z1" value="(b + z1*(x1 - c)) / SEC"/>
+      <TimeDerivative variable="x2" value="(-z2 - omega2*y2) / SEC"/>
+      <TimeDerivative variable="y2" value="(a*y2 + k2*(y1 - y2) + omega2*x2) / SEC"/>
+      <TimeDerivative variable="z2" value="(b + z2*(x2 - c)) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="x1" value="x1_0"/>
+        <StateAssignment variable="y1" value="y1_0"/>
+        <StateAssignment variable="z1" value="z1_0"/>
+        <StateAssignment variable="x2" value="x2_0"/>
+        <StateAssignment variable="y2" value="y2_0"/>
+        <StateAssignment variable="z2" value="z2_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="CoupledRoessler_inst" type="CoupledRoessler" omega1="0.18" omega2="0.22" a="0.2" b="0.2" c="5.7" k1="0.115" k2="0.0" x1_0="1.0" y1_0="-2.0" z1_0="0.0" x2_0="0.11" y2_0="0.2" z2_0="0.1"/>
+
+
+
+</Lems>

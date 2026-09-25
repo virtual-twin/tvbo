@@ -1,0 +1,15 @@
+{
+  "_type": "tvbo:EnvironmentVariable",
+  "required": [
+    "name",
+    "value"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "value": {
+      "type": "string"
+    }
+  }
+}

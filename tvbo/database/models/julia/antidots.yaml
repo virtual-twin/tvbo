@@ -58,34 +58,20 @@ derived_variables:
     equation:
       lhs: Ux
       latex: false
-    conditional: true
-    cases:
-    - condition: rho < (0.5*d0 + c)
-      equation:
-        lhs: Ux
-        rhs: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*xt
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: Ux
-        rhs: '0'
-        latex: false
+      conditionals:
+      - condition: rho < (0.5*d0 + c)
+        expression: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*xt
+      - condition: 'True'
+        expression: '0'
   Uy:
     equation:
       lhs: Uy
       latex: false
-    conditional: true
-    cases:
-    - condition: rho < (0.5*d0 + c)
-      equation:
-        lhs: Uy
-        rhs: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*yt
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: Uy
-        rhs: '0'
-        latex: false
+      conditionals:
+      - condition: rho < (0.5*d0 + c)
+        expression: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*yt
+      - condition: 'True'
+        expression: '0'
 description: |-
   Hamiltonian antidot lattice (periodic Sinai-like billiard) with smooth circular
   repulsive potentials and perpendicular magnetic field. Models guiding center

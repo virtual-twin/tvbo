@@ -59,9 +59,7 @@ flowchart LR
 
 ### Import a TVB Simulator
 
-Convert a fully configured TVB `Simulator` into a tvbo
-`SimulationExperiment` — preserving the model, coupling, integrator,
-monitors, noise, and network:
+Convert a fully configured TVB `Simulator` into a tvbo `SimulationExperiment` — preserving the model, coupling, integrator, monitors, noise, and network:
 
 ```{python}
 import numpy as np
@@ -100,7 +98,7 @@ print(f"TVB Simulator: {sim.model.__class__.__name__}, "
 exp = SimulationExperiment.from_tvb_simulator(sim)
 
 print(f"Model:      {exp.model}")
-print(f"Coupling:   {exp.coupling.name}")
+print(f"Coupling:   {list(exp.network.coupling)}")
 print(f"Integrator: {exp.integration.method}")
 print(f"Duration:   {exp.integration.duration} ms")
 print(f"dt:         {exp.integration.step_size}")
@@ -108,8 +106,7 @@ print(f"Noise:      {'additive' if exp.integration.noise.additive else 'multipli
 print(f"Monitors:   {list(exp.observations.keys())}")
 ```
 
-The imported experiment is a standard tvbo object — you can inspect
-the YAML representation, modify parameters, or re-export:
+The imported experiment is a standard tvbo object — you can inspect the YAML representation, modify parameters, or re-export:
 
 ```{python}
 # Show the YAML specification
@@ -119,8 +116,7 @@ print("...")
 
 ### Export a Dynamics Model to TVB
 
-Any tvbo `Dynamics` can be compiled into a TVB-compatible `Model`
-object. This uses Mako code generation to produce a TVB Model subclass:
+Any tvbo `Dynamics` can be compiled into a TVB-compatible `Model` object. This uses Mako code generation to produce a TVB Model subclass:
 
 ```{python}
 dyn = Dynamics.from_db("JansenRit")
@@ -143,8 +139,7 @@ print("...")
 
 ### Define and Run a Simulation
 
-A `SimulationExperiment` can also be defined from a YAML string —
-useful for sharing reproducible experiment specifications:
+A `SimulationExperiment` can also be defined from a YAML string — useful for sharing reproducible experiment specifications:
 
 ```{python}
 # Define an experiment from YAML
@@ -154,13 +149,14 @@ label: Quick JansenRit demo
 model:
   name: JansenRit
 
-coupling:
-  name: SigmoidalJansenRit
-  parameters:
-    a: {value: 1.0}
-    cmax: {value: 0.005}
-    midpoint: {value: 6.0}
-    r: {value: 0.56}
+network:
+  coupling:
+    SigmoidalJansenRit:
+      parameters:
+        a: {value: 1.0}
+        cmax: {value: 0.005}
+        midpoint: {value: 6.0}
+        r: {value: 0.56}
 
 integration:
   method: HeunStochastic
@@ -175,7 +171,10 @@ observations:
   Raw:
     name: Raw
 """)
+# Coupling belongs to the network, so carry the declared one onto the imported connectivity
+_declared_coupling = exp2.network.coupling
 exp2.network = Network.from_tvb(conn)
+exp2.network.coupling = _declared_coupling
 
 print(f"Model:    {exp2.model}")
 print(f"Method:   {exp2.integration.method}")
@@ -215,9 +214,7 @@ plt.show()
 
 ### Import a Connectivity
 
-For connectome-only workflows, import TVB connectivity without a full
-simulator. See the [Connectome Round-Trip](Connectome.qmd) page for
-the complete walkthrough including surface meshes and HDF5 persistence.
+For connectome-only workflows, import TVB connectivity without a full simulator. See the [Connectome Round-Trip](Connectome.qmd) page for the complete walkthrough including surface meshes and HDF5 persistence.
 
 ```{python}
 from tvb.datatypes.connectivity import Connectivity

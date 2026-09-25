@@ -1,0 +1,34 @@
+function Lorenz84!(dx, _x, p, t = 0)
+
+    (;F, G, a, b) = p
+
+    x, y, z = _x
+
+
+    dx[1] = -y .^ 2 .- z .^ 2 .+ F .* a .- a .* x
+    dx[2] = G .- y .+ x .* y .- b .* x .* z
+    dx[3] = -z .+ x .* z .+ b .* x .* y
+    dx
+end
+
+# Parameter values
+p = (F = 6.846, G = 1.287, a = 0.25, b = 4.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Lorenz84!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

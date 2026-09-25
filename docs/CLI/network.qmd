@@ -1,0 +1,122 @@
+---
+title: "tvbo network"
+---
+
+Build brain-network connectomes. Today this sub-tree has one verb, `build`, a thin wrapper around [MRtrix3](https://www.mrtrix.org/)'s `tck2connectome` that
+turns a streamline **tractogram** + a **parcellation** into a tvbo structural connectome (`…_desc-SC_relmat.h5` + YAML sidecar) you can load with `tvbo.Network(...)`.
+
+## Prerequisites
+
+`tvbo network build` shells out to MRtrix3 — it does not vendor any tractography code. You need `tck2connectome` on your `PATH`:
+
+- Install MRtrix3: <https://www.mrtrix.org/download/>
+- `tck2connectome` reference:
+  <https://mrtrix.readthedocs.io/en/latest/reference/commands/tck2connectome.html>
+
+If MRtrix is missing, the command fails fast with these same links.
+
+::: {.callout-important}
+## Same space, not registered here
+The tractogram and the parcellation image **must already be co-registered in the same space** (e.g. both in `FSLMNI152`). `tvbo network build` does not register them — it only assigns streamline endpoints to parcellation labels. Record the shared space with `--space` so it lands in the output filename and metadata.
+:::
+
+## Synopsis
+
+```text
+tvbo network build TRACTOGRAM PARCELLATION
+    [--output, -o PATH]
+    [--atlas NAME] [--space NAME] [--cohort NAME]
+    [--reconstruction, --rec NAME] [--seg NAME] [--scale NAME]
+    [--labels FILE]
+    [--symmetric / --no-symmetric]
+    [--zero-diagonal / --no-zero-diagonal]
+    [--keep-assignments PATH]
+    [--mrtrix-arg ARG ...]
+    [--overwrite] [--dry-run]
+```
+
+## Flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `TRACTOGRAM` | _(required)_ | Streamline tractogram MRtrix can read (e.g. `.tck`), same space as the parcellation. |
+| `PARCELLATION` | _(required)_ | Integer-labelled parcellation image (e.g. `dseg.nii.gz`), same space as the tractogram. |
+| `--output, -o` | _(BIDS-derived name in CWD)_ | Sidecar path (`.yaml`); the `.h5` companion is written next to it. |
+| `--atlas` | _(none)_ | Parcellation/atlas name — metadata and `atlas-` filename entity. |
+| `--space` | _(none)_ | Shared coordinate space (e.g. `FSLMNI152`) — the `tpl-` entity. |
+| `--cohort` | _(none)_ | Cohort/dataset — the `cohort-` entity (e.g. `HCPYA`). |
+| `--reconstruction, --rec` | _(none)_ | Tractography pipeline (e.g. `dTOR`) — the `rec-` entity + `tractogram` metadata. |
+| `--seg` | _(none)_ | Segmentation — the `seg-` entity (e.g. `17Networks`). |
+| `--scale` | _(none)_ | Scale — the `scale-` entity (e.g. `1000`). |
+| `--labels` | _(none)_ | Text file, one node label per line, ordered by parcellation label `1..N`. |
+| `--symmetric / --no-symmetric` | `--symmetric` | Pass `-symmetric` to `tck2connectome`. |
+| `--zero-diagonal / --no-zero-diagonal` | `--zero-diagonal` | Pass `-zero_diagonal` to `tck2connectome`. |
+| `--keep-assignments` | _(discarded)_ | Save `tck2connectome`'s `-out_assignments` to this path. |
+| `--mrtrix-arg` | _(none)_ | Extra raw argument forwarded to **both** `tck2connectome` calls (repeatable). |
+| `--overwrite` | `false` | Overwrite existing output. |
+| `--dry-run` | `false` | Print the `tck2connectome` commands and exit without running them. |
+
+## Behaviour
+
+1. Checks `tck2connectome` is installed (friendly error with docs links if not).
+2. Resolves the output path and the overwrite guard **up front** — before the (potentially minutes-long) MRtrix run — since the name is entirely entity-derived.
+3. Runs `tck2connectome` twice in a temp dir:
+   - **weights**: streamline count per node pair;
+   - **lengths** — `-scale_length -stat_edge mean`, the mean streamline length per edge.
+4. Loads the two CSVs, assembles a `Network` (`descriptor: SC`, `distance_unit: mm`) with any `--labels` and the provided BIDS entities, and saves the sidecar + `.h5`.
+
+The result loads straight back through the normal DB path, e.g.
+`tvbo.Network(atlas=..., tractogram=...)` / `get_normative_connectome_data(...)` — see [Networks](../2-specify/Networks/Network.qmd).
+
+## Examples
+
+```bash
+# Preview the exact MRtrix commands without running them
+tvbo network build dTOR.tck atlas_dseg.nii.gz --dry-run
+
+# Minimal build → BIDS-named output in the current directory
+tvbo network build dTOR.tck Schaefer1000_dseg.nii.gz \
+    --space FSLMNI152 --atlas Schaefer2018 --rec dTOR \
+    --seg 17Networks --scale 1000 --cohort HCPYA
+#   → tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.{yaml,h5}
+
+# Explicit output path + node labels + keep the streamline assignments
+tvbo network build dTOR.tck DK_dseg.nii.gz \
+    --atlas DesikanKilliany --rec dTOR --labels dk_labels.txt \
+    --keep-assignments assignments.csv \
+    -o desikan_dTOR.yaml
+
+# Forward an extra MRtrix flag to both tck2connectome calls
+tvbo network build dTOR.tck atlas_dseg.nii.gz --rec dTOR \
+    --mrtrix-arg -tck_weights_in --mrtrix-arg sift2_weights.txt \
+    -o weighted.yaml
+```
+
+## Suggested methods description
+
+If you use the TVB-O network builder to construct connectomes for a publication, the paragraphs below are starting points for your Methods section. Pick the tab that matches your data, adapt the parcellation and any non-default choices to what you ran, and cite the tools. The normative variant describes how the connectomes shipped with TVB-O were produced.
+
+::: {.panel-tabset}
+
+### Individual connectome
+
+Structural connectomes were constructed for each participant with the network builder of The Virtual Brain Ontology (TVB-O) [@Martin2025], the metadata and code-generation framework for The Virtual Brain [@SanzLeon2013], which calls the connectome tool of MRtrix3 [@Tournier2019]. A whole-brain streamline tractogram, reconstructed from the participant's diffusion-weighted MRI, and a parcellation image in the same space were used as input. Each end of every streamline was assigned to the nearest parcellation node found by a radial search out to 4 mm, and endpoints with no node in range were left unassigned [@Smith2015]. Two matrices were derived over these assignments. In the weight matrix, each entry is the number of streamlines that connect a pair of nodes. In the length matrix, every streamline contributes its own length, and the entry for a node pair is the mean of those lengths across the streamlines assigned to it, so the value is the mean streamline length of that connection. Both matrices were written in undirected form, meaning a node pair carries a single value that does not depend on which node is treated as the streamline's start or end, and the matrix diagonal was set to zero so that self-connections are excluded. The weight and length matrices were stored together as one connectome, an HDF5 array file with a YAML sidecar named following the Brain Imaging Data Structure [@Gorgolewski2016a], from which TVB-O reads them at simulation time.
+
+### Normative connectome
+
+Group-level structural connectomes were constructed with the network builder of The Virtual Brain Ontology (TVB-O) [@Martin2025], the metadata and code-generation framework for The Virtual Brain [@SanzLeon2013], which calls the connectome tool of MRtrix3 [@Tournier2019]. In place of subject-specific tractography, we used a normative whole-brain tractogram, the dTOR-985 connectome [@Elias2024], which holds roughly 12 million streamlines reconstructed in MNI space from the diffusion MRI of 985 Human Connectome Project subjects. This tractogram and a parcellation in the same MNI template space were used as input. Each end of every streamline was assigned to the nearest parcellation node found by a radial search out to 4 mm, and endpoints with no node in range were left unassigned [@Smith2015]. In the weight matrix, each entry is the number of streamlines that connect a pair of nodes. In the length matrix, every streamline contributes its own length, and the entry for a node pair is the mean of those lengths, so the value is the mean streamline length of that connection. Both matrices were written in undirected form with a zeroed diagonal, so each node pair carries a single value and self-connections are excluded. The matrices were stored together as one connectome, an HDF5 array file with a YAML sidecar named following the Brain Imaging Data Structure [@Gorgolewski2016a]. The normative connectomes distributed with TVB-O were produced this way.
+
+:::
+
+Edge weights are raw streamline counts and index the relative density of a connection rather than an absolute measure of axonal strength. Because streamline endpoints are matched to parcellation labels by proximity, the tractogram and the parcellation must already lie in the same coordinate space; the builder performs no registration.
+
+## References
+
+::: {#refs}
+:::
+
+## See also
+
+- [`tvbo import`](import.qmd): load foreign network files into TVBO objects
+- [Networks](../2-specify/Networks/Network.qmd): how connectomes are consumed at runtime
+- MRtrix3 `tck2connectome`: <https://mrtrix.readthedocs.io/en/latest/reference/commands/tck2connectome.html>

@@ -1,0 +1,79 @@
+import NaNMath
+function EpileptorCodim3SlowMod!(dx, _x, p, t = 0)
+
+    (;mu1_Ain, mu2_Ain, nu_Ain, mu1_Bin, mu2_Bin, nu_Bin, mu1_Aend, mu2_Aend, nu_Aend, mu1_Bend, mu2_Bend, nu_Bend, b, R, c, cA, cB, dstar, Ks, modification, c_glob) = p
+
+    x, y, z, uA, uB = _x
+
+
+    G0 = mu2_Ain ./ sqrt(mu1_Ain .^ 2 .+ mu2_Ain .^ 2 .+ nu_Ain .^ 2)
+    G1 = -mu1_Ain ./ sqrt(mu1_Ain .^ 2 .+ mu2_Ain .^ 2 .+ nu_Ain .^ 2)
+    G2 = nu_Ain ./ sqrt(mu1_Ain .^ 2 .+ mu2_Ain .^ 2 .+ nu_Ain .^ 2)
+    H0 = (mu1_Ain .* (mu1_Ain .* mu2_Aend .- mu1_Aend .* mu2_Ain) .+ nu_Ain .* (mu2_Aend .* nu_Ain .- mu2_Ain .* nu_Aend)) ./ sqrt((mu1_Ain .* (mu1_Ain .* mu2_Aend .- mu1_Aend .* mu2_Ain) .+ nu_Ain .* (mu2_Aend .* nu_Ain .- mu2_Ain .* nu_Aend)) .^ 2 .+ (mu2_Ain .* (mu1_Ain .* mu2_Aend .- mu1_Aend .* mu2_Ain) .- nu_Ain .* (mu1_Aend .* nu_Ain .- mu1_Ain .* nu_Aend)) .^ 2 .+ (-mu1_Ain .* (mu1_Aend .* nu_Ain .- mu1_Ain .* nu_Aend) .- mu2_Ain .* (mu2_Aend .* nu_Ain .- mu2_Ain .* nu_Aend)) .^ 2)
+    H1 = (mu2_Ain .* (mu1_Ain .* mu2_Aend .- mu1_Aend .* mu2_Ain) .- nu_Ain .* (mu1_Aend .* nu_Ain .- mu1_Ain .* nu_Aend)) ./ sqrt((mu1_Ain .* (mu1_Ain .* mu2_Aend .- mu1_Aend .* mu2_Ain) .+ nu_Ain .* (mu2_Aend .* nu_Ain .- mu2_Ain .* nu_Aend)) .^ 2 .+ (mu2_Ain .* (mu1_Ain .* mu2_Aend .- mu1_Aend .* mu2_Ain) .- nu_Ain .* (mu1_Aend .* nu_Ain .- mu1_Ain .* nu_Aend)) .^ 2 .+ (-mu1_Ain .* (mu1_Aend .* nu_Ain .- mu1_Ain .* nu_Aend) .- mu2_Ain .* (mu2_Aend .* nu_Ain .- mu2_Ain .* nu_Aend)) .^ 2)
+    H2 = (-mu1_Ain .* (mu1_Aend .* nu_Ain .- mu1_Ain .* nu_Aend) .- mu2_Ain .* (mu2_Aend .* nu_Ain .- mu2_Ain .* nu_Aend)) ./ sqrt((mu1_Ain .* (mu1_Ain .* mu2_Aend .- mu1_Aend .* mu2_Ain) .+ nu_Ain .* (mu2_Aend .* nu_Ain .- mu2_Ain .* nu_Aend)) .^ 2 .+ (mu2_Ain .* (mu1_Ain .* mu2_Aend .- mu1_Aend .* mu2_Ain) .- nu_Ain .* (mu1_Aend .* nu_Ain .- mu1_Ain .* nu_Aend)) .^ 2 .+ (-mu1_Ain .* (mu1_Aend .* nu_Ain .- mu1_Ain .* nu_Aend) .- mu2_Ain .* (mu2_Aend .* nu_Ain .- mu2_Ain .* nu_Aend)) .^ 2)
+    L0 = mu2_Bin ./ sqrt(mu1_Bin .^ 2 .+ mu2_Bin .^ 2 .+ nu_Bin .^ 2)
+    L1 = -mu1_Bin ./ sqrt(mu1_Bin .^ 2 .+ mu2_Bin .^ 2 .+ nu_Bin .^ 2)
+    L2 = nu_Bin ./ sqrt(mu1_Bin .^ 2 .+ mu2_Bin .^ 2 .+ nu_Bin .^ 2)
+    M0 = (mu1_Bin .* (mu1_Bin .* mu2_Bend .- mu1_Bend .* mu2_Bin) .+ nu_Bin .* (mu2_Bend .* nu_Bin .- mu2_Bin .* nu_Bend)) ./ sqrt((mu1_Bin .* (mu1_Bin .* mu2_Bend .- mu1_Bend .* mu2_Bin) .+ nu_Bin .* (mu2_Bend .* nu_Bin .- mu2_Bin .* nu_Bend)) .^ 2 .+ (mu2_Bin .* (mu1_Bin .* mu2_Bend .- mu1_Bend .* mu2_Bin) .- nu_Bin .* (mu1_Bend .* nu_Bin .- mu1_Bin .* nu_Bend)) .^ 2 .+ (-mu1_Bin .* (mu1_Bend .* nu_Bin .- mu1_Bin .* nu_Bend) .- mu2_Bin .* (mu2_Bend .* nu_Bin .- mu2_Bin .* nu_Bend)) .^ 2)
+    M1 = (mu2_Bin .* (mu1_Bin .* mu2_Bend .- mu1_Bend .* mu2_Bin) .- nu_Bin .* (mu1_Bend .* nu_Bin .- mu1_Bin .* nu_Bend)) ./ sqrt((mu1_Bin .* (mu1_Bin .* mu2_Bend .- mu1_Bend .* mu2_Bin) .+ nu_Bin .* (mu2_Bend .* nu_Bin .- mu2_Bin .* nu_Bend)) .^ 2 .+ (mu2_Bin .* (mu1_Bin .* mu2_Bend .- mu1_Bend .* mu2_Bin) .- nu_Bin .* (mu1_Bend .* nu_Bin .- mu1_Bin .* nu_Bend)) .^ 2 .+ (-mu1_Bin .* (mu1_Bend .* nu_Bin .- mu1_Bin .* nu_Bend) .- mu2_Bin .* (mu2_Bend .* nu_Bin .- mu2_Bin .* nu_Bend)) .^ 2)
+    M2 = (-mu1_Bin .* (mu1_Bend .* nu_Bin .- mu1_Bin .* nu_Bend) .- mu2_Bin .* (mu2_Bend .* nu_Bin .- mu2_Bin .* nu_Bend)) ./ sqrt((mu1_Bin .* (mu1_Bin .* mu2_Bend .- mu1_Bend .* mu2_Bin) .+ nu_Bin .* (mu2_Bend .* nu_Bin .- mu2_Bin .* nu_Bend)) .^ 2 .+ (mu2_Bin .* (mu1_Bin .* mu2_Bend .- mu1_Bend .* mu2_Bin) .- nu_Bin .* (mu1_Bend .* nu_Bin .- mu1_Bin .* nu_Bend)) .^ 2 .+ (-mu1_Bin .* (mu1_Bend .* nu_Bin .- mu1_Bin .* nu_Bend) .- mu2_Bin .* (mu2_Bend .* nu_Bin .- mu2_Bin .* nu_Bend)) .^ 2)
+
+    A0 = R .* (G0 .* cos(uA) .+ H0 .* sin(uA))
+    A1 = R .* (G1 .* cos(uA) .+ H1 .* sin(uA))
+    A2 = R .* (G2 .* cos(uA) .+ H2 .* sin(uA))
+    B0 = R .* (L0 .* cos(uB) .+ M0 .* sin(uB))
+    B1 = R .* (L1 .* cos(uB) .+ M1 .* sin(uB))
+    B2 = R .* (L2 .* cos(uB) .+ M2 .* sin(uB))
+    C0 = A1 .* B2 .- A2 .* B1
+    C1 = A2 .* B0 .- A0 .* B2
+    C2 = A0 .* B1 .- A1 .* B0
+    normA = sqrt(A0 .^ 2 .+ A1 .^ 2 .+ A2 .^ 2)
+    E0 = A0 ./ normA
+    E1 = A1 ./ normA
+    E2 = A2 ./ normA
+    Fx0 = A2 .* C1 .- A1 .* C2
+    Fx1 = A0 .* C2 .- A2 .* C0
+    Fx2 = A1 .* C0 .- A0 .* C1
+    normF = sqrt(Fx0 .^ 2 .+ Fx1 .^ 2 .+ Fx2 .^ 2)
+    F0 = Fx0 ./ normF
+    F1 = Fx1 ./ normF
+    F2 = Fx2 ./ normF
+    mu1 = -R .* (E1 .* cos(z) .+ F1 .* sin(z))
+    mu2 = R .* (E0 .* cos(z) .+ F0 .* sin(z))
+    nu = R .* (E2 .* cos(z) .+ F2 .* sin(z))
+    disc = -mu2 .^ 3 / 27 .+ mu1 .^ 2 / 4
+    sqdisc = sqrt(abs(disc))
+    xs = ifelse(disc >= 0, NaNMath.pow(abs(sqdisc .+ mu1 / 2), 1 // 3) .* cos(atan(0, sqdisc .+ mu1 / 2) / 3) .+ NaNMath.pow(abs(mu1 / 2 .- sqdisc), 1 // 3) .* cos(atan(0, mu1 / 2 .- sqdisc) / 3), NaNMath.pow(sqdisc .^ 2 .+ mu1 .^ 2 / 4, 1 // 6) .* cos(atan(sqdisc, mu1 / 2) / 3) .+ NaNMath.pow(sqdisc .^ 2 .+ mu1 .^ 2 / 4, 1 // 6) .* cos(atan(-sqdisc, mu1 / 2) / 3))
+
+    dx[1] = -y
+    dx[2] = x .^ 3 .- mu1 .- mu2 .* x .- y .* (nu .+ x .^ 2 .+ b .* x)
+    dx[3] = -c .* (sqrt(y .^ 2 .+ (x .- xs) .^ 2) .- dstar .+ Ks .* c_glob .+ ifelse(modification > 0, (-1 // 2 .+ z) .^ 7 / 10, 0))
+    dx[4] = cA
+    dx[5] = cB
+    dx
+end
+
+# Parameter values
+p = (mu1_Ain = 0.05494, mu2_Ain = 0.2731, nu_Ain = 0.287, mu1_Bin = -0.0461, mu2_Bin = 0.243, nu_Bin = 0.3144, mu1_Aend = 0.06485, mu2_Aend = 0.07337, nu_Aend = -0.3878, mu1_Bend = 0.03676, mu2_Bend = -0.02792, nu_Bend = -0.3973, b = 1.0, R = 0.4, c = 0.002, cA = 0.0001, cB = 0.00012, dstar = 0.3, Ks = 0.0, modification = 1.0, c_glob = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.5,
+        0.0,
+        0.05,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(EpileptorCodim3SlowMod!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

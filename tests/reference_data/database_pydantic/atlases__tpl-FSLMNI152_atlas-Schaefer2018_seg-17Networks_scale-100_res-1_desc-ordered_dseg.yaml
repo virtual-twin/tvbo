@@ -1,0 +1,1009 @@
+name: Schaefer2018
+coordinateSpace: FSLMNI152
+abbreviation: Schaefer2018
+versionIdentifier: '2018'
+terminology:
+  label: Schaefer2018_100Parcels_17Networks_order
+  dataLocation: schaefer2018_original_mni/Schaefer2018_100Parcels_17Networks_order_FSLMNI152_1mm.nii.gz
+  versionIdentifier: '2018'
+  entities:
+    17Networks_LH_VisCent_ExStr_1:
+      name: 17Networks_LH_VisCent_ExStr_1
+      lookupLabel: 1
+      originalLookupLabel: 1
+      hemisphere: left
+      center:
+        x: -26.0
+        y: -77.0
+        z: -14.0
+      color: '#781288'
+    17Networks_LH_VisCent_ExStr_2:
+      name: 17Networks_LH_VisCent_ExStr_2
+      lookupLabel: 2
+      originalLookupLabel: 2
+      hemisphere: left
+      center:
+        x: -27.0
+        y: -95.0
+        z: -4.0
+      color: '#781289'
+    17Networks_LH_VisCent_Striate_1:
+      name: 17Networks_LH_VisCent_Striate_1
+      lookupLabel: 3
+      originalLookupLabel: 3
+      hemisphere: left
+      center:
+        x: -5.0
+        y: -92.0
+        z: -2.0
+      color: '#78128a'
+    17Networks_LH_VisCent_ExStr_3:
+      name: 17Networks_LH_VisCent_ExStr_3
+      lookupLabel: 4
+      originalLookupLabel: 4
+      hemisphere: left
+      center:
+        x: -25.0
+        y: -88.0
+        z: 20.0
+      color: '#78128b'
+    17Networks_LH_VisPeri_ExStrInf_1:
+      name: 17Networks_LH_VisPeri_ExStrInf_1
+      lookupLabel: 5
+      originalLookupLabel: 5
+      hemisphere: left
+      center:
+        x: -17.0
+        y: -60.0
+        z: -7.0
+      color: '#ff0002'
+    17Networks_LH_VisPeri_StriCal_1:
+      name: 17Networks_LH_VisPeri_StriCal_1
+      lookupLabel: 6
+      originalLookupLabel: 6
+      hemisphere: left
+      center:
+        x: -12.0
+        y: -67.0
+        z: 7.0
+      color: '#ff0003'
+    17Networks_LH_VisPeri_ExStrSup_1:
+      name: 17Networks_LH_VisPeri_ExStrSup_1
+      lookupLabel: 7
+      originalLookupLabel: 7
+      hemisphere: left
+      center:
+        x: -6.0
+        y: -82.0
+        z: 26.0
+      color: '#ff0004'
+    17Networks_LH_SomMotA_1:
+      name: 17Networks_LH_SomMotA_1
+      lookupLabel: 8
+      originalLookupLabel: 8
+      hemisphere: left
+      center:
+        x: -39.0
+        y: -23.0
+        z: 59.0
+      color: '#4682b5'
+    17Networks_LH_SomMotA_2:
+      name: 17Networks_LH_SomMotA_2
+      lookupLabel: 9
+      originalLookupLabel: 9
+      hemisphere: left
+      center:
+        x: -6.0
+        y: -29.0
+        z: 70.0
+      color: '#4682b6'
+    17Networks_LH_SomMotB_Aud_1:
+      name: 17Networks_LH_SomMotB_Aud_1
+      lookupLabel: 10
+      originalLookupLabel: 10
+      hemisphere: left
+      center:
+        x: -53.0
+        y: -23.0
+        z: 8.0
+      color: '#2bcca5'
+    17Networks_LH_SomMotB_S2_1:
+      name: 17Networks_LH_SomMotB_S2_1
+      lookupLabel: 11
+      originalLookupLabel: 11
+      hemisphere: left
+      center:
+        x: -37.0
+        y: -21.0
+        z: 16.0
+      color: '#2bcca6'
+    17Networks_LH_SomMotB_S2_2:
+      name: 17Networks_LH_SomMotB_S2_2
+      lookupLabel: 12
+      originalLookupLabel: 12
+      hemisphere: left
+      center:
+        x: -54.0
+        y: -12.0
+        z: 13.0
+      color: '#2bcca7'
+    17Networks_LH_SomMotB_Cent_1:
+      name: 17Networks_LH_SomMotB_Cent_1
+      lookupLabel: 13
+      originalLookupLabel: 13
+      hemisphere: left
+      center:
+        x: -55.0
+        y: -8.0
+        z: 34.0
+      color: '#2bcca8'
+    17Networks_LH_DorsAttnA_TempOcc_1:
+      name: 17Networks_LH_DorsAttnA_TempOcc_1
+      lookupLabel: 14
+      originalLookupLabel: 14
+      hemisphere: left
+      center:
+        x: -47.0
+        y: -58.0
+        z: -13.0
+      color: '#4a9c3d'
+    17Networks_LH_DorsAttnA_ParOcc_1:
+      name: 17Networks_LH_DorsAttnA_ParOcc_1
+      lookupLabel: 15
+      originalLookupLabel: 15
+      hemisphere: left
+      center:
+        x: -47.0
+        y: -71.0
+        z: 11.0
+      color: '#4a9c3e'
+    17Networks_LH_DorsAttnA_SPL_1:
+      name: 17Networks_LH_DorsAttnA_SPL_1
+      lookupLabel: 16
+      originalLookupLabel: 16
+      hemisphere: left
+      center:
+        x: -24.0
+        y: -68.0
+        z: 49.0
+      color: '#4a9c3f'
+    17Networks_LH_DorsAttnB_PostC_1:
+      name: 17Networks_LH_DorsAttnB_PostC_1
+      lookupLabel: 17
+      originalLookupLabel: 17
+      hemisphere: left
+      center:
+        x: -57.0
+        y: -25.0
+        z: 39.0
+      color: '#007610'
+    17Networks_LH_DorsAttnB_PostC_2:
+      name: 17Networks_LH_DorsAttnB_PostC_2
+      lookupLabel: 18
+      originalLookupLabel: 18
+      hemisphere: left
+      center:
+        x: -42.0
+        y: -34.0
+        z: 48.0
+      color: '#007611'
+    17Networks_LH_DorsAttnB_PostC_3:
+      name: 17Networks_LH_DorsAttnB_PostC_3
+      lookupLabel: 19
+      originalLookupLabel: 19
+      hemisphere: left
+      center:
+        x: -22.0
+        y: -51.0
+        z: 66.0
+      color: '#007612'
+    17Networks_LH_DorsAttnB_FEF_1:
+      name: 17Networks_LH_DorsAttnB_FEF_1
+      lookupLabel: 20
+      originalLookupLabel: 20
+      hemisphere: left
+      center:
+        x: -26.0
+        y: -3.0
+        z: 59.0
+      color: '#00770f'
+    17Networks_LH_SalVentAttnA_ParOper_1:
+      name: 17Networks_LH_SalVentAttnA_ParOper_1
+      lookupLabel: 21
+      originalLookupLabel: 21
+      hemisphere: left
+      center:
+        x: -59.0
+        y: -38.0
+        z: 29.0
+      color: '#c43afb'
+    17Networks_LH_SalVentAttnA_Ins_1:
+      name: 17Networks_LH_SalVentAttnA_Ins_1
+      lookupLabel: 22
+      originalLookupLabel: 22
+      hemisphere: left
+      center:
+        x: -41.0
+        y: -1.0
+        z: -7.0
+      color: '#c43bfb'
+    17Networks_LH_SalVentAttnA_Ins_2:
+      name: 17Networks_LH_SalVentAttnA_Ins_2
+      lookupLabel: 23
+      originalLookupLabel: 23
+      hemisphere: left
+      center:
+        x: -38.0
+        y: 12.0
+        z: 6.0
+      color: '#c43bfc'
+    17Networks_LH_SalVentAttnA_ParMed_1:
+      name: 17Networks_LH_SalVentAttnA_ParMed_1
+      lookupLabel: 24
+      originalLookupLabel: 24
+      hemisphere: left
+      center:
+        x: -11.0
+        y: -34.0
+        z: 45.0
+      color: '#c43bfd'
+    17Networks_LH_SalVentAttnA_FrMed_1:
+      name: 17Networks_LH_SalVentAttnA_FrMed_1
+      lookupLabel: 25
+      originalLookupLabel: 25
+      hemisphere: left
+      center:
+        x: -6.0
+        y: 4.0
+        z: 62.0
+      color: '#c53afb'
+    17Networks_LH_SalVentAttnB_PFCl_1:
+      name: 17Networks_LH_SalVentAttnB_PFCl_1
+      lookupLabel: 26
+      originalLookupLabel: 26
+      hemisphere: left
+      center:
+        x: -30.0
+        y: 44.0
+        z: 30.0
+      color: '#ff99d6'
+    17Networks_LH_SalVentAttnB_PFCmp_1:
+      name: 17Networks_LH_SalVentAttnB_PFCmp_1
+      lookupLabel: 27
+      originalLookupLabel: 27
+      hemisphere: left
+      center:
+        x: -5.0
+        y: 20.0
+        z: 34.0
+      color: '#ff97d6'
+    17Networks_LH_LimbicB_OFC_1:
+      name: 17Networks_LH_LimbicB_OFC_1
+      lookupLabel: 28
+      originalLookupLabel: 28
+      hemisphere: left
+      center:
+        x: -14.0
+        y: 32.0
+        z: -20.0
+      color: '#7a8733'
+    17Networks_LH_LimbicA_TempPole_1:
+      name: 17Networks_LH_LimbicA_TempPole_1
+      lookupLabel: 29
+      originalLookupLabel: 29
+      hemisphere: left
+      center:
+        x: -32.0
+        y: 2.0
+        z: -37.0
+      color: '#dcf8a5'
+    17Networks_LH_LimbicA_TempPole_2:
+      name: 17Networks_LH_LimbicA_TempPole_2
+      lookupLabel: 30
+      originalLookupLabel: 30
+      hemisphere: left
+      center:
+        x: -57.0
+        y: -33.0
+        z: -21.0
+      color: '#dcf8a6'
+    17Networks_LH_ContA_IPS_1:
+      name: 17Networks_LH_ContA_IPS_1
+      lookupLabel: 31
+      originalLookupLabel: 31
+      hemisphere: left
+      center:
+        x: -37.0
+        y: -53.0
+        z: 46.0
+      color: '#e69424'
+    17Networks_LH_ContA_PFCl_1:
+      name: 17Networks_LH_ContA_PFCl_1
+      lookupLabel: 32
+      originalLookupLabel: 32
+      hemisphere: left
+      center:
+        x: -43.0
+        y: 33.0
+        z: 21.0
+      color: '#e69524'
+    17Networks_LH_ContA_PFCl_2:
+      name: 17Networks_LH_ContA_PFCl_2
+      lookupLabel: 33
+      originalLookupLabel: 33
+      hemisphere: left
+      center:
+        x: -48.0
+        y: 6.0
+        z: 28.0
+      color: '#e69525'
+    17Networks_LH_ContB_PFClv_1:
+      name: 17Networks_LH_ContB_PFClv_1
+      lookupLabel: 34
+      originalLookupLabel: 34
+      hemisphere: left
+      center:
+        x: -24.0
+        y: 61.0
+        z: -1.0
+      color: '#88324b'
+    17Networks_LH_ContC_pCun_1:
+      name: 17Networks_LH_ContC_pCun_1
+      lookupLabel: 35
+      originalLookupLabel: 35
+      hemisphere: left
+      center:
+        x: -9.0
+        y: -73.0
+        z: 38.0
+      color: '#778cb1'
+    17Networks_LH_ContC_pCun_2:
+      name: 17Networks_LH_ContC_pCun_2
+      lookupLabel: 36
+      originalLookupLabel: 36
+      hemisphere: left
+      center:
+        x: -6.0
+        y: -60.0
+        z: 56.0
+      color: '#778cb2'
+    17Networks_LH_ContC_Cingp_1:
+      name: 17Networks_LH_ContC_Cingp_1
+      lookupLabel: 37
+      originalLookupLabel: 37
+      hemisphere: left
+      center:
+        x: -4.0
+        y: -26.0
+        z: 33.0
+      color: '#778cb3'
+    17Networks_LH_DefaultA_PFCd_1:
+      name: 17Networks_LH_DefaultA_PFCd_1
+      lookupLabel: 38
+      originalLookupLabel: 38
+      hemisphere: left
+      center:
+        x: -25.0
+        y: 20.0
+        z: 51.0
+      color: '#ffff02'
+    17Networks_LH_DefaultA_pCunPCC_1:
+      name: 17Networks_LH_DefaultA_pCunPCC_1
+      lookupLabel: 39
+      originalLookupLabel: 39
+      hemisphere: left
+      center:
+        x: -6.0
+        y: -53.0
+        z: 33.0
+      color: '#fffe01'
+    17Networks_LH_DefaultA_PFCm_1:
+      name: 17Networks_LH_DefaultA_PFCm_1
+      lookupLabel: 40
+      originalLookupLabel: 40
+      hemisphere: left
+      center:
+        x: -6.0
+        y: 47.0
+        z: 0.0
+      color: '#feff01'
+    17Networks_LH_DefaultB_Temp_1:
+      name: 17Networks_LH_DefaultB_Temp_1
+      lookupLabel: 41
+      originalLookupLabel: 41
+      hemisphere: left
+      center:
+        x: -55.0
+        y: -4.0
+        z: -20.0
+      color: '#cd3e4f'
+    17Networks_LH_DefaultB_Temp_2:
+      name: 17Networks_LH_DefaultB_Temp_2
+      lookupLabel: 42
+      originalLookupLabel: 42
+      hemisphere: left
+      center:
+        x: -58.0
+        y: -32.0
+        z: -1.0
+      color: '#cd3e50'
+    17Networks_LH_DefaultB_IPL_1:
+      name: 17Networks_LH_DefaultB_IPL_1
+      lookupLabel: 43
+      originalLookupLabel: 43
+      hemisphere: left
+      center:
+        x: -48.0
+        y: -63.0
+        z: 35.0
+      color: '#cd3e51'
+    17Networks_LH_DefaultB_PFCd_1:
+      name: 17Networks_LH_DefaultB_PFCd_1
+      lookupLabel: 44
+      originalLookupLabel: 44
+      hemisphere: left
+      center:
+        x: -9.0
+        y: 48.0
+        z: 41.0
+      color: '#cd3f4f'
+    17Networks_LH_DefaultB_PFCl_1:
+      name: 17Networks_LH_DefaultB_PFCl_1
+      lookupLabel: 45
+      originalLookupLabel: 45
+      hemisphere: left
+      center:
+        x: -41.0
+        y: 14.0
+        z: 48.0
+      color: '#cd3f50'
+    17Networks_LH_DefaultB_PFCv_1:
+      name: 17Networks_LH_DefaultB_PFCv_1
+      lookupLabel: 46
+      originalLookupLabel: 46
+      hemisphere: left
+      center:
+        x: -35.0
+        y: 21.0
+        z: -11.0
+      color: '#ce3e4f'
+    17Networks_LH_DefaultB_PFCv_2:
+      name: 17Networks_LH_DefaultB_PFCv_2
+      lookupLabel: 47
+      originalLookupLabel: 47
+      hemisphere: left
+      center:
+        x: -47.0
+        y: 33.0
+        z: -3.0
+      color: '#ce3e50'
+    17Networks_LH_DefaultC_Rsp_1:
+      name: 17Networks_LH_DefaultC_Rsp_1
+      lookupLabel: 48
+      originalLookupLabel: 48
+      hemisphere: left
+      center:
+        x: -11.0
+        y: -56.0
+        z: 13.0
+      color: '#000084'
+    17Networks_LH_DefaultC_PHC_1:
+      name: 17Networks_LH_DefaultC_PHC_1
+      lookupLabel: 49
+      originalLookupLabel: 49
+      hemisphere: left
+      center:
+        x: -26.0
+        y: -34.0
+        z: -17.0
+      color: '#000183'
+    17Networks_LH_TempPar_1:
+      name: 17Networks_LH_TempPar_1
+      lookupLabel: 50
+      originalLookupLabel: 50
+      hemisphere: left
+      center:
+        x: -57.0
+        y: -50.0
+        z: 12.0
+      color: '#0929fa'
+    17Networks_RH_VisCent_ExStr_1:
+      name: 17Networks_RH_VisCent_ExStr_1
+      lookupLabel: 51
+      originalLookupLabel: 51
+      hemisphere: right
+      center:
+        x: 27.0
+        y: -66.0
+        z: -12.0
+      color: '#7c1388'
+    17Networks_RH_VisCent_ExStr_2:
+      name: 17Networks_RH_VisCent_ExStr_2
+      lookupLabel: 52
+      originalLookupLabel: 52
+      hemisphere: right
+      center:
+        x: 22.0
+        y: -96.0
+        z: -5.0
+      color: '#7c1389'
+    17Networks_RH_VisCent_ExStr_3:
+      name: 17Networks_RH_VisCent_ExStr_3
+      lookupLabel: 53
+      originalLookupLabel: 53
+      hemisphere: right
+      center:
+        x: 36.0
+        y: -82.0
+        z: 16.0
+      color: '#7c138a'
+    17Networks_RH_VisPeri_StriCal_1:
+      name: 17Networks_RH_VisPeri_StriCal_1
+      lookupLabel: 54
+      originalLookupLabel: 54
+      hemisphere: right
+      center:
+        x: 8.0
+        y: -76.0
+        z: 5.0
+      color: '#fa0002'
+    17Networks_RH_VisPeri_ExStrInf_1:
+      name: 17Networks_RH_VisPeri_ExStrInf_1
+      lookupLabel: 55
+      originalLookupLabel: 55
+      hemisphere: right
+      center:
+        x: 17.0
+        y: -57.0
+        z: 5.0
+      color: '#fa0003'
+    17Networks_RH_VisPeri_ExStrSup_1:
+      name: 17Networks_RH_VisPeri_ExStrSup_1
+      lookupLabel: 56
+      originalLookupLabel: 56
+      hemisphere: right
+      center:
+        x: 13.0
+        y: -86.0
+        z: 29.0
+      color: '#fa0004'
+    17Networks_RH_SomMotA_1:
+      name: 17Networks_RH_SomMotA_1
+      lookupLabel: 57
+      originalLookupLabel: 57
+      hemisphere: right
+      center:
+        x: 47.0
+        y: -11.0
+        z: 48.0
+      color: '#4a83b6'
+    17Networks_RH_SomMotA_2:
+      name: 17Networks_RH_SomMotA_2
+      lookupLabel: 58
+      originalLookupLabel: 58
+      hemisphere: right
+      center:
+        x: 41.0
+        y: -22.0
+        z: 60.0
+      color: '#4a83b7'
+    17Networks_RH_SomMotA_3:
+      name: 17Networks_RH_SomMotA_3
+      lookupLabel: 59
+      originalLookupLabel: 59
+      hemisphere: right
+      center:
+        x: 30.0
+        y: -37.0
+        z: 64.0
+      color: '#4a83b8'
+    17Networks_RH_SomMotA_4:
+      name: 17Networks_RH_SomMotA_4
+      lookupLabel: 60
+      originalLookupLabel: 60
+      hemisphere: right
+      center:
+        x: 6.0
+        y: -26.0
+        z: 70.0
+      color: '#4a83b9'
+    17Networks_RH_SomMotB_Aud_1:
+      name: 17Networks_RH_SomMotB_Aud_1
+      lookupLabel: 61
+      originalLookupLabel: 61
+      hemisphere: right
+      center:
+        x: 53.0
+        y: -16.0
+        z: 7.0
+      color: '#2fcda5'
+    17Networks_RH_SomMotB_S2_1:
+      name: 17Networks_RH_SomMotB_S2_1
+      lookupLabel: 62
+      originalLookupLabel: 62
+      hemisphere: right
+      center:
+        x: 40.0
+        y: -15.0
+        z: 15.0
+      color: '#2fcda6'
+    17Networks_RH_SomMotB_S2_2:
+      name: 17Networks_RH_SomMotB_S2_2
+      lookupLabel: 63
+      originalLookupLabel: 63
+      hemisphere: right
+      center:
+        x: 57.0
+        y: -4.0
+        z: 11.0
+      color: '#2fcda7'
+    17Networks_RH_SomMotB_Cent_1:
+      name: 17Networks_RH_SomMotB_Cent_1
+      lookupLabel: 64
+      originalLookupLabel: 64
+      hemisphere: right
+      center:
+        x: 58.0
+        y: -5.0
+        z: 31.0
+      color: '#2fcda8'
+    17Networks_RH_DorsAttnA_TempOcc_1:
+      name: 17Networks_RH_DorsAttnA_TempOcc_1
+      lookupLabel: 65
+      originalLookupLabel: 65
+      hemisphere: right
+      center:
+        x: 49.0
+        y: -60.0
+        z: -11.0
+      color: '#4f9b3e'
+    17Networks_RH_DorsAttnA_ParOcc_1:
+      name: 17Networks_RH_DorsAttnA_ParOcc_1
+      lookupLabel: 66
+      originalLookupLabel: 66
+      hemisphere: right
+      center:
+        x: 50.0
+        y: -62.0
+        z: 16.0
+      color: '#4f9b3f'
+    17Networks_RH_DorsAttnA_SPL_1:
+      name: 17Networks_RH_DorsAttnA_SPL_1
+      lookupLabel: 67
+      originalLookupLabel: 67
+      hemisphere: right
+      center:
+        x: 27.0
+        y: -67.0
+        z: 51.0
+      color: '#4f9b40'
+    17Networks_RH_DorsAttnB_PostC_1:
+      name: 17Networks_RH_DorsAttnB_PostC_1
+      lookupLabel: 68
+      originalLookupLabel: 68
+      hemisphere: right
+      center:
+        x: 50.0
+        y: -24.0
+        z: 42.0
+      color: '#057610'
+    17Networks_RH_DorsAttnB_PostC_2:
+      name: 17Networks_RH_DorsAttnB_PostC_2
+      lookupLabel: 69
+      originalLookupLabel: 69
+      hemisphere: right
+      center:
+        x: 14.0
+        y: -52.0
+        z: 66.0
+      color: '#057611'
+    17Networks_RH_DorsAttnB_FEF_1:
+      name: 17Networks_RH_DorsAttnB_FEF_1
+      lookupLabel: 70
+      originalLookupLabel: 70
+      hemisphere: right
+      center:
+        x: 28.0
+        y: -3.0
+        z: 59.0
+      color: '#05770f'
+    17Networks_RH_SalVentAttnA_ParOper_1:
+      name: 17Networks_RH_SalVentAttnA_ParOper_1
+      lookupLabel: 71
+      originalLookupLabel: 71
+      hemisphere: right
+      center:
+        x: 61.0
+        y: -26.0
+        z: 27.0
+      color: '#c83afa'
+    17Networks_RH_SalVentAttnA_Ins_1:
+      name: 17Networks_RH_SalVentAttnA_Ins_1
+      lookupLabel: 72
+      originalLookupLabel: 72
+      hemisphere: right
+      center:
+        x: 40.0
+        y: 8.0
+        z: 1.0
+      color: '#c73afb'
+    17Networks_RH_SalVentAttnA_ParMed_1:
+      name: 17Networks_RH_SalVentAttnA_ParMed_1
+      lookupLabel: 73
+      originalLookupLabel: 73
+      hemisphere: right
+      center:
+        x: 11.0
+        y: -31.0
+        z: 45.0
+      color: '#c739fb'
+    17Networks_RH_SalVentAttnA_FrMed_1:
+      name: 17Networks_RH_SalVentAttnA_FrMed_1
+      lookupLabel: 74
+      originalLookupLabel: 74
+      hemisphere: right
+      center:
+        x: 7.0
+        y: 6.0
+        z: 52.0
+      color: '#c739fc'
+    17Networks_RH_SalVentAttnB_IPL_1:
+      name: 17Networks_RH_SalVentAttnB_IPL_1
+      lookupLabel: 75
+      originalLookupLabel: 75
+      hemisphere: right
+      center:
+        x: 57.0
+        y: -39.0
+        z: 44.0
+      color: '#fa98d6'
+    17Networks_RH_SalVentAttnB_PFCl_1:
+      name: 17Networks_RH_SalVentAttnB_PFCl_1
+      lookupLabel: 76
+      originalLookupLabel: 76
+      hemisphere: right
+      center:
+        x: 32.0
+        y: 46.0
+        z: 29.0
+      color: '#fa97d6'
+    17Networks_RH_SalVentAttnB_PFCmp_1:
+      name: 17Networks_RH_SalVentAttnB_PFCmp_1
+      lookupLabel: 77
+      originalLookupLabel: 77
+      hemisphere: right
+      center:
+        x: 6.0
+        y: 28.0
+        z: 30.0
+      color: '#fa99d6'
+    17Networks_RH_LimbicB_OFC_1:
+      name: 17Networks_RH_LimbicB_OFC_1
+      lookupLabel: 78
+      originalLookupLabel: 78
+      hemisphere: right
+      center:
+        x: 12.0
+        y: 35.0
+        z: -20.0
+      color: '#7e8734'
+    17Networks_RH_LimbicA_TempPole_1:
+      name: 17Networks_RH_LimbicA_TempPole_1
+      lookupLabel: 79
+      originalLookupLabel: 79
+      hemisphere: right
+      center:
+        x: 38.0
+        y: 1.0
+        z: -38.0
+      color: '#e0f8a6'
+    17Networks_RH_ContA_IPS_1:
+      name: 17Networks_RH_ContA_IPS_1
+      lookupLabel: 80
+      originalLookupLabel: 80
+      hemisphere: right
+      center:
+        x: 38.0
+        y: -45.0
+        z: 49.0
+      color: '#ea9323'
+    17Networks_RH_ContA_PFCl_1:
+      name: 17Networks_RH_ContA_PFCl_1
+      lookupLabel: 81
+      originalLookupLabel: 81
+      hemisphere: right
+      center:
+        x: 45.0
+        y: 39.0
+        z: 15.0
+      color: '#e99423'
+    17Networks_RH_ContA_PFCl_2:
+      name: 17Networks_RH_ContA_PFCl_2
+      lookupLabel: 82
+      originalLookupLabel: 82
+      hemisphere: right
+      center:
+        x: 49.0
+        y: 10.0
+        z: 27.0
+      color: '#e99424'
+    17Networks_RH_ContB_Temp_1:
+      name: 17Networks_RH_ContB_Temp_1
+      lookupLabel: 83
+      originalLookupLabel: 83
+      hemisphere: right
+      center:
+        x: 62.0
+        y: -23.0
+        z: -19.0
+      color: '#8c334c'
+    17Networks_RH_ContB_IPL_1:
+      name: 17Networks_RH_ContB_IPL_1
+      lookupLabel: 84
+      originalLookupLabel: 84
+      hemisphere: right
+      center:
+        x: 45.0
+        y: -63.0
+        z: 46.0
+      color: '#8b324a'
+    17Networks_RH_ContB_PFCld_1:
+      name: 17Networks_RH_ContB_PFCld_1
+      lookupLabel: 85
+      originalLookupLabel: 85
+      hemisphere: right
+      center:
+        x: 43.0
+        y: 16.0
+        z: 45.0
+      color: '#8b314b'
+    17Networks_RH_ContB_PFClv_1:
+      name: 17Networks_RH_ContB_PFClv_1
+      lookupLabel: 86
+      originalLookupLabel: 86
+      hemisphere: right
+      center:
+        x: 30.0
+        y: 58.0
+        z: -3.0
+      color: '#8b314a'
+    17Networks_RH_ContC_Cingp_1:
+      name: 17Networks_RH_ContC_Cingp_1
+      lookupLabel: 87
+      originalLookupLabel: 87
+      hemisphere: right
+      center:
+        x: 5.0
+        y: -27.0
+        z: 33.0
+      color: '#7b8db1'
+    17Networks_RH_ContC_pCun_1:
+      name: 17Networks_RH_ContC_pCun_1
+      lookupLabel: 88
+      originalLookupLabel: 88
+      hemisphere: right
+      center:
+        x: 9.0
+        y: -66.0
+        z: 43.0
+      color: '#7b8db2'
+    17Networks_RH_DefaultA_IPL_1:
+      name: 17Networks_RH_DefaultA_IPL_1
+      lookupLabel: 89
+      originalLookupLabel: 89
+      hemisphere: right
+      center:
+        x: 55.0
+        y: -51.0
+        z: 31.0
+      color: '#fbfe02'
+    17Networks_RH_DefaultA_PFCd_1:
+      name: 17Networks_RH_DefaultA_PFCd_1
+      lookupLabel: 90
+      originalLookupLabel: 90
+      hemisphere: right
+      center:
+        x: 26.0
+        y: 24.0
+        z: 50.0
+      color: '#fbff03'
+    17Networks_RH_DefaultA_pCunPCC_1:
+      name: 17Networks_RH_DefaultA_pCunPCC_1
+      lookupLabel: 91
+      originalLookupLabel: 91
+      hemisphere: right
+      center:
+        x: 7.0
+        y: -52.0
+        z: 31.0
+      color: '#fbfd01'
+    17Networks_RH_DefaultA_PFCm_1:
+      name: 17Networks_RH_DefaultA_PFCm_1
+      lookupLabel: 92
+      originalLookupLabel: 92
+      hemisphere: right
+      center:
+        x: 7.0
+        y: 48.0
+        z: 1.0
+      color: '#f9ff01'
+    17Networks_RH_DefaultB_PFCd_1:
+      name: 17Networks_RH_DefaultB_PFCd_1
+      lookupLabel: 93
+      originalLookupLabel: 93
+      hemisphere: right
+      center:
+        x: 11.0
+        y: 50.0
+        z: 39.0
+      color: '#d23f50'
+    17Networks_RH_DefaultB_PFCv_1:
+      name: 17Networks_RH_DefaultB_PFCv_1
+      lookupLabel: 94
+      originalLookupLabel: 94
+      hemisphere: right
+      center:
+        x: 35.0
+        y: 26.0
+        z: -15.0
+      color: '#d13e4e'
+    17Networks_RH_DefaultB_PFCv_2:
+      name: 17Networks_RH_DefaultB_PFCv_2
+      lookupLabel: 95
+      originalLookupLabel: 95
+      hemisphere: right
+      center:
+        x: 51.0
+        y: 28.0
+        z: 0.0
+      color: '#d13e4f'
+    17Networks_RH_DefaultC_Rsp_1:
+      name: 17Networks_RH_DefaultC_Rsp_1
+      lookupLabel: 96
+      originalLookupLabel: 96
+      hemisphere: right
+      center:
+        x: 12.0
+        y: -54.0
+        z: 14.0
+      color: '#050083'
+    17Networks_RH_DefaultC_PHC_1:
+      name: 17Networks_RH_DefaultC_PHC_1
+      lookupLabel: 97
+      originalLookupLabel: 97
+      hemisphere: right
+      center:
+        x: 32.0
+        y: -31.0
+        z: -22.0
+      color: '#050084'
+    17Networks_RH_TempPar_1:
+      name: 17Networks_RH_TempPar_1
+      lookupLabel: 98
+      originalLookupLabel: 98
+      hemisphere: right
+      center:
+        x: 51.0
+        y: 7.0
+        z: -18.0
+      color: '#1030ff'
+    17Networks_RH_TempPar_2:
+      name: 17Networks_RH_TempPar_2
+      lookupLabel: 99
+      originalLookupLabel: 99
+      hemisphere: right
+      center:
+        x: 57.0
+        y: -26.0
+        z: -2.0
+      color: '#0d29fa'
+    17Networks_RH_TempPar_3:
+      name: 17Networks_RH_TempPar_3
+      lookupLabel: 100
+      originalLookupLabel: 100
+      hemisphere: right
+      center:
+        x: 58.0
+        y: -42.0
+        z: 13.0
+      color: '#0d29fb'

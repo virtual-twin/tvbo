@@ -1,3 +1,6 @@
+<%!
+from tvbo.utils import initial_value as _initial_value
+%>\
 ## -*- coding: utf-8 -*-
 <%doc>
 NetworkDynamics.jl full experiment template.
@@ -22,10 +25,10 @@ Context: Pre-computed dict from BaseAdapter.prepare_context()
 <%page args="experiment, model, network, integration, \
 dynamics_dict, node_dynamics_map, all_couplings, coupling, \
 coupling_vars, outdim, outsym_names, \
-n_nodes, nodes, graph_gen, edges_list, emf_names, \
+n_nodes, nodes, graph_gen, has_graph_generator, edges_list, emf_names, \
 has_edge_matrix, has_explicit_edges, is_directed, \
 sv_names, n_sv, is_heterogeneous, is_stochastic, \
-dt, duration, solver_method, needs_stiff, needs_weighted, \
+dt, duration, solver_method, fixed_step, needs_stiff, needs_weighted, \
 weight_matrix, weight_sym, \
 dist_info, needs_random, dist_seed, \
 all_events, has_events, coupling_observed, find_fixpoint, \
@@ -102,18 +105,14 @@ vertex_${dyn.name} = VertexModel(;
 % endfor
 
 ## ── Graph ───────────────────────────────────────────────────────────────────
-<%
-MATRIX_THRESHOLD = 50
-use_matrix = has_explicit_edges and len(edges_list) > MATRIX_THRESHOLD
-%>
 % if has_edge_matrix:
 G = readdlm("${emf_names[0]}", ',', Float64, '\n')
 g_weighted = SimpleWeightedDiGraph(G)
 edge_weights = getfield.(collect(edges(g_weighted)), :weight)
 g = SimpleDiGraph(g_weighted)
-% elif graph_gen:
+% elif has_graph_generator:
 g = ${graph_generator_call(graph_gen, n_nodes, 'julia')}
-% elif use_matrix and weight_matrix is not None:
+% elif weight_matrix is not None:
 using SimpleWeightedGraphs
 <%
 import numpy as np
@@ -263,8 +262,8 @@ rng = MersenneTwister(${dist_seed})
 s.v[${node_idx}, :${sv.name}] = ${init_val}
 % elif has_dist:
 s.v[${node_idx}, :${sv.name}] = ${sample_expression(d, 'julia')}
-% elif sv.initial_value is not None:
-s.v[${node_idx}, :${sv.name}] = ${sv.initial_value}
+% else:
+s.v[${node_idx}, :${sv.name}] = ${_initial_value(sv)}
 % endif
 % endfor
 % if not find_fixpoint:
@@ -294,8 +293,8 @@ s.p.v[${node_idx}, :${p_name}] = ${sample_expression(d, 'julia')}
 for node in 1:nv(g)
     s.v[node, :${sv.name}] = ${sample_expression(d, 'julia')}
 end
-% elif sv.initial_value is not None:
-s.v[1:nv(g), :${sv.name}] .= ${sv.initial_value}
+% else:
+s.v[1:nv(g), :${sv.name}] .= ${_initial_value(sv)}
 % endif
 % endfor
 % for p_name, p_obj, d in collect_param_distributions(model):
@@ -442,13 +441,13 @@ sol = solve(prob, EulerHeun(); dt=${dt}, saveat=${dt})
 ## ODEProblem from NWState: auto-extracts initial state, parameters, and callbacks
 u0 = NWState(nw)
 prob = ODEProblem(nw, u0, tspan)
-sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); saveat=${dt})
+sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); ${'dt=%s, ' % dt if fixed_step else ''}saveat=${dt})
 % elif has_edge_matrix and has_weight_param:
 prob = ODEProblem(nw, uflat(s), tspan, pflat(p))
-sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); saveat=${dt})
+sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); ${'dt=%s, ' % dt if fixed_step else ''}saveat=${dt})
 % else:
 prob = ODEProblem(nw, uflat(s), tspan, pflat(s))
-sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); saveat=${dt})
+sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); ${'dt=%s, ' % dt if fixed_step else ''}saveat=${dt})
 % endif
 
 ## ── Graph data (extracted by Python adapter) ───────────────────────────────

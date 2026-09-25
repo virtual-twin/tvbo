@@ -1,0 +1,8 @@
+{
+  "_type": "tvbo:AxisReduction",
+  "properties": {
+    "statistic": {
+      "type": "string"
+    }
+  }
+}

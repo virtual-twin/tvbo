@@ -1,0 +1,77 @@
+using SpecialFunctions
+import NaNMath
+function ZerlautAdaptationFirstOrder!(dx, x, p, t = 0)
+
+    (;C_m, DTvN0, DmuV0, DsV0, E_L_e, E_L_i, E_e, E_i, K_ext_e, K_ext_i, N_tot, P0_e, P0_i, P1_e, P1_i, P2_e, P2_i, P3_e, P3_i, P4_e, P4_i, P5_e, P5_i, P6_e, P6_i, P7_e, P7_i, P8_e, P8_i, P9_e, P9_i, P_e, P_i, Q_e, Q_i, S_i, T, TvN0, a_e, a_i, b_e, b_i, external_input_ex_ex, external_input_ex_in, external_input_in_ex, external_input_in_in, g_L, g, muV0, p_connect_e, p_connect_i, sV0, tau_OU, tau_e, tau_i, tau_w_e, tau_w_i, weight_noise, c_glob, local_coupling) = p
+
+    E, I, W_e, W_i, ou_drift = x
+
+
+    lc_E = E .* local_coupling
+    lc_I = I .* local_coupling
+    Fe_ext = ifelse(K_ext_e .* (c_glob .+ lc_E .+ ou_drift .* weight_noise) < 0, 0, c_glob .+ lc_E .+ ou_drift .* weight_noise)
+    Fi_ext = lc_I
+    fe_e = K_ext_e .* (Fe_ext .+ external_input_ex_ex) .+ N_tot .* p_connect_e .* (1 // 1000000 .+ E) .* (1.0 .- g)
+    fe_i = K_ext_e .* (Fe_ext .+ external_input_in_ex) .+ N_tot .* p_connect_e .* (1 // 1000000 .+ E) .* (1.0 .- g)
+    fi_e = K_ext_i .* (Fi_ext .+ external_input_ex_in) .+ N_tot .* g .* p_connect_i .* (1 // 1000000 .+ I)
+    fi_i = K_ext_i .* (Fi_ext .+ external_input_in_in) .+ N_tot .* g .* p_connect_i .* (1 // 1000000 .+ I)
+    mu_Ge_e = Q_e .* fe_e .* tau_e
+    mu_Ge_i = Q_e .* fe_i .* tau_e
+    mu_Gi_e = Q_i .* fi_e .* tau_i
+    mu_Gi_i = Q_i .* fi_i .* tau_i
+    mu_G_e = g_L .+ mu_Ge_e .+ mu_Gi_e
+    mu_G_i = g_L .+ mu_Ge_i .+ mu_Gi_i
+    T_m_e = C_m ./ mu_G_e
+    T_m_i = C_m ./ mu_G_i
+    mu_V_e = (-W_e .+ E_L_e .* g_L .+ E_e .* mu_Ge_e .+ E_i .* mu_Gi_e) ./ mu_G_e
+    mu_V_i = (-W_i .+ E_L_i .* g_L .+ E_e .* mu_Ge_i .+ E_i .* mu_Gi_i) ./ mu_G_i
+    U_e_e = Q_e .* (E_e .- mu_V_e) ./ mu_G_e
+    U_e_i = Q_e .* (E_e .- mu_V_i) ./ mu_G_i
+    U_i_e = Q_i .* (E_i .- mu_V_e) ./ mu_G_e
+    U_i_i = Q_i .* (E_i .- mu_V_i) ./ mu_G_i
+    V_e = (mu_V_e .- muV0) ./ DmuV0
+    V_i = (mu_V_i .- muV0) ./ DmuV0
+    T_V_e = (fe_e .* U_e_e .^ 2 .* tau_e .^ 2 .+ fi_e .* U_i_e .^ 2 .* tau_i .^ 2) ./ (fe_e .* U_e_e .^ 2 .* tau_e .^ 2 ./ (T_m_e .+ tau_e) .+ fi_e .* U_i_e .^ 2 .* tau_i .^ 2 ./ (T_m_e .+ tau_i))
+    T_V_i = (fe_i .* U_e_i .^ 2 .* tau_e .^ 2 .+ fi_i .* U_i_i .^ 2 .* tau_i .^ 2) ./ (fe_i .* U_e_i .^ 2 .* tau_e .^ 2 ./ (T_m_i .+ tau_e) .+ fi_i .* U_i_i .^ 2 .* tau_i .^ 2 ./ (T_m_i .+ tau_i))
+    sigma_V_e = sqrt(fe_e .* U_e_e .^ 2 .* tau_e .^ 2 ./ (2.0 * T_m_e .+ 2.0 * tau_e) .+ fi_e .* U_i_e .^ 2 .* tau_i .^ 2 ./ (2.0 * T_m_e .+ 2.0 * tau_i))
+    sigma_V_i = sqrt(fe_i .* U_e_i .^ 2 .* tau_e .^ 2 ./ (2.0 * T_m_i .+ 2.0 * tau_e) .+ fi_i .* U_i_i .^ 2 .* tau_i .^ 2 ./ (2.0 * T_m_i .+ 2.0 * tau_i))
+    S_e = (sigma_V_e .- sV0) ./ DsV0
+    S_i = (sigma_V_i .- sV0) ./ DsV0
+    T_e = (-TvN0 .+ T_V_e .* g_L ./ C_m) ./ DTvN0
+    T_i = (-TvN0 .+ T_V_i .* g_L ./ C_m) ./ DTvN0
+    V_thre_e = 1000.0 * P0_e .+ 1000.0 * P1_e .* V_e .+ 1000.0 * P2_e .* S_e .+ 1000.0 * P3_e .* T_e .+ 1000.0 * P4_e .* V_e .^ 2 .+ 1000.0 * P5_e .* S_e .^ 2 .+ 1000.0 * P6_e .* T_e .^ 2 .+ 1000.0 * P7_e .* S_e .* V_e .+ 1000.0 * P8_e .* T_e .* V_e .+ 1000.0 * P9_e .* S_e .* T_e
+    V_thre_i = 1000.0 * P0_i .+ 1000.0 * P1_i .* V_i .+ 1000.0 * P2_i .* S_i .+ 1000.0 * P3_i .* T_i .+ 1000.0 * P4_i .* V_i .^ 2 .+ 1000.0 * P5_i .* S_i .^ 2 .+ 1000.0 * P6_i .* T_i .^ 2 .+ 1000.0 * P7_i .* S_i .* V_i .+ 1000.0 * P8_i .* T_i .* V_i .+ 1000.0 * P9_i .* S_i .* T_i
+    f_out_e = erfc(sqrt(2) * (V_thre_e .- mu_V_e) ./ (2 * sigma_V_e)) ./ (2 * T_V_e)
+    f_out_i = erfc(sqrt(2) * (V_thre_i .- mu_V_i) ./ (2 * sigma_V_i)) ./ (2 * T_V_i)
+
+    dx[1] = (f_out_e .- E) ./ T
+    dx[2] = (f_out_i .- I) ./ T
+    dx[3] = E .* b_e .- W_e ./ tau_w_e .+ a_e .* (mu_V_e .- E_L_e) ./ tau_w_e
+    dx[4] = I .* b_i .- W_i ./ tau_w_i .+ a_i .* (mu_V_i .- E_L_i) ./ tau_w_i
+    dx[5] = -ou_drift ./ tau_OU
+    dx
+end
+
+# Parameter values
+p = (C_m = 200.0, DTvN0 = 1.0, DmuV0 = 10.0, DsV0 = 6.0, E_L_e = -65.0, E_L_i = -65.0, E_e = 0.0, E_i = -80.0, K_ext_e = 400.0, K_ext_i = 0.0, N_tot = 10000.0, P0_e = -0.04983106, P0_i = -0.05149122024209484, P1_e = 0.005063550882777035, P1_i = 0.004003689190271077, P2_e = -0.023470121807314552, P2_i = -0.008352013668528155, P3_e = 0.0022951513725067503, P3_i = 0.0002414237992765705, P4_e = -0.0004105302652029825, P4_i = -0.0005070645080016026, P5_e = 0.010547051343547399, P5_i = 0.0014345394104282397, P6_e = -0.03659252821136933, P6_i = -0.014686689498949967, P7_e = 0.007437487505797858, P7_i = 0.004502706285435741, P8_e = 0.001265064721846073, P8_i = 0.0028472190352532454, P9_e = -0.04072161294490446, P9_i = -0.015357804594594548, P_e = -0.04983106, P_i = -0.05149122024209484, Q_e = 1.5, Q_i = 5.0, S_i = 1.0, T = 20.0, TvN0 = 0.5, a_e = 4.0, a_i = 0.0, b_e = 60.0, b_i = 0.0, external_input_ex_ex = 0.0, external_input_ex_in = 0.0, external_input_in_ex = 0.0, external_input_in_in = 0.0, g_L = 10.0, g = 0.2, muV0 = -60.0, p_connect_e = 0.05, p_connect_i = 0.05, sV0 = 4.0, tau_OU = 5.0, tau_e = 5.0, tau_i = 5.0, tau_w_e = 500.0, tau_w_i = 1.0, weight_noise = 10.5, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ZerlautAdaptationFirstOrder!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

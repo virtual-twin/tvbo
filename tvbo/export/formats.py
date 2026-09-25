@@ -1,21 +1,16 @@
 """Built-in export-format registrations.
 
-Importing this module populates :mod:`tvbo.export.registry` with every
-backend that ships with TVBO. Third-party packages can register their own
-formats the same way (preferably in their own module's import-time code).
+Importing this module populates :mod:`tvbo.export.registry` with every backend that ships with TVBO. Third-party packages can register their own formats the same way (preferably in their own module's import-time code).
 
-Each renderer is a thin closure ``(experiment, **kwargs) -> str``. Heavy
-adapter imports happen *inside* the closure so that simply listing
-formats does not pull in optional dependencies (Mako templates, NeuroML, …).
+Each renderer is a thin closure ``(experiment, **kwargs) -> str``. Heavy adapter imports happen *inside* the closure so that simply listing formats does not pull in optional dependencies (Mako templates, NeuroML, …).
 """
+
 from __future__ import annotations
 
 from .registry import ExportFormat, register
 
-
-# ---------------------------------------------------------------------------
 # Serialisation (LinkML YAML / openMINDS JSON-LD)
-# ---------------------------------------------------------------------------
+
 
 def _render_yaml(exp, **kw) -> str:
     return exp.to_yaml(filepath=kw.get("filepath"))
@@ -27,14 +22,15 @@ def _render_pyrates_yaml(exp, **kw) -> str:
 
 def _render_openminds(exp, **kw) -> str:
     import json
+
     from tvbo.adapters.openminds import experiment_to_openminds
+
     indent = kw.pop("indent", 2)
     return json.dumps(experiment_to_openminds(exp, **kw), indent=indent, default=str)
 
 
-# ---------------------------------------------------------------------------
 # Reports (markdown / pdf)
-# ---------------------------------------------------------------------------
+
 
 def _render_markdown(exp, **kw) -> str:
     return exp.report(format="markdown", **kw)
@@ -45,177 +41,265 @@ def _render_pdf(exp, **kw) -> str:
     return exp.report(format="pdf", **kw) or ""
 
 
-# ---------------------------------------------------------------------------
 # Code generation (delegates to existing render_code branches via templates)
-# ---------------------------------------------------------------------------
 
-def _template_renderer(template_path: str, *, use_black: bool = True,
-                       experiment_kw: str = "experiment", extra_ctx=None):
-    """Build a renderer that loads a Mako template and formats the result."""
-    def _render(exp, **kw):
-        from tvbo.classes.experiment import templates, format_code
-        ctx = {experiment_kw: exp}
-        if extra_ctx:
-            ctx.update({k: v(exp) for k, v in extra_ctx.items()})
-        ctx.update(kw)
-        template = templates.lookup.get_template(template_path)
-        rendered = template.render(**ctx)
-        return format_code(rendered, use_black=use_black) if use_black is not None else rendered
-    return _render
+
+def _codegen_context(exp, **kw) -> dict:
+    """The model and coupling every code template renders, resolved once by the adapter.
+
+    ``BaseAdapter`` reads ``network.coupling`` — where a coupling is declared — and names the default. A template deriving its own is a second answer to a question the adapter already answers, and the two drift.
+
+    Both callers write the integrator's update step out symbolically, so the integration is checked here too: a method with no closed form reaches the template as an unset ``update_expression`` and fails there on ``'NoneType' object has no attribute 'equation'``, which names neither the method nor the reason.
+    """
+    from tvbo.adapters.base import BaseAdapter
+    from tvbo.utils import integration_method
+
+    integration = getattr(exp, "integration", None)
+    if integration is not None:
+        integration.enrich()
+        if getattr(integration, "update_expression", None) is None:
+            canonical = integration_method(integration.method, strict=False)
+            raise ValueError(
+                f"integration method {integration.method!r} ({canonical or 'a spelling tvbo does not know'}) has no "
+                "symbolic update expression, and this backend renders the update step. Declare a fixed-step method, or "
+                "run it on a backend that supplies its own solver."
+            )
+
+    adapter = BaseAdapter(exp)
+    kw.setdefault("model", exp.dynamics)
+    kw.setdefault("coupling", adapter.get_default_coupling())
+    # The settle plan, resolved once: which window to integrate and which leading part of it is not measurement. A template computing `transient_time + duration` for itself is a second answer to a question the adapter already answers, and that is how TVB and tvboptim came to disagree about what `duration` means.
+    kw.setdefault("settle", adapter.get_integration_info())
+    return kw
 
 
 def _render_tvb(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
+
     template = templates.lookup.get_template("tvbo-tvb-SimulationExperiment.py.mako")
-    return format_code(template.render(experiment=exp, **kw))
+    return template.render(experiment=exp, **_codegen_context(exp, **kw))
 
 
 def _render_jax(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
     from tvbo.adapters.observation_sampling import resolve_observation_sampling
+    from tvbo.classes.experiment import templates
+    from tvbo.utils import keyed_items
+
     template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
-    # Resolve observation sampling step counts once, in Python, and hand the
-    # {obs_name: ObservationSampling} mapping to the template (which only emits
-    # the resolved integers). This is the same backend-shared resolver the
-    # tvboptim runtime uses, so all Python backends emit identical sample counts.
-    observations = getattr(exp, "observations", None) or {}
+    # The same shared resolver the tvboptim runtime uses, so every Python backend agrees.
     dt = exp.integration.step_size
     kw.setdefault(
         "obs_sampling",
-        {name: resolve_observation_sampling(obs, dt) for name, obs in observations.items()},
+        {
+            name: resolve_observation_sampling(obs, dt)
+            for name, obs in keyed_items(getattr(exp, "observations", None), "observations")
+        },
     )
-    return format_code(template.render(experiment=exp, **kw), use_black=False)
+    return template.render(experiment=exp, **_codegen_context(exp, **kw))
 
 
 def _render_tvboptim(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.adapters.tvboptim import TvboptimAdapter
+    from tvbo.classes.experiment import templates
+
     template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
-    # Resolve network-observation source pointers once, in Python, and hand
-    # the {obs_name: measure} mapping to the template (which only emits code).
-    kw.setdefault("network_obs_measures", exp.network_observation_measures)
-    return format_code(template.render(experiment=exp, **kw), use_black=False)
+    adapter = TvboptimAdapter(exp)
+    # Which couplings this experiment has is the adapter's answer, not the template's.
+    kw.setdefault("all_couplings", adapter.resolve_couplings())
+    # And so is the window it integrates: which part settles and which is measured, in time and in steps. See `_codegen_context`, which hands the same answer to the backends that share it.
+    kw.setdefault("settle", adapter.get_integration_info())
+    # Resolve network- and dataset-sourced observation pointers once, in Python, and hand the {obs_name: measure} mapping to the template (which only emits code). Both bind at run_experiment time via _bind_network_observations.
+    measures = dict(exp.network_observation_measures)
+    measures.update(exp.dataset_observation_targets)
+    kw.setdefault("network_obs_measures", measures)
+    # Model-side gather (keyed by label, never positional) that aligns a simulated observable to a by_label empirical target's shared nodes in the loss.
+    kw.setdefault("dataset_reconcile_indices", exp.dataset_reconcile_indices())
+    return template.render(experiment=exp, **kw)
 
 
 def _render_pde(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
+
     template = templates.lookup.get_template("tvbo-pde-fem.py.mako")
-    return format_code(template.render(experiment=exp, **kw), use_black=True)
+    return template.render(experiment=exp, **kw)
 
 
 def _render_julia(exp, **kw):
     from tvbo.classes.experiment import templates
+
     template = templates.lookup.get_template("tvbo-julia-DifferentialEquations.jl.mako")
     return template.render(experiment=exp, model=exp.dynamics, **kw)
 
 
 def _render_networkdynamics(exp, **kw):
-    from tvbo.adapters.base import BaseAdapter
-    from tvbo.classes.experiment import templates
-    adapter = BaseAdapter(exp)
-    ctx = adapter.prepare_context()
-    ctx.update(kw)
-    template = templates.lookup.get_template("tvbo-nd-experiment.jl.mako")
-    return template.render(**ctx)
+    from tvbo.adapters.networkdynamics import NetworkDynamicsAdapter
+
+    return NetworkDynamicsAdapter(exp).render_code(**kw)
 
 
 def _render_modelingtoolkit(exp, **kw):
     from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
+
     return ModelingToolkitAdapter(exp).render_code(**kw)
 
 
 def _render_bifurcationkit(exp, **kw):
     from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
+
     return BifurcationKitAdapter(exp).render_code(**kw)
 
 
 def _render_pyrates_bifurcation(exp, **kw):
     from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
+
     return PyRatesBifurcationAdapter(exp).render_code(**kw)
 
 
 def _render_neuroml(exp, **kw):
     from tvbo.adapters.neuroml import NeuroMLAdapter
+
     kw.setdefault("use_standard_types", True)
     return NeuroMLAdapter(exp).render_code(**kw)
 
 
 def _render_lems(exp, **kw):
     from tvbo.adapters.neuroml import NeuroMLAdapter
+
     kw.setdefault("use_standard_types", False)
     return NeuroMLAdapter(exp).render_code(**kw)
 
 
+def _render_brian2(exp, **kw):
+    from tvbo.adapters.brian2 import Brian2Adapter
+
+    return Brian2Adapter(exp).render_code(**kw)
+
+
 def _render_rateml_python(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
+
     template = templates.lookup.get_template("rateml/tvbo-rateml-python.py.mako")
-    return format_code(template.render(model=exp.dynamics, experiment=exp, **kw),
-                       use_black=False)
+    return template.render(model=exp.dynamics, experiment=exp, **kw)
 
 
 def _render_rateml_cuda(exp, **kw):
     from tvbo.classes.experiment import templates
+
     template = templates.lookup.get_template("rateml/tvbo-rateml-cuda.c.mako")
-    return template.render(model=exp.dynamics, experiment=exp, coupling=exp.coupling, **kw)
+    return template.render(model=exp.dynamics, experiment=exp, **kw)
 
 
 def _render_rateml_driver(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
+
     template = templates.lookup.get_template("rateml/tvbo-rateml-driver.py.mako")
-    return format_code(template.render(model=exp.dynamics, experiment=exp, **kw),
-                       use_black=False)
+    return template.render(model=exp.dynamics, experiment=exp, **kw)
 
 
-# ---------------------------------------------------------------------------
 # Registration
-# ---------------------------------------------------------------------------
 
 _BUILTINS = [
     # serialisation
-    ExportFormat("yaml", "TVBO YAML", ".yaml", "application/x-yaml",
-                 _render_yaml, aliases=("tvbo", "tvbo-yaml"), supports_with_data=True),
-    ExportFormat("pyrates-yaml", "PyRates YAML", ".yaml", "application/x-yaml",
-                 _render_pyrates_yaml, aliases=("pyrates_yaml",)),
-    ExportFormat("openminds", "openMINDS JSON-LD", ".jsonld", "application/ld+json",
-                 _render_openminds, aliases=("jsonld", "json-ld")),
+    ExportFormat(
+        "yaml",
+        "TVBO YAML",
+        ".yaml",
+        "application/x-yaml",
+        _render_yaml,
+        aliases=("tvbo", "tvbo-yaml"),
+        supports_with_data=True,
+    ),
+    # No language: `to_yaml(filepath=...)` writes the file, so normalising would diverge.
+    ExportFormat(
+        "pyrates-yaml", "PyRates YAML", ".yaml", "application/x-yaml", _render_pyrates_yaml, aliases=("pyrates_yaml",)
+    ),
+    ExportFormat(
+        "openminds", "openMINDS JSON-LD", ".jsonld", "application/ld+json", _render_openminds, aliases=("jsonld", "json-ld")
+    ),
     # reports
-    ExportFormat("markdown", "Markdown report", ".md", "text/markdown",
-                 _render_markdown, aliases=("md", "report")),
-    ExportFormat("pdf", "PDF report", ".pdf", "application/pdf",
-                 _render_pdf),
+    ExportFormat("markdown", "Markdown report", ".md", "text/markdown", _render_markdown, aliases=("md", "report")),
+    ExportFormat("pdf", "PDF report", ".pdf", "application/pdf", _render_pdf),
     # standards
-    ExportFormat("neuroml", "NeuroML (standard IRI components)", ".nml",
-                 "application/xml", _render_neuroml, aliases=("nml",)),
-    ExportFormat("lems", "LEMS (custom components)", ".xml",
-                 "application/xml", _render_lems),
+    ExportFormat(
+        "neuroml",
+        "NeuroML (standard IRI components)",
+        ".nml",
+        "application/xml",
+        _render_neuroml,
+        aliases=("nml",),
+        language="xml",
+    ),
+    ExportFormat("lems", "LEMS (custom components)", ".xml", "application/xml", _render_lems, language="xml"),
     # code: python
-    ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb),
-    ExportFormat("tvboptim", "tvboptim Python", ".py", "text/x-python",
-                 _render_tvboptim, aliases=("tvb-optim",)),
-    ExportFormat("jax", "JAX Python", ".py", "text/x-python",
-                 _render_jax, aliases=("autodiff",)),
-    ExportFormat("pde", "PDE-FEM Python", ".py", "text/x-python",
-                 _render_pde, aliases=("pde-fem", "pde-python")),
+    ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb, language="python"),
+    ExportFormat(
+        "tvboptim", "tvboptim Python", ".py", "text/x-python", _render_tvboptim, aliases=("tvb-optim",), language="python"
+    ),
+    ExportFormat("jax", "JAX Python", ".py", "text/x-python", _render_jax, aliases=("autodiff",), language="python"),
+    ExportFormat(
+        "pde", "PDE-FEM Python", ".py", "text/x-python", _render_pde, aliases=("pde-fem", "pde-python"), language="python"
+    ),
+    ExportFormat(
+        "brian2", "Brian2 Python (spiking)", ".py", "text/x-python", _render_brian2, aliases=("brian",), language="python"
+    ),
     # code: julia
-    ExportFormat("julia", "Julia (DifferentialEquations.jl)", ".jl", "text/plain",
-                 _render_julia, aliases=("diffeq", "differentialequations")),
-    ExportFormat("networkdynamics", "NetworkDynamics.jl", ".jl", "text/plain",
-                 _render_networkdynamics, aliases=("nd", "networkdynamics.jl")),
-    ExportFormat("modelingtoolkit", "ModelingToolkit.jl", ".jl", "text/plain",
-                 _render_modelingtoolkit, aliases=("mtk", "modelingtoolkit.jl")),
-    ExportFormat("bifurcationkit", "BifurcationKit.jl", ".jl", "text/plain",
-                 _render_bifurcationkit,
-                 aliases=("bifurcationkit.jl", "bifurcation", "bifurcation-julia")),
-    ExportFormat("pyrates-bifurcation", "PyRates / AUTO-07p bifurcation", ".py",
-                 "text/x-python", _render_pyrates_bifurcation,
-                 aliases=("pyrates-bif", "pycobi", "bifurcation-pyrates",
-                          "auto", "auto-07p")),
+    ExportFormat(
+        "julia",
+        "Julia (DifferentialEquations.jl)",
+        ".jl",
+        "text/plain",
+        _render_julia,
+        aliases=("diffeq", "differentialequations"),
+        language="julia",
+    ),
+    ExportFormat(
+        "networkdynamics",
+        "NetworkDynamics.jl",
+        ".jl",
+        "text/plain",
+        _render_networkdynamics,
+        aliases=("nd", "networkdynamics.jl"),
+        language="julia",
+    ),
+    ExportFormat(
+        "modelingtoolkit",
+        "ModelingToolkit.jl",
+        ".jl",
+        "text/plain",
+        _render_modelingtoolkit,
+        aliases=("mtk", "modelingtoolkit.jl"),
+        language="julia",
+    ),
+    ExportFormat(
+        "bifurcationkit",
+        "BifurcationKit.jl",
+        ".jl",
+        "text/plain",
+        _render_bifurcationkit,
+        aliases=("bifurcationkit.jl", "bifurcation", "bifurcation-julia"),
+        language="julia",
+    ),
+    ExportFormat(
+        "pyrates-bifurcation",
+        "PyRates / AUTO-07p bifurcation",
+        ".py",
+        "text/x-python",
+        _render_pyrates_bifurcation,
+        aliases=("pyrates-bif", "pycobi", "bifurcation-pyrates", "auto", "auto-07p"),
+        language="python",
+    ),
     # code: rateml
-    ExportFormat("rateml", "RateML Python (Numba gufunc)", ".py", "text/x-python",
-                 _render_rateml_python, aliases=("rateml-python",)),
-    ExportFormat("rateml-cuda", "RateML CUDA kernel", ".c", "text/x-c",
-                 _render_rateml_cuda, aliases=("cuda",)),
-    ExportFormat("rateml-driver", "RateML PyCUDA driver", ".py", "text/x-python",
-                 _render_rateml_driver),
+    ExportFormat(
+        "rateml",
+        "RateML Python (Numba gufunc)",
+        ".py",
+        "text/x-python",
+        _render_rateml_python,
+        aliases=("rateml-python",),
+        language="python",
+    ),
+    ExportFormat("rateml-cuda", "RateML CUDA kernel", ".c", "text/x-c", _render_rateml_cuda, aliases=("cuda",), language="c"),
+    ExportFormat("rateml-driver", "RateML PyCUDA driver", ".py", "text/x-python", _render_rateml_driver, language="python"),
 ]
 
 

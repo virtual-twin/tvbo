@@ -1,0 +1,36 @@
+function UlamRing4!(dx, x, p, t = 0)
+
+    (;eps,) = p
+
+    x0, x1, x2, x3 = x
+
+
+    dx[1] = 2 .- (eps .* x3 .+ x0 .* (1 .- eps)) .^ 2
+    dx[2] = 2 .- (eps .* x0 .+ x1 .* (1 .- eps)) .^ 2
+    dx[3] = 2 .- (eps .* x1 .+ x2 .* (1 .- eps)) .^ 2
+    dx[4] = 2 .- (eps .* x2 .+ x3 .* (1 .- eps)) .^ 2
+    dx
+end
+
+# Parameter values
+p = (eps = 0.6,)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.5403023058681398,
+        0.8414709848078965,
+        -0.4161468365471424,
+        -0.9899924966004454,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(UlamRing4!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

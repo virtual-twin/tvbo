@@ -156,14 +156,12 @@ derived_variables:
       lhs: sigma_y0_1
       rhs: 2.0*nu_max/(exp(r*(-J*a_1*y0 + v0)) + 1.0)
       latex: false
-    conditional: false
   sigma_y0_3:
     description: Sigmoid function that transforms the average membrane potential of the PCs populations (y0) into an average firing rate to the inhibitory interneurons IINs.
     equation:
       lhs: sigma_y0_3
       rhs: 2.0*nu_max/(exp(r*(-J*a_3*y0 + v0)) + 1.0)
       latex: false
-    conditional: false
   sigma_y1_y2:
     description: 'Sigmoid function that transforms the average membrane potential of the interneurons populations (y1-y2)
 
@@ -172,7 +170,6 @@ derived_variables:
       lhs: sigma_y1_y2
       rhs: 2.0*nu_max/(exp(r*(v0 - y1 + y2)) + 1.0)
       latex: false
-    conditional: false
 coupling_inputs:
   c_glob: {}
   local_coupling: {local: true}

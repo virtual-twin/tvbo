@@ -1,0 +1,33 @@
+import numpy as np
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    I = _p.I
+    V3 = _p.V3
+    V1 = _p.V1
+    V2 = _p.V2
+    V4 = _p.V4
+    VCa = _p.VCa
+    VL = _p.VL
+    VK = _p.VK
+    gCa = _p.gCa
+    gK = _p.gK
+    gL = _p.gL
+    tau = _p.tau
+
+    # State variables
+    V = current_state[0]
+    N = current_state[1]
+
+    # Derived variables
+    G = 0.5 + 0.5 * np.tanh((V - V3) / V4)
+    M = 0.5 + 0.5 * np.tanh((V - V1) / V2)
+
+    # Derivatives
+    dV_dt = I - gL * (V - VL) - M * gCa * (V - VCa) - N * gK * (V - VK)
+    dN_dt = (G - N) / tau
+
+    derivatives = np.array(np.broadcast_arrays(dV_dt, dN_dt))
+
+    return derivatives

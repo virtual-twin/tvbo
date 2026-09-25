@@ -1,0 +1,714 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class ZerlautAdaptationSecondOrder(AbstractDynamics):
+    """ZerlautAdaptationSecondOrder neural mass model."""
+
+    STATE_NAMES = ("E", "I", "C_ee", "C_ei", "C_ii", "W_e", "W_i", "ou_drift")
+    INITIAL_STATE = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    AUXILIARY_NAMES = (
+        "E_input_excitatory",
+        "E_input_inhibitory",
+        "I_input_excitatory",
+        "I_input_inhibitory",
+        "TFe",
+        "TFi",
+        "d2_fefi_e",
+        "d2_fefi_i",
+        "d2_fife_e",
+        "d2_fife_i",
+        "dfe_TFe",
+        "dfe_TFi",
+        "dfi_TFe",
+        "dfi_TFi",
+        "muV_e",
+        "muV_i",
+        "d2_fefe_e",
+        "d2_fefe_i",
+        "d2_fifi_e",
+        "d2_fifi_i",
+    )
+
+    DEFAULT_PARAMS = Bunch(
+        C_m=200.0,
+        E_L_e=-65.0,
+        E_L_i=-65.0,
+        E_e=0.0,
+        E_i=-80.0,
+        K_ext_e=400.0,
+        K_ext_i=0.0,
+        N_tot=10000.0,
+        P_e0=-0.04983106,
+        P_e1=0.005063550882777035,
+        P_e2=-0.023470121807314552,
+        P_e3=0.0022951513725067503,
+        P_e4=-0.0004105302652029825,
+        P_e5=0.010547051343547399,
+        P_e6=-0.03659252821136933,
+        P_e7=0.007437487505797858,
+        P_e8=0.001265064721846073,
+        P_e9=-0.04072161294490446,
+        P_i0=-0.05149122024209484,
+        P_i1=0.004003689190271077,
+        P_i2=-0.008352013668528155,
+        P_i3=0.0002414237992765705,
+        P_i4=-0.0005070645080016026,
+        P_i5=0.0014345394104282397,
+        P_i6=-0.014686689498949967,
+        P_i7=0.004502706285435741,
+        P_i8=0.0028472190352532454,
+        P_i9=-0.015357804594594548,
+        Q_e=1.5,
+        Q_i=5.0,
+        S_i=1.0,
+        T=20.0,
+        a_e=4.0,
+        a_i=0.0,
+        b_e=60.0,
+        b_i=0.0,
+        external_input_ex_ex=0.0,
+        external_input_ex_in=0.0,
+        external_input_in_ex=0.0,
+        external_input_in_in=0.0,
+        g=0.2,
+        g_L=10.0,
+        p_connect_e=0.05,
+        p_connect_i=0.05,
+        tau_OU=5.0,
+        tau_e=5.0,
+        tau_i=5.0,
+        tau_w_e=500.0,
+        tau_w_i=1.0,
+        weight_noise=10.5,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+        "local_coupling": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        C_m = params.C_m
+        E_L_e = params.E_L_e
+        E_L_i = params.E_L_i
+        E_e = params.E_e
+        E_i = params.E_i
+        K_ext_e = params.K_ext_e
+        K_ext_i = params.K_ext_i
+        N_tot = params.N_tot
+        P_e0 = params.P_e0
+        P_e1 = params.P_e1
+        P_e2 = params.P_e2
+        P_e3 = params.P_e3
+        P_e4 = params.P_e4
+        P_e5 = params.P_e5
+        P_e6 = params.P_e6
+        P_e7 = params.P_e7
+        P_e8 = params.P_e8
+        P_e9 = params.P_e9
+        P_i0 = params.P_i0
+        P_i1 = params.P_i1
+        P_i2 = params.P_i2
+        P_i3 = params.P_i3
+        P_i4 = params.P_i4
+        P_i5 = params.P_i5
+        P_i6 = params.P_i6
+        P_i7 = params.P_i7
+        P_i8 = params.P_i8
+        P_i9 = params.P_i9
+        Q_e = params.Q_e
+        Q_i = params.Q_i
+        S_i = params.S_i
+        T = params.T
+        a_e = params.a_e
+        a_i = params.a_i
+        b_e = params.b_e
+        b_i = params.b_i
+        external_input_ex_ex = params.external_input_ex_ex
+        external_input_ex_in = params.external_input_ex_in
+        external_input_in_ex = params.external_input_in_ex
+        external_input_in_in = params.external_input_in_in
+        g = params.g
+        g_L = params.g_L
+        p_connect_e = params.p_connect_e
+        p_connect_i = params.p_connect_i
+        tau_OU = params.tau_OU
+        tau_e = params.tau_e
+        tau_i = params.tau_i
+        tau_w_e = params.tau_w_e
+        tau_w_i = params.tau_w_i
+        weight_noise = params.weight_noise
+
+        E = state[0]
+        I = state[1]
+        C_ee = state[2]
+        C_ei = state[3]
+        C_ii = state[4]
+        W_e = state[5]
+        W_i = state[6]
+        ou_drift = state[7]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+        local_coupling = (
+            jnp.atleast_1d(coupling.local_coupling)[0]
+            if hasattr(coupling, "local_coupling")
+            else 0.0
+        )
+
+        def muV(fe, fi, fe_ext, fi_ext, W, E_leak):
+            return (
+                Q_e
+                * tau_e
+                * ((fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot + fe_ext * K_ext_e)
+                * E_e
+                + Q_i
+                * tau_i
+                * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                * E_i
+                + g_L * E_leak
+                - W
+            ) / (
+                g_L
+                + Q_e
+                * tau_e
+                * ((fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot + fe_ext * K_ext_e)
+                + Q_i
+                * tau_i
+                * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+            )
+
+        def sigmaV(fe, fi, fe_ext, fi_ext, W, E_leak):
+            return jnp.sqrt(
+                ((fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot + fe_ext * K_ext_e)
+                * (
+                    Q_e
+                    * (E_e - muV(fe, fi, fe_ext, fi_ext, W, E_leak))
+                    * tau_e
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                            + fe_ext * K_ext_e
+                        )
+                        + Q_i
+                        * tau_i
+                        * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                    )
+                )
+                ** 2
+                / (
+                    (
+                        2.0
+                        * (
+                            tau_e
+                            + C_m
+                            / (
+                                g_L
+                                + Q_e
+                                * tau_e
+                                * (
+                                    (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                                    + fe_ext * K_ext_e
+                                )
+                                + Q_i
+                                * tau_i
+                                * (
+                                    (fi + 1.0e-6) * g * p_connect_i * N_tot
+                                    + fi_ext * K_ext_i
+                                )
+                            )
+                        )
+                    )
+                )
+                + ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                * (
+                    Q_i
+                    * (E_i - muV(fe, fi, fe_ext, fi_ext, W, E_leak))
+                    * tau_i
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                            + fe_ext * K_ext_e
+                        )
+                        + Q_i
+                        * tau_i
+                        * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                    )
+                )
+                ** 2
+                / (
+                    (
+                        2.0
+                        * (
+                            tau_i
+                            + C_m
+                            / (
+                                g_L
+                                + Q_e
+                                * tau_e
+                                * (
+                                    (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                                    + fe_ext * K_ext_e
+                                )
+                                + Q_i
+                                * tau_i
+                                * (
+                                    (fi + 1.0e-6) * g * p_connect_i * N_tot
+                                    + fi_ext * K_ext_i
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+
+        def T_V(fe, fi, fe_ext, fi_ext, W, E_leak):
+            return (
+                ((fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot + fe_ext * K_ext_e)
+                * (
+                    Q_e
+                    * (E_e - muV(fe, fi, fe_ext, fi_ext, W, E_leak))
+                    * tau_e
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                            + fe_ext * K_ext_e
+                        )
+                        + Q_i
+                        * tau_i
+                        * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                    )
+                )
+                ** 2
+                + ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                * (
+                    Q_i
+                    * (E_i - muV(fe, fi, fe_ext, fi_ext, W, E_leak))
+                    * tau_i
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                            + fe_ext * K_ext_e
+                        )
+                        + Q_i
+                        * tau_i
+                        * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                    )
+                )
+                ** 2
+            ) / (
+                ((fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot + fe_ext * K_ext_e)
+                * (
+                    Q_e
+                    * (E_e - muV(fe, fi, fe_ext, fi_ext, W, E_leak))
+                    * tau_e
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                            + fe_ext * K_ext_e
+                        )
+                        + Q_i
+                        * tau_i
+                        * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                    )
+                )
+                ** 2
+                / (
+                    tau_e
+                    + C_m
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                            + fe_ext * K_ext_e
+                        )
+                        + Q_i
+                        * tau_i
+                        * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                    )
+                )
+                + ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                * (
+                    Q_i
+                    * (E_i - muV(fe, fi, fe_ext, fi_ext, W, E_leak))
+                    * tau_i
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                            + fe_ext * K_ext_e
+                        )
+                        + Q_i
+                        * tau_i
+                        * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                    )
+                )
+                ** 2
+                / (
+                    tau_i
+                    + C_m
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            (fe + 1.0e-6) * (1.0 - g) * p_connect_e * N_tot
+                            + fe_ext * K_ext_e
+                        )
+                        + Q_i
+                        * tau_i
+                        * ((fi + 1.0e-6) * g * p_connect_i * N_tot + fi_ext * K_ext_i)
+                    )
+                )
+            )
+
+        def TF_e(fe, fi, fe_ext, fi_ext, W):
+            return jsp.special.erfc(
+                (
+                    (
+                        P_e0
+                        + P_e1 * (muV(fe, fi, fe_ext, fi_ext, W, E_L_e) + 60.0) / 10.0
+                        + P_e2 * (sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e) - 4.0) / 6.0
+                        + P_e3
+                        * (T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) * g_L / C_m - 0.5)
+                        / 1.0
+                        + P_e4
+                        * ((muV(fe, fi, fe_ext, fi_ext, W, E_L_e) + 60.0) / 10.0) ** 2
+                        + P_e5
+                        * ((sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e) - 4.0) / 6.0) ** 2
+                        + P_e6
+                        * (
+                            (T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) * g_L / C_m - 0.5)
+                            / 1.0
+                        )
+                        ** 2
+                        + P_e7
+                        * (muV(fe, fi, fe_ext, fi_ext, W, E_L_e) + 60.0)
+                        * (sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e) - 4.0)
+                        / (10.0 * 6.0)
+                        + P_e8
+                        * (muV(fe, fi, fe_ext, fi_ext, W, E_L_e) + 60.0)
+                        * (T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) * g_L / C_m - 0.5)
+                        / (10.0 * 1.0)
+                        + P_e9
+                        * (sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e) - 4.0)
+                        * (T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) * g_L / C_m - 0.5)
+                        / (6.0 * 1.0)
+                    )
+                    * 1000.0
+                    - muV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                )
+                / ((jnp.sqrt(2.0) * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)))
+            ) / ((2.0 * T_V(fe, fi, fe_ext, fi_ext, W, E_L_e)))
+
+        def TF_i(fe, fi, fe_ext, fi_ext, W):
+            return jsp.special.erfc(
+                (
+                    (
+                        P_i0
+                        + P_i1 * (muV(fe, fi, fe_ext, fi_ext, W, E_L_i) + 60.0) / 10.0
+                        + P_i2 * (sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i) - 4.0) / 6.0
+                        + P_i3
+                        * (T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) * g_L / C_m - 0.5)
+                        / 1.0
+                        + P_i4
+                        * ((muV(fe, fi, fe_ext, fi_ext, W, E_L_i) + 60.0) / 10.0) ** 2
+                        + P_i5
+                        * ((sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i) - 4.0) / 6.0) ** 2
+                        + P_i6
+                        * (
+                            (T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) * g_L / C_m - 0.5)
+                            / 1.0
+                        )
+                        ** 2
+                        + P_i7
+                        * (muV(fe, fi, fe_ext, fi_ext, W, E_L_i) + 60.0)
+                        * (sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i) - 4.0)
+                        / (10.0 * 6.0)
+                        + P_i8
+                        * (muV(fe, fi, fe_ext, fi_ext, W, E_L_i) + 60.0)
+                        * (T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) * g_L / C_m - 0.5)
+                        / (10.0 * 1.0)
+                        + P_i9
+                        * (sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i) - 4.0)
+                        * (T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) * g_L / C_m - 0.5)
+                        / (6.0 * 1.0)
+                    )
+                    * 1000.0
+                    - muV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                )
+                / ((jnp.sqrt(2.0) * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)))
+            ) / ((2.0 * T_V(fe, fi, fe_ext, fi_ext, W, E_L_i)))
+
+        E_input_excitatory = jnp.where(
+            jnp.less(
+                c_glob
+                + local_coupling * E
+                + external_input_ex_ex
+                + weight_noise * ou_drift,
+                0,
+            ),
+            0.0,
+            c_glob
+            + local_coupling * E
+            + external_input_ex_ex
+            + weight_noise * ou_drift,
+        )
+        E_input_inhibitory = jnp.where(
+            jnp.less(
+                S_i * c_glob
+                + local_coupling * E
+                + external_input_in_ex
+                + weight_noise * ou_drift,
+                0,
+            ),
+            0.0,
+            S_i * c_glob
+            + local_coupling * E
+            + external_input_in_ex
+            + weight_noise * ou_drift,
+        )
+        I_input_excitatory = local_coupling * I + external_input_ex_in
+        I_input_inhibitory = local_coupling * I + external_input_in_in
+        TFe = TF_e(E, I, E_input_excitatory, I_input_excitatory, W_e)
+        TFi = TF_i(E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+        d2_fefi_e = (
+            (
+                TF_e(
+                    E + 1.0e-7, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e
+                )
+                - TF_e(
+                    E - 1.0e-7, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e
+                )
+            )
+            / ((2 * 1.0e-7 * 1000.0))
+            - (
+                TF_e(
+                    E + 1.0e-7, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e
+                )
+                - TF_e(
+                    E - 1.0e-7, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e
+                )
+            )
+            / (2 * 1.0e-7 * 1000.0)
+        ) / ((2 * 1.0e-7 * 1000.0))
+        d2_fefi_i = (
+            (
+                TF_i(
+                    E + 1.0e-7, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i
+                )
+                - TF_i(
+                    E - 1.0e-7, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i
+                )
+            )
+            / ((2 * 1.0e-7 * 1000.0))
+            - (
+                TF_i(
+                    E + 1.0e-7, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i
+                )
+                - TF_i(
+                    E - 1.0e-7, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i
+                )
+            )
+            / (2 * 1.0e-7 * 1000.0)
+        ) / ((2 * 1.0e-7 * 1000.0))
+        d2_fife_e = (
+            (
+                TF_e(
+                    E + 1.0e-7, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e
+                )
+                - TF_e(
+                    E + 1.0e-7, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e
+                )
+            )
+            / ((2 * 1.0e-7 * 1000.0))
+            - (
+                TF_e(
+                    E - 1.0e-7, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e
+                )
+                - TF_e(
+                    E - 1.0e-7, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e
+                )
+            )
+            / (2 * 1.0e-7 * 1000.0)
+        ) / ((2 * 1.0e-7 * 1000.0))
+        d2_fife_i = (
+            (
+                TF_i(
+                    E + 1.0e-7, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i
+                )
+                - TF_i(
+                    E + 1.0e-7, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i
+                )
+            )
+            / ((2 * 1.0e-7 * 1000.0))
+            - (
+                TF_i(
+                    E - 1.0e-7, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i
+                )
+                - TF_i(
+                    E - 1.0e-7, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i
+                )
+            )
+            / (2 * 1.0e-7 * 1000.0)
+        ) / ((2 * 1.0e-7 * 1000.0))
+        dfe_TFe = (
+            TF_e(E + 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e)
+            - TF_e(E - 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e)
+        ) / ((2 * 1.0e-7 * 1000.0))
+        dfe_TFi = (
+            TF_i(E + 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i)
+            - TF_i(E - 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i)
+        ) / ((2 * 1.0e-7 * 1000.0))
+        dfi_TFe = (
+            TF_e(E, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e)
+            - TF_e(E, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e)
+        ) / ((2 * 1.0e-7 * 1000.0))
+        dfi_TFi = (
+            TF_i(E, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i)
+            - TF_i(E, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i)
+        ) / ((2 * 1.0e-7 * 1000.0))
+        muV_e = muV(E, I, E_input_excitatory, I_input_excitatory, W_e, E_L_e)
+        muV_i = muV(E, I, E_input_inhibitory, I_input_inhibitory, W_i, E_L_i)
+        d2_fefe_e = (
+            TF_e(E + 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e)
+            - 2 * TFe
+            + TF_e(E - 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e)
+        ) / (1.0e-7 * 1000.0) ** 2
+        d2_fefe_i = (
+            TF_i(E + 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i)
+            - 2 * TFi
+            + TF_i(E - 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i)
+        ) / (1.0e-7 * 1000.0) ** 2
+        d2_fifi_e = (
+            TF_e(E, I + 1.0e-7, E_input_excitatory, I_input_excitatory, W_e)
+            - 2 * TFe
+            + TF_e(E, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e)
+        ) / (1.0e-7 * 1000.0) ** 2
+        d2_fifi_i = (
+            TF_i(E, I + 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i)
+            - 2 * TFi
+            + TF_i(E, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i)
+        ) / (1.0e-7 * 1000.0) ** 2
+
+        dE_dt = (
+            TFe
+            - E
+            + 0.5 * C_ee * d2_fefe_e
+            + 0.5 * C_ei * d2_fefi_e
+            + 0.5 * C_ei * d2_fife_e
+            + 0.5 * C_ii * d2_fifi_e
+        ) / T
+        dI_dt = (
+            TFi
+            - I
+            + 0.5 * C_ee * d2_fefe_i
+            + 0.5 * C_ei * d2_fefi_i
+            + 0.5 * C_ei * d2_fife_i
+            + 0.5 * C_ii * d2_fifi_i
+        ) / T
+        dC_ee_dt = (
+            TFe * (1.0 / T - TFe) / ((N_tot * (1.0 - g)))
+            + (TFe - E) ** 2
+            + 2.0 * C_ee * dfe_TFe
+            + 2.0 * C_ei * dfi_TFe
+            - 2.0 * C_ee
+        ) / T
+        dC_ei_dt = (
+            (TFe - E) * (TFi - I)
+            + C_ee * dfe_TFe
+            + C_ei * dfe_TFi
+            + C_ei * dfi_TFe
+            + C_ii * dfi_TFi
+            - 2.0 * C_ei
+        ) / T
+        dC_ii_dt = (
+            TFi * (1.0 / T - TFi) / ((N_tot * g))
+            + (TFi - I) ** 2
+            + 2.0 * C_ii * dfi_TFi
+            + 2.0 * C_ei * dfe_TFi
+            - 2.0 * C_ii
+        ) / T
+        dW_e_dt = (-W_e) / tau_w_e + b_e * E + a_e * (muV_e - E_L_e) / tau_w_e
+        dW_i_dt = (-W_i) / tau_w_i + b_i * I + a_i * (muV_i - E_L_i) / tau_w_i
+        dou_drift_dt = (-ou_drift) / tau_OU
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dE_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dE_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dI_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dC_ee_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dC_ei_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dC_ii_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dW_e_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dW_i_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dou_drift_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(E_input_excitatory), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(E_input_inhibitory), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(I_input_excitatory), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(I_input_inhibitory), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(TFe), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(TFi), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(d2_fefi_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(d2_fefi_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(d2_fife_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(d2_fife_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dfe_TFe), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dfe_TFi), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dfi_TFe), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dfi_TFi), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(muV_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(muV_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(d2_fefe_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(d2_fefe_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(d2_fifi_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(d2_fifi_i), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

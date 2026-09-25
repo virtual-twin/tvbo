@@ -1,0 +1,179 @@
+---
+title: "Output Specification"
+subtitle: "Declarative definition of simulation outputs in TVBO"
+format:
+  html:
+    code-fold: false
+aliases:
+  - /Specification/Output.html
+---
+
+## Overview
+
+The `output` attribute in TVBO model specifications defines which variables are included in simulation results. This is a **declarative approach** that explicitly specifies what the user wants to observe from the simulation.
+
+## Output Format
+
+The `output` field is a list of string references to either:
+
+1. **State variables** - Variables that are integrated during simulation
+2. **Derived variables** - Variables computed from state variables (not integrated)
+
+```yaml
+# Example: Output both state and derived variables
+state_variables:
+    x:
+        equation:
+            rhs: a * x
+    y:
+        equation:
+            rhs: b * y
+
+derived_variables:
+    x_squared:
+        equation:
+            rhs: x**2
+    signal:
+        equation:
+            rhs: x + y
+
+output:
+    - x           # State variable (integrated)
+    - x_squared   # Derived variable (computed post-integration)
+    - signal      # Another derived variable
+```
+
+## How it Works
+
+During simulation:
+
+1. **Integration phase**: Only state variables (`x`, `y`) are integrated using the numerical scheme
+2. **Output phase**: After integration, the output variables are extracted:
+   - State variables are indexed directly from the integration trace
+   - Derived variables are computed from the state variables in the trace
+
+This means derived variables in `output` are computed **outside** the integration loop, from the full time series of state variables.
+
+## Example: Simple Dynamical System
+
+Let's create and run a simple experiment to demonstrate the output format.
+
+```{python}
+#| label: setup
+#| code-fold: true
+from tvbo import Dynamics
+from tvbo.classes.experiment import SimulationExperiment
+import tempfile
+import os
+```
+
+### Define a Simple Model
+
+We'll create a damped harmonic oscillator with both state variables and derived outputs:
+
+```{python}
+#| label: model-definition
+yaml_content = """
+name: DampedOscillator
+description: "Simple damped harmonic oscillator with derived output"
+
+parameters:
+    omega:
+        value: 1.0
+        description: "Natural frequency"
+    gamma:
+        value: 0.1
+        description: "Damping coefficient"
+
+state_variables:
+    x:
+        description: "Position"
+        equation:
+            rhs: v
+        initial_value: 1.0
+    v:
+        description: "Velocity"
+        equation:
+            rhs: -omega**2 * x - gamma * v
+        initial_value: 0.0
+
+derived_variables:
+    energy:
+        description: "Total energy (kinetic + potential)"
+        equation:
+            rhs: 0.5 * v**2 + 0.5 * omega**2 * x**2
+
+output:
+    - x        # Position (state variable)
+    - v        # Velocity (state variable)
+    - energy   # Total energy (derived variable)
+"""
+
+# Save to temp file and load
+with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+    f.write(yaml_content)
+    temp_path = f.name
+
+model = Dynamics.from_file(temp_path)
+print(f"Model: {model.name}")
+print(f"State variables: {list(model.state_variables.keys())}")
+print(f"Derived variables: {list(model.derived_variables.keys())}")
+print(f"Output: {model.output}")
+```
+
+### Create and Run Experiment
+
+```{python}
+#| label: run-experiment
+#| warning: false
+exp = SimulationExperiment(dynamics=model)
+
+# Run the simulation using JAX backend
+res = exp.run('jax')
+print(f"Result type: {type(res).__name__}")
+print(f"Result shape: {res.data.shape}")
+print(f"Time points: {len(res.time)}")
+```
+
+### Visualize Results
+
+```{python}
+#| label: plot-results
+#| fig-cap: "Damped oscillator simulation showing position, velocity, and energy"
+res.plot()
+```
+
+### Inspect Output Variables
+
+The result contains exactly what was specified in `output`:
+
+```{python}
+#| label: inspect-output
+# Access the labels
+if hasattr(res, 'labels_dimensions') and res.labels_dimensions:
+    print("Output variables:", res.labels_dimensions.get("State Variable", []))
+```
+
+## Key Points
+
+1. **`output` is the declarative specification** - it defines exactly what appears in results
+2. **No duplication** - each variable appears once in the output
+3. **Derived variables are computed post-integration** - they are not part of the integration state
+4. **State variables can be outputs** - they are simply indexed from the integration trace
+5. **If `output` is empty**, all state variables are returned (backwards compatibility)
+
+## Comparison: State vs Derived in Output
+
+| Variable Type | In Integration? | In Output |
+|--------------|-----------------|-----------|
+| State variable in `output` | ✅ Integrated | ✅ Indexed from trace |
+| Derived variable in `output` | ❌ Not integrated | ✅ Computed from trace |
+| State variable NOT in `output` | ✅ Integrated | ❌ Not in result |
+
+## Cleanup
+
+```{python}
+#| label: cleanup
+#| code-fold: true
+os.unlink(temp_path)
+```

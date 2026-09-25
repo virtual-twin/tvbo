@@ -1,224 +1,193 @@
-"""User-facing `SimulationStudy` class for grouping related experiments.
+(
+    """What a study run produces, and the public import location for ``SimulationStudy``.
 
-Provides a thin wrapper around the generated datamodel that adds loading
-helpers (YAML files, the tvbo database, openMINDS JSON-LD), citation
-formatting, and access to individual `SimulationExperiment`s.
+`StudyResult` and `FigureImage` are what a run hands back — plain objects, not records. The study class itself is the generated one; what it does lives in :mod:`tvbo.behaviour.study`.
 """
+    ""
+)
 
-from tvbo.utils import yaml_loader
+import os
+from collections.abc import Mapping
+from dataclasses import dataclass
+from pathlib import Path
 
 from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.classes import experiment
-from tvbo.utils import report
 
 
-class SimulationStudy(tvbo_datamodel.SimulationStudy):
-    """A collection of related `SimulationExperiment`s with shared provenance.
+@dataclass(frozen=True)
+class FigureImage:
+    """One figure a study run rendered: the image, the self-contained script that drew it, and an inline representation.
 
-    Aggregates the experiments behind a published paper or analysis (model,
-    DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
-    Load with `from_db(name)` for curated studies, `from_file(path)` for
-    local YAML, or `from_openminds(...)` for JSON-LD provenance graphs.
-
-    The most-used entry points are
-    [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment)
-    to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite)
-    for the formatted citation, and
-    [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for
-    JSON-LD export.
+    ``_repr_png_`` / ``_repr_svg_`` are what a notebook or Quarto cell calls, so the cell that ran the study also shows what it drew and a page never writes its own image reference. The object is a :class:`os.PathLike`, so it still passes anywhere a path does.
     """
 
-    def __repr__(self) -> str:
-        key = self.key or "?"
-        title = self.title or "Untitled Study"
-        year = getattr(self, "year", "n.d.")
-        doi = self.doi or "n/a"
-        exps = getattr(self, "experiments", {}) or {}
-        n_exp = len(exps)
-        model_name = str(self.model) if self.model else "n/a"
+    name: str
+    path: Path
+    script: Path | None = None
+    caption: str | None = None
+
+    def __fspath__(self) -> str:
+        return str(self.path)
+
+    def _repr_png_(self):
+        return self.path.read_bytes() if self.path.suffix.lower() == ".png" and self.path.is_file() else None
+
+    def _repr_svg_(self):
+        return self.path.read_text(encoding="utf-8") if self.path.suffix.lower() == ".svg" and self.path.is_file() else None
+
+    def _repr_html_(self):
+        """An animated figure inline, for the movie kinds a notebook cannot show as a still image.
+
+        Embedded rather than linked: the page that displays it is rendered once and read from somewhere else, so a relative path out of a cached notebook would resolve against whatever directory the reader happens to be in.
+        """
+        import base64
+        from html import escape
+
+        suffix = self.path.suffix.lower()
+        if suffix not in (".gif", ".mp4") or not self.path.is_file():
+            return None
+        data = base64.b64encode(self.path.read_bytes()).decode("ascii")
+        if suffix == ".gif":
+            return f'<img src="data:image/gif;base64,{data}" alt="{escape(self.name)}" style="max-width:100%;height:auto" />'
         return (
-            f"SimulationStudy(\n"
-            f"  key={key!r},\n"
-            f"  title={title!r},\n"
-            f"  year={year}, doi={doi!r},\n"
-            f"  model={model_name!r}, experiments={n_exp}\n"
-            f")"
+            '<video controls loop muted playsinline style="max-width:100%;height:auto">'
+            f'<source src="data:video/mp4;base64,{data}" type="video/mp4"></video>'
         )
 
-    @classmethod
-    def from_file(cls, filepath):
-        """Load a study from a local YAML file.
 
-        The resolved absolute path is stored on the returned instance so that
-        experiments materialised later can locate sibling data files.
+class StudyResult(Mapping):
+    """What one :meth:`SimulationStudy.run` produced — the study-level counterpart of the :class:`~tvbo.data.types.ExperimentResult` a single experiment's ``run()`` returns.
 
-        Args:
-            filepath: Path to the study YAML file.
+    A mapping from experiment to that experiment's outputs, read back from the same container the study's figures read, so a page and the figure it shows cannot report different numbers. Keys are the ``exp-<id>`` spelling the recipe's ``id:`` gives each experiment, which is also the name of the container on disk; the experiment's ``label`` reaches it too, and so does the bare id a figure layer writes (``used: {experiment: 2}``). A bare integer is accepted for that last reason and no other: it is the id, never a position in the list.
 
-        Returns:
-            A `SimulationStudy` parsed from the file.
+    Each entry is an :class:`xarray.DataTree` in the recipe's own shape rather than the container's flat one, so an output is reached along the path it was declared at::
+
+        results["exp-1"].optimizations.spectral_gradient_fit.observations.peak_frequencies
+
+    Being a tree rather than a bag of attributes is what keeps the run an xarray object end to end: the node labels are declared once at the root and inherited by every group, one ``.sel`` reaches every per-node output at once, and an analysis can write back out what it derived.
+
+    :meth:`dataset` hands back the underlying :class:`xarray.Dataset` for anyone who wants the flat names, :meth:`analysis` reaches an analysis container by name, :meth:`figure` a rendered figure by name, and :meth:`report` the study's Methods section. Containers are read on first access and cached.
+    """
+
+    def __init__(self, study, root: Path, results_root: Path, experiments, figures, studies=None):
+        from tvbo.data.dataref import experiment_id
+
+        self.study = study
+        self.studies = dict(studies or {})
+        """Each nested study's own result, keyed by the label it goes by — empty unless this is a study-of-studies.
+
+        Nested rather than merged into this mapping, because that is the shape the recipe has and the shape the results have on disk: a sub-study keeps its own results root, and two sub-studies both declaring ``exp-1`` are two different experiments.
         """
-        from pathlib import Path
-        import yaml
+        self.root = Path(root)
+        self.results_root = Path(results_root)
+        self._figures = {f.name: f for f in figures}
+        self._open: dict[str, object] = {}
+        self._keys: list[str] = []
+        self._by_alias: dict[str, str] = {}
+        for exp in experiments or []:
+            eid = experiment_id(getattr(exp, "id", exp))
+            if eid is None:
+                continue
+            key = f"exp-{eid}"
+            self._keys.append(key)
+            for alias in (key, eid, getattr(exp, "label", None)):
+                if alias:
+                    self._by_alias[str(alias)] = key
 
-        study = yaml_loader.load(filepath, cls)
-        study._source_file = str(Path(filepath).resolve())
-        # Keep the raw (anchor-resolved) experiment dicts so experiments can be
-        # materialised through SimulationExperiment.from_string — that path
-        # iri-sources dynamics/coupling from the registry, which loading the
-        # datamodel object directly does not.
+    def _dataset(self, path: Path):
+        """The container at *path*, read into memory once and kept.
+
+        Read rather than opened: an open HDF5 handle holds a lock, and a result object that outlives its cell — which every notebook one does — would block the next run from rewriting the container it is holding.
+        """
+        import xarray as xr
+
+        key = str(path)
+        if key not in self._open:
+            with xr.open_dataset(path, engine="h5netcdf") as ds:
+                self._open[key] = ds.load()
+        return self._open[key]
+
+    def _container(self, key) -> Path:
+        """Path to the container of the experiment *key* names, in any spelling the recipe uses."""
+        from tvbo.data.dataref import locate_exp_container
+
+        resolved = self._by_alias.get(str(getattr(key, "id", key)))
+        if resolved is None:
+            raise KeyError(
+                f"{key!r} names no experiment in this study. It declares {self._keys}, "
+                f"reachable by that key, by its label, or by the bare id a figure layer writes."
+            )
+        return locate_exp_container(self.results_root, resolved.removeprefix("exp-"))
+
+    def __getitem__(self, key):
+        """Experiment *key*'s outputs as an :class:`xarray.DataTree` shaped like the recipe that declared them."""
+        from tvbo.data.experiment_result_io import result_tree
+
+        return result_tree(self._dataset(self._container(key)))
+
+    def dataset(self, key):
+        """The raw :class:`xarray.Dataset` behind experiment *key*, with the container's flat variable names."""
+        return self._dataset(self._container(key))
+
+    def __iter__(self):
+        return iter(self._keys)
+
+    def __len__(self) -> int:
+        return len(self._keys)
+
+    def analysis(self, name: str):
+        """The container the analysis *name* wrote, as a labelled :class:`xarray.Dataset`."""
+        from tvbo.data.dataref import locate_analysis_container
+
+        return self._dataset(locate_analysis_container(self.results_root, name))
+
+    @property
+    def figures(self) -> dict:
+        """The rendered figures, keyed by their declared ``name``."""
+        return dict(self._figures)
+
+    def _undrawn(self) -> str:
+        """The declared figures this run did not draw, named so a reader is not left to conclude the recipe declared none."""
+        from tvbo.utils import as_list
+
+        declared = {str(f.name) for f in as_list(getattr(self.study, "figures", None)) if getattr(f, "name", None)}
+        missing = sorted(declared - set(self._figures))
+        if not missing:
+            return ""
+        return f"; declared but not drawn: {', '.join(missing)} — rendering failed, and the run logged why at WARNING"
+
+    def figure(self, name: str | None = None) -> FigureImage:
+        """The rendered figure *name*, or the only one when the study declares a single figure."""
+        if name is None:
+            if len(self._figures) != 1:
+                raise KeyError(
+                    f"this run drew {len(self._figures)} figures; name one of: {sorted(self._figures)}{self._undrawn()}"
+                )
+            return next(iter(self._figures.values()))
         try:
-            with open(filepath) as _fh:
-                _raw = yaml.safe_load(_fh) or {}
-            _raw_exps = {
-                e.get("id"): e for e in (_raw.get("experiments") or []) if isinstance(e, dict)
-            }
-        except Exception:
-            _raw_exps = {}
-        # Store as a plain dict (bypass the JsonObj setattr that would wrap it).
-        object.__setattr__(study, "_raw_experiments", _raw_exps)
-        return study
+            return self._figures[name]
+        except KeyError:
+            raise KeyError(
+                f"no figure {name!r} was rendered; this run drew: {sorted(self._figures)}{self._undrawn()}"
+            ) from None
 
-    @classmethod
-    def from_datamodel(cls, datamodel: tvbo_datamodel.SimulationStudy):
-        """Wrap a generated datamodel instance as a `SimulationStudy`.
+    def report(self, *args, **kwargs) -> str:
+        """The study's Methods section — :meth:`SimulationStudy.report`, reached from the run that produced the numbers it describes."""
+        return self.study.report(*args, **kwargs)
 
-        Args:
-            datamodel: A datamodel-level study whose fields are copied into the
-                user-facing class.
+    def __repr__(self) -> str:
+        # Relative where that is shorter: this repr is cell output on a docs page, and an absolute path would publish one machine's directory layout and change under every other.
+        root = str(self.results_root)
+        try:
+            rel = os.path.relpath(self.results_root)
+            root = rel if len(rel) < len(root) else root
+        except ValueError:
+            pass
+        nested = f", studies={sorted(self.studies)}" if self.studies else ""
+        return f"StudyResult(experiments={self._keys}, figures={sorted(self._figures)}{nested}, results_root={root!r})"
 
-        Returns:
-            A `SimulationStudy` with the same field values as `datamodel`.
-        """
-        return cls(**datamodel._as_dict)
 
-    @classmethod
-    def from_db(cls, name: str) -> "SimulationStudy":
-        """Load a SimulationStudy by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("SimulationStudy", name)))
-
-    @classmethod
-    def list_db(cls) -> list[str]:
-        """List available studies in the tvbo database."""
-        from tvbo.data.registry import list_entries
-
-        return list_entries("SimulationStudy")
-
-    def cite(self):
-        """Return the formatted citation for this study.
-
-        Returns:
-            The citation string resolved from the study's `key`.
-        """
-        return report.get_citation(self.key)
-
-    def get_experiment(self, experiment_id):
-        """Retrieve a single experiment by its declared id."""
-        exps = getattr(self, "experiments", None) or []
-        source_file = getattr(self, "_source_file", None)
-        raw_experiments = getattr(self, "_raw_experiments", None) or {}
-        for exp_dm in exps:
-            if getattr(exp_dm, "id", None) == experiment_id:
-                if source_file:
-                    experiment.SimulationExperiment._pending_source_file = source_file
-                try:
-                    # Materialise through the YAML construction path so that
-                    # iri-sourced components (dynamics, coupling) are merged from
-                    # the registry — exactly as SimulationExperiment.from_file
-                    # does. from_datamodel alone skips that resolution and would
-                    # leave an iri-only dynamics unpopulated. Prefer the raw
-                    # authored experiment dict (minimal, anchor-resolved) so the
-                    # merge behaves identically to loading a standalone spec.
-                    raw = raw_experiments.get(experiment_id)
-                    if isinstance(raw, dict):
-                        import yaml
-
-                        exp = experiment.SimulationExperiment.from_string(
-                            yaml.safe_dump(raw)
-                        )
-                    else:
-                        from linkml_runtime.dumpers import yaml_dumper
-
-                        exp = experiment.SimulationExperiment.from_string(
-                            yaml_dumper.dumps(exp_dm)
-                        )
-                    if source_file:
-                        exp._source_file = source_file
-                finally:
-                    experiment.SimulationExperiment._pending_source_file = None
-                return exp
-        available = [getattr(e, "id", None) for e in exps]
-        raise KeyError(f"Experiment {experiment_id!r} not found. Available: {available}")
-
-    # ---- OpenMINDS JSON-LD conversion ----
-    def to_openminds(
-        self,
-        filepath: str | None = None,
-        base_id: str | None = None,
-        include_context: bool = True,
-    ) -> dict:
-        """Export study to openMINDS JSON-LD format.
-
-        Parameters
-        ----------
-        filepath : str, optional
-            If provided, write JSON-LD to this file path.
-        base_id : str, optional
-            Base URI for generating @id values (e.g., "https://example.org/studies").
-            If not provided and study has a DOI, uses the DOI as @id.
-        include_context : bool
-            Whether to include the @context in the output. Default True.
-
-        Returns
-        -------
-        dict
-            OpenMINDS-compatible JSON-LD dictionary.
-
-        Example
-        -------
-        >>> study = SimulationStudy.from_file("study.yaml")
-        >>> jsonld = study.to_openminds()
-        >>> study.to_openminds("output.jsonld", base_id="https://example.org")
-        """
-        from tvbo.adapters.openminds import study_to_openminds, save_openminds
-
-        result = study_to_openminds(self, base_id=base_id, include_context=include_context)
-
-        if filepath:
-            save_openminds(self, filepath, base_id=base_id)
-
-        return result
-
-    @classmethod
-    def from_openminds(cls, source: str | dict) -> "SimulationStudy":
-        """Create a SimulationStudy from openMINDS JSON-LD.
-
-        Parameters
-        ----------
-        source : str or dict
-            Either a file path to a JSON-LD file, or a dict containing
-            JSON-LD data.
-
-        Returns
-        -------
-        SimulationStudy
-            New instance constructed from the openMINDS data.
-
-        Example
-        -------
-        >>> study = SimulationStudy.from_openminds("study.jsonld")
-        >>> study = SimulationStudy.from_openminds({"@type": "tvbo:SimulationStudy", ...})
-        """
-        from tvbo.adapters.openminds import study_from_openminds, load_openminds
-
-        if isinstance(source, str):
-            # It's a file path
-            data = load_openminds(source)
-        elif isinstance(source, dict):
-            data = study_from_openminds(source)
-        else:
-            raise TypeError(f"Expected str or dict, got {type(source)}")
-
-        return cls(**data)
+SimulationStudy = tvbo_datamodel.SimulationStudy
+"""The generated class itself. What a study does lives in :mod:`tvbo.behaviour.study`, attached where
+the class is generated, so a study nested inside another is already a study — no promotion step, and
+none of the class-rebinding that used to stand in for one."""

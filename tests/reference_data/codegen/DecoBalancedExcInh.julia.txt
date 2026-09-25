@@ -1,0 +1,41 @@
+function DecoBalancedExcInh!(dx, x, p, t = 0)
+
+    (;G, I_ext, I_o, J_N, J_i, M_i, W_e, W_i, a_e, a_i, b_e, b_i, d_e, d_i, gamma_e, gamma_i, lamda, tau_e, tau_i, w_p, c_glob, local_coupling) = p
+
+    S_e, S_i = x
+
+
+    J_N_S_e = J_N .* S_e
+    coupling = G .* J_N .* (c_glob .+ S_e .* local_coupling)
+    I_e = I_ext .+ coupling .+ I_o .* W_e .+ J_N_S_e .* w_p .- J_i .* S_i
+    I_i = J_N_S_e .- S_i .+ I_o .* W_i .+ coupling .* lamda
+    x_e = M_i .* (-b_e .+ I_e .* a_e)
+    x_i = M_i .* (-b_i .+ I_i .* a_i)
+    H_e = x_e ./ (1 .- exp(-d_e .* x_e))
+    H_i = x_i ./ (1 .- exp(-d_i .* x_i))
+
+    dx[1] = -S_e ./ tau_e .+ H_e .* gamma_e .* (1 .- S_e)
+    dx[2] = H_i .* gamma_i .- S_i ./ tau_i
+    dx
+end
+
+# Parameter values
+p = (G = 2.0, I_ext = 0.0, I_o = 0.382, J_N = 0.15, J_i = 1.0, M_i = 1.0, W_e = 1.0, W_i = 0.7, a_e = 310.0, a_i = 615.0, b_e = 125.0, b_i = 177.0, d_e = 0.16, d_i = 0.087, gamma_e = 0.000641, gamma_i = 0.001, lamda = 0.0, tau_e = 100.0, tau_i = 10.0, w_p = 1.4, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(DecoBalancedExcInh!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

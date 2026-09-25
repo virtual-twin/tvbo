@@ -1,0 +1,98 @@
+---
+title: "Custom figure panels"
+description: "When a paper needs a panel the figure grammar cannot express, ship the drawing code with the study and register it, and the generated plot.py imports it automatically."
+aliases:
+  - /Replication/custom-panels.html
+---
+
+A TVBO `Figure` renders result containers into a publication figure: most panels are [grammar-driven](index.qmd) (`cartesian`, `heatmap`) or an external `image`. When a paper needs a bespoke panel the grammar cannot express, such as a covariant Lyapunov vector, a per-node profile or a hand-drawn inset, the study ships the drawing code itself and registers it under a name the spec refers to.
+
+The code lives with the study (in its `code_source`, the `code/` directory convention), not in core TVBO. The generated `plot.py` imports it, so the panel is available whether you render on your laptop or as an HPC job, and the script stays editable afterwards.
+
+## The escape hatch
+
+A panel with `kind: custom` names a registered callable instead of a mark + encoding:
+
+```yaml
+panels:
+  b:
+    kind: custom
+    render: lambda_vs_k        # a registered panel callable (defined below)
+```
+
+The callable has the signature `fn(fig, ax, ctx)`. `ctx` carries the panel's resolved layers (container paths, transforms and selectors already resolved by `build_context`) and its `opts`, so the function opens the container(s) itself and draws exactly what the paper needs. It opens a resolved layer with `bsplot.load_layer`, which returns an xarray `DataArray` with that layer's declared `transform` and `.sel` already applied:
+
+```python
+from tvbo.adapters import bsplot
+
+@bsplot.register_panel("lambda_vs_k")
+def lambda_vs_k(fig, ax, ctx):
+    da = bsplot.load_layer(ctx["layers"][0])   # container opened; transform + selector applied
+    ax.plot(da.coords["K"].values, da.values)
+    ax.set_ylabel(ctx["opts"].get("ylabel", r"$\lambda_1$"))
+```
+
+## Registering a panel or transform
+
+A study decorates its callables with `register_panel` / `register_transform` from the bsplot adapter. Core ships no panels or transforms of its own: these two registries start empty and are filled entirely by the studies that declare them, so the figure system has no privileged built-ins to compete with your own:
+
+```python
+# my_study/code/figures.py
+from tvbo.adapters import bsplot
+
+@bsplot.register_transform("demo_scale")   # a presentation-only layer reduction fn(da) -> da
+def demo_scale(da):
+    return da * 2.0
+
+@bsplot.register_panel("demo_panel")       # a custom-panel drawer fn(fig, ax, ctx)
+def demo_panel(fig, ax, ctx):
+    ax.text(0.5, 0.5, "drawn by study code", ha="center", va="center",
+            transform=ax.transAxes)
+    ax.set_xticks([]); ax.set_yticks([])
+```
+
+## Wiring it into the figure
+
+The decorators only fire when the module is imported. Declare the modules on the figure with `code_modules`, and the generated `plot.py` imports them before it dispatches any panel:
+
+```yaml
+figures:
+  - name: figure_5
+    code_modules: [figures]        # my_study/code/figures.py
+    layout: "ab"
+    panels:
+      a: {kind: custom, render: demo_panel}
+      b: {kind: cartesian, layers: [...]}
+```
+
+The emitted script imports each declared module right after the adapter import, so every registration fires before the first panel is drawn and the spec's names resolve:
+
+```python
+from tvbo.adapters.bsplot import TRANSFORMS as _TF, CUSTOM_PANELS as _CP
+import figures  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
+```
+
+## The round-trip, proven
+
+The three pieces form one loop: the decorator, `code_modules`, and the import the adapter emits. A panel core TVBO has never heard of is dispatched only because the generated script imports the study module that registers it:
+
+```python
+from tvbo.adapters import bsplot
+from tvbo.datamodel import schema as dm
+
+# The study module (my_study/code/figures.py) is on the path, but not yet imported.
+assert "demo_panel" not in bsplot.CUSTOM_PANELS          # core TVBO does not know it
+
+fig = dm.Figure(
+    name="roundtrip", layout="a", code_modules=["figures"],
+    panels={"a": dm.Panel(panel_key="a", kind="custom", render="demo_panel")},
+)
+bsplot.render(fig, base_dir=".", outfile="roundtrip.png")  # runs the generated plot.py
+
+assert "demo_panel" in bsplot.CUSTOM_PANELS              # the emitted import registered it
+# roundtrip.png is written by the study's own drawing code.
+```
+
+## Where the code has to be importable
+
+Rendering a study in one process, through `tvbo figure render <study>` or `SimulationStudy`, puts the study's `code/` directory on the import path when the study loads, so `code_modules` imports resolve. Running a frozen `plot.py` on its own (a workflow kit on an HPC node) needs that `code/` directory on `PYTHONPATH` too; provisioning it in the kit is the remaining step for standalone runs.

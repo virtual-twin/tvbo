@@ -15,13 +15,14 @@ Output:
 - TVB-compatible Model class with Numba-accelerated dfun
 </%doc>
 <%
+from tvbo.templates.base.utils import get_coupling_terms, get_func_name
 from tvbo.templates.rateml.utils import (
     python_code, has_boundaries, get_initial_value,
     get_domain_str, get_boundary_str, get_range_str
 )
 
-# Model name: capitalize and add 'T' suffix (RateML convention)
-model_name = model.name.replace(' ', '').replace('-', '') + 'T'
+# Model name: the one sanitized identifier, plus RateML's 'T' suffix.
+model_name = get_func_name(model) + 'T'
 
 # State variables
 state_vars = list(model.state_variables.items())
@@ -31,10 +32,12 @@ n_states = len(state_vars)
 params = list(model.parameters.items()) if model.parameters else []
 
 # Derived variables
-derived_vars = list(model.derived_variables.items()) if model.derived_variables else []
+derived_vars = list(model.in_dependency_order('derived_variables').items()) if model.derived_variables else []
 
-# Coupling terms
-coupling_terms = list(model.coupling_terms.keys()) if model.coupling_terms else ['c_glob']
+# Only the global inputs read the coupling array; a local one is bound to 0, as elsewhere.
+_all_ct, _global_ct, _local_ct = get_coupling_terms(model)
+coupling_terms = _global_ct or (_all_ct or ['c_glob'])
+extra_local_terms = [ct for ct in _local_ct if ct != 'local_coupling']
 
 # Check for state variable boundaries
 svboundaries = has_boundaries(model)
@@ -132,6 +135,9 @@ local_coupling, dx):
     % for i, ct in enumerate(coupling_terms):
     ${ct} = coupling[${i}]
     % endfor
+% for ct in extra_local_terms:
+    ${ct} = 0.0
+% endfor
 
     # Unpack state variables
     % for i, (sv_name, sv) in enumerate(state_vars):

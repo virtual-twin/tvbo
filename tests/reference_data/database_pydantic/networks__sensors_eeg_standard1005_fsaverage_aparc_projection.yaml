@@ -1,0 +1,586 @@
+label: EEG standard_1005 fsaverage projection
+description: MNE standard_1005 EEG sensors (MNI, mm) with fsaverage aparc projection
+  gain matrix (sensors x regions).
+parameters:
+  conduction_speed:
+    name: conduction_speed
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+time_unit: ms
+nodes:
+- id: 0
+  label: Fp1
+  record: true
+  size: 1
+  position:
+    x: -29.4367
+    y: 83.9171
+    z: -6.99
+- id: 1
+  label: Fp2
+  record: true
+  size: 1
+  position:
+    x: 29.8723
+    y: 84.8959
+    z: -7.08
+- id: 2
+  label: F4
+  record: true
+  size: 1
+  position:
+    x: 51.8362
+    y: 54.3048
+    z: 40.814
+- id: 3
+  label: F3
+  record: true
+  size: 1
+  position:
+    x: -50.2438
+    y: 53.1112
+    z: 42.192
+- id: 4
+  label: C3
+  record: true
+  size: 1
+  position:
+    x: -65.3581
+    y: -11.6317
+    z: 64.358
+- id: 5
+  label: C4
+  record: true
+  size: 1
+  position:
+    x: 67.1179
+    y: -10.9003
+    z: 63.58
+- id: 6
+  label: P4
+  record: true
+  size: 1
+  position:
+    x: 55.6667
+    y: -78.5602
+    z: 56.561
+- id: 7
+  label: P3
+  record: true
+  size: 1
+  position:
+    x: -53.0073
+    y: -78.7878
+    z: 55.94
+- id: 8
+  label: O2
+  record: true
+  size: 1
+  position:
+    x: 29.8426
+    y: -112.156
+    z: 8.8
+- id: 9
+  label: O1
+  record: true
+  size: 1
+  position:
+    x: -29.4134
+    y: -112.449
+    z: 8.839
+- id: 10
+  label: F8
+  record: true
+  size: 1
+  position:
+    x: 73.0431
+    y: 44.4217
+    z: -12.0
+- id: 11
+  label: F7
+  record: true
+  size: 1
+  position:
+    x: -70.2629
+    y: 42.4743
+    z: -11.42
+- id: 12
+  label: T8/T4
+  record: true
+  size: 1
+  position:
+    x: 85.0799
+    y: -15.0203
+    z: -9.49
+- id: 13
+  label: T7/T3
+  record: true
+  size: 1
+  position:
+    x: -84.1611
+    y: -16.0187
+    z: -9.346
+- id: 14
+  label: P8/T6
+  record: true
+  size: 1
+  position:
+    x: 73.0557
+    y: -73.0683
+    z: -2.54
+- id: 15
+  label: P7/T5
+  record: true
+  size: 1
+  position:
+    x: -72.4343
+    y: -73.4527
+    z: -2.487
+- id: 16
+  label: Pz
+  record: true
+  size: 1
+  position:
+    x: 0.3247
+    y: -81.115
+    z: 82.615
+- id: 17
+  label: Fz
+  record: true
+  size: 1
+  position:
+    x: 0.3122
+    y: 58.512
+    z: 66.462
+- id: 18
+  label: AF9
+  record: true
+  size: 1
+  position:
+    x: -48.9708
+    y: 64.0872
+    z: -47.683
+- id: 19
+  label: AF10
+  record: true
+  size: 1
+  position:
+    x: 50.4352
+    y: 63.869800000000005
+    z: -48.005
+- id: 20
+  label: F9
+  record: true
+  size: 1
+  position:
+    x: -70.1019
+    y: 41.6523
+    z: -49.952
+- id: 21
+  label: F10
+  record: true
+  size: 1
+  position:
+    x: 72.1141
+    y: 42.0667
+    z: -50.452
+- id: 22
+  label: TP7
+  record: true
+  size: 1
+  position:
+    x: -84.8302
+    y: -46.0217
+    z: -7.056
+- id: 23
+  label: TP9
+  record: true
+  size: 1
+  position:
+    x: -85.6192
+    y: -46.5147
+    z: -45.707
+- id: 24
+  label: TP10
+  record: true
+  size: 1
+  position:
+    x: 86.1618
+    y: -47.0353
+    z: -45.869
+- id: 25
+  label: TP8
+  record: true
+  size: 1
+  position:
+    x: 85.5488
+    y: -45.5453
+    z: -7.13
+- id: 26
+  label: Oz
+  record: true
+  size: 1
+  position:
+    x: 0.1076
+    y: -114.892
+    z: 14.657
+- id: 27
+  label: Iz
+  record: true
+  size: 1
+  position:
+    x: 0.0045
+    y: -118.565
+    z: -23.078
+- id: 28
+  label: PO4
+  record: true
+  size: 1
+  position:
+    x: 36.7816
+    y: -100.8491
+    z: 36.397
+- id: 29
+  label: PO3
+  record: true
+  size: 1
+  position:
+    x: -36.5114
+    y: -100.8529
+    z: 37.167
+- id: 30
+  label: CP5
+  record: true
+  size: 1
+  position:
+    x: -79.5922
+    y: -46.5507
+    z: 30.949
+- id: 31
+  label: CP6
+  record: true
+  size: 1
+  position:
+    x: 83.3218
+    y: -46.1013
+    z: 31.206
+- id: 32
+  label: CP1
+  record: true
+  size: 1
+  position:
+    x: -35.5131
+    y: -47.2919
+    z: 91.315
+- id: 33
+  label: CP2
+  record: true
+  size: 1
+  position:
+    x: 38.3838
+    y: -47.0731
+    z: 90.695
+- id: 34
+  label: FT9
+  record: true
+  size: 1
+  position:
+    x: -84.0759
+    y: 14.5673
+    z: -50.429
+- id: 35
+  label: FT10
+  record: true
+  size: 1
+  position:
+    x: 84.1131
+    y: 14.3647
+    z: -50.538
+- id: 36
+  label: FC2
+  record: true
+  size: 1
+  position:
+    x: 34.7841
+    y: 26.4379
+    z: 78.808
+- id: 37
+  label: FC1
+  record: true
+  size: 1
+  position:
+    x: -34.0619
+    y: 26.0111
+    z: 79.987
+- id: 38
+  label: AF3
+  record: true
+  size: 1
+  position:
+    x: -33.7007
+    y: 76.8371
+    z: 21.227
+- id: 39
+  label: AF4
+  record: true
+  size: 1
+  position:
+    x: 35.7123
+    y: 77.7259
+    z: 21.956
+- id: 40
+  label: FC6
+  record: true
+  size: 1
+  position:
+    x: 79.5341
+    y: 19.9357
+    z: 24.438
+- id: 41
+  label: FC5
+  record: true
+  size: 1
+  position:
+    x: -77.2149
+    y: 18.6433
+    z: 24.46
+- id: 42
+  label: CPz
+  record: true
+  size: 1
+  position:
+    x: 0.3858
+    y: -47.318
+    z: 99.432
+- id: 43
+  label: P1
+  record: true
+  size: 1
+  position:
+    x: -28.6203
+    y: -80.5249
+    z: 75.436
+- id: 44
+  label: POz
+  record: true
+  size: 1
+  position:
+    x: 0.2156
+    y: -102.178
+    z: 50.608
+- id: 45
+  label: P2
+  record: true
+  size: 1
+  position:
+    x: 31.919700000000002
+    y: -80.4871
+    z: 76.716
+- id: 46
+  label: P6
+  record: true
+  size: 1
+  position:
+    x: 67.8877
+    y: -75.9043
+    z: 28.091
+- id: 47
+  label: C6
+  record: true
+  size: 1
+  position:
+    x: 83.4559
+    y: -12.7763
+    z: 29.208
+- id: 48
+  label: P5
+  record: true
+  size: 1
+  position:
+    x: -67.2723
+    y: -76.2907
+    z: 28.382
+- id: 49
+  label: C1
+  record: true
+  size: 1
+  position:
+    x: -36.158
+    y: -9.9839
+    z: 89.752
+- id: 50
+  label: C2
+  record: true
+  size: 1
+  position:
+    x: 37.672
+    y: -9.6241
+    z: 88.412
+- id: 51
+  label: C5
+  record: true
+  size: 1
+  position:
+    x: -80.2801
+    y: -13.7597
+    z: 29.16
+- id: 52
+  label: F2
+  record: true
+  size: 1
+  position:
+    x: 29.5142
+    y: 57.6019
+    z: 59.54
+- id: 53
+  label: F6
+  record: true
+  size: 1
+  position:
+    x: 67.9142
+    y: 49.8297
+    z: 16.367
+- id: 54
+  label: F1
+  record: true
+  size: 1
+  position:
+    x: -27.4958
+    y: 56.9311
+    z: 60.342
+- id: 55
+  label: AF8
+  record: true
+  size: 1
+  position:
+    x: 55.7433
+    y: 69.6568
+    z: -10.755
+- id: 56
+  label: F5
+  record: true
+  size: 1
+  position:
+    x: -64.4658
+    y: 48.0353
+    z: 16.921
+- id: 57
+  label: AF7
+  record: true
+  size: 1
+  position:
+    x: -54.8397
+    y: 68.5722
+    z: -10.59
+- id: 58
+  label: Fpz
+  record: true
+  size: 1
+  position:
+    x: 0.1123
+    y: 88.247
+    z: -1.713
+- id: 59
+  label: FCz
+  record: true
+  size: 1
+  position:
+    x: 0.3761
+    y: 27.39
+    z: 88.668
+- id: 60
+  label: Cz
+  record: true
+  size: 1
+  position:
+    x: 0.4009
+    y: -9.167
+    z: 100.244
+edges:
+- label: gain
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+  allow_self_connections: true
+  target_network: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat.yaml
+  dimension_labels:
+  - ctx-lh-bankssts
+  - ctx-lh-caudalanteriorcingulate
+  - ctx-lh-caudalmiddlefrontal
+  - ctx-lh-cuneus
+  - ctx-lh-entorhinal
+  - ctx-lh-fusiform
+  - ctx-lh-inferiorparietal
+  - ctx-lh-inferiortemporal
+  - ctx-lh-isthmuscingulate
+  - ctx-lh-lateraloccipital
+  - ctx-lh-lateralorbitofrontal
+  - ctx-lh-lingual
+  - ctx-lh-medialorbitofrontal
+  - ctx-lh-middletemporal
+  - ctx-lh-parahippocampal
+  - ctx-lh-paracentral
+  - ctx-lh-parsopercularis
+  - ctx-lh-parsorbitalis
+  - ctx-lh-parstriangularis
+  - ctx-lh-pericalcarine
+  - ctx-lh-postcentral
+  - ctx-lh-posteriorcingulate
+  - ctx-lh-precentral
+  - ctx-lh-precuneus
+  - ctx-lh-rostralanteriorcingulate
+  - ctx-lh-rostralmiddlefrontal
+  - ctx-lh-superiorfrontal
+  - ctx-lh-superiorparietal
+  - ctx-lh-superiortemporal
+  - ctx-lh-supramarginal
+  - ctx-lh-frontalpole
+  - ctx-lh-temporalpole
+  - ctx-lh-transversetemporal
+  - ctx-lh-insula
+  - ctx-rh-bankssts
+  - ctx-rh-caudalanteriorcingulate
+  - ctx-rh-caudalmiddlefrontal
+  - ctx-rh-cuneus
+  - ctx-rh-entorhinal
+  - ctx-rh-fusiform
+  - ctx-rh-inferiorparietal
+  - ctx-rh-inferiortemporal
+  - ctx-rh-isthmuscingulate
+  - ctx-rh-lateraloccipital
+  - ctx-rh-lateralorbitofrontal
+  - ctx-rh-lingual
+  - ctx-rh-medialorbitofrontal
+  - ctx-rh-middletemporal
+  - ctx-rh-parahippocampal
+  - ctx-rh-paracentral
+  - ctx-rh-parsopercularis
+  - ctx-rh-parsorbitalis
+  - ctx-rh-parstriangularis
+  - ctx-rh-pericalcarine
+  - ctx-rh-postcentral
+  - ctx-rh-posteriorcingulate
+  - ctx-rh-precentral
+  - ctx-rh-precuneus
+  - ctx-rh-rostralanteriorcingulate
+  - ctx-rh-rostralmiddlefrontal
+  - ctx-rh-superiorfrontal
+  - ctx-rh-superiorparietal
+  - ctx-rh-superiortemporal
+  - ctx-rh-supramarginal
+  - ctx-rh-frontalpole
+  - ctx-rh-temporalpole
+  - ctx-rh-transversetemporal
+  - ctx-rh-insula
+graph_representation: auto
+number_of_nodes: 61
+data_file: tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.h5
+descriptor: sensors
+bids:
+  template: fsaverage
+  atlas: DesikanKilliany
+  acquisition: EEGstandard1005
+distance_unit: mm

@@ -1,0 +1,32 @@
+function RulkovMap!(dx, _x, p, t = 0)
+
+    (;alpha, beta, sigma) = p
+
+    x, y = _x
+
+
+    dx[1] = y .+ alpha ./ (1 .+ x .^ 2)
+    dx[2] = y .- beta .- sigma .* x
+    dx
+end
+
+# Parameter values
+p = (alpha = 4.1, beta = 0.001, sigma = 0.001)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        1.0,
+        1.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(RulkovMap!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

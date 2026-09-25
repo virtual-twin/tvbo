@@ -1,0 +1,112 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class Antidots(Model):
+
+    d0 = NArray(
+        label=r":math:`d0`",
+        default=np.array([0.5]),
+        doc="""Effective antidot diameter.""",
+    )
+    c = NArray(
+        label=r":math:`c`", default=np.array([0.2]), doc="""Smoothing factor c."""
+    )
+    B = NArray(
+        label=r":math:`B`",
+        default=np.array([1.0]),
+        doc="""Magnetic field strength (normalized).""",
+    )
+
+    _nvar = 4
+    state_variables = ["x", "y", "vx", "vy"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "x": np.array([-1000000000.0, 1000000000.0]),
+            "y": np.array([-1000000000.0, 1000000000.0]),
+            "vx": np.array([-1000000000.0, 1000000000.0]),
+            "vy": np.array([-1000000000.0, 1000000000.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("x", "y", "vx", "vy"),
+        default=("x", "y", "vx", "vy"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=["d0", "c", "B"],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "x": "vx",
+            "y": "vy",
+            "vx": "-Ux + 2*B*vy*np.sqrt(2)",
+            "vy": "-Uy - 2*B*vx*np.sqrt(2)",
+        },
+    )
+
+    cvar = np.array([], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=[])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        x = state_variables[0, :]
+        y = state_variables[1, :]
+        vx = state_variables[2, :]
+        vy = state_variables[3, :]
+
+        d0 = self.d0
+        c = self.c
+        B = self.B
+
+        # Coupling Terms (from coupling array)
+
+        # Derived Variables
+        self.xt = xt = -0.5 + np.mod(1.0 * x, 1)
+        self.yt = yt = -0.5 + np.mod(1.0 * y, 1)
+        self.rho = rho = np.sqrt(xt**2 + yt**2)
+        self.Ux = Ux = np.where(
+            np.less(rho, 0.5 * d0 + c),
+            (-4 * (0.5 * d0 + c - rho) ** 3) * xt / ((c**4 * (rho + 1.0e-12))),
+            0,
+        )
+        self.Uy = Uy = np.where(
+            np.less(rho, 0.5 * d0 + c),
+            (-4 * (0.5 * d0 + c - rho) ** 3) * yt / ((c**4 * (rho + 1.0e-12))),
+            0,
+        )
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(vx),  # x
+            np.asarray(vy),  # y
+            np.asarray(-Ux + 2 * B * vy * np.sqrt(2)),  # vx
+            np.asarray(-Uy - 2 * B * vx * np.sqrt(2)),  # vy
+        )
+        return np.array(_derivs)

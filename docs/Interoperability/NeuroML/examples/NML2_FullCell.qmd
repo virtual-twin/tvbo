@@ -1,12 +1,14 @@
 ---
 title: "NML2: Full Cell"
 description: "Complete cell with morphology, channels, and biophysical properties"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## NML2_FullCell.nml
 
-Combines morphology and biophysics in a complete cell definition, ready
-for multi-compartment simulation. Includes:
+Combines morphology and biophysics in a complete cell definition, ready for multi-compartment simulation. Includes:
 
 - Detailed morphology with soma, axon, and dendritic segments
 - Channel densities assigned to segment groups

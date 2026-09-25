@@ -1,0 +1,10 @@
+name: MNI152NLin2009b
+abbreviation: MNI152NLin2009b
+alternateName:
+- MNI152NLin2009bSym
+- tpl-MNI152NLin2009bSym
+description: Nonlinear 6th-generation MNI152 average, 2009b release (symmetric variant).
+  Produced by the McConnell Brain Imaging Centre (Fonov et al., 2011).
+anatomicalAxesOrientation: RAS
+axesOrigin: anterior commissure
+nativeUnit: mm

@@ -1,9 +1,78 @@
 {
   "_type": "tvbo:LossFunction",
   "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "acronym": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "iri": {
+      "type": "string"
+    },
+    "equation": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "definition": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "input": {
+      "_linkedTypes": [
+        "tvbo:Function"
+      ]
+    },
+    "output": {
+      "type": "string"
+    },
+    "arguments": {
+      "_embeddedTypes": [
+        "tvbo:Argument"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "output_equation": {
+      "_embeddedTypes": [
+        "tvbo:Equation"
+      ]
+    },
+    "source_code": {
+      "type": "string"
+    },
+    "callable": {
+      "_embeddedTypes": [
+        "tvbo:Callable"
+      ]
+    },
+    "apply_on_dimension": {
+      "type": "string"
+    },
     "aggregate": {
       "_embeddedTypes": [
         "tvbo:Aggregation"
+      ]
+    },
+    "time_range": {
+      "_embeddedTypes": [
+        "tvbo:Range"
       ]
     }
   }

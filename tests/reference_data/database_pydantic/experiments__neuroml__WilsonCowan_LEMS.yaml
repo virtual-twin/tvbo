@@ -1,0 +1,33 @@
+id: 907
+part: main
+description: 'Export the Wilson-Cowan model from the TVBO database as LEMS XML. Demonstrates
+  derived variables and coupling inputs in LEMS.
+
+  '
+label: TVBO WilsonCowan as LEMS
+dynamics:
+  name: WilsonCowan
+  iri: tvbo:WilsonCowan
+  number_of_modes: 1
+  system_type: continuous
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: euler
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.01
+  time_unit: ms
+  duration: 100.0
+  transient_time: 0.0
+  block_size: 1000
+  noise_draw: fused
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  graph_representation: auto
+  number_of_nodes: 1
+  distance_unit: mm

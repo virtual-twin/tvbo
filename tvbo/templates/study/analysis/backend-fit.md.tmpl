@@ -1,0 +1,31 @@
+# <Study> — backend-fit + framework gaps (Phase 1.5)
+
+**Scope selected:** all | {T1, T2, …}
+
+## Feature matrix (selected targets → required capabilities)
+
+| Target | delays | Lyapunov | sweep/continuation | fit/inference | noise | multi-mode | gated events | sparse |
+|--------|:------:|:--------:|:------------------:|:-------------:|:-----:|:----------:|:------------:|:------:|
+| T2     |        |          |                    |               |       |            |              |        |
+| T3     |   ✓    |          |                    |               |       |            |      ✓       |        |
+| T5     |        |    ✓     |         ✓          |               |       |            |              |        |
+
+## Data obtainability + fidelity tier (Phase 1.5 — decide BEFORE building)
+
+| Target | Fidelity (mech/dec) | Exact input needed | Obtainable now? | Decision |
+|--------|:-------------------:|--------------------|:---------------:|----------|
+| T2     | dec                 | <connectome / empirical target / seeds> | <yes/no> | <exact \| documented substitute → downgrade to mech> |
+| T3     | mech                | none (self-contained)                   | n/a      | proceed |
+
+## Backend pick (with rationale)
+
+- **Execution backend:** <tvboptim | tvb | julia | …> — because <which selected targets
+  need delays / Lyapunov / adiabatic lax.scan sweeps, which are tvboptim-gated today;
+  plain forward sims and operating points run on any backend>.
+- Metadata stays backend-independent (states intent, never a backend mechanism).
+
+## Framework / schema gaps (surfaced BEFORE writing the recipe)
+
+- <need not yet supported> → <framework/schema enhancement>; **BLOCKS** T<n> →
+  mark it `partial`/`out` in the scorecard. (e.g. Lyapunov of a *delayed* closed loop
+  under `vmap` needs a delay-correct MLE — a tvboptim enhancement.)

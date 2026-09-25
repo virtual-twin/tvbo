@@ -20,9 +20,10 @@ Output:
 </%doc>
 <%
 # Get experiment info
+assert 'coupling' in context.keys(), "coupling required — render with BaseAdapter(experiment).prepare_context()"
 model = experiment.dynamics
 network = experiment.network
-coupling = experiment.coupling
+coupling = context['coupling']
 n_nodes = N_nodes = (getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)) if network else 1
 
 # Get optimization specifications
@@ -91,7 +92,8 @@ import jax.numpy as jnp
 
 from tvboptim.types import Parameter
 from tvboptim.optim.optax import OptaxOptimizer
-from tvboptim.optim.callbacks import MultiCallback, DefaultPrintCallback
+from tvboptim.optim.callbacks import MultiCallback
+from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 
 
 def mark_parameters_optimizable(state, n_nodes: int = ${n_nodes}):
@@ -174,7 +176,7 @@ def create_optimizer(
         "sgd": optax.sgd,
     }
     opt_fn = optimizers.get(optimizer.lower(), optax.adam)
-    callback = MultiCallback([DefaultPrintCallback(every=print_every)])
+    callback = MultiCallback([LoggingProgressCallback(every=print_every)])
     return OptaxOptimizer(loss_fn, opt_fn(learning_rate), callback=callback, has_aux=has_aux)
 
 

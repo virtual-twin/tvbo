@@ -1,54 +1,38 @@
-#
-# Module: templater.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""Generate TVBO Python classes from ontology definitions via Mako templates.
+# SPDX-License-Identifier: EUPL-1.2
 
-Provides helpers that read model, parameter, state-variable, equation,
-coupling and integrator metadata from the ontology and render it into
-executable TVBO/TVB source using the templates in `tvbo.templates`.
+"""Shared codegen helpers the Mako templates and the export registry read.
+
+Answers the questions a backend asks about a model before emitting it — which observations are derived, which equations read the integrator's time symbol, which base parameters a derived-parameter block consumes — plus the one namespace generated modules are `exec`-ed into and the formatting entry point every component-level render routes through.
 """
-import re
-from os.path import join
+
+import logging
+from dataclasses import dataclass
 from typing import Any
 
-import black
-import numpy as np
 import sympy as sp
-from mako.template import Template
-from sympy import pycode
 
-from tvbo import templates
-from tvbo.ontology import owl as ontology
-from tvbo.classes import equation as equations, coupling
+from tvbo.templates.base.utils import get_func_name
+
+logger = logging.getLogger(__name__)
 
 exec_globals = {}
-TEMPLATES = templates.root
+"""Globals a generated module is `exec`-ed into, shared so one render's imports serve the next."""
 
 
 def is_derived(obs: Any, experiment: Any) -> bool:
     """Return True if ``obs`` derives from other observations in ``experiment``.
 
-    An Observation is derived when any item in its multivalued ``source``
-    slot names ANOTHER observation in the same experiment. Source entries
-    may be bare strings, objects with a ``name`` attribute, or inlined
-    Observation/StateVariable instances.
+    An Observation is derived when any item in its multivalued ``source`` slot names ANOTHER observation in the same experiment. Source entries may be bare strings, objects with a ``name`` attribute, or inlined Observation/StateVariable instances.
 
-    A SELF-reference (an observation whose ``source`` names itself — e.g. an
-    observation ``r_A`` with ``source: [r_A]`` that simply observes the model
-    variable ``r_A``) is NOT derived: an observation cannot derive from itself.
-    Without this exclusion such observations are mis-routed to the derived path,
-    where they have no pipeline and are never computed, so the generated
-    ``observations.r_A = _all_obs.r_A`` extraction raises AttributeError.
+    A SELF-reference (an observation whose ``source`` names itself — e.g. an observation ``r_A`` with ``source: [r_A]`` that simply observes the model variable ``r_A``) is NOT derived: an observation cannot derive from itself.
+    Without this exclusion such observations are mis-routed to the derived path, where they have no pipeline and are never computed, so the generated ``observations.r_A = _all_obs.r_A`` extraction raises AttributeError.
     """
     obs_names = set((getattr(experiment, "observations", {}) or {}).keys())
     if not obs_names:
         return False
     self_name = getattr(obs, "name", None)
-    for s in (getattr(obs, "source", None) or []):
+    for s in getattr(obs, "source", None) or []:
         name = getattr(s, "name", None) or s
         if isinstance(name, str) and name in obs_names and name != self_name:
             return True
@@ -58,442 +42,147 @@ def is_derived(obs: Any, experiment: Any) -> bool:
 def source_observations(obs: Any, experiment: Any) -> list:
     """Return the source names of ``obs`` that resolve to other observations.
 
-    A filtered view of ``obs.source`` keeping only entries whose name
-    matches a key in ``experiment.observations``.
+    A filtered view of ``obs.source`` keeping only entries whose name matches a key in ``experiment.observations``.
     """
     obs_names = set((getattr(experiment, "observations", {}) or {}).keys())
     if not obs_names:
         return []
     self_name = getattr(obs, "name", None)
     out = []
-    for s in (getattr(obs, "source", None) or []):
+    for s in getattr(obs, "source", None) or []:
         name = getattr(s, "name", None) or s
         if isinstance(name, str) and name in obs_names and name != self_name:
             out.append(name)
     return out
 
 
-def format_code(code: str, format: str = "python", use_black: bool = True, **kwargs: Any) -> str:
-    """Format code using black for Python variants.
+def canonical_observation_ref(value: Any, observation_names: Any) -> Any:
+    """Rewrite ``observations.<name>`` to the bare ``<name>`` a pipeline argument resolves.
+
+    ``observations.<name>`` is how the spec names an observation from a loss, an exploration builder and a study analysis, so a pipeline argument accepts the same spelling rather than a second one. Anything that is not that spelling — a literal, ``network.observations.<measure>``, a name no observation carries — is returned unchanged, and a trailing ``.<key>`` is preserved so ``observations.psd.frequencies`` still reaches a named output.
+    """
+    if not isinstance(value, str) or not value.startswith("observations."):
+        return value
+    rest = value.split(".", 1)[1]
+    return rest if rest.split(".", 1)[0] in set(observation_names or ()) else value
+
+
+@dataclass(frozen=True)
+class CodeFormat:
+    """How one component-level code format is rendered, formatted and re-entered.
+
+    A component format renders a single `Dynamics` rather than a whole experiment, so it names no :class:`~tvbo.export.registry.ExportFormat` and declares itself here instead. `template` is the Mako template that emits it, or empty for the formats an adapter builds. `entry` is the module-level name the emitted code binds its callable to; empty means the template names it after the model, falling back to `unnamed_entry` for a model with no name of its own. `language` selects the normaliser in :func:`format_code`, is empty for output returned verbatim, and is what says whether the output can be executed at all.
+    """
+
+    template: str = ""
+    language: str = ""
+    entry: str = ""
+    unnamed_entry: str = "dfun"
+    render_kwargs: tuple = ()
+
+
+_PYTHON_MODEL = "tvbo-python-model.py.mako"
+_JAX_DFUNS = "tvbo-jax-dfuns.py.mako"
+_AUTO7P = "tvbo-auto7p.py.mako"
+_PDE_FEM = "tvbo-pde-fem.py.mako"
+
+CODE_FORMATS: dict[str, CodeFormat] = {
+    "tvb": CodeFormat("tvbo-tvb-model.py.mako", "python", unnamed_entry="GeneratedDynamics"),
+    "tvboptim": CodeFormat("tvbo-tvboptim-dynamics.py.mako", "python", unnamed_entry="GeneratedDynamics"),
+    "scipy": CodeFormat(_PYTHON_MODEL, "python"),
+    "python": CodeFormat(_PYTHON_MODEL, "python"),
+    "jax-python": CodeFormat(_PYTHON_MODEL, "python"),
+    "python-jax": CodeFormat(_PYTHON_MODEL, "python"),
+    "python-network": CodeFormat(_PYTHON_MODEL, "python", render_kwargs=(("coupling_as_argument", True),)),
+    "jax": CodeFormat(_JAX_DFUNS, "python", entry="dfun"),
+    "numpy": CodeFormat(_JAX_DFUNS, "python", entry="dfun"),
+    "autodiff": CodeFormat(_JAX_DFUNS, "python", entry="dfun"),
+    "julia": CodeFormat("tvbo-julia-DifferentialEquations.jl.mako", "julia"),
+    "bifurcation-numcont": CodeFormat(_AUTO7P),
+    "bifurcation-auto7p": CodeFormat(_AUTO7P),
+    "pde-fem": CodeFormat(_PDE_FEM, "python"),
+    "pde-python": CodeFormat(_PDE_FEM, "python"),
+    "pde": CodeFormat(_PDE_FEM, "python"),
+    "pyrates": CodeFormat(language="yaml"),
+}
+"""Every component-level code format: template, output language and entry point."""
+
+
+def code_format(format: str) -> CodeFormat | None:
+    """The :class:`CodeFormat` declared for *format*, or ``None`` if it declares none."""
+    return CODE_FORMATS.get(str(format).lower())
+
+
+def source_language(format: str) -> str:
+    """Return the output language of *format*, or ``""`` when it emits none.
+
+    A backend declares its language once: component formats on their :data:`CODE_FORMATS` entry, experiment-level export backends on their :class:`~tvbo.export.registry.ExportFormat`.
+    """
+    spec = code_format(format)
+    if spec is not None:
+        return spec.language
+    from tvbo.export import registry
+
+    try:
+        return registry.resolve(format).language
+    except ValueError:
+        return ""
+
+
+def entry_point_name(model, format: str) -> str:
+    """The name generated code for *format* binds its callable to.
+
+    The template and [`Dynamics.execute`](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.execute) read this one declaration — including the fallback for a model with no name of its own — so handing a rendered dfun to a custom JAX or NumPy workflow never depends on guessing which name the template chose.
+
+    Raises:
+        ValueError: If *format* is not declared, or emits something other than Python.
+            A Julia module or a YAML document has no Python callable to bind, and
+            `exec`-ing one raises `SyntaxError` from inside the generated text rather
+            than naming the format that could never have worked.
+    """
+    spec = code_format(format)
+    if spec is None:
+        raise ValueError(f"Format '{format}' declares no entry point in CODE_FORMATS, so its output cannot be executed.")
+    if spec.language != "python":
+        raise ValueError(
+            f"Format '{format}' emits {spec.language or 'unformatted'} output, not Python, "
+            "so there is no callable to execute. Render it and hand it to that toolchain."
+        )
+    return spec.entry or get_func_name(model, fallback=spec.unnamed_entry)
+
+
+def format_code(code: str, format: str = "python", use_black: bool = True) -> str:
+    """Format generated *code* for the backend named by *format*.
+
+    Component-level renders (a Dynamics, a Coupling, an Observation) come through here; whole-experiment renders are formatted by :func:`tvbo.export.registry.render`. Both resolve the language the same way and both route to :mod:`tvbo.codegen.style`, so they cannot drift apart.
 
     Args:
         code: Source code string to format
-        format: Language/variant (python, jax, numpy, scipy, tvboptim)
-        use_black: Whether to apply black formatting (default True)
-        **kwargs: Additional black.FileMode options (line_length, etc.)
-    """
-    if format in ["tvb", "python", "autodiff", "jax", "numpy", "scipy", "tvboptim"]:
-        if use_black:
-            code = black.format_str(code, mode=black.FileMode(**kwargs))
-    return code
-
-
-def get_statevariable_equations(model):
-    """Map each state variable to its symbolic time-derivative equation.
-
-    For every state variable of `model`, look up the matching `TimeDerivative`
-    expression among the model's symbolic differential equations, keyed by the
-    derivative's label with the model acronym suffix stripped.
-
-    Args:
-        model: An ontology model class, or a model name to resolve.
-
-    Returns:
-        A dict mapping state-variable name to its differential-equation
-        expression.
-    """
-    acr = ontology.get_model_suffix(model)
-    diff_eqs = equations.symbolic_differential_equations(model)
-    state_variable_dfuns = {
-        k: diff_eqs[
-            (
-                ontology.intersection(v.subclasses(), ontology.onto.TimeDerivative.descendants())[0]
-                .label.first()
-                .replace(acr, "")
-                if ontology.intersection(v.subclasses(), ontology.onto.TimeDerivative.descendants())
-                else v.has_derivative[0].label.first().replace(acr, "")
-            )
-        ]
-        for k, v in ontology.get_model_statevariables(model).items()
-    }
-    return state_variable_dfuns
-
-
-def get_model_info(model):
-    """Collect the codegen-relevant metadata for a model into a dict.
-
-    Resolve `model` from the ontology if given as a name, then gather its
-    parameters and constants, coupling-variable indices, coupling terms,
-    non-integrated variables (functions and conditionals) with their
-    dependency-sorted symbolic expressions, state variables, state-variable
-    differential equations, and variables of interest.
-
-    Args:
-        model: An ontology model class, or a model name to resolve.
-
-    Returns:
-        A dict with keys `parameters`, `cvars`, `coupling_terms`,
-        `non_integrated_variables`, `ninvar_dfuns`, `state_variables`,
-        `state_variable_dfuns` and `vois`.
-    """
-    if isinstance(model, str):
-        model = ontology.get_model(model)
-
-    svs = ontology.get_model_statevariables(model)
-    cvars = [list(svs.keys()).index(c) for c in ontology.get_model_cvars(model).keys()]
-
-    parameters = ontology.get_model_parameters(model)
-    parameters.update(ontology.get_model_constants(model))
-
-    non_integrated_variables = ontology.get_model_functions(model)
-    non_integrated_variables.update(ontology.get_model_conditionals(model))
-    ninvar_dfuns = equations.symbolic_model_functions(model)
-    ninvar_dfuns.update(equations.symbolic_conditions(model))
-    ninvar_dfuns = equations.sort_equations_by_dependencies(ninvar_dfuns)
-
-    # TODO: Remove hack that replaces 'e' with 'E' in equations created by pycode
-    ninvar_dfuns = {
-        var: re.sub(r"(?<=[( ])e(?= )", "E", pycode(eq, fully_qualified_modules=False)) for var, eq in ninvar_dfuns.items()
-    }
-    for var, eq in ninvar_dfuns.items():
-        if "if" in eq and "else" in eq:
-            ninvar_dfuns[var] = equations.convert_ifelse_to_np_where(eq)
-
-    model_info = dict(
-        parameters=parameters,
-        cvars=cvars,
-        coupling_terms=list(ontology.get_model_coupling_terms(model).keys()),
-        non_integrated_variables=non_integrated_variables,
-        ninvar_dfuns=ninvar_dfuns,
-        state_variables=svs,
-        state_variable_dfuns=get_statevariable_equations(model),
-        vois=ontology.get_model_vois(model),
-    )
-    return model_info
-
-
-def get_param_info(param_class):
-    """Extract label, symbol, default, range, definition and dependencies of a parameter.
-
-    Fall back from the ontology `defaultValue` to `value` when no default is
-    set.
-
-    Args:
-        param_class: Ontology parameter class to read metadata from.
-
-    Returns:
-        A dict describing the parameter.
-    """
-    return dict(
-        label=param_class.label.first(),
-        symbol=param_class.symbol.first(),
-        default=(
-            param_class.defaultValue.first()
-            if not isinstance(param_class.defaultValue.first(), type(None))
-            else param_class.value.first()
-        ),
-        range=ontology.get_range(param_class),
-        definition=param_class.definition.first(),
-        dependencies=param_class.has_dependency,
-    )
-
-
-def get_sv_info(sv_class):
-    """Extract label, symbol, default, range, boundaries and definition of a state variable.
-
-    Parse the ontology `stateVariableRange` and `stateVariableBoundaries`
-    strings, defaulting to an effectively unbounded range and open boundaries
-    when unset.
-
-    Args:
-        sv_class: Ontology state-variable class to read metadata from.
-
-    Returns:
-        A dict describing the state variable.
-    """
-    range = sv_class.stateVariableRange.first().split(",") if sv_class.stateVariableRange else [-1e100, 1e100]
-
-    if sv_class.stateVariableBoundaries:
-        boundaries = [svb.strip() for svb in sv_class.stateVariableBoundaries.first().split(",")]
-
-    else:
-        boundaries = (None, None)
-
-    return dict(
-        label=sv_class.label.first(),
-        symbol=sv_class.symbol.first(),
-        default=sv_class.defaultValue.first(),
-        range=range,
-        boundaries=boundaries,
-        definition=sv_class.definition.first(),
-    )
-
-
-def boolean2bitwise(code_str):
-    """Rewrite Python boolean operators as their bitwise equivalents.
-
-    Replace `and`/`or`/`not` with `&`/`|`/`~` so element-wise array
-    expressions evaluate correctly.
-
-    Args:
-        code_str: Source expression using boolean keywords.
-
-    Returns:
-        The expression with boolean operators replaced by bitwise operators.
-    """
-    return code_str.replace("and", "&").replace("or", "|").replace("not", "~")
-
-
-def equation2class(EQ, fout=None, print_source=False, **kwargs):
-    """Generate a TVBO equation class from an ontology equation.
-
-    Sympify the equation, render it (with its Python and LaTeX forms and
-    default parameter values) through the `_tvbo-tvb-equation.py.mako`
-    template, then either write the source, print it, or execute it and return
-    an instantiated equation object.
-
-    Args:
-        EQ: Ontology equation class to convert.
-        fout: Optional path; when given, write the rendered source there instead
-            of instantiating.
-        print_source: When True, print the rendered source with line numbers.
-        **kwargs: Overrides for the equation's default parameter values.
-
-    Returns:
-        The instantiated equation object, or `None` when `fout` is given.
-    """
-    var = sp.symbols("var")
-    eq_name = EQ.label.first()
-    definition = EQ.definition.first()
-    eq_type = ", ".join([c.name for c in ontology.intersection(EQ.is_a, ontology.onto.Equation.descendants())])
-
-    eq = equations.sympify_value(EQ)
-    code_str = boolean2bitwise(
-        equations.convert_ifelse_to_np_where(pycode(eq.subs({"t": var}), fully_qualified_modules=False))
-    )
-    latex_str = sp.latex(eq, mul_symbol="dot")
-
-    values = ontology.get_default_values(EQ)
-    for k, v in kwargs.items():
-        if k in values:
-            values[k] = v
-
-    local_vars = {}
-    template = templates.lookup.get_template("_tvbo-tvb-equation.py.mako")
-    rendered_code = template.render(
-        eq_name=eq_name,
-        definition=definition,
-        code_str=code_str,
-        latex_str=latex_str,
-        parameters=values,
-        eq_type=eq_type,
-    )
-    if print_source:
-        # Print each line with its line number
-        for i, line in enumerate(rendered_code.split("\n"), start=1):
-            print(f"{i}\t{line}")
-    if fout:
-        with open(fout, "w") as f:
-            f.write(rendered_code)
-    else:
-        exec(rendered_code, exec_globals, local_vars)
-        eq_kwargs = {k: v for k, v in values.items() if k in ["equation", "parameters", "gid"]}
-        tvbo_equation = local_vars[f"{eq_name}"](**eq_kwargs)
-        return tvbo_equation
-
-
-def coupling2class(CF, fout=None, print_source=False, **kwargs):
-    """Generate a TVBO coupling class from an ontology coupling function.
-
-    Resolve `CF` from the ontology if given as a name, build the pre- and
-    post-summation expressions and parameters, and render them through the
-    `_tvbo-tvb-coupling.py.mako` template. Then either write the source, print
-    it, or execute it and return an instantiated coupling object. Keyword
-    arguments matching coupling attributes are passed as array-coerced
-    constructor values.
-
-    Args:
-        CF: Ontology coupling-function class, or a name to resolve.
-        fout: Optional path; when given, write the rendered source there instead
-            of instantiating.
-        print_source: When True, print the rendered source with line numbers.
-        **kwargs: Constructor overrides for recognised coupling attributes.
-
-    Returns:
-        The instantiated coupling object, or `None` when `fout` is given.
-    """
-    from tvbo.datamodel import schema as tvbo_datamodel
-
-    if isinstance(CF, str):
-        CF = ontology.get_coupling_function(CF)
-
-    sparse = ontology.onto.SparseCoupling in CF.is_a
-    coupling_name = CF.label.first()
-    eqs = equations.get_symbolic_coupling(CF)
-    fpre = pycode(eqs["pre"], fully_qualified_modules=False)
-    fpost = pycode(eqs["post"], fully_qualified_modules=False)
-
-    local_vars = {}
-    template = templates.lookup.get_template("_tvbo-tvb-coupling.py.mako")
-    parameters = coupling.get_parameters(CF)
-
-    rendered_code = template.render(
-        class_name=coupling_name,
-        pre_expr=fpre,
-        post_expr=fpost,
-        parameters={v["label"]: tvbo_datamodel.Parameter(**v) for k, v in parameters.items()},
-        sparse=sparse,
-    )
-    if print_source:
-        # Print each line with its line number
-        for i, line in enumerate(rendered_code.split("\n"), start=1):
-            print(f"{i}\t{line}")
-    if fout:
-        with open(fout, "w") as f:
-            f.write(rendered_code)
-    else:
-        exec(rendered_code, exec_globals, local_vars)
-        tvbo_coupling = local_vars[f"{coupling_name}"]
-        class_kwargs = {}
-        for k, v in kwargs.items():
-            if hasattr(tvbo_coupling, k):
-                if not isinstance(v, np.ndarray):
-                    v = np.array([v])
-                class_kwargs[k] = v
-        return tvbo_coupling(**class_kwargs)
-
-
-def formulate_dependency_imports(dependencies):
-    """Build `from ... import ...` statements for dotted dependency paths.
-
-    Only dependencies containing a dotted path produce an import; the final
-    segment is imported from the preceding module path.
-
-    Args:
-        dependencies: Iterable of dependency strings (e.g. `"pkg.mod.name"`).
-
-    Returns:
-        A generator of import statements, one per dotted dependency.
-    """
-    for d in dependencies:
-        if len(d.split(".")) > 1:
-            yield f"from {'.'.join(d.split('.')[0:-1])} import {d.split('.')[-1]}"
-
-
-def model2class(
-    model,
-    fout=None,
-    print_source=False,
-    split_nonintegrated_variables=False,
-    return_instance=True,
-    sub_ninvars=False,
-    bifmodel=False,
-    **kwargs,
-):
-    """Generate a TVBO model class from an ontology model.
-
-    Resolve `model` from the ontology if given as a name, assemble its state
-    variables, differential equations, non-integrated variables, parameters and
-    dependency imports via `get_model_info`, and render them through the
-    `_tvbo-tvb-model_old.py.mako` template. Then either write the source, print
-    it, or execute it and return the model class or an instance.
-
-    Args:
-        model: An ontology model class, or a model name to resolve.
-        fout: Optional path; when given, write the rendered source there instead
-            of instantiating.
-        print_source: When True, print the rendered source with line numbers.
-        split_nonintegrated_variables: When True, treat non-integrated variables
-            as additional state variables (forced off when `sub_ninvars` is set).
-        return_instance: When True, return an instance; otherwise return the
-            class.
-        sub_ninvars: When True, substitute non-integrated function expressions
-            into the state equations instead of splitting them out.
-        bifmodel: Reserved flag (currently unused in rendering).
-        **kwargs: Constructor overrides for recognised model attributes.
-
-    Returns:
-        The instantiated model, the model class, or `None` when `fout` is given.
+        format: Backend key or component-level alias (python, jax, numpy, tvboptim…)
+        use_black: Set False to return *code* untouched
 
     Raises:
-        ValueError: If a model name cannot be resolved in the ontology.
+        tvbo.codegen.style.GeneratedSourceError: *code* does not parse as its language.
     """
-    if isinstance(model, str):
-        model = ontology.get_model(model)
+    from tvbo.codegen.style import format_source
 
-        if not model:
-            raise ValueError(f"Model {model} not found in the ontology. Available models:" + "\n".join(ontology.get_models()))
+    return format_source(code, source_language(format)) if use_black else code
 
-    if sub_ninvars:
-        split_nonintegrated_variables = False
 
-    model_name = model.label.first()
-    local_vars = {}
-    model_info = get_model_info(model)
+def time_dependent_equations(model) -> list[str]:
+    """Names whose equation reads the time symbol ``t``, sorted.
 
-    state_variables = model_info["state_variables"]
+    A backend whose derivative signature carries no time — TVB's ``Model.dfun`` — cannot express these, and emitting the term anyway yields an unbound name. The equations are the ground truth rather than the ``autonomous`` slot, which is author-declared and can disagree with them.
 
-    if split_nonintegrated_variables:
-        state_variables.update(model_info["non_integrated_variables"])
-        nivars = list(model_info["ninvar_dfuns"].keys())
-    else:
-        nivars = None
-
-    for k, sv in state_variables.items():
-        state_variables[k] = get_sv_info(sv)
-    sv_dfuns = model_info["state_variable_dfuns"]
-    # if split_nonintegrated_variables:
-    sv_dfuns.update(model_info["ninvar_dfuns"])
-
-    if sub_ninvars:
-        sv_dfuns = equations.substitute_function_in_state_equations(sv_dfuns, model_info["ninvar_dfuns"])
-
-    parameters = dict()
-    for k, param in model_info["parameters"].items():
-        parameters[k] = get_param_info(param)
-
-    dependencies = list()
-    for v in model.descendants():
-        if len(v.has_dependency) > 0:
-            dependencies.extend(v.has_dependency)
-    dependencies = list(set(dependencies))
-    import_statements = list(formulate_dependency_imports(dependencies))
-
-    template = Template(filename=join(TEMPLATES, "_tvbo-tvb-model_old.py.mako"))
-
-    rendered_code = template.render(
-        model_name=model_name,
-        coupling_terms=model_info["coupling_terms"],
-        non_integrated_variables=nivars if nivars and len(nivars) > 0 else None,
-        state_variables=state_variables,
-        state_variable_dfuns=sv_dfuns,
-        parameters=parameters,
-        spatial_parameter_names=[],
-        cvars=model_info["cvars"],
-        ninvar_dfuns=model_info["ninvar_dfuns"],
-        vois=model_info["vois"],
-        import_statements=import_statements,
-    )
-    if print_source:
-        # Print each line with its line number
-        for i, line in enumerate(rendered_code.split("\n"), start=1):
-            print(f"{i}\t{line}")
-    if fout:
-        with open(fout, "w") as f:
-            f.write(rendered_code)
-    else:
-        exec(rendered_code, exec_globals, local_vars)
-        tvbo_model = local_vars[f"{model_name}"]
-        class_kwargs = {}
-        for k, v in kwargs.items():
-            if hasattr(tvbo_model, k):
-                if isinstance(v, float):
-                    v = np.array([v])
-                class_kwargs[k] = v
-        if return_instance:
-            return tvbo_model(**class_kwargs)
-        else:
-            return tvbo_model
+    A model that declares a symbol of its own named ``t`` — a time constant, a threshold — reads no time at all: there the name means that symbol, and flagging it would block a valid autonomous export.
+    """
+    t = sp.Symbol("t")
+    # Only integrated and derived quantities: a `functions:` entry taking an argument named `t` binds it as a parameter, so its rhs naming `t` is not time dependence.
+    scoped = set(model.state_variables) | set(model.derived_variables) | set(model.derived_parameters)
+    # `t` is integrator time only when the model declares no symbol of its own by that name.
+    if "t" in scoped | set(model.parameters):
+        return []
+    return sorted(name for name, eq in (model.get_equations() or {}).items() if name in scoped and t in eq.rhs.free_symbols)
 
 
 ### Integrator ###
@@ -519,35 +208,3 @@ def get_integrator_info(integrator):
         "dX_expr": dX,
     }
     return info
-
-
-def integrator2class(integrator, return_instance=True, **kwargs):
-    """Resolve an ontology integrator to a TVB integrator class or instance.
-
-    Look up the matching `tvb.simulator.integrators` class, selecting the
-    stochastic variant when a `noise` keyword is supplied and the deterministic
-    variant otherwise.
-
-    Args:
-        integrator: Ontology integrator class, or a name to search for.
-        return_instance: When True, return an instance built from `kwargs`;
-            otherwise return the class.
-        **kwargs: Integrator constructor arguments; a `noise` entry selects the
-            stochastic variant.
-
-    Returns:
-        The TVB integrator instance or class.
-    """
-    from tvb.simulator import integrators
-
-    if isinstance(integrator, str):
-        integrator = ontology.search_all(integrator)
-
-    Integrator = getattr(
-        integrators,
-        integrator.name + ("Stochastic" if "noise" in kwargs else "Deterministic"),
-    )
-
-    if return_instance:
-        return Integrator(**kwargs)
-    return Integrator

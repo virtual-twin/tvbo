@@ -1,0 +1,56 @@
+name: DuffingForced
+parameters:
+  omega:
+    name: omega
+    value: 2.2
+    description: Forcing angular frequency ω.
+  f:
+    name: f
+    value: 27.0
+    description: Forcing amplitude f.
+  d:
+    name: d
+    value: 0.2
+    description: Linear damping coefficient d.
+  beta:
+    name: beta
+    value: 1.0
+    description: Linear stiffness parameter β.
+description: Forced Duffing oscillator with linear damping and periodic forcing. Exhibits
+  rich nonlinear dynamics including bifurcations, quasiperiodicity, and chaos depending
+  on forcing amplitude and frequency.
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- Duffing1918
+state_variables:
+  x:
+    name: x
+    description: Position coordinate.
+    equation:
+      lhs: Derivative(x, t)
+      rhs: v
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  v:
+    name: v
+    description: Velocity coordinate.
+    equation:
+      lhs: Derivative(v, t)
+      rhs: f*cos(omega*t) - beta*x - x**3 - d*v
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.25
+number_of_modes: 1
+model_type: generic
+autonomous: false
+cse: false
+compile: false

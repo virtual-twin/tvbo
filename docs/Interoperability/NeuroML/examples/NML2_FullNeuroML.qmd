@@ -1,6 +1,9 @@
 ---
 title: "NML2: Full NeuroML"
 description: "Complete NeuroML document with cell, channels, network, and inputs"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## NML2_FullNeuroML.nml

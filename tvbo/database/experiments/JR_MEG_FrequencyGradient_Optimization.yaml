@@ -134,7 +134,7 @@ network:
   transforms:
     - name: weight
       equation:
-        rhs: "W / W_max"
+        rhs: "weight / max(weight)"
 
     # Coupling functions: key == class name == coupling_input key
   coupling:
@@ -222,18 +222,29 @@ functions:
 
   cauchy_pdf:
     name: cauchy_pdf
-    description: "Cauchy-Lorentz probability density function"
-    equation:
-      rhs: "1 / (pi * gamma * (1 + ((x - x0) / gamma)**2))"
-      definition: "Cauchy-Lorentz distribution centered at x0 with scale gamma"
+    description: "Cauchy-Lorentz density of x about each peak in x0, one row per peak"
+    source_code: "1.0 / (3.141592653589793 * gamma * (1.0 + ((x[None, :] - x0[:, None]) / gamma) ** 2))"
     arguments:
       x:
-        description: "Input values (frequency axis)"
+        description: "Frequency axis shared by every row"
       x0:
         description: "Peak location for each region (target frequencies)"
       gamma:
         value: 1.0
         description: "Scale parameter (half-width at half-maximum)"
+
+  distance_from_seed:
+    name: distance_from_seed
+    description: "Mean tract length from the seed regions to every region, seeds picked BY LABEL"
+    source_code: "lengths[[list(labels).index(s) for s in seeds], :].mean(axis=0)"
+    arguments:
+      lengths:
+        description: "Tract-length matrix (n_regions, n_regions)"
+      labels:
+        description: "Region label of each network node"
+      seeds:
+        value: [L.LOG, R.LOG]
+        description: "Seed regions the gradient is measured from (bilateral lateral occipital)"
 
   correlation:
     name: correlation
@@ -267,6 +278,7 @@ functions:
 observations:
     # Root: Power Spectral Density from simulation state variable y0
   simulated_psd:
+    dims: [node, variable, frequency]
     label: "Simulated Power Spectral Density"
     description: "Power spectral density using Welch's method on simulated y0"
     source: [y0]
@@ -299,9 +311,93 @@ observations:
             value: 256
             description: "Segment length for Welch"
 
+  # === Raw signals kept for inspection, not consumed by the fit ===
+  y0_trace:
+    dims: [time, variable, node]
+    label: "Pyramidal Membrane Potential"
+    description: "Subsampled y0 trajectory, the network dynamics the spectra are computed from"
+    source: [y0]
+    record: true
+    pipeline:
+      - function: subsample
+        output: y0_trace
+        arguments:
+          data:
+            value: integration.result
+
+  y0_mean:
+    dims: [variable, node]
+    label: "Mean Pyramidal Potential per Region"
+    description: "Time-average of y0 for each region, the amplitude a trace bundle is shaded by"
+    source:
+      - y0_trace
+    record: true
+    pipeline:
+      - callable:
+          module: jax.numpy
+          name: mean
+        output: y0_mean
+        arguments:
+          a:
+            value: y0_trace
+          axis:
+            value: 0
+
+  psd_frequencies:
+    dims: [frequency]
+    label: "PSD Frequency Axis"
+    description: "The Welch frequency axis, recorded so a spectrum can be plotted against Hz rather than bin index"
+    source:
+      - simulated_psd
+    record: true
+    pipeline:
+      - callable:
+          module: jax.numpy
+          name: asarray
+        output: psd_frequencies
+        arguments:
+          a:
+            value: simulated_psd.frequencies
+
+  # === Fit target, derived from the connectome rather than passed in at runtime ===
+  target_peak_frequencies:
+    dims: [node]
+    label: "Target Peak Frequencies"
+    description: "The MEG frequency gradient the fit reproduces, built from tract-length distance to visual cortex"
+    pipeline:
+      - function: distance_from_seed
+        output: dist_from_vc
+        arguments:
+          lengths:
+            value: network.edges.tractLength
+          labels:
+            value: network.nodes.labels
+      - function: compute_target_frequencies
+        output: target_peak_frequencies
+        arguments:
+          d:
+            value: dist_from_vc
+
+  target_psd:
+    dims: [node, frequency]
+    label: "Target Power Spectral Density"
+    description: "Per-region Cauchy spectra centred on the target peak frequencies"
+    source:
+      - simulated_psd
+      - target_peak_frequencies
+    pipeline:
+      - function: cauchy_pdf
+        output: target_psd
+        arguments:
+          x:
+            value: simulated_psd.frequencies
+          x0:
+            value: target_peak_frequencies
+
   # === Derived observations (computed from other observations) ===
     # Derived: Average spectrum across regions
   avg_spectrum:
+    dims: [variable, frequency]
     name: avg_spectrum
     label: "Average Spectrum"
     description: "Mean power spectrum across all regions"
@@ -322,6 +418,7 @@ observations:
 
     # Derived: Peak frequency per region
   peak_frequencies:
+    dims: [node]
     label: "Peak Frequencies per Region"
     description: "Peak frequency for each brain region from its PSD"
     source:
@@ -411,7 +508,8 @@ optimizations:
           value: observations.simulated_psd.psd
           description: "Simulated power spectrum from observation (n_regions, n_freqs)"
         target:
-          description: "Target power spectrum (passed to optimizer at runtime)"
+          value: observations.target_psd
+          description: "Target power spectrum, derived from the connectome's own tract lengths"
 
       # Optimizer configuration
     algorithm: adamaxw

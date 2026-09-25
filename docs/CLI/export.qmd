@@ -61,5 +61,5 @@ Run `tvbo formats` to see the full alias list.
 ## See also
 
 - [`tvbo save`](save.qmd) — `export --with-data` shortcut
-- [`tvbo formats`](formats.qmd) — list registered formats
-- [`tvbo import`](import.qmd) — inverse direction (foreign → TVBO)
+- [`tvbo formats`](formats.qmd): list registered formats
+- [`tvbo import`](import.qmd): inverse direction (foreign → TVBO)

@@ -68,7 +68,7 @@
       }
     },
     "n_parallel": {
-      "type": "integer"
+      "type": "string"
     },
     "n_trials": {
       "type": "integer"
@@ -81,6 +81,12 @@
     },
     "parallel_batch_size": {
       "type": "integer"
+    },
+    "sweep_seeding": {
+      "type": "string"
+    },
+    "sweep_direction": {
+      "type": "string"
     }
   }
 }

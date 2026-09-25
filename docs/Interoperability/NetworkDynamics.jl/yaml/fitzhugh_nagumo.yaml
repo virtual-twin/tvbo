@@ -45,7 +45,7 @@ dynamics:
             value: 0.05
             unit: "1"
             description: "Ratio of fast (u) to slow (v) time scales"
-    coupling_terms:
+    coupling_inputs:
         c_electrical:
             description: "Aggregated electrical gap-junction coupling (sum of incident edge outputs)"
     state_variables:

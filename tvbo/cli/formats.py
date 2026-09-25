@@ -1,4 +1,5 @@
 """``tvbo formats`` — list every registered I/O format."""
+
 from __future__ import annotations
 
 import typer
@@ -13,6 +14,7 @@ def formats(
     rows = _export.list_format_dicts()
     if json:
         from . import _common
+
         _common.emit_json(rows)
         return
 

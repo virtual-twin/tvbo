@@ -23,11 +23,12 @@
     except TypeError:
         monitors_seq = _mon.values() if hasattr(_mon, 'values') else (_mon or [])
     model = experiment.dynamics
-    coupling = experiment.coupling
+    coupling = context['coupling']
     integration = experiment.integration
 
     dt = integration.step_size if integration is not None else 0.1
-    cvar = [i for i, sv in enumerate(experiment.dynamics.state_variables.values()) if sv.coupling_variable]
+    from tvbo.templates.base.utils import gathered_state_indices
+    cvar = gathered_state_indices(model, coupling)
     vois = [sv.name for sv in experiment.dynamics.state_variables.values() if getattr(sv, 'record', True)]
 
     svars = list(model.state_variables.keys())
@@ -35,9 +36,9 @@
 
     # Identify output derived variables that depend on dfun arguments (coupling, t, noise, stimulus)
     # These must be computed inside integrate and returned as part of scan output
-    dfun_args = set(model.coupling_terms.keys()) | {'t', 'noise', 'stimulus'}
-    derived_var_names = list(model.derived_variables.keys())
-    derived_param_names = list(model.derived_parameters.keys())
+    dfun_args = set(model.coupling_inputs.keys()) | {'t', 'noise', 'stimulus'}
+    derived_var_names = list(model.in_dependency_order('derived_variables').keys())
+    derived_param_names = list(model.in_dependency_order('derived_parameters').keys())
     param_names = [p.name for p in model.parameters.values()]
     output_vars = list(model.output) if model.output else svars
     has_output = len(output_vars) > 0
@@ -88,11 +89,15 @@
     ## print('simulation delayed:', is_delayed)
 %>
 
+import logging
+
 import jax
 from tvbo.data.types import TimeSeries
 from tvbo.utils import Bunch
 ## Usefull shorthands
 import jax.numpy as jnp
+
+logger = logging.getLogger("tvbo.run")
 
 <%include file="/tvbo-jax-coupling.py.mako" />
 <%include file="/tvbo-jax-dfuns.py.mako" />
@@ -117,29 +122,26 @@ ${obs.create_all_observations(experiment, obs_sampling=context.get('obs_sampling
 % endif
 
 ## Transformation for derived parameters
+<%
+    from tvbo.templates.base.utils import referenced_parameters
+    derived_params = list(experiment.dynamics.in_dependency_order('derived_parameters').values())
+    ## Unpack only what the derived expressions read; the rest would be dead bindings.
+    unpacked_params = referenced_parameters(
+        experiment.dynamics, within=experiment.dynamics.derived_parameters or {}
+    )
+%>
 def transform_parameters(_p):
-% if experiment.dynamics.parameters:
-    ${", ".join([p.name for p in experiment.dynamics.parameters.values()])} = _p.${", _p.".join([p.name for p in experiment.dynamics.parameters.values()])}
+% if unpacked_params:
+    ${", ".join(unpacked_params)} = _p.${", _p.".join(unpacked_params)}
+
 % endif
-    \
-## % for par in [p.name for p in experiment.dynamics.parameters.values()]:
-## ${par}, \
-## % endfor
-## = params_dfun
-
-    % for par in experiment.dynamics.derived_parameters.values():
+% for par in derived_params:
     ${par.name} = ${jaxcode_obj(par)}
-    % endfor
-    %if len(experiment.dynamics.derived_parameters.values()) > 0:
-    _p.${", _p.".join([p.name for p in experiment.dynamics.derived_parameters.values()])} = ${", ".join([p.name for p in experiment.dynamics.derived_parameters.values()])}
-    % endif
+% endfor
+% if derived_params:
+    _p.${", _p.".join([p.name for p in derived_params])} = ${", ".join([p.name for p in derived_params])}
+% endif
     return _p
-
-##     return (\
-## % for par in [p.name for p in experiment.dynamics.parameters.values()] + [p.name for p in experiment.dynamics.derived_parameters.values()]:
-## ${par}, \
-## % endfor
-## )
 c_vars = ${utils.array_input(np.array(cvar))}.astype(jnp.int32)
 
 ## Main Function
@@ -149,9 +151,14 @@ def kernel(state):
     # problem dimensions
     n_nodes = ${getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions}
     n_svar = ${len(experiment.dynamics.state_variables)}
+## n_cvar sizes the delay-history pad and nh slices it and the returned ICs, so emitting either outside the branch that reads it leaves a binding nothing consumes.
+% if is_delayed and small_dt:
     n_cvar = ${len(cvar) if len(cvar) > 0 else len(experiment.dynamics.state_variables)}
+% endif
     n_modes = ${experiment.dynamics.number_of_modes}
+% if is_delayed or return_new_ics:
     nh = ${experiment.horizon}
+% endif
 
     %if is_delayed:
     %if len(cvar) > 0:
@@ -181,11 +188,8 @@ def kernel(state):
 
     # Generate batch noise using xi with per-state sigma_vec.
     # Prefer state-provided sigma_vec (supports vmapped sweeps); fallback to experiment-level constants.
-    seed = getattr(state.noise, 'seed', 0) if hasattr(state.noise, 'seed') else 0
-    try:
-        sigma_vec_runtime = getattr(state.noise, 'sigma_vec', None)
-    except Exception:
-        sigma_vec_runtime = None
+    seed = getattr(state.noise, 'seed', 0)
+    sigma_vec_runtime = getattr(state.noise, 'sigma_vec', None)
     sigma_vec = sigma_vec_runtime if sigma_vec_runtime is not None else ${utils.array_input(sw)}
     noise = g(dt, nt, n_svar, n_nodes, n_modes, seed=seed, sigma_vec=sigma_vec)
 
@@ -238,8 +242,8 @@ def kernel(state):
     # output_derived_in_integrate and output_derived_from_trace also already computed
     %>
     % if has_output:
-    % if output_derived_from_trace or output_derived_in_integrate:
-    ## Need parameters for derived variable computations
+    % if (output_derived_from_trace or output_derived_in_integrate) and (param_names + derived_param_names):
+    ## Need parameters for derived variable computations; an empty unpack does not parse.
     ${", ".join(param_names + derived_param_names)} = p.${", p.".join(param_names + derived_param_names)}
     % endif
 
@@ -386,6 +390,10 @@ def run_experiment(state):
 if __name__ == "__main__":
     import argparse
     from pathlib import Path as _Path
+    from tvbo.log import configure_logging
+
+    # Standalone run: progress on stderr, controlled by TVBO_LOG_LEVEL (default INFO).
+    configure_logging()
 
     _parser = argparse.ArgumentParser(description="Run JAX-generated TVBO simulation")
     _parser.add_argument("--spec", type=_Path, default=None,
@@ -405,7 +413,7 @@ if __name__ == "__main__":
     _experiment = SimulationExperiment.from_yaml(str(_spec))
     _state = _experiment.collect_state()
     _result = kernel(_state)
-    print(f"Done: {type(_result).__name__}, shape={getattr(_result, 'shape', None)}")
+    logger.info("Done: %s, shape=%s", type(_result).__name__, getattr(_result, "shape", None))
 
     if _args.output is not None:
         _args.output.mkdir(parents=True, exist_ok=True)
@@ -414,4 +422,4 @@ if __name__ == "__main__":
         else:
             import numpy as _np
             _np.savez(_args.output / "result.npz", data=getattr(_result, "data", _result))
-        print(f"Wrote results to {_args.output}")
+        logger.info("Wrote results to %s", _args.output)

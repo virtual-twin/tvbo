@@ -75,69 +75,54 @@ derived_variables:
     description: Excitatory-to-excitatory mode-coupling matrix from Gaussian quadrature.
     grounding: [GO:0060079]
     equation: {lhs: A_ik, rhs: '0.5', latex: false}
-    conditional: false
   B_ik:
     description: Inhibitory-to-excitatory mode-coupling matrix.
     grounding: [GO:0060080]
     equation: {lhs: B_ik, rhs: '0.5', latex: false}
-    conditional: false
   C_ik:
     description: Excitatory-to-inhibitory mode-coupling matrix.
     grounding: [GO:0060079]
     equation: {lhs: C_ik, rhs: '0.5', latex: false}
-    conditional: false
   a_i:
     description: Per-mode cubic coefficient for the excitatory xi dynamics (a * <V|V^3>).
     equation: {lhs: a_i, rhs: 'a', latex: false}
-    conditional: false
   b_i:
     description: Per-mode quadratic coefficient for the excitatory xi dynamics.
     equation: {lhs: b_i, rhs: 'b', latex: false}
-    conditional: false
   c_i:
     description: Per-mode constant for the excitatory eta dynamics.
     equation: {lhs: c_i, rhs: 'c', latex: false}
-    conditional: false
   d_i:
     description: Per-mode quadratic coefficient for the excitatory eta dynamics.
     grounding: [GO:0060079]
     equation: {lhs: d_i, rhs: 'd', latex: false}
-    conditional: false
   e_i:
     description: Per-mode cubic coefficient for the inhibitory alpha dynamics.
     equation: {lhs: e_i, rhs: 'a', latex: false}
-    conditional: false
   f_i:
     description: Per-mode quadratic coefficient for the inhibitory alpha dynamics.
     equation: {lhs: f_i, rhs: 'b', latex: false}
-    conditional: false
   h_i:
     description: Per-mode constant for the inhibitory beta dynamics.
     equation: {lhs: h_i, rhs: 'c', latex: false}
-    conditional: false
   p_i:
     description: Per-mode quadratic coefficient for the inhibitory beta dynamics.
     grounding: [GO:0060080]
     equation: {lhs: p_i, rhs: 'd', latex: false}
-    conditional: false
   IE_i:
     description: Per-mode constant excitatory input.
     grounding: [GO:0060079]
     equation: {lhs: IE_i, rhs: '0.0', latex: false}
-    conditional: false
   II_i:
     description: Per-mode constant inhibitory input.
     grounding: [GO:0060080]
     equation: {lhs: II_i, rhs: '0.0', latex: false}
-    conditional: false
   m_i:
     description: Per-mode adaptation offset entering the tau dynamics.
     equation: {lhs: m_i, rhs: 'r*s*x_0', latex: false}
-    conditional: false
   n_i:
     description: Per-mode adaptation offset entering the gamma dynamics.
     equation: {lhs: n_i, rhs: 'r*s*x_0', latex: false}
-    conditional: false
 coupling_inputs:
   c_glob: {}
   local_coupling: {local: true}

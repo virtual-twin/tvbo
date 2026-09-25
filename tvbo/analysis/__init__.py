@@ -1,7 +1,6 @@
 """Analysis subpackage.
 
-Houses analysis result container classes (e.g., BifurcationResult) and related
-APIs that are logically distinct from plotting utilities or simulation drivers.
+Houses analysis result container classes (e.g., BifurcationResult) and related APIs that are logically distinct from plotting utilities or simulation drivers.
 """
 
 from __future__ import annotations
@@ -35,7 +34,7 @@ def per_window_fc(tv, xv, window=1e3):
     window : float, optional
         Time window for calculation. Default is 1e3.
 
-    Returns
+    Returns:
     -------
     ndarray
         Correlation coefficients for each window.
@@ -54,7 +53,7 @@ def ttest_correlation_strength(cs):
     cs : ndarray
         Correlation coefficients.
 
-    Returns
+    Returns:
     -------
     ndarray
         P-values of the t-test for each correlation coefficient.

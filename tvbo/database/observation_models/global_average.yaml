@@ -13,7 +13,26 @@ class_reference:
     module: tvb.simulator.monitors
 
 pipeline:
+    - name: subsample
+      output: subsampled
+      description: >-
+          Decimation to the reporting period, taken before the spatial mean. TVB's
+          GlobalAverage emits on `step % istep == 0` and averages what it emits, so a
+          pipeline that only averages reports one sample per integration step and
+          ignores the declared period entirely.
+      equation:
+          rhs: "subsample(X, step)"
+          parameters:
+              step:
+                  equation: {rhs: "iround(period / dt)"}
+                  description: "Integration steps between recorded samples, so the decimation tracks the grid the experiment declares rather than the one this file was written on."
+      arguments:
+          step:
+              description: "Decimation factor. Its value is declared on the equation parameter of the same name; a backend that has not yet been migrated to read that still derives it here."
+      apply_on_dimension: time
+
     - name: global_mean
+      input: subsample
       output: global_averaged
       equation:
           rhs: "global_mean(X)"

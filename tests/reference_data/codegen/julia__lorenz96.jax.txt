@@ -1,0 +1,47 @@
+import jax.numpy as jnp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    F = _p.F
+
+    # State variables
+    x0 = current_state[0]
+    x1 = current_state[1]
+    x2 = current_state[2]
+    x3 = current_state[3]
+    x4 = current_state[4]
+    x5 = current_state[5]
+    x6 = current_state[6]
+    x7 = current_state[7]
+    x8 = current_state[8]
+    x9 = current_state[9]
+
+    # Derivatives
+    dx0_dt = F - x0 + x9 * (x1 - x8)
+    dx1_dt = F - x1 + x0 * (x2 - x9)
+    dx2_dt = F - x2 + x1 * (x3 - x0)
+    dx3_dt = F - x3 + x2 * (x4 - x1)
+    dx4_dt = F - x4 + x3 * (x5 - x2)
+    dx5_dt = F - x5 + x4 * (x6 - x3)
+    dx6_dt = F - x6 + x5 * (x7 - x4)
+    dx7_dt = F - x7 + x6 * (x8 - x5)
+    dx8_dt = F - x8 + x7 * (x9 - x6)
+    dx9_dt = F - x9 + x8 * (x0 - x7)
+
+    derivatives = jnp.array(
+        jnp.broadcast_arrays(
+            dx0_dt,
+            dx1_dt,
+            dx2_dt,
+            dx3_dt,
+            dx4_dt,
+            dx5_dt,
+            dx6_dt,
+            dx7_dt,
+            dx8_dt,
+            dx9_dt,
+        )
+    )
+
+    return derivatives

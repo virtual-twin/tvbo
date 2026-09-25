@@ -1,0 +1,76 @@
+@prefix tvbo:     <https://w3id.org/tvbo/> .
+@prefix nml:      <https://w3id.org/tvbo/neuroml/> .
+@prefix lems:     <http://www.neuroml.org/lems/0.7.6#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+
+#
+# ═════════════════════════════════════════════════════════════════
+# TVB-O ↔ NeuroML / LEMS alignment (mergeable module).
+# ═════════════════════════════════════════════════════════════════
+#
+# Records the semantic overlaps between tvbo-core and the NeuroML/LEMS core,
+# merged into `tvbo.owl` alongside `tvb-o-neuroml.ttl` (the ingested NeuroML
+# class hierarchy). Two kinds of link:
+#
+#   1. Meta-model correspondence — tvbo's modelling primitives against the LEMS
+#      meta-model elements they mirror (a tvbo Dynamics is the analog of a LEMS
+#      ComponentType, its StateVariable/Parameter/DerivedVariable/Event of the
+#      LEMS peers of the same name).
+#   2. Role correspondence — the NeuroML branch a tvbo Dynamics is emitted into
+#      when it plays a given role (synapse, cell, population, input current).
+#
+# SKOS mapping relations (not owl:equivalentClass) are used deliberately: these
+# concepts correspond closely across the two schemes without being logically
+# identical (tvbo:Dynamics is broader than any single LEMS ComponentType), so
+# skos:closeMatch / skos:relatedMatch state the correspondence at the right
+# strength and keep the ELK merge free of spurious class-equivalence
+# entailments. This mirrors the tvbo↔GO cross-reference precedent.
+#
+
+<https://w3id.org/tvbo/neuroml/mappings> a owl:Ontology ;
+    dcterms:title       "TVB-O ↔ NeuroML/LEMS alignment"@en ;
+    dcterms:description  "Semantic overlaps between tvbo-core and the NeuroML/LEMS core: meta-model correspondences (Dynamics↔ComponentType, StateVariable/Parameter/DerivedVariable/Event↔LEMS peers) and role correspondences (synapse/cell/population/input branches)."@en ;
+    dcterms:license      <https://creativecommons.org/licenses/by/4.0/> ;
+    rdfs:seeAlso         <https://w3id.org/tvbo/neuroml> ;
+    rdfs:seeAlso         <http://www.neuroml.org/lems/0.7.6> .
+
+#
+# ── 1. Meta-model correspondence: tvbo-core ↔ LEMS meta-model ──────
+#
+# A tvbo Dynamics declares the same kinds of internal elements a LEMS
+# ComponentType does; each maps to its LEMS peer of the same role.
+#
+
+tvbo:Dynamics         skos:closeMatch lems:ComponentType .
+tvbo:StateVariable    skos:closeMatch lems:StateVariable .
+tvbo:Parameter        skos:closeMatch lems:Parameter .
+tvbo:DerivedVariable  skos:closeMatch lems:DerivedVariable .
+tvbo:Event            skos:closeMatch lems:EventPort .
+
+# A tvbo CouplingInput is a quantity a Dynamics draws from its network context,
+# the role a LEMS Requirement plays for a ComponentType.
+tvbo:CouplingInput    skos:relatedMatch lems:Requirement .
+
+#
+# ── 2. Role correspondence: tvbo:Dynamics ↔ NeuroML branch roots ──
+#
+# The same tvbo:Dynamics is emitted into a different NeuroML branch depending on
+# the role it plays. These links name the emission target per role; they are
+# associative (relatedMatch), not subsumption, because the tvbo class is the
+# role-neutral Dynamics.
+#
+
+nml:baseCell         skos:relatedMatch tvbo:Dynamics ;
+    rdfs:comment "A tvbo:Dynamics acting as a neuron is emitted as a descendant of baseCell."@en .
+
+nml:baseSynapse      skos:relatedMatch tvbo:Dynamics ;
+    rdfs:comment "A tvbo:Dynamics acting as a synapse is emitted as a descendant of baseSynapse."@en .
+
+nml:basePointCurrent skos:relatedMatch tvbo:Dynamics ;
+    rdfs:comment "A tvbo:Dynamics acting as an input current is emitted as a descendant of basePointCurrent."@en .
+
+nml:basePopulation   skos:relatedMatch tvbo:Node ;
+    rdfs:comment "A NeuroML population corresponds to a tvbo network node (a group of cells of one type)."@en .

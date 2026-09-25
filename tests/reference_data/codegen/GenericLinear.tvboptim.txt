@@ -1,0 +1,63 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class GenericLinear(AbstractDynamics):
+    """GenericLinear neural mass model."""
+
+    STATE_NAMES = ("x",)
+    INITIAL_STATE = (0.1,)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        gamma=-10.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+        "local_coupling": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        gamma = params.gamma
+
+        x = state[0]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+        local_coupling = (
+            jnp.atleast_1d(coupling.local_coupling)[0]
+            if hasattr(coupling, "local_coupling")
+            else 0.0
+        )
+
+        dx_dt = c_glob + gamma * x + local_coupling * x
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

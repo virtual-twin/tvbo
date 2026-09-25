@@ -1,6 +1,19 @@
 {
   "_type": "tvbo:ClassReference",
   "properties": {
+    "name": {
+      "type": "string",
+      "_instruction": "Enter the name."
+    },
+    "description": {
+      "type": "string"
+    },
+    "module": {
+      "type": "string"
+    },
+    "software": {
+      "type": "string"
+    },
     "constructor_args": {
       "_embeddedTypes": [
         "tvbo:Argument"

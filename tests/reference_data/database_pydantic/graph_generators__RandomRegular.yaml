@@ -1,0 +1,32 @@
+name: RandomRegular
+description: Random k-regular graph — every node has exactly degree k.
+iri: tvbo:RandomRegular
+directed: false
+parameters:
+  n:
+    name: n
+    description: Number of nodes
+    datatype: integer
+  k:
+    name: k
+    description: Degree of every node (n*k must be even)
+    datatype: integer
+  seed:
+    name: seed
+    datatype: integer
+    required: false
+bindings:
+  julia:
+    name: julia
+    library: Graphs
+    callable: random_regular_graph
+    args:
+    - n
+    - k
+  networkx:
+    name: networkx
+    library: networkx
+    callable: random_regular_graph
+    args:
+    - k
+    - n

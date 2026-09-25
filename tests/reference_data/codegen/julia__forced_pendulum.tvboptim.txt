@@ -1,0 +1,58 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class ForcedPendulum(AbstractDynamics):
+    """ForcedPendulum neural mass model."""
+
+    STATE_NAMES = ("x", "v")
+    INITIAL_STATE = (0.1, 0.25)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        d=0.2,
+        f=27.0,
+        omega=2.2,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        d = params.d
+        f = params.f
+        omega = params.omega
+
+        x = state[0]
+        v = state[1]
+
+        dx_dt = v
+        dv_dt = (-d) * v - jnp.sin(x) + f * jnp.cos(omega * t)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dv_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

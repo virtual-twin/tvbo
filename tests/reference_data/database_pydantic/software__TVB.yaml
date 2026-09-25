@@ -1,0 +1,56 @@
+name: TVB
+description: The Virtual Brain — a neuroinformatics platform for full-brain network
+  simulation using neural mass and mean-field models on individual connectome data.
+homepage: https://www.thevirtualbrain.org
+license: GPL-3.0-or-later
+repository: https://github.com/the-virtual-brain/tvb-root
+doi: 10.3389/fninf.2013.00010
+ecosystem:
+- pypi
+application_category: simulation
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- neural_mass
+- mean_field
+tool_role:
+- simulator
+programming_language:
+- Python
+- C
+runtime_platform:
+- Python
+- NumPy
+interoperates_with:
+- NEST
+- NEURON
+- Arbor
+- NeuroML
+- PyRates
+- neurolib
+date_created: '2013-01-01'
+development_status: active
+author:
+- Viktor Jirsa
+- Petra Ritter
+- Randy McIntosh
+- Michael Breakspear
+maintainer:
+- The Virtual Brain Consortium
+funder:
+- EU H2020 826421 (TVB-Cloud)
+- EU H2020 945539 (HBP SGA3)
+- EU Horizon Europe 101147319 (EBRAINS 2.0)
+reference_publication: 10.3389/fninf.2013.00010
+keywords:
+- whole-brain simulation
+- neural mass
+- connectome
+- mean-field
+- neuroimaging
+same_as:
+- https://www.wikidata.org/entity/Q49165099
+- https://scicrunch.org/resolver/RRID:SCR_004841
+issue_tracker: https://github.com/the-virtual-brain/tvb-root/issues
+is_accessible_for_free: true

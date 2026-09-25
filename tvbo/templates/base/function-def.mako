@@ -89,13 +89,7 @@ def get_equation_rhs(func):
     return None
 
 
-def get_source_code(func):
-    """Get raw source code if available."""
-    if hasattr(func, 'source_code') and func.source_code:
-        return func.source_code
-    if func.equation and hasattr(func.equation, 'pycode') and func.equation.pycode:
-        return func.equation.pycode
-    return None
+from tvbo.templates.base.utils import get_source_code
 
 
 def get_enum_text(enum_val):

@@ -5,10 +5,8 @@ subtitle: "Julia code generation for bifurcation analysis"
 
 ## Overview
 
-The **BifurcationKit.jl** backend generates Julia code for bifurcation analysis
-using [BifurcationKit.jl](https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/) [@Veltz2020].
-From a YAML experiment specification, `render_code("bifurcation-julia")` produces
-a self-contained Julia script that:
+The **BifurcationKit.jl** backend generates Julia code for bifurcation analysis using [BifurcationKit.jl](https://bifurcationkit.github.io/BifurcationKitDocs.jl/stable/) [@Veltz2020].
+From a YAML experiment specification, `render_code("bifurcation-julia")` produces a self-contained Julia script that:
 
 - Defines the model's vector field from YAML equations (including derived variables)
 - Finds a steady-state equilibrium via time integration
@@ -20,15 +18,15 @@ a self-contained Julia script that:
 ## Examples
 
 These examples recreate official
-[BifurcationKit.jl examples](https://github.com/bifurcationkit/BifurcationKit.jl/tree/main/examples)
+[BifurcationKit.jl examples](https://github.com/bifurcationkit/BifurcationKit.jl/tree/master/examples)
 using TVBO's declarative YAML format.
 
 ### Mapping to Original Examples
 
 | Original BifurcationKit.jl Example | TVBO Example | Features Demonstrated |
 |-------------------------------------|--------------|----------------------|
-| [`TMModel.jl`](https://github.com/bifurcationkit/BifurcationKit.jl/blob/main/examples/TMModel.jl) | [Tsodyks-Markram](TMModel.qmd) | 3-variable neural model, derived variables, equilibrium + PO continuation |
-| [`COModel.jl`](https://github.com/bifurcationkit/BifurcationKit.jl/blob/main/examples/COModel.jl) | [CO Oxidation](COModel.qmd) | Catalytic surface chemistry, conservation law via derived variable, PO with mesh adaptation |
+| [`TMModel.jl`](https://github.com/bifurcationkit/BifurcationKit.jl/blob/master/examples/TMModel.jl) | [Tsodyks-Markram](TMModel.qmd) | 3-variable neural model, derived variables, equilibrium + PO continuation |
+| [`COModel.jl`](https://github.com/bifurcationkit/BifurcationKit.jl/blob/master/examples/COModel.jl) | [CO Oxidation](COModel.qmd) | Catalytic surface chemistry, conservation law via derived variable, PO with mesh adaptation |
 
 ## Quick Start
 
@@ -53,18 +51,11 @@ result.plot()
 
 The code generation pipeline:
 
-1. **Model YAML → vector field**: The model YAML defines parameters, state variables,
-   derived variables, and equations. The `tvbo-julia-model.jl.mako` template renders
-   these into a Julia function `ModelName!(dx, x, p, t)`.
+1. **Model YAML → vector field**: The model YAML defines parameters, state variables, derived variables, and equations. The `tvbo-julia-model.jl.mako` template renders these into a Julia function `ModelName!(dx, x, p, t)`.
 
-2. **Bifurcation YAML → continuation settings**: The bifurcation YAML specifies the
-   free parameter, its range, algorithm choice, step-size control, Newton solver
-   settings, and branch-switching configuration. The `tvbo-julia-BifurcationKit.jl.mako`
-   template maps these to BifurcationKit.jl API calls.
+2. **Bifurcation YAML → continuation settings**: The bifurcation YAML specifies the free parameter, its range, algorithm choice, step-size control, Newton solver settings, and branch-switching configuration. The `tvbo-julia-BifurcationKit.jl.mako` template maps these to BifurcationKit.jl API calls.
 
-3. **Execution**: TVBO uses `juliacall` (PythonCall) to execute the generated Julia code
-   in-process, then extracts the `ContResult` objects into Python `BifurcationResult`
-   objects with Pandas DataFrames and matplotlib plotting.
+3. **Execution**: TVBO uses `juliacall` (PythonCall) to execute the generated Julia code in-process, then extracts the `ContResult` objects into Python `BifurcationResult` objects with Pandas DataFrames and matplotlib plotting.
 
 ## YAML Schema
 
@@ -99,8 +90,7 @@ branches:                             # branch switching from bifurcation points
       bothside: true
 ```
 
-See [Generic2dOscillator-bifurcation-full.yaml](../../../tvbo/database/continuations/Generic2dOscillator-bifurcation-full.yaml)
-for a comprehensive reference of all available settings.
+See [Generic2dOscillator-bifurcation-full.yaml](../../../tvbo/database/continuations/Generic2dOscillator-bifurcation-full.yaml) for a comprehensive reference of all available settings.
 
 ## Supported Features
 

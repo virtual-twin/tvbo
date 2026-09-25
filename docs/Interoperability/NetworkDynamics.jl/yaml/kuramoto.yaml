@@ -37,7 +37,7 @@ dynamics:
             distribution:
                 name: Uniform
                 domain: { lo: 0.2, hi: 1.0 }
-    coupling_terms:
+    coupling_inputs:
         c_coupling:
             description: "Aggregated sinusoidal coupling from incident edges"
     state_variables:

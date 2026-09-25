@@ -1,0 +1,261 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class PinskyRinzelCA3(Model):
+
+    iSoma = NArray(
+        label=r":math:`iSoma`",
+        default=np.array([0.75]),
+    )
+    iDend = NArray(
+        label=r":math:`iDend`",
+        default=np.array([0.0]),
+    )
+    gLs = NArray(
+        label=r":math:`gLs`",
+        default=np.array([0.1]),
+    )
+    gLd = NArray(
+        label=r":math:`gLd`",
+        default=np.array([0.1]),
+    )
+    gNa = NArray(
+        label=r":math:`gNa`",
+        default=np.array([30.0]),
+    )
+    gKdr = NArray(
+        label=r":math:`gKdr`",
+        default=np.array([15.0]),
+    )
+    gCa = NArray(
+        label=r":math:`gCa`",
+        default=np.array([10.0]),
+    )
+    gKahp = NArray(
+        label=r":math:`gKahp`",
+        default=np.array([0.8]),
+    )
+    gKC = NArray(
+        label=r":math:`gKC`",
+        default=np.array([15.0]),
+    )
+    gc = NArray(
+        label=r":math:`gc`",
+        default=np.array([2.1]),
+    )
+    eNa = NArray(
+        label=r":math:`eNa`",
+        default=np.array([60.0]),
+    )
+    eCa = NArray(
+        label=r":math:`eCa`",
+        default=np.array([80.0]),
+    )
+    eK = NArray(
+        label=r":math:`eK`",
+        default=np.array([-75.0]),
+    )
+    eL = NArray(
+        label=r":math:`eL`",
+        default=np.array([-60.0]),
+    )
+    pp = NArray(
+        label=r":math:`pp`",
+        default=np.array([0.5]),
+    )
+    cm = NArray(
+        label=r":math:`cm`",
+        default=np.array([3.0]),
+    )
+
+    _nvar = 10
+    state_variables = ["Vs", "Vd", "Cad", "hs", "ns", "sd", "cd", "qd", "Si", "Wi"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "Vs": np.array([-1000000000.0, 1000000000.0]),
+            "Vd": np.array([-1000000000.0, 1000000000.0]),
+            "Cad": np.array([-1000000000.0, 1000000000.0]),
+            "hs": np.array([-1000000000.0, 1000000000.0]),
+            "ns": np.array([-1000000000.0, 1000000000.0]),
+            "sd": np.array([-1000000000.0, 1000000000.0]),
+            "cd": np.array([-1000000000.0, 1000000000.0]),
+            "qd": np.array([-1000000000.0, 1000000000.0]),
+            "Si": np.array([-1000000000.0, 1000000000.0]),
+            "Wi": np.array([-1000000000.0, 1000000000.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("Vs", "Vd", "Cad", "hs", "ns", "sd", "cd", "qd", "Si", "Wi"),
+        default=("Vs", "Vd", "Cad", "hs", "ns", "sd", "cd", "qd", "Si", "Wi"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "iSoma",
+            "iDend",
+            "gLs",
+            "gLd",
+            "gNa",
+            "gKdr",
+            "gCa",
+            "gKahp",
+            "gKC",
+            "gc",
+            "eNa",
+            "eCa",
+            "eK",
+            "eL",
+            "pp",
+            "cm",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "Vs": "(iSoma/pp - gLs*(Vs - eL) + gc*(Vd - Vs)/pp - gKdr*ns*(Vs - eK) - gNa*hs*minf_s**2*(Vs - eNa))/cm",
+            "Vd": "(-ICa_d + iDend/(1.0 - pp) - gLd*(Vd - eL) + gc*(Vs - Vd)/(1.0 - pp) - gKahp*qd*(Vd - eK) - cd*chi_d*gKC*(Vd - eK))/cm",
+            "Cad": "-0.13*ICa_d - 0.075*Cad",
+            "hs": "alpha_hs - hs*(alpha_hs + beta_hs)",
+            "ns": "alpha_ns - ns*(alpha_ns + beta_ns)",
+            "sd": "alpha_sd - sd*(alpha_sd + beta_sd)",
+            "cd": "alpha_cd - cd*(alpha_cd + beta_cd)",
+            "qd": "alpha_qd - qd*(0.001 + alpha_qd)",
+            "Si": "-0.00666666666666667*Si",
+            "Wi": "-0.5*Wi",
+        },
+    )
+
+    cvar = np.array([], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=[])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        Vs = state_variables[0, :]
+        Vd = state_variables[1, :]
+        Cad = state_variables[2, :]
+        hs = state_variables[3, :]
+        ns = state_variables[4, :]
+        sd = state_variables[5, :]
+        cd = state_variables[6, :]
+        qd = state_variables[7, :]
+        Si = state_variables[8, :]
+        Wi = state_variables[9, :]
+
+        iSoma = self.iSoma
+        iDend = self.iDend
+        gLs = self.gLs
+        gLd = self.gLd
+        gNa = self.gNa
+        gKdr = self.gKdr
+        gCa = self.gCa
+        gKahp = self.gKahp
+        gKC = self.gKC
+        gc = self.gc
+        eNa = self.eNa
+        eCa = self.eCa
+        eK = self.eK
+        eL = self.eL
+        pp = self.pp
+        cm = self.cm
+
+        # Coupling Terms (from coupling array)
+
+        # Derived Variables
+        self.ICa_d = ICa_d = gCa * sd**2 * (Vd - eCa)
+        self.alpha_cd = alpha_cd = np.where(
+            np.less(Vd, -10.0),
+            0.684443445486297 * np.exp(0.0538720538720539 * Vd),
+            0.275729683468338 * np.exp(-0.037037037037037 * Vd),
+        )
+        self.alpha_hs = alpha_hs = 0.0117416385561416 * np.exp(-0.0555555555555556 * Vs)
+        self.alpha_ms = alpha_ms = np.where(
+            np.equal(Vs, -46.9),
+            0.08,
+            (-15.008 - 0.32 * Vs) / (-1.0 + 8.08904403605717e-6 * np.exp(-0.25 * Vs)),
+        )
+        self.alpha_ns = alpha_ns = np.where(
+            np.equal(Vs, -24.9),
+            0.0032,
+            (-0.3984 - 0.016 * Vs) / (-1.0 + 0.00687406255749625 * np.exp(-0.2 * Vs)),
+        )
+        self.alpha_qd = alpha_qd = np.minimum(0.01, 2.0e-5 * Cad)
+        self.alpha_sd = alpha_sd = 1.6 / (1.0 + 1.43332941456034 * np.exp(-0.072 * Vd))
+        self.beta_hs = beta_hs = 4.0 / (1.0 + 0.0183156388887342 * np.exp(-0.2 * Vs))
+        self.beta_ms = beta_ms = np.where(
+            np.equal(Vs, -19.9),
+            0.056,
+            (5.572 + 0.28 * Vs) / (-1.0 + 53.5170342274912 * np.exp(0.2 * Vs)),
+        )
+        self.beta_ns = beta_ns = 0.0919698602928606 * np.exp(-0.025 * Vs)
+        self.beta_sd = beta_sd = np.where(
+            np.equal(Vd, -8.9),
+            0.004,
+            (0.178 + 0.02 * Vd) / (-1.0 + 5.92985641859115 * np.exp(0.2 * Vd)),
+        )
+        self.chi_d = chi_d = np.minimum(1.0, 0.004 * Cad)
+        self.beta_cd = beta_cd = np.where(
+            np.less(Vd, -10.0),
+            -alpha_cd + 0.275729683468338 * np.exp(-0.037037037037037 * Vd),
+            0.0,
+        )
+        self.minf_s = minf_s = alpha_ms / (alpha_ms + beta_ms)
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(
+                (
+                    iSoma / pp
+                    - gLs * (Vs - eL)
+                    + gc * (Vd - Vs) / pp
+                    - gKdr * ns * (Vs - eK)
+                    - gNa * hs * minf_s**2 * (Vs - eNa)
+                )
+                / cm
+            ),  # Vs
+            np.asarray(
+                (
+                    -ICa_d
+                    + iDend / (1.0 - pp)
+                    - gLd * (Vd - eL)
+                    + gc * (Vs - Vd) / (1.0 - pp)
+                    - gKahp * qd * (Vd - eK)
+                    - cd * chi_d * gKC * (Vd - eK)
+                )
+                / cm
+            ),  # Vd
+            np.asarray(-0.13 * ICa_d - 0.075 * Cad),  # Cad
+            np.asarray(alpha_hs - hs * (alpha_hs + beta_hs)),  # hs
+            np.asarray(alpha_ns - ns * (alpha_ns + beta_ns)),  # ns
+            np.asarray(alpha_sd - sd * (alpha_sd + beta_sd)),  # sd
+            np.asarray(alpha_cd - cd * (alpha_cd + beta_cd)),  # cd
+            np.asarray(alpha_qd - qd * (0.001 + alpha_qd)),  # qd
+            np.asarray(-0.00666666666666667 * Si),  # Si
+            np.asarray(-0.5 * Wi),  # Wi
+        )
+        return np.array(_derivs)

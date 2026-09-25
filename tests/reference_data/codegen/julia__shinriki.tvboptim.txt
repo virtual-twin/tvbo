@@ -1,0 +1,64 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class Shinriki(AbstractDynamics):
+    """Shinriki neural mass model."""
+
+    STATE_NAMES = ("v1", "v2", "v3")
+    INITIAL_STATE = (-2.0, 0.0, 0.2)
+    AUXILIARY_NAMES = ("Vnl",)
+
+    DEFAULT_PARAMS = Bunch(
+        R1=22.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        R1 = params.R1
+
+        v1 = state[0]
+        v2 = state[1]
+        v3 = state[2]
+
+        Vnl = 2.295e-5 * (jnp.exp(3.0038 * (v1 - v2)) - jnp.exp(-3.0038 * (v1 - v2)))
+
+        dv1_dt = (v1 * (1 / 6.9 - 1 / R1) - Vnl - (v1 - v2) / 14.5) / 0.01
+        dv2_dt = (Vnl + (v1 - v2) / 14.5 - v3) / 0.1
+        dv3_dt = (-0.1 * v3 + v2) / 0.32
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dv1_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dv1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dv2_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dv3_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(Vnl), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

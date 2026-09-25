@@ -27,7 +27,6 @@ derived_variables:
       lhs: lc_0
       rhs: local_coupling*x
       latex: false
-    conditional: false
 coupling_inputs:
   c_glob0: {}
   c_glob1: {}

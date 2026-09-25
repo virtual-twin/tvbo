@@ -1,0 +1,27 @@
+name: WeightShuffle
+description: 'Derived generator: load a reference adjacency by IRI and permute its
+  non-zero entries, holding one structural property fixed. Used for null-model controls
+  (e.g. a shuffled SC matrix that keeps the source''s density and weight multiset
+  while randomising which edge carries which weight).'
+iri: tvbo:WeightShuffle
+directed: false
+parameters:
+  source:
+    name: source
+    description: IRI of the reference Network whose weights matrix is shuffled.
+    datatype: uriorcurie
+  preserve:
+    name: preserve
+    default: binary_mask
+    description: 'Which structural property to hold fixed under permutation. Only
+      `binary_mask` is implemented: keep the {0, nonzero} pattern and permute the
+      weight values among their existing positions, so density and topology stay fixed
+      while the weight-to-edge assignment is randomised. Any other value is rejected
+      — a null model that silently controlled a different property than the one asked
+      for would invalidate the comparison it exists to support.'
+    datatype: string
+bindings:
+  python:
+    name: python
+    library: tvbo.graph_generators
+    callable: weight_shuffle

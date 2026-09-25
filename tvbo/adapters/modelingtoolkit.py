@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
 """Standalone ModelingToolkit.jl backend adapter for SimulationExperiment.
 
 Pure MTK adapter using @component + mtkcompile + ODEProblem + solve.
 No dependency on NetworkDynamics.jl.
 
-Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to
-MTK Julia code, MTK's ``mtkcompile`` performs structural transformations
-(e.g. higher-order ODE lowering), and the resulting equations are extracted
-back into SymPy.
+Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to MTK Julia code, MTK's ``mtkcompile`` performs structural transformations (e.g. higher-order ODE lowering), and the resulting equations are extracted back into SymPy.
 """
 
 from __future__ import annotations
@@ -59,9 +55,11 @@ class ModelingToolkitAdapter(BaseAdapter):
         adapter = ModelingToolkitAdapter(exp)            # full experiment
     """
 
+    TEMPLATE = "tvbo-mtk-experiment.jl.mako"
+
     def __init__(self, source=None):
-        from tvbo.classes.experiment import SimulationExperiment
         from tvbo.classes.dynamics import Dynamics
+        from tvbo.classes.experiment import SimulationExperiment
 
         if source is None:
             self.experiment = None
@@ -74,19 +72,10 @@ class ModelingToolkitAdapter(BaseAdapter):
             self._input_dynamics = None
         super().__init__(source)
 
-    def render_code(self, **kwargs) -> str:
-        """Render Julia code using the standalone MTK template."""
-        from tvbo import templates
-
-        ctx = self.prepare_context()
-        ctx.update(kwargs)
-        template = templates.lookup.get_template("tvbo-mtk-experiment.jl.mako")
-        return template.render(**ctx)
-
-    def run(self, **kwargs) -> "ExperimentResult":
+    def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using pure ModelingToolkit.jl.
 
-        Returns
+        Returns:
         -------
         ExperimentResult
             Simulation results with named dimensions and coordinates.
@@ -102,6 +91,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         )
 
         exp = self.experiment
+        self.refuse_network("a single model")
 
         # 1. Ensure required Julia packages
         ensure_packages(*MTK_PACKAGES)
@@ -131,18 +121,18 @@ class ModelingToolkitAdapter(BaseAdapter):
         n_sv = ctx["n_sv"]
         n_nodes = ctx["n_nodes"]
 
-        # Pure MTK: single model, n_nodes=1 typically
-        # u shape from MTK: (n_unknowns, n_t)
-        # n_unknowns may differ from n_sv if mtkcompile introduced
-        # auxiliary variables (e.g., higher-order ODE lowering)
+        # Pure MTK: single model, n_nodes=1 typically u shape from MTK: (n_unknowns, n_t) n_unknowns may differ from n_sv if mtkcompile introduced auxiliary variables (e.g., higher-order ODE lowering)
         n_unknowns = u.shape[0] if u.ndim == 2 else 1
-        if n_unknowns != n_sv * n_nodes:
-            try:
-                unknowns = run_julia_code("string.(unknowns(sys))")
-                state_labels = [_mtk_to_python_name(str(s).replace("(t)", "")) for s in list(unknowns)]
-            except Exception:
-                state_labels = [f"x_{i}" for i in range(n_unknowns)]
-            # Flat unknowns — treat as n_unknowns variables, 1 node
+        try:
+            state_labels = [
+                _mtk_to_python_name(str(s).replace("(t)", "")) for s in list(run_julia_code("string.(unknowns(sys))"))
+            ]
+        except Exception:
+            state_labels = [f"x_{i}" for i in range(n_unknowns)]
+        if u.ndim == 2 and n_nodes == 1 and sorted(state_labels) == sorted(sv_names):
+            # mtkcompile orders the unknowns as it likes, so rows are matched to the declared state variables by name; by position, a two-variable model came back with its variables swapped.
+            da = solution_to_dataarray(t, u[[state_labels.index(name) for name in sv_names]], sv_names, 1)
+        elif n_unknowns != n_sv * n_nodes:
             da = solution_to_dataarray(t, u, state_labels, 1)
         else:
             da = solution_to_dataarray(t, u, sv_names, n_nodes)
@@ -163,9 +153,7 @@ class ModelingToolkitAdapter(BaseAdapter):
     def lower(self, source=None, returns="auto", **kwargs):
         """Lower higher-order ODEs via MTK's ``mtkcompile``.
 
-        Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile →
-        lowered first-order SymPy equations, optionally wrapped back into
-        a tvbo ``Dynamics`` or ``SimulationExperiment``.
+        Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile → lowered first-order SymPy equations, optionally wrapped back into a tvbo ``Dynamics`` or ``SimulationExperiment``.
 
         Parameters
         ----------
@@ -182,12 +170,12 @@ class ModelingToolkitAdapter(BaseAdapter):
               if given ``Dynamics``, ``SimulationExperiment`` if given an
               experiment, ``"sympy"`` if empty.
 
-        Returns
+        Returns:
         -------
         dict | Dynamics | SimulationExperiment
         """
-        from tvbo.classes.experiment import SimulationExperiment
         from tvbo.classes.dynamics import Dynamics
+        from tvbo.classes.experiment import SimulationExperiment
 
         # Accept source at call time — set up adapter state
         if source is not None:
@@ -233,8 +221,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         ensure_packages(*MTK_PACKAGES)
         code = self.render_code(**kwargs)
 
-        # Only keep code up to (and including) the mtkcompile line —
-        # we don't need ODEProblem / solve / plot for equation extraction.
+        # Only keep code up to (and including) the mtkcompile line — we don't need ODEProblem / solve / plot for equation extraction.
         lines = []
         for line in code.splitlines():
             lines.append(line)
@@ -335,7 +322,7 @@ def _parse_mtk_equation(lhs_str, rhs_str, unknown_strs, param_names):
     param_names : list[str]
         Parameter names from Julia.
 
-    Returns
+    Returns:
     -------
     tuple[str, sympy.Eq]
         ``(python_var_name, Eq(Derivative(var, t), rhs_expr))``.

@@ -1,0 +1,60 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class FitzHughNagumo1969(AbstractDynamics):
+    """FitzHughNagumo1969 neural mass model."""
+
+    STATE_NAMES = ("V", "W")
+    INITIAL_STATE = (0.0, 0.0)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        I=1.0,
+        a=0.7,
+        b=0.08,
+        phi=0.08,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        I = params.I
+        a = params.a
+        b = params.b
+        phi = params.phi
+
+        V = state[0]
+        W = state[1]
+
+        dV_dt = V - V**3 / 3 - W + I
+        dW_dt = phi * (V + a - b * W)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dV_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dV_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dW_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

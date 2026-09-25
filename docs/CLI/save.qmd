@@ -26,5 +26,5 @@ Only formats whose registry entry says `with_data: yes` (visible in `tvbo format
 
 ## See also
 
-- [`tvbo export`](export.qmd) — the underlying verb
-- [`tvbo formats`](formats.qmd) — which formats support `--with-data`
+- [`tvbo export`](export.qmd): the underlying verb
+- [`tvbo formats`](formats.qmd): which formats support `--with-data`

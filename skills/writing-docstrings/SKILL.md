@@ -41,6 +41,8 @@ def render_code(experiment: SimulationExperiment, format: str = "jax") -> str:
 
 That's the shape every docstring should approximate. The rules behind it:
 
+**Before any of them: a docstring — and a `#` comment — states the code's *current* contract, addressed to a reader who has never seen the diff that produced it.** Not what the code used to do, not what changed, not what you plan next. That rules out "Previously…", "This replaces…", "Note: now also handles…" and "for now" without needing to enumerate them, and it is the rule that decides what to do when the thing you are documenting already has a comment: **rewrite that comment to describe the new state — never append a second one beside it.** Appending is how a three-line explanation becomes a twelve-line archaeological record in which every layer is individually true and the stack as a whole no longer says what the code does. `CHANGELOG.md` is where history goes; the commit message is where your reasoning goes.
+
 ## 1. Style is Google
 
 The quartodoc config in `docs/api/_quartodoc_config.yml` sets `parser: google`. Use `Args:` / `Returns:` / `Raises:` / `Yields:` / `Examples:` blocks — **not** NumPy's `Parameters\n----------\n` underline form.
@@ -53,8 +55,9 @@ Google style is also less line-noise than NumPy and renders predictably as param
 # ✗ Wrong — type duplicated in docstring
 def foo(x):
     """Args:
-        x (int): The thing.
+    x (int): The thing.
     """
+
 
 # ✓ Right — type on signature only
 def foo(x: int) -> str:
@@ -86,9 +89,10 @@ Quarto's renderer processes the body as markdown after quartodoc lifts the param
 Imperative, period-terminated, fits on one line. This becomes the entry in the module's summary table.
 
 ```python
-"""Render a SimulationExperiment to YAML."""        # ✓
-"""Renders a SimulationExperiment to YAML"""        # ✗ (no period, "Renders" not imperative)
-"""This function renders a SimulationExperiment.""" # ✗ (filler words)
+"""Render a SimulationExperiment to YAML."""  # ✓
+
+"""Renders a SimulationExperiment to YAML"""  # ✗ (no period, "Renders" not imperative)
+"""This function renders a SimulationExperiment."""  # ✗ (filler words)
 ```
 
 After a blank line, free-form prose can elaborate.
@@ -249,8 +253,8 @@ class Dynamics:
     Examples:
         >>> lorenz = Dynamics(name="Lorenz", parameters={"sigma": {"value": 10}})
     """
-    def __init__(self, name, parameters=None, state_variables=None):
-        ...
+
+    def __init__(self, name, parameters=None, state_variables=None): ...
 ```
 
 Methods on the class follow the same conventions as standalone functions.
@@ -288,7 +292,7 @@ Quartodoc emits anchor IDs as `{full.qualified.path}` — use that as the URL fr
 - **Don't** repeat the function name in the summary: `"""Render the experiment."""` not `"""render_experiment renders the experiment."""`
 - **Don't** describe parameter types in prose when the annotation already does it
 - **Don't** write `Returns: None` for procedures that return nothing
-- **Don't** write change-log / version-history notes in docstrings — those live in `CHANGELOG.md`
+- **Don't** write change-log / version-history notes in a docstring *or a `#` comment* — those live in `CHANGELOG.md`. See the current-contract rule above; this is the same rule stated as a prohibition.
 - **Don't** include planning notes ("TODO: handle the case where…") — those go in commit messages or issue trackers, not user-facing docs
 - **Don't** copy-paste the same paragraph across overloaded methods — write it once on the base method and let inheritance / cross-references do the rest
 

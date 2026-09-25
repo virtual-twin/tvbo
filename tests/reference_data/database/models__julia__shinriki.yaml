@@ -1,0 +1,62 @@
+name: Shinriki
+parameters:
+  R1:
+    name: R1
+    value: 22.0
+    description: Variable resistor R1 controlling nonlinearity.
+description: 'Shinriki oscillator (stiff chaotic electronic circuit) with exponential
+  nonlinearity.
+
+  All parameters except R1 fixed to canonical literature values.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+derived_variables:
+  Vnl:
+    name: Vnl
+    description: Nonlinear diode network voltage characteristic.
+    equation:
+      lhs: Vnl
+      rhs: 0.00002295*(exp(3.0038*(v1 - v2)) - exp(-3.0038*(v1 - v2)))
+      latex: false
+    record: false
+state_variables:
+  v1:
+    name: v1
+    equation:
+      lhs: Derivative(v1, t)
+      rhs: (v1*(1/6.9 - 1/R1) - Vnl - (v1 - v2)/14.5)/0.01
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -2.0
+  v2:
+    name: v2
+    equation:
+      lhs: Derivative(v2, t)
+      rhs: (Vnl + (v1 - v2)/14.5 - v3)/0.1
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  v3:
+    name: v3
+    equation:
+      lhs: Derivative(v3, t)
+      rhs: (-0.1*v3 + v2)/0.32
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.2
+number_of_modes: 1
+model_type: generic
+autonomous: true
+cse: false
+compile: false

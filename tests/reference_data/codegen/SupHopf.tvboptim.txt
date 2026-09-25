@@ -1,0 +1,79 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class SupHopf(AbstractDynamics):
+    """SupHopf neural mass model."""
+
+    STATE_NAMES = ("x", "y")
+    INITIAL_STATE = (0.1, 0.1)
+    AUXILIARY_NAMES = ("lc_0",)
+
+    DEFAULT_PARAMS = Bunch(
+        a=-0.5,
+        omega=1.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob0": 1,
+        "c_glob1": 1,
+        "local_coupling": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        a = params.a
+        omega = params.omega
+
+        x = state[0]
+        y = state[1]
+
+        c_glob0 = (
+            jnp.atleast_1d(coupling.c_glob0)[0] if hasattr(coupling, "c_glob0") else 0.0
+        )
+        c_glob1 = (
+            jnp.atleast_1d(coupling.c_glob1)[0] if hasattr(coupling, "c_glob1") else 0.0
+        )
+        local_coupling = (
+            jnp.atleast_1d(coupling.local_coupling)[0]
+            if hasattr(coupling, "local_coupling")
+            else 0.0
+        )
+
+        lc_0 = local_coupling * x
+
+        dx_dt = c_glob0 + lc_0 - omega * y + x * (a - x**2 - y**2)
+        dy_dt = c_glob1 + omega * x + y * (a - x**2 - y**2)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(lc_0), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

@@ -1,12 +1,14 @@
 ---
 title: "NML2: Instance-Based Network"
 description: "Network with explicit instance placement and coordinates"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## NML2_InstanceBasedNetwork.nml
 
-Demonstrates `<instance>` elements within a population, giving each cell
-explicit 3D coordinates for spatial positioning:
+Demonstrates `<instance>` elements within a population, giving each cell explicit 3D coordinates for spatial positioning:
 
 ```xml
 <population id="pop0" component="iaf0" size="3" type="populationList">

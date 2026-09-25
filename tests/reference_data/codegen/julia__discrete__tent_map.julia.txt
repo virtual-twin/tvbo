@@ -1,0 +1,31 @@
+import NaNMath
+function TentMap!(dx, _x, p, t = 0)
+
+    (;mu,) = p
+
+    x = _x[1]
+
+
+    dx[1] = ifelse(x < 0.5, mu .* x, mu .* (1 .- x))
+    dx
+end
+
+# Parameter values
+p = (mu = 2.0,)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.25,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(TentMap!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

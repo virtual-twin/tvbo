@@ -1,0 +1,138 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: StefanescuJirsa2D
+       Generated from TVBO Dynamics: StefanescuJirsa2D
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="StefanescuJirsa2D">
+
+    <!-- Parameters -->
+    <Parameter name="tau" dimension="none"/>
+    <Parameter name="a" dimension="none"/>
+    <Parameter name="b" dimension="none"/>
+    <Parameter name="K11" dimension="none"/>
+    <Parameter name="K12" dimension="none"/>
+    <Parameter name="K21" dimension="none"/>
+    <Parameter name="sigma" dimension="none"/>
+    <Parameter name="mu" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <Parameter name="local_coupling" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="xi_0" dimension="none"/>
+    <Parameter name="eta_0" dimension="none"/>
+    <Parameter name="alpha_0" dimension="none"/>
+    <Parameter name="beta_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="xi" dimension="none"/>
+    <Exposure name="eta" dimension="none"/>
+    <Exposure name="alpha" dimension="none"/>
+    <Exposure name="beta" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="xi" dimension="none" exposure="xi"/>
+      <StateVariable name="eta" dimension="none" exposure="eta"/>
+      <StateVariable name="alpha" dimension="none" exposure="alpha"/>
+      <StateVariable name="beta" dimension="none" exposure="beta"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="Aik" dimension="none" value="0.500000000000000"/>
+      <DerivedVariable name="Bik" dimension="none" value="0.500000000000000"/>
+      <DerivedVariable name="Cik" dimension="none" value="0.500000000000000"/>
+      <DerivedVariable name="e_i" dimension="none" value="1.00000000000000"/>
+      <DerivedVariable name="f_i" dimension="none" value="1.00000000000000"/>
+      <DerivedVariable name="IE_i" dimension="none" value="0.0"/>
+      <DerivedVariable name="II_i" dimension="none" value="0.0"/>
+      <DerivedVariable name="m_i" dimension="none" value="a"/>
+      <DerivedVariable name="n_i" dimension="none" value="a"/>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="xi" value="(K11*(-xi + Aik*xi) + tau*(IE_i + c_glob + local_coupling*xi) + tau*(xi - eta - e_i*xi^3/3) - K12*(-xi + Bik*alpha)) / SEC"/>
+      <TimeDerivative variable="eta" value="((m_i + xi - b*eta)/tau) / SEC"/>
+      <TimeDerivative variable="alpha" value="(K21*(-alpha + Cik*xi) + tau*(II_i + c_glob + local_coupling*xi) + tau*(alpha - beta - f_i*alpha^3/3)) / SEC"/>
+      <TimeDerivative variable="beta" value="((alpha + n_i - b*beta)/tau) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="xi" value="xi_0"/>
+        <StateAssignment variable="eta" value="eta_0"/>
+        <StateAssignment variable="alpha" value="alpha_0"/>
+        <StateAssignment variable="beta" value="beta_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="StefanescuJirsa2D_inst" type="StefanescuJirsa2D" tau="3.0" a="0.45" b="0.9" K11="0.5" K12="0.15" K21="0.15" sigma="0.35" mu="0.0" c_glob="0" local_coupling="0" xi_0="0.1" eta_0="0.1" alpha_0="0.1" beta_0="0.1"/>
+
+
+
+</Lems>

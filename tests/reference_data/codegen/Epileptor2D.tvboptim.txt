@@ -1,0 +1,107 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class Epileptor2D(AbstractDynamics):
+    """Epileptor2D neural mass model."""
+
+    STATE_NAMES = ("x1", "z")
+    INITIAL_STATE = (0.1, 0.1)
+    AUXILIARY_NAMES = ("x1cond", "zcond", "h")
+
+    DEFAULT_PARAMS = Bunch(
+        Iext=3.1,
+        Ks=0.0,
+        Kvf=0.0,
+        a=1.0,
+        b=3.0,
+        c=1.0,
+        d=5.0,
+        modification=0.0,
+        r=0.00035,
+        slope=0.0,
+        tt=1.0,
+        x0=-1.6,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+        "local_coupling": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        Iext = params.Iext
+        Ks = params.Ks
+        Kvf = params.Kvf
+        a = params.a
+        b = params.b
+        c = params.c
+        d = params.d
+        modification = params.modification
+        r = params.r
+        slope = params.slope
+        tt = params.tt
+        x0 = params.x0
+
+        x1 = state[0]
+        z = state[1]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+        local_coupling = (
+            jnp.atleast_1d(coupling.local_coupling)[0]
+            if hasattr(coupling, "local_coupling")
+            else 0.0
+        )
+
+        x1cond = jnp.where(
+            jnp.less(x1, 0),
+            a * x1**2 + x1 * (-b + d),
+            d * x1 - slope - 0.6 * (z - 4.0) ** 2,
+        )
+        zcond = jnp.where(jnp.less(z, 0), -0.1 * z**7, 0)
+        h = jnp.where(
+            jnp.greater(modification, 0),
+            x0 + 3.0 / (jnp.exp((-x1 - 1 * 0.5) / 0.1) + 1.0),
+            zcond + 4 * (-x0 + x1),
+        )
+
+        dx1_dt = tt * (Iext + Kvf * c_glob + c + local_coupling * x1 - x1 * x1cond - z)
+        dz_dt = r * tt * (Ks * c_glob + h - z)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx1_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dz_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(x1cond), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(zcond), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(h), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

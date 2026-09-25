@@ -1,0 +1,72 @@
+import NaNMath
+function ZerlautAdaptationSecondOrder!(dx, x, p, t = 0)
+
+    (;g_L, E_L_e, E_L_i, C_m, b_e, a_e, b_i, a_i, tau_w_e, tau_w_i, E_e, E_i, Q_e, Q_i, tau_e, tau_i, N_tot, p_connect_e, p_connect_i, g, K_ext_e, K_ext_i, T, P_e0, P_e1, P_e2, P_e3, P_e4, P_e5, P_e6, P_e7, P_e8, P_e9, P_i0, P_i1, P_i2, P_i3, P_i4, P_i5, P_i6, P_i7, P_i8, P_i9, external_input_ex_ex, external_input_ex_in, external_input_in_ex, external_input_in_in, tau_OU, weight_noise, S_i, c_glob, local_coupling) = p
+
+    E, I, C_ee, C_ei, C_ii, W_e, W_i, ou_drift = x
+
+    muV(fe, fi, fe_ext, fi_ext, W, E_leak) = (-W .+ E_leak .* g_L .+ E_e .* Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ E_i .* Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi))) ./ (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi)))
+    sigmaV(fe, fi, fe_ext, fi_ext, W, E_leak) = sqrt(Q_e .^ 2 .* tau_e .^ 2 .* (E_e .- muV(fe, fi, fe_ext, fi_ext, W, E_leak)) .^ 2 .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) ./ ((2.0 * tau_e .+ 2.0 * C_m ./ (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi)))) .* (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi))) .^ 2) .+ Q_i .^ 2 .* tau_i .^ 2 .* (E_i .- muV(fe, fi, fe_ext, fi_ext, W, E_leak)) .^ 2 .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi)) ./ ((2.0 * tau_i .+ 2.0 * C_m ./ (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi)))) .* (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi))) .^ 2))
+    T_V(fe, fi, fe_ext, fi_ext, W, E_leak) = (Q_e .^ 2 .* tau_e .^ 2 .* (E_e .- muV(fe, fi, fe_ext, fi_ext, W, E_leak)) .^ 2 .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) ./ (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi))) .^ 2 .+ Q_i .^ 2 .* tau_i .^ 2 .* (E_i .- muV(fe, fi, fe_ext, fi_ext, W, E_leak)) .^ 2 .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi)) ./ (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi))) .^ 2) ./ (Q_e .^ 2 .* tau_e .^ 2 .* (E_e .- muV(fe, fi, fe_ext, fi_ext, W, E_leak)) .^ 2 .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) ./ ((tau_e .+ C_m ./ (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi)))) .* (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi))) .^ 2) .+ Q_i .^ 2 .* tau_i .^ 2 .* (E_i .- muV(fe, fi, fe_ext, fi_ext, W, E_leak)) .^ 2 .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi)) ./ ((tau_i .+ C_m ./ (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi)))) .* (g_L .+ Q_e .* tau_e .* (K_ext_e .* fe_ext .+ N_tot .* p_connect_e .* (1.0 .- g) .* (1.0e-6 .+ fe)) .+ Q_i .* tau_i .* (K_ext_i .* fi_ext .+ N_tot .* g .* p_connect_i .* (1.0e-6 .+ fi))) .^ 2))
+    TF_e(fe, fi, fe_ext, fi_ext, W) = 0.5 * erfc(0.707106781186547 * (-muV(fe, fi, fe_ext, fi_ext, W, E_L_e) .+ 1000.0 * P_e0 .+ 1000.0 * P_e1 .* (6.0 .+ 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_e)) .+ 1000.0 * P_e2 .* (-0.666666666666667 .+ 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)) .+ 1000.0 * P_e3 .* (-0.5 .+ 1.0 * g_L .* T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) ./ C_m) .+ 1000.0 * P_e4 .* (6.0 .+ 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_e)) .^ 2 .+ 1000.0 * P_e5 .* (-0.666666666666667 .+ 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)) .^ 2 .+ 1000.0 * P_e6 .* (-0.5 .+ 1.0 * g_L .* T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) ./ C_m) .^ 2 .+ 1000.0 * P_e7 .* (6.0 .+ 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_e)) .* (-0.666666666666667 .+ 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)) .+ 1000.0 * P_e8 .* (6.0 .+ 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_e)) .* (-0.5 .+ 1.0 * g_L .* T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) ./ C_m) .+ 1000.0 * P_e9 .* (-0.5 .+ 1.0 * g_L .* T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) ./ C_m) .* (-0.666666666666667 .+ 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e))) ./ sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)) ./ T_V(fe, fi, fe_ext, fi_ext, W, E_L_e)
+    TF_i(fe, fi, fe_ext, fi_ext, W) = 0.5 * erfc(0.707106781186547 * (-muV(fe, fi, fe_ext, fi_ext, W, E_L_i) .+ 1000.0 * P_i0 .+ 1000.0 * P_i1 .* (6.0 .+ 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_i)) .+ 1000.0 * P_i2 .* (-0.666666666666667 .+ 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)) .+ 1000.0 * P_i3 .* (-0.5 .+ 1.0 * g_L .* T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) ./ C_m) .+ 1000.0 * P_i4 .* (6.0 .+ 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_i)) .^ 2 .+ 1000.0 * P_i5 .* (-0.666666666666667 .+ 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)) .^ 2 .+ 1000.0 * P_i6 .* (-0.5 .+ 1.0 * g_L .* T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) ./ C_m) .^ 2 .+ 1000.0 * P_i7 .* (6.0 .+ 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_i)) .* (-0.666666666666667 .+ 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)) .+ 1000.0 * P_i8 .* (6.0 .+ 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_i)) .* (-0.5 .+ 1.0 * g_L .* T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) ./ C_m) .+ 1000.0 * P_i9 .* (-0.5 .+ 1.0 * g_L .* T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) ./ C_m) .* (-0.666666666666667 .+ 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i))) ./ sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)) ./ T_V(fe, fi, fe_ext, fi_ext, W, E_L_i)
+
+
+    E_input_excitatory = ifelse(c_glob .+ external_input_ex_ex .+ E .* local_coupling .+ ou_drift .* weight_noise < 0, 0.0, c_glob .+ external_input_ex_ex .+ E .* local_coupling .+ ou_drift .* weight_noise)
+    E_input_inhibitory = ifelse(external_input_in_ex .+ E .* local_coupling .+ S_i .* c_glob .+ ou_drift .* weight_noise < 0, 0.0, external_input_in_ex .+ E .* local_coupling .+ S_i .* c_glob .+ ou_drift .* weight_noise)
+    I_input_excitatory = external_input_ex_in .+ I .* local_coupling
+    I_input_inhibitory = external_input_in_in .+ I .* local_coupling
+    TFe = TF_e(E, I, E_input_excitatory, I_input_excitatory, W_e)
+    TFi = TF_i(E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+    d2_fefi_e = 25000000.0 * TF_e(1.0e-7 .+ E, 1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e) .+ 25000000.0 * TF_e(-1.0e-7 .+ E, -1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e) .- 25000000.0 * TF_e(1.0e-7 .+ E, -1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e) .- 25000000.0 * TF_e(-1.0e-7 .+ E, 1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e)
+    d2_fefi_i = 25000000.0 * TF_i(1.0e-7 .+ E, 1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i) .+ 25000000.0 * TF_i(-1.0e-7 .+ E, -1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i) .- 25000000.0 * TF_i(1.0e-7 .+ E, -1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i) .- 25000000.0 * TF_i(-1.0e-7 .+ E, 1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i)
+    d2_fife_e = 25000000.0 * TF_e(1.0e-7 .+ E, 1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e) .+ 25000000.0 * TF_e(-1.0e-7 .+ E, -1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e) .- 25000000.0 * TF_e(1.0e-7 .+ E, -1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e) .- 25000000.0 * TF_e(-1.0e-7 .+ E, 1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e)
+    d2_fife_i = 25000000.0 * TF_i(1.0e-7 .+ E, 1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i) .+ 25000000.0 * TF_i(-1.0e-7 .+ E, -1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i) .- 25000000.0 * TF_i(1.0e-7 .+ E, -1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i) .- 25000000.0 * TF_i(-1.0e-7 .+ E, 1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i)
+    dfe_TFe = 5000.0 * TF_e(1.0e-7 .+ E, I, E_input_excitatory, I_input_excitatory, W_e) .- 5000.0 * TF_e(-1.0e-7 .+ E, I, E_input_excitatory, I_input_excitatory, W_e)
+    dfe_TFi = 5000.0 * TF_i(1.0e-7 .+ E, I, E_input_inhibitory, I_input_inhibitory, W_i) .- 5000.0 * TF_i(-1.0e-7 .+ E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+    dfi_TFe = 5000.0 * TF_e(E, 1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e) .- 5000.0 * TF_e(E, -1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e)
+    dfi_TFi = 5000.0 * TF_i(E, 1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i) .- 5000.0 * TF_i(E, -1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i)
+    muV_e = muV(E, I, E_input_excitatory, I_input_excitatory, W_e, E_L_e)
+    muV_i = muV(E, I, E_input_inhibitory, I_input_inhibitory, W_i, E_L_i)
+    d2_fefe_e = 100000000.0 * TF_e(1.0e-7 .+ E, I, E_input_excitatory, I_input_excitatory, W_e) .+ 100000000.0 * TF_e(-1.0e-7 .+ E, I, E_input_excitatory, I_input_excitatory, W_e) .- 200000000.0 * TFe
+    d2_fefe_i = 100000000.0 * TF_i(1.0e-7 .+ E, I, E_input_inhibitory, I_input_inhibitory, W_i) .+ 100000000.0 * TF_i(-1.0e-7 .+ E, I, E_input_inhibitory, I_input_inhibitory, W_i) .- 200000000.0 * TFi
+    d2_fifi_e = 100000000.0 * TF_e(E, 1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e) .+ 100000000.0 * TF_e(E, -1.0e-7 .+ I, E_input_excitatory, I_input_excitatory, W_e) .- 200000000.0 * TFe
+    d2_fifi_i = 100000000.0 * TF_i(E, 1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i) .+ 100000000.0 * TF_i(E, -1.0e-7 .+ I, E_input_inhibitory, I_input_inhibitory, W_i) .- 200000000.0 * TFi
+
+    dx[1] = (TFe .- E .+ 0.5 * C_ee .* d2_fefe_e .+ 0.5 * C_ei .* d2_fefi_e .+ 0.5 * C_ei .* d2_fife_e .+ 0.5 * C_ii .* d2_fifi_e) ./ T
+    dx[2] = (TFi .- I .+ 0.5 * C_ee .* d2_fefe_i .+ 0.5 * C_ei .* d2_fefi_i .+ 0.5 * C_ei .* d2_fife_i .+ 0.5 * C_ii .* d2_fifi_i) ./ T
+    dx[3] = ((TFe .- E) .^ 2 .- 2.0 * C_ee .+ 2.0 * C_ee .* dfe_TFe .+ 2.0 * C_ei .* dfi_TFe .+ TFe .* (-TFe .+ 1.0 ./ T) ./ (N_tot .* (1.0 .- g))) ./ T
+    dx[4] = (-2.0 * C_ei .+ C_ee .* dfe_TFe .+ C_ei .* dfe_TFi .+ C_ei .* dfi_TFe .+ C_ii .* dfi_TFi .+ (TFe .- E) .* (TFi .- I)) ./ T
+    dx[5] = ((TFi .- I) .^ 2 .- 2.0 * C_ii .+ 2.0 * C_ei .* dfe_TFi .+ 2.0 * C_ii .* dfi_TFi .+ TFi .* (-TFi .+ 1.0 ./ T) ./ (N_tot .* g)) ./ T
+    dx[6] = E .* b_e .- W_e ./ tau_w_e .+ a_e .* (muV_e .- E_L_e) ./ tau_w_e
+    dx[7] = I .* b_i .- W_i ./ tau_w_i .+ a_i .* (muV_i .- E_L_i) ./ tau_w_i
+    dx[8] = -ou_drift ./ tau_OU
+    dx
+end
+
+# Parameter values
+p = (g_L = 10.0, E_L_e = -65.0, E_L_i = -65.0, C_m = 200.0, b_e = 60.0, a_e = 4.0, b_i = 0.0, a_i = 0.0, tau_w_e = 500.0, tau_w_i = 1.0, E_e = 0.0, E_i = -80.0, Q_e = 1.5, Q_i = 5.0, tau_e = 5.0, tau_i = 5.0, N_tot = 10000, p_connect_e = 0.05, p_connect_i = 0.05, g = 0.2, K_ext_e = 400, K_ext_i = 0, T = 20.0, P_e0 = -0.04983106, P_e1 = 0.005063550882777035, P_e2 = -0.023470121807314552, P_e3 = 0.0022951513725067503, P_e4 = -0.0004105302652029825, P_e5 = 0.010547051343547399, P_e6 = -0.03659252821136933, P_e7 = 0.007437487505797858, P_e8 = 0.001265064721846073, P_e9 = -0.04072161294490446, P_i0 = -0.05149122024209484, P_i1 = 0.004003689190271077, P_i2 = -0.008352013668528155, P_i3 = 0.0002414237992765705, P_i4 = -0.0005070645080016026, P_i5 = 0.0014345394104282397, P_i6 = -0.014686689498949967, P_i7 = 0.004502706285435741, P_i8 = 0.0028472190352532454, P_i9 = -0.015357804594594548, external_input_ex_ex = 0.0, external_input_ex_in = 0.0, external_input_in_ex = 0.0, external_input_in_in = 0.0, tau_OU = 5.0, weight_noise = 10.5, S_i = 1.0, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ZerlautAdaptationSecondOrder!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

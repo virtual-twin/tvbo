@@ -1,0 +1,63 @@
+name: vbi
+description: Virtual Brain Inference. Probabilistic inference toolkit for whole-brain
+  models — multi-backend simulators (Numba, C++, CuPy, JAX, PyTorch, TVB kernels),
+  a 40+ time-series feature library (statistical, spectral, FC/FCD, complexity, event-detection),
+  and two parallel inference paths (SBI via sbi-toolkit SNPE/SNLE/SNRE with MAF/NSF,
+  and a built-in autograd-based CDE with MDN/MAF estimators). Targets the inverse
+  problem of mapping observed neuroimaging (EEG/MEG/fMRI) onto brain-model parameters.
+homepage: https://vbi.readthedocs.io
+license: MIT
+repository: https://github.com/ins-amu/vbi
+doi: 10.5281/zenodo.14795543
+ecosystem:
+- pypi
+- docker
+application_category: inference
+scale:
+- neural_mass
+- network_system
+- whole_brain
+model_paradigm:
+- neural_mass
+- dynamic_mean_field
+tool_role:
+- simulator
+- inference_framework
+- feature_extraction
+programming_language:
+- Python
+- C++
+runtime_platform:
+- Numba
+- CuPy
+- PyTorch
+- JAX
+interoperates_with:
+- TVB
+- sbi
+- vbjax
+date_created: '2023-09-01'
+development_status: active
+author:
+- Abolfazl Ziaeemehr
+- Marmaduke Woodman
+- Meysam Hashemi
+- Viktor Jirsa
+maintainer:
+- Institut de Neurosciences des Systèmes (INS), Aix-Marseille Université
+funder:
+- EU Horizon Europe 101147319 (EBRAINS 2.0)
+- EU H2020 945539 (HBP SGA3)
+keywords:
+- simulation-based inference
+- SBI
+- conditional density estimation
+- normalizing flows
+- whole-brain simulation
+- feature extraction
+- neural mass
+- personalization
+- virtual brain
+- GPU
+issue_tracker: https://github.com/ins-amu/vbi/issues
+is_accessible_for_free: true

@@ -1,0 +1,56 @@
+name: LorenzDiffusionless
+parameters:
+  R:
+    name: R
+    value: 4.7
+    description: Constant parameter R controlling coexistence of attractors.
+description: 'Diffusionless variant of Lorenz-type flow supporting a pair of linked
+  Malasoma
+
+  strange attractors with fractal basin boundaries for typical parameter values.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- Sprott2014
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: y - x
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: -x*z
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: x*y - R
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 1
+model_type: generic
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

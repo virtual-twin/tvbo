@@ -55,4 +55,4 @@ ani = ts.animate("theta", format="dots")
 ani.save("kuramoto.gif", writer="pillow", fps=20)
 ```
 
-![](kuramoto.gif)
+![Kuramoto phase oscillators drawing together into synchrony as the coupling holds them against their spread of natural frequencies.](kuramoto.gif)

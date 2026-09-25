@@ -1,0 +1,152 @@
+name: TsodyksMarkram
+iri: tvbo:TsodyksMarkram
+parameters:
+  J:
+    name: J
+    value: 3.07
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 10.0
+      log_scale: false
+    description: Synaptic coupling strength
+  alpha:
+    name: alpha
+    value: 1.5
+    domain:
+      enforce: none
+      lo: 0.1
+      hi: 5.0
+      log_scale: false
+    description: Softplus nonlinearity steepness (smoothed threshold gain)
+  E0:
+    name: E0
+    value: -2.0
+    domain:
+      enforce: none
+      lo: -10.0
+      hi: 2.0
+      log_scale: false
+    description: External input (baseline excitability)
+  tau:
+    name: tau
+    value: 0.013
+    domain:
+      enforce: none
+      lo: 0.001
+      hi: 0.1
+      log_scale: false
+    description: Membrane time constant (firing rate relaxation)
+  tauD:
+    name: tauD
+    value: 0.2
+    domain:
+      enforce: none
+      lo: 0.01
+      hi: 1.0
+      log_scale: false
+    description: Synaptic depression recovery time constant
+  tauF:
+    name: tauF
+    value: 1.5
+    domain:
+      enforce: none
+      lo: 0.1
+      hi: 5.0
+      log_scale: false
+    description: Synaptic facilitation decay time constant
+  U0:
+    name: U0
+    value: 0.3
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+    description: Baseline release probability
+description: Tsodyks-Markram mean-field model of short-term synaptic plasticity. A
+  three-variable neural mass model with firing rate E, synaptic depression variable
+  x, and facilitation variable u. The transfer function uses a softplus nonlinearity
+  α·log(1 + exp(s/α)). Reproduces the dynamics from BifurcationKit.jl/examples/TMModel.jl.
+references:
+- Tsodyks1997
+- Tsodyks1998
+derived_variables:
+  SS0:
+    name: SS0
+    description: Total synaptic input (recurrent + external)
+    equation:
+      lhs: SS0
+      rhs: J*u*x*E + E0
+      latex: false
+    record: false
+  SS1:
+    name: SS1
+    description: Softplus transfer function output
+    equation:
+      lhs: SS1
+      rhs: alpha*log(1 + exp(SS0/alpha))
+      latex: false
+    record: false
+state_variables:
+  E:
+    name: E
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 5.0
+      log_scale: false
+    description: Mean firing rate of the excitatory population
+    equation:
+      lhs: Derivative(E, t)
+      rhs: (-E + SS1)/tau
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.238616
+  x:
+    name: x
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+    description: Synaptic depression variable (fraction of available neurotransmitter).
+      Recovers to 1 with time constant tauD and is depleted proportionally to firing.
+    equation:
+      lhs: Derivative(x, t)
+      rhs: (1 - x)/tauD - u*x*E
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.982747
+  u:
+    name: u
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+    description: Synaptic facilitation variable (release probability). Decays to U0
+      with time constant tauF and is enhanced proportionally to firing.
+    equation:
+      lhs: Derivative(u, t)
+      rhs: (U0 - u)/tauF + U0*(1 - u)*E
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.367876
+number_of_modes: 1
+model_type: neural_mass
+autonomous: true
+cse: false
+compile: false

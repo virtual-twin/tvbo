@@ -54,4 +54,6 @@ pytest -m "not julia"
 
 ## Adding a new backend marker
 
-Edit `[tool.pytest.ini_options].markers` in `pyproject.toml`. Add the optional-dependency group under `[project.optional-dependencies]` so users can `pip install tvbo[<backend>]`. See the `codegen-templates` skill for the full new-backend checklist.
+Register `backend_<backend>` in `[tool.pytest.ini_options].markers` in `pyproject.toml` — unregistered markers fail under `--strict-markers`.
+
+Registering the marker is one step of the wider new-backend flow; see the `codegen-templates` skill for the full checklist.

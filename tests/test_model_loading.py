@@ -1,11 +1,10 @@
-"""
-Test that all models in the database can be loaded without errors.
-"""
+"""Test that all models in the database can be loaded without errors."""
 
 import glob
+from pathlib import Path
+
 import pytest
 import yaml
-from pathlib import Path
 
 from tvbo import Dynamics, database_path
 
@@ -25,7 +24,7 @@ def get_all_model_files():
 def get_model_name(path):
     """Extract model name from YAML file."""
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             raw = yaml.safe_load(f)
         if isinstance(raw, dict):
             return raw.get("name", Path(path).stem)
@@ -43,7 +42,7 @@ test_params = [(path, get_model_name(path)) for path in model_files]
 def test_model_loads(model_path, model_name):
     """Test that a model can be loaded from its YAML file."""
     # Read the YAML to ensure it's valid
-    with open(model_path, "r", encoding="utf-8") as f:
+    with open(model_path, encoding="utf-8") as f:
         raw = yaml.safe_load(f)
 
     assert isinstance(raw, dict), f"Model YAML must be a dictionary, got {type(raw)}"
@@ -81,7 +80,7 @@ if __name__ == "__main__":
         print(f"   File: {path}")
 
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 raw = yaml.safe_load(f)
 
             if not isinstance(raw, dict):

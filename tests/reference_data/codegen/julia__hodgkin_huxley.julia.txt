@@ -1,0 +1,46 @@
+function HodgkinHuxley!(dx, x, p, t = 0)
+
+    (;Cm, gNa, gK, gL, ENa, EK, EL, Iext) = p
+
+    V, m, h, n = x
+
+
+    IK = gK .* n .^ 4 .* (V .- EK)
+    IL = gL .* (V .- EL)
+    INa = gNa .* h .* m .^ 3 .* (V .- ENa)
+    alpha_h = 0.07 * exp(-13 // 4 .- V / 20)
+    alpha_m = (4.0 .+ 0.1 * V) ./ (1 .- exp(-4 .- V / 10))
+    alpha_n = (0.55 .+ 0.01 * V) ./ (1 .- exp(-11 // 2 .- V / 10))
+    beta_h = 1 ./ (1 .+ exp(-7 // 2 .- V / 10))
+    beta_m = 4 * exp(-65 // 18 .- V / 18)
+    beta_n = 0.125 * exp(-13 // 16 .- V / 80)
+
+    dx[1] = (Iext .- gL .* (V .- EL) .- gK .* n .^ 4 .* (V .- EK) .- gNa .* h .* m .^ 3 .* (V .- ENa)) ./ Cm
+    dx[2] = alpha_m .* (1 .- m) .- beta_m .* m
+    dx[3] = alpha_h .* (1 .- h) .- beta_h .* h
+    dx[4] = alpha_n .* (1 .- n) .- beta_n .* n
+    dx
+end
+
+# Parameter values
+p = (Cm = 1.0, gNa = 120.0, gK = 36.0, gL = 0.3, ENa = 50.0, EK = -77.0, EL = -54.387, Iext = 10.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -65.0,
+        0.0529,
+        0.5961,
+        0.3177,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(HodgkinHuxley!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

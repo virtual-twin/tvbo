@@ -1,0 +1,5684 @@
+{
+  "Display": {
+    "attachments": {},
+    "chain": [
+      "Display"
+    ],
+    "children": {
+      "lines": {
+        "multiple": true,
+        "type": "Line"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "timeScale": "time",
+      "xmax": "none",
+      "xmin": "none",
+      "ymax": "none",
+      "ymin": "none"
+    },
+    "requirements": {}
+  },
+  "EIF_cond_alpha_isfa_ista": {
+    "attachments": {
+      "synapses": "baseSynapse"
+    },
+    "chain": [
+      "EIF_cond_alpha_isfa_ista",
+      "basePyNNIaFCondCell",
+      "basePyNNIaFCell",
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "iSyn": "current",
+      "v": "voltage",
+      "w": "none"
+    },
+    "extends": "basePyNNIaFCondCell",
+    "on_start": {},
+    "parameters": {
+      "a": "none",
+      "b": "none",
+      "cm": "none",
+      "delta_T": "none",
+      "e_rev_E": "none",
+      "e_rev_I": "none",
+      "i_offset": "none",
+      "tau_m": "none",
+      "tau_refrac": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "tau_w": "none",
+      "v_init": "none",
+      "v_reset": "none",
+      "v_rest": "none",
+      "v_spike": "none",
+      "v_thresh": "none"
+    },
+    "requirements": {}
+  },
+  "EIF_cond_exp_isfa_ista": {
+    "attachments": {
+      "synapses": "baseSynapse"
+    },
+    "chain": [
+      "EIF_cond_exp_isfa_ista",
+      "basePyNNIaFCondCell",
+      "basePyNNIaFCell",
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "iSyn": "current",
+      "v": "voltage",
+      "w": "none"
+    },
+    "extends": "basePyNNIaFCondCell",
+    "on_start": {},
+    "parameters": {
+      "a": "none",
+      "b": "none",
+      "cm": "none",
+      "delta_T": "none",
+      "e_rev_E": "none",
+      "e_rev_I": "none",
+      "i_offset": "none",
+      "tau_m": "none",
+      "tau_refrac": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "tau_w": "none",
+      "v_init": "none",
+      "v_reset": "none",
+      "v_rest": "none",
+      "v_spike": "none",
+      "v_thresh": "none"
+    },
+    "requirements": {}
+  },
+  "EventOutputFile": {
+    "attachments": {},
+    "chain": [
+      "EventOutputFile"
+    ],
+    "children": {
+      "eventSelection": {
+        "multiple": true,
+        "type": "EventSelection"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "EventSelection": {
+    "attachments": {},
+    "chain": [
+      "EventSelection"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "HHExpLinearRate": {
+    "attachments": {},
+    "chain": [
+      "HHExpLinearRate",
+      "baseHHRate",
+      "baseVoltageDepRate"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "r": "per_time"
+    },
+    "extends": "baseHHRate",
+    "on_start": {},
+    "parameters": {
+      "midpoint": "voltage",
+      "rate": "per_time",
+      "scale": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "HHExpLinearVariable": {
+    "attachments": {},
+    "chain": [
+      "HHExpLinearVariable",
+      "baseHHVariable",
+      "baseVoltageDepVariable"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "x": "none"
+    },
+    "extends": "baseHHVariable",
+    "on_start": {},
+    "parameters": {
+      "midpoint": "voltage",
+      "rate": "none",
+      "scale": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "HHExpRate": {
+    "attachments": {},
+    "chain": [
+      "HHExpRate",
+      "baseHHRate",
+      "baseVoltageDepRate"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "r": "per_time"
+    },
+    "extends": "baseHHRate",
+    "on_start": {},
+    "parameters": {
+      "midpoint": "voltage",
+      "rate": "per_time",
+      "scale": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "HHExpVariable": {
+    "attachments": {},
+    "chain": [
+      "HHExpVariable",
+      "baseHHVariable",
+      "baseVoltageDepVariable"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "x": "none"
+    },
+    "extends": "baseHHVariable",
+    "on_start": {},
+    "parameters": {
+      "midpoint": "voltage",
+      "rate": "none",
+      "scale": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "HHSigmoidRate": {
+    "attachments": {},
+    "chain": [
+      "HHSigmoidRate",
+      "baseHHRate",
+      "baseVoltageDepRate"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "r": "per_time"
+    },
+    "extends": "baseHHRate",
+    "on_start": {},
+    "parameters": {
+      "midpoint": "voltage",
+      "rate": "per_time",
+      "scale": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "HHSigmoidVariable": {
+    "attachments": {},
+    "chain": [
+      "HHSigmoidVariable",
+      "baseHHVariable",
+      "baseVoltageDepVariable"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "x": "none"
+    },
+    "extends": "baseHHVariable",
+    "on_start": {},
+    "parameters": {
+      "midpoint": "voltage",
+      "rate": "none",
+      "scale": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "HH_cond_exp": {
+    "attachments": {
+      "synapses": "baseSynapse"
+    },
+    "chain": [
+      "HH_cond_exp",
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "h": "none",
+      "iSyn": "current",
+      "m": "none",
+      "n": "none",
+      "v": "voltage"
+    },
+    "extends": "basePyNNCell",
+    "on_start": {},
+    "parameters": {
+      "cm": "none",
+      "e_rev_E": "none",
+      "e_rev_I": "none",
+      "e_rev_K": "none",
+      "e_rev_Na": "none",
+      "e_rev_leak": "none",
+      "g_leak": "none",
+      "gbar_K": "none",
+      "gbar_Na": "none",
+      "i_offset": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "v_init": "none",
+      "v_offset": "none"
+    },
+    "requirements": {}
+  },
+  "IF_cond_alpha": {
+    "attachments": {
+      "synapses": "baseSynapse"
+    },
+    "chain": [
+      "IF_cond_alpha",
+      "basePyNNIaFCondCell",
+      "basePyNNIaFCell",
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "basePyNNIaFCondCell",
+    "on_start": {},
+    "parameters": {
+      "cm": "none",
+      "e_rev_E": "none",
+      "e_rev_I": "none",
+      "i_offset": "none",
+      "tau_m": "none",
+      "tau_refrac": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "v_init": "none",
+      "v_reset": "none",
+      "v_rest": "none",
+      "v_thresh": "none"
+    },
+    "requirements": {}
+  },
+  "IF_cond_exp": {
+    "attachments": {
+      "synapses": "baseSynapse"
+    },
+    "chain": [
+      "IF_cond_exp",
+      "basePyNNIaFCondCell",
+      "basePyNNIaFCell",
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "basePyNNIaFCondCell",
+    "on_start": {},
+    "parameters": {
+      "cm": "none",
+      "e_rev_E": "none",
+      "e_rev_I": "none",
+      "i_offset": "none",
+      "tau_m": "none",
+      "tau_refrac": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "v_init": "none",
+      "v_reset": "none",
+      "v_rest": "none",
+      "v_thresh": "none"
+    },
+    "requirements": {}
+  },
+  "IF_curr_alpha": {
+    "attachments": {
+      "synapses": "baseSynapse"
+    },
+    "chain": [
+      "IF_curr_alpha",
+      "basePyNNIaFCell",
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "basePyNNIaFCell",
+    "on_start": {},
+    "parameters": {
+      "cm": "none",
+      "i_offset": "none",
+      "tau_m": "none",
+      "tau_refrac": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "v_init": "none",
+      "v_reset": "none",
+      "v_rest": "none",
+      "v_thresh": "none"
+    },
+    "requirements": {}
+  },
+  "IF_curr_exp": {
+    "attachments": {
+      "synapses": "baseSynapse"
+    },
+    "chain": [
+      "IF_curr_exp",
+      "basePyNNIaFCell",
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "basePyNNIaFCell",
+    "on_start": {},
+    "parameters": {
+      "cm": "none",
+      "i_offset": "none",
+      "tau_m": "none",
+      "tau_refrac": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "v_init": "none",
+      "v_reset": "none",
+      "v_rest": "none",
+      "v_thresh": "none"
+    },
+    "requirements": {}
+  },
+  "KSState": {
+    "attachments": {},
+    "chain": [
+      "KSState"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "occupancy": "none",
+      "q": "none"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "relativeConductance": "none"
+    },
+    "requirements": {}
+  },
+  "KSTransition": {
+    "attachments": {},
+    "chain": [
+      "KSTransition"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "rf": "per_time",
+      "rr": "per_time"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "Line": {
+    "attachments": {},
+    "chain": [
+      "Line"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "scale": "*",
+      "timeScale": "*"
+    },
+    "requirements": {}
+  },
+  "Meta": {
+    "attachments": {},
+    "chain": [
+      "Meta"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "OutputColumn": {
+    "attachments": {},
+    "chain": [
+      "OutputColumn"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "OutputFile": {
+    "attachments": {},
+    "chain": [
+      "OutputFile"
+    ],
+    "children": {
+      "outputColumn": {
+        "multiple": true,
+        "type": "OutputColumn"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "Simulation": {
+    "attachments": {},
+    "chain": [
+      "Simulation"
+    ],
+    "children": {
+      "displays": {
+        "multiple": true,
+        "type": "Display"
+      },
+      "events": {
+        "multiple": true,
+        "type": "EventOutputFile"
+      },
+      "metas": {
+        "multiple": true,
+        "type": "Meta"
+      },
+      "outputs": {
+        "multiple": true,
+        "type": "OutputFile"
+      }
+    },
+    "component_references": {
+      "target": "Component"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "length": "time",
+      "step": "time"
+    },
+    "requirements": {}
+  },
+  "SpikeSourcePoisson": {
+    "attachments": {},
+    "chain": [
+      "SpikeSourcePoisson",
+      "baseSpikeSource"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in",
+      "spike": "out"
+    },
+    "exposures": {
+      "isi": "time",
+      "tnextIdeal": "time",
+      "tnextUsed": "time",
+      "tsince": "time"
+    },
+    "extends": "baseSpikeSource",
+    "on_start": {},
+    "parameters": {
+      "duration": "time",
+      "rate": "per_time",
+      "start": "time"
+    },
+    "requirements": {}
+  },
+  "adExIaFCell": {
+    "attachments": {
+      "synapses": "basePointCurrent"
+    },
+    "chain": [
+      "adExIaFCell",
+      "baseCellMembPotCap",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "iMemb": "current",
+      "iSyn": "current",
+      "v": "voltage",
+      "w": "current"
+    },
+    "extends": "baseCellMembPotCap",
+    "on_start": {},
+    "parameters": {
+      "C": "capacitance",
+      "EL": "voltage",
+      "VT": "voltage",
+      "a": "conductance",
+      "b": "current",
+      "delT": "voltage",
+      "gL": "conductance",
+      "refract": "time",
+      "reset": "voltage",
+      "tauw": "time",
+      "thresh": "voltage"
+    },
+    "requirements": {}
+  },
+  "alphaCondSynapse": {
+    "attachments": {},
+    "chain": [
+      "alphaCondSynapse",
+      "basePynnSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "A": "none",
+      "g": "none",
+      "i": "current"
+    },
+    "extends": "basePynnSynapse",
+    "on_start": {},
+    "parameters": {
+      "e_rev": "none",
+      "tau_syn": "none"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "alphaCurrSynapse": {
+    "attachments": {},
+    "chain": [
+      "alphaCurrSynapse",
+      "basePynnSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "A": "current",
+      "i": "current"
+    },
+    "extends": "basePynnSynapse",
+    "on_start": {},
+    "parameters": {
+      "tau_syn": "none"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "alphaCurrentSynapse": {
+    "attachments": {},
+    "chain": [
+      "alphaCurrentSynapse",
+      "baseCurrentBasedSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseCurrentBasedSynapse",
+    "on_start": {},
+    "parameters": {
+      "ibase": "current",
+      "tau": "time"
+    },
+    "requirements": {}
+  },
+  "alphaSynapse": {
+    "attachments": {},
+    "chain": [
+      "alphaSynapse",
+      "baseConductanceBasedSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "g": "conductance",
+      "i": "current"
+    },
+    "extends": "baseConductanceBasedSynapse",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage",
+      "gbase": "conductance",
+      "tau": "time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseBlockMechanism": {
+    "attachments": {},
+    "chain": [
+      "baseBlockMechanism"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "blockFactor": "none"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseCell": {
+    "attachments": {},
+    "chain": [
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": "baseStandalone",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseCellMembPot": {
+    "attachments": {},
+    "chain": [
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "v": "voltage"
+    },
+    "extends": "baseSpikingCell",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseCellMembPotCap": {
+    "attachments": {},
+    "chain": [
+      "baseCellMembPotCap",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "iMemb": "current",
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPot",
+    "on_start": {},
+    "parameters": {
+      "C": "capacitance"
+    },
+    "requirements": {}
+  },
+  "baseCellMembPotDL": {
+    "attachments": {},
+    "chain": [
+      "baseCellMembPotDL",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "V": "none"
+    },
+    "extends": "baseSpikingCell",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseChannelDensity": {
+    "attachments": {},
+    "chain": [
+      "baseChannelDensity"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "iDensity": "currentDensity"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseChannelDensityCond": {
+    "attachments": {},
+    "chain": [
+      "baseChannelDensityCond",
+      "baseChannelDensity"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "gDensity": "conductanceDensity",
+      "iDensity": "currentDensity"
+    },
+    "extends": "baseChannelDensity",
+    "on_start": {},
+    "parameters": {
+      "condDensity": "conductanceDensity"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseChannelPopulation": {
+    "attachments": {},
+    "chain": [
+      "baseChannelPopulation",
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseVoltageDepPointCurrent",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseConductanceBasedSynapse": {
+    "attachments": {},
+    "chain": [
+      "baseConductanceBasedSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "g": "conductance",
+      "i": "current"
+    },
+    "extends": "baseVoltageDepSynapse",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage",
+      "gbase": "conductance"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseConductanceBasedSynapseTwo": {
+    "attachments": {},
+    "chain": [
+      "baseConductanceBasedSynapseTwo",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "g": "conductance",
+      "i": "current"
+    },
+    "extends": "baseVoltageDepSynapse",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage",
+      "gbase1": "conductance",
+      "gbase2": "conductance"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseConductanceScaling": {
+    "attachments": {},
+    "chain": [
+      "baseConductanceScaling"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "factor": "none"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "temperature": "temperature"
+    }
+  },
+  "baseConductanceScalingCaDependent": {
+    "attachments": {},
+    "chain": [
+      "baseConductanceScalingCaDependent",
+      "baseConductanceScaling"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "factor": "none"
+    },
+    "extends": "baseConductanceScaling",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "caConc": "concentration",
+      "temperature": "temperature"
+    }
+  },
+  "baseCurrentBasedSynapse": {
+    "attachments": {},
+    "chain": [
+      "baseCurrentBasedSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseSynapse",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseGate": {
+    "attachments": {},
+    "chain": [
+      "baseGate"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fcond": "none",
+      "q": "none"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "baseGradedSynapse": {
+    "attachments": {},
+    "chain": [
+      "baseGradedSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseSynapse",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseHHRate": {
+    "attachments": {},
+    "chain": [
+      "baseHHRate",
+      "baseVoltageDepRate"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "r": "per_time"
+    },
+    "extends": "baseVoltageDepRate",
+    "on_start": {},
+    "parameters": {
+      "midpoint": "voltage",
+      "rate": "per_time",
+      "scale": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseHHVariable": {
+    "attachments": {},
+    "chain": [
+      "baseHHVariable",
+      "baseVoltageDepVariable"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "x": "none"
+    },
+    "extends": "baseVoltageDepVariable",
+    "on_start": {},
+    "parameters": {
+      "midpoint": "voltage",
+      "rate": "none",
+      "scale": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseIaf": {
+    "attachments": {},
+    "chain": [
+      "baseIaf",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPot",
+    "on_start": {},
+    "parameters": {
+      "reset": "voltage",
+      "thresh": "voltage"
+    },
+    "requirements": {}
+  },
+  "baseIafCapCell": {
+    "attachments": {},
+    "chain": [
+      "baseIafCapCell",
+      "baseCellMembPotCap",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "iMemb": "current",
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPotCap",
+    "on_start": {},
+    "parameters": {
+      "C": "capacitance",
+      "reset": "voltage",
+      "thresh": "voltage"
+    },
+    "requirements": {}
+  },
+  "baseIonChannel": {
+    "attachments": {},
+    "chain": [
+      "baseIonChannel"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fopen": "none",
+      "g": "conductance"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "conductance": "conductance"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "basePlasticityMechanism": {
+    "attachments": {},
+    "chain": [
+      "basePlasticityMechanism"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "plasticityFactor": "none"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "basePointCurrent": {
+    "attachments": {},
+    "chain": [
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseStandalone",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "basePointCurrentDL": {
+    "attachments": {},
+    "chain": [
+      "basePointCurrentDL"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "I": "none"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "basePopulation": {
+    "attachments": {},
+    "chain": [
+      "basePopulation",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {
+      "component": "baseCell"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": "baseStandalone",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "basePyNNCell": {
+    "attachments": {},
+    "chain": [
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPot",
+    "on_start": {},
+    "parameters": {
+      "cm": "none",
+      "i_offset": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "v_init": "none"
+    },
+    "requirements": {}
+  },
+  "basePyNNIaFCell": {
+    "attachments": {},
+    "chain": [
+      "basePyNNIaFCell",
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "basePyNNCell",
+    "on_start": {},
+    "parameters": {
+      "cm": "none",
+      "i_offset": "none",
+      "tau_m": "none",
+      "tau_refrac": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "v_init": "none",
+      "v_reset": "none",
+      "v_rest": "none",
+      "v_thresh": "none"
+    },
+    "requirements": {}
+  },
+  "basePyNNIaFCondCell": {
+    "attachments": {},
+    "chain": [
+      "basePyNNIaFCondCell",
+      "basePyNNIaFCell",
+      "basePyNNCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out",
+      "spike_in_E": "in",
+      "spike_in_I": "in"
+    },
+    "exposures": {
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "basePyNNIaFCell",
+    "on_start": {},
+    "parameters": {
+      "cm": "none",
+      "e_rev_E": "none",
+      "e_rev_I": "none",
+      "i_offset": "none",
+      "tau_m": "none",
+      "tau_refrac": "none",
+      "tau_syn_E": "none",
+      "tau_syn_I": "none",
+      "v_init": "none",
+      "v_reset": "none",
+      "v_rest": "none",
+      "v_thresh": "none"
+    },
+    "requirements": {}
+  },
+  "basePynnSynapse": {
+    "attachments": {},
+    "chain": [
+      "basePynnSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseVoltageDepSynapse",
+    "on_start": {},
+    "parameters": {
+      "tau_syn": "none"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseQ10Settings": {
+    "attachments": {},
+    "chain": [
+      "baseQ10Settings"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "q10": "none"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "temperature": "temperature"
+    }
+  },
+  "baseSpikeSource": {
+    "attachments": {},
+    "chain": [
+      "baseSpikeSource"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "tsince": "time"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseSpikingCell": {
+    "attachments": {},
+    "chain": [
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {},
+    "extends": "baseCell",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseStandalone": {
+    "attachments": {},
+    "chain": [
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseSynapse": {
+    "attachments": {},
+    "chain": [
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "basePointCurrent",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "baseSynapseDL": {
+    "attachments": {},
+    "chain": [
+      "baseSynapseDL",
+      "baseVoltageDepPointCurrentDL",
+      "basePointCurrentDL"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "I": "none"
+    },
+    "extends": "baseVoltageDepPointCurrentDL",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "V": "none"
+    }
+  },
+  "baseVoltageConcDepRate": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageConcDepRate",
+      "baseVoltageDepRate"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "r": "per_time"
+    },
+    "extends": "baseVoltageDepRate",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "caConc": "concentration",
+      "v": "voltage"
+    }
+  },
+  "baseVoltageConcDepTime": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageConcDepTime",
+      "baseVoltageDepTime"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "t": "time"
+    },
+    "extends": "baseVoltageDepTime",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "caConc": "concentration",
+      "v": "voltage"
+    }
+  },
+  "baseVoltageConcDepVariable": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageConcDepVariable",
+      "baseVoltageDepVariable"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "x": "none"
+    },
+    "extends": "baseVoltageDepVariable",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "caConc": "concentration",
+      "v": "voltage"
+    }
+  },
+  "baseVoltageDepPointCurrent": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "basePointCurrent",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseVoltageDepPointCurrentDL": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageDepPointCurrentDL",
+      "basePointCurrentDL"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "I": "none"
+    },
+    "extends": "basePointCurrentDL",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "V": "none"
+    }
+  },
+  "baseVoltageDepPointCurrentSpiking": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageDepPointCurrentSpiking",
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "i": "current",
+      "tsince": "time"
+    },
+    "extends": "baseVoltageDepPointCurrent",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseVoltageDepRate": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageDepRate"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "r": "per_time"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseVoltageDepSynapse": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseSynapse",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseVoltageDepTime": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageDepTime"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "t": "time"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "baseVoltageDepVariable": {
+    "attachments": {},
+    "chain": [
+      "baseVoltageDepVariable"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "x": "none"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "biophysicalProperties": {
+    "attachments": {},
+    "chain": [
+      "biophysicalProperties"
+    ],
+    "children": {
+      "intracellularProperties": {
+        "multiple": false,
+        "type": "intracellularProperties"
+      },
+      "membraneProperties": {
+        "multiple": false,
+        "type": "membraneProperties"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "totSpecCap": "specificCapacitance"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "biophysicalProperties2CaPools": {
+    "attachments": {},
+    "chain": [
+      "biophysicalProperties2CaPools"
+    ],
+    "children": {
+      "intracellularProperties2CaPools": {
+        "multiple": false,
+        "type": "intracellularProperties2CaPools"
+      },
+      "membraneProperties2CaPools": {
+        "multiple": false,
+        "type": "membraneProperties2CaPools"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "totSpecCap": "specificCapacitance"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "blockingPlasticSynapse": {
+    "attachments": {},
+    "chain": [
+      "blockingPlasticSynapse",
+      "expTwoSynapse",
+      "baseConductanceBasedSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {
+      "blockMechanisms": {
+        "multiple": true,
+        "type": "baseBlockMechanism"
+      },
+      "plasticityMechanisms": {
+        "multiple": true,
+        "type": "basePlasticityMechanism"
+      }
+    },
+    "component_references": {},
+    "event_ports": {
+      "in": "in",
+      "relay": "out"
+    },
+    "exposures": {
+      "g": "conductance",
+      "i": "current"
+    },
+    "extends": "expTwoSynapse",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage",
+      "gbase": "conductance",
+      "tauDecay": "time",
+      "tauRise": "time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "cell": {
+    "attachments": {
+      "synapses": "basePointCurrent"
+    },
+    "chain": [
+      "cell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {
+      "biophysicalProperties": {
+        "multiple": false,
+        "type": "biophysicalProperties"
+      },
+      "morphology": {
+        "multiple": false,
+        "type": "morphology"
+      }
+    },
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "caConc": "concentration",
+      "caConcExt": "concentration",
+      "iCa": "current",
+      "iChannels": "current",
+      "iSyn": "current",
+      "spiking": "none",
+      "surfaceArea": "area",
+      "totSpecCap": "specificCapacitance",
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPot",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "cell2CaPools": {
+    "attachments": {
+      "synapses": "basePointCurrent"
+    },
+    "chain": [
+      "cell2CaPools",
+      "cell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {
+      "biophysicalProperties": {
+        "multiple": false,
+        "type": "biophysicalProperties"
+      },
+      "biophysicalProperties2CaPools": {
+        "multiple": false,
+        "type": "biophysicalProperties2CaPools"
+      },
+      "morphology": {
+        "multiple": false,
+        "type": "morphology"
+      }
+    },
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "caConc": "concentration",
+      "caConc2": "concentration",
+      "caConcExt": "concentration",
+      "caConcExt2": "concentration",
+      "iCa": "current",
+      "iCa2": "current",
+      "iChannels": "current",
+      "iSyn": "current",
+      "spiking": "none",
+      "surfaceArea": "area",
+      "totSpecCap": "specificCapacitance",
+      "v": "voltage"
+    },
+    "extends": "cell",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "channelDensity": {
+    "attachments": {},
+    "chain": [
+      "channelDensity",
+      "baseChannelDensityCond",
+      "baseChannelDensity"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "gDensity": "conductanceDensity",
+      "iDensity": "currentDensity"
+    },
+    "extends": "baseChannelDensityCond",
+    "on_start": {},
+    "parameters": {
+      "condDensity": "conductanceDensity",
+      "erev": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "channelDensityGHK": {
+    "attachments": {},
+    "chain": [
+      "channelDensityGHK",
+      "baseChannelDensity"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "iDensity": "currentDensity"
+    },
+    "extends": "baseChannelDensity",
+    "on_start": {},
+    "parameters": {
+      "permeability": "permeability"
+    },
+    "requirements": {
+      "caConc": "concentration",
+      "caConcExt": "concentration",
+      "temperature": "temperature",
+      "v": "voltage"
+    }
+  },
+  "channelDensityGHK2": {
+    "attachments": {},
+    "chain": [
+      "channelDensityGHK2",
+      "baseChannelDensityCond",
+      "baseChannelDensity"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "gDensity": "conductanceDensity",
+      "iDensity": "currentDensity"
+    },
+    "extends": "baseChannelDensityCond",
+    "on_start": {},
+    "parameters": {
+      "condDensity": "conductanceDensity"
+    },
+    "requirements": {
+      "caConc": "concentration",
+      "caConcExt": "concentration",
+      "temperature": "temperature",
+      "v": "voltage"
+    }
+  },
+  "channelDensityNernst": {
+    "attachments": {},
+    "chain": [
+      "channelDensityNernst",
+      "baseChannelDensityCond",
+      "baseChannelDensity"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "erev": "voltage",
+      "gDensity": "conductanceDensity",
+      "iDensity": "currentDensity"
+    },
+    "extends": "baseChannelDensityCond",
+    "on_start": {},
+    "parameters": {
+      "condDensity": "conductanceDensity"
+    },
+    "requirements": {
+      "caConc": "concentration",
+      "caConcExt": "concentration",
+      "temperature": "temperature",
+      "v": "voltage"
+    }
+  },
+  "channelDensityNernstCa2": {
+    "attachments": {},
+    "chain": [
+      "channelDensityNernstCa2",
+      "baseChannelDensityCond",
+      "baseChannelDensity"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "erev": "voltage",
+      "gDensity": "conductanceDensity",
+      "iDensity": "currentDensity"
+    },
+    "extends": "baseChannelDensityCond",
+    "on_start": {},
+    "parameters": {
+      "condDensity": "conductanceDensity"
+    },
+    "requirements": {
+      "caConc2": "concentration",
+      "caConcExt2": "concentration",
+      "temperature": "temperature",
+      "v": "voltage"
+    }
+  },
+  "channelDensityNonUniform": {
+    "attachments": {},
+    "chain": [
+      "channelDensityNonUniform",
+      "baseChannelDensity"
+    ],
+    "children": {
+      "variableParameter": {
+        "multiple": false,
+        "type": "variableParameter"
+      }
+    },
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "iDensity": "currentDensity"
+    },
+    "extends": "baseChannelDensity",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "channelDensityNonUniformGHK": {
+    "attachments": {},
+    "chain": [
+      "channelDensityNonUniformGHK",
+      "baseChannelDensity"
+    ],
+    "children": {
+      "variableParameter": {
+        "multiple": false,
+        "type": "variableParameter"
+      }
+    },
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "iDensity": "currentDensity"
+    },
+    "extends": "baseChannelDensity",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "channelDensityNonUniformNernst": {
+    "attachments": {},
+    "chain": [
+      "channelDensityNonUniformNernst",
+      "baseChannelDensity"
+    ],
+    "children": {
+      "variableParameter": {
+        "multiple": false,
+        "type": "variableParameter"
+      }
+    },
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "iDensity": "currentDensity"
+    },
+    "extends": "baseChannelDensity",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "channelDensityVShift": {
+    "attachments": {},
+    "chain": [
+      "channelDensityVShift",
+      "channelDensity",
+      "baseChannelDensityCond",
+      "baseChannelDensity"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "gDensity": "conductanceDensity",
+      "iDensity": "currentDensity"
+    },
+    "extends": "channelDensity",
+    "on_start": {},
+    "parameters": {
+      "condDensity": "conductanceDensity",
+      "erev": "voltage",
+      "vShift": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "channelPopulation": {
+    "attachments": {},
+    "chain": [
+      "channelPopulation",
+      "baseChannelPopulation",
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseChannelPopulation",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage",
+      "number": "none"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "channelPopulationNernst": {
+    "attachments": {},
+    "chain": [
+      "channelPopulationNernst",
+      "baseChannelPopulation",
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "erev": "voltage",
+      "i": "current"
+    },
+    "extends": "baseChannelPopulation",
+    "on_start": {},
+    "parameters": {
+      "number": "none"
+    },
+    "requirements": {
+      "caConc": "concentration",
+      "caConcExt": "concentration",
+      "temperature": "temperature",
+      "v": "voltage"
+    }
+  },
+  "closedState": {
+    "attachments": {},
+    "chain": [
+      "closedState",
+      "KSState"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "occupancy": "none",
+      "q": "none"
+    },
+    "extends": "KSState",
+    "on_start": {},
+    "parameters": {
+      "relativeConductance": "__dimension_inherited__"
+    },
+    "requirements": {}
+  },
+  "compoundInput": {
+    "attachments": {},
+    "chain": [
+      "compoundInput",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {
+      "currents": {
+        "multiple": true,
+        "type": "basePointCurrent"
+      }
+    },
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "basePointCurrent",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "compoundInputDL": {
+    "attachments": {},
+    "chain": [
+      "compoundInputDL",
+      "basePointCurrentDL"
+    ],
+    "children": {
+      "currents": {
+        "multiple": true,
+        "type": "basePointCurrentDL"
+      }
+    },
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "I": "none"
+    },
+    "extends": "basePointCurrentDL",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "concentrationModel": {
+    "attachments": {},
+    "chain": [
+      "concentrationModel"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "concentration": "concentration",
+      "extConcentration": "concentration"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "initialConcentration": "concentration",
+      "initialExtConcentration": "concentration",
+      "surfaceArea": "area"
+    }
+  },
+  "connection": {
+    "attachments": {},
+    "chain": [
+      "connection"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "connectionWD": {
+    "attachments": {},
+    "chain": [
+      "connectionWD",
+      "connection"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": "connection",
+    "on_start": {},
+    "parameters": {
+      "delay": "time",
+      "weight": "none"
+    },
+    "requirements": {}
+  },
+  "continuousConnection": {
+    "attachments": {},
+    "chain": [
+      "continuousConnection"
+    ],
+    "children": {},
+    "component_references": {
+      "postComponent": "baseGradedSynapse",
+      "preComponent": "baseGradedSynapse"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "continuousConnectionInstance": {
+    "attachments": {},
+    "chain": [
+      "continuousConnectionInstance"
+    ],
+    "children": {},
+    "component_references": {
+      "postComponent": "baseGradedSynapse",
+      "preComponent": "baseGradedSynapse"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "continuousConnectionInstanceW": {
+    "attachments": {},
+    "chain": [
+      "continuousConnectionInstanceW",
+      "continuousConnectionInstance"
+    ],
+    "children": {},
+    "component_references": {
+      "postComponent": "baseGradedSynapse",
+      "preComponent": "baseGradedSynapse"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": "continuousConnectionInstance",
+    "on_start": {},
+    "parameters": {
+      "weight": "none"
+    },
+    "requirements": {}
+  },
+  "continuousProjection": {
+    "attachments": {},
+    "chain": [
+      "continuousProjection"
+    ],
+    "children": {
+      "connectionInstances": {
+        "multiple": true,
+        "type": "continuousConnectionInstance"
+      },
+      "connections": {
+        "multiple": true,
+        "type": "continuousConnection"
+      }
+    },
+    "component_references": {
+      "postsynapticPopulation": "population",
+      "presynapticPopulation": "population"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "decayingPoolConcentrationModel": {
+    "attachments": {},
+    "chain": [
+      "decayingPoolConcentrationModel",
+      "concentrationModel"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "concentration": "concentration",
+      "extConcentration": "concentration"
+    },
+    "extends": "concentrationModel",
+    "on_start": {},
+    "parameters": {
+      "decayConstant": "time",
+      "restingConc": "concentration",
+      "shellThickness": "length"
+    },
+    "requirements": {
+      "iCa": "current",
+      "initialConcentration": "concentration",
+      "initialExtConcentration": "concentration",
+      "surfaceArea": "area"
+    }
+  },
+  "distal": {
+    "attachments": {},
+    "chain": [
+      "distal",
+      "point3DWithDiam"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": "point3DWithDiam",
+    "on_start": {},
+    "parameters": {
+      "diameter": "none",
+      "x": "none",
+      "y": "none",
+      "z": "none"
+    },
+    "requirements": {}
+  },
+  "distalDetails": {
+    "attachments": {},
+    "chain": [
+      "distalDetails"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "doubleSynapse": {
+    "attachments": {},
+    "chain": [
+      "doubleSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {
+      "synapse1": "baseSynapse",
+      "synapse2": "baseSynapse"
+    },
+    "event_ports": {
+      "in": "in",
+      "relay": "out"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseVoltageDepSynapse",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "electricalConnection": {
+    "attachments": {},
+    "chain": [
+      "electricalConnection"
+    ],
+    "children": {},
+    "component_references": {
+      "synapse": "gapJunction"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "electricalConnectionInstance": {
+    "attachments": {},
+    "chain": [
+      "electricalConnectionInstance"
+    ],
+    "children": {},
+    "component_references": {
+      "synapse": "gapJunction"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "electricalConnectionInstanceW": {
+    "attachments": {},
+    "chain": [
+      "electricalConnectionInstanceW",
+      "electricalConnectionInstance"
+    ],
+    "children": {},
+    "component_references": {
+      "synapse": "gapJunction"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": "electricalConnectionInstance",
+    "on_start": {},
+    "parameters": {
+      "weight": "none"
+    },
+    "requirements": {}
+  },
+  "electricalProjection": {
+    "attachments": {},
+    "chain": [
+      "electricalProjection"
+    ],
+    "children": {
+      "connectionInstances": {
+        "multiple": true,
+        "type": "electricalConnectionInstance"
+      },
+      "connections": {
+        "multiple": true,
+        "type": "electricalConnection"
+      }
+    },
+    "component_references": {
+      "postsynapticPopulation": "population",
+      "presynapticPopulation": "population"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "expCondSynapse": {
+    "attachments": {},
+    "chain": [
+      "expCondSynapse",
+      "basePynnSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "g": "none",
+      "i": "current"
+    },
+    "extends": "basePynnSynapse",
+    "on_start": {},
+    "parameters": {
+      "e_rev": "none",
+      "tau_syn": "none"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "expCurrSynapse": {
+    "attachments": {},
+    "chain": [
+      "expCurrSynapse",
+      "basePynnSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "basePynnSynapse",
+    "on_start": {},
+    "parameters": {
+      "tau_syn": "none"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "expOneSynapse": {
+    "attachments": {},
+    "chain": [
+      "expOneSynapse",
+      "baseConductanceBasedSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "g": "conductance",
+      "i": "current"
+    },
+    "extends": "baseConductanceBasedSynapse",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage",
+      "gbase": "conductance",
+      "tauDecay": "time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "expThreeSynapse": {
+    "attachments": {},
+    "chain": [
+      "expThreeSynapse",
+      "baseConductanceBasedSynapseTwo",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "g": "conductance",
+      "i": "current"
+    },
+    "extends": "baseConductanceBasedSynapseTwo",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage",
+      "gbase1": "conductance",
+      "gbase2": "conductance",
+      "tauDecay1": "time",
+      "tauDecay2": "time",
+      "tauRise": "time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "expTwoSynapse": {
+    "attachments": {},
+    "chain": [
+      "expTwoSynapse",
+      "baseConductanceBasedSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "g": "conductance",
+      "i": "current"
+    },
+    "extends": "baseConductanceBasedSynapse",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage",
+      "gbase": "conductance",
+      "tauDecay": "time",
+      "tauRise": "time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "explicitConnection": {
+    "attachments": {},
+    "chain": [
+      "explicitConnection"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "explicitInput": {
+    "attachments": {},
+    "chain": [
+      "explicitInput"
+    ],
+    "children": {},
+    "component_references": {
+      "input": "basePointCurrent"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "fitzHughNagumo1969Cell": {
+    "attachments": {},
+    "chain": [
+      "fitzHughNagumo1969Cell",
+      "baseCellMembPotDL",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "F": "none",
+      "V": "none",
+      "W": "none"
+    },
+    "extends": "baseCellMembPotDL",
+    "on_start": {},
+    "parameters": {
+      "I": "none",
+      "V0": "none",
+      "W0": "none",
+      "a": "none",
+      "b": "none",
+      "phi": "none"
+    },
+    "requirements": {}
+  },
+  "fitzHughNagumoCell": {
+    "attachments": {},
+    "chain": [
+      "fitzHughNagumoCell",
+      "baseCellMembPotDL",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "V": "none",
+      "W": "none"
+    },
+    "extends": "baseCellMembPotDL",
+    "on_start": {},
+    "parameters": {
+      "I": "none"
+    },
+    "requirements": {}
+  },
+  "fixedFactorConcentrationModel": {
+    "attachments": {},
+    "chain": [
+      "fixedFactorConcentrationModel",
+      "concentrationModel"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "concentration": "concentration",
+      "extConcentration": "concentration"
+    },
+    "extends": "concentrationModel",
+    "on_start": {},
+    "parameters": {
+      "decayConstant": "time",
+      "restingConc": "concentration",
+      "rho": "rho_factor"
+    },
+    "requirements": {
+      "iCa": "current",
+      "initialConcentration": "concentration",
+      "initialExtConcentration": "concentration",
+      "surfaceArea": "area"
+    }
+  },
+  "fixedFactorConcentrationModelTraub": {
+    "attachments": {},
+    "chain": [
+      "fixedFactorConcentrationModelTraub",
+      "concentrationModel"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "concentration": "concentration",
+      "extConcentration": "concentration"
+    },
+    "extends": "concentrationModel",
+    "on_start": {},
+    "parameters": {
+      "beta": "per_time",
+      "phi": "rho_factor",
+      "restingConc": "concentration"
+    },
+    "requirements": {
+      "iCa": "current",
+      "initialConcentration": "concentration",
+      "initialExtConcentration": "concentration",
+      "surfaceArea": "area"
+    }
+  },
+  "fixedTimeCourse": {
+    "attachments": {},
+    "chain": [
+      "fixedTimeCourse",
+      "baseVoltageDepTime"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "t": "time"
+    },
+    "extends": "baseVoltageDepTime",
+    "on_start": {},
+    "parameters": {
+      "tau": "time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "foaf_account": {
+    "attachments": {},
+    "chain": [
+      "foaf_account"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "foaf_fundedBy": {
+    "attachments": {},
+    "chain": [
+      "foaf_fundedBy"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "foaf_homepage": {
+    "attachments": {},
+    "chain": [
+      "foaf_homepage"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "foaf_mbox": {
+    "attachments": {},
+    "chain": [
+      "foaf_mbox"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "foaf_name": {
+    "attachments": {},
+    "chain": [
+      "foaf_name"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "foaf_publications": {
+    "attachments": {},
+    "chain": [
+      "foaf_publications"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "foaf_thumbnail": {
+    "attachments": {},
+    "chain": [
+      "foaf_thumbnail"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "foaf_weblog": {
+    "attachments": {},
+    "chain": [
+      "foaf_weblog"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "forwardTransition": {
+    "attachments": {},
+    "chain": [
+      "forwardTransition",
+      "KSTransition"
+    ],
+    "children": {
+      "rate": {
+        "multiple": false,
+        "type": "baseHHRate"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "rf": "per_time",
+      "rr": "per_time"
+    },
+    "extends": "KSTransition",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "from": {
+    "attachments": {},
+    "chain": [
+      "from"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "gapJunction": {
+    "attachments": {},
+    "chain": [
+      "gapJunction",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseSynapse",
+    "on_start": {},
+    "parameters": {
+      "conductance": "conductance"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "gate": {
+    "attachments": {},
+    "chain": [
+      "gate",
+      "baseGate"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fcond": "none",
+      "q": "none"
+    },
+    "extends": "baseGate",
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "gateFractional": {
+    "attachments": {},
+    "chain": [
+      "gateFractional",
+      "gate",
+      "baseGate"
+    ],
+    "children": {
+      "q10Settings": {
+        "multiple": true,
+        "type": "baseQ10Settings"
+      },
+      "subGate": {
+        "multiple": true,
+        "type": "subGate"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fcond": "none",
+      "q": "none",
+      "rateScale": "none"
+    },
+    "extends": "gate",
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "gateHHInstantaneous": {
+    "attachments": {},
+    "chain": [
+      "gateHHInstantaneous",
+      "gate",
+      "baseGate"
+    ],
+    "children": {
+      "steadyState": {
+        "multiple": false,
+        "type": "baseVoltageDepVariable"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fcond": "none",
+      "inf": "none",
+      "q": "none",
+      "tau": "time"
+    },
+    "extends": "gate",
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "gateHHrates": {
+    "attachments": {},
+    "chain": [
+      "gateHHrates",
+      "gate",
+      "baseGate"
+    ],
+    "children": {
+      "forwardRate": {
+        "multiple": false,
+        "type": "baseVoltageDepRate"
+      },
+      "q10Settings": {
+        "multiple": true,
+        "type": "baseQ10Settings"
+      },
+      "reverseRate": {
+        "multiple": false,
+        "type": "baseVoltageDepRate"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "alpha": "per_time",
+      "beta": "per_time",
+      "fcond": "none",
+      "inf": "none",
+      "q": "none",
+      "rateScale": "none",
+      "tau": "time"
+    },
+    "extends": "gate",
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "gateHHratesInf": {
+    "attachments": {},
+    "chain": [
+      "gateHHratesInf",
+      "gate",
+      "baseGate"
+    ],
+    "children": {
+      "forwardRate": {
+        "multiple": false,
+        "type": "baseVoltageDepRate"
+      },
+      "q10Settings": {
+        "multiple": true,
+        "type": "baseQ10Settings"
+      },
+      "reverseRate": {
+        "multiple": false,
+        "type": "baseVoltageDepRate"
+      },
+      "steadyState": {
+        "multiple": false,
+        "type": "baseVoltageDepVariable"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "alpha": "per_time",
+      "beta": "per_time",
+      "fcond": "none",
+      "inf": "none",
+      "q": "none",
+      "rateScale": "none",
+      "tau": "time"
+    },
+    "extends": "gate",
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "gateHHratesTau": {
+    "attachments": {},
+    "chain": [
+      "gateHHratesTau",
+      "gate",
+      "baseGate"
+    ],
+    "children": {
+      "forwardRate": {
+        "multiple": false,
+        "type": "baseVoltageDepRate"
+      },
+      "q10Settings": {
+        "multiple": true,
+        "type": "baseQ10Settings"
+      },
+      "reverseRate": {
+        "multiple": false,
+        "type": "baseVoltageDepRate"
+      },
+      "timeCourse": {
+        "multiple": false,
+        "type": "baseVoltageDepTime"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "alpha": "per_time",
+      "beta": "per_time",
+      "fcond": "none",
+      "inf": "none",
+      "q": "none",
+      "rateScale": "none",
+      "tau": "time"
+    },
+    "extends": "gate",
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "gateHHratesTauInf": {
+    "attachments": {},
+    "chain": [
+      "gateHHratesTauInf",
+      "gate",
+      "baseGate"
+    ],
+    "children": {
+      "forwardRate": {
+        "multiple": false,
+        "type": "baseVoltageDepRate"
+      },
+      "q10Settings": {
+        "multiple": true,
+        "type": "baseQ10Settings"
+      },
+      "reverseRate": {
+        "multiple": false,
+        "type": "baseVoltageDepRate"
+      },
+      "steadyState": {
+        "multiple": false,
+        "type": "baseVoltageDepVariable"
+      },
+      "timeCourse": {
+        "multiple": false,
+        "type": "baseVoltageDepTime"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "alpha": "per_time",
+      "beta": "per_time",
+      "fcond": "none",
+      "inf": "none",
+      "q": "none",
+      "rateScale": "none",
+      "tau": "time"
+    },
+    "extends": "gate",
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "gateHHtauInf": {
+    "attachments": {},
+    "chain": [
+      "gateHHtauInf",
+      "gate",
+      "baseGate"
+    ],
+    "children": {
+      "q10Settings": {
+        "multiple": true,
+        "type": "baseQ10Settings"
+      },
+      "steadyState": {
+        "multiple": false,
+        "type": "baseVoltageDepVariable"
+      },
+      "timeCourse": {
+        "multiple": false,
+        "type": "baseVoltageDepTime"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fcond": "none",
+      "inf": "none",
+      "q": "none",
+      "rateScale": "none",
+      "tau": "time"
+    },
+    "extends": "gate",
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "gateKS": {
+    "attachments": {},
+    "chain": [
+      "gateKS",
+      "baseGate"
+    ],
+    "children": {
+      "q10Settings": {
+        "multiple": true,
+        "type": "baseQ10Settings"
+      },
+      "states": {
+        "multiple": true,
+        "type": "KSState"
+      },
+      "transitions": {
+        "multiple": true,
+        "type": "KSTransition"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fcond": "none",
+      "q": "none",
+      "rateScale": "none"
+    },
+    "extends": "baseGate",
+    "on_start": {},
+    "parameters": {
+      "instances": "none"
+    },
+    "requirements": {}
+  },
+  "gradedSynapse": {
+    "attachments": {},
+    "chain": [
+      "gradedSynapse",
+      "baseGradedSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current",
+      "inf": "none",
+      "tau": "time"
+    },
+    "extends": "baseGradedSynapse",
+    "on_start": {},
+    "parameters": {
+      "Vth": "voltage",
+      "conductance": "conductance",
+      "delta": "voltage",
+      "erev": "voltage",
+      "k": "per_time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "hindmarshRose1984Cell": {
+    "attachments": {
+      "synapses": "basePointCurrent"
+    },
+    "chain": [
+      "hindmarshRose1984Cell",
+      "baseCellMembPotCap",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "chi": "none",
+      "iMemb": "current",
+      "iSyn": "current",
+      "phi": "none",
+      "rho": "none",
+      "spiking": "none",
+      "v": "voltage",
+      "x": "none",
+      "y": "none",
+      "z": "none"
+    },
+    "extends": "baseCellMembPotCap",
+    "on_start": {},
+    "parameters": {
+      "C": "capacitance",
+      "a": "none",
+      "b": "none",
+      "c": "none",
+      "d": "none",
+      "r": "none",
+      "s": "none",
+      "v_scaling": "voltage",
+      "x0": "none",
+      "x1": "none",
+      "y0": "none",
+      "z0": "none"
+    },
+    "requirements": {}
+  },
+  "iafCell": {
+    "attachments": {
+      "synapses": "basePointCurrent"
+    },
+    "chain": [
+      "iafCell",
+      "baseIafCapCell",
+      "baseCellMembPotCap",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "iMemb": "current",
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "baseIafCapCell",
+    "on_start": {},
+    "parameters": {
+      "C": "capacitance",
+      "leakConductance": "conductance",
+      "leakReversal": "voltage",
+      "reset": "voltage",
+      "thresh": "voltage"
+    },
+    "requirements": {}
+  },
+  "iafRefCell": {
+    "attachments": {
+      "synapses": "basePointCurrent"
+    },
+    "chain": [
+      "iafRefCell",
+      "iafCell",
+      "baseIafCapCell",
+      "baseCellMembPotCap",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "iMemb": "current",
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "iafCell",
+    "on_start": {},
+    "parameters": {
+      "C": "capacitance",
+      "leakConductance": "conductance",
+      "leakReversal": "voltage",
+      "refract": "time",
+      "reset": "voltage",
+      "thresh": "voltage"
+    },
+    "requirements": {}
+  },
+  "iafTauCell": {
+    "attachments": {},
+    "chain": [
+      "iafTauCell",
+      "baseIaf",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "v": "voltage"
+    },
+    "extends": "baseIaf",
+    "on_start": {},
+    "parameters": {
+      "leakReversal": "voltage",
+      "reset": "voltage",
+      "tau": "time",
+      "thresh": "voltage"
+    },
+    "requirements": {}
+  },
+  "iafTauRefCell": {
+    "attachments": {},
+    "chain": [
+      "iafTauRefCell",
+      "iafTauCell",
+      "baseIaf",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "v": "voltage"
+    },
+    "extends": "iafTauCell",
+    "on_start": {},
+    "parameters": {
+      "leakReversal": "voltage",
+      "refract": "time",
+      "reset": "voltage",
+      "tau": "time",
+      "thresh": "voltage"
+    },
+    "requirements": {}
+  },
+  "include": {
+    "attachments": {},
+    "chain": [
+      "include"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "inhomogeneousParameter": {
+    "attachments": {},
+    "chain": [
+      "inhomogeneousParameter"
+    ],
+    "children": {
+      "distal": {
+        "multiple": false,
+        "type": "distalDetails"
+      },
+      "proximal": {
+        "multiple": false,
+        "type": "proximalDetails"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "inhomogeneousValue": {
+    "attachments": {},
+    "chain": [
+      "inhomogeneousValue"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "initMembPotential": {
+    "attachments": {},
+    "chain": [
+      "initMembPotential"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "value": "voltage"
+    },
+    "requirements": {}
+  },
+  "input": {
+    "attachments": {},
+    "chain": [
+      "input"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "inputList": {
+    "attachments": {},
+    "chain": [
+      "inputList"
+    ],
+    "children": {
+      "inputs": {
+        "multiple": true,
+        "type": "input"
+      }
+    },
+    "component_references": {
+      "component": "basePointCurrent"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "inputW": {
+    "attachments": {},
+    "chain": [
+      "inputW",
+      "input"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": "input",
+    "on_start": {},
+    "parameters": {
+      "weight": "none"
+    },
+    "requirements": {}
+  },
+  "instance": {
+    "attachments": {},
+    "chain": [
+      "instance"
+    ],
+    "children": {
+      "location": {
+        "multiple": false,
+        "type": "location"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "intracellularProperties": {
+    "attachments": {},
+    "chain": [
+      "intracellularProperties"
+    ],
+    "children": {
+      "resistivity": {
+        "multiple": true,
+        "type": "resistivity"
+      },
+      "speciesList": {
+        "multiple": true,
+        "type": "species"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "caConc": "concentration",
+      "caConcExt": "concentration"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "intracellularProperties2CaPools": {
+    "attachments": {},
+    "chain": [
+      "intracellularProperties2CaPools",
+      "intracellularProperties"
+    ],
+    "children": {
+      "resistivity": {
+        "multiple": true,
+        "type": "resistivity"
+      },
+      "speciesList": {
+        "multiple": true,
+        "type": "species"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "caConc": "concentration",
+      "caConc2": "concentration",
+      "caConcExt": "concentration",
+      "caConcExt2": "concentration"
+    },
+    "extends": "intracellularProperties",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "ionChannel": {
+    "attachments": {},
+    "chain": [
+      "ionChannel",
+      "ionChannelHH",
+      "baseIonChannel"
+    ],
+    "children": {
+      "conductanceScaling": {
+        "multiple": true,
+        "type": "baseConductanceScaling"
+      },
+      "gates": {
+        "multiple": true,
+        "type": "gate"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fopen": "none",
+      "g": "conductance"
+    },
+    "extends": "ionChannelHH",
+    "on_start": {},
+    "parameters": {
+      "conductance": "conductance"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "ionChannelHH": {
+    "attachments": {},
+    "chain": [
+      "ionChannelHH",
+      "baseIonChannel"
+    ],
+    "children": {
+      "conductanceScaling": {
+        "multiple": true,
+        "type": "baseConductanceScaling"
+      },
+      "gates": {
+        "multiple": true,
+        "type": "gate"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fopen": "none",
+      "g": "conductance"
+    },
+    "extends": "baseIonChannel",
+    "on_start": {},
+    "parameters": {
+      "conductance": "conductance"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "ionChannelKS": {
+    "attachments": {},
+    "chain": [
+      "ionChannelKS",
+      "baseIonChannel"
+    ],
+    "children": {
+      "conductanceScaling": {
+        "multiple": true,
+        "type": "baseConductanceScaling"
+      },
+      "gates": {
+        "multiple": true,
+        "type": "gateKS"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fopen": "none",
+      "g": "conductance"
+    },
+    "extends": "baseIonChannel",
+    "on_start": {},
+    "parameters": {
+      "conductance": "conductance"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "ionChannelPassive": {
+    "attachments": {},
+    "chain": [
+      "ionChannelPassive",
+      "ionChannel",
+      "ionChannelHH",
+      "baseIonChannel"
+    ],
+    "children": {
+      "conductanceScaling": {
+        "multiple": true,
+        "type": "baseConductanceScaling"
+      },
+      "gates": {
+        "multiple": true,
+        "type": "gate"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fopen": "none",
+      "g": "conductance"
+    },
+    "extends": "ionChannel",
+    "on_start": {},
+    "parameters": {
+      "conductance": "conductance"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "ionChannelVShift": {
+    "attachments": {},
+    "chain": [
+      "ionChannelVShift",
+      "ionChannel",
+      "ionChannelHH",
+      "baseIonChannel"
+    ],
+    "children": {
+      "conductanceScaling": {
+        "multiple": true,
+        "type": "baseConductanceScaling"
+      },
+      "gates": {
+        "multiple": true,
+        "type": "gate"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "fopen": "none",
+      "g": "conductance"
+    },
+    "extends": "ionChannel",
+    "on_start": {},
+    "parameters": {
+      "conductance": "conductance",
+      "vShift": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "izhikevich2007Cell": {
+    "attachments": {
+      "synapses": "basePointCurrent"
+    },
+    "chain": [
+      "izhikevich2007Cell",
+      "baseCellMembPotCap",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "iMemb": "current",
+      "iSyn": "current",
+      "u": "current",
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPotCap",
+    "on_start": {},
+    "parameters": {
+      "C": "capacitance",
+      "a": "per_time",
+      "b": "conductance",
+      "c": "voltage",
+      "d": "current",
+      "k": "conductance_per_voltage",
+      "v0": "voltage",
+      "vpeak": "voltage",
+      "vr": "voltage",
+      "vt": "voltage"
+    },
+    "requirements": {}
+  },
+  "izhikevichCell": {
+    "attachments": {
+      "synapses": "basePointCurrentDL"
+    },
+    "chain": [
+      "izhikevichCell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "U": "none",
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPot",
+    "on_start": {},
+    "parameters": {
+      "a": "none",
+      "b": "none",
+      "c": "none",
+      "d": "none",
+      "thresh": "voltage",
+      "v0": "voltage"
+    },
+    "requirements": {}
+  },
+  "linearGradedSynapse": {
+    "attachments": {},
+    "chain": [
+      "linearGradedSynapse",
+      "baseGradedSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseGradedSynapse",
+    "on_start": {},
+    "parameters": {
+      "conductance": "conductance"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "location": {
+    "attachments": {},
+    "chain": [
+      "location"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "x": "none",
+      "y": "none",
+      "z": "none"
+    },
+    "requirements": {}
+  },
+  "member": {
+    "attachments": {},
+    "chain": [
+      "member"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "membraneProperties": {
+    "attachments": {},
+    "chain": [
+      "membraneProperties"
+    ],
+    "children": {
+      "channelDensities": {
+        "multiple": true,
+        "type": "baseChannelDensity"
+      },
+      "initMembPotential": {
+        "multiple": false,
+        "type": "initMembPotential"
+      },
+      "populations": {
+        "multiple": true,
+        "type": "baseChannelPopulation"
+      },
+      "specificCapacitances": {
+        "multiple": true,
+        "type": "specificCapacitance"
+      },
+      "spikeThresh": {
+        "multiple": false,
+        "type": "spikeThresh"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "iCa": "current",
+      "totChanCurrent": "current",
+      "totSpecCap": "specificCapacitance"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "surfaceArea": "area"
+    }
+  },
+  "membraneProperties2CaPools": {
+    "attachments": {},
+    "chain": [
+      "membraneProperties2CaPools",
+      "membraneProperties"
+    ],
+    "children": {
+      "channelDensities": {
+        "multiple": true,
+        "type": "baseChannelDensity"
+      },
+      "initMembPotential": {
+        "multiple": false,
+        "type": "initMembPotential"
+      },
+      "populations": {
+        "multiple": true,
+        "type": "baseChannelPopulation"
+      },
+      "specificCapacitances": {
+        "multiple": true,
+        "type": "specificCapacitance"
+      },
+      "spikeThresh": {
+        "multiple": false,
+        "type": "spikeThresh"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "iCa": "current",
+      "iCa2": "current",
+      "totChanCurrent": "current",
+      "totSpecCap": "specificCapacitance"
+    },
+    "extends": "membraneProperties",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "surfaceArea": "area"
+    }
+  },
+  "morphology": {
+    "attachments": {},
+    "chain": [
+      "morphology"
+    ],
+    "children": {
+      "segmentGroups": {
+        "multiple": true,
+        "type": "segmentGroup"
+      },
+      "segments": {
+        "multiple": true,
+        "type": "segment"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "network": {
+    "attachments": {},
+    "chain": [
+      "network",
+      "baseStandalone"
+    ],
+    "children": {
+      "continuousProjection": {
+        "multiple": true,
+        "type": "continuousProjection"
+      },
+      "electricalProjection": {
+        "multiple": true,
+        "type": "electricalProjection"
+      },
+      "explicitInputs": {
+        "multiple": true,
+        "type": "explicitInput"
+      },
+      "inputs": {
+        "multiple": true,
+        "type": "inputList"
+      },
+      "populations": {
+        "multiple": true,
+        "type": "basePopulation"
+      },
+      "projections": {
+        "multiple": true,
+        "type": "projection"
+      },
+      "regions": {
+        "multiple": true,
+        "type": "region"
+      },
+      "synapticConnections": {
+        "multiple": true,
+        "type": "explicitConnection"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": "baseStandalone",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "networkWithTemperature": {
+    "attachments": {},
+    "chain": [
+      "networkWithTemperature",
+      "network",
+      "baseStandalone"
+    ],
+    "children": {
+      "continuousProjection": {
+        "multiple": true,
+        "type": "continuousProjection"
+      },
+      "electricalProjection": {
+        "multiple": true,
+        "type": "electricalProjection"
+      },
+      "explicitInputs": {
+        "multiple": true,
+        "type": "explicitInput"
+      },
+      "inputs": {
+        "multiple": true,
+        "type": "inputList"
+      },
+      "populations": {
+        "multiple": true,
+        "type": "basePopulation"
+      },
+      "projections": {
+        "multiple": true,
+        "type": "projection"
+      },
+      "regions": {
+        "multiple": true,
+        "type": "region"
+      },
+      "synapticConnections": {
+        "multiple": true,
+        "type": "explicitConnection"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": "network",
+    "on_start": {},
+    "parameters": {
+      "temperature": "temperature"
+    },
+    "requirements": {}
+  },
+  "openState": {
+    "attachments": {},
+    "chain": [
+      "openState",
+      "KSState"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "occupancy": "none",
+      "q": "none"
+    },
+    "extends": "KSState",
+    "on_start": {},
+    "parameters": {
+      "relativeConductance": "__dimension_inherited__"
+    },
+    "requirements": {}
+  },
+  "orcid_id": {
+    "attachments": {},
+    "chain": [
+      "orcid_id"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "parent": {
+    "attachments": {},
+    "chain": [
+      "parent"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "path": {
+    "attachments": {},
+    "chain": [
+      "path"
+    ],
+    "children": {
+      "from": {
+        "multiple": false,
+        "type": "from"
+      },
+      "to": {
+        "multiple": false,
+        "type": "to"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "pinskyRinzelCA3Cell": {
+    "attachments": {},
+    "chain": [
+      "pinskyRinzelCA3Cell",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "Cad": "none",
+      "ICad": "currentDensity",
+      "Si": "none",
+      "Vd": "voltage",
+      "Vs": "voltage",
+      "Wi": "none",
+      "cd": "none",
+      "hs": "none",
+      "ns": "none",
+      "qd": "none",
+      "sd": "none",
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPot",
+    "on_start": {},
+    "parameters": {
+      "alphac": "none",
+      "betac": "none",
+      "cm": "specificCapacitance",
+      "eCa": "voltage",
+      "eK": "voltage",
+      "eL": "voltage",
+      "eNa": "voltage",
+      "gAmpa": "conductanceDensity",
+      "gCa": "conductanceDensity",
+      "gKC": "conductanceDensity",
+      "gKahp": "conductanceDensity",
+      "gKdr": "conductanceDensity",
+      "gLd": "conductanceDensity",
+      "gLs": "conductanceDensity",
+      "gNa": "conductanceDensity",
+      "gNmda": "conductanceDensity",
+      "gc": "conductanceDensity",
+      "iDend": "currentDensity",
+      "iSoma": "currentDensity",
+      "pp": "none",
+      "qd0": "none"
+    },
+    "requirements": {}
+  },
+  "point3DWithDiam": {
+    "attachments": {},
+    "chain": [
+      "point3DWithDiam"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "diameter": "none",
+      "x": "none",
+      "y": "none",
+      "z": "none"
+    },
+    "requirements": {}
+  },
+  "pointCellCondBased": {
+    "attachments": {
+      "synapses": "basePointCurrent"
+    },
+    "chain": [
+      "pointCellCondBased",
+      "baseCellMembPotCap",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {
+      "populations": {
+        "multiple": true,
+        "type": "baseChannelPopulation"
+      }
+    },
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "iMemb": "current",
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPotCap",
+    "on_start": {},
+    "parameters": {
+      "C": "capacitance",
+      "thresh": "voltage",
+      "v0": "voltage"
+    },
+    "requirements": {}
+  },
+  "pointCellCondBasedCa": {
+    "attachments": {
+      "synapses": "basePointCurrent"
+    },
+    "chain": [
+      "pointCellCondBasedCa",
+      "baseCellMembPotCap",
+      "baseCellMembPot",
+      "baseSpikingCell",
+      "baseCell",
+      "baseStandalone"
+    ],
+    "children": {
+      "concentrationModels": {
+        "multiple": true,
+        "type": "concentrationModel"
+      },
+      "populations": {
+        "multiple": true,
+        "type": "baseChannelPopulation"
+      }
+    },
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "caConc": "concentration",
+      "iCa": "current",
+      "iMemb": "current",
+      "iSyn": "current",
+      "v": "voltage"
+    },
+    "extends": "baseCellMembPotCap",
+    "on_start": {},
+    "parameters": {
+      "C": "capacitance",
+      "thresh": "voltage",
+      "v0": "voltage"
+    },
+    "requirements": {}
+  },
+  "poissonFiringSynapse": {
+    "attachments": {},
+    "chain": [
+      "poissonFiringSynapse",
+      "baseVoltageDepPointCurrentSpiking",
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
+    "event_ports": {
+      "in": "in",
+      "spike": "out"
+    },
+    "exposures": {
+      "i": "current",
+      "isi": "time",
+      "tnextIdeal": "time",
+      "tnextUsed": "time",
+      "tsince": "time"
+    },
+    "extends": "baseVoltageDepPointCurrentSpiking",
+    "on_start": {},
+    "parameters": {
+      "averageRate": "per_time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "population": {
+    "attachments": {},
+    "chain": [
+      "population",
+      "basePopulation",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {
+      "component": "baseCell"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": "basePopulation",
+    "on_start": {},
+    "parameters": {
+      "size": "none"
+    },
+    "requirements": {}
+  },
+  "populationList": {
+    "attachments": {},
+    "chain": [
+      "populationList",
+      "basePopulation",
+      "baseStandalone"
+    ],
+    "children": {
+      "instances": {
+        "multiple": true,
+        "type": "instance"
+      }
+    },
+    "component_references": {
+      "component": "baseCell"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": "basePopulation",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "projection": {
+    "attachments": {},
+    "chain": [
+      "projection"
+    ],
+    "children": {
+      "connections": {
+        "multiple": true,
+        "type": "connection"
+      },
+      "connectionsWD": {
+        "multiple": true,
+        "type": "connectionWD"
+      }
+    },
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "proximal": {
+    "attachments": {},
+    "chain": [
+      "proximal",
+      "point3DWithDiam"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": "point3DWithDiam",
+    "on_start": {},
+    "parameters": {
+      "diameter": "none",
+      "x": "none",
+      "y": "none",
+      "z": "none"
+    },
+    "requirements": {}
+  },
+  "proximalDetails": {
+    "attachments": {},
+    "chain": [
+      "proximalDetails"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "pulseGenerator": {
+    "attachments": {},
+    "chain": [
+      "pulseGenerator",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "basePointCurrent",
+    "on_start": {},
+    "parameters": {
+      "amplitude": "current",
+      "delay": "time",
+      "duration": "time"
+    },
+    "requirements": {}
+  },
+  "pulseGeneratorDL": {
+    "attachments": {},
+    "chain": [
+      "pulseGeneratorDL",
+      "basePointCurrentDL"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "I": "none"
+    },
+    "extends": "basePointCurrentDL",
+    "on_start": {},
+    "parameters": {
+      "amplitude": "none",
+      "delay": "time",
+      "duration": "time"
+    },
+    "requirements": {}
+  },
+  "q10ConductanceScaling": {
+    "attachments": {},
+    "chain": [
+      "q10ConductanceScaling",
+      "baseConductanceScaling"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "factor": "none"
+    },
+    "extends": "baseConductanceScaling",
+    "on_start": {},
+    "parameters": {
+      "experimentalTemp": "temperature",
+      "q10Factor": "none"
+    },
+    "requirements": {
+      "temperature": "temperature"
+    }
+  },
+  "q10ExpTemp": {
+    "attachments": {},
+    "chain": [
+      "q10ExpTemp",
+      "baseQ10Settings"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "q10": "none"
+    },
+    "extends": "baseQ10Settings",
+    "on_start": {},
+    "parameters": {
+      "experimentalTemp": "temperature",
+      "q10Factor": "none"
+    },
+    "requirements": {
+      "temperature": "temperature"
+    }
+  },
+  "q10Fixed": {
+    "attachments": {},
+    "chain": [
+      "q10Fixed",
+      "baseQ10Settings"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "q10": "none"
+    },
+    "extends": "baseQ10Settings",
+    "on_start": {},
+    "parameters": {
+      "fixedQ10": "none"
+    },
+    "requirements": {
+      "temperature": "temperature"
+    }
+  },
+  "rampGenerator": {
+    "attachments": {},
+    "chain": [
+      "rampGenerator",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "basePointCurrent",
+    "on_start": {},
+    "parameters": {
+      "baselineAmplitude": "current",
+      "delay": "time",
+      "duration": "time",
+      "finishAmplitude": "current",
+      "startAmplitude": "current"
+    },
+    "requirements": {}
+  },
+  "rampGeneratorDL": {
+    "attachments": {},
+    "chain": [
+      "rampGeneratorDL",
+      "basePointCurrentDL"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "I": "none"
+    },
+    "extends": "basePointCurrentDL",
+    "on_start": {},
+    "parameters": {
+      "baselineAmplitude": "none",
+      "delay": "time",
+      "duration": "time",
+      "finishAmplitude": "none",
+      "startAmplitude": "none"
+    },
+    "requirements": {}
+  },
+  "rectangularExtent": {
+    "attachments": {},
+    "chain": [
+      "rectangularExtent"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "xLength": "none",
+      "xStart": "none",
+      "yLength": "none",
+      "yStart": "none",
+      "zLength": "none",
+      "zStart": "none"
+    },
+    "requirements": {}
+  },
+  "region": {
+    "attachments": {},
+    "chain": [
+      "region"
+    ],
+    "children": {
+      "rectangularExtent": {
+        "multiple": false,
+        "type": "rectangularExtent"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "resistivity": {
+    "attachments": {},
+    "chain": [
+      "resistivity"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "value": "resistivity"
+    },
+    "requirements": {}
+  },
+  "reverseTransition": {
+    "attachments": {},
+    "chain": [
+      "reverseTransition",
+      "KSTransition"
+    ],
+    "children": {
+      "rate": {
+        "multiple": false,
+        "type": "baseHHRate"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "rf": "per_time",
+      "rr": "per_time"
+    },
+    "extends": "KSTransition",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "segment": {
+    "attachments": {},
+    "chain": [
+      "segment"
+    ],
+    "children": {
+      "distal": {
+        "multiple": false,
+        "type": "distal"
+      },
+      "parent": {
+        "multiple": false,
+        "type": "parent"
+      },
+      "proximal": {
+        "multiple": false,
+        "type": "proximal"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "length": "length",
+      "radDist": "length",
+      "surfaceArea": "area"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "segmentGroup": {
+    "attachments": {},
+    "chain": [
+      "segmentGroup"
+    ],
+    "children": {
+      "includes": {
+        "multiple": true,
+        "type": "include"
+      },
+      "inhomogeneousParameter": {
+        "multiple": true,
+        "type": "inhomogeneousParameter"
+      },
+      "members": {
+        "multiple": true,
+        "type": "member"
+      },
+      "paths": {
+        "multiple": true,
+        "type": "path"
+      },
+      "subTrees": {
+        "multiple": true,
+        "type": "subTree"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "silentSynapse": {
+    "attachments": {},
+    "chain": [
+      "silentSynapse",
+      "baseGradedSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseGradedSynapse",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "sineGenerator": {
+    "attachments": {},
+    "chain": [
+      "sineGenerator",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "basePointCurrent",
+    "on_start": {},
+    "parameters": {
+      "amplitude": "current",
+      "delay": "time",
+      "duration": "time",
+      "period": "time",
+      "phase": "none"
+    },
+    "requirements": {}
+  },
+  "sineGeneratorDL": {
+    "attachments": {},
+    "chain": [
+      "sineGeneratorDL",
+      "basePointCurrentDL"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "I": "none"
+    },
+    "extends": "basePointCurrentDL",
+    "on_start": {},
+    "parameters": {
+      "amplitude": "none",
+      "delay": "time",
+      "duration": "time",
+      "period": "time",
+      "phase": "none"
+    },
+    "requirements": {}
+  },
+  "species": {
+    "attachments": {},
+    "chain": [
+      "species"
+    ],
+    "children": {},
+    "component_references": {
+      "concentrationModel": "concentrationModel"
+    },
+    "event_ports": {},
+    "exposures": {
+      "concentration": "concentration",
+      "extConcentration": "concentration"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "initialConcentration": "concentration",
+      "initialExtConcentration": "concentration"
+    },
+    "requirements": {}
+  },
+  "specificCapacitance": {
+    "attachments": {},
+    "chain": [
+      "specificCapacitance"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "specCap": "specificCapacitance"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "value": "specificCapacitance"
+    },
+    "requirements": {}
+  },
+  "spike": {
+    "attachments": {},
+    "chain": [
+      "spike",
+      "baseSpikeSource"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "spiked": "none",
+      "tsince": "time"
+    },
+    "extends": "baseSpikeSource",
+    "on_start": {},
+    "parameters": {
+      "time": "time"
+    },
+    "requirements": {}
+  },
+  "spikeArray": {
+    "attachments": {},
+    "chain": [
+      "spikeArray",
+      "baseSpikeSource"
+    ],
+    "children": {
+      "spikes": {
+        "multiple": true,
+        "type": "spike"
+      }
+    },
+    "component_references": {},
+    "event_ports": {
+      "in": "in",
+      "spike": "out"
+    },
+    "exposures": {
+      "tsince": "time"
+    },
+    "extends": "baseSpikeSource",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "spikeGenerator": {
+    "attachments": {},
+    "chain": [
+      "spikeGenerator",
+      "baseSpikeSource"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "tnext": "time",
+      "tsince": "time"
+    },
+    "extends": "baseSpikeSource",
+    "on_start": {},
+    "parameters": {
+      "period": "time"
+    },
+    "requirements": {}
+  },
+  "spikeGeneratorPoisson": {
+    "attachments": {},
+    "chain": [
+      "spikeGeneratorPoisson",
+      "baseSpikeSource"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "isi": "time",
+      "tnextIdeal": "time",
+      "tnextUsed": "time",
+      "tsince": "time"
+    },
+    "extends": "baseSpikeSource",
+    "on_start": {},
+    "parameters": {
+      "averageRate": "per_time"
+    },
+    "requirements": {}
+  },
+  "spikeGeneratorRandom": {
+    "attachments": {},
+    "chain": [
+      "spikeGeneratorRandom",
+      "baseSpikeSource"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "isi": "time",
+      "tnext": "time",
+      "tsince": "time"
+    },
+    "extends": "baseSpikeSource",
+    "on_start": {},
+    "parameters": {
+      "maxISI": "time",
+      "minISI": "time"
+    },
+    "requirements": {}
+  },
+  "spikeGeneratorRefPoisson": {
+    "attachments": {},
+    "chain": [
+      "spikeGeneratorRefPoisson",
+      "spikeGeneratorPoisson",
+      "baseSpikeSource"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "spike": "out"
+    },
+    "exposures": {
+      "isi": "time",
+      "tnextIdeal": "time",
+      "tnextUsed": "time",
+      "tsince": "time"
+    },
+    "extends": "spikeGeneratorPoisson",
+    "on_start": {},
+    "parameters": {
+      "averageRate": "per_time",
+      "minimumISI": "time"
+    },
+    "requirements": {}
+  },
+  "spikeThresh": {
+    "attachments": {},
+    "chain": [
+      "spikeThresh"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "value": "voltage"
+    },
+    "requirements": {}
+  },
+  "stdpSynapse": {
+    "attachments": {},
+    "chain": [
+      "stdpSynapse",
+      "expTwoSynapse",
+      "baseConductanceBasedSynapse",
+      "baseVoltageDepSynapse",
+      "baseSynapse",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "M": "none",
+      "P": "none",
+      "g": "conductance",
+      "i": "current",
+      "tsince": "time"
+    },
+    "extends": "expTwoSynapse",
+    "on_start": {},
+    "parameters": {
+      "erev": "voltage",
+      "gbase": "conductance",
+      "tauDecay": "time",
+      "tauRise": "time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "subGate": {
+    "attachments": {},
+    "chain": [
+      "subGate"
+    ],
+    "children": {
+      "steadyState": {
+        "multiple": false,
+        "type": "baseVoltageDepVariable"
+      },
+      "timeCourse": {
+        "multiple": false,
+        "type": "baseVoltageDepTime"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "inf": "none",
+      "q": "none",
+      "qfrac": "none",
+      "tau": "time"
+    },
+    "extends": null,
+    "on_start": {},
+    "parameters": {
+      "fractionalConductance": "none"
+    },
+    "requirements": {
+      "rateScale": "none"
+    }
+  },
+  "subTree": {
+    "attachments": {},
+    "chain": [
+      "subTree"
+    ],
+    "children": {
+      "from": {
+        "multiple": false,
+        "type": "from"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "synapticConnection": {
+    "attachments": {},
+    "chain": [
+      "synapticConnection",
+      "explicitConnection"
+    ],
+    "children": {},
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": "explicitConnection",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "synapticConnectionWD": {
+    "attachments": {},
+    "chain": [
+      "synapticConnectionWD",
+      "synapticConnection",
+      "explicitConnection"
+    ],
+    "children": {},
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
+    "event_ports": {},
+    "exposures": {},
+    "extends": "synapticConnection",
+    "on_start": {},
+    "parameters": {
+      "delay": "time",
+      "weight": "none"
+    },
+    "requirements": {}
+  },
+  "tauInfTransition": {
+    "attachments": {},
+    "chain": [
+      "tauInfTransition",
+      "KSTransition"
+    ],
+    "children": {
+      "steadyState": {
+        "multiple": false,
+        "type": "baseVoltageDepVariable"
+      },
+      "timeCourse": {
+        "multiple": false,
+        "type": "baseVoltageDepTime"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "rf": "per_time",
+      "rr": "per_time"
+    },
+    "extends": "KSTransition",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "timedSynapticInput": {
+    "attachments": {},
+    "chain": [
+      "timedSynapticInput",
+      "baseVoltageDepPointCurrentSpiking",
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {
+      "spikes": {
+        "multiple": true,
+        "type": "spike"
+      }
+    },
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
+    "event_ports": {
+      "in": "in",
+      "spike": "out"
+    },
+    "exposures": {
+      "i": "current",
+      "tsince": "time"
+    },
+    "extends": "baseVoltageDepPointCurrentSpiking",
+    "on_start": {},
+    "parameters": {},
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "to": {
+    "attachments": {},
+    "chain": [
+      "to"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "transientPoissonFiringSynapse": {
+    "attachments": {},
+    "chain": [
+      "transientPoissonFiringSynapse",
+      "baseVoltageDepPointCurrentSpiking",
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
+    "event_ports": {
+      "in": "in",
+      "spike": "out"
+    },
+    "exposures": {
+      "i": "current",
+      "isi": "time",
+      "tnextIdeal": "time",
+      "tnextUsed": "time",
+      "tsince": "time"
+    },
+    "extends": "baseVoltageDepPointCurrentSpiking",
+    "on_start": {},
+    "parameters": {
+      "averageRate": "per_time",
+      "delay": "time",
+      "duration": "time"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "tsodyksMarkramDepFacMechanism": {
+    "attachments": {},
+    "chain": [
+      "tsodyksMarkramDepFacMechanism",
+      "basePlasticityMechanism"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "plasticityFactor": "none"
+    },
+    "extends": "basePlasticityMechanism",
+    "on_start": {},
+    "parameters": {
+      "initReleaseProb": "none",
+      "tauFac": "time",
+      "tauRec": "time"
+    },
+    "requirements": {}
+  },
+  "tsodyksMarkramDepMechanism": {
+    "attachments": {},
+    "chain": [
+      "tsodyksMarkramDepMechanism",
+      "basePlasticityMechanism"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "plasticityFactor": "none"
+    },
+    "extends": "basePlasticityMechanism",
+    "on_start": {},
+    "parameters": {
+      "initReleaseProb": "none",
+      "tauRec": "time"
+    },
+    "requirements": {}
+  },
+  "vHalfTransition": {
+    "attachments": {},
+    "chain": [
+      "vHalfTransition",
+      "KSTransition"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "rf": "per_time",
+      "rr": "per_time"
+    },
+    "extends": "KSTransition",
+    "on_start": {},
+    "parameters": {
+      "gamma": "none",
+      "tau": "time",
+      "tauMin": "time",
+      "vHalf": "voltage",
+      "z": "none"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "variableParameter": {
+    "attachments": {},
+    "chain": [
+      "variableParameter"
+    ],
+    "children": {
+      "inhomogeneousValue": {
+        "multiple": false,
+        "type": "inhomogeneousValue"
+      }
+    },
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {},
+    "extends": null,
+    "on_start": {},
+    "parameters": {},
+    "requirements": {}
+  },
+  "voltageClamp": {
+    "attachments": {},
+    "chain": [
+      "voltageClamp",
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseVoltageDepPointCurrent",
+    "on_start": {},
+    "parameters": {
+      "delay": "time",
+      "duration": "time",
+      "simpleSeriesResistance": "resistance",
+      "targetVoltage": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "voltageClampTriple": {
+    "attachments": {},
+    "chain": [
+      "voltageClampTriple",
+      "baseVoltageDepPointCurrent",
+      "basePointCurrent",
+      "baseStandalone"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {
+      "in": "in"
+    },
+    "exposures": {
+      "i": "current"
+    },
+    "extends": "baseVoltageDepPointCurrent",
+    "on_start": {},
+    "parameters": {
+      "active": "none",
+      "conditioningVoltage": "voltage",
+      "delay": "time",
+      "duration": "time",
+      "returnVoltage": "voltage",
+      "simpleSeriesResistance": "resistance",
+      "testingVoltage": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  },
+  "voltageConcDepBlockMechanism": {
+    "attachments": {},
+    "chain": [
+      "voltageConcDepBlockMechanism",
+      "baseBlockMechanism"
+    ],
+    "children": {},
+    "component_references": {},
+    "event_ports": {},
+    "exposures": {
+      "blockFactor": "none"
+    },
+    "extends": "baseBlockMechanism",
+    "on_start": {},
+    "parameters": {
+      "blockConcentration": "concentration",
+      "scalingConc": "concentration",
+      "scalingVolt": "voltage"
+    },
+    "requirements": {
+      "v": "voltage"
+    }
+  }
+}

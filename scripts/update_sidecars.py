@@ -2,11 +2,7 @@
 """Update YAML sidecar contents to match the tvbo HDF5 format proposal v0.7.
 
 Changes per file:
-1. Add `descriptor: SC` (maps to desc- BIDS entity)
-2. Add `bids:` section with template, cohort, reconstruction entities
-3. Convert edge `label: weights` → `name: weights` (template edge naming)
-4. Remove redundant `number_of_regions:` (same as number_of_nodes)
-5. Normalize parcellation.atlas.coordinateSpace to consistent naming
+1. Add `descriptor: SC` (maps to desc- BIDS entity) 2. Add `bids:` section with template, cohort, reconstruction entities 3. Convert edge `label: weights` → `name: weights` (template edge naming) 4. Remove redundant `number_of_regions:` (same as number_of_nodes) 5. Normalize parcellation.atlas.coordinateSpace to consistent naming
 """
 
 import re
@@ -54,8 +50,7 @@ def update_sidecar(yaml_path):
     # 2. Remove number_of_regions (redundant with number_of_nodes)
     content = re.sub(r"number_of_regions: \d+\n", "", content)
 
-    # 3. Convert edge label → name for template edges (weights, lengths)
-    # Template edges use "name:" (HDF5 group path), not "label:"
+    # 3. Template edges (weights, lengths) key on "name:", the HDF5 group path, not "label:".
     content = re.sub(
         r"(- )label: (weights|lengths)",
         r"\1name: \2",

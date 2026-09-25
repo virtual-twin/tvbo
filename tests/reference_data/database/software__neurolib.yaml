@@ -1,0 +1,42 @@
+name: neurolib
+description: A simulation framework for whole-brain neural mass models with built-in
+  exploration, optimization, and fMRI/EEG forward-model support on empirical connectomes.
+homepage: https://neurolib-dev.github.io/
+license: MIT
+repository: https://github.com/neurolib-dev/neurolib
+doi: 10.1007/s12559-021-09931-9
+ecosystem:
+- pypi
+application_category: simulation
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- neural_mass
+- mean_field
+tool_role:
+- simulator
+programming_language:
+- Python
+runtime_platform:
+- NumPy
+interoperates_with:
+- TVB
+date_created: '2020-01-01'
+development_status: active
+author:
+- Caglar Cakan
+- Klaus Obermayer
+maintainer:
+- Caglar Cakan
+funder:
+- TU Berlin
+- DFG
+reference_publication: 10.1007/s12559-021-09931-9
+keywords:
+- whole-brain simulation
+- neural mass
+- exploration
+- optimization
+issue_tracker: https://github.com/neurolib-dev/neurolib/issues
+is_accessible_for_free: true

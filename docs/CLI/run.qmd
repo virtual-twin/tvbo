@@ -12,22 +12,26 @@ tvbo run SPEC
     [--out-dir, -o DIR]
     [--experiment NAME]
     [--duration MS]
+    [--set PATH=VALUE ...]
+    [--limit N]
     [--engine, -e {local|slurm|snakemake|nextflow}]
     [--container IMAGE]
-    [--slurm-chunk i/N]
+    [--shard i/N]
 ```
 
 ## Flags
 
 | Flag | Default | Purpose |
 |------|---------|---------|
-| `--backend, -b` | `tvboptim` | Execution backend. See [`tvbo workflow backends`](backends.qmd) for the full list. |
+| `--backend, -b` | `tvboptim` | Execution backend. See [`tvbo workflow backends`](../4-run/Backends.qmd) for the full list. |
 | `--out-dir, -o` | _(none)_ | Directory to write results into. When omitted, no files are written. |
-| `--experiment` | _(all)_ | If SPEC is a Study, run only this named experiment. |
-| `--duration` | _(spec)_ | Override `integration.duration` in milliseconds. |
+| `--experiment` | _(all)_ | If SPEC is a Study, run only this experiment (by `key`/`name`/`label`/numeric `id`). A comma-list (`2,3,20,30`) runs several. |
+| `--duration` | _(spec)_ | Override `integration.duration` in milliseconds (shorthand for `--set integration.duration=…`). |
+| `--set` | _(none, repeatable)_ | Override any experiment metadata field for this run only — the recipe file is not touched. Dotted `PATH` traverses attributes and keyed collections; `VALUE` is coerced (bool/int/float/JSON). See [Overriding metadata](#overriding-metadata-for-a-run---set). |
+| `--limit` | _(none)_ | Run at most `N` cells of the sweep (a spread sample) without needing to know the grid size. Ignored when `--shard` is given. |
 | `--engine, -e` | `local` | `local` runs in-process; the others re-emit via `tvbo workflow ENGINE` and submit. |
 | `--container` | _(none)_ | OCI image to re-exec inside (Singularity preferred, then Docker). |
-| `--slurm-chunk` | _(none)_ | `i/N` — shard the sweep grid: cell `j` runs iff `j % N == i`. |
+| `--shard` | _(none)_ | `i/N` — shard the sweep grid: cell `j` runs iff `j % N == i`. (`--slurm-chunk` is a deprecated alias.) |
 
 ## Behaviour by `kind`
 
@@ -39,7 +43,43 @@ tvbo run SPEC
 | `study` | Iterates over `study.experiments`; if `--experiment NAME` is given, only that one runs. |
 | anything else | Errors with `tvbo run does not yet support kind=<kind>`. |
 
-## Sharding (`--slurm-chunk i/N`)
+## Custom code in a recipe (`code/`)
+
+A recipe can reference custom Python by bare module name — a network builder (`builder: {module: my_networks}`) or an analysis callable (`callable: {module: my_analysis}`). tvbo resolves these by making the recipe's
+**`code/` subdir** importable when the recipe loads, so the modules resolve with no `PYTHONPATH` prefix:
+
+```text
+study/
+  recipe.yaml            # references module: my_analysis
+  code/my_analysis.py    # found automatically on load
+```
+
+```bash
+tvbo run recipe.yaml --experiment 3      # not: PYTHONPATH=code tvbo run …
+```
+
+The paths go to the front of `sys.path` on load and stay there (callables resolve lazily during the run, not only at load). The convention carries to the cluster:
+`tvbo workflow` bundles the referenced local modules into the kit's `code/` and the emitted job puts it on `PYTHONPATH`. Modules installed as packages are used as-is; only local `.py` files travel with the kit.
+
+## Overriding metadata for a run (`--set`)
+
+Keep **one** recipe as the ground truth and let the CLI run it with different settings — no divergent copy to drift out of sync. Each `--set PATH=VALUE` mutates the *loaded* experiment before code generation; the file on disk is never modified.
+
+```bash
+# Smoke-test a long study cheaply, straight from the real recipe:
+tvbo run study.yaml --experiment 3 \
+    --set integration.duration=1.0 \
+    --set integration.transient_time=0.5 \
+    --set observations.lyapunov.analysis.parameters.n_steps.value=4 \
+    -o ./smoke
+```
+
+`PATH` is a dotted walk through attributes **and** keyed collections (LinkML keyed dicts such as `observations`, `parameters`): `integration.step_size`,
+`observations.<name>.analysis.parameters.<name>.value`, and so on. `VALUE` is coerced to `bool`/`int`/`float`, or parsed as JSON when it starts with `[`/`{` (e.g. `--set …=[0,2]`), else kept as a string. Repeat `--set` for several overrides; the run logs each one it applies.
+
+`--duration` is the shorthand for `--set integration.duration=…`. A collection key that itself contains a dot (e.g. an exploration `space` keyed by `KuramotoInertia.K`) can't be addressed this way — reduce sweep size with `--limit` or `--shard` instead.
+
+## Sharding (`--shard i/N`)
 
 When the experiment carries one or more `Exploration`s, `--slurm-chunk` lets a single Slurm array task run a deterministic subset of cells:
 
@@ -86,7 +126,7 @@ tvbo workflow slurm experiment:JR_MEG --backend jax -o ./run-001/run.sbatch
 sbatch ./run-001/run.sbatch
 ```
 
-For `snakemake` and `nextflow`, only the artefact is written — no automatic launcher is invoked. See [HPC patterns](hpc.qmd) for the full lifecycle.
+For `snakemake` and `nextflow`, only the artefact is written — no automatic launcher is invoked. See [HPC patterns](../3-generate/workflows/hpc.qmd) for the full lifecycle.
 
 ## Examples
 
@@ -112,6 +152,6 @@ tvbo run experiment:JR_MEG -b jax --container ghcr.io/the-virtual-brain/tvbo:0.7
 
 ## See also
 
-- [Backends](backends.qmd) — what each backend can do
-- [HPC patterns](hpc.qmd) — sharding, containers, retries
-- [`tvbo workflow`](workflow.qmd) — emit kits without launching
+- [Backends](../4-run/Backends.qmd): what each backend can do
+- [HPC patterns](../3-generate/workflows/hpc.qmd): sharding, containers, retries
+- [`tvbo workflow`](workflow.qmd): emit kits without launching

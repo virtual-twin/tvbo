@@ -1,0 +1,4994 @@
+label: MEG Brainstorm 276
+description: 276-channel MEG sensor array (Brainstorm default). Positions and orientations
+  in mm.
+parameters:
+  conduction_speed:
+    name: conduction_speed
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+time_unit: ms
+nodes:
+- id: 0
+  label: TRIGGER
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.0
+    orientation_y:
+      name: orientation_y
+      value: 0.0
+    orientation_z:
+      name: orientation_z
+      value: 0.0
+  record: true
+  size: 1
+  position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: 1
+  label: RESPONSE
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.0
+    orientation_y:
+      name: orientation_y
+      value: 0.0
+    orientation_z:
+      name: orientation_z
+      value: 0.0
+  record: true
+  size: 1
+  position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: 2
+  label: MLzA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.496355
+    orientation_y:
+      name: orientation_y
+      value: 0.496355
+    orientation_z:
+      name: orientation_z
+      value: 0.496355
+  record: true
+  size: 1
+  position:
+    x: 54.505607
+    y: 41.498565
+    z: 42.118203
+- id: 3
+  label: MLyA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.000272
+    orientation_y:
+      name: orientation_y
+      value: 0.000272
+    orientation_z:
+      name: orientation_z
+      value: 0.000272
+  record: true
+  size: 1
+  position:
+    x: 42.690317
+    y: 57.306222
+    z: 53.933493
+- id: 4
+  label: MLzaA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.496355
+    orientation_y:
+      name: orientation_y
+      value: 0.496355
+    orientation_z:
+      name: orientation_z
+      value: 0.496355
+  record: true
+  size: 1
+  position:
+    x: 54.505607
+    y: 41.498565
+    z: 42.118203
+- id: 5
+  label: MLyaA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.000272
+    orientation_y:
+      name: orientation_y
+      value: 0.000272
+    orientation_z:
+      name: orientation_z
+      value: 0.000272
+  record: true
+  size: 1
+  position:
+    x: 42.690317
+    y: 57.306222
+    z: 53.933493
+- id: 6
+  label: MLxA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.868119
+    orientation_y:
+      name: orientation_y
+      value: 0.868119
+    orientation_z:
+      name: orientation_z
+      value: 0.868119
+  record: true
+  size: 1
+  position:
+    x: 51.835833
+    y: 52.223234
+    z: 44.787978
+- id: 7
+  label: A22
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.220585
+    orientation_y:
+      name: orientation_y
+      value: 0.220585
+    orientation_z:
+      name: orientation_z
+      value: 0.220585
+  record: true
+  size: 1
+  position:
+    x: 64.154909
+    y: 75.254445
+    z: 73.637256
+- id: 8
+  label: MLxaA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.868119
+    orientation_y:
+      name: orientation_y
+      value: 0.868119
+    orientation_z:
+      name: orientation_z
+      value: 0.868119
+  record: true
+  size: 1
+  position:
+    x: 51.835833
+    y: 52.223234
+    z: 44.787978
+- id: 9
+  label: A2
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.216128
+    orientation_y:
+      name: orientation_y
+      value: 0.216128
+    orientation_z:
+      name: orientation_z
+      value: 0.216128
+  record: true
+  size: 1
+  position:
+    x: 23.026709
+    y: 34.247983
+    z: 33.853727
+- id: 10
+  label: MRzA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.496355
+    orientation_y:
+      name: orientation_y
+      value: 0.496355
+    orientation_z:
+      name: orientation_z
+      value: 0.496355
+  record: true
+  size: 1
+  position:
+    x: 54.434411
+    y: 41.427369
+    z: 42.047007
+- id: 11
+  label: MRxA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.868119
+    orientation_y:
+      name: orientation_y
+      value: 0.868119
+    orientation_z:
+      name: orientation_z
+      value: 0.868119
+  record: true
+  size: 1
+  position:
+    x: 51.764637
+    y: 52.152038
+    z: 44.716782
+- id: 12
+  label: MRzaA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.496355
+    orientation_y:
+      name: orientation_y
+      value: 0.496355
+    orientation_z:
+      name: orientation_z
+      value: 0.496355
+  record: true
+  size: 1
+  position:
+    x: 54.434411
+    y: 41.427369
+    z: 42.047007
+- id: 13
+  label: MRxaA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.868119
+    orientation_y:
+      name: orientation_y
+      value: 0.868119
+    orientation_z:
+      name: orientation_z
+      value: 0.868119
+  record: true
+  size: 1
+  position:
+    x: 51.764637
+    y: 52.152038
+    z: 44.716782
+- id: 14
+  label: MRyA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.000272
+    orientation_y:
+      name: orientation_y
+      value: 0.000272
+    orientation_z:
+      name: orientation_z
+      value: 0.000272
+  record: true
+  size: 1
+  position:
+    x: 42.619121
+    y: 57.235026
+    z: 53.862298
+- id: 15
+  label: MCzA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.496355
+    orientation_y:
+      name: orientation_y
+      value: 0.496355
+    orientation_z:
+      name: orientation_z
+      value: 0.496355
+  record: true
+  size: 1
+  position:
+    x: -48.838548
+    y: -61.84559
+    z: -61.225952
+- id: 16
+  label: MRyaA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.000272
+    orientation_y:
+      name: orientation_y
+      value: 0.000272
+    orientation_z:
+      name: orientation_z
+      value: 0.000272
+  record: true
+  size: 1
+  position:
+    x: 42.619121
+    y: 57.235026
+    z: 53.862298
+- id: 17
+  label: MCzaA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.496355
+    orientation_y:
+      name: orientation_y
+      value: 0.496355
+    orientation_z:
+      name: orientation_z
+      value: 0.496355
+  record: true
+  size: 1
+  position:
+    x: -48.838548
+    y: -61.84559
+    z: -61.225952
+- id: 18
+  label: MCyA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.000272
+    orientation_y:
+      name: orientation_y
+      value: 0.000272
+    orientation_z:
+      name: orientation_z
+      value: 0.000272
+  record: true
+  size: 1
+  position:
+    x: -60.653838
+    y: -46.037933
+    z: -49.410661
+- id: 19
+  label: GzxA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.868119
+    orientation_y:
+      name: orientation_y
+      value: -0.868119
+    orientation_z:
+      name: orientation_z
+      value: 0.013384
+  record: true
+  size: 1
+  position:
+    x: 22.190039
+    y: 89.198983
+    z: -6.598661
+- id: 20
+  label: MCyaA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.000272
+    orientation_y:
+      name: orientation_y
+      value: 0.000272
+    orientation_z:
+      name: orientation_z
+      value: 0.000272
+  record: true
+  size: 1
+  position:
+    x: -60.653838
+    y: -46.037933
+    z: -49.410661
+- id: 21
+  label: A104
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.816902
+    orientation_y:
+      name: orientation_y
+      value: -0.816902
+    orientation_z:
+      name: orientation_z
+      value: -0.816902
+  record: true
+  size: 1
+  position:
+    x: -95.001069
+    y: -93.950553
+    z: -87.401334
+- id: 22
+  label: A241
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.836285
+    orientation_y:
+      name: orientation_y
+      value: -0.836285
+    orientation_z:
+      name: orientation_z
+      value: -0.836285
+  record: true
+  size: 1
+  position:
+    x: -101.716727
+    y: -99.70675
+    z: -105.683202
+- id: 23
+  label: MCxA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.868119
+    orientation_y:
+      name: orientation_y
+      value: 0.868119
+    orientation_z:
+      name: orientation_z
+      value: 0.868119
+  record: true
+  size: 1
+  position:
+    x: -51.508322
+    y: -51.120921
+    z: -58.556177
+- id: 24
+  label: A138
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.924905
+    orientation_y:
+      name: orientation_y
+      value: -0.924905
+    orientation_z:
+      name: orientation_z
+      value: -0.924905
+  record: true
+  size: 1
+  position:
+    x: -99.491095
+    y: -98.78672
+    z: -103.101901
+- id: 25
+  label: MCxaA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.868119
+    orientation_y:
+      name: orientation_y
+      value: 0.868119
+    orientation_z:
+      name: orientation_z
+      value: 0.868119
+  record: true
+  size: 1
+  position:
+    x: -51.508322
+    y: -51.120921
+    z: -58.556177
+- id: 26
+  label: A214
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.106353
+    orientation_y:
+      name: orientation_y
+      value: 0.106353
+    orientation_z:
+      name: orientation_z
+      value: 0.106353
+  record: true
+  size: 1
+  position:
+    x: -42.148443
+    y: -39.571816
+    z: -28.43112
+- id: 27
+  label: A71
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.304371
+    orientation_y:
+      name: orientation_y
+      value: -0.304371
+    orientation_z:
+      name: orientation_z
+      value: -0.304371
+  record: true
+  size: 1
+  position:
+    x: -32.172363
+    y: -34.26618
+    z: -45.018579
+- id: 28
+  label: A26
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.118919
+    orientation_y:
+      name: orientation_y
+      value: -0.118919
+    orientation_z:
+      name: orientation_z
+      value: -0.118919
+  record: true
+  size: 1
+  position:
+    x: -25.630639
+    y: -24.218952
+    z: -12.888157
+- id: 29
+  label: A93
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.577797
+    orientation_y:
+      name: orientation_y
+      value: 0.577797
+    orientation_z:
+      name: orientation_z
+      value: 0.577797
+  record: true
+  size: 1
+  position:
+    x: 99.069769
+    y: 101.684935
+    z: 110.699331
+- id: 30
+  label: A39
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.616866
+    orientation_y:
+      name: orientation_y
+      value: 0.616866
+    orientation_z:
+      name: orientation_z
+      value: 0.616866
+  record: true
+  size: 1
+  position:
+    x: 104.630145
+    y: 106.686873
+    z: 115.501383
+- id: 31
+  label: A125
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.562697
+    orientation_y:
+      name: orientation_y
+      value: 0.562697
+    orientation_z:
+      name: orientation_z
+      value: 0.562697
+  record: true
+  size: 1
+  position:
+    x: 98.476561
+    y: 101.015838
+    z: 110.17706
+- id: 32
+  label: A20
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.613457
+    orientation_y:
+      name: orientation_y
+      value: 0.613457
+    orientation_z:
+      name: orientation_z
+      value: 0.613457
+  record: true
+  size: 1
+  position:
+    x: 103.396279
+    y: 104.816507
+    z: 113.786644
+- id: 33
+  label: A65
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.417148
+    orientation_y:
+      name: orientation_y
+      value: 0.417148
+    orientation_z:
+      name: orientation_z
+      value: 0.417148
+  record: true
+  size: 1
+  position:
+    x: 83.190936
+    y: 85.660601
+    z: 95.816273
+- id: 34
+  label: A9
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.213605
+    orientation_y:
+      name: orientation_y
+      value: 0.213605
+    orientation_z:
+      name: orientation_z
+      value: 0.213605
+  record: true
+  size: 1
+  position:
+    x: 22.197357
+    y: 23.271023
+    z: 34.454182
+- id: 35
+  label: A8
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.209848
+    orientation_y:
+      name: orientation_y
+      value: 0.209848
+    orientation_z:
+      name: orientation_z
+      value: 0.209848
+  record: true
+  size: 1
+  position:
+    x: 55.736675
+    y: 54.673715
+    z: 43.480131
+- id: 36
+  label: A95
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.148597
+    orientation_y:
+      name: orientation_y
+      value: 0.148597
+    orientation_z:
+      name: orientation_z
+      value: 0.148597
+  record: true
+  size: 1
+  position:
+    x: 69.025573
+    y: 66.44869
+    z: 55.372162
+- id: 37
+  label: A114
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.134006
+    orientation_y:
+      name: orientation_y
+      value: 0.134006
+    orientation_z:
+      name: orientation_z
+      value: 0.134006
+  record: true
+  size: 1
+  position:
+    x: 46.887829
+    y: 49.21712
+    z: 38.061426
+- id: 38
+  label: A175
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.316859
+    orientation_y:
+      name: orientation_y
+      value: 0.316859
+    orientation_z:
+      name: orientation_z
+      value: 0.316859
+  record: true
+  size: 1
+  position:
+    x: 82.908143
+    y: 85.520701
+    z: 74.930766
+- id: 39
+  label: A16
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.230701
+    orientation_y:
+      name: orientation_y
+      value: 0.230701
+    orientation_z:
+      name: orientation_z
+      value: 0.230701
+  record: true
+  size: 1
+  position:
+    x: 55.168507
+    y: 55.507424
+    z: 44.322773
+- id: 40
+  label: A228
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.290154
+    orientation_y:
+      name: orientation_y
+      value: 0.290154
+    orientation_z:
+      name: orientation_z
+      value: 0.290154
+  record: true
+  size: 1
+  position:
+    x: 75.519599
+    y: 78.130166
+    z: 67.439007
+- id: 41
+  label: A35
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.414356
+    orientation_y:
+      name: orientation_y
+      value: 0.414356
+    orientation_z:
+      name: orientation_z
+      value: 0.414356
+  record: true
+  size: 1
+  position:
+    x: 86.74712
+    y: 97.162023
+    z: 98.198202
+- id: 42
+  label: A191
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.416181
+    orientation_y:
+      name: orientation_y
+      value: -0.416181
+    orientation_z:
+      name: orientation_z
+      value: -0.416181
+  record: true
+  size: 1
+  position:
+    x: -49.337456
+    y: -46.842738
+    z: -56.997533
+- id: 43
+  label: A37
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.784095
+    orientation_y:
+      name: orientation_y
+      value: 0.784095
+    orientation_z:
+      name: orientation_z
+      value: 0.784095
+  record: true
+  size: 1
+  position:
+    x: 129.782435
+    y: 122.652162
+    z: 122.970218
+- id: 44
+  label: A170
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.297232
+    orientation_y:
+      name: orientation_y
+      value: -0.297232
+    orientation_z:
+      name: orientation_z
+      value: -0.297232
+  record: true
+  size: 1
+  position:
+    x: -35.420146
+    y: -32.906579
+    z: -43.595269
+- id: 45
+  label: A207
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.694696
+    orientation_y:
+      name: orientation_y
+      value: -0.694696
+    orientation_z:
+      name: orientation_z
+      value: -0.694696
+  record: true
+  size: 1
+  position:
+    x: -80.514453
+    y: -78.213476
+    z: -86.159006
+- id: 46
+  label: A112
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.062974
+    orientation_y:
+      name: orientation_y
+      value: 0.062974
+    orientation_z:
+      name: orientation_z
+      value: 0.062974
+  record: true
+  size: 1
+  position:
+    x: 3.916188
+    y: 6.197745
+    z: -5.050367
+- id: 47
+  label: A224
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.601293
+    orientation_y:
+      name: orientation_y
+      value: -0.601293
+    orientation_z:
+      name: orientation_z
+      value: -0.601293
+  record: true
+  size: 1
+  position:
+    x: -71.277304
+    y: -80.156605
+    z: -82.521459
+- id: 48
+  label: A82
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.176762
+    orientation_y:
+      name: orientation_y
+      value: 0.176762
+    orientation_z:
+      name: orientation_z
+      value: 0.176762
+  record: true
+  size: 1
+  position:
+    x: 28.014252
+    y: 29.992904
+    z: 18.848273
+- id: 49
+  label: A238
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.978682
+    orientation_y:
+      name: orientation_y
+      value: -0.978682
+    orientation_z:
+      name: orientation_z
+      value: -0.978682
+  record: true
+  size: 1
+  position:
+    x: -119.315418
+    y: -117.164599
+    z: -118.140569
+- id: 50
+  label: A202
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.934442
+    orientation_y:
+      name: orientation_y
+      value: -0.934442
+    orientation_z:
+      name: orientation_z
+      value: -0.934442
+  record: true
+  size: 1
+  position:
+    x: -110.76278
+    y: -108.7998
+    z: -105.205542
+- id: 51
+  label: A220
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.986451
+    orientation_y:
+      name: orientation_y
+      value: -0.986451
+    orientation_z:
+      name: orientation_z
+      value: -0.986451
+  record: true
+  size: 1
+  position:
+    x: -115.985961
+    y: -117.856442
+    z: -117.610337
+- id: 52
+  label: A28
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.326322
+    orientation_y:
+      name: orientation_y
+      value: -0.326322
+    orientation_z:
+      name: orientation_z
+      value: -0.326322
+  record: true
+  size: 1
+  position:
+    x: -45.548418
+    y: -45.230693
+    z: -34.364863
+- id: 53
+  label: A239
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.983343
+    orientation_y:
+      name: orientation_y
+      value: -0.983343
+    orientation_z:
+      name: orientation_z
+      value: -0.983343
+  record: true
+  size: 1
+  position:
+    x: -117.65831
+    y: -117.116539
+    z: -119.135336
+- id: 54
+  label: A13
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.086638
+    orientation_y:
+      name: orientation_y
+      value: -0.086638
+    orientation_z:
+      name: orientation_z
+      value: -0.086638
+  record: true
+  size: 1
+  position:
+    x: -8.883331
+    y: -8.666966
+    z: -20.121681
+- id: 55
+  label: A165
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.979783
+    orientation_y:
+      name: orientation_y
+      value: -0.979783
+    orientation_z:
+      name: orientation_z
+      value: -0.979783
+  record: true
+  size: 1
+  position:
+    x: -106.915441
+    y: -106.388493
+    z: -108.628065
+- id: 56
+  label: A204
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.982185
+    orientation_y:
+      name: orientation_y
+      value: -0.982185
+    orientation_z:
+      name: orientation_z
+      value: -0.982185
+  record: true
+  size: 1
+  position:
+    x: -112.04598
+    y: -114.156428
+    z: -114.621325
+- id: 57
+  label: A233
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.103917
+    orientation_y:
+      name: orientation_y
+      value: 0.103917
+    orientation_z:
+      name: orientation_z
+      value: 0.103917
+  record: true
+  size: 1
+  position:
+    x: -25.719799
+    y: -14.575282
+    z: -17.148529
+- id: 58
+  label: A98
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.058908
+    orientation_y:
+      name: orientation_y
+      value: 0.058908
+    orientation_z:
+      name: orientation_z
+      value: 0.058908
+  record: true
+  size: 1
+  position:
+    x: 5.521326
+    y: 2.983347
+    z: -8.212622
+- id: 59
+  label: A25
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.115685
+    orientation_y:
+      name: orientation_y
+      value: 0.115685
+    orientation_z:
+      name: orientation_z
+      value: 0.115685
+  record: true
+  size: 1
+  position:
+    x: 0.295015
+    y: 11.61035
+    z: 10.047249
+- id: 60
+  label: A70
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.11237
+    orientation_y:
+      name: orientation_y
+      value: -0.11237
+    orientation_z:
+      name: orientation_z
+      value: -0.11237
+  record: true
+  size: 1
+  position:
+    x: -25.871312
+    y: -23.630443
+    z: -12.42515
+- id: 61
+  label: A72
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.467762
+    orientation_y:
+      name: orientation_y
+      value: -0.467762
+    orientation_z:
+      name: orientation_z
+      value: -0.467762
+  record: true
+  size: 1
+  position:
+    x: -59.640267
+    y: -49.64535
+    z: -51.493361
+- id: 62
+  label: A11
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.079808
+    orientation_y:
+      name: orientation_y
+      value: -0.079808
+    orientation_z:
+      name: orientation_z
+      value: -0.079808
+  record: true
+  size: 1
+  position:
+    x: -19.525373
+    y: -8.096856
+    z: -8.989425
+- id: 63
+  label: A47
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.410805
+    orientation_y:
+      name: orientation_y
+      value: -0.410805
+    orientation_z:
+      name: orientation_z
+      value: -0.410805
+  record: true
+  size: 1
+  position:
+    x: -54.785738
+    y: -53.404126
+    z: -43.010738
+- id: 64
+  label: A160
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.482156
+    orientation_y:
+      name: orientation_y
+      value: -0.482156
+    orientation_z:
+      name: orientation_z
+      value: -0.482156
+  record: true
+  size: 1
+  position:
+    x: -62.178842
+    y: -52.445793
+    z: -55.048293
+- id: 65
+  label: A64
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.620471
+    orientation_y:
+      name: orientation_y
+      value: 0.620471
+    orientation_z:
+      name: orientation_z
+      value: 0.620471
+  record: true
+  size: 1
+  position:
+    x: 103.437599
+    y: 105.92949
+    z: 114.597028
+- id: 66
+  label: A3
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.229032
+    orientation_y:
+      name: orientation_y
+      value: 0.229032
+    orientation_z:
+      name: orientation_z
+      value: 0.229032
+  record: true
+  size: 1
+  position:
+    x: 44.934164
+    y: 45.262186
+    z: 56.451696
+- id: 67
+  label: A177
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.586569
+    orientation_y:
+      name: orientation_y
+      value: 0.586569
+    orientation_z:
+      name: orientation_z
+      value: 0.586569
+  record: true
+  size: 1
+  position:
+    x: 92.423218
+    y: 83.43614
+    z: 85.881568
+- id: 68
+  label: A63
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.779107
+    orientation_y:
+      name: orientation_y
+      value: 0.779107
+    orientation_z:
+      name: orientation_z
+      value: 0.779107
+  record: true
+  size: 1
+  position:
+    x: 126.904742
+    y: 120.125166
+    z: 122.576832
+- id: 69
+  label: A155
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.120358
+    orientation_y:
+      name: orientation_y
+      value: 0.120358
+    orientation_z:
+      name: orientation_z
+      value: 0.120358
+  record: true
+  size: 1
+  position:
+    x: 48.7764
+    y: 51.355426
+    z: 62.476705
+- id: 70
+  label: A10
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.117062
+    orientation_y:
+      name: orientation_y
+      value: 0.117062
+    orientation_z:
+      name: orientation_z
+      value: 0.117062
+  record: true
+  size: 1
+  position:
+    x: 0.851199
+    y: 12.227302
+    z: 11.216356
+- id: 71
+  label: A127
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.118736
+    orientation_y:
+      name: orientation_y
+      value: 0.118736
+    orientation_z:
+      name: orientation_z
+      value: 0.118736
+  record: true
+  size: 1
+  position:
+    x: 52.602381
+    y: 55.213992
+    z: 66.329972
+- id: 72
+  label: A67
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.163337
+    orientation_y:
+      name: orientation_y
+      value: 0.163337
+    orientation_z:
+      name: orientation_z
+      value: 0.163337
+  record: true
+  size: 1
+  position:
+    x: 50.962919
+    y: 48.547939
+    z: 37.462383
+- id: 73
+  label: A115
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.166098
+    orientation_y:
+      name: orientation_y
+      value: 0.166098
+    orientation_z:
+      name: orientation_z
+      value: 0.166098
+  record: true
+  size: 1
+  position:
+    x: 56.733732
+    y: 67.826408
+    z: 70.183096
+- id: 74
+  label: A247
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.2312
+    orientation_y:
+      name: orientation_y
+      value: 0.2312
+    orientation_z:
+      name: orientation_z
+      value: 0.2312
+  record: true
+  size: 1
+  position:
+    x: 45.04605
+    y: 47.656482
+    z: 36.776847
+- id: 75
+  label: A174
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.101129
+    orientation_y:
+      name: orientation_y
+      value: 0.101129
+    orientation_z:
+      name: orientation_z
+      value: 0.101129
+  record: true
+  size: 1
+  position:
+    x: 60.816987
+    y: 63.410016
+    z: 52.266692
+- id: 76
+  label: A194
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.428077
+    orientation_y:
+      name: orientation_y
+      value: 0.428077
+    orientation_z:
+      name: orientation_z
+      value: 0.428077
+  record: true
+  size: 1
+  position:
+    x: 63.451432
+    y: 73.510195
+    z: 76.124868
+- id: 77
+  label: A5
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.433239
+    orientation_y:
+      name: orientation_y
+      value: 0.433239
+    orientation_z:
+      name: orientation_z
+      value: 0.433239
+  record: true
+  size: 1
+  position:
+    x: 86.652429
+    y: 86.985154
+    z: 97.34452
+- id: 78
+  label: A242
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.693117
+    orientation_y:
+      name: orientation_y
+      value: -0.693117
+    orientation_z:
+      name: orientation_z
+      value: -0.693117
+  record: true
+  size: 1
+  position:
+    x: -93.226565
+    y: -85.260264
+    z: -82.968184
+- id: 79
+  label: A176
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.492416
+    orientation_y:
+      name: orientation_y
+      value: 0.492416
+    orientation_z:
+      name: orientation_z
+      value: 0.492416
+  record: true
+  size: 1
+  position:
+    x: 100.511459
+    y: 103.122876
+    z: 93.460402
+- id: 80
+  label: A78
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.46832
+    orientation_y:
+      name: orientation_y
+      value: -0.46832
+    orientation_z:
+      name: orientation_z
+      value: -0.46832
+  record: true
+  size: 1
+  position:
+    x: -51.094313
+    y: -49.904921
+    z: -59.995994
+- id: 81
+  label: A168
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.701426
+    orientation_y:
+      name: orientation_y
+      value: -0.701426
+    orientation_z:
+      name: orientation_z
+      value: -0.701426
+  record: true
+  size: 1
+  position:
+    x: -81.578908
+    y: -83.868435
+    z: -75.998153
+- id: 82
+  label: A31
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.103847
+    orientation_y:
+      name: orientation_y
+      value: 0.103847
+    orientation_z:
+      name: orientation_z
+      value: 0.103847
+  record: true
+  size: 1
+  position:
+    x: 0.116106
+    y: -0.777729
+    z: 10.625115
+- id: 83
+  label: A223
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.778628
+    orientation_y:
+      name: orientation_y
+      value: -0.778628
+    orientation_z:
+      name: orientation_z
+      value: -0.778628
+  record: true
+  size: 1
+  position:
+    x: -91.032567
+    y: -88.839163
+    z: -95.71382
+- id: 84
+  label: A245
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.105364
+    orientation_y:
+      name: orientation_y
+      value: 0.105364
+    orientation_z:
+      name: orientation_z
+      value: 0.105364
+  record: true
+  size: 1
+  position:
+    x: -7.067288
+    y: 4.072463
+    z: 6.658538
+- id: 85
+  label: A219
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.959172
+    orientation_y:
+      name: orientation_y
+      value: -0.959172
+    orientation_z:
+      name: orientation_z
+      value: -0.959172
+  record: true
+  size: 1
+  position:
+    x: -116.850909
+    y: -115.28529
+    z: -112.434449
+- id: 86
+  label: A12
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.10082
+    orientation_y:
+      name: orientation_y
+      value: -0.10082
+    orientation_z:
+      name: orientation_z
+      value: -0.10082
+  record: true
+  size: 1
+  position:
+    x: -22.540713
+    y: -22.180445
+    z: -10.744714
+- id: 87
+  label: A186
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.987726
+    orientation_y:
+      name: orientation_y
+      value: -0.987726
+    orientation_z:
+      name: orientation_z
+      value: -0.987726
+  record: true
+  size: 1
+  position:
+    x: -110.517331
+    y: -112.313145
+    z: -112.27109
+- id: 88
+  label: A105
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.849472
+    orientation_y:
+      name: orientation_y
+      value: -0.849472
+    orientation_z:
+      name: orientation_z
+      value: -0.849472
+  record: true
+  size: 1
+  position:
+    x: -90.59685
+    y: -90.926495
+    z: -96.985317
+- id: 89
+  label: A222
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.894134
+    orientation_y:
+      name: orientation_y
+      value: -0.894134
+    orientation_z:
+      name: orientation_z
+      value: -0.894134
+  record: true
+  size: 1
+  position:
+    x: -103.340614
+    y: -108.15187
+    z: -109.987926
+- id: 90
+  label: A76
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.697771
+    orientation_y:
+      name: orientation_y
+      value: -0.697771
+    orientation_z:
+      name: orientation_z
+      value: -0.697771
+  record: true
+  size: 1
+  position:
+    x: -73.397261
+    y: -73.157082
+    z: -81.391272
+- id: 91
+  label: A50
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.511533
+    orientation_y:
+      name: orientation_y
+      value: -0.511533
+    orientation_z:
+      name: orientation_z
+      value: -0.511533
+  record: true
+  size: 1
+  position:
+    x: -52.235679
+    y: -52.00278
+    z: -61.881566
+- id: 92
+  label: A188
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.893155
+    orientation_y:
+      name: orientation_y
+      value: -0.893155
+    orientation_z:
+      name: orientation_z
+      value: -0.893155
+  record: true
+  size: 1
+  position:
+    x: -99.192913
+    y: -97.31405
+    z: -102.132838
+- id: 93
+  label: A231
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.100275
+    orientation_y:
+      name: orientation_y
+      value: 0.100275
+    orientation_z:
+      name: orientation_z
+      value: 0.100275
+  record: true
+  size: 1
+  position:
+    x: 28.425901
+    y: 25.854407
+    z: 14.705074
+- id: 94
+  label: A45
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.063855
+    orientation_y:
+      name: orientation_y
+      value: -0.063855
+    orientation_z:
+      name: orientation_z
+      value: -0.063855
+  record: true
+  size: 1
+  position:
+    x: -19.140996
+    y: -17.230026
+    z: -5.913713
+- id: 95
+  label: A180
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.115694
+    orientation_y:
+      name: orientation_y
+      value: 0.115694
+    orientation_z:
+      name: orientation_z
+      value: 0.115694
+  record: true
+  size: 1
+  position:
+    x: -23.869053
+    y: -26.449422
+    z: -37.576934
+- id: 96
+  label: A99
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.123837
+    orientation_y:
+      name: orientation_y
+      value: -0.123837
+    orientation_z:
+      name: orientation_z
+      value: -0.123837
+  record: true
+  size: 1
+  position:
+    x: -14.671465
+    y: -17.162701
+    z: -28.29893
+- id: 97
+  label: A234
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.514416
+    orientation_y:
+      name: orientation_y
+      value: -0.514416
+    orientation_z:
+      name: orientation_z
+      value: -0.514416
+  record: true
+  size: 1
+  position:
+    x: -75.426145
+    y: -72.815118
+    z: -63.305337
+- id: 98
+  label: A215
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.434493
+    orientation_y:
+      name: orientation_y
+      value: -0.434493
+    orientation_z:
+      name: orientation_z
+      value: -0.434493
+  record: true
+  size: 1
+  position:
+    x: -64.04007
+    y: -61.428003
+    z: -51.40501
+- id: 99
+  label: A235
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.689099
+    orientation_y:
+      name: orientation_y
+      value: -0.689099
+    orientation_z:
+      name: orientation_z
+      value: -0.689099
+  record: true
+  size: 1
+  position:
+    x: -92.999905
+    y: -90.446772
+    z: -82.513826
+- id: 100
+  label: A181
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.380137
+    orientation_y:
+      name: orientation_y
+      value: -0.380137
+    orientation_z:
+      name: orientation_z
+      value: -0.380137
+  record: true
+  size: 1
+  position:
+    x: -55.242877
+    y: -44.932631
+    z: -47.547618
+- id: 101
+  label: A38
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.771794
+    orientation_y:
+      name: orientation_y
+      value: 0.771794
+    orientation_z:
+      name: orientation_z
+      value: 0.771794
+  record: true
+  size: 1
+  position:
+    x: 126.567866
+    y: 119.449639
+    z: 121.124159
+- id: 102
+  label: A230
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.261417
+    orientation_y:
+      name: orientation_y
+      value: 0.261417
+    orientation_z:
+      name: orientation_z
+      value: 0.261417
+  record: true
+  size: 1
+  position:
+    x: 32.967009
+    y: 35.525519
+    z: 46.326734
+- id: 103
+  label: A91
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.867509
+    orientation_y:
+      name: orientation_y
+      value: 0.867509
+    orientation_z:
+      name: orientation_z
+      value: 0.867509
+  record: true
+  size: 1
+  position:
+    x: 136.152243
+    y: 131.061357
+    z: 133.670035
+- id: 104
+  label: A212
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.299633
+    orientation_y:
+      name: orientation_y
+      value: 0.299633
+    orientation_z:
+      name: orientation_z
+      value: 0.299633
+  record: true
+  size: 1
+  position:
+    x: 65.317217
+    y: 67.857864
+    z: 78.531275
+- id: 105
+  label: A24
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.204922
+    orientation_y:
+      name: orientation_y
+      value: 0.204922
+    orientation_z:
+      name: orientation_z
+      value: 0.204922
+  record: true
+  size: 1
+  position:
+    x: 20.093096
+    y: 21.7665
+    z: 32.897364
+- id: 106
+  label: A66
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.182427
+    orientation_y:
+      name: orientation_y
+      value: 0.182427
+    orientation_z:
+      name: orientation_z
+      value: 0.182427
+  record: true
+  size: 1
+  position:
+    x: 71.915337
+    y: 69.50285
+    z: 58.456192
+- id: 107
+  label: A42
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.178903
+    orientation_y:
+      name: orientation_y
+      value: 0.178903
+    orientation_z:
+      name: orientation_z
+      value: 0.178903
+  record: true
+  size: 1
+  position:
+    x: 56.390528
+    y: 54.33031
+    z: 43.204993
+- id: 108
+  label: A96
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.140726
+    orientation_y:
+      name: orientation_y
+      value: 0.140726
+    orientation_z:
+      name: orientation_z
+      value: 0.140726
+  record: true
+  size: 1
+  position:
+    x: 35.227426
+    y: 37.800327
+    z: 48.891365
+- id: 109
+  label: A57
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.192984
+    orientation_y:
+      name: orientation_y
+      value: 0.192984
+    orientation_z:
+      name: orientation_z
+      value: 0.192984
+  record: true
+  size: 1
+  position:
+    x: 65.198892
+    y: 63.660594
+    z: 74.839068
+- id: 110
+  label: A86
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.582648
+    orientation_y:
+      name: orientation_y
+      value: 0.582648
+    orientation_z:
+      name: orientation_z
+      value: 0.582648
+  record: true
+  size: 1
+  position:
+    x: 112.252518
+    y: 114.415448
+    z: 105.322827
+- id: 111
+  label: A56
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.179193
+    orientation_y:
+      name: orientation_y
+      value: 0.179193
+    orientation_z:
+      name: orientation_z
+      value: 0.179193
+  record: true
+  size: 1
+  position:
+    x: 43.004699
+    y: 54.224362
+    z: 55.681277
+- id: 112
+  label: A116
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.376711
+    orientation_y:
+      name: orientation_y
+      value: 0.376711
+    orientation_z:
+      name: orientation_z
+      value: 0.376711
+  record: true
+  size: 1
+  position:
+    x: 89.931231
+    y: 92.355043
+    z: 81.981646
+- id: 113
+  label: A151
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.871632
+    orientation_y:
+      name: orientation_y
+      value: 0.871632
+    orientation_z:
+      name: orientation_z
+      value: 0.871632
+  record: true
+  size: 1
+  position:
+    x: 137.605817
+    y: 140.131221
+    z: 135.091753
+- id: 114
+  label: A141
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.593169
+    orientation_y:
+      name: orientation_y
+      value: -0.593169
+    orientation_z:
+      name: orientation_z
+      value: -0.593169
+  record: true
+  size: 1
+  position:
+    x: -63.899489
+    y: -61.800223
+    z: -70.81748
+- id: 115
+  label: A120
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.935945
+    orientation_y:
+      name: orientation_y
+      value: 0.935945
+    orientation_z:
+      name: orientation_z
+      value: 0.935945
+  record: true
+  size: 1
+  position:
+    x: 139.385102
+    y: 142.486044
+    z: 145.090656
+- id: 116
+  label: A189
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.780757
+    orientation_y:
+      name: orientation_y
+      value: -0.780757
+    orientation_z:
+      name: orientation_z
+      value: -0.780757
+  record: true
+  size: 1
+  position:
+    x: -86.760259
+    y: -84.540722
+    z: -91.374944
+- id: 117
+  label: A80
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.118547
+    orientation_y:
+      name: orientation_y
+      value: -0.118547
+    orientation_z:
+      name: orientation_z
+      value: -0.118547
+  record: true
+  size: 1
+  position:
+    x: -14.92003
+    y: -13.196058
+    z: -24.484077
+- id: 118
+  label: A210
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.091826
+    orientation_y:
+      name: orientation_y
+      value: 0.091826
+    orientation_z:
+      name: orientation_z
+      value: 0.091826
+  record: true
+  size: 1
+  position:
+    x: 8.543345
+    y: 11.137372
+    z: -0.016366
+- id: 119
+  label: A143
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.181212
+    orientation_y:
+      name: orientation_y
+      value: -0.181212
+    orientation_z:
+      name: orientation_z
+      value: -0.181212
+  record: true
+  size: 1
+  position:
+    x: -32.570153
+    y: -21.516405
+    z: -19.124365
+- id: 120
+  label: A113
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.135185
+    orientation_y:
+      name: orientation_y
+      value: 0.135185
+    orientation_z:
+      name: orientation_z
+      value: 0.135185
+  record: true
+  size: 1
+  position:
+    x: 25.069169
+    y: 27.399663
+    z: 16.246102
+- id: 121
+  label: A27
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.296201
+    orientation_y:
+      name: orientation_y
+      value: -0.296201
+    orientation_z:
+      name: orientation_z
+      value: -0.296201
+  record: true
+  size: 1
+  position:
+    x: -41.844524
+    y: -30.900817
+    z: -31.840133
+- id: 122
+  label: A137
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.943499
+    orientation_y:
+      name: orientation_y
+      value: -0.943499
+    orientation_z:
+      name: orientation_z
+      value: -0.943499
+  record: true
+  size: 1
+  position:
+    x: -105.914314
+    y: -105.553024
+    z: -101.75938
+- id: 123
+  label: A135
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.841352
+    orientation_y:
+      name: orientation_y
+      value: -0.841352
+    orientation_z:
+      name: orientation_z
+      value: -0.841352
+  record: true
+  size: 1
+  position:
+    x: -97.731382
+    y: -95.764476
+    z: -89.868285
+- id: 124
+  label: A167
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.838486
+    orientation_y:
+      name: orientation_y
+      value: -0.838486
+    orientation_z:
+      name: orientation_z
+      value: -0.838486
+  record: true
+  size: 1
+  position:
+    x: -91.018773
+    y: -88.988892
+    z: -94.917633
+- id: 125
+  label: A75
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.720189
+    orientation_y:
+      name: orientation_y
+      value: -0.720189
+    orientation_z:
+      name: orientation_z
+      value: -0.720189
+  record: true
+  size: 1
+  position:
+    x: -83.649242
+    y: -75.678919
+    z: -76.038727
+- id: 126
+  label: A240
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.939645
+    orientation_y:
+      name: orientation_y
+      value: -0.939645
+    orientation_z:
+      name: orientation_z
+      value: -0.939645
+  record: true
+  size: 1
+  position:
+    x: -113.985962
+    y: -115.612743
+    z: -112.030029
+- id: 127
+  label: A206
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.839496
+    orientation_y:
+      name: orientation_y
+      value: -0.839496
+    orientation_z:
+      name: orientation_z
+      value: -0.839496
+  record: true
+  size: 1
+  position:
+    x: -95.966404
+    y: -93.882947
+    z: -99.774087
+- id: 128
+  label: A107
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.758659
+    orientation_y:
+      name: orientation_y
+      value: -0.758659
+    orientation_z:
+      name: orientation_z
+      value: -0.758659
+  record: true
+  size: 1
+  position:
+    x: -80.604173
+    y: -88.030299
+    z: -89.02244
+- id: 129
+  label: A130
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.022987
+    orientation_y:
+      name: orientation_y
+      value: 0.022987
+    orientation_z:
+      name: orientation_z
+      value: 0.022987
+  record: true
+  size: 1
+  position:
+    x: 2.984079
+    y: 0.370593
+    z: -10.82538
+- id: 130
+  label: A100
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.31974
+    orientation_y:
+      name: orientation_y
+      value: -0.31974
+    orientation_z:
+      name: orientation_z
+      value: -0.31974
+  record: true
+  size: 1
+  position:
+    x: -47.518469
+    y: -45.136001
+    z: -34.50334
+- id: 131
+  label: A43
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.184503
+    orientation_y:
+      name: orientation_y
+      value: 0.184503
+    orientation_z:
+      name: orientation_z
+      value: 0.184503
+  record: true
+  size: 1
+  position:
+    x: 34.291833
+    y: 23.181928
+    z: 25.259916
+- id: 132
+  label: A200
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.679051
+    orientation_y:
+      name: orientation_y
+      value: -0.679051
+    orientation_z:
+      name: orientation_z
+      value: -0.679051
+  record: true
+  size: 1
+  position:
+    x: -88.368382
+    y: -85.822011
+    z: -77.773144
+- id: 133
+  label: A102
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.643863
+    orientation_y:
+      name: orientation_y
+      value: -0.643863
+    orientation_z:
+      name: orientation_z
+      value: -0.643863
+  record: true
+  size: 1
+  position:
+    x: -76.843287
+    y: -68.269448
+    z: -70.24777
+- id: 134
+  label: A132
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.363749
+    orientation_y:
+      name: orientation_y
+      value: -0.363749
+    orientation_z:
+      name: orientation_z
+      value: -0.363749
+  record: true
+  size: 1
+  position:
+    x: -50.102814
+    y: -39.700468
+    z: -42.258358
+- id: 135
+  label: A183
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.755264
+    orientation_y:
+      name: orientation_y
+      value: -0.755264
+    orientation_z:
+      name: orientation_z
+      value: -0.755264
+  record: true
+  size: 1
+  position:
+    x: -93.19854
+    y: -90.697884
+    z: -83.587452
+- id: 136
+  label: A199
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.495671
+    orientation_y:
+      name: orientation_y
+      value: -0.495671
+    orientation_z:
+      name: orientation_z
+      value: -0.495671
+  record: true
+  size: 1
+  position:
+    x: -68.06725
+    y: -58.425921
+    z: -61.034025
+- id: 137
+  label: A122
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.975276
+    orientation_y:
+      name: orientation_y
+      value: 0.975276
+    orientation_z:
+      name: orientation_z
+      value: 0.975276
+  record: true
+  size: 1
+  position:
+    x: 145.397471
+    y: 143.502293
+    z: 145.195415
+- id: 138
+  label: A19
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.63225
+    orientation_y:
+      name: orientation_y
+      value: 0.63225
+    orientation_z:
+      name: orientation_z
+      value: 0.63225
+  record: true
+  size: 1
+  position:
+    x: 105.861761
+    y: 106.214021
+    z: 115.116846
+- id: 139
+  label: A62
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.884177
+    orientation_y:
+      name: orientation_y
+      value: 0.884177
+    orientation_z:
+      name: orientation_z
+      value: 0.884177
+  record: true
+  size: 1
+  position:
+    x: 131.646515
+    y: 133.859371
+    z: 138.754717
+- id: 140
+  label: A21
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.429799
+    orientation_y:
+      name: orientation_y
+      value: 0.429799
+    orientation_z:
+      name: orientation_z
+      value: 0.429799
+  record: true
+  size: 1
+  position:
+    x: 96.46231
+    y: 86.219022
+    z: 87.920473
+- id: 141
+  label: A229
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.443537
+    orientation_y:
+      name: orientation_y
+      value: 0.443537
+    orientation_z:
+      name: orientation_z
+      value: 0.443537
+  record: true
+  size: 1
+  position:
+    x: 57.371116
+    y: 59.844098
+    z: 69.849972
+- id: 142
+  label: A84
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.188721
+    orientation_y:
+      name: orientation_y
+      value: 0.188721
+    orientation_z:
+      name: orientation_z
+      value: 0.188721
+  record: true
+  size: 1
+  position:
+    x: 61.883833
+    y: 59.86614
+    z: 70.97779
+- id: 143
+  label: A213
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.11784
+    orientation_y:
+      name: orientation_y
+      value: 0.11784
+    orientation_z:
+      name: orientation_z
+      value: 0.11784
+  record: true
+  size: 1
+  position:
+    x: 43.60444
+    y: 46.189465
+    z: 57.312917
+- id: 144
+  label: A55
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.202108
+    orientation_y:
+      name: orientation_y
+      value: 0.202108
+    orientation_z:
+      name: orientation_z
+      value: 0.202108
+  record: true
+  size: 1
+  position:
+    x: 35.092027
+    y: 36.567635
+    z: 25.402041
+- id: 145
+  label: A32
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.19852
+    orientation_y:
+      name: orientation_y
+      value: 0.19852
+    orientation_z:
+      name: orientation_z
+      value: 0.19852
+  record: true
+  size: 1
+  position:
+    x: 21.043786
+    y: 32.27488
+    z: 33.223827
+- id: 146
+  label: A85
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.40616
+    orientation_y:
+      name: orientation_y
+      value: 0.40616
+    orientation_z:
+      name: orientation_z
+      value: 0.40616
+  record: true
+  size: 1
+  position:
+    x: 93.53837
+    y: 95.660626
+    z: 85.368431
+- id: 147
+  label: A146
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.106929
+    orientation_y:
+      name: orientation_y
+      value: 0.106929
+    orientation_z:
+      name: orientation_z
+      value: 0.106929
+  record: true
+  size: 1
+  position:
+    x: 35.503095
+    y: 32.954864
+    z: 44.101361
+- id: 148
+  label: A58
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.398925
+    orientation_y:
+      name: orientation_y
+      value: 0.398925
+    orientation_z:
+      name: orientation_z
+      value: 0.398925
+  record: true
+  size: 1
+  position:
+    x: 83.602328
+    y: 94.02036
+    z: 95.653819
+- id: 149
+  label: A60
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.76898
+    orientation_y:
+      name: orientation_y
+      value: 0.76898
+    orientation_z:
+      name: orientation_z
+      value: 0.76898
+  record: true
+  size: 1
+  position:
+    x: 120.468076
+    y: 127.78825
+    z: 128.467758
+- id: 150
+  label: GyyA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.000742
+    orientation_y:
+      name: orientation_y
+      value: -0.000742
+    orientation_z:
+      name: orientation_z
+      value: 0.9996
+  record: true
+  size: 1
+  position:
+    x: 55.744615
+    y: 55.644407
+    z: 59.193343
+- id: 151
+  label: A88
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.881169
+    orientation_y:
+      name: orientation_y
+      value: 0.881169
+    orientation_z:
+      name: orientation_z
+      value: 0.881169
+  record: true
+  size: 1
+  position:
+    x: 137.199351
+    y: 138.908273
+    z: 133.746591
+- id: 152
+  label: A79
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.301049
+    orientation_y:
+      name: orientation_y
+      value: -0.301049
+    orientation_z:
+      name: orientation_z
+      value: -0.301049
+  record: true
+  size: 1
+  position:
+    x: -45.000998
+    y: -34.136233
+    z: -32.645932
+- id: 153
+  label: GzyA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.868119
+    orientation_y:
+      name: orientation_y
+      value: -0.868119
+    orientation_z:
+      name: orientation_z
+      value: 0.013384
+  record: true
+  size: 1
+  position:
+    x: 55.744615
+    y: 55.644407
+    z: 59.193343
+- id: 154
+  label: GxxA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.496356
+    orientation_y:
+      name: orientation_y
+      value: 0.496356
+    orientation_z:
+      name: orientation_z
+      value: 0.024904
+  record: true
+  size: 1
+  position:
+    x: 22.190039
+    y: 89.198983
+    z: -6.598661
+- id: 155
+  label: A169
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.516649
+    orientation_y:
+      name: orientation_y
+      value: -0.516649
+    orientation_z:
+      name: orientation_z
+      value: -0.516649
+  record: true
+  size: 1
+  position:
+    x: -56.982373
+    y: -54.569576
+    z: -64.115643
+- id: 156
+  label: A54
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.165987
+    orientation_y:
+      name: orientation_y
+      value: 0.165987
+    orientation_z:
+      name: orientation_z
+      value: 0.165987
+  record: true
+  size: 1
+  position:
+    x: 3.581628
+    y: 14.834548
+    z: 16.240989
+- id: 157
+  label: GyxA
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.000742
+    orientation_y:
+      name: orientation_y
+      value: -0.000742
+    orientation_z:
+      name: orientation_z
+      value: 0.9996
+  record: true
+  size: 1
+  position:
+    x: 22.190039
+    y: 89.198983
+    z: -6.598661
+- id: 158
+  label: A203
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.980731
+    orientation_y:
+      name: orientation_y
+      value: -0.980731
+    orientation_z:
+      name: orientation_z
+      value: -0.980731
+  record: true
+  size: 1
+  position:
+    x: -114.039974
+    y: -112.779035
+    z: -110.133723
+- id: 159
+  label: A145
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.107303
+    orientation_y:
+      name: orientation_y
+      value: 0.107303
+    orientation_z:
+      name: orientation_z
+      value: 0.107303
+  record: true
+  size: 1
+  position:
+    x: 21.863845
+    y: 24.404252
+    z: 13.256445
+- id: 160
+  label: A103
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.748366
+    orientation_y:
+      name: orientation_y
+      value: -0.748366
+    orientation_z:
+      name: orientation_z
+      value: -0.748366
+  record: true
+  size: 1
+  position:
+    x: -89.003415
+    y: -87.411639
+    z: -79.951794
+- id: 161
+  label: A163
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.923419
+    orientation_y:
+      name: orientation_y
+      value: -0.923419
+    orientation_z:
+      name: orientation_z
+      value: -0.923419
+  record: true
+  size: 1
+  position:
+    x: -99.313207
+    y: -101.287439
+    z: -105.234919
+- id: 162
+  label: A139
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.843713
+    orientation_y:
+      name: orientation_y
+      value: -0.843713
+    orientation_z:
+      name: orientation_z
+      value: -0.843713
+  record: true
+  size: 1
+  position:
+    x: -91.662181
+    y: -90.196556
+    z: -96.193186
+- id: 163
+  label: A49
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.530061
+    orientation_y:
+      name: orientation_y
+      value: -0.530061
+    orientation_z:
+      name: orientation_z
+      value: -0.530061
+  record: true
+  size: 1
+  position:
+    x: -56.778409
+    y: -66.525619
+    z: -66.235327
+- id: 164
+  label: A166
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.940696
+    orientation_y:
+      name: orientation_y
+      value: -0.940696
+    orientation_z:
+      name: orientation_z
+      value: -0.940696
+  record: true
+  size: 1
+  position:
+    x: -103.942922
+    y: -105.407275
+    z: -101.791138
+- id: 165
+  label: A156
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.108146
+    orientation_y:
+      name: orientation_y
+      value: 0.108146
+    orientation_z:
+      name: orientation_z
+      value: 0.108146
+  record: true
+  size: 1
+  position:
+    x: 22.756421
+    y: 25.337525
+    z: 36.474901
+- id: 166
+  label: A128
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.120485
+    orientation_y:
+      name: orientation_y
+      value: 0.120485
+    orientation_z:
+      name: orientation_z
+      value: 0.120485
+  record: true
+  size: 1
+  position:
+    x: 46.240156
+    y: 43.628598
+    z: 32.515096
+- id: 167
+  label: A68
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.148879
+    orientation_y:
+      name: orientation_y
+      value: 0.148879
+    orientation_z:
+      name: orientation_z
+      value: 0.148879
+  record: true
+  size: 1
+  position:
+    x: 16.195891
+    y: 18.609896
+    z: 29.722559
+- id: 168
+  label: A159
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.283192
+    orientation_y:
+      name: orientation_y
+      value: -0.283192
+    orientation_z:
+      name: orientation_z
+      value: -0.283192
+  record: true
+  size: 1
+  position:
+    x: -45.034355
+    y: -42.41916
+    z: -31.704468
+- id: 169
+  label: A236
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.847269
+    orientation_y:
+      name: orientation_y
+      value: -0.847269
+    orientation_z:
+      name: orientation_z
+      value: -0.847269
+  record: true
+  size: 1
+  position:
+    x: -104.508336
+    y: -98.906689
+    z: -101.342673
+- id: 170
+  label: A161
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.672055
+    orientation_y:
+      name: orientation_y
+      value: -0.672055
+    orientation_z:
+      name: orientation_z
+      value: -0.672055
+  record: true
+  size: 1
+  position:
+    x: -80.203744
+    y: -72.074083
+    z: -74.609225
+- id: 171
+  label: A121
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.999242
+    orientation_y:
+      name: orientation_y
+      value: 0.999242
+    orientation_z:
+      name: orientation_z
+      value: 0.999242
+  record: true
+  size: 1
+  position:
+    x: 147.638028
+    y: 148.084914
+    z: 148.057036
+- id: 172
+  label: A4
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.23634
+    orientation_y:
+      name: orientation_y
+      value: 0.23634
+    orientation_z:
+      name: orientation_z
+      value: 0.23634
+  record: true
+  size: 1
+  position:
+    x: 65.728682
+    y: 66.075162
+    z: 77.243999
+- id: 173
+  label: A61
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.908476
+    orientation_y:
+      name: orientation_y
+      value: 0.908476
+    orientation_z:
+      name: orientation_z
+      value: 0.908476
+  record: true
+  size: 1
+  position:
+    x: 135.603412
+    y: 135.57266
+    z: 140.378853
+- id: 174
+  label: A6
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.409735
+    orientation_y:
+      name: orientation_y
+      value: 0.409735
+    orientation_z:
+      name: orientation_z
+      value: 0.409735
+  record: true
+  size: 1
+  position:
+    x: 85.509994
+    y: 86.577871
+    z: 97.013732
+- id: 175
+  label: A126
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.345501
+    orientation_y:
+      name: orientation_y
+      value: 0.345501
+    orientation_z:
+      name: orientation_z
+      value: 0.345501
+  record: true
+  size: 1
+  position:
+    x: 77.363645
+    y: 79.951675
+    z: 90.428568
+- id: 176
+  label: A14
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.109443
+    orientation_y:
+      name: orientation_y
+      value: 0.109443
+    orientation_z:
+      name: orientation_z
+      value: 0.109443
+  record: true
+  size: 1
+  position:
+    x: 0.789215
+    y: 0.523402
+    z: 11.951231
+- id: 177
+  label: A94
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.369829
+    orientation_y:
+      name: orientation_y
+      value: 0.369829
+    orientation_z:
+      name: orientation_z
+      value: 0.369829
+  record: true
+  size: 1
+  position:
+    x: 79.267823
+    y: 81.875424
+    z: 92.236994
+- id: 178
+  label: A15
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.216046
+    orientation_y:
+      name: orientation_y
+      value: 0.216046
+    orientation_z:
+      name: orientation_z
+      value: 0.216046
+  record: true
+  size: 1
+  position:
+    x: 33.717495
+    y: 34.041144
+    z: 22.817402
+- id: 179
+  label: A193
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.147111
+    orientation_y:
+      name: orientation_y
+      value: 0.147111
+    orientation_z:
+      name: orientation_z
+      value: 0.147111
+  record: true
+  size: 1
+  position:
+    x: 55.234952
+    y: 57.827743
+    z: 46.752304
+- id: 180
+  label: A150
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.732905
+    orientation_y:
+      name: orientation_y
+      value: 0.732905
+    orientation_z:
+      name: orientation_z
+      value: 0.732905
+  record: true
+  size: 1
+  position:
+    x: 125.236047
+    y: 127.84312
+    z: 120.466459
+- id: 181
+  label: A227
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.088295
+    orientation_y:
+      name: orientation_y
+      value: 0.088295
+    orientation_z:
+      name: orientation_z
+      value: 0.088295
+  record: true
+  size: 1
+  position:
+    x: 53.745662
+    y: 56.342225
+    z: 45.185307
+- id: 182
+  label: A59
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.598543
+    orientation_y:
+      name: orientation_y
+      value: 0.598543
+    orientation_z:
+      name: orientation_z
+      value: 0.598543
+  record: true
+  size: 1
+  position:
+    x: 113.713175
+    y: 115.188798
+    z: 106.095202
+- id: 183
+  label: A36
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.601822
+    orientation_y:
+      name: orientation_y
+      value: 0.601822
+    orientation_z:
+      name: orientation_z
+      value: 0.601822
+  record: true
+  size: 1
+  position:
+    x: 103.871635
+    y: 103.178883
+    z: 112.336972
+- id: 184
+  label: A225
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.418544
+    orientation_y:
+      name: orientation_y
+      value: -0.418544
+    orientation_z:
+      name: orientation_z
+      value: -0.418544
+  record: true
+  size: 1
+  position:
+    x: -53.995675
+    y: -51.520639
+    z: -61.6674
+- id: 185
+  label: A195
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.600585
+    orientation_y:
+      name: orientation_y
+      value: 0.600585
+    orientation_z:
+      name: orientation_z
+      value: 0.600585
+  record: true
+  size: 1
+  position:
+    x: 92.733893
+    y: 95.327614
+    z: 86.506066
+- id: 186
+  label: A30
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.101644
+    orientation_y:
+      name: orientation_y
+      value: -0.101644
+    orientation_z:
+      name: orientation_z
+      value: -0.101644
+  record: true
+  size: 1
+  position:
+    x: -24.369076
+    y: -12.954931
+    z: -12.179719
+- id: 187
+  label: A109
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.52666
+    orientation_y:
+      name: orientation_y
+      value: -0.52666
+    orientation_z:
+      name: orientation_z
+      value: -0.52666
+  record: true
+  size: 1
+  position:
+    x: -63.481337
+    y: -65.268731
+    z: -55.657649
+- id: 188
+  label: A172
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.120115
+    orientation_y:
+      name: orientation_y
+      value: 0.120115
+    orientation_z:
+      name: orientation_z
+      value: 0.120115
+  record: true
+  size: 1
+  position:
+    x: 12.608222
+    y: 15.201572
+    z: 4.083277
+- id: 189
+  label: A108
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.669816
+    orientation_y:
+      name: orientation_y
+      value: -0.669816
+    orientation_z:
+      name: orientation_z
+      value: -0.669816
+  record: true
+  size: 1
+  position:
+    x: -79.108472
+    y: -70.692709
+    z: -69.24686
+- id: 190
+  label: A81
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.087583
+    orientation_y:
+      name: orientation_y
+      value: 0.087583
+    orientation_z:
+      name: orientation_z
+      value: 0.087583
+  record: true
+  size: 1
+  position:
+    x: -3.114586
+    y: -5.008538
+    z: 6.289624
+- id: 191
+  label: A171
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.093536
+    orientation_y:
+      name: orientation_y
+      value: 0.093536
+    orientation_z:
+      name: orientation_z
+      value: 0.093536
+  record: true
+  size: 1
+  position:
+    x: -20.400278
+    y: -9.248649
+    z: -6.653633
+- id: 192
+  label: A218
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.880061
+    orientation_y:
+      name: orientation_y
+      value: -0.880061
+    orientation_z:
+      name: orientation_z
+      value: -0.880061
+  record: true
+  size: 1
+  position:
+    x: -110.644771
+    y: -108.403141
+    z: -103.423539
+- id: 193
+  label: A173
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.086892
+    orientation_y:
+      name: orientation_y
+      value: 0.086892
+    orientation_z:
+      name: orientation_z
+      value: 0.086892
+  record: true
+  size: 1
+  position:
+    x: 33.846362
+    y: 36.44867
+    z: 25.291633
+- id: 194
+  label: A201
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.828583
+    orientation_y:
+      name: orientation_y
+      value: -0.828583
+    orientation_z:
+      name: orientation_z
+      value: -0.828583
+  record: true
+  size: 1
+  position:
+    x: -101.999876
+    y: -99.575352
+    z: -93.610844
+- id: 195
+  label: A74
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.686217
+    orientation_y:
+      name: orientation_y
+      value: -0.686217
+    orientation_z:
+      name: orientation_z
+      value: -0.686217
+  record: true
+  size: 1
+  position:
+    x: -72.067041
+    y: -73.008741
+    z: -81.320631
+- id: 196
+  label: A29
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.308385
+    orientation_y:
+      name: orientation_y
+      value: -0.308385
+    orientation_z:
+      name: orientation_z
+      value: -0.308385
+  record: true
+  size: 1
+  position:
+    x: -42.479465
+    y: -31.544529
+    z: -31.228205
+- id: 197
+  label: A164
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.974733
+    orientation_y:
+      name: orientation_y
+      value: -0.974733
+    orientation_z:
+      name: orientation_z
+      value: -0.974733
+  record: true
+  size: 1
+  position:
+    x: -109.358877
+    y: -108.30199
+    z: -105.960688
+- id: 198
+  label: A205
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.93346
+    orientation_y:
+      name: orientation_y
+      value: -0.93346
+    orientation_z:
+      name: orientation_z
+      value: -0.93346
+  record: true
+  size: 1
+  position:
+    x: -104.752524
+    y: -108.567609
+    z: -110.135885
+- id: 199
+  label: A232
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.101977
+    orientation_y:
+      name: orientation_y
+      value: 0.101977
+    orientation_z:
+      name: orientation_z
+      value: 0.101977
+  record: true
+  size: 1
+  position:
+    x: 6.966653
+    y: 4.392947
+    z: -6.753835
+- id: 200
+  label: A69
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.08212
+    orientation_y:
+      name: orientation_y
+      value: 0.08212
+    orientation_z:
+      name: orientation_z
+      value: 0.08212
+  record: true
+  size: 1
+  position:
+    x: 5.623164
+    y: -5.597612
+    z: -3.262589
+- id: 201
+  label: A157
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.086938
+    orientation_y:
+      name: orientation_y
+      value: 0.086938
+    orientation_z:
+      name: orientation_z
+      value: 0.086938
+  record: true
+  size: 1
+  position:
+    x: 3.191353
+    y: 14.353091
+    z: 11.771228
+- id: 202
+  label: A97
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.127002
+    orientation_y:
+      name: orientation_y
+      value: 0.127002
+    orientation_z:
+      name: orientation_z
+      value: 0.127002
+  record: true
+  size: 1
+  position:
+    x: 13.009834
+    y: 15.578675
+    z: 26.692538
+- id: 203
+  label: A217
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.765991
+    orientation_y:
+      name: orientation_y
+      value: -0.765991
+    orientation_z:
+      name: orientation_z
+      value: -0.765991
+  record: true
+  size: 1
+  position:
+    x: -96.019543
+    y: -89.057308
+    z: -91.543405
+- id: 204
+  label: A101
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.50371
+    orientation_y:
+      name: orientation_y
+      value: -0.50371
+    orientation_z:
+      name: orientation_z
+      value: -0.50371
+  record: true
+  size: 1
+  position:
+    x: -64.449231
+    y: -62.227887
+    z: -52.544877
+- id: 205
+  label: A124
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.74733
+    orientation_y:
+      name: orientation_y
+      value: 0.74733
+    orientation_z:
+      name: orientation_z
+      value: 0.74733
+  record: true
+  size: 1
+  position:
+    x: 118.354753
+    y: 120.778941
+    z: 128.025423
+- id: 206
+  label: A40
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.436577
+    orientation_y:
+      name: orientation_y
+      value: 0.436577
+    orientation_z:
+      name: orientation_z
+      value: 0.436577
+  record: true
+  size: 1
+  position:
+    x: 97.305689
+    y: 95.123197
+    z: 85.009843
+- id: 207
+  label: A123
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.88572
+    orientation_y:
+      name: orientation_y
+      value: 0.88572
+    orientation_z:
+      name: orientation_z
+      value: 0.88572
+  record: true
+  size: 1
+  position:
+    x: 132.968651
+    y: 135.23206
+    z: 140.067032
+- id: 208
+  label: A153
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.483826
+    orientation_y:
+      name: orientation_y
+      value: 0.483826
+    orientation_z:
+      name: orientation_z
+      value: 0.483826
+  record: true
+  size: 1
+  position:
+    x: 89.480463
+    y: 91.967921
+    z: 101.720073
+- id: 209
+  label: A178
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.360053
+    orientation_y:
+      name: orientation_y
+      value: 0.360053
+    orientation_z:
+      name: orientation_z
+      value: 0.360053
+  record: true
+  size: 1
+  position:
+    x: 78.657293
+    y: 76.13769
+    z: 65.709028
+- id: 210
+  label: A1
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.121893
+    orientation_y:
+      name: orientation_y
+      value: 0.121893
+    orientation_z:
+      name: orientation_z
+      value: 0.121893
+  record: true
+  size: 1
+  position:
+    x: 0.32007
+    y: 0.688396
+    z: 12.096699
+- id: 211
+  label: A179
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.116023
+    orientation_y:
+      name: orientation_y
+      value: 0.116023
+    orientation_z:
+      name: orientation_z
+      value: 0.116023
+  record: true
+  size: 1
+  position:
+    x: 45.895749
+    y: 48.468186
+    z: 59.597081
+- id: 212
+  label: A33
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.204447
+    orientation_y:
+      name: orientation_y
+      value: 0.204447
+    orientation_z:
+      name: orientation_z
+      value: 0.204447
+  record: true
+  size: 1
+  position:
+    x: 54.228455
+    y: 55.220184
+    z: 44.006861
+- id: 213
+  label: A147
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.138483
+    orientation_y:
+      name: orientation_y
+      value: 0.138483
+    orientation_z:
+      name: orientation_z
+      value: 0.138483
+  record: true
+  size: 1
+  position:
+    x: 56.150869
+    y: 53.603318
+    z: 64.703938
+- id: 214
+  label: A117
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.546626
+    orientation_y:
+      name: orientation_y
+      value: 0.546626
+    orientation_z:
+      name: orientation_z
+      value: 0.546626
+  record: true
+  size: 1
+  position:
+    x: 108.063305
+    y: 110.545752
+    z: 101.241385
+- id: 215
+  label: A148
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.363005
+    orientation_y:
+      name: orientation_y
+      value: 0.363005
+    orientation_z:
+      name: orientation_z
+      value: 0.363005
+  record: true
+  size: 1
+  position:
+    x: 88.783577
+    y: 91.370685
+    z: 80.972129
+- id: 216
+  label: A87
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.764996
+    orientation_y:
+      name: orientation_y
+      value: 0.764996
+    orientation_z:
+      name: orientation_z
+      value: 0.764996
+  record: true
+  size: 1
+  position:
+    x: 127.485221
+    y: 129.657543
+    z: 122.576883
+- id: 217
+  label: A89
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.976863
+    orientation_y:
+      name: orientation_y
+      value: 0.976863
+    orientation_z:
+      name: orientation_z
+      value: 0.976863
+  record: true
+  size: 1
+  position:
+    x: 143.649101
+    y: 144.634209
+    z: 146.887783
+- id: 218
+  label: A243
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.509107
+    orientation_y:
+      name: orientation_y
+      value: -0.509107
+    orientation_z:
+      name: orientation_z
+      value: -0.509107
+  record: true
+  size: 1
+  position:
+    x: -63.894937
+    y: -73.491893
+    z: -75.914802
+- id: 219
+  label: A119
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.862293
+    orientation_y:
+      name: orientation_y
+      value: 0.862293
+    orientation_z:
+      name: orientation_z
+      value: 0.862293
+  record: true
+  size: 1
+  position:
+    x: 135.927753
+    y: 138.475206
+    z: 133.238228
+- id: 220
+  label: A52
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.214927
+    orientation_y:
+      name: orientation_y
+      value: -0.214927
+    orientation_z:
+      name: orientation_z
+      value: -0.214927
+  record: true
+  size: 1
+  position:
+    x: -36.427033
+    y: -37.525831
+    z: -26.348463
+- id: 221
+  label: A142
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.388916
+    orientation_y:
+      name: orientation_y
+      value: -0.388916
+    orientation_z:
+      name: orientation_z
+      value: -0.388916
+  record: true
+  size: 1
+  position:
+    x: -53.343976
+    y: -43.000069
+    z: -40.708766
+- id: 222
+  label: A211
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.071268
+    orientation_y:
+      name: orientation_y
+      value: 0.071268
+    orientation_z:
+      name: orientation_z
+      value: 0.071268
+  record: true
+  size: 1
+  position:
+    x: 28.951107
+    y: 31.544313
+    z: 20.370524
+- id: 223
+  label: A190
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.602958
+    orientation_y:
+      name: orientation_y
+      value: -0.602958
+    orientation_z:
+      name: orientation_z
+      value: -0.602958
+  record: true
+  size: 1
+  position:
+    x: -66.38712
+    y: -75.239869
+    z: -77.647825
+- id: 224
+  label: A53
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.045557
+    orientation_y:
+      name: orientation_y
+      value: -0.045557
+    orientation_z:
+      name: orientation_z
+      value: -0.045557
+  record: true
+  size: 1
+  position:
+    x: -6.240285
+    y: -4.98326
+    z: -16.402341
+- id: 225
+  label: A192
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.09963
+    orientation_y:
+      name: orientation_y
+      value: 0.09963
+    orientation_z:
+      name: orientation_z
+      value: 0.09963
+  record: true
+  size: 1
+  position:
+    x: -28.042342
+    y: -25.449027
+    z: -36.59407
+- id: 226
+  label: A73
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.609695
+    orientation_y:
+      name: orientation_y
+      value: -0.609695
+    orientation_z:
+      name: orientation_z
+      value: -0.609695
+  record: true
+  size: 1
+  position:
+    x: -63.32204
+    y: -64.758551
+    z: -73.759964
+- id: 227
+  label: A226
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.107091
+    orientation_y:
+      name: orientation_y
+      value: 0.107091
+    orientation_z:
+      name: orientation_z
+      value: 0.107091
+  record: true
+  size: 1
+  position:
+    x: -31.030434
+    y: -28.436529
+    z: -39.57228
+- id: 228
+  label: A136
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.919223
+    orientation_y:
+      name: orientation_y
+      value: -0.919223
+    orientation_z:
+      name: orientation_z
+      value: -0.919223
+  record: true
+  size: 1
+  position:
+    x: -102.666026
+    y: -98.309611
+    z: -99.544213
+- id: 229
+  label: A184
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.880186
+    orientation_y:
+      name: orientation_y
+      value: -0.880186
+    orientation_z:
+      name: orientation_z
+      value: -0.880186
+  record: true
+  size: 1
+  position:
+    x: -104.448196
+    y: -102.217197
+    z: -97.235737
+- id: 230
+  label: A51
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.396978
+    orientation_y:
+      name: orientation_y
+      value: -0.396978
+    orientation_z:
+      name: orientation_z
+      value: -0.396978
+  record: true
+  size: 1
+  position:
+    x: -43.316909
+    y: -42.597692
+    z: -53.128184
+- id: 231
+  label: A237
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.927776
+    orientation_y:
+      name: orientation_y
+      value: -0.927776
+    orientation_z:
+      name: orientation_z
+      value: -0.927776
+  record: true
+  size: 1
+  position:
+    x: -114.865788
+    y: -111.041012
+    z: -112.986405
+- id: 232
+  label: A77
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.61887
+    orientation_y:
+      name: orientation_y
+      value: -0.61887
+    orientation_z:
+      name: orientation_z
+      value: -0.61887
+  record: true
+  size: 1
+  position:
+    x: -72.439189
+    y: -73.239719
+    z: -64.242086
+- id: 233
+  label: A129
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.100953
+    orientation_y:
+      name: orientation_y
+      value: 0.100953
+    orientation_z:
+      name: orientation_z
+      value: 0.100953
+  record: true
+  size: 1
+  position:
+    x: 11.858629
+    y: 22.99751
+    z: 20.384565
+- id: 234
+  label: A131
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.170333
+    orientation_y:
+      name: orientation_y
+      value: -0.170333
+    orientation_z:
+      name: orientation_z
+      value: -0.170333
+  record: true
+  size: 1
+  position:
+    x: -18.90381
+    y: -21.503815
+    z: -32.533456
+- id: 235
+  label: A198
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.100204
+    orientation_y:
+      name: orientation_y
+      value: 0.100204
+    orientation_z:
+      name: orientation_z
+      value: 0.100204
+  record: true
+  size: 1
+  position:
+    x: -21.80127
+    y: -10.655417
+    z: -13.242318
+- id: 236
+  label: A197
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.110502
+    orientation_y:
+      name: orientation_y
+      value: 0.110502
+    orientation_z:
+      name: orientation_z
+      value: 0.110502
+  record: true
+  size: 1
+  position:
+    x: 0.460691
+    y: 11.594625
+    z: 9.011867
+- id: 237
+  label: A182
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.579385
+    orientation_y:
+      name: orientation_y
+      value: -0.579385
+    orientation_z:
+      name: orientation_z
+      value: -0.579385
+  record: true
+  size: 1
+  position:
+    x: -74.609956
+    y: -65.600442
+    z: -68.185793
+- id: 238
+  label: A46
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.264379
+    orientation_y:
+      name: orientation_y
+      value: -0.264379
+    orientation_z:
+      name: orientation_z
+      value: -0.264379
+  record: true
+  size: 1
+  position:
+    x: -38.946826
+    y: -37.218453
+    z: -26.263137
+- id: 239
+  label: A92
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.749468
+    orientation_y:
+      name: orientation_y
+      value: 0.749468
+    orientation_z:
+      name: orientation_z
+      value: 0.749468
+  record: true
+  size: 1
+  position:
+    x: 116.838728
+    y: 119.451392
+    z: 126.602542
+- id: 240
+  label: A41
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.221882
+    orientation_y:
+      name: orientation_y
+      value: 0.221882
+    orientation_z:
+      name: orientation_z
+      value: 0.221882
+  record: true
+  size: 1
+  position:
+    x: 63.334274
+    y: 65.440463
+    z: 76.45423
+- id: 241
+  label: A90
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.960149
+    orientation_y:
+      name: orientation_y
+      value: 0.960149
+    orientation_z:
+      name: orientation_z
+      value: 0.960149
+  record: true
+  size: 1
+  position:
+    x: 140.986144
+    y: 143.564287
+    z: 145.483571
+- id: 242
+  label: A7
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.225704
+    orientation_y:
+      name: orientation_y
+      value: 0.225704
+    orientation_z:
+      name: orientation_z
+      value: 0.225704
+  record: true
+  size: 1
+  position:
+    x: 63.92862
+    y: 64.985576
+    z: 76.138859
+- id: 243
+  label: A23
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.204486
+    orientation_y:
+      name: orientation_y
+      value: 0.204486
+    orientation_z:
+      name: orientation_z
+      value: 0.204486
+  record: true
+  size: 1
+  position:
+    x: 42.467072
+    y: 44.137083
+    z: 55.269517
+- id: 244
+  label: A83
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.151489
+    orientation_y:
+      name: orientation_y
+      value: 0.151489
+    orientation_z:
+      name: orientation_z
+      value: 0.151489
+  record: true
+  size: 1
+  position:
+    x: 48.725416
+    y: 50.680092
+    z: 39.482135
+- id: 245
+  label: A154
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.299342
+    orientation_y:
+      name: orientation_y
+      value: 0.299342
+    orientation_z:
+      name: orientation_z
+      value: 0.299342
+  record: true
+  size: 1
+  position:
+    x: 84.479903
+    y: 81.937711
+    z: 71.263587
+- id: 246
+  label: A34
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.206764
+    orientation_y:
+      name: orientation_y
+      value: 0.206764
+    orientation_z:
+      name: orientation_z
+      value: 0.206764
+  record: true
+  size: 1
+  position:
+    x: 62.370323
+    y: 73.58245
+    z: 74.522839
+- id: 247
+  label: A17
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.234932
+    orientation_y:
+      name: orientation_y
+      value: 0.234932
+    orientation_z:
+      name: orientation_z
+      value: 0.234932
+  record: true
+  size: 1
+  position:
+    x: 64.764793
+    y: 64.4609
+    z: 75.634905
+- id: 248
+  label: A18
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.432001
+    orientation_y:
+      name: orientation_y
+      value: 0.432001
+    orientation_z:
+      name: orientation_z
+      value: 0.432001
+  record: true
+  size: 1
+  position:
+    x: 96.488893
+    y: 96.86133
+    z: 86.496476
+- id: 249
+  label: A248
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.390448
+    orientation_y:
+      name: orientation_y
+      value: 0.390448
+    orientation_z:
+      name: orientation_z
+      value: 0.390448
+  record: true
+  size: 1
+  position:
+    x: 66.302744
+    y: 68.907641
+    z: 58.645916
+- id: 250
+  label: A149
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.542529
+    orientation_y:
+      name: orientation_y
+      value: 0.542529
+    orientation_z:
+      name: orientation_z
+      value: 0.542529
+  record: true
+  size: 1
+  position:
+    x: 107.997385
+    y: 110.608139
+    z: 101.307178
+- id: 251
+  label: A118
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.716554
+    orientation_y:
+      name: orientation_y
+      value: 0.716554
+    orientation_z:
+      name: orientation_z
+      value: 0.716554
+  record: true
+  size: 1
+  position:
+    x: 124.002275
+    y: 126.519864
+    z: 118.903559
+- id: 252
+  label: A208
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.512382
+    orientation_y:
+      name: orientation_y
+      value: -0.512382
+    orientation_z:
+      name: orientation_z
+      value: -0.512382
+  record: true
+  size: 1
+  position:
+    x: -61.547972
+    y: -59.112505
+    z: -68.683201
+- id: 253
+  label: A152
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.967314
+    orientation_y:
+      name: orientation_y
+      value: 0.967314
+    orientation_z:
+      name: orientation_z
+      value: 0.967314
+  record: true
+  size: 1
+  position:
+    x: 144.833777
+    y: 146.943493
+    z: 144.930193
+- id: 254
+  label: A140
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.745785
+    orientation_y:
+      name: orientation_y
+      value: -0.745785
+    orientation_z:
+      name: orientation_z
+      value: -0.745785
+  record: true
+  size: 1
+  position:
+    x: -79.406984
+    y: -77.553137
+    z: -84.986604
+- id: 255
+  label: A144
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.025015
+    orientation_y:
+      name: orientation_y
+      value: 0.025015
+    orientation_z:
+      name: orientation_z
+      value: 0.025015
+  record: true
+  size: 1
+  position:
+    x: 0.845298
+    y: 3.314635
+    z: -7.913438
+- id: 256
+  label: A209
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.10465
+    orientation_y:
+      name: orientation_y
+      value: 0.10465
+    orientation_z:
+      name: orientation_z
+      value: 0.10465
+  record: true
+  size: 1
+  position:
+    x: -12.829306
+    y: -10.23394
+    z: -21.37242
+- id: 257
+  label: A110
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.341075
+    orientation_y:
+      name: orientation_y
+      value: -0.341075
+    orientation_z:
+      name: orientation_z
+      value: -0.341075
+  record: true
+  size: 1
+  position:
+    x: -47.815549
+    y: -37.185333
+    z: -35.219729
+- id: 258
+  label: A111
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.164546
+    orientation_y:
+      name: orientation_y
+      value: -0.164546
+    orientation_z:
+      name: orientation_z
+      value: -0.164546
+  record: true
+  size: 1
+  position:
+    x: -17.020585
+    y: -14.885007
+    z: -26.025411
+- id: 259
+  label: A244
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.112195
+    orientation_y:
+      name: orientation_y
+      value: 0.112195
+    orientation_z:
+      name: orientation_z
+      value: 0.112195
+  record: true
+  size: 1
+  position:
+    x: -16.585252
+    y: -13.996633
+    z: -25.126967
+- id: 260
+  label: A185
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.957587
+    orientation_y:
+      name: orientation_y
+      value: -0.957587
+    orientation_z:
+      name: orientation_z
+      value: -0.957587
+  record: true
+  size: 1
+  position:
+    x: -111.022397
+    y: -109.464515
+    z: -106.539932
+- id: 261
+  label: A246
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.096317
+    orientation_y:
+      name: orientation_y
+      value: 0.096317
+    orientation_z:
+      name: orientation_z
+      value: 0.096317
+  record: true
+  size: 1
+  position:
+    x: 25.906233
+    y: 28.492745
+    z: 17.342271
+- id: 262
+  label: A162
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.831165
+    orientation_y:
+      name: orientation_y
+      value: -0.831165
+    orientation_z:
+      name: orientation_z
+      value: -0.831165
+  record: true
+  size: 1
+  position:
+    x: -96.273659
+    y: -93.893227
+    z: -87.958525
+- id: 263
+  label: A106
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.831901
+    orientation_y:
+      name: orientation_y
+      value: -0.831901
+    orientation_z:
+      name: orientation_z
+      value: -0.831901
+  record: true
+  size: 1
+  position:
+    x: -88.406838
+    y: -94.779001
+    z: -95.126655
+- id: 264
+  label: A187
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.966039
+    orientation_y:
+      name: orientation_y
+      value: -0.966039
+    orientation_z:
+      name: orientation_z
+      value: -0.966039
+  record: true
+  size: 1
+  position:
+    x: -109.358828
+    y: -110.44953
+    z: -107.685398
+- id: 265
+  label: A48
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.492922
+    orientation_y:
+      name: orientation_y
+      value: -0.492922
+    orientation_z:
+      name: orientation_z
+      value: -0.492922
+  record: true
+  size: 1
+  position:
+    x: -61.900033
+    y: -51.935534
+    z: -52.844187
+- id: 266
+  label: A221
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.962961
+    orientation_y:
+      name: orientation_y
+      value: -0.962961
+    orientation_z:
+      name: orientation_z
+      value: -0.962961
+  record: true
+  size: 1
+  position:
+    x: -111.727627
+    y: -114.6102
+    z: -115.753067
+- id: 267
+  label: A196
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.108857
+    orientation_y:
+      name: orientation_y
+      value: 0.108857
+    orientation_z:
+      name: orientation_z
+      value: 0.108857
+  record: true
+  size: 1
+  position:
+    x: 32.731871
+    y: 30.152907
+    z: 19.015951
+- id: 268
+  label: A133
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.574513
+    orientation_y:
+      name: orientation_y
+      value: -0.574513
+    orientation_z:
+      name: orientation_z
+      value: -0.574513
+  record: true
+  size: 1
+  position:
+    x: -69.333606
+    y: -60.247994
+    z: -62.707775
+- id: 269
+  label: A158
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.091062
+    orientation_y:
+      name: orientation_y
+      value: 0.091062
+    orientation_z:
+      name: orientation_z
+      value: 0.091062
+  record: true
+  size: 1
+  position:
+    x: -20.804391
+    y: -18.223912
+    z: -7.066203
+- id: 270
+  label: A44
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.149767
+    orientation_y:
+      name: orientation_y
+      value: 0.149767
+    orientation_z:
+      name: orientation_z
+      value: 0.149767
+  record: true
+  size: 1
+  position:
+    x: 15.58328
+    y: 13.558983
+    z: 2.370336
+- id: 271
+  label: A134
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.723749
+    orientation_y:
+      name: orientation_y
+      value: -0.723749
+    orientation_z:
+      name: orientation_z
+      value: -0.723749
+  record: true
+  size: 1
+  position:
+    x: -86.760542
+    y: -84.481285
+    z: -76.879916
+- id: 272
+  label: A216
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: -0.598089
+    orientation_y:
+      name: orientation_y
+      value: -0.598089
+    orientation_z:
+      name: orientation_z
+      value: -0.598089
+  record: true
+  size: 1
+  position:
+    x: -80.14672
+    y: -71.299999
+    z: -73.884256
+- id: 273
+  label: UACurrent
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.0
+    orientation_y:
+      name: orientation_y
+      value: 0.0
+    orientation_z:
+      name: orientation_z
+      value: 0.0
+  record: true
+  size: 1
+  position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: 274
+  label: EOG
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.0
+    orientation_y:
+      name: orientation_y
+      value: 0.0
+    orientation_z:
+      name: orientation_z
+      value: 0.0
+  record: true
+  size: 1
+  position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+- id: 275
+  label: ECG
+  parameters:
+    orientation_x:
+      name: orientation_x
+      value: 0.0
+    orientation_y:
+      name: orientation_y
+      value: 0.0
+    orientation_z:
+      name: orientation_z
+      value: 0.0
+  record: true
+  size: 1
+  position:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+edges:
+- label: gain
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+  allow_self_connections: true
+graph_representation: auto
+number_of_nodes: 276
+data_file: acq-MEGBrainstorm276_sensors.h5
+descriptor: sensors
+bids:
+  acquisition: MEGBrainstorm276
+distance_unit: mm

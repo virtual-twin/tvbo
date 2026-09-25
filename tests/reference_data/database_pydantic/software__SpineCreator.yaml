@@ -1,0 +1,33 @@
+name: SpineCreator
+description: A graphical tool for building neural network models using SpineML component-based
+  descriptions, with export to multiple simulation engines.
+homepage: https://spineml.github.io/spinecreator/
+license: GPL-3.0-only
+repository: https://github.com/SpineML/SpineCreator
+application_category: editor
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+tool_role:
+- workflow_framework
+programming_language:
+- C++
+runtime_platform:
+- Qt
+interoperates_with:
+- SpineML
+- BRAHMS
+date_created: '2014-01-01'
+development_status: inactive
+author:
+- Alex Cope
+maintainer:
+- SpineML Team
+keywords:
+- SpineML
+- GUI
+- model builder
+is_accessible_for_free: true

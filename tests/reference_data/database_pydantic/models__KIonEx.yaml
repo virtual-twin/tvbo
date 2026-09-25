@@ -1,0 +1,730 @@
+name: KIonEx
+iri: tvbo:KIonEx
+parameters:
+  Cm:
+    name: Cm
+    definition: membrane capacitance
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.5
+      hi: 1.5
+      step: 0.1
+      log_scale: false
+    description: membrane capacitance
+    grounding:
+    - GO:0042391
+  Delta:
+    name: Delta
+    definition: HWHM heterogeneous noise
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 10.0
+      step: 0.01
+      log_scale: false
+    description: HWHM heterogeneous noise
+  E:
+    name: E
+    definition: Reversal Potential
+    value: 0.0
+    domain:
+      enforce: none
+      lo: -80.0
+      hi: 0.0
+      step: 0.5
+      log_scale: false
+    description: Reversal Potential
+    grounding:
+    - GO:0019228
+  J:
+    name: J
+    definition: Mean Synaptic weight
+    value: 0.1
+    domain:
+      enforce: none
+      lo: 0.001
+      hi: 40.0
+      step: 0.01
+      log_scale: false
+    description: Mean Synaptic weight
+    grounding:
+    - GO:0099536
+  K_bath:
+    name: K_bath
+    definition: Potassium concentration in bath
+    value: 5.5
+    domain:
+      enforce: none
+      lo: 3.0
+      hi: 40.0
+      step: 0.25
+      log_scale: false
+    description: Potassium concentration in bath
+    grounding:
+    - GO:0055075
+  R_minus:
+    name: R_minus
+    definition: curvature left parabola
+    value: 0.5
+    domain:
+      enforce: none
+      lo: 0.0001
+      hi: 5.0
+      step: 0.01
+      log_scale: false
+    description: curvature left parabola
+  R_plus:
+    name: R_plus
+    definition: curvature right parabola
+    value: -0.5
+    domain:
+      enforce: none
+      lo: -5.0
+      hi: -0.0001
+      step: 0.01
+      log_scale: false
+    description: curvature right parabola
+  Vstar:
+    name: Vstar
+    definition: x-coordinate meeting point of parabolas
+    value: -31.0
+    domain:
+      enforce: none
+      lo: -55.0
+      hi: -15.0
+      step: 0.5
+      log_scale: false
+    description: x-coordinate meeting point of parabolas
+  c_minus:
+    name: c_minus
+    definition: x-coordinate left parabola
+    value: -40.0
+    domain:
+      enforce: none
+      lo: -100.0
+      hi: -10.0
+      step: 0.5
+      log_scale: false
+    description: x-coordinate left parabola
+  c_plus:
+    name: c_plus
+    definition: x-coordinate right parabola
+    value: -20.0
+    domain:
+      enforce: none
+      lo: -80.0
+      hi: 0.0
+      step: 0.5
+      log_scale: false
+    description: x-coordinate right parabola
+  epsilon:
+    name: epsilon
+    definition: diffusion rate
+    value: 0.001
+    domain:
+      enforce: none
+      lo: 0.0005
+      hi: 0.0015
+      step: 0.0001
+      log_scale: false
+    description: diffusion rate
+  eta:
+    name: eta
+    definition: Mean heterogeneous noise
+    value: 0.0
+    domain:
+      enforce: none
+      lo: -10.0
+      hi: 10.0
+      step: 0.1
+      log_scale: false
+    description: Mean heterogeneous noise
+  gamma:
+    name: gamma
+    definition: conversion factor
+    value: 0.04
+    domain:
+      enforce: none
+      lo: 0.02
+      hi: 0.06
+      step: 0.005
+      log_scale: false
+    description: conversion factor
+  tau_n:
+    name: tau_n
+    definition: time constant of gating variable
+    value: 4.0
+    domain:
+      enforce: none
+      lo: 2.0
+      hi: 6.0
+      step: 0.5
+      log_scale: false
+    description: time constant of gating variable
+  Chn:
+    name: Chn
+    value: 0.4
+    domain:
+      enforce: none
+      lo: 0.4
+      hi: 0.4
+      step: 0.0
+      log_scale: false
+  Ckp:
+    name: Ckp
+    value: 5.5
+    domain:
+      enforce: none
+      lo: 5.5
+      hi: 5.5
+      step: 0.0
+      log_scale: false
+    unit: mol_per_m3
+  Cl_i0:
+    name: Cl_i0
+    definition: initial concentration of intracellular Cl
+    value: 5.0
+    domain:
+      enforce: none
+      lo: 5.0
+      hi: 5.0
+      step: 0.0
+      log_scale: false
+    description: initial concentration of intracellular Cl
+    unit: mol_per_m3
+  Cl_o0:
+    name: Cl_o0
+    definition: initial concentration of extracellular Cl
+    value: 112.0
+    domain:
+      enforce: none
+      lo: 112.0
+      hi: 112.0
+      step: 0.0
+      log_scale: false
+    description: initial concentration of extracellular Cl
+    unit: mol_per_m3
+  Cmna:
+    name: Cmna
+    value: -24.0
+    domain:
+      enforce: none
+      lo: -24.0
+      hi: -24.0
+      step: 0.0
+      log_scale: false
+    unit: mV
+  Cnap:
+    name: Cnap
+    value: 21.0
+    domain:
+      enforce: none
+      lo: 21.0
+      hi: 21.0
+      step: 0.0
+      log_scale: false
+    unit: mol_per_m3
+  Cnk:
+    name: Cnk
+    value: -19.0
+    domain:
+      enforce: none
+      lo: -19.0
+      hi: -19.0
+      step: 0.0
+      log_scale: false
+    unit: mV
+  DChn:
+    name: DChn
+    value: -8.0
+    domain:
+      enforce: none
+      lo: -8.0
+      hi: -8.0
+      step: 0.0
+      log_scale: false
+  DCkp:
+    name: DCkp
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 1.0
+      hi: 1.0
+      step: 0.0
+      log_scale: false
+    unit: mol_per_m3
+  DCmna:
+    name: DCmna
+    value: 12.0
+    domain:
+      enforce: none
+      lo: 12.0
+      hi: 12.0
+      step: 0.0
+      log_scale: false
+    unit: mV
+  DCnap:
+    name: DCnap
+    value: 2.0
+    domain:
+      enforce: none
+      lo: 2.0
+      hi: 2.0
+      step: 0.0
+      log_scale: false
+    unit: mol_per_m3
+  DCnk:
+    name: DCnk
+    value: 18.0
+    domain:
+      enforce: none
+      lo: 18.0
+      hi: 18.0
+      step: 0.0
+      log_scale: false
+    unit: mV
+  K_i0:
+    name: K_i0
+    definition: initial concentration of intracellular K
+    value: 130.0
+    domain:
+      enforce: none
+      lo: 130.0
+      hi: 130.0
+      step: 0.0
+      log_scale: false
+    description: initial concentration of intracellular K
+    unit: mol_per_m3
+  K_o0:
+    name: K_o0
+    definition: initial concentration of extracellular K
+    value: 4.8
+    domain:
+      enforce: none
+      lo: 4.8
+      hi: 4.8
+      step: 0.0
+      log_scale: false
+    description: initial concentration of extracellular K
+    unit: mol_per_m3
+  Na_i0:
+    name: Na_i0
+    definition: initial concentration of intracellular Na
+    value: 16.0
+    domain:
+      enforce: none
+      lo: 16.0
+      hi: 16.0
+      step: 0.0
+      log_scale: false
+    description: initial concentration of intracellular Na
+    unit: mol_per_m3
+  Na_o0:
+    name: Na_o0
+    definition: initial concentration of extracellular Na
+    value: 138.0
+    domain:
+      enforce: none
+      lo: 138.0
+      hi: 138.0
+      step: 0.0
+      log_scale: false
+    description: initial concentration of extracellular Na
+    unit: mol_per_m3
+  g_Cl:
+    name: g_Cl
+    definition: chloride conductance
+    value: 7.5
+    domain:
+      enforce: none
+      lo: 7.5
+      hi: 7.5
+      step: 0.0
+      log_scale: false
+    description: chloride conductance
+    unit: nS
+  g_K:
+    name: g_K
+    definition: maximal potassium conductance
+    value: 22.0
+    domain:
+      enforce: none
+      lo: 22.0
+      hi: 22.0
+      step: 0.0
+      log_scale: false
+    description: maximal potassium conductance
+    unit: nS
+  g_Kl:
+    name: g_Kl
+    definition: potassium leak conductance
+    value: 0.12
+    domain:
+      enforce: none
+      lo: 0.12
+      hi: 0.12
+      step: 0.0
+      log_scale: false
+    description: potassium leak conductance
+    unit: nS
+  g_Na:
+    name: g_Na
+    definition: maximal sodiumconductance
+    value: 40.0
+    domain:
+      enforce: none
+      lo: 40.0
+      hi: 40.0
+      step: 0.0
+      log_scale: false
+    description: maximal sodiumconductance
+    unit: nS
+  g_Nal:
+    name: g_Nal
+    definition: sodium leak conductance
+    value: 0.02
+    domain:
+      enforce: none
+      lo: 0.02
+      hi: 0.02
+      step: 0.0
+      log_scale: false
+    description: sodium leak conductance
+    unit: nS
+  rho:
+    name: rho
+    definition: maximal Na/K pump current
+    value: 250.0
+    domain:
+      enforce: none
+      lo: 250.0
+      hi: 250.0
+      step: 0.0
+      log_scale: false
+    description: maximal Na/K pump current
+    unit: pA
+  w_i:
+    name: w_i
+    definition: intracellular volume
+    value: 2160.0
+    domain:
+      enforce: none
+      lo: 2160.0
+      hi: 2160.0
+      step: 0.0
+      log_scale: false
+    description: intracellular volume
+    unit: um3
+  w_o:
+    name: w_o
+    definition: extracellular volume
+    value: 720.0
+    domain:
+      enforce: none
+      lo: 720.0
+      hi: 720.0
+      step: 0.0
+      log_scale: false
+    description: extracellular volume
+    unit: um3
+description: "It describes the mean-field activity of a population of Hodgkin-Huxley-type\
+  \ neurons (Depannemaker et al 2022) linking the slow fluctuations of intra- and\
+  \ extra-cellular potassium ion concentrations to the mean membrane potential, and\
+  \ the synaptic input to the population firing rate. \nThe model is derived as the\
+  \ mathematical limit of an infinite number of all-to-all coupled neurons, resulting\
+  \ in 5 state variables:\n    :math:`x` represents a phenomenological variable connected\
+  \ to the firing rate, \n    :math:`V` represent the average membrane potential,\n\
+  \    :math:`n` represents the gating variable for potassium K, \n    :math:`\\Delta\
+  \ K_{int}` represent the intracellular potassium concentration,\n    :math:`K_g`\
+  \ represents the extracellular potassium buffering by the external bath\n    \"\"\
+  \""
+references:
+- Rabuffo2024
+- Depannemaecker2023
+derived_variables:
+  DNa_i:
+    name: DNa_i
+    equation:
+      lhs: DNa_i
+      rhs: -DKi
+      latex: false
+    record: false
+  I_Cl:
+    name: I_Cl
+    equation:
+      lhs: I_Cl
+      rhs: g_Cl*(V + 26.64*log(Cl_o0/Cl_i0))
+      latex: false
+    record: false
+  K_i:
+    name: K_i
+    equation:
+      lhs: K_i
+      rhs: DKi + K_i0
+      latex: false
+    record: false
+  beta:
+    name: beta
+    equation:
+      lhs: beta
+      rhs: w_i/w_o
+      latex: false
+    record: false
+  h:
+    name: h
+    equation:
+      lhs: h
+      rhs: 1.1 - 1.0/(1.0 + 24.5325301971094*exp(-8.0*n))
+      latex: false
+    record: false
+  minf:
+    name: minf
+    equation:
+      lhs: minf
+      rhs: 1.0/(exp((Cmna - V)/DCmna) + 1.0)
+      latex: false
+    record: false
+  ninf:
+    name: ninf
+    equation:
+      lhs: ninf
+      rhs: 1.0/(exp((Cnk - V)/DCnk) + 1.0)
+      latex: false
+    record: false
+  r:
+    name: r
+    equation:
+      lhs: r
+      rhs: R_minus*x/pi
+      latex: false
+    record: false
+  DK_o:
+    name: DK_o
+    equation:
+      lhs: DK_o
+      rhs: -DKi*beta
+      latex: false
+    record: false
+  DNa_o:
+    name: DNa_o
+    equation:
+      lhs: DNa_o
+      rhs: -DNa_i*beta
+      latex: false
+    record: false
+  Na_i:
+    name: Na_i
+    equation:
+      lhs: Na_i
+      rhs: DNa_i + Na_i0
+      latex: false
+    record: false
+  xcond:
+    name: xcond
+    symbol: xcond
+    equation:
+      lhs: xcond
+      rhs: Piecewise((Delta - J*r*x + 2*R_minus*x*(V - c_minus), V <= Vstar), (Delta
+        - J*r*x + 2*R_plus*x*(V - c_plus), True))
+      conditionals:
+      - condition: V <= Vstar
+        expression: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
+      - condition: 'True'
+        expression: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
+      latex: false
+    record: false
+  K_o:
+    name: K_o
+    equation:
+      lhs: K_o
+      rhs: DK_o + K_o0 + Kg
+      latex: false
+    record: false
+  Na_o:
+    name: Na_o
+    equation:
+      lhs: Na_o
+      rhs: DNa_o + Na_o0
+      latex: false
+    record: false
+  I_K:
+    name: I_K
+    equation:
+      lhs: I_K
+      rhs: (V - 26.64*log(K_o/K_i))*(g_K*n + g_Kl)
+      latex: false
+    record: false
+  I_Na:
+    name: I_Na
+    equation:
+      lhs: I_Na
+      rhs: (V - 26.64*log(Na_o/Na_i))*(g_Na*h*minf + g_Nal)
+      latex: false
+    record: false
+  I_pump:
+    name: I_pump
+    equation:
+      lhs: I_pump
+      rhs: 1.0*rho/((exp((Ckp - K_o)/DCkp) + 1.0)*(exp((Cnap - Na_i)/DCnap) + 1.0))
+      latex: false
+    record: false
+  V_temp:
+    name: V_temp
+    equation:
+      lhs: V_temp
+      rhs: -1.0*(I_Cl + I_K + I_Na + I_pump)/Cm
+      latex: false
+    record: false
+  Vcond:
+    name: Vcond
+    symbol: Vcond
+    equation:
+      lhs: Vcond
+      rhs: Piecewise((R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V
+        <= Vstar), (R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))
+      conditionals:
+      - condition: V <= Vstar
+        expression: R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta
+      - condition: 'True'
+        expression: R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta
+      latex: false
+    record: false
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    dimension: 1
+    local: false
+state_variables:
+  DKi:
+    name: DKi
+    domain:
+      enforce: clamp
+      lo: -100.0
+      hi: .inf
+      log_scale: false
+    equation:
+      lhs: Derivative(DKi, t)
+      rhs: -gamma*(I_K - 2.0*I_pump)/w_i
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+    distribution:
+      name: Uniform
+      domain:
+        enforce: none
+        lo: -10.0
+        hi: 0.0
+        log_scale: false
+      axis: space
+  Kg:
+    name: Kg
+    domain:
+      enforce: clamp
+      lo: -100.0
+      hi: .inf
+      log_scale: false
+    equation:
+      lhs: Derivative(Kg, t)
+      rhs: epsilon*(K_bath - K_o)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+    distribution:
+      name: Uniform
+      domain:
+        enforce: none
+        lo: -20.0
+        hi: -5.0
+        log_scale: false
+      axis: space
+  V:
+    name: V
+    domain:
+      enforce: clamp
+      lo: -500.0
+      hi: .inf
+      log_scale: false
+    equation:
+      lhs: Derivative(V, t)
+      rhs: Vcond
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+    distribution:
+      name: Uniform
+      domain:
+        enforce: none
+        lo: -90.0
+        hi: 10.0
+        log_scale: false
+      axis: space
+  n:
+    name: n
+    domain:
+      enforce: clamp
+      lo: 0.0
+      hi: .inf
+      log_scale: false
+    equation:
+      lhs: Derivative(n, t)
+      rhs: (-n + ninf)/tau_n
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+    distribution:
+      name: Uniform
+      domain:
+        enforce: none
+        lo: 0.0
+        hi: 1.0
+        log_scale: false
+      axis: space
+  x:
+    name: x
+    domain:
+      enforce: clamp
+      lo: 0.0
+      hi: .inf
+      log_scale: false
+    equation:
+      lhs: Derivative(x, t)
+      rhs: xcond
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+    distribution:
+      name: Uniform
+      domain:
+        enforce: none
+        lo: 0.0
+        hi: 1.0
+        log_scale: false
+      axis: space
+number_of_modes: 1
+model_type: mean_field
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

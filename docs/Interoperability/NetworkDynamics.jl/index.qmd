@@ -47,9 +47,9 @@ The code generation pipeline:
 
 1. **YAML → Python objects**: `SimulationExperiment.from_file()` parses the YAML into `Dynamics`, `Coupling`, `Network`, and `Integrator` instances
 2. **[Mako](https://www.makotemplates.org/) templates**: The `networkdynamics` format uses three composable templates:
-   - `tvbo-nd-vertex.jl.mako` — generates the vertex function `f!` and `VertexModel`
-   - `tvbo-nd-edge.jl.mako` — generates the edge function `g!` and `EdgeModel`
-   - `tvbo-nd-experiment.jl.mako` — orchestrates the full script (imports, graph, solve, plot)
+   - `tvbo-nd-vertex.jl.mako`: generates the vertex function `f!` and `VertexModel`
+   - `tvbo-nd-edge.jl.mako`: generates the edge function `g!` and `EdgeModel`
+   - `tvbo-nd-experiment.jl.mako`: orchestrates the full script (imports, graph, solve, plot)
 3. **Symbolic rendering**: Equations from the YAML are rendered to Julia syntax via `JuliaPrinter`
 
 For standalone (non-network) systems, see the [ModelingToolkit.jl backend](../ModelingToolkit.jl/index.qmd).
@@ -182,5 +182,5 @@ ani.save("diffusion.gif", writer="pillow", fps=20)
 | `integration` | `ODEProblem` + `solve(prob, Tsit5())` | experiment |
 
 ::: {.callout-tip}
-The distribution-based IC and parameter sampling described above is specific to the NetworkDynamics.jl (Julia) backend. For the Python/tvboptim backend, see [Initial Conditions & Initial State](../../Usage/InitialConditions.qmd) — which covers `state:` per-node overrides, `Exploration(n_trials=N)` sampling, and transient warm-up.
+The distribution-based IC and parameter sampling described above is specific to the NetworkDynamics.jl (Julia) backend. For the Python/tvboptim backend, see [Initial Conditions & Initial State](../../2-specify/Models/InitialConditions.qmd) — which covers `state:` per-node overrides, `Exploration(n_trials=N)` sampling, and transient warm-up.
 :::

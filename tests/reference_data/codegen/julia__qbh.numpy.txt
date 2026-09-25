@@ -1,0 +1,26 @@
+import numpy as np
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    A = _p.A
+    B = _p.B
+    D = _p.D
+
+    # State variables
+    q0 = current_state[0]
+    p0 = current_state[1]
+    q2 = current_state[2]
+    p2 = current_state[3]
+
+    # Derivatives
+    dq0_dt = A * p0
+    dp0_dt = (
+        -A * q0 - D * q0 * (q0**2 + q2**2) - 3 / 2 * B * np.sqrt(2) * (q2**2 - q0**2)
+    )
+    dq2_dt = A * p2
+    dp2_dt = -q2 * (A + D * (q0**2 + q2**2) + 3 * B * q0 * np.sqrt(2))
+
+    derivatives = np.array(np.broadcast_arrays(dq0_dt, dp0_dt, dq2_dt, dp2_dt))
+
+    return derivatives

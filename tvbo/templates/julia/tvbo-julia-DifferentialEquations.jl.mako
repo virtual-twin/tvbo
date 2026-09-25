@@ -21,19 +21,17 @@ fout = context.get('fout', False)
 mc = build_model_context(model)
 %>
 
-## Decide problem type (ODE vs SDE) based on presence of any state variable noise intensity > 0
+## ODE against SDE: any state variable with a positive noise amplitude makes it stochastic, read through the shared `noise_sigma` so a recipe spelling its amplitude as `parameters.sigma` is not silently integrated as a deterministic ODE here while every other backend simulates it with noise.
 <%
+from tvbo.utils import noise_sigma
+
+
 def has_noise(model):
     # Prefer live state_variables (may include user-added noise) over metadata snapshot
-    for sv in getattr(model, 'state_variables', {}).values():
-        n = getattr(sv, 'noise', None)
-        if n and getattr(getattr(n, 'intensity', None), 'value', None):
-            try:
-                if float(n.intensity.value) > 0:
-                    return True
-            except Exception:
-                pass
-    return False
+    return any(
+        (noise_sigma(getattr(sv, 'noise', None)) or 0.0) > 0
+        for sv in getattr(model, 'state_variables', {}).values()
+    )
 %>
 % if has_noise(model):
 <%include file="/tvbo-julia-SDEProblem.jl.mako" args="model=model, mc=mc, duration=duration" />

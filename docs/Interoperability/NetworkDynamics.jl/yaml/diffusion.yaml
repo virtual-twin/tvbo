@@ -29,7 +29,7 @@ dynamics:
     system_type: continuous
     autonomous: true
     parameters: {}
-    coupling_terms:
+    coupling_inputs:
         c_flow:
             description: "Aggregated edge flow into this vertex (sum of incident edge outputs)"
     state_variables:

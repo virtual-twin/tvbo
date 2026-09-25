@@ -1,12 +1,14 @@
 ---
 title: "Ex0: Integrate-and-Fire"
 description: "Leaky integrate-and-fire cells — iafTauCell with spike/reset events"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: `iafTauCell`
 
-The simplest NeuroML2 example: a leaky integrate-and-fire neuron with a single
-state variable $v$, governed by:
+The simplest NeuroML2 example: a leaky integrate-and-fire neuron with a single state variable $v$, governed by:
 
 $$\frac{dv}{dt} = \frac{E_L - v}{\tau}$$
 
@@ -14,8 +16,7 @@ With spike event: if $v > \text{thresh}$, then $v \leftarrow \text{reset}$.
 
 Parameters: `leakReversal=-50 mV`, `thresh=-55 mV`, `reset=-70 mV`, `tau=30 ms`.
 
-Note: since `leakReversal > thresh`, this cell will never fire.  The NeuroML
-example also includes `iafTauRefCell`, `iafCell`, and `iafRefCell` variants.
+Note: since `leakReversal > thresh`, this cell will never fire.  The NeuroML example also includes `iafTauRefCell`, `iafCell`, and `iafRefCell` variants.
 The TVBO version matches the `iafTauCell` (tau-based, no refractory period).
 
 ---

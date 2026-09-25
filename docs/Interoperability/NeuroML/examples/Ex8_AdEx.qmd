@@ -1,6 +1,9 @@
 ---
 title: "Ex8: Adaptive Exponential IF"
 description: "AdEx integrate-and-fire neuron with adaptation current — four variants"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: AdEx (adExIaFCell)

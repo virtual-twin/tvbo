@@ -1,0 +1,103 @@
+name: ReducedWongWangFunc
+derived_from_model: ReducedWongWang
+model_type: mean_field
+parameters:
+  I_o:
+    definition: "External input current to the neurons population"
+    value: 0.33
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: External input current to the neurons population
+    unit: nA
+  J_N:
+    definition: Excitatory recurrence
+    value: 0.2609
+    domain:
+      lo: 0.2609
+      hi: 0.5
+      step: 0.001
+    description: Excitatory recurrence
+    unit: nA
+  a:
+    definition: "Slope (or gain) parameter of the sigmoid input-output function H_RWW"
+    value: 0.27
+    domain:
+      lo: 0.0
+      hi: 0.27
+      step: 0.01
+    description: Slope (or gain) parameter of the sigmoid input-output function H_RWW (Deco et al
+    unit: per_pC
+  b:
+    value: 0.108
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: Shift parameter of the sigmoid input-output function H_RWW (Deco et al
+    unit: kHz
+  d:
+    value: 154.0
+    domain:
+      lo: 0.0
+      hi: 200.0
+      step: 0.01
+    description: Scaling parameter of the sigmoid input-output function H_RWW (Deco et al
+    unit: ms
+  gamma:
+    definition: Kinetic parameter
+    value: 0.641
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: Kinetic parameter
+  tau_s:
+    value: 100.0
+    domain:
+      lo: 50.0
+      hi: 150.0
+      step: 1.0
+    description: Kinetic parameter
+    unit: ms
+  w:
+    definition: Excitatory recurrence
+    value: 0.6
+    domain:
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+    description: Excitatory recurrence
+    unit: dimensionless
+functions:
+  H:
+    definition: Sigmoid input-output function of the synaptic input current that computes the averaged firing rate of the neurons population (Deco et al., 2013).
+    arguments:
+      x: {}
+    equation:
+      rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
+derived_variables:
+  x:
+    description: (NMDAR)-mediated synaptic input current to the neurons population (Deco et al., 2013).
+    equation:
+      lhs: x
+      rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_glob
+      latex: false
+coupling_inputs:
+  c_glob: {}
+  local_coupling: {}
+state_variables:
+  S:
+    domain:
+      lo: 0.0
+      hi: 1.0
+      enforce: clamp
+    description: State-variable of the Reduced WongWang model, denoting the average, (NMDAR)-mediated synaptic gating, i
+    equation:
+      lhs: Derivative(S, t)
+      rhs: H(x)*gamma*(1 - S) - S/tau_s
+      latex: false
+    coupling_variable: true
+    initial_value: 0.1
+number_of_modes: 1

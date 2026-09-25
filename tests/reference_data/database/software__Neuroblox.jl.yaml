@@ -1,0 +1,44 @@
+name: Neuroblox.jl
+description: A Julia package for building brain circuit models from composable neural
+  mass and spiking "blox" components. Built on ModelingToolkit.jl for symbolic model
+  construction and automatic differentiation.
+homepage: https://docs.neuroblox.org
+license: MIT
+repository: https://github.com/Neuroblox/Neuroblox.jl
+ecosystem:
+- julia_registry
+application_category: simulation
+scale:
+- neural_mass
+- neural_network
+- network_system
+model_paradigm:
+- neural_mass
+- spiking
+- mean_field
+tool_role:
+- framework
+programming_language:
+- Julia
+runtime_platform:
+- ModelingToolkit.jl
+- DifferentialEquations.jl
+interoperates_with:
+- NetworkDynamics.jl
+- TVB
+date_created: '2023-01-01'
+development_status: active
+author:
+- Neuroblox Inc.
+maintainer:
+- Neuroblox Inc.
+funder:
+- ARPA-H
+keywords:
+- Julia
+- whole-brain model
+- modular
+- neural mass
+- clinical
+issue_tracker: https://github.com/Neuroblox/Neuroblox.jl/issues
+is_accessible_for_free: true

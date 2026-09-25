@@ -1,15 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# Module: utils.py
-#
-# RateML Template Utilities
-# =========================
-#
-# Minimal utilities for generating RateML-style CUDA/Python code from TVBO.
-# The TVBO LinkML datamodel already has all metadata - we just need code printers.
-#
-"""
-Usage in templates:
+"""Code printers for generating RateML-style CUDA and Python from TVBO.
+
+The LinkML datamodel already carries every piece of metadata a RateML template needs, so all this module adds is the printers that turn a sympy right-hand side into target-language source.
+
     <%
     from tvbo.templates.rateml.utils import cuda_code, python_code
     %>
@@ -17,16 +9,14 @@ Usage in templates:
 """
 
 import re
-from typing import Optional, Dict, Any
+from typing import Any
 
 import sympy.printing.c as spc
 from sympy.printing.pycode import PythonCodePrinter
+
 from tvbo.classes.equation import sympify as tvbo_sympify
 
-
-# =============================================================================
 # CUDA Code Printer
-# =============================================================================
 
 
 class CUDACodePrinter(spc.C99CodePrinter):
@@ -122,9 +112,7 @@ class CUDACodePrinter(spc.C99CodePrinter):
         return result
 
 
-# =============================================================================
 # Numba Code Printer (for TVB Python models)
-# =============================================================================
 
 
 class NumbaPrinter(PythonCodePrinter):
@@ -152,15 +140,13 @@ class NumbaPrinter(PythonCodePrinter):
         return result
 
 
-# =============================================================================
 # Convenience Functions for Templates
-# =============================================================================
 
 _cuda_printer = CUDACodePrinter()
 _numba_printer = NumbaPrinter()
 
 
-def cuda_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
+def cuda_code(expr: Any, local_dict: dict[str, Any] | None = None) -> str:
     """Convert expression to CUDA code string.
 
     Args:
@@ -188,7 +174,7 @@ def cuda_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
     return _cuda_printer.doprint(expr)
 
 
-def python_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
+def python_code(expr: Any, local_dict: dict[str, Any] | None = None) -> str:
     """Convert expression to Python/Numba code string.
 
     Args:
@@ -219,8 +205,6 @@ def _string_to_cuda(expr_str: str) -> str:
     """Simple string-based conversion to CUDA for expressions that fail parsing."""
     result = str(expr_str)
 
-    # Power syntax: ** -> powf
-    # Match x**y patterns
     power_pattern = r"(\w+|\([^)]+\))\s*\*\*\s*(\w+|\([^)]+\))"
     while re.search(power_pattern, result):
         result = re.sub(power_pattern, r"powf(\1, \2)", result)
@@ -236,16 +220,11 @@ def _string_to_cuda(expr_str: str) -> str:
     return result
 
 
-# =============================================================================
 # Template Helpers (direct attribute access, minimal processing)
-# =============================================================================
 
 
 def _enforced_clamp(sv):
-    """Return (lo, hi) when a state variable's ``domain`` opts into hard clamping
-    (``enforce == 'clamp'``), else None. The legacy ``boundaries`` slot is folded
-    into ``domain`` with ``enforce: clamp`` by the Dynamics loader; a domain with
-    the default ``enforce: none`` is descriptive metadata and is not clamped."""
+    """Return (lo, hi) when a state variable's ``domain`` opts into hard clamping (``enforce == 'clamp'``), else None. The legacy ``boundaries`` slot is folded into ``domain`` with ``enforce: clamp`` by the Dynamics loader; a domain with the default ``enforce: none`` is descriptive metadata and is not clamped."""
     from tvbo.utils import domain_enforcement
 
     dom = getattr(sv, "domain", None)
@@ -263,13 +242,9 @@ def has_boundaries(model) -> bool:
 
 def get_initial_value(sv) -> float:
     """Get initial value for state variable, with sensible default."""
-    if hasattr(sv, "initial_value") and sv.initial_value is not None:
-        return float(sv.initial_value)
-    if hasattr(sv, "domain") and sv.domain:
-        lo = getattr(sv.domain, "lo", 0.0) or 0.0
-        hi = getattr(sv.domain, "hi", 1.0) or 1.0
-        return (lo + hi) / 2
-    return 0.0
+    from tvbo.utils import initial_value
+
+    return initial_value(sv)
 
 
 def get_domain_str(obj) -> str:

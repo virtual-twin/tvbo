@@ -1,0 +1,61 @@
+name: Rikitake
+parameters:
+  mu:
+    name: mu
+    value: 1.0
+    description: Dissipation parameter μ.
+  alpha:
+    name: alpha
+    value: 1.0
+    description: Axial asymmetry parameter α.
+description: 'Rikitake two-disk dynamo model for geomagnetic polarity reversals. Exhibits
+
+  chaotic switching between polarity states through nonlinear coupling of
+
+  mechanical and electromagnetic components.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- Rikitake1958
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: -mu*x + y*z
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 1.0
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: -mu*y + x*(z - alpha)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: 1 - x*y
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.6
+number_of_modes: 1
+model_type: generic
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

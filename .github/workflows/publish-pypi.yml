@@ -30,7 +30,6 @@ jobs:
               .github/workflows/publish-pypi.yml
 
       - name: Install project (minimal) + test deps
-        # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI.
         run: |
             uv pip install . pytest pytest-cov pytest-xdist
 
@@ -39,7 +38,7 @@ jobs:
 
   build:
     name: Build distributions
-    needs: tests
+    needs: [tests, ontology]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -54,6 +53,13 @@ jobs:
       - name: Install build backend
         run: uv pip install build twine
 
+      # The committed copy is whatever was last merged by hand; overwriting it with the one built from this release's schema is what makes the shipped knowledge graph match the shipped code.
+      - name: Take the runtime ontology from the ontology job
+        uses: actions/download-artifact@v6
+        with:
+          name: runtime-ontology
+          path: tvbo/data/ontology
+
       - name: Build sdist and wheel
         run: python -m build
 
@@ -66,6 +72,63 @@ jobs:
           name: dist
           path: dist/*
           if-no-files-found: error
+
+  # The ontology ships with the release that determines it: `gen-merged` stamps the version IRI from tvbo/__init__.py, so the wheel, the attached artifacts and the IRI all name one version. It runs on a dispatch too, so a build that would fail at release time fails when it is cheap to fix.
+  ontology:
+    name: Build ontology
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write  # attach artifacts to the release being published
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          activate-environment: true
+
+      # Exactly what the generators import; the extra that declares pybtex is `docs`, which would drag quarto and jupyter in for nothing. A floor rather than a pin, so the ontology tracks linkml the way the rest of the project does.
+      - name: Install generator toolchain
+        run: uv pip install "linkml>=1.11.0" "linkml-runtime>=1.11.0" pyyaml rdflib pybtex
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install ROBOT
+        run: |
+          mkdir -p $HOME/.local/bin
+          curl -L -o $HOME/.local/bin/robot.jar \
+            https://github.com/ontodev/robot/releases/download/v1.9.6/robot.jar
+          curl -L -o $HOME/.local/bin/robot \
+            https://raw.githubusercontent.com/ontodev/robot/v1.9.6/bin/robot
+          chmod +x $HOME/.local/bin/robot
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Build the ontology from the released schema
+        run: make gen-merged gen-shacl
+
+      - name: Hand the runtime ontology to the build
+        uses: actions/upload-artifact@v6
+        with:
+          name: runtime-ontology
+          path: tvbo/data/ontology/tvbo.owl
+          if-no-files-found: error
+
+      - name: Attach ontology to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd ontology
+          sha256sum tvbo.owl tvb-o-struct.owl tvb-o.shacl.ttl > tvbo-ontology.sha256
+          gh release upload "${{ github.event.release.tag_name }}" \
+            tvbo.owl tvb-o-struct.owl tvb-o.shacl.ttl tvbo-ontology.sha256 --clobber
 
   publish:
     name: Publish to PyPI

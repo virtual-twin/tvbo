@@ -1,0 +1,81 @@
+name: Izhikevich2007
+parameters:
+  C:
+    name: C
+    value: 100.0
+    description: Capacitance (pF)
+  k:
+    name: k
+    value: 0.7
+    description: nS/mV
+  vr:
+    name: vr
+    value: -60.0
+    description: Resting potential (mV)
+  vt:
+    name: vt
+    value: -40.0
+    description: Instantaneous threshold (mV)
+  vpeak:
+    name: vpeak
+    value: 35.0
+    description: Spike cutoff (mV)
+  a:
+    name: a
+    value: 0.03
+    description: Recovery rate (1/ms)
+  b:
+    name: b
+    value: -2.0
+    description: Recovery sensitivity (nS)
+  c:
+    name: c
+    value: -50.0
+    description: Reset potential (mV)
+  d:
+    name: d
+    value: 100.0
+    description: Recovery reset (pA)
+description: Izhikevich 2007 model
+source: 'NeuroML2 example: NML2_AbstractCells'
+state_variables:
+  v:
+    name: v
+    equation:
+      rhs: (k*(v - vr)*(v - vt) - u) / C
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -60.0
+  u:
+    name: u
+    equation:
+      rhs: a*(b*(v - vr) - u)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: true
+events:
+  spike:
+    name: spike
+    event_type: stimulus
+    condition:
+      rhs: v > vpeak
+      latex: false
+    affect:
+      rhs: v = c; u = u + d
+      latex: false
+    sampling_rate: 1.0
+    interpolation: linear
+cse: false
+compile: false
