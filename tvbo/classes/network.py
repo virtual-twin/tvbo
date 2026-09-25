@@ -156,7 +156,7 @@ def _find_network_sidecar(
     Searches tvbo/database/networks/ for files matching the atlas and rec- entities.
     When ``segmentation`` / ``scale`` are given, also requires ``seg-<segmentation>`` and ``scale-<scale>``. Falls back to partial matching if exact match fails.
     """
-    for f in NETWORK_DIR.glob("*.yaml"):
+    for f in sorted(NETWORK_DIR.glob("*.yaml")):
         stem = f.stem
         if f"atlas-{atlas}" not in stem or f"rec-{tractogram}" not in stem:
             continue
@@ -196,7 +196,7 @@ def _parse_bids_entities(stem: str) -> dict[str, str]:
 def _filter_networks_by_entities(entities: dict[str, str]) -> list:
     """Return network YAML paths whose BIDS entities match all given filters."""
     matches = []
-    for f in NETWORK_DIR.glob("*.yaml"):
+    for f in sorted(NETWORK_DIR.glob("*.yaml")):
         file_ents = _parse_bids_entities(f.stem)
         if all(file_ents.get(k) == str(v) for k, v in entities.items()):
             matches.append(f)
