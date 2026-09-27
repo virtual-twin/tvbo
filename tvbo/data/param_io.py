@@ -43,6 +43,27 @@ def _default_cache_dir() -> Path:
     return Path.home() / ".tvbo" / "constants"
 
 
+def _cache_root(cache_dir: Path | None) -> Path:
+    """The produced-constant store: *cache_dir* when given, else :func:`_default_cache_dir`."""
+    return Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
+
+
+def _artifact_path(module: str, fname: str, key: tuple, cache_dir: Path | None = None) -> Path:
+    """Where the call ``module.fname`` keyed by *key* (its :func:`_producer_key`) is materialised: ``<store>/<module>.<fname>.<digest>.h5``.
+
+    Content-addressed on the SAME key the in-memory cache uses, so the two can never disagree about which call an artifact holds.
+    """
+    import hashlib
+
+    digest = hashlib.sha256(repr(key).encode()).hexdigest()[:16]
+    return _cache_root(cache_dir) / f"{module}.{fname}.{digest}.h5"
+
+
+def _artifact_producer(path: Path) -> str:
+    """The ``module.function`` an artifact named by :func:`_artifact_path` was produced by."""
+    return Path(path).name.rsplit(".", 2)[0]
+
+
 def clear_cache() -> None:
     """Drop every resolved array. Mainly for tests and long-lived processes."""
     _CACHE.clear()
@@ -289,10 +310,10 @@ def _argument_values(producer: Any, context: Any, where: str) -> dict:
     A `network.*` value is resolved against the context; everything else is a literal.
     Same rule as a pipeline step's arguments, so a producer reads no differently.
     """
-    args = _slot(producer, "arguments", None) or {}
-    items = args.items() if hasattr(args, "items") else [(_slot(a, "name"), a) for a in args]
+    from tvbo.utils import keyed_items
+
     out = {}
-    for k, a in items:
+    for k, a in keyed_items(_slot(producer, "arguments", None), "arguments"):
         value = _slot(a, "value", a)
         out[str(k)] = _resolve_ref(value, context, where) if is_reference(value) else value
     return out
@@ -445,17 +466,11 @@ def materialise(
             )
         return path, _checked_key(path, str(measure), name)
 
-    # The artifact is content-addressed on the SAME key the in-memory cache uses.
-    import hashlib
-
     producer = _slot(param, "producer")
     module, fname, kwargs = _producer_spec(producer, name, context)
     key = _producer_key(module, fname, kwargs)
-    digest = hashlib.sha256(repr(key).encode()).hexdigest()[:16]
-
-    root = Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
-    root.mkdir(parents=True, exist_ok=True)
-    path = root / f"{module}.{fname}.{digest}.h5"
+    path = _artifact_path(module, fname, key, cache_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     if not path.exists():
         _write_bundle(path, _producer_bundle(producer, name, context, (module, fname, kwargs), key))
@@ -534,19 +549,16 @@ def live_artifacts(root: Any, cache_dir: Path | None = None) -> tuple[set, set]:
     *producers* is every ``module.function`` whose liveness could be decided; a producer
     whose arguments cannot be resolved is left out of BOTH sets, so its artifacts are never judged dead on the strength of a failure to look at them.
     """
-    import hashlib
-
-    root_dir = Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
     paths, producers = set(), set()
     for owner in _declared_producers(root):
         name = str(_slot(owner, "name", "<unnamed>"))
         try:
             module, fname, kwargs = _producer_spec(_slot(owner, "producer"), name, root)
-            digest = hashlib.sha256(repr(_producer_key(module, fname, kwargs)).encode()).hexdigest()[:16]
+            path = _artifact_path(module, fname, _producer_key(module, fname, kwargs), cache_dir)
         except Exception:
             continue
         producers.add(f"{module}.{fname}")
-        paths.add(root_dir / f"{module}.{fname}.{digest}.h5")
+        paths.add(path)
     return paths, producers
 
 
@@ -555,11 +567,11 @@ def superseded_artifacts(root: Any, cache_dir: Path | None = None) -> list:
 
     Superseded, not merely old: the content address keys on the producing call *and* on its module's source, so an artifact of a producer this study uses, at a digest this study no longer computes, can only be a version left behind by an edit or by a changed argument. Files belonging to producers not seen here are never listed — they may well be another study's, and this reads one study.
     """
-    root_dir = Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
+    root_dir = _cache_root(cache_dir)
     if not root_dir.is_dir():
         return []
     keep, producers = live_artifacts(root, cache_dir)
-    dead = [p for p in sorted(root_dir.glob("*.h5")) if p not in keep and p.name.rsplit(".", 2)[0] in producers]
+    dead = [p for p in sorted(root_dir.glob("*.h5")) if p not in keep and _artifact_producer(p) in producers]
     return sorted(dead, key=lambda p: -p.stat().st_size)
 
 

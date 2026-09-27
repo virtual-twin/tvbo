@@ -20,7 +20,7 @@ from typing import Any
 
 import numpy as np
 
-from ._backends import BackendSpec, axis_kind_of, resolve_backend
+from ._backends import BackendSpec, axis_kind_of, effective_backend, resolve_backend
 
 # Canonical published tvbo image. CI (``.github/workflows/docker.yml``) pushes this on every ``main``/``dev`` commit, tagged ``:<branch>``, ``:<version>``, ``:<sha>`` and ``:latest`` (default branch), so a registry reference tracks the source rather than a local file that goes stale.
 DEFAULT_CONTAINER_IMAGE = "ghcr.io/virtual-twin/tvbo"
@@ -58,8 +58,7 @@ def resolve_container_ref(raw: Any) -> str | None:
     - a tvbo registry reference with no tag (``docker://…/tvbo``).
 
     No container declared ⇒ ``None``: tasks run in the surrounding environment (bare, or the requirements venv ``setup.sh`` provisions — see :attr:`WorkflowPlan.needs_env_layer`).
-    ``requirements`` are provisioned by whichever substrate the ``container`` field selects;
-    they do NOT force a container of their own.
+    ``requirements`` are provisioned by whichever substrate the ``container`` field selects; they do NOT force a container of their own.
     """
     val = str(raw or "").strip()
     if not val:
@@ -267,11 +266,9 @@ def extract_axes(experiment) -> list[SweepAxis]:
 
     The axis kind is inferred from the parameter path (see :func:`tvbo.cli._backends.axis_kind_of`); placement defaults to ``"auto"`` and is resolved by :func:`plan`.
     """
-    explorations = getattr(experiment, "explorations", None) or {}
-    if hasattr(explorations, "values"):
-        explorations = list(explorations.values())
-    else:
-        explorations = list(explorations)
+    from tvbo.utils import as_list
+
+    explorations = as_list(getattr(experiment, "explorations", None))
 
     # A from_experiment:branch experiment restarts an analysis over a sibling run's whole recorded branch: its exploration axes carry no domain (values come from the branch at run time), so they are runtime-sized shard axes rather than statically-valued grids.
     _ini = getattr(experiment, "initial_state", None)
@@ -284,7 +281,7 @@ def extract_axes(experiment) -> list[SweepAxis]:
     out: list[SweepAxis] = []
     seen: set[str] = set()
     for expl in explorations:
-        for ax in _as_list(getattr(expl, "space", None)):
+        for ax in as_list(getattr(expl, "space", None)):
             param = str(getattr(ax, "parameter", "") or "")
             if not param:
                 continue
@@ -312,8 +309,7 @@ def extract_axes(experiment) -> list[SweepAxis]:
 def _dataset_subject_axis(experiment) -> SweepAxis | None:
     """A workflow-fanned ``subject`` axis when the experiment has a per-subject target.
 
-    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``);
-    each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that subject's empirical target. Returns ``None`` when the experiment declares no dataset-sourced observation.
+    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``); each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that subject's empirical target. Returns ``None`` when the experiment declares no dataset-sourced observation.
     """
     ids_fn = getattr(experiment, "dataset_subject_ids", None)
     if not callable(ids_fn):
@@ -354,27 +350,9 @@ def _norm_requirement(item) -> dict[str, Any]:
 def _normalize_env(raw) -> list[dict[str, str]]:
     """Canonicalise an engine block's ``env`` into a shell-ready list.
 
-    Accepts the YAML list form ``[{name, value}]`` and the mapping form ``{NAME: value}`` produced by ``--set slurm.env.NAME=value``. Booleans lower to ``true``/``false``; every value is shell-quoted so the template can emit ``export NAME=value`` verbatim without branching on shape or escaping.
+    Accepts every shape :func:`_pairs_to_map` does — the YAML list form ``[{name, value}]`` and the mapping form ``{NAME: value}`` produced by ``--set slurm.env.NAME=value`` — so a name given twice keeps its last value. Booleans lower to ``true``/``false``; every value is shell-quoted so the template can emit ``export NAME=value`` verbatim without branching on shape or escaping.
     """
-    import shlex
-
-    pairs: list[tuple[Any, Any]] = []
-    if isinstance(raw, dict):
-        for name, value in raw.items():
-            # schema-inlined EnvironmentVariable carries {name, value}; --set is scalar.
-            pairs.append((name, value.get("value") if isinstance(value, dict) else value))
-    elif isinstance(raw, (list, tuple)):
-        for item in raw:
-            if isinstance(item, dict):
-                pairs.append((item.get("name"), item.get("value")))
-    out: list[dict[str, str]] = []
-    for name, value in pairs:
-        if name is None:
-            continue
-        if isinstance(value, bool):
-            value = str(value).lower()
-        out.append({"name": str(name), "value": shlex.quote(str(value))})
-    return out
+    return [{"name": name, "value": shlex.quote(value)} for name, value in _named_values(raw)]
 
 
 def _pairs_to_map(items) -> dict[str, Any]:
@@ -412,19 +390,16 @@ def _normalize_directives(raw) -> list[dict[str, str]]:
 
     Same name-keyed shapes as :func:`_normalize_env`, but the values are scheduler directive tokens (e.g. a Slurm ``#SBATCH --<name>=<value>`` line), not shell words, so they are emitted verbatim rather than shell-quoted.
     """
-    src = (
-        raw.items()
-        if isinstance(raw, dict)
-        else (((i.get("name"), i.get("value")) for i in raw if isinstance(i, dict)) if isinstance(raw, (list, tuple)) else ())
-    )
-    out: list[dict[str, str]] = []
-    for name, value in src:
-        if name is None:
-            continue
-        if isinstance(value, bool):
-            value = str(value).lower()
-        out.append({"name": str(name), "value": str(value)})
-    return out
+    return [{"name": name, "value": value} for name, value in _named_values(raw)]
+
+
+def _named_values(raw) -> list[tuple[str, str]]:
+    """``(name, value)`` string pairs of a name-keyed slot, booleans lowered to ``true``/``false`` and nameless entries dropped."""
+    return [
+        (str(name), str(value).lower() if isinstance(value, bool) else str(value))
+        for name, value in _pairs_to_map(raw).items()
+        if name is not None
+    ]
 
 
 def _as_lines(raw) -> list[str]:
@@ -571,14 +546,12 @@ def plan(
 ) -> WorkflowPlan:
     """Compute a :class:`WorkflowPlan` from an Experiment + spec.
 
-    *workflow_spec* mirrors the Study-level ``workflow:`` block from
-    ``study.yaml`` (§4.10.1). Missing keys use sensible defaults.
+    *workflow_spec* mirrors the Study-level ``workflow:`` block from ``study.yaml`` (§4.10.1). Missing keys use sensible defaults, and an unset *backend* is the experiment's own (see :func:`tvbo.cli._backends.effective_backend`).
     """
+    from tvbo.utils import as_list
+
     spec = dict(workflow_spec or {})
-    # No explicit backend → the experiment self-selects via execution.backend (a spiking network declares 'brian2'), defaulting to tvboptim.
-    if not backend:
-        backend = getattr(getattr(experiment, "execution", None), "backend", None) or "tvboptim"
-    bk = resolve_backend(backend)
+    bk = resolve_backend(effective_backend(experiment, backend))
 
     distribute = dict(spec.get("distribute") or {})
     explicit_vec = set(distribute.get("vectorize") or [])
@@ -673,7 +646,7 @@ def plan(
     # Software dependencies come from the experiment's schema-native environment.requirements (overridable via workflow_spec["requirements"]).
     _exp_env = getattr(experiment, "environment", None)
     _req_raw = spec.get("requirements") or (getattr(_exp_env, "requirements", None) if _exp_env is not None else None) or []
-    _reqs = [r for r in (_norm_requirement(x) for x in _as_list(_req_raw)) if r.get("package") or r.get("source_url")]
+    _reqs = [r for r in (_norm_requirement(x) for x in as_list(_req_raw)) if r.get("package") or r.get("source_url")]
 
     from ._common import experiment_key as _experiment_key  # canonical (id-first) key
 
@@ -742,15 +715,12 @@ def plan(
         _record_used_param_deps(getattr(_cpl, "parameters", None))
     # A sourced data-driven stimulus plays another run's recording (Event.parameters.data → Parameter.used).
     _events = getattr(experiment, "events", None)
-    for _ev in list(_events.values()) if hasattr(_events, "values") else _as_list(_events or []):
+    for _ev in as_list(_events):
         _record_used_param_deps(getattr(_ev, "parameters", None))
     # Exploration-builder arguments (ExplorationAxis.builder → Argument.used).
-    _expls = getattr(experiment, "explorations", None)
-    for _expl in list(_expls.values()) if hasattr(_expls, "values") else _as_list(_expls or []):
-        _space = getattr(_expl, "space", None)
-        for _axis in list(_space.values()) if hasattr(_space, "values") else _as_list(_space or []):
-            _bargs = getattr(getattr(_axis, "builder", None), "arguments", None)
-            for _barg in list(_bargs.values()) if hasattr(_bargs, "values") else _as_list(_bargs or []):
+    for _expl in as_list(getattr(experiment, "explorations", None)):
+        for _axis in as_list(getattr(_expl, "space", None)):
+            for _barg in as_list(getattr(getattr(_axis, "builder", None), "arguments", None)):
                 _dep_from_used(getattr(_barg, "used", None))
 
     # An explicit run venv wins over a declared container, with a notice.
@@ -769,7 +739,7 @@ def plan(
         engine=engine,
         out_dir=out_dir,
         container=_container,
-        container_binds=[str(b) for b in _as_list(spec.get("container_binds") or [])],
+        container_binds=[str(b) for b in as_list(spec.get("container_binds") or [])],
         container_args=(spec.get("container_args") or None),
         retries=int(spec.get("retries") or 0),
         rng=str(spec.get("rng") or "deterministic"),
@@ -860,11 +830,13 @@ def merge_workflow_spec(study, experiment=None) -> dict[str, Any]:
 
     The experiment block refines the study block: only the fields it sets take precedence, the rest are inherited. Pass the experiment object directly — it need not carry a ``key``. With no experiment, only the study block is returned.
     """
+    from tvbo.utils import deep_merge
+
     base = _canonicalize_engine_maps(_as_plain_dict(getattr(study, "workflow", None)))
     override = _canonicalize_engine_maps(
         _as_plain_dict(getattr(experiment, "workflow", None)) if experiment is not None else {}
     )
-    return _deep_merge(base, override)
+    return deep_merge(base, override)
 
 
 def _as_plain_dict(obj) -> dict[str, Any]:
@@ -896,7 +868,3 @@ def _plainify(obj):
     if hasattr(obj, "__dict__"):
         return {k: _plainify(v) for k, v in vars(obj).items() if not k.startswith("_") and not _unset(v)}
     return obj
-
-
-from tvbo.utils import as_list as _as_list
-from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (late-imported shared utils)

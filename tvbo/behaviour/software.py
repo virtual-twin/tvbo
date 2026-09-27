@@ -12,36 +12,16 @@ A tool's unit vocabulary is a fact about the tool. LEMS calls ``Hz`` a ``per_tim
 
 from __future__ import annotations
 
-import os
 import re
 from functools import lru_cache
+
+from tvbo.behaviour._runtime import Catalogued
 
 _CODEGEN_FORMAT_RE = re.compile(r"^codegen_format:\s*(\S+)\s*$", re.MULTILINE)
 
 
-class SimulationToolBehaviour:
+class SimulationToolBehaviour(Catalogued):
     """A software tool's database entry, with its code-generation capabilities."""
-
-    @classmethod
-    def from_file(cls, path: str | os.PathLike):
-        """Load a SimulationTool from a YAML file."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.load(str(path), cls)
-
-    @classmethod
-    def from_db(cls, name: str):
-        """Load a SimulationTool by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("SimulationTool", name)))
-
-    @classmethod
-    def list_db(cls) -> list[str]:
-        """List available software entries in the tvbo database."""
-        from tvbo.data.registry import list_entries
-
-        return list_entries("SimulationTool")
 
     @classmethod
     def for_format(cls, format_key: str):

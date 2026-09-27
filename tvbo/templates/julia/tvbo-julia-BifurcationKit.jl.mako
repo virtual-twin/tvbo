@@ -1,18 +1,9 @@
 using BifurcationKit
 using OrdinaryDiffEq
-<%!
-from tvbo.adapters.julia_model import build_model_context
-%>
+<%namespace name="model_fn" file="/tvbo-julia-model.jl.mako"/>
 <%
-## All variables are pre-computed by BifurcationKitAdapter._prepare_context()
-## Template only places values — no processing.
+## All variables are pre-computed by BifurcationKitAdapter._prepare_context(); the template only places them.
 svs = list(model.state_variables.values())
-mc = build_model_context(model, network, constraints=constraints)
-n_nodes = mc.get("n_nodes", 1)
-# A single node records each state variable directly; a network reduces derived observables across nodes below.
-_rec = ", ".join(f"{sv.name} = x[{i+1}]" for i, sv in enumerate(svs))
-# The record argument supplies the continuation parameter, so exclude it from the closure's destructure.
-_destr_no_ics = ", ".join(n for n in (nm.strip() for nm in mc["destructure"].split(",")) if n and n != ICS)
 %>
 ##
 <%include file="/tvbo-julia-model.jl.mako" args="mc=mc" />
@@ -63,7 +54,7 @@ x0_eq = _find_steady_state(${model.name}!, x0, p)
 % if network:
 ## Recompute derived observables per node, reusing the model's equation emission, and reduce to max and mean.
 record_from_sol = (${mc['arg_x']}, ${ICS}; k...) -> begin
-    (; ${_destr_no_ics}) = p
+    (; ${record_destructure}) = p
     N = ${n_nodes}
 % for name, rhs in mc['derived_params']:
     ${name} = ${rhs}
@@ -75,26 +66,15 @@ record_from_sol = (${mc['arg_x']}, ${ICS}; k...) -> begin
     _${name}_max = -Inf; _${name}_sum = 0.0
 % endfor
     @inbounds for i in 1:N
-% for line in mc['unpack']:
-        ${line}
-% endfor
-% for line in mc.get('pernode_gather', []):
-        ${line}
-% endfor
-% for line in mc['coupling_body']:
-        ${line}
-% endfor
-% for name, rhs in mc['derived_vars']:
-        ${name} = ${rhs}
-% endfor
+${model_fn.node_locals(mc, '        ')}\
 % for name in mc['record_obs']:
         _${name}_max = max(_${name}_max, ${name}); _${name}_sum += ${name}
 % endfor
     end
-    (${', '.join(f'{name}_max = _{name}_max, {name}_mean = _{name}_sum / N' for name in mc['record_obs'])},)
+    (${record_fields},)
 end
 % else:
-record_from_sol = (x, p; k...) -> (${_rec},)
+record_from_sol = (x, p; k...) -> (${record_fields},)
 % endif
 
 # Bifurcation Problem

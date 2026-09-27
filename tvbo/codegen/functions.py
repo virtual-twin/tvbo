@@ -318,15 +318,15 @@ def function_to_callable(
     0.5
     """
     code = generate_function(func, format=format, user_functions=user_functions)
+    return callable_from_code(code, str(func.name), format=format, namespace=namespace)
 
-    # Start with user-provided namespace or empty dict
-    if namespace is None:
-        namespace = {}
-    else:
-        # Copy to avoid mutating the user's dict
-        namespace = dict(namespace)
 
-    # Always add required imports for the format
+def callable_from_code(code: str, name: str, format: str = "jax", namespace: dict | None = None) -> Callable:
+    """Execute generated function code and return the callable it defines under *name*.
+
+    The code runs in a copy of *namespace*, so the caller's dict is never mutated, holding the modules the *format* emits calls into — ``jax`` and ``jnp`` for JAX, ``np`` for NumPy — unless the caller already bound those names.
+    """
+    namespace = dict(namespace or {})
     if format == "jax":
         import jax
         import jax.numpy as jnp
@@ -337,9 +337,8 @@ def function_to_callable(
         import numpy as np
 
         namespace.setdefault("np", np)
-
     exec(code, namespace)
-    return namespace[func.name]
+    return namespace[name]
 
 
 # Convenience alias

@@ -49,47 +49,8 @@ class PyRatesBifurcationAdapter(ContinuationAdapter):
 
     # ── Public API ───────────────────────────────────────────────────────
 
-    def run(self, **kwargs) -> BifurcationResult | dict[str, BifurcationResult]:
-        """Run bifurcation analysis for each continuation in the experiment.
-
-        Returns:
-        -------
-        BifurcationResult or dict[str, BifurcationResult]
-            Single result if one continuation, dict if multiple.
-        """
-        conts = self.continuations()
-        if not conts:
-            raise ValueError(
-                "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
-            )
-
-        results = {}
-        for name, cont in conts.items():
-            model = self.resolve_dynamics(cont)
-            results[name] = self._run_single(model, cont, **kwargs)
-
-        if len(results) == 1:
-            return next(iter(results.values()))
-        return results
-
-    def render_code(self, model=None, continuation=None, **kwargs) -> str:
-        """Render Python code for the PyRates/PyCoBi bifurcation workflow.
-
-        Parameters
-        ----------
-        model : Dynamics, optional
-            The dynamics model. Defaults to ``experiment.dynamics``.
-        continuation : Continuation, optional
-            The continuation spec. Defaults to first in experiment.
-
-        Returns:
-        -------
-        str
-            Executable Python code string.
-        """
-        model = model or self.experiment.dynamics
-        continuation = self.resolve_continuation(continuation)
-
+    def render_continuation(self, model, continuation, **kwargs) -> str:
+        """Executable Python for the PyRates/PyCoBi bifurcation workflow of *continuation* on *model*."""
         fp = self._get_free_parameter(continuation, model)
         fp_name = fp["name"]
         p_min, p_max = fp["p_min"], fp["p_max"]
@@ -188,8 +149,8 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
 
     # ── Core workflow ────────────────────────────────────────────────────
 
-    def _run_single(self, model, cont, **kwargs):
-        """Run a single continuation analysis."""
+    def run_one(self, model, cont, name, **kwargs) -> BifurcationResult:
+        """Continue *cont* on *model* through PyRates and PyCoBi, with the periodic-orbit and codim-2 branches it declares."""
         from pycobi import ODESystem
         from pyrates import clear
 

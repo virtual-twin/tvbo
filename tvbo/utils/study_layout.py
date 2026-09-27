@@ -17,7 +17,7 @@ One record covers every kind of study: an entry carrying ``in_templates`` belong
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from functools import cache, lru_cache
 from pathlib import Path
 from typing import Any
@@ -151,20 +151,31 @@ def study_path(role: str, root: Path | str | None = None, layout: StudyLayout | 
     return Path(root) / rel if root is not None else rel
 
 
-def study_root(inside: Path | str, layout: StudyLayout | None = None) -> Path:
-    """The study dataset ``inside`` belongs to — the nearest ancestor declaring itself one.
+def _study_roots(inside: Path | str, layout: StudyLayout | None = None) -> Iterator[Path]:
+    """Every study dataset ``inside`` belongs to, nearest first: each ancestor, ``inside`` included, that declares itself one.
 
-    A BIDS dataset is identified by its own ``dataset_description.json``, so that file is what the walk looks for; a helper handed a figure path can then resolve any other role without its caller passing a root it already implies. Raises rather than guessing, because a wrong root silently writes into the wrong study.
+    A BIDS dataset is identified by its own ``dataset_description.json``, so that file is what the walk looks for. Raises once the walk has found none, rather than guessing, because a wrong root silently writes into the wrong study; a caller that stops at the first root never walks further than it.
     """
     marker = file_relpath("dataset_description", layout=layout)
     start = Path(inside).resolve()
+    found = False
     for candidate in (start, *start.parents):
         if (candidate / marker).is_file():
-            return candidate
-    raise FileNotFoundError(
-        f"{start} is not inside a study dataset: no {marker} in it or any parent. "
-        f"Create one with `tvbo study init`, or pass the study root explicitly."
-    )
+            found = True
+            yield candidate
+    if not found:
+        raise FileNotFoundError(
+            f"{start} is not inside a study dataset: no {marker} in it or any parent. "
+            f"Create one with `tvbo study init`, or pass the study root explicitly."
+        )
+
+
+def study_root(inside: Path | str, layout: StudyLayout | None = None) -> Path:
+    """The study dataset ``inside`` belongs to — the nearest ancestor declaring itself one.
+
+    A helper handed a figure path can then resolve any other role without its caller passing a root it already implies. Raises when ``inside`` is in no study dataset.
+    """
+    return next(_study_roots(inside, layout))
 
 
 def outermost_study_root(inside: Path | str, layout: StudyLayout | None = None) -> Path:
@@ -172,15 +183,8 @@ def outermost_study_root(inside: Path | str, layout: StudyLayout | None = None) 
 
     :func:`study_root` answers "which study is this file in", which is what a member's own paths resolve against. This answers "which tree is it part of", which is what a reference from one member to another has to be resolved within: searching wider than the shared root is how a binding silently finds a same-named study in an unrelated checkout.
     """
-    marker = file_relpath("dataset_description", layout=layout)
-    start = Path(inside).resolve()
-    found = None
-    for candidate in (start, *start.parents):
-        if (candidate / marker).is_file():
-            found = candidate
-    if found is None:
-        raise FileNotFoundError(f"{start} is not inside a study dataset: no {marker} in it or any parent.")
-    return found
+    *_, outermost = _study_roots(inside, layout)
+    return outermost
 
 
 _DECLARED_CITEKEY = re.compile(r"^citekey:\s*[\"']?([\w.-]+)", re.MULTILINE)
@@ -336,7 +340,7 @@ def gitignore_lines(
             lines.append(f"{rel}/")
         elif tracked == _TRACK_DECLARED:
             lines.extend(_declared_files_rules(rel, files, study))
-    lines.extend(interpolate(rel, study) for rel, f in iter_files(layout, templates) if str(f.tracked) == _TRACK_NONE)
+    lines.extend(interpolate(rel, study) for rel, f in files if str(f.tracked) == _TRACK_NONE)
     return lines
 
 
@@ -376,20 +380,25 @@ def bidsignore_lines(
     return lines
 
 
+def _tree_rows(
+    layout: StudyLayout, study: str, templates: tuple[str, ...]
+) -> Iterator[tuple[str, StudyDirectory | StudyFile | None]]:
+    """Each line of :func:`tree` with the entry it renders, ``None`` for the study root."""
+    yield f"{study}/", None
+    yield from ((f"  {interpolate(str(f.name), study)}", f) for rel, f in iter_files(layout, templates) if "/" not in rel)
+    for rel, d in walk(layout, templates):
+        depth = rel.count("/") + 1
+        yield f"{'  ' * depth}{d.name}/", d
+        yield from ((f"{'  ' * (depth + 1)}{f.name}", f) for f in d.files or [] if _selected(f, templates))
+
+
 def tree(
     layout: StudyLayout | None = None,
     study: str = "<Study>",
     templates: tuple[str, ...] = (),
 ) -> str:
     """The layout as an indented tree, for documentation to render rather than restate."""
-    layout = layout or load_layout()
-    out = [f"{study}/"]
-    out.extend(f"  {interpolate(str(f.name), study)}" for rel, f in iter_files(layout, templates) if "/" not in rel)
-    for rel, d in walk(layout, templates):
-        depth = rel.count("/") + 1
-        out.append(f"{'  ' * depth}{d.name}/")
-        out.extend(f"{'  ' * (depth + 1)}{f.name}" for f in d.files or [] if _selected(f, templates))
-    return "\n".join(out)
+    return "\n".join(line for line, _ in _tree_rows(layout or load_layout(), study, templates))
 
 
 def markers(name: str) -> tuple[str, str]:
@@ -412,11 +421,11 @@ def layout_block(
 
     Every entry's own ``description`` travels with it, so the tree and its explanation come from the one record and a document showing the layout cannot fall behind it.
     """
-    layout = layout or load_layout()
-    width = max((len(line) for line in tree(layout, study, templates).splitlines()), default=0)
+    rows = list(_tree_rows(layout or load_layout(), study, templates))
+    width = max((len(line) for line, _ in rows), default=0)
     lines = ["```"]
-    for line in tree(layout, study, templates).splitlines():
-        note = _note_for(line, layout, study, templates)
+    for line, entry in rows:
+        note = _note_for(entry)
         lines.append(f"{line.ljust(width + 2)}{note}".rstrip() if note else line)
     lines.append("```")
     return _wrap("STUDY LAYOUT", "\n".join(lines))
@@ -503,18 +512,13 @@ def _uncapitalize(text: str) -> str:
     return text[:1].lower() + text[1:] if first.islower() or not first else text
 
 
-def _note_for(line: str, layout: StudyLayout, study: str, templates: tuple[str, ...]) -> str:
-    """Gloss for the entry this tree line renders, keyed by its name and depth.
+def _note_for(entry: StudyDirectory | StudyFile | None) -> str:
+    """Gloss for the tree line rendering ``entry``, or ``""`` for the study root and an undescribed entry.
 
     The first sentence of the entry's own ``description``, whole rather than clipped, so every note is a complete thought and the record stays the only place the text is written.
     """
-    depth = (len(line) - len(line.lstrip())) // 2
-    name = line.strip().rstrip("/")
-    for rel, entry in [*walk(layout, templates), *iter_files(layout, templates)]:
-        if rel.count("/") + 1 == depth and interpolate(str(entry.name), study) == name:
-            head = _sentence(entry)
-            return _uncapitalize(head) if head else ""
-    return ""
+    head = _sentence(entry)
+    return _uncapitalize(head) if head else ""
 
 
 def splice_layout(text: str, block: str) -> str:

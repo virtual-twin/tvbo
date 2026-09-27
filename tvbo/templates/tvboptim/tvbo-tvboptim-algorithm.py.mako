@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-<%doc>TVB-Optim Algorithm Template. Context: experiment (SimulationExperiment).</%doc>
+<%doc>TVB-Optim Algorithm Template. Context: experiment (SimulationExperiment); `stream_plan` is the experiment's streaming_post_eval_plan when the including template already holds it.</%doc>
+<%page args="stream_plan=None"/>\
 <%
 from tvbo.codegen import render_expression
 from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, is_external_observation,
     get_include_info, get_all_observations_from_algo, get_all_hyperparams,
-    streaming_post_eval_plan, selection_settings,
+    streaming_post_eval_plan, selection_settings, monitor_class_name, coupling_param_keys,
 )
 
 # Backend key this template targets — used for streaming-reducer registry lookups.
 _STREAMING_BACKEND = 'tvboptim'
 
 # Shared with the experiment template, so the two sides cannot drift: non-empty `names` means post_model_fn returns streamed values rather than a trajectory.
-_pp = streaming_post_eval_plan(experiment)
+_pp = stream_plan if stream_plan is not None else streaming_post_eval_plan(experiment)
 _pp_names = _pp['names']
 _pp_deliverables = _pp['deliverables']
 
@@ -183,11 +184,7 @@ _, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if 
 
 # Build coupling parameter lookup: param_name -> coupling_key
 from tvbo.utils import network_couplings
-coupling_param_to_key = {}
-for coupling_key, coupling_obj in network_couplings(experiment.network).items():
-    if coupling_obj.parameters:
-        for param_name in coupling_obj.parameters.keys():
-            coupling_param_to_key[param_name] = coupling_key
+coupling_param_to_key = coupling_param_keys(network_couplings(experiment.network))
 
 import re as _re_sym
 model_param_names = list(model.parameters.keys()) if model and getattr(model, 'parameters', None) else []
@@ -463,7 +460,7 @@ def run_${algo_name}(
     for obs in simulated_observations:
         obs_def = observations_dict.get(obs)
         if obs_def and hasattr(obs_def, 'pipeline') and obs_def.pipeline:
-            obs_class = ''.join(w.capitalize() for w in obs.replace('_', ' ').split())
+            obs_class = monitor_class_name(obs)
             pipeline_observations.append((obs, obs_class))
 
     # For source observations that need sliding-window buffers, we need their
@@ -477,7 +474,7 @@ def run_${algo_name}(
     # monitors like `_bold_monitor` undefined -> UnboundLocalError.)
     source_monitors = []
     for src_obs in source_observations_needed:
-        src_class = ''.join(w.capitalize() for w in src_obs.replace('_', ' ').split())
+        src_class = monitor_class_name(src_obs)
         source_monitors.append((src_obs, src_class))
 
     # Note: Derived observations don't have monitor classes - they're computed from other observations
@@ -1150,7 +1147,7 @@ def _${algo_name}_tuning_core_impl(
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
 <%
-    src_obs_class = ''.join(w.capitalize() for w in src_obs.replace('_', ' ').split())
+    src_obs_class = monitor_class_name(src_obs)
 %>
         _${src_obs}_sample = _${src_obs}_monitor(result)
         _${src_obs}_sample_data = _${src_obs}_sample.data if hasattr(_${src_obs}_sample, 'data') else _${src_obs}_sample
@@ -1323,7 +1320,7 @@ def _${algo_name}_tuning_core_impl(
         has_pipeline = False
 
     # Generate Python class name for pipeline-based observations
-    obs_class_name = ''.join(w.capitalize() for w in obs.replace('_', ' ').split())
+    obs_class_name = monitor_class_name(obs)
 %>
 % if obs_def and obs_source and state_idx is not None:
         ${obs} = jnp.mean(result.data[${obs_tail_start(obs_def)}:, ${state_idx}], axis=0)  # Mean over the declared window, per node

@@ -55,6 +55,8 @@ import yaml
 from linkml_runtime.loaders import yaml_loader as _linkml_yaml_loader
 from linkml_runtime.utils.yamlutils import DupCheckYamlLoader
 
+from tvbo.utils import deep_merge
+
 _MERGE_TAG = "tag:yaml.org,2002:merge"
 _INCLUDE_TAG = "!include"
 
@@ -235,10 +237,10 @@ def _make_loader_class(base_dir: Path) -> type[DupCheckYamlLoader]:
     return _TVBOLoader
 
 
-def _looks_like_path(source: Any) -> bool:
-    """Heuristic: short string with no newline, treated as a path candidate.
+def looks_like_path(source: Any) -> bool:
+    """Whether *source* names an existing file or directory rather than being the document text itself.
 
-    Avoids ``OSError: File name too long`` when callers pass full YAML content as a string.
+    A path object always counts; a string counts when it is short, has no newline and exists. Checking the shape before the filesystem avoids ``OSError: File name too long`` when a caller passes a whole document as a string.
     """
     if isinstance(source, os.PathLike):
         return True
@@ -286,29 +288,12 @@ def resolve_edge_var_aliases(edges: Any) -> None:
                 edge[canonical] = edge.pop(alias)
 
 
-def _fold_edge_var_aliases(obj: Any) -> Any:
-    """Recursively apply :func:`resolve_edge_var_aliases` to every ``edges`` / ``edge_template`` value, wherever the network sits in the document.
-
-    Keying on the slot name rather than on the enclosing class keeps the fold scoped to edges while staying agnostic about the document root — the same alias works whether a ``Network``, a ``SimulationExperiment`` or a ``SimulationStudy`` is being loaded.
-    """
-    if isinstance(obj, dict):
-        for key in ("edges", "edge_template"):
-            resolve_edge_var_aliases(obj.get(key))
-        for v in obj.values():
-            _fold_edge_var_aliases(v)
-    elif isinstance(obj, list):
-        for x in obj:
-            _fold_edge_var_aliases(x)
-    return obj
-
-
 def _lift_one_distribution(obj: dict) -> None:
     """Complete every terse ``*distribution`` mapping written directly on *obj*, in place.
 
     A ``Distribution`` carries its support under ``domain``; a bare ``lo``/``hi``/``step`` on any ``*distribution`` slot is lifted into ``domain``, and the distribution ``name`` is materialised as ``Uniform`` so the lifted form is a complete, valid ``{name: Uniform, domain: {lo, hi}}``. Any other keys (seed, axis, …) are preserved; a value that already states a ``domain`` is left untouched.
 
-    One level, so the dialect can apply it to each object as it is constructed;
-    :func:`_apply_dict_shorthands` walks a whole document with it.
+    One level, so the dialect can apply it to each object as it is constructed; :func:`_apply_dict_shorthands` walks a whole document with it.
     """
     for key, value in list(obj.items()):
         if (
@@ -364,11 +349,15 @@ def _lift_one_legend(obj: dict) -> None:
 
 
 def _apply_dict_shorthands(obj: Any) -> Any:
-    """Apply every one-level dict convenience at every depth of *obj*: :func:`_lift_one_distribution` and :func:`_lift_one_legend` on the way down, :func:`_split_one_scalar_unit` on the way back up.
+    """Apply every one-level dict convenience at every depth of *obj*: the edge var-slot aliases on its ``edges`` / ``edge_template``, the legacy domain slots of its ``state_variables``, :func:`_lift_one_distribution` and :func:`_lift_one_legend` on the way down, :func:`_split_one_scalar_unit` on the way back up.
 
-    One walk rather than one per convenience, so a document is traversed once however many of them there are. In place, because an ``!include``d fragment is a dict SUBCLASS carrying the file it came from, and rebuilding it as a plain dict is how that origin gets lost.
+    One walk rather than one per convenience, so a document is traversed once however many of them there are. A parent folds its children before the walk reaches them, so the terse ``distribution`` a state variable's ``boundaries`` fold leaves behind is completed when the walk lifts that state variable. The edge and state-variable folds key on the slot name rather than on the enclosing class, so they apply wherever a network or a model sits in the document. In place, because an ``!include``d fragment is a dict SUBCLASS carrying the file it came from, and rebuilding it as a plain dict is how that origin gets lost.
     """
     if isinstance(obj, dict):
+        for key in ("edges", "edge_template"):
+            resolve_edge_var_aliases(obj.get(key))
+        for sv in _state_variable_dicts(obj.get("state_variables")):
+            _fold_one_state_variable_domain(sv)
         _lift_one_distribution(obj)
         _lift_one_legend(obj)
         for value in obj.values():
@@ -384,12 +373,11 @@ def _fold_one_state_variable_domain(sv: dict) -> None:
     """Fold a single state variable's legacy domain slots in place.
 
     * ``range`` (a ``domain`` alias) → ``domain`` when no explicit ``domain`` is set.
-    * ``boundaries`` (deprecated hard-clamp slot) → ``domain`` with ``enforce: clamp``;
-      a co-existing descriptive ``domain`` is preserved as the sampling ``distribution`` (a terse ``{lo, hi}`` that the distribution-lift then completes) so a half-open
-      clamp cannot drop a finite IC-sampling range.
+    * ``boundaries`` (deprecated hard-clamp slot) → ``domain`` with ``enforce: clamp``; a co-existing descriptive ``domain`` is preserved as the sampling ``distribution`` (a terse ``{lo, hi}`` that the distribution-lift then completes) so a half-open clamp cannot drop a finite IC-sampling range.
 
-    A ``Range`` object or an ``(lo, hi[, step])`` sequence is accepted as well as a mapping:
-    the class carries no ``boundaries`` slot, so a value this cannot read would be popped and lost without a word.
+    The schema declares ``range``/``boundaries`` as ``domain`` aliases, but LinkML aliases are metadata only (the loader keys on the canonical slot), so the fold runs on the dict before LinkML sees it: on every state variable of a loaded document (:func:`_apply_dict_shorthands`) and on each state variable the Python construction path builds (``tvbo.datamodel.dialect``), so ``yaml_loader.load``/``loads`` matches ``Dynamics.from_file`` for legacy files.
+
+    A ``Range`` object or an ``(lo, hi[, step])`` sequence is accepted as well as a mapping: the class carries no ``boundaries`` slot, so a value this cannot read would be popped and lost without a word.
     """
     if "range" in sv:
         if sv.get("domain") is None:
@@ -428,23 +416,10 @@ def _as_bounds_mapping(bounds: Any) -> dict:
     return {k: v for k, v in read.items() if v is not None}
 
 
-def _fold_state_variable_domains(obj: Any) -> Any:
-    """Recursively fold legacy ``boundaries``/``range`` on state variables into ``domain`` (see :func:`_fold_one_state_variable_domain`), at any nesting depth.
-
-    The schema declares ``range``/``boundaries`` as ``domain`` aliases, but LinkML aliases are metadata only (the loader keys on the canonical slot), so — like the slot-alias and distribution-shortcut folds — this is applied before LinkML sees the data. Runs on both load paths so ``yaml_loader.load``/``loads`` matches ``Dynamics.from_file`` for legacy files.
-    """
-    if isinstance(obj, dict):
-        svs = obj.get("state_variables")
-        sv_iter = svs.values() if isinstance(svs, dict) else svs if isinstance(svs, list) else []
-        for sv in sv_iter:
-            if isinstance(sv, dict):
-                _fold_one_state_variable_domain(sv)
-        for v in obj.values():
-            _fold_state_variable_domains(v)
-    elif isinstance(obj, list):
-        for x in obj:
-            _fold_state_variable_domains(x)
-    return obj
+def _state_variable_dicts(svs: Any) -> list:
+    """The mapping members of a ``state_variables`` value, keyed or listed; anything else holds none."""
+    members = svs.values() if isinstance(svs, dict) else svs if isinstance(svs, list) else []
+    return [sv for sv in members if isinstance(sv, dict)]
 
 
 _PATH_KEYS = ("bids_dir", "mesh_file", "data_file", "code_source", "path", "file")
@@ -505,26 +480,10 @@ def _expand_curated_experiments(data: Any) -> Any:
             continue
         curated = _load_curated(iri)
         if isinstance(entry, dict):
-            curated = _merge_curated(curated, {k: v for k, v in entry.items() if k != "iri"})
+            curated = deep_merge(curated, {k: v for k, v in entry.items() if k != "iri"}, drop_null=True)
         expanded.append(curated)
     data["experiments"] = expanded
     return data
-
-
-def _merge_curated(base: dict, over: dict) -> dict:
-    """*over* laid on *base*, recursing into mappings; a null drops the key.
-
-    Shared by every curated-reference expansion so a variant declared as the difference from a curated record means the same thing wherever it is written.
-    """
-    merged = dict(base)
-    for k, v in over.items():
-        if v is None:
-            merged.pop(k, None)
-        elif isinstance(v, dict) and isinstance(merged.get(k), dict):
-            merged[k] = _merge_curated(merged[k], v)
-        else:
-            merged[k] = v
-    return merged
 
 
 def _load_curated(iri: str) -> dict:
@@ -597,7 +556,7 @@ def _expand_pipeline_references(data: Any) -> Any:
                 f"and also overrides {sorted(overrides)} — an override has no single step to apply to. "
                 "Reference it without overrides, or name a single-step observation."
             )
-        return [_merge_curated(step, overrides) if overrides else copy.deepcopy(step) for step in referenced]
+        return [deep_merge(step, overrides, drop_null=True) if overrides else copy.deepcopy(step) for step in referenced]
 
     return _walk(data)
 
@@ -613,10 +572,7 @@ def _normalize_loaded(data: Any) -> Any:
     data = copy.deepcopy(data)
     data = _expand_curated_experiments(data)
     data = _expand_pipeline_references(data)
-    data = _fold_edge_var_aliases(data)
-    data = _fold_state_variable_domains(data)
-    data = _apply_dict_shorthands(data)
-    return data
+    return _apply_dict_shorthands(data)
 
 
 def strip_envelope(data: Any) -> Any:
@@ -637,7 +593,7 @@ def _preprocess(source: Any, base_dir: Path) -> str:
     The LinkML loader expects either a path it can open or a string it can hand to its own ``DupCheckYamlLoader``. To layer our extensions on top, we first parse with our loader, then re-serialise the fully-expanded data structure (no anchors, no includes, no merge keys) and let LinkML consume that.
     """
     LoaderCls = _make_loader_class(base_dir)
-    if _looks_like_path(source):
+    if looks_like_path(source):
         with open(source) as fh:
             data = yaml.load(fh, LoaderCls)
     elif isinstance(source, str):
@@ -677,7 +633,7 @@ def load_as_dict(source: Any, **kwargs: Any) -> dict:
     """
     base_dir = _base_dir_for(source)
     LoaderCls = _make_loader_class(base_dir)
-    if _looks_like_path(source):
+    if looks_like_path(source):
         with open(source) as fh:
             data = yaml.load(fh, LoaderCls)
     elif isinstance(source, str):
@@ -691,7 +647,7 @@ def load_as_dict(source: Any, **kwargs: Any) -> dict:
 
 
 def _base_dir_for(source: Any) -> Path:
-    if _looks_like_path(source):
+    if looks_like_path(source):
         return Path(str(source)).resolve().parent
     if hasattr(source, "name"):
         try:

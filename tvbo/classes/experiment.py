@@ -6,7 +6,6 @@
 A `SimulationExperiment` binds local [`Dynamics`](../classes/dynamics.qmd), a [`Network`](../classes/network.qmd), coupling, integration settings, monitors, and stimulation into a single, YAML-round-trippable object. It is the entry point for constructing an experiment (from YAML, a file, the platform, or a TVB simulator), configuring and resolving its coupling/delay metadata, rendering backend code, and running it on any of the supported backends (`tvb`, `tvboptim`, `jax`, `pde`, `cuda`, `python`).
 """
 
-import copy as _copy
 import logging
 import os
 import re
@@ -34,6 +33,7 @@ from linkml_runtime.utils.yamlutils import YAMLRoot
 
 from tvbo import templates
 from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
+from tvbo.behaviour._runtime import Copyable
 from tvbo.classes.coupling import Coupling
 from tvbo.classes.dynamics import Dynamics
 from tvbo.classes.network import Network
@@ -259,7 +259,7 @@ def _merge_from_registry(d, category: str):
     d.setdefault("name", local)
 
 
-class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
+class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     """The central runnable object in TVBO: a complete brain-network simulation spec.
 
     Bundles `dynamics`, `network` (with its `coupling`), `integration`, `observations`, and any analysis layers (stimulation, algorithms, explorations, …) into one declarative specification. The same instance can be:
@@ -399,12 +399,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             self.stimulation = _coerce(tvbo_datamodel.Stimulus, self.stimulation)
 
         obss = getattr(self, "observations", None)
-        if obss and hasattr(obss, "values"):
+        if obss:
             from tvbo.classes.observation import populate_observation_from_iri
 
             # A curated model may ship the helper functions its pipeline calls; collect them into a fresh sink so an experiment with no iri-referenced model keeps its functions table untouched (reassigning it re-wraps the type downstream).
             _iri_funcs: dict = {}
-            for val in obss.values():
+            for _, val in keyed_items(obss, "observations"):
                 if val is not None and getattr(val, "iri", None):
                     populate_observation_from_iri(val, functions_sink=_iri_funcs)
             if _iri_funcs:
@@ -446,81 +446,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
         self.integration.enrich()
-
-    def _load_network_from_data_file(self):
-        """Load network matrices from a companion data file (h5/zarr/yaml sidecar).
-
-        Resolves `network.data_file` as an absolute path, or relative to the YAML source file or the working directory. Coupling and transforms declared inline in the experiment YAML survive the load: they are written back by indexing into the loaded network's containers rather than bulk-assigning a plain dict, since LinkML's `__setattr__` wraps a plain dict into a `JsonObj` whose `.items()` then breaks downstream.
-        """
-        from pathlib import Path
-
-        from tvbo.classes.network import Network as _Network
-
-        data_file = Path(self.network.data_file)
-        if not data_file.is_absolute():
-            source_file = getattr(self, "_source_file", None)
-            if source_file:
-                data_file = (Path(source_file).parent / data_file).resolve()
-            else:
-                data_file = (Path.cwd() / data_file).resolve()
-
-        # An .h5/.zarr describes itself when it carries embedded metadata, and otherwise names its sidecar; a .yaml path is already one.
-        from tvbo.data.network_io import read_embedded_metadata
-
-        if data_file.suffix in (".h5", ".zarr") and read_embedded_metadata(data_file) is None:
-            sidecar = data_file.with_suffix(".yaml")
-        else:
-            sidecar = data_file
-
-        loaded = _Network.from_file(sidecar)
-
-        inline_coupling = dict(keyed_items(self.network.coupling, "coupling"))
-        inline_transforms = list(self.network.transforms) if self.network.transforms else []
-
-        self.network = loaded
-        self.network.__class__ = Network
-
-        if inline_coupling:
-            # Replace the loaded network's coupling wholesale: an inline block is the recipe's own answer, not an addition to the companion's.
-            for k, _v in keyed_items(self.network.coupling, "coupling"):
-                del self.network.coupling[k]
-            for k, v in inline_coupling.items():
-                self.network.coupling[k] = v
-
-        if inline_transforms:
-            self.network.transforms = inline_transforms
-
-    def _load_network_from_bids(self):
-        """Load network matrices from BEP017 BIDS directory.
-
-        Uses network.bids_dir, network.structural_measures, and network.observational_measures to load connectivity data. Relative paths are resolved relative to the YAML source file.
-        """
-        from pathlib import Path
-
-        bids_dir = Path(self.network.bids_dir)
-        if not bids_dir.is_absolute():
-            # Resolve relative to YAML source file location
-            source_file = getattr(self, "_source_file", None)
-            if source_file:
-                bids_dir = (Path(source_file).parent / bids_dir).resolve()
-            else:
-                # Fallback: resolve relative to cwd
-                bids_dir = (Path.cwd() / bids_dir).resolve()
-
-        # Get measures from network attributes
-        structural = getattr(self.network, "structural_measures", None) or []
-        if not structural:
-            from tvbo.classes.network import _discover_bids_measures
-
-            structural = _discover_bids_measures(bids_dir)
-        observational = getattr(self.network, "observational_measures", None) or []
-
-        # Use Network.load_from_bids to load data into self.network
-        self.network.load_from_bids(
-            bids_dir,
-            structural_measures=structural,
-            observational_measures=observational,
-        )
 
     @classmethod
     def from_datamodel(cls, dm: tvbo_datamodel.SimulationExperiment) -> "SimulationExperiment":
@@ -966,51 +891,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def __repr__(self):
         return self.__str__()
 
-    # ---- Copy utilities ----
-    def copy(self, **overrides) -> "SimulationExperiment":
-        """Return a deep copy of this experiment.
-
-        Use keyword overrides to set attributes on the returned copy.
-
-        Errors are not swallowed; if a field can't be copied, an exception is raised.
-        """
-        new_obj = _copy.deepcopy(self)
-        for k, v in overrides.items():
-            setattr(new_obj, k, v)
-        return new_obj
-
-    # Python copy protocol hooks
-    def __copy__(self):
-        # Keep Python's copy.copy semantics: shallow copy
-        cls = self.__class__
-        clone = cls.__new__(cls)
-        for k, v in self.__dict__.items():
-            setattr(clone, k, v)
-        return clone
-
-    def __deepcopy__(self, memo):
-        """Deep-copy every declared field, not just those present in `__dict__`.
-
-        A dataclass field still holding its default may be absent from `__dict__`, so copying that alone would silently drop it.
-        """
-        import dataclasses
-
-        cls = self.__class__
-        data = {}
-        if dataclasses.is_dataclass(self):
-            for field in dataclasses.fields(self):
-                value = getattr(self, field.name, None)
-                data[field.name] = _copy.deepcopy(value, memo)
-        else:
-            # Fallback for non-dataclass
-            for k, v in self.__dict__.items():
-                data[k] = _copy.deepcopy(v, memo)
-
-        # Create clone using proper constructor to ensure all defaults are set
-        clone = cls(**data)
-        memo[id(self)] = clone
-        return clone
-
     def to_yaml(self, filepath: str | None = None, format: str = "tvbo") -> str:
         """Export the experiment to YAML format.
 
@@ -1351,9 +1231,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         source_id = int(getattr(src, "id", src))
 
         # State variables of THIS experiment → which <sv>_final observations to load. Keyed by name; the generated code places each into its own row.
-        svs = self.dynamics.state_variables
-        sv_items = svs.items() if hasattr(svs, "items") else [(getattr(s, "name", None), s) for s in svs]
-        sv_names = [getattr(sv, "name", None) or key for key, sv in sv_items]
+        declared = keyed_items(self.dynamics.state_variables, "state_variables")
+        sv_names = [getattr(sv, "name", None) or key for key, sv in declared]
 
         src_h5 = self._locate_source_result(results_root, source_id)
         n_nodes = len(self.network.nodes) if self.network.nodes else None
@@ -1369,8 +1248,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return da.dims[-1]
 
         # Last-declared first: that is the algorithm whose endpoint the run actually finished at, and guessing would warm-start from an untuned state that looks tuned. A consumer that runs no algorithm of its own reads the order the source declared.
-        algs = getattr(self, "algorithms", None)
-        alg_names = list(algs.keys()) if hasattr(algs, "keys") else [getattr(a, "name", None) for a in (algs or [])]
+        alg_names = [key for key, _ in keyed_items(getattr(self, "algorithms", None), "algorithms")]
         seed_producers = [str(a) for a in reversed(alg_names) if a]
         if not seed_producers:
             from tvbo.data import dataref as _dref
@@ -1460,27 +1338,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ini = getattr(self, "initial_state", None)
         is_from_exp = ini is not None and str(getattr(ini, "method", "") or "") == "from_experiment"
 
-        def _items(params):
-            if params is None:
-                return []
-            return list(params.items()) if hasattr(params, "items") else [(getattr(p, "name", None), p) for p in params]
-
-        def _couplings(obj):
-            if obj is None:
-                return []
-            if hasattr(obj, "values"):
-                return list(obj.values())
-            return list(obj) if isinstance(obj, (list, tuple)) else [obj]
-
         # Each sourced parameter -> ('used', DataRef) | ('measure', name). A ``used:`` edge carries its own WHERE, so it resolves independently of from_experiment; a bare ``measure:`` needs the from_experiment source that supplies its WHERE.
         wanted: dict = {}
         declared_shapes: dict = {}
         param_sets = [getattr(getattr(self, "dynamics", None), "parameters", None)]
-        net = getattr(self, "network", None)
-        for c in _couplings(getattr(net, "coupling", None)) + _couplings(getattr(self, "coupling", None)):
-            param_sets.append(getattr(c, "parameters", None))
+        param_sets += [getattr(c, "parameters", None) for c in network_couplings(getattr(self, "network", None)).values()]
         for ps in param_sets:
-            for key, p in _items(ps):
+            for key, p in keyed_items(ps, "parameters"):
                 nm = getattr(p, "name", None) or key
                 if not nm or nm in wanted:
                     continue
@@ -1598,7 +1462,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.data import dataref as _dref
 
         out: dict = {}
-        for name, ev in self.events.items() if getattr(self, "events", None) else []:
+        for name, ev in keyed_items(getattr(self, "events", None), "events"):
             params = dict(ev.parameters) if getattr(ev, "parameters", None) else {}
             ref = getattr(params.get("data"), "used", None)
             if ref is None:
@@ -1624,9 +1488,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def _random_seed_axis_length(self):
         """Number of seeds an exploration's ``execution.random_seed`` axis declares, or ``None`` without one."""
-        for expl in self.explorations.values() if getattr(self, "explorations", None) else []:
-            space = getattr(expl, "space", None)
-            for key, axis in space.items() if hasattr(space, "items") else []:
+        for expl in as_list(getattr(self, "explorations", None)):
+            for key, axis in keyed_items(getattr(expl, "space", None), "space"):
                 if str(getattr(axis, "parameter", None) or key) != "execution.random_seed":
                     continue
                 values = getattr(axis, "explored_values", None)
@@ -1647,20 +1510,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         expls = getattr(self, "explorations", None)
         if not expls:
             return None
-        expl_list = list(expls.values()) if hasattr(expls, "values") else list(expls)
         out: dict = {}
-        for expl in expl_list:
-            space = getattr(expl, "space", None)
-            if not space:
-                continue
-            axes = list(space.values()) if hasattr(space, "values") else list(space)
-            for axis in axes:
+        for expl in as_list(expls):
+            for axis in as_list(getattr(expl, "space", None)):
                 builder = getattr(axis, "builder", None)
                 args = getattr(builder, "arguments", None) if builder is not None else None
-                if not args:
-                    continue
-                items = args.items() if hasattr(args, "items") else [(getattr(a, "name", None), a) for a in args]
-                for an, arg in items:
+                for an, arg in keyed_items(args, "arguments"):
                     ref = getattr(arg, "used", None)
                     if ref is None:
                         continue
@@ -2831,7 +2686,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         dynamics = getattr(self, "dynamics", None)
         if not events or dynamics is None:
             return
-        names = list(events.keys()) if hasattr(events, "keys") else [getattr(e, "name", None) for e in events]
+        names = [key for key, _ in keyed_items(events, "events")]
         is_mapping = isinstance(dynamics, dict)
         existing = dynamics.get("events") if is_mapping else getattr(dynamics, "events", None)
         if existing:
@@ -2870,8 +2725,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         except Exception:
             labels = {}
 
-        items = events.items() if hasattr(events, "items") else []
-        for _key, ev in items:
+        for _key, ev in keyed_items(events, "events"):
             et = str(getattr(ev, "event_type", "stimulus") or "stimulus").lower()
             is_stimulus = "stimul" in et
             if not (is_stimulus or et in ("continuous", "discrete")):
@@ -2961,7 +2815,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if target is None:
                     ev.parameters = {}
                     target = ev.parameters
-                for pk, pv in eq_params.items() if hasattr(eq_params, "items") else []:
+                for pk, pv in keyed_items(eq_params, "parameters"):
                     if pk not in target:
                         target[pk] = pv
 

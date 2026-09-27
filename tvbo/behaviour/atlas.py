@@ -14,7 +14,7 @@ import os
 
 import numpy as np
 
-from tvbo.behaviour._runtime import RuntimeAttributes
+from tvbo.behaviour._runtime import Catalogued, RuntimeAttributes
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ WHOLEBRAIN = "wholebrain"
 """The atlas a record names when it names none: one region and no files, so nothing is ever read for it."""
 
 
-class BrainAtlasBehaviour(RuntimeAttributes):
+class BrainAtlasBehaviour(Catalogued, RuntimeAttributes):
     """A brain atlas record, with the properties its own data files answer.
 
     SANDS entities are stored in ``self.terminology.entities`` — a schema-native ``dict[ParcellationEntityName, ParcellationEntity]`` produced by the loader (the ``entities`` slot uses ``inlined: true`` in the SANDS schema).
@@ -238,16 +238,3 @@ class BrainAtlasBehaviour(RuntimeAttributes):
             if e.lookupLabel == lookup_id:
                 return e.name
         return None
-
-    def to_yaml(self, fname=None):
-        """Serialise the atlas to YAML.
-
-        Args:
-            fname: Optional path to write the YAML to; if omitted, the YAML is returned as a string.
-
-        Returns:
-            The written file path when `fname` is given, otherwise the YAML string.
-        """
-        from tvbo.utils import to_yaml as _to_yaml
-
-        return _to_yaml(self, fname)

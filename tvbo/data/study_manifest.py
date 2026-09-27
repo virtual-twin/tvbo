@@ -199,16 +199,6 @@ def emit_manifest(inv: Any, results_root: Path | None, out_path: Path) -> tuple[
 # --------------------------------------------------------------------------- verify
 
 
-def _figure_ids(inv: Any) -> list[str]:
-    """The ``@fig-*`` cross-reference ids the collection's figures declare (by name)."""
-    ids: list[str] = []
-    for fig in as_list(getattr(inv, "figures", None)):
-        name = getattr(fig, "name", None)
-        if name:
-            ids.append(str(name))
-    return ids
-
-
 def _analysis_fingerprint(analysis: Any) -> str:
     """A stable digest of the one analysis, over the fields that change its numbers."""
     import hashlib

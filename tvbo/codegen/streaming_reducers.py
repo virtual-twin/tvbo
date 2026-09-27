@@ -25,17 +25,9 @@ class StreamingReducerSpec:
         add: ordered ``(lhs, rhs)`` assignments folding one arriving sample ``v``.
         evict: ordered assignments dropping one leaving sample ``v`` (sliding window).
         resync: ordered assignments rebuilding the state exactly from the window ``x``.
-        resync_masked: optional assignments rebuilding the state from a max-sized ring
-            buffer whose valid window is the last ``L`` rows, selected by the boolean
-            mask ``m`` (row-vector over the full buffer) with count ``L``. Present so a
-            reducer can be resynced over a fixed-shape buffer with a traced window
-            length — the tuning scan then compiles once across varying window sizes.
-            Empty when the reducer has no masked form (the masked path is not offered).
+        resync_masked: optional assignments rebuilding the state from a max-sized ring buffer whose valid window is the last ``L`` rows, selected by the boolean mask ``m`` (row-vector over the full buffer) with count ``L``. Present so a reducer can be resynced over a fixed-shape buffer with a traced window length — the tuning scan then compiles once across varying window sizes. Empty when the reducer has no masked form (the masked path is not offered).
         emit: readout expression over the final state (the reduced value).
-        emit_kind: ``"window"`` (emit every step; wired today) or ``"stride"`` (emit a
-            per-window observation for a downstream reduction — the dFC / FCD
-            follow-on; :func:`streaming_capable` returns ``False`` for it until the
-            template's stride branch lands, recompute fallback meanwhile).
+        emit_kind: ``"window"`` (emit every step) or ``"stride"`` (emit a per-window observation for a downstream reduction, as dFC / FCD need). Generated code streams only a ``"window"`` spec and recomputes for any other kind, so registering a ``"stride"`` spec is safe.
     """
 
     state: tuple
@@ -56,12 +48,17 @@ def register_streaming_reducer(backend: str, reducer: str, spec: StreamingReduce
 
     Args:
         backend: Codegen backend key (e.g. ``"tvboptim"``).
-        reducer: Fully-qualified pipeline reducer callable the spec replaces
-            (e.g. ``"tvboptim.observations.observation.compute_fc"``). The bare
-            callable name is also matched as a fallback.
+        reducer: Fully-qualified pipeline reducer callable the spec replaces (e.g. ``"tvboptim.observations.observation.compute_fc"``). The bare callable name is also matched as a fallback.
         spec: The streaming reducer descriptor.
     """
     _REGISTRY.setdefault(backend, {})[reducer] = spec
+
+
+def _registered(backend: str, reducer_module: str | None, reducer_name: str) -> StreamingReducerSpec | None:
+    """The spec *backend* registers for a pipeline reducer, by its qualified name first and its bare name second, or ``None``."""
+    backend_map = _REGISTRY.get(backend) or {}
+    qualified = f"{reducer_module}.{reducer_name}" if reducer_module else reducer_name
+    return backend_map.get(qualified) or backend_map.get(reducer_name)
 
 
 def lookup_streaming_reducer(backend: str, reducer_module: str | None, reducer_name: str):
@@ -71,32 +68,15 @@ def lookup_streaming_reducer(backend: str, reducer_module: str | None, reducer_n
     """
     if os.environ.get("TVBO_STREAMING_REDUCERS", "1") == "0":
         return None
-    backend_map = _REGISTRY.get(backend)
-    if not backend_map:
-        return None
-    qualified = f"{reducer_module}.{reducer_name}" if reducer_module else reducer_name
-    return backend_map.get(qualified) or backend_map.get(reducer_name)
-
-
-def streaming_capable(backend: str, reducer_module: str | None, reducer_name: str) -> bool:
-    """True when a step-wise (``"window"``) streaming reducer is registered.
-
-    The algorithm template gates its streaming branch on this; ``"stride"`` (dFC / FCD) specs return ``False`` here until the template's stride branch lands, so registering them is safe (recompute fallback stays in force).
-    """
-    spec = lookup_streaming_reducer(backend, reducer_module, reducer_name)
-    return spec is not None and spec.emit_kind == "window"
+    return _registered(backend, reducer_module, reducer_name)
 
 
 def is_windowed_reducer(reducer_module: str | None, reducer_name: str, backend: str = "tvboptim") -> bool:
     """True when a pipeline reducer is a registered windowed reducer for *backend*.
 
-    The registered reducer (``compute_fc`` for ``tvboptim``) is a windowed correlation reduction — undefined over a ``< 2``-sample window, where ``jnp.corrcoef`` collapses to a scalar — so codegen routes it through a degenerate-window guard. Unlike :func:`lookup_streaming_reducer`, this is a pure registry-membership test with no factory-availability or ``TVBO_STREAMING_REDUCERS`` gating: the guard applies whether or not the streaming *path* is active. It shares the one registered reducer set so the guard's routing and the streaming lookup cannot drift.
+    The registered reducer (``compute_fc`` for ``tvboptim``) is a windowed correlation reduction — undefined over a ``< 2``-sample window, where ``jnp.corrcoef`` collapses to a scalar — so codegen routes it through a degenerate-window guard. Unlike :func:`lookup_streaming_reducer`, this is a pure registry-membership test with no ``TVBO_STREAMING_REDUCERS`` gating: the guard applies whether or not the streaming *path* is active. It shares the one registered reducer set so the guard's routing and the streaming lookup cannot drift.
     """
-    backend_map = _REGISTRY.get(backend)
-    if not backend_map:
-        return False
-    qualified = f"{reducer_module}.{reducer_name}" if reducer_module else reducer_name
-    return qualified in backend_map or reducer_name in backend_map
+    return _registered(backend, reducer_module, reducer_name) is not None
 
 
 # Recipes are data in `tvbo/database/reducers/*.yaml`; a backend registering none recomputes instead.

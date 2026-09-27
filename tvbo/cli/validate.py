@@ -7,8 +7,6 @@ from pathlib import Path
 
 import typer
 
-from tvbo.utils.yaml_loader import declared_class
-
 from . import _common
 
 app = typer.Typer(name="validate", no_args_is_help=True)
@@ -44,7 +42,7 @@ def schema(
     data = yaml_loader.load_as_dict(str(path))
 
     if target_class is None:
-        target_class = declared_class(data) or "SimulationExperiment"
+        target_class = yaml_loader.declared_class(data) or "SimulationExperiment"
 
     defs = full.get("$defs", {})
     if target_class not in defs:
@@ -214,7 +212,7 @@ def _suffix_problems(path: Path) -> list[str]:
         return [f"suffix {suffix!r} is not in the tvbo suffix vocabulary ({', '.join(sorted(SPEC_SUFFIXES))})"]
     # The include-aware loader, because a fragment may itself `!include` a sibling (a network naming its coupling), which a plain safe_load rejects as an unknown tag. A fragment that will not parse at all is one of this command's problems to report, not a traceback out of it.
     try:
-        declared = declared_class(yaml_loader.load_as_dict(str(path)))
+        declared = yaml_loader.declared_class(yaml_loader.load_as_dict(str(path)))
     except Exception as exc:
         return [f"cannot be parsed ({type(exc).__name__}: {exc})"]
     if declared is None:

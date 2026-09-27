@@ -177,51 +177,23 @@ def _orbit_profiles(solutions, sv_names, n_phase=101):
 
 
 class NumContAdapter(ContinuationAdapter):
-    """Adapter for bifurcation analysis via AUTO-07p (no external deps)."""
+    """Adapter for bifurcation analysis via AUTO-07p (no external deps).
 
-    # ── Context for the f90 template ─────────────────────────────────────
+    Renders the AUTO-07p Fortran (.f90) model source from `TEMPLATE`, with the shared `(model, continuation)` context.
+    """
 
-    @staticmethod
-    def _prepare_context(model, cont, **kwargs) -> dict:
-        return dict(model=model, continuation=cont)
-
-    def render_code(self, model=None, continuation=None, **kwargs) -> str:
-        """Render the AUTO-07p Fortran (.f90) model source as a string."""
-        from tvbo import templates
-
-        model = model or self.experiment.dynamics
-        ctx = self._prepare_context(model, self.resolve_continuation(continuation), **kwargs)
-        template = templates.lookup.get_template("tvbo-auto7p.py.mako")
-        return template.render(**ctx)
+    TEMPLATE = "tvbo-auto7p.py.mako"
 
     # ── Public API ───────────────────────────────────────────────────────
 
-    def run(self, **kwargs):
-        """Run AUTO-07p continuation for each continuation in the experiment."""
+    def run_one(self, model, cont, cont_name, **kwargs):
+        """Continue *cont* on *model* in AUTO-07p, from its equilibrium branch through its Hopf and codim-2 branches, saving each under *cont_name*."""
+        import contextlib
+        import io
+
         from tvbo.utils.auto import check_auto_dir
 
         check_auto_dir()
-
-        conts = self.continuations()
-        if not conts:
-            raise ValueError(
-                "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
-            )
-
-        results = {}
-        for name, cont in conts.items():
-            model = self.resolve_dynamics(cont)
-            results[name] = self._run_one(model, cont, name, **kwargs)
-
-        if len(results) == 1:
-            return next(iter(results.values()))
-        return results
-
-    # ── Internals ────────────────────────────────────────────────────────
-
-    def _run_one(self, model, cont, cont_name, **kwargs):
-        import contextlib
-        import io
 
         # AUTO-07p prints a Tkinter import warning to stdout even when plotting is unused. Suppress it.
         _buf = io.StringIO()

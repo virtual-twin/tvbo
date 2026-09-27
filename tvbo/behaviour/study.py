@@ -17,6 +17,8 @@ from pathlib import Path
 
 from jsonasobj2 import as_dict
 
+from tvbo.behaviour._runtime import Catalogued
+
 
 def _wire_nested(study, raw: dict | None) -> None:
     """Give every study nested under *study* the identity its own recipe gives it, recursively.
@@ -46,7 +48,7 @@ def _wire_nested(study, raw: dict | None) -> None:
     object.__setattr__(study, "_nested", wired)
 
 
-class SimulationStudyBehaviour:
+class SimulationStudyBehaviour(Catalogued):
     """A collection of related `SimulationExperiment`s with shared provenance.
 
     Aggregates the experiments behind a published paper or analysis (model, DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
@@ -134,7 +136,9 @@ class SimulationStudyBehaviour:
     def from_file(cls, filepath):
         """Load a study from a local YAML file.
 
-        The resolved absolute path is stored on the returned instance so that experiments materialised later can locate sibling data files.
+        The document is read once, through `yaml_loader.load_as_dict`, which resolves anchors and `!include` fragments and normalises exactly as every other load path does, and it serves three readers. The study is constructed from a copy of it. Its raw experiment dicts are kept, so an experiment can be materialised through `SimulationExperiment.from_string`, the path that iri-sources dynamics and coupling from the registry, which constructing the record does not. And the nested studies are wired from it rather than by reloading each recipe: `!include` has already read every one of them, and a tree of twenty-odd studies parsed twice costs seconds on every command that only wants to know what it contains.
+
+        The resolved absolute path is stored on the returned instance so that experiments materialised later can locate sibling data files, and the recipe's callable code is made importable — an explicit `code_source` when declared, else the `code/` directory beside the YAML — so custom builders and callables resolve by bare module name.
 
         Args:
             filepath: Path to the study YAML file.
@@ -142,22 +146,19 @@ class SimulationStudyBehaviour:
         Returns:
             A `SimulationStudy` parsed from the file.
         """
+        import copy
+
         from tvbo.utils import register_recipe_code_paths, yaml_loader
 
-        study = yaml_loader.load(filepath, cls)
+        raw = yaml_loader.load_as_dict(filepath) or {}
+        # a copy, so the record shares nothing with the raw dicts kept beside it
+        study = cls(**copy.deepcopy(yaml_loader.strip_envelope(raw)))
         study._source_file = str(Path(filepath).resolve())
-        # Make the recipe's callable code importable so custom builders/callables resolve by bare module name without a PYTHONPATH prefix: an explicit code_source (local dir or git repo) when declared, else the code/ subdir beside the YAML.
         register_recipe_code_paths(study._source_file, getattr(study, "code_source", None))
-        # Keep the raw (anchor- and !include-resolved) experiment dicts so experiments can be materialised through SimulationExperiment.from_string — that path iri-sources dynamics/coupling from the registry, which loading the datamodel object directly does not. Extract them with the SAME loader as the LinkML load above (yaml_loader, NOT a plain yaml.safe_load) so the two load paths cannot diverge: load_as_dict resolves `!include` fragments and folds slot aliases identically, so a modular (!include-split) study materialises exactly like a monolithic one. A plain safe_load chokes on the `!include` tag and would silently empty this, dropping every experiment to the iri-unaware from_datamodel fallback.
-        try:
-            _raw = yaml_loader.load_as_dict(filepath) or {}
-            _raw_exps = {e.get("id"): e for e in (_raw.get("experiments") or []) if isinstance(e, dict)}
-        except Exception:
-            _raw_exps = {}
-        # Store as a plain dict (bypass the JsonObj setattr that would wrap it).
-        object.__setattr__(study, "_raw_experiments", _raw_exps)
-        # Wire the nested studies from the content already parsed, rather than reloading each recipe: `!include` has read every one of them, and a tree of twenty-odd studies parsed twice costs seconds on every command that only wants to know what it contains.
-        _wire_nested(study, _raw)
+        raw_experiments = {e.get("id"): e for e in (raw.get("experiments") or []) if isinstance(e, dict)}
+        # a plain dict, past the JsonObj setattr that would wrap it
+        object.__setattr__(study, "_raw_experiments", raw_experiments)
+        _wire_nested(study, raw)
         return study
 
     @classmethod
@@ -172,20 +173,6 @@ class SimulationStudyBehaviour:
             A `SimulationStudy` with the same field values as `datamodel`.
         """
         return cls(**as_dict(datamodel))
-
-    @classmethod
-    def from_db(cls, name: str) -> SimulationStudyBehaviour:
-        """Load a SimulationStudy by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("SimulationStudyBehaviour", name)))
-
-    @classmethod
-    def list_db(cls) -> list[str]:
-        """List available studies in the tvbo database."""
-        from tvbo.data.registry import list_entries
-
-        return list_entries("SimulationStudyBehaviour")
 
     def cite(self):
         """Return the formatted citation for this study.

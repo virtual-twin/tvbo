@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -18,6 +19,7 @@ from pathlib import Path
 import typer
 
 from . import _common
+from ._backends import effective_backend
 
 
 def run(
@@ -191,9 +193,10 @@ def run(
         return
 
     kind, obj = _common.resolve_spec(spec)
+    nested = _has_nested(obj)
     requested_out_dir = out_dir
-    # Resolved once, so every writer and reader below is handed the same concrete directory and a run persists whether or not -o was passed.
-    if not _has_nested(obj):
+    # One directory for every writer and reader below; a tree run resolves one per nested study, unless --analysis names the holder's own analyses.
+    if not nested or analysis is not None:
         out_dir = _results_root(spec, out_dir)
 
     # Flags that select or reshape SIMULATION work.
@@ -214,11 +217,7 @@ def run(
         if v is not None
     ]
 
-    # A study-of-studies owns analyses of its own — the ones reading what its nested studies committed — and `--analysis` names them, so it selects the owning study's own content rather than running the tree. Everything else about the run is unchanged.
-    if _has_nested(obj) and analysis is not None:
-        out_dir = _results_root(spec, out_dir)
-
-    if _has_nested(obj) and analysis is None:
+    if nested and analysis is None:
         # A study-of-studies runs every nested study end to end with fixed save options, so any of these is silently dropped — turning a one-container request into the whole tree, or reporting success for a --save-all that saved record-only.
         rejected = _sim_flags + [
             f
@@ -287,50 +286,27 @@ def run(
         _import_figure_code_modules(obj)
         analyses_before, analyses_after = _study_analysis_stages(obj)
         if analysis is not None:
-            _run_named_analyses(analyses_before + analyses_after, analysis, spec, out_dir)
+            _run_named_analyses(obj, analyses_before + analyses_after, analysis, spec, out_dir)
             return
         whole_study = experiment is None and shard is None
         if whole_study:
-            _run_study_analyses(analyses_before, spec, out_dir, stage="before")
-        exps = obj.experiments if hasattr(obj, "experiments") else obj.simulation_experiments
-        items = list(exps.values()) if hasattr(exps, "values") else list(exps)
-        if experiment is not None:
-            # Accept one id/name or a comma-separated list ("2,3,20,30" runs all).
-            wanted = {s.strip() for s in str(experiment).split(",") if s.strip()}
-            items = [e for e in items if wanted & _common.experiment_ids(e)]
-            if not items:
-                _common.die(f"No experiment(s) matching {experiment!r} in study.")
+            _run_study_analyses(obj, analyses_before, spec, out_dir, stage="before")
+        items = _common.select_experiments(obj, experiment)
         # A single frozen script belongs to a single experiment; refuse to run it against several (each experiment renders its own code). The workflow always drives one experiment per rule, so this only guards manual misuse.
         if rendered is not None and len(items) > 1:
             _common.die(
                 f"--rendered is a single pre-rendered experiment script but {len(items)} "
                 f"experiments matched; pass --experiment to select exactly one."
             )
-        for exp in items:
-            _common.info(f"running experiment: {getattr(exp, 'key', None) or getattr(exp, 'label', None)}")
-            # Resolve to the runtime experiment (has .run) rather than the datamodel object.
-            if not hasattr(exp, "run") and hasattr(obj, "get_experiment"):
-                sel = (
-                    getattr(exp, "id", None)
-                    or getattr(exp, "key", None)
-                    or getattr(exp, "name", None)
-                    or getattr(exp, "label", None)
-                )
-                try:
-                    exp = obj.get_experiment(sel)
-                except Exception as e:
-                    _common.die(
-                        f"Could not resolve experiment {sel!r} to a runnable object: {e}\n"
-                        "If the recipe references custom builder/analysis modules "
-                        "(e.g. `module: my_networks`), make them importable — run from "
-                        "their directory or set PYTHONPATH."
-                    )
+        for record in items:
+            _common.info(f"running experiment: {getattr(record, 'key', None) or getattr(record, 'label', None)}")
+            exp = _common.runtime_experiment(obj, record)
             _apply_metadata_overrides(exp, set_)
             _apply_axis_pins(exp, pin)
             _apply_max_iterations(exp, eff_max_iterations)
             kwargs["prov_ctx"] = _provenance_ctx(spec, obj, requested_out_dir)
-            _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
-        ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after") if whole_study else True
+            _run_one(exp, effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
+        ok = _run_study_analyses(obj, analyses_after, spec, out_dir, stage="after") if whole_study else True
         if not whole_study and shard is None:
             # Not per shard: an array task holds one slice of one sweep, so every task would repeat the warning and its "refresh now" remedy would run on a half-done grid.
             _warn_stale_analyses(
@@ -348,7 +324,7 @@ def run(
         _apply_axis_pins(obj, pin)
         _apply_max_iterations(obj, eff_max_iterations)
         kwargs["prov_ctx"] = _provenance_ctx(spec, obj, requested_out_dir)
-        _run_one(obj, _effective_backend(obj, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
+        _run_one(obj, effective_backend(obj, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
     _common.die(f"`tvbo run` does not yet support kind={kind!r}.")
@@ -360,17 +336,11 @@ def run(
 def _import_figure_code_modules(study) -> None:
     """Import a study's figure ``code_modules`` so their registered transforms/panels are available before its experiments run.
 
-    A figure ``Layer.transform`` and a builder/parameter ``used:`` transform name the same ``bsplot.register_transform`` registry, but the latter is resolved during the experiment run, before any figure renders. Importing the declared modules up front (the study loader has already put ``code/`` on the path) fires their ``register_*`` decorators once, study- wide. Import errors are swallowed here — a genuinely broken module is reported with full context when a figure that needs it renders; this pass only pre-populates the registry.
+    A figure ``Layer.transform`` and a builder/parameter ``used:`` transform name the same ``bsplot.register_transform`` registry, but the latter is resolved during the experiment run, before any figure renders. Importing the declared modules up front (the study loader has already put ``code/`` on the path) fires their ``register_*`` decorators once, study-wide. Import errors are swallowed here — a genuinely broken module is reported with full context when a figure that needs it renders; this pass only pre-populates the registry.
     """
     import importlib
 
-    figures = getattr(study, "figures", None) or []
-    seen: list[str] = []
-    for fig in figures.values() if hasattr(figures, "values") else figures:
-        for m in getattr(fig, "code_modules", None) or []:
-            if str(m) not in seen:
-                seen.append(str(m))
-    for m in seen:
+    for m in _common.figure_code_modules(getattr(study, "figures", None)):
         try:
             importlib.import_module(m)
         except Exception:
@@ -417,7 +387,7 @@ def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experimen
     )
 
 
-def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) -> None:
+def _run_named_analyses(study, analyses, wanted: str, spec: str, out_dir: Path | None) -> None:
     """Run only the named ``analyses:``, plus whatever they read, in dependency order.
 
     The counterpart to ``--experiment`` on the derivation side. It exists because an analysis container is content-addressed on its INPUTS: editing the callable that produces it changes nothing a cache can see, so the only way to refresh one is to ask for it by name.
@@ -439,7 +409,7 @@ def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) 
     ordered = [a for a in analyses if analysis_name(a) in needed]
     if len(ordered) > len(names):
         _common.info(f"also producing {len(ordered) - len(names)} upstream analysis container(s) that do not exist yet")
-    _run_study_analyses(ordered, spec, out_dir, stage="named")
+    _run_study_analyses(study, ordered, spec, out_dir, stage="named")
     _warn_stale_analyses(analyses, spec, out_dir, recomputed=needed)
     _common.info(
         f"figures were NOT re-rendered; run `tvbo figure render {spec}` to redraw them from the refreshed container(s)."
@@ -447,9 +417,8 @@ def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) 
 
 
 def _spec_base(spec: str) -> Path:
-    """The study file's own directory — the root ``used:`` references resolve against."""
-    spec_path = Path(spec)
-    return spec_path.resolve().parent if spec_path.is_file() else Path.cwd()
+    """The study file's own directory — the root ``used:`` references resolve against — or the cwd for a spec that is not a file."""
+    return _common.spec_dir(spec) or Path.cwd()
 
 
 def _results_root(spec: str, out_dir: Path | None) -> Path:
@@ -532,10 +501,10 @@ def _analysis_inputs(analysis, results_root, ctx: dict | None):
     return input_containers(refs, results_root=results_root, study_root=ctx["study_root"])
 
 
-def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str) -> bool:
-    """Execute one stage of a study's declarative ``analyses:``; True when the stage held.
+def _run_study_analyses(study, analyses, spec: str, out_dir: Path | None, *, stage: str) -> bool:
+    """Execute one stage of *study*'s declarative ``analyses:``; True when the stage held.
 
-    Each writes ``<root>/ana-<name>_result.h5`` — the container a figure layer or a later analysis binds with ``used: {analysis: <name>}``, in the directory :func:`_results_root` resolves for this run.
+    Each writes ``<root>/ana-<name>_result.h5`` — the container a figure layer or a later analysis binds with ``used: {analysis: <name>}``, in the directory :func:`_results_root` resolves for this run. Each container's provenance record names *study* as the one it belongs to.
 
     A failure is only ever SWALLOWED when there are completed experiments to protect. The ``before`` stage raises — nothing has run yet, and an experiment may source the missing analysis. A ``named`` stage (``--analysis``) raises too: it ran no experiments, the analysis is the whole of what was asked for, and a warning there would exit zero on a job that produced nothing. Only the ``after`` stage reports and returns False, because the experiments already succeeded and must not be lost to a reduction; the figures that would read the missing container are then skipped rather than drawn from absent data.
     """
@@ -545,7 +514,7 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
         return True
     base = _spec_base(spec)
     root = _results_root(spec, out_dir)
-    ctx = _provenance_ctx(spec, obj, out_dir) if (obj := _analysis_owner(spec)) is not None else None
+    ctx = _provenance_ctx(spec, study, out_dir)
 
     by_name = {str(getattr(a, "name", "")): a for a in analyses}
 
@@ -593,12 +562,11 @@ def _render_study_figures(study, spec: str, *, base: Path | None = None) -> None
         return
 
     base = Path(base).resolve() if base is not None else _spec_base(spec)
-    # Layers resolve their containers against the study root, whose results directory is where the run and the analysis stage just wrote — so reader and writer cannot disagree about where this run's containers are.
-    fig_base = base
     out_figs = study_path("figures", root=base)
     _common.info(f"rendering {len(figs)} figure(s) -> {out_figs}")
     try:
-        render_figures(figs, fig_base, out_figs)
+        # Layers resolve against the study root, whose results directory is where the run and the analysis stage just wrote.
+        render_figures(figs, base, out_figs)
     except Exception as e:  # noqa: BLE001 - never lose a completed run over a plotting error
         # At WARNING because the default level suppresses INFO: a failure reported below the threshold is one the run never mentions, and what follows is a reader failing on a figure that was never drawn.
         _common.warn(
@@ -618,26 +586,12 @@ def _run_whole_study(
     out_dir = Path(out_dir).resolve() if out_dir is not None else study_path_for("results", base)
     _import_figure_code_modules(obj)
     analyses_before, analyses_after = _study_analysis_stages(obj)
-    _run_study_analyses(analyses_before, spec, out_dir, stage="before")
-    exps = getattr(obj, "experiments", None)
-    if exps is None:
-        exps = getattr(obj, "simulation_experiments", None) or []
-    items = list(exps.values()) if hasattr(exps, "values") else list(exps)
-    for exp in items:
-        _common.info(f"running experiment: {getattr(exp, 'key', None) or getattr(exp, 'label', None)}")
-        if not hasattr(exp, "run") and hasattr(obj, "get_experiment"):
-            sel = (
-                getattr(exp, "id", None)
-                or getattr(exp, "key", None)
-                or getattr(exp, "name", None)
-                or getattr(exp, "label", None)
-            )
-            try:
-                exp = obj.get_experiment(sel)
-            except Exception as e:
-                _common.die(f"Could not resolve experiment {sel!r} to a runnable object: {e}")
-        _run_one(exp, _effective_backend(exp, backend), out_dir, {"compress": True, "record_only": True}, None, None, None)
-    ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after")
+    _run_study_analyses(obj, analyses_before, spec, out_dir, stage="before")
+    for record in _common.select_experiments(obj):
+        _common.info(f"running experiment: {getattr(record, 'key', None) or getattr(record, 'label', None)}")
+        exp = _common.runtime_experiment(obj, record)
+        _run_one(exp, effective_backend(exp, backend), out_dir, {"compress": True, "record_only": True}, None, None, None)
+    ok = _run_study_analyses(obj, analyses_after, spec, out_dir, stage="after")
     if figures and ok:
         _render_study_figures(obj, spec, base=base)
     return ok
@@ -754,16 +708,6 @@ def _run_tree(
     _emit()
 
 
-def _effective_backend(experiment, cli_backend: str | None) -> str:
-    """Resolve which backend runs *experiment*.
-
-    An explicit ``--backend`` wins for the whole run; otherwise each experiment self-selects via its declared ``execution.backend`` (e.g. a spiking network sets ``brian2``), falling back to ``tvboptim``. This lets one study mix a mean-field sweep and a spiking column and run each on the right engine.
-    """
-    if cli_backend:
-        return cli_backend
-    return getattr(getattr(experiment, "execution", None), "backend", None) or "tvboptim"
-
-
 def _parse_chunk(s: str) -> tuple[int, int]:
     if "/" not in s:
         raise typer.BadParameter("--shard must be of the form i/N")
@@ -772,26 +716,6 @@ def _parse_chunk(s: str) -> tuple[int, int]:
     if not (0 <= i < n):
         raise typer.BadParameter(f"--shard i={i} out of range [0,{n})")
     return i, n
-
-
-def _coerce_scalar(v: str):
-    """Coerce a ``--set`` value string to bool/int/float/JSON, else leave a string."""
-    low = v.strip().lower()
-    if low in {"true", "false"}:
-        return low == "true"
-    for cast in (int, float):
-        try:
-            return cast(v)
-        except ValueError:
-            pass
-    if v[:1] in "[{":  # JSON list/object, e.g. [0,2] or ["xi","freq"]
-        import json
-
-        try:
-            return json.loads(v)
-        except ValueError:
-            pass
-    return v
 
 
 def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
@@ -813,16 +737,13 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
             _common.die(f"--set: cannot resolve {seg!r} on {type(cur).__name__}")
 
     for raw in overrides:
-        s = raw.lstrip("-")
-        if "=" not in s:
-            raise typer.BadParameter(f"--set {raw!r} must be of the form path=value")
-        path, _, val = s.partition("=")
+        path, val = _common.parse_assignment(raw, "--set", "path=value")
         segs = [p for p in path.split(".") if p]
         cur, chain = experiment, [experiment]
         for seg in segs[:-1]:
             cur = _step(cur, seg)
             chain.append(cur)
-        leaf, value = segs[-1], _coerce_scalar(val)
+        leaf, value = segs[-1], _common.coerce_value(val)
         if isinstance(cur, dict):
             cur[leaf] = value
         elif hasattr(cur, leaf):
@@ -893,11 +814,8 @@ def _apply_axis_pins(experiment, pins: list[str]) -> None:
     For each ``parameter=value``: set the axis's parameter on the experiment so the base (representative) run uses it — every DECLARED observation, host or not, is computed on that run, so this is what makes a fanned cell's host observation land at the cell's coordinates — AND drop that axis from every exploration so the sweep does not re-expand it. An exploration left with no axes is removed, collapsing the run to a single point.
     """
     for raw in pins:
-        s = raw.lstrip("-")
-        if "=" not in s:
-            raise typer.BadParameter(f"--pin {raw!r} must be of the form parameter=value")
-        parameter, _, val = s.partition("=")
-        value = _coerce_scalar(val)
+        parameter, val = _common.parse_assignment(raw, "--pin", "parameter=value")
+        value = _common.coerce_value(val)
         _set_axis_parameter(experiment, parameter, value)
         _drop_exploration_axis(experiment, parameter)
         _common.info(f"--pin {parameter} = {value!r}")
@@ -1045,15 +963,6 @@ def _run_one(
     _exec_one(experiment, backend, out_dir, kwargs)
 
 
-def _analysis_owner(spec: str):
-    """The study an analysis stage belongs to, for the provenance its records carry."""
-    try:
-        kind, obj = _common.resolve_spec(spec)
-    except Exception:  # noqa: BLE001 — the caller already loaded it; a second failure is not this stage's to report
-        return None
-    return obj if kind == "study" else None
-
-
 def _container_vars(path: Path) -> list[str]:
     """The data variables a written container actually holds, read back from it."""
     import xarray as xr
@@ -1129,7 +1038,7 @@ def _dispatch_to_engine(
 
 def _reexec_in_container(image: str, argv: list[str]) -> None:
     """Re-exec ``tvbo`` inside *image* via Singularity (preferred) or Docker."""
-    use_singularity = bool(os.environ.get("SINGULARITY_BIND")) or _which("singularity")
+    use_singularity = bool(os.environ.get("SINGULARITY_BIND")) or shutil.which("singularity")
     cwd = os.getcwd()
     if use_singularity:
         cmd = ["singularity", "exec", "--bind", f"{cwd}:{cwd}", image, "tvbo", *argv]
@@ -1137,9 +1046,3 @@ def _reexec_in_container(image: str, argv: list[str]) -> None:
         cmd = ["docker", "run", "--rm", "-e", "TVBO_IN_CONTAINER=1", "-v", f"{cwd}:{cwd}", "-w", cwd, image, "tvbo", *argv]
     _common.info("$ " + " ".join(shlex.quote(c) for c in cmd))
     raise SystemExit(subprocess.run(cmd).returncode)
-
-
-def _which(prog: str) -> str | None:
-    from shutil import which
-
-    return which(prog)

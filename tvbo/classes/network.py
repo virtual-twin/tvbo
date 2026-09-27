@@ -32,7 +32,7 @@ _cfg_jax()
 from tvbo.behaviour._runtime import RuntimeAttributes
 from tvbo.data.registry import database_dir
 from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.utils import edge_param, keyed_items, transform_target
+from tvbo.utils import edge_param, keyed_items, normalize_params, transform_target
 from tvbo.utils.source import current_source_dir
 from tvbo.utils.yaml_loader import resolve_edge_var_aliases
 
@@ -3791,7 +3791,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 # Explicit edges (source/target): collect parameter names
                 params = getattr(e, "parameters", None)
                 if params and getattr(e, "source", None) is not None:
-                    for pname in params.keys() if hasattr(params, "keys") else []:
+                    for pname in normalize_params(params):
                         seen[pname] = True
             # Also include stored matrices
             for pname in self.edge_arrays():
@@ -4544,10 +4544,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             for pname, pval in eq.parameters.items():
                 arg_values.setdefault(pname, getattr(pval, "value", pval))
 
-        from tvbo.codegen.transforms import prepare, subscript_locals
+        from tvbo.codegen.transforms import prepare
 
-        rhs = str(getattr(eq, "rhs", eq) or "")
-        exp = parse_eq(eq, local_dict=subscript_locals(rhs))
+        exp = parse_eq(eq)
         if exp is None:
             return None, {}
         subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if arg_values.get(str(s)) is not None}

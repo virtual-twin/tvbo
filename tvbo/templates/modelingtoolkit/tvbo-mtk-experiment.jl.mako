@@ -19,14 +19,14 @@ Context: Pre-computed dict from BaseAdapter.prepare_context()
 </%doc>
 <%page args="experiment, model, integration, \
 dynamics_dict, sv_names, n_sv, \
-is_stochastic, dt, duration, solver_method, fixed_step, needs_stiff, \
+is_stochastic, dt, duration, solver_method, solve_kwargs, needs_stiff, \
 tstops, \
 **kwargs"/>
 <%!
 from tvbo.codegen import render_expression
 from sympy.parsing.sympy_parser import parse_expr as _parse_expr
 from tvbo.adapters.julia_model import (
-    julia_ode_package, make_renderer, needs_special_functions, symbol_names,
+    equation_rhs_text, julia_ode_package, make_renderer, needs_special_functions, symbol_names,
 )
 %>
 <%
@@ -107,7 +107,7 @@ for sv_name, sv in model.state_variables.items():
 has_higher_order = len(higher_order_svs) > 0
 
 # Detect if any equation uses special functions (shared across Julia backends)
-model_needs_special = needs_special_functions(model)
+model_needs_special = needs_special_functions(equation_rhs_text(model))
 
 # Helper: escape backslashes in Julia strings to avoid parse errors
 def jl_escape(s):
@@ -270,7 +270,7 @@ tspan = (0.0, ${duration})
         tstops_str = ", tstops=[" + ", ".join(str(t) for t in tstops) + "]"
 %>\
 prob = ODEProblem(sys, u0, tspan, jac=true)
-sol = solve(prob, ${solver_method}(); ${'dt=%s, ' % dt if fixed_step else ''}saveat=${dt}${tstops_str})
+sol = solve(prob, ${solver_method}(); ${solve_kwargs}${tstops_str})
 
 ## ── Plot ────────────────────────────────────────────────────────────────────
 using Plots

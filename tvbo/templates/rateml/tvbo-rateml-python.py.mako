@@ -17,7 +17,7 @@ Output:
 <%
 from tvbo.templates.base.utils import get_coupling_terms, get_func_name
 from tvbo.templates.rateml.utils import (
-    python_code, has_boundaries, get_initial_value,
+    python_code, has_boundaries,
     get_domain_str, get_boundary_str, get_range_str
 )
 

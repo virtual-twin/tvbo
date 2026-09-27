@@ -2,14 +2,10 @@
 
 The functions here turn a TVB-O ``Network`` (nodes with ``size``, edges with a ``connectivity`` rule, ``Dynamics``/``Coupling``/``Event`` biology) into the two structures every point-neuron backend needs:
 
-* **populations** — nodes grouped by their ``Dynamics``, each a block of
-  ``Node.size`` cells, with a stable base index per node so edges can address individual cells; and
-* **connections** — the explicit cell-to-cell :class:`ConnectionRecord` set that a
-  ``connectivity`` rule (``all_to_all``/``one_to_one``) lowers to, with self-connections filtered and per-connection ``weight``/``delay`` extracted.
+* **populations** — nodes grouped by their ``Dynamics``, each a block of ``Node.size`` cells, with a stable base index per node so edges can address individual cells; and
+* **connections** — the explicit cell-to-cell :class:`ConnectionRecord` set that a ``connectivity`` rule (``all_to_all``/``one_to_one``) lowers to, with self-connections filtered and per-connection ``weight``/``delay`` extracted.
 
-Everything here is independent of *how* a backend emits a synapse — that (LEMS XML, Brian2 ``Synapses``, …) stays in the backend adapter. The backend injects its own
-*role vocabulary* (which ``Dynamics`` are cells vs current sources vs event
-sources) so the same lowering serves NeuroML, Brian2 and the rest unchanged.
+Everything here is independent of *how* a backend emits a synapse — that (LEMS XML, Brian2 ``Synapses``, …) stays in the backend adapter. The backend injects its own *role vocabulary* (which ``Dynamics`` are cells vs current sources vs event sources), drawn from the NeuroML type sets defined here, so the same lowering serves NeuroML, Brian2 and the rest unchanged.
 """
 
 from __future__ import annotations
@@ -63,8 +59,7 @@ def unique_component_id(name, taken, kind="component"):
 def merge_params(*param_dicts):
     """Merge parameter dicts with later dicts overriding earlier ones.
 
-    The canonical order is dynamics-library → node/edge → per-connection, i.e.
-    the same precedence as the ``{**dyn, **node, **edge}`` spreads the backends build by hand. Keys are taken verbatim; values are not copied.
+    The canonical order is dynamics-library → node/edge → per-connection, i.e. the same precedence as the ``{**dyn, **node, **edge}`` spreads the backends build by hand. Keys are taken verbatim; values are not copied.
     """
     merged = {}
     for d in param_dicts:
@@ -123,15 +118,54 @@ class ConnectionRecord(TypedDict, total=False):
     from_rule: bool
 
 
+# ── NeuroML type vocabulary ───────────────────────────────────────────
+
+POISSON_INPUT_TYPES = frozenset({"poissonFiringSynapse", "transientPoissonFiringSynapse"})
+"""Poisson inputs that are a spike source and a synapse in one component, applied onto a cell's synapses rather than wired by a projection."""
+
+CURRENT_INPUT_TYPES = POISSON_INPUT_TYPES | frozenset(
+    {
+        "pulseGenerator",
+        "pulseGeneratorDL",
+        "compoundPulseGenerator",
+        "compoundInput",
+        "sineGenerator",
+        "sineGeneratorDL",
+        "rampGenerator",
+        "rampGeneratorDL",
+        "voltageClamp",
+        "voltageClampTriple",
+        "timedSynapticInput",
+    }
+)
+"""NeuroML inputs that act on a cell from outside it: a standalone component injected through an ``explicitInput``, never a population."""
+
+EVENT_SOURCE_TYPES = frozenset(
+    {
+        "spikeGenerator",
+        "spikeGeneratorRandom",
+        "spikeGeneratorRefPoisson",
+        "spikeGeneratorPoisson",
+        "spikeArray",
+        "SpikeSourcePoisson",
+    }
+)
+"""NeuroML spike sources: populations of their own that carry no membrane, connected to their targets by a projection."""
+
+
+def nml_type(dynamics, default=None):
+    """The NeuroML type a ``Dynamics`` names by its ``neuroml:<type>`` iri, or *default* when its iri names none."""
+    iri = getattr(dynamics, "iri", None) or ""
+    return iri.split(":", 1)[1] if iri.startswith("neuroml:") else default
+
+
 # ── Node grouping and role classification ─────────────────────────────
 
 
 def node_dynamics_name(node, default_dyn_name):
     """The ``Dynamics`` name a node runs.
 
-    ``Node.dynamics`` is a name-reference slot, so it may arrive as a bare name or as a resolved ``Dynamics``; a node that declares none falls back to
-    *default_dyn_name* — the experiment's top-level dynamics. One rule, shared by
-    every backend, so they cannot disagree about which model a node runs.
+    ``Node.dynamics`` is a name-reference slot, so it may arrive as a bare name or as a resolved ``Dynamics``; a node that declares none falls back to *default_dyn_name* — the experiment's top-level dynamics. One rule, shared by every backend, so they cannot disagree about which model a node runs.
     """
     node_dyn = getattr(node, "dynamics", None)
     if not node_dyn:
@@ -156,13 +190,12 @@ def classify_node_role(dyn_name, dyn_lib_obj, vocab):
 
     Returns ``(role, nml_type)`` with role one of ``"cell"``, ``"current_input"``, ``"event_source"``.
     """
-    dyn_iri = getattr(dyn_lib_obj, "iri", "") or ""
-    nml_type = dyn_iri.split(":", 1)[1] if dyn_iri.startswith("neuroml:") else dyn_name
-    if nml_type in vocab.get("current_input", ()):
-        return "current_input", nml_type
-    if nml_type in vocab.get("event_source", ()):
-        return "event_source", nml_type
-    return "cell", nml_type
+    type_name = nml_type(dyn_lib_obj, dyn_name)
+    if type_name in vocab.get("current_input", ()):
+        return "current_input", type_name
+    if type_name in vocab.get("event_source", ()):
+        return "event_source", type_name
+    return "cell", type_name
 
 
 # ── Connectivity-rule expansion (the allToAll lowering) ───────────────
@@ -181,10 +214,7 @@ def expand_input_targets(tgt_base, tgt_size, rule):
 def expand_edge_connections(edge, *, src_pop, src_base, tgt_pop, tgt_base, src_size, tgt_size):
     """Yield ``(from_idx, to_idx, from_rule)`` for one synapse edge.
 
-    An Edge with a ``connectivity`` rule is a population-to-population projection:
-    expand it into the individual cell-to-cell connections here, skipping the diagonal of a self-projection when ``allow_self_connections`` is False.
-    Without a rule the Edge is a single explicit cell-to-cell connection.
-    ``from_rule`` marks whether the connection came from a lowered rule.
+    An Edge with a ``connectivity`` rule is a population-to-population projection: expand it into the individual cell-to-cell connections here, skipping the diagonal of a self-projection when ``allow_self_connections`` is False. Without a rule the Edge is a single explicit cell-to-cell connection. ``from_rule`` marks whether the connection came from a lowered rule.
     """
     rule = getattr(edge, "connectivity", None)
     if rule:

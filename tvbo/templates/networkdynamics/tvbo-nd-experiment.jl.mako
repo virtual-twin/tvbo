@@ -28,14 +28,14 @@ coupling_vars, outdim, outsym_names, \
 n_nodes, nodes, graph_gen, has_graph_generator, edges_list, emf_names, \
 has_edge_matrix, has_explicit_edges, is_directed, \
 sv_names, n_sv, is_heterogeneous, is_stochastic, \
-dt, duration, solver_method, fixed_step, needs_stiff, needs_weighted, \
+dt, duration, solver_method, solve_kwargs, needs_stiff, needs_weighted, \
 weight_matrix, weight_sym, \
 dist_info, needs_random, dist_seed, \
 all_events, has_events, coupling_observed, find_fixpoint, \
 is_static, parse_node_parameters, get_noise_sigmas, graph_generator_call"/>
 <%!
 from tvbo.adapters.julia_model import (
-    julia_ode_package, needs_nanmath, needs_special_functions,
+    equation_rhs_text, julia_ode_package, needs_nanmath, needs_special_functions,
 )
 %>
 
@@ -55,10 +55,10 @@ using DelimitedFiles
 using SimpleWeightedGraphs
 % endif
 <%
-# Optional Julia packages, gated per dynamics (shared detection with the other backends):
-#  - SpecialFunctions for erf/erfc/…; NaNMath for domain-restricted powers in Piecewise.
-_needs_special = any(needs_special_functions(dyn) for dyn in dynamics_dict.values())
-_needs_nanmath = any(needs_nanmath(dyn) for dyn in dynamics_dict.values())
+# SpecialFunctions for erf/erfc/…, NaNMath for domain-restricted powers in a Piecewise, each sniffed once per dynamics.
+_rhs_texts = [equation_rhs_text(dyn) for dyn in dynamics_dict.values()]
+_needs_special = any(needs_special_functions(text) for text in _rhs_texts)
+_needs_nanmath = any(needs_nanmath(text) for text in _rhs_texts)
 %>
 % if _needs_special:
 using SpecialFunctions
@@ -437,17 +437,17 @@ end
 
 prob = SDEProblem(nw, nw_noise!, uflat(s), tspan, pflat(s))
 sol = solve(prob, EulerHeun(); dt=${dt}, saveat=${dt})
-% elif find_fixpoint:
+% else:
+% if find_fixpoint:
 ## ODEProblem from NWState: auto-extracts initial state, parameters, and callbacks
 u0 = NWState(nw)
 prob = ODEProblem(nw, u0, tspan)
-sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); ${'dt=%s, ' % dt if fixed_step else ''}saveat=${dt})
 % elif has_edge_matrix and has_weight_param:
 prob = ODEProblem(nw, uflat(s), tspan, pflat(p))
-sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); ${'dt=%s, ' % dt if fixed_step else ''}saveat=${dt})
 % else:
 prob = ODEProblem(nw, uflat(s), tspan, pflat(s))
-sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); ${'dt=%s, ' % dt if fixed_step else ''}saveat=${dt})
+% endif
+sol = solve(prob, ${solver_method}(${'TRBDF2()' if needs_stiff else ''}); ${solve_kwargs})
 % endif
 
 ## ── Graph data (extracted by Python adapter) ───────────────────────────────

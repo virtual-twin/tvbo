@@ -33,7 +33,6 @@ A cache hit requires both:
 
 from __future__ import annotations
 
-import functools
 import hashlib
 import os
 from collections.abc import Mapping
@@ -234,27 +233,38 @@ def check_cache(
 
 
 SEPARATOR = "__"
-"""What :meth:`ExperimentResult.save` puts between the segments of an output's path."""
+"""The separator :func:`result_tree` splits a container variable's name on. :meth:`ExperimentResult.save` spells it as a literal ``__`` in every name it builds, so the two change together."""
 
-STRUCTURAL_PREFIXES = frozenset({"integration", "optimization", "algorithm", "continuation", "observation", "inference"})
+RESULT_SECTIONS = {
+    "integration": "integration",
+    "exploration": "explorations",
+    "algorithm": "algorithms",
+    "optimization": "optimizations",
+    "continuation": "continuations",
+    "inference": "inferences",
+}
+"""Each section of a run's result, from its singular spelling to its plural one.
+
+The singular is how :meth:`ExperimentResult.save` names a section in a variable's path (``optimization__…``) and an alias :class:`ExperimentResult` answers to; the plural is the :class:`SimulationExperiment` slot a recipe declares the section under (``optimizations:``) and the attribute :class:`ExperimentResult` holds it in.
+"""
+
+_SEGMENT_SLOTS = {**RESULT_SECTIONS, "observation": "observations"}
+"""Every structural path segment under the recipe slot it restores to: the result sections, and ``observation``, which is structure without being a section of its own (observations hang off the run and off each fit)."""
+
+STRUCTURAL_PREFIXES = frozenset(_SEGMENT_SLOTS) - {"exploration"}
 """The path segments the writer emits as structure that a recipe also declares, and which therefore take the recipe's spelling.
 
-Re-spelled only where they carry children, so an observation a study happens to call ``observation`` stays what its author named it. ``estimate`` is deliberately absent: ``estimate__<param>`` is a fitted parameter the writer emits and no recipe section declares, so it has no spelling to be restored to and keeps the writer's own.
+Re-spelled only where they carry children, so an observation a study happens to call ``observation`` stays what its author named it. ``exploration`` is absent because the writer names an exploration's outputs by the exploration itself, never by the section. ``estimate`` is deliberately absent: ``estimate__<param>`` is a fitted parameter the writer emits and no recipe section declares, so it has no spelling to be restored to and keeps the writer's own.
 """
 
 
-@functools.cache
-def _spec_slot(segment: str) -> str:
-    """*segment* under the name :class:`SimulationExperiment` gives that slot.
+def write_container(ds, path, compress: bool = True) -> None:
+    """Write *ds* as a result container at *path*: HDF5 through h5netcdf, every variable deflated at level 4 unless *compress* is off.
 
-    The writer flattens in the singular (``optimization__…``) while a recipe declares in the plural (``optimizations:``). The plural is read off the datamodel rather than typed here, so the two spellings cannot drift from the schema. Cached, because the answer is a property of the schema and the alternative is re-reading every field of the class once per segment of every variable in the container.
+    Grids of trajectories and observations compress well (repeated structure, smooth fields), and level 4 is deflate's speed/size sweet spot; ``compress=False`` trades size for write speed. One self-describing format, so a write failure raises rather than falling back to a lossy one.
     """
-    import dataclasses
-
-    from tvbo.datamodel import schema as dm
-
-    slots = {f.name for f in dataclasses.fields(dm.SimulationExperiment)}
-    return segment if segment in slots else (f"{segment}s" if f"{segment}s" in slots else segment)
+    encoding = {name: {"zlib": True, "complevel": 4} for name in ds.data_vars} if compress else None
+    ds.to_netcdf(path, engine="h5netcdf", encoding=encoding)
 
 
 def result_tree(dataset):
@@ -272,7 +282,7 @@ def result_tree(dataset):
     groups: dict[str, dict] = {}
     for name in dataset.data_vars:
         segments = str(name).split(SEPARATOR)
-        path = "/" + "/".join(_spec_slot(s) if s in STRUCTURAL_PREFIXES else s for s in segments[:-1])
+        path = "/" + "/".join(_SEGMENT_SLOTS[s] if s in STRUCTURAL_PREFIXES else s for s in segments[:-1])
         da = dataset[name]
         groups.setdefault(path, {})[segments[-1]] = da.drop_vars([c for c in shared if c in da.coords])
 

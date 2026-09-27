@@ -119,6 +119,14 @@ def resolve_backend(name: str) -> BackendSpec:
     raise ValueError(f"Unknown backend {name!r}. Known: {', '.join(sorted(BACKENDS))}.")
 
 
+def effective_backend(experiment, requested: str | None = None) -> str:
+    """The backend that runs *experiment*: *requested* when given, else its declared ``execution.backend``, else ``tvboptim``.
+
+    An explicit ``--backend`` wins for the whole run; otherwise each experiment self-selects (a spiking network declares ``brian2``), so one study can mix a mean-field sweep and a spiking column and run each on the right engine.
+    """
+    return requested or getattr(getattr(experiment, "execution", None), "backend", None) or "tvboptim"
+
+
 def list_backends() -> list[BackendSpec]:
     return list(BACKENDS.values())
 

@@ -83,7 +83,7 @@ if coupling_inputs_info and all_couplings:
             _func_to_ci.setdefault(_fn, _ci)
 %>
 <%namespace name="compact" file="tvbo-tvboptim-compact-coupling.py.mako"/>
-% if any(resolve_coupling_spec(_c, _k, model, coupling_inputs_info, _func_to_ci, n_modes)['has_delay'] for _k, _c in all_couplings.items()):
+% if any(getattr(_c, 'delayed', False) for _c in all_couplings.values()):
 ${compact.render_compact_delayed_coupling()}
 % endif
 % for coupling_key, coupling in all_couplings.items():

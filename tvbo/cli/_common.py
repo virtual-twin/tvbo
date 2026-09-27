@@ -94,6 +94,86 @@ def experiment_ids(exp: Any) -> set[str]:
     return spellings | {experiment_id(s) for s in spellings} - {None}
 
 
+def select_experiments(study: Any, ids: str | None = None) -> list:
+    """The experiment records of *study*, or the comma-separated *ids* subset of them.
+
+    An id is matched against every spelling :func:`experiment_ids` accepts, so ``--experiment`` selects the same way in every verb; a selector that matches nothing is fatal. The records are datamodel objects — :func:`runtime_experiment` turns each into one that can ``run`` and ``render``, which callers do one at a time so a long study never holds every materialised experiment at once.
+    """
+    from tvbo.utils import as_list
+
+    records = as_list(getattr(study, "experiments", None))
+    if ids is None:
+        return records
+    wanted = {s.strip() for s in str(ids).split(",") if s.strip()}
+    records = [e for e in records if wanted & experiment_ids(e)]
+    if not records:
+        die(f"No experiment(s) matching {ids!r} in study.")
+    return records
+
+
+def runtime_experiment(study: Any, record: Any) -> Any:
+    """*record* materialised through ``study.get_experiment``, which is keyed on its ``id``, or a fatal error naming what usually stops one from loading."""
+    if hasattr(record, "run") or not hasattr(study, "get_experiment"):
+        return record
+    record_id = getattr(record, "id", None)
+    try:
+        return study.get_experiment(record_id)
+    except Exception as e:
+        die(
+            f"Could not resolve experiment {record_id!r} to a runnable object: {e}\nIf the recipe references custom builder/analysis modules (e.g. `module: my_networks`), make them importable — run from their directory or set PYTHONPATH."
+        )
+
+
+def figure_code_modules(figures: Any) -> list[str]:
+    """The ``code_modules`` the *figures* declare, deduplicated in declaration order.
+
+    Importing one registers the custom panels and transforms its figures name, which is why ``tvbo run`` imports them before a study's experiments and ``tvbo workflow`` bundles them into a kit's ``code/``.
+    """
+    from tvbo.utils import as_list
+
+    return list(dict.fromkeys(str(m) for fig in as_list(figures) for m in as_list(getattr(fig, "code_modules", None))))
+
+
+def spec_dir(spec: str) -> Path | None:
+    """The directory a spec's relative paths mean, or ``None`` when the spec is not a file.
+
+    ``resolve_spec`` also accepts a CURIE (``study:Deco2014``), a bare database name and a ``file://`` URL; ``Path(spec).parent`` on any of those silently yields the cwd, which would resolve relative paths against whatever directory the CLI happened to run in.
+    """
+    raw = spec[len("file://") :] if spec.startswith("file://") else spec
+    path = Path(raw).expanduser()
+    return path.resolve().parent if path.is_file() else None
+
+
+def parse_assignment(raw: str, flag: str, form: str = "key=value") -> tuple[str, str]:
+    """Split one ``KEY=VALUE`` command-line assignment into its stripped key and its verbatim value.
+
+    Leading dashes are dropped, so ``--slurm.account=foo`` and ``slurm.account=foo`` are the same assignment. A missing ``=`` is a usage error naming *flag* and the *form* it expects.
+    """
+    s = raw.lstrip("-")
+    if "=" not in s:
+        raise typer.BadParameter(f"{flag} {raw!r} must be of the form {form}")
+    key, _, value = s.partition("=")
+    return key.strip(), value
+
+
+def coerce_value(raw: str) -> Any:
+    """A command-line value as the type it spells: a JSON list or object, a bool, an int, a float, else the string unchanged."""
+    text = raw.strip()
+    if text[:1] in ("[", "{"):
+        try:
+            return _json.loads(text)
+        except ValueError:
+            return raw
+    if text.lower() in ("true", "false"):
+        return text.lower() == "true"
+    for cast in (int, float):
+        try:
+            return cast(text)
+        except ValueError:
+            pass
+    return raw
+
+
 def experiment_key(exp: Any) -> str:
     """The canonical short key for an experiment.
 

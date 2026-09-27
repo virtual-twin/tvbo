@@ -201,6 +201,25 @@ def _sync_assets(assets_dir: Path | None, dest_skill_dir: Path) -> None:
         shutil.copytree(assets_dir, dest_assets, ignore=shutil.ignore_patterns(*ASSET_IGNORE))
 
 
+def _target_name(skill: Skill, use_install_name: bool) -> str:
+    """The name a skill is rendered under: :attr:`Skill.install_name` (with the ``tvbo-`` prefix) for an install, the raw canonical ``name`` for in-repo rendering."""
+    return skill.install_name if use_install_name else skill.name
+
+
+def _write_skill(out: Path, fm: dict, body: str, managed: bool, tvbo_version: str | None) -> Path:
+    """Write *body* under the frontmatter *fm* to *out*, creating its directory.
+
+    A *managed* file also carries ``managed-by: tvbo`` and, when known, ``tvbo-version``, which is how :func:`is_managed_file` tells tvbo's own files from a user's.
+    """
+    if managed:
+        fm = {**fm, "managed-by": "tvbo"}
+        if tvbo_version:
+            fm["tvbo-version"] = tvbo_version
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(_wrap(fm, body), encoding="utf-8")
+    return out
+
+
 def render_claude_code(
     skill: Skill,
     dest_dir: Path,
@@ -214,21 +233,13 @@ def render_claude_code(
     Parameters
     ----------
     managed
-        If True, stamp ``managed-by: tvbo`` and ``tvbo-version`` into the
-        frontmatter so :func:`uninstall_managed` can recognise our files.
+        If True, stamp ``managed-by: tvbo`` and ``tvbo-version`` into the frontmatter so :func:`is_managed_file` can recognise our files.
     use_install_name
-        If True, use :attr:`Skill.install_name` (with the ``tvbo-`` prefix);
-        otherwise use the raw canonical ``name`` (for in-repo rendering).
+        If True, use :attr:`Skill.install_name` (with the ``tvbo-`` prefix); otherwise use the raw canonical ``name`` (for in-repo rendering).
     """
-    target_name = skill.install_name if use_install_name else skill.name
-    fm: dict = {"name": target_name, "description": skill.description}
-    if managed:
-        fm["managed-by"] = "tvbo"
-        if tvbo_version:
-            fm["tvbo-version"] = tvbo_version
-    out = dest_dir / target_name / "SKILL.md"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(_wrap(fm, skill.body), encoding="utf-8")
+    target_name = _target_name(skill, use_install_name)
+    fm = {"name": target_name, "description": skill.description}
+    out = _write_skill(dest_dir / target_name / "SKILL.md", fm, skill.body, managed, tvbo_version)
     _sync_assets(skill.assets_dir, out.parent)
     return out
 
@@ -246,23 +257,13 @@ def render_copilot(
     Parameters
     ----------
     managed
-        If True, stamp ``managed-by: tvbo`` and ``tvbo-version`` into the
-        frontmatter so :func:`uninstall_managed` can recognise our files.
+        If True, stamp ``managed-by: tvbo`` and ``tvbo-version`` into the frontmatter so :func:`is_managed_file` can recognise our files.
     use_install_name
-        If True, use :attr:`Skill.install_name` (with the ``tvbo-`` prefix);
-        otherwise use the raw canonical ``name`` (for in-repo rendering).
+        If True, use :attr:`Skill.install_name` (with the ``tvbo-`` prefix); otherwise use the raw canonical ``name`` (for in-repo rendering).
     """
-    target_name = skill.install_name if use_install_name else skill.name
-    apply_to = ",".join(skill.applies_to) if skill.applies_to else "**"
-    fm: dict = {"applyTo": apply_to}
-    if managed:
-        fm["managed-by"] = "tvbo"
-        if tvbo_version:
-            fm["tvbo-version"] = tvbo_version
-    out = dest_dir / f"{target_name}.instructions.md"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(_wrap(fm, flat_body(skill)), encoding="utf-8")
-    return out
+    fm = {"applyTo": ",".join(skill.applies_to) if skill.applies_to else "**"}
+    out = dest_dir / f"{_target_name(skill, use_install_name)}.instructions.md"
+    return _write_skill(out, fm, flat_body(skill), managed, tvbo_version)
 
 
 def render_cursor(
@@ -274,20 +275,9 @@ def render_cursor(
     use_install_name: bool = False,
 ) -> Path:
     """Render a skill as a Cursor ``<name>.mdc`` file."""
-    target_name = skill.install_name if use_install_name else skill.name
-    fm: dict = {
-        "description": skill.description,
-        "globs": skill.applies_to or [],
-        "alwaysApply": False,
-    }
-    if managed:
-        fm["managed-by"] = "tvbo"
-        if tvbo_version:
-            fm["tvbo-version"] = tvbo_version
-    out = dest_dir / f"{target_name}.mdc"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(_wrap(fm, flat_body(skill)), encoding="utf-8")
-    return out
+    fm = {"description": skill.description, "globs": skill.applies_to or [], "alwaysApply": False}
+    out = dest_dir / f"{_target_name(skill, use_install_name)}.mdc"
+    return _write_skill(out, fm, flat_body(skill), managed, tvbo_version)
 
 
 def render_prompt(skills: list[Skill], dest: Path | None = None) -> str:

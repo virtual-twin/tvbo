@@ -11,10 +11,12 @@ import logging
 
 import numpy as np
 
+from tvbo.behaviour._runtime import Catalogued
+
 logger = logging.getLogger(__name__)
 
 
-class StimulusBehaviour:
+class StimulusBehaviour(Catalogued):
     """Loading, symbolic reading, rendering and plotting for an exogenous stimulus."""
 
     @classmethod
@@ -48,13 +50,6 @@ class StimulusBehaviour:
                 logger.warning("Multiple stimulus classes found: %s", ontoclasses)
             ontoclass = ontoclasses[0]
         return cls(**class2metadata(ontoclass)._as_dict)
-
-    @classmethod
-    def from_file(cls, filepath):
-        """Load a `Stimulus` from a YAML metadata file."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.load(filepath, target_class=cls)
 
     @property
     def metadata(self):

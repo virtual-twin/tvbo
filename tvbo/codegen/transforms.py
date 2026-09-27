@@ -15,7 +15,6 @@ Each printer already turns that into its own ``where``/``ifelse``, so the mask i
 
 from __future__ import annotations
 
-import re
 from collections.abc import Sequence
 
 from sympy import (
@@ -31,7 +30,6 @@ from sympy import (
 )
 from sympy.logic.boolalg import Boolean
 
-_SUBSCRIPTED = re.compile(r"([A-Za-z_]\w*)\s*\[")
 MASK_PREFIX = "_mask"
 
 REDUCTIONS: dict[str, Basic] = {
@@ -50,14 +48,6 @@ plausible-looking extremum of the entries it was told to ignore. ``mean`` additi
 divides by the number of kept entries, which is the whole reason an unmasked
 ``mean(weight)`` over a sparse connectome is not the mean of its edges.
 """
-
-
-def subscript_locals(source: str) -> dict[str, IndexedBase]:
-    """An ``IndexedBase`` for every name *source* subscripts, to hand the parser.
-
-    ``parse_expr`` builds a plain ``Symbol`` for a name it has not been given, and a ``Symbol`` is not subscriptable — so ``mean(weight[weight > 0])`` would die with ``'Symbol' object is not subscriptable`` before anything could read the mask.
-    """
-    return {name: IndexedBase(name) for name in set(_SUBSCRIPTED.findall(source or ""))}
 
 
 def _plain(expr):

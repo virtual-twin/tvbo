@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from tvbo.data import dataref as _dref
-from tvbo.utils import as_list
+from tvbo.utils import as_list, keyed_items
 
 logger = logging.getLogger("tvbo.run")
 
@@ -61,13 +61,9 @@ def analysis_name(analysis) -> str:
     return str(name)
 
 
-def _arg_items(arguments) -> list[tuple[str, Any]]:
-    """``(name, Argument)`` pairs from the keyed dict or the list spelling."""
-    if not arguments:
-        return []
-    if hasattr(arguments, "items"):
-        return [(str(k), v) for k, v in arguments.items()]
-    return [(str(_slot(a, "name")), a) for a in arguments]
+def _arg_items(arguments, kind: str = "arguments") -> list[tuple[str, Any]]:
+    """``(name, Argument)`` pairs of an argument collection in either spelling (:func:`tvbo.utils.keyed_items`), each name a plain ``str`` so it can key a call and a YAML record alike."""
+    return [(str(key), arg) for key, arg in keyed_items(arguments, kind)]
 
 
 # --------------------------------------------------------------------------- WHERE
@@ -255,7 +251,7 @@ def render_inprocess(analysis, kwargs):
     cls_ref = _slot(analysis, "class_call")
     if cls_ref is not None:
         cls = _import_attr(str(_slot(cls_ref, "module", "")), str(_slot(cls_ref, "name", "")), name)
-        ctor = {str(_slot(a, "name")): _slot(a, "value") for a in as_list(_slot(cls_ref, "constructor_args"))}
+        ctor = {key: _slot(a, "value") for key, a in _arg_items(_slot(cls_ref, "constructor_args"), "constructor_args")}
         return cls(**ctor)(**kwargs)
 
     declared = [k for k in ("function", "equation") if _slot(analysis, k) is not None]
@@ -725,14 +721,15 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
     """Execute one declared analysis and persist its result. Returns the container path."""
     import yaml
 
+    from tvbo.data.experiment_result_io import write_container
+
     name = analysis_name(analysis)
     produced = _render(analysis, _kwargs_of(analysis, results_root))
     ds = _as_dataset(name, produced)
 
     path = container_path(name, results_root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    encoding = {v: {"zlib": True, "complevel": 4} for v in ds.data_vars} if compress else None
-    ds.to_netcdf(path, engine="h5netcdf", encoding=encoding)
+    write_container(ds, path, compress)
     record = _provenance(analysis, (str(v)[len("observation__") :] for v in ds.data_vars))
     # The declaration's own digest travels in the sidecar, so staleness is per analysis rather than "the spec file was touched" (see study_manifest._stale_or_missing_analyses) and the container has one companion rather than three.
     from tvbo.data.study_manifest import _analysis_fingerprint

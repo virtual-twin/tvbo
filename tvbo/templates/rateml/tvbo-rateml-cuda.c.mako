@@ -17,10 +17,8 @@ Output:
 </%doc>
 <%
 from tvbo.templates.base.utils import get_coupling_terms, get_func_name
-from tvbo.templates.rateml.utils import (
-    cuda_code, has_boundaries, get_initial_value,
-    get_domain_str, get_boundary_str
-)
+from tvbo.templates.rateml.utils import cuda_code, get_boundary_str
+from tvbo.utils import initial_value
 
 # Model name: the one sanitized identifier.
 model_name = get_func_name(model)
@@ -134,7 +132,7 @@ extern "C" __global__ void ${model_name}(
 
     // State variable declarations
     % for sv_name, sv in state_vars:
-    float ${sv_name} = ${get_initial_value(sv)}f;
+    float ${sv_name} = ${initial_value(sv)}f;
     % endfor
 
     // Derivative declarations

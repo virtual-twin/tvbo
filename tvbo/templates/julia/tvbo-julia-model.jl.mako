@@ -2,6 +2,21 @@
 ## Slim emitter: all metadata→Julia translation lives in
 ## tvbo.adapters.julia_model.build_model_context (passed in as ``mc``).
 <%page args="mc"/>
+<%def name="node_locals(mc, indent)">\
+## Every local one iteration of a per-node loop binds: the node's state, its own parameter values, its coupling inputs, and the derived variables computed from them.
+% for line in mc['unpack']:
+${indent}${line}
+% endfor
+% for line in mc.get('pernode_gather', []):
+${indent}${line}
+% endfor
+% for line in mc['coupling_body']:
+${indent}${line}
+% endfor
+% for name, rhs in mc['derived_vars']:
+${indent}${name} = ${rhs}
+% endfor
+</%def>\
 % if mc['needs_special']:
 using SpecialFunctions
 % endif
@@ -33,22 +48,7 @@ function ${mc['func_name']}!(dx, ${mc['arg_x']}, p, t = 0)
 % endfor
 
     @inbounds for i in 1:N
-        ## Per-node state
-% for line in mc['unpack']:
-        ${line}
-% endfor
-        ## Per-node heterogeneous parameters (e.g. FIC-tuned J_i)
-% for line in mc.get('pernode_gather', []):
-        ${line}
-% endfor
-        ## Per-node coupling (gather / local)
-% for line in mc['coupling_body']:
-        ${line}
-% endfor
-        ## Derived variables
-% for name, rhs in mc['derived_vars']:
-        ${name} = ${rhs}
-% endfor
+${node_locals(mc, '        ')}\
         ## State variable derivatives
 % for lhs, rhs in mc['dfun']:
         ${lhs} ${rhs}

@@ -18,7 +18,7 @@ Order (mirrors a typical "Model" methods sub-section):
   8. References
 </%doc>
 <%
-from sympy import latex, Eq, Symbol, Derivative
+from sympy import latex, Symbol
 from tvbo.utils import report
 
 derivative_notation = context.get('derivative_notation', 'd')
@@ -27,42 +27,8 @@ mul_symbol = context.get('mul_symbol', None)
 # Display overrides passed to every sympy.latex call, so equations use the source's own notation (``w_plus`` as ``w_+``).
 symbol_names = {}
 
-def _dot_lhs(deriv, mul_symbol='*'):
-    try:
-        t = Symbol("t")
-        order = sum(1 for v in deriv.variables if v == t)
-        base = deriv.expr
-        base_latex = latex(base, mul_symbol=mul_symbol, symbol_names=symbol_names)
-        if order == 1:
-            return f"\\dot{{{base_latex}}}"
-        if order == 2:
-            return f"\\ddot{{{base_latex}}}"
-        if order == 3:
-            return f"\\dddot{{{base_latex}}}"
-        return f"\\frac{{d^{order}}}{{d t^{order}}} {base_latex}"
-    except Exception:
-        return latex(deriv, mul_symbol=mul_symbol, symbol_names=symbol_names)
-
-def latex_equation(eq, mul_symbol=mul_symbol):
-    if derivative_notation == 'dot' and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
-        lhs = _dot_lhs(eq.lhs, mul_symbol=mul_symbol)
-        rhs = latex(eq.rhs, mul_symbol=mul_symbol, symbol_names=symbol_names)
-        return f"{lhs} = {rhs}"
-    return latex(eq, mul_symbol=mul_symbol, symbol_names=symbol_names)
-
-def _slot(obj, name, default=None):
-    return getattr(obj, name, default) if obj is not None else default
-
-def _present(value):
-    return value not in (None, '', [], {})
-
-# Cell formatters live in the adapter (tvbo.utils.report) to avoid duplicating
-# them across the report templates; alias for the local call sites below.
-_unit_text = report.unit_text
-_range_text = report.range_text
-_distribution_text = report.distribution_text
-_metadata_text = report.metadata_text
-_flag_text = report.flag_text
+def latex_equation(eq):
+    return report.equation_latex(eq, derivative_notation, symbol_names, mul_symbol)
 
 if 'experiment' in context.keys():
     model = context.get('experiment').dynamics
@@ -88,10 +54,10 @@ outputs = list(model.output or [])
 _scope = report.symbol_scope(model)
 events_lines = []
 for _en, _ev in (getattr(model, 'events', None) or {}).items():
-    _cond = _slot(_slot(_ev, 'condition', None), 'rhs', None)
-    _aff = _slot(_slot(_ev, 'affect', None), 'rhs', None)
+    _cond = report.slot(report.slot(_ev, 'condition', None), 'rhs', None)
+    _aff = report.slot(report.slot(_ev, 'affect', None), 'rhs', None)
     _parts = []
-    if _present(_cond):
+    if report.present(_cond):
         try:
             _c = latex(_scope.parse(str(_cond)), symbol_names=symbol_names)
         except Exception:

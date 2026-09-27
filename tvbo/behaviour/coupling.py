@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import numpy as np
 
+from tvbo.behaviour._runtime import Catalogued
 
-class CouplingBehaviour:
+
+class CouplingBehaviour(Catalogued):
     """Population, rendering and symbolic reading for a coupling function."""
 
     def _from_ontology(self, key: str) -> bool:
@@ -65,45 +67,10 @@ class CouplingBehaviour:
             raise ValueError("datamodel_instance must be a tvbo_datamodel.Coupling instance.")
         return cls(**datamodel_instance._as_dict)
 
-    @classmethod
-    def from_file(cls, filepath: str):
-        """Load a Coupling from a YAML file."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.load(str(filepath), target_class=cls)
-
-    @classmethod
-    def from_db(cls, name: str):
-        """Load a Coupling by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("Coupling", name)))
-
-    @classmethod
-    def list_db(cls) -> list[str]:
-        """List available coupling functions in the tvbo database."""
-        from tvbo.data.registry import list_entries
-
-        return list_entries("Coupling")
-
     @property
     def metadata(self):
         """The coupling's own metadata, i.e. this object itself (back-compat accessor)."""
         return self
-
-    def to_yaml(self, filepath: str | None = None):
-        """Serialize this coupling to YAML.
-
-        Args:
-            filepath: Optional path to write the YAML to. If omitted, the
-                YAML is only returned.
-
-        Returns:
-            The YAML representation of the coupling as a string.
-        """
-        from tvbo.utils import to_yaml as _to_yaml
-
-        return _to_yaml(self, filepath)
 
     def render(self, format="yaml", **kwargs) -> str:
         """Render this coupling in the requested output format.
@@ -290,6 +257,25 @@ class CouplingBehaviour:
         except Exception:
             return None
 
+    @staticmethod
+    def _edge_indexing(delays=False):
+        """The index symbols a symbolic coupling is written in, and readers placing a state at either end of an edge.
+
+        Returns ``(i, j, N, w, incoming, local)``: the receiving and the summed node, the node count, the weight base, and two readers taking a state's name — ``incoming`` gives it at the summed node, ``sn[j, t - tau[i, j]]`` under *delays* and ``sn[j]`` otherwise, and ``local`` gives it at the receiving node, ``sn[i]``.
+        """
+        from sympy import IndexedBase, Symbol, symbols
+
+        i, j, N = symbols("i j N")
+        t, tau = Symbol("t"), IndexedBase("tau")
+
+        def incoming(sn):
+            return IndexedBase(sn)[j, t - tau[i, j]] if delays else IndexedBase(sn)[j]
+
+        def local(sn):
+            return IndexedBase(sn)[i]
+
+        return i, j, N, IndexedBase("w"), incoming, local
+
     def symbolic(self, delays=False):
         """Full symbolic coupling equation with proper indexed state variables.
 
@@ -311,35 +297,17 @@ class CouplingBehaviour:
         Parsing and substitution both stay inside ``evaluate(False)`` so that sympy neither canonicalizes signs nor reorders an ``Add`` before the states are indexed. In the factored case a bare state name refers to the summed (``j``) node even where it is declared ``local``; only an explicit ``_i`` stays local.
         """
         import sympy as sp
-        from sympy import IndexedBase, Sum, Symbol, symbols
+        from sympy import Sum, Symbol
 
         from tvbo.parse.expression import parse_eq
 
-        i, j, N, gx = symbols("i j N gx")
-        w = IndexedBase("w")
+        i, j, N, w, _incoming, _local = self._edge_indexing(delays)
+        gx = Symbol("gx")
 
         incoming = [str(s) for s in (self.incoming_states or [])]
         local = [str(s) for s in (self.local_states or [])]
 
-        state_bases = {}
         subs_map = {}
-        for state_name in set(incoming + local):
-            state_bases[state_name] = IndexedBase(state_name)
-
-        if delays:
-            t = Symbol("t")
-            tau = IndexedBase("tau")
-
-            def _incoming(sn):
-                return state_bases[sn][j, t - tau[i, j]]
-        else:
-
-            def _incoming(sn):
-                return state_bases[sn][j]
-
-        def _local(sn):
-            return state_bases[sn][i]
-
         for sn in incoming:
             subs_map[Symbol(sn)] = _incoming(sn)
         for sn in local:
@@ -416,7 +384,7 @@ class CouplingBehaviour:
         A factored coupling emits a *list* pre-expression whose k-th component is summed over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
         """
         import sympy as sp
-        from sympy import IndexedBase, Sum, Symbol, symbols
+        from sympy import Sum, Symbol
 
         from tvbo.parse.expression import parse_eq
 
@@ -425,14 +393,8 @@ class CouplingBehaviour:
         if not isinstance(pre, (list, tuple)):
             return []
 
-        i, j, N = symbols("i j N")
-        w = IndexedBase("w")
+        i, j, N, w, _incoming, _ = self._edge_indexing(delays)
         states = {str(s) for s in (self.incoming_states or [])} | {str(s) for s in (self.local_states or [])}
-        t, tau = Symbol("t"), IndexedBase("tau")
-
-        def _incoming(sn):
-            base = IndexedBase(sn)
-            return base[j, t - tau[i, j]] if delays else base[j]
 
         # In a summed pre a bare state (or its `_j` alias) is the incoming (j) node.
         subs = {}

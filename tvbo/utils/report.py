@@ -19,12 +19,13 @@ Functions:
 import operator
 import re
 from collections.abc import Sequence
+from functools import cache
 from pathlib import Path
 from typing import Any, NamedTuple
 
-import pandas as pd
-
 from tvbo.data import db
+from tvbo.utils import as_list, keyed_items, normalize_params
+from tvbo.utils.yaml_loader import looks_like_path
 
 _EMPTY_MARKERS = {"", "—", "-", "None", "nan"}
 
@@ -283,15 +284,10 @@ def value_of(obj):
 def recipe_param(experiment, name, group: str = "dynamics"):
     """A declared parameter's value, read from the recipe rather than typed into prose.
 
-    *group* selects where to look: ``"dynamics"`` for the model's parameters, or the name of a
-    single event/coupling whose parameters to read. Returns None when the name is not declared, so a renamed parameter shows as a dash instead of silently reporting a stale literal.
+    *group* selects where to look: ``"dynamics"`` for the model's parameters, or the name of a single event/coupling whose parameters to read. Returns None when the name is not declared, so a renamed parameter shows as a dash instead of silently reporting a stale literal.
     """
     holder = getattr(experiment, group, None) if group != "dynamics" else experiment.dynamics
-    params = getattr(holder, "parameters", None)
-    if params is None:
-        return None
-    items = params.items() if hasattr(params, "items") else [(getattr(p, "name", None), p) for p in params]
-    return next((value_of(p) for n, p in items if n == name), None)
+    return value_of(normalize_params(getattr(holder, "parameters", None)).get(name))
 
 
 def _result_files(out_dir, experiment: str | None, suffix: str) -> list[Path]:
@@ -509,7 +505,7 @@ def divergence_register(source) -> dict:
 
     The tolerance is load-bearing. A pattern that demands a bare id matches nothing on a register that bolds its ids, and the zeros it returns read as "no divergences found".
     """
-    text = Path(source).read_text() if _looks_like_path(source) else str(source)
+    text = Path(source).read_text() if looks_like_path(source) else str(source)
     classes: dict[str, dict] = {}
     scores = False
     for line in text.splitlines():
@@ -852,22 +848,16 @@ def present(value):
     return value not in (None, "", [], {})
 
 
-_SYMBOL_LATEX_FNS = None
-
-
+@cache
 def _symbol_latex(text):
-    r"""Render ``text`` as an inline-LaTeX symbol via sympy, imported lazily once.
+    r"""Render ``text`` as an inline-LaTeX symbol via sympy, memoised per name.
 
-    sympy is a heavy import deliberately kept out of this module's import path (as are the other local imports here), so the ``(Symbol, latex)`` pair is cached on first use rather than re-imported per table row.
+    sympy is a heavy import deliberately kept out of this module's import path (as are the other local imports here), so it is imported on first use; a report renders the same few names in every table, so each is rendered once.
 
     sympy renders a symbol *name* verbatim, so a LaTeX-active character in the source notation (``% # & $``) survives unescaped and would corrupt the enclosing ``$...$`` cell — ``%`` silently comments out the rest of the line, ``$`` closes math mode. sympy never emits these for a symbol, so they are escaped after rendering: a no-op for ordinary notation (Greek, sub/superscripts, ``\\`` commands), whose ``\\ { } _ ^`` sympy emits legitimately and must keep.
     """
-    global _SYMBOL_LATEX_FNS
-    if _SYMBOL_LATEX_FNS is None:
-        from sympy import Symbol, latex
+    from sympy import Symbol, latex
 
-        _SYMBOL_LATEX_FNS = (Symbol, latex)
-    Symbol, latex = _SYMBOL_LATEX_FNS
     return re.sub(r"(?<!\\)([%#&$])", r"\\\1", latex(Symbol(text)))
 
 
@@ -902,13 +892,10 @@ def format_number(value, decimals=4):
 
 
 def name_items(collection):
-    """Yield ``(name, obj)`` pairs from a name-keyed dict, list, or ``None``."""
+    """``(name, obj)`` pairs from a keyed collection in any shape :func:`tvbo.utils.keyed_items` reads, ``[]`` for ``None`` or empty; a list member without a ``name`` is keyed ``item_<i>``."""
     if not collection:
         return []
-    if hasattr(collection, "items"):
-        return list(collection.items())
-    values = collection.values() if hasattr(collection, "values") else collection
-    return [(slot(v, "name", f"item_{i}"), v) for i, v in enumerate(values)]
+    return [(f"item_{i}" if key is None else key, obj) for i, (key, obj) in enumerate(keyed_items(collection))]
 
 
 def unit_text(unit):
@@ -1110,9 +1097,7 @@ def model_functions(model, derivative_notation="dot", mul_symbol=None):
         rhs = slot(slot(func, "equation"), "rhs", "")
         if rhs in (None, ""):
             continue
-        args = slot(func, "arguments", None)
-        args = list(args.values()) if hasattr(args, "values") else list(args or [])
-        args = [str(slot(a, "name", a)) for a in args]
+        args = [str(slot(a, "name", a)) for a in as_list(slot(func, "arguments", None) or None)]
         try:
             body = equation_latex(
                 parse_eq(str(rhs), parameters=symbols + args, functions=functions), derivative_notation, None, mul_symbol
@@ -1172,14 +1157,7 @@ def coupling_of(experiments):
     """The distinct couplings these experiments use, in declared order."""
     seen, out = set(), []
     for exp in experiments:
-        candidates = slot(exp, "coupling", None) or slot(slot(exp, "network"), "coupling", None)
-        if candidates is None:
-            continue
-        if hasattr(candidates, "values"):
-            candidates = list(candidates.values())
-        elif not isinstance(candidates, (list, tuple)):
-            candidates = [candidates]
-        for cpl in candidates:
+        for cpl in as_list(slot(exp, "coupling", None) or slot(slot(exp, "network"), "coupling", None)):
             key = str(slot(cpl, "name", None) or slot(cpl, "label", None) or id(cpl))
             if key not in seen:
                 seen.add(key)
@@ -1458,11 +1436,7 @@ def model_delta(model, baseline):
     from types import SimpleNamespace
 
     def _keyed(coll):
-        if not coll:
-            return {}
-        if hasattr(coll, "items"):
-            return dict(coll.items())
-        return {slot(v, "name", i): v for i, v in enumerate(coll)}
+        return dict(name_items(coll))
 
     b_eqs, m_eqs = _equations_of(baseline), _equations_of(model)
 
@@ -1770,11 +1744,9 @@ def sweep_axes(experiment):
 
     ``explorations`` is keyed by name, so iterate the values: iterating the mapping walks the keys, and a string has no slots, which is the other half of why this was empty.
     """
-    explorations = slot(experiment, "explorations", None) or {}
-    members = explorations.values() if hasattr(explorations, "values") else explorations
     return {
         slot(axis, "name", None) or str(name): _axis_range(axis)
-        for exploration in members
+        for exploration in as_list(slot(experiment, "explorations", None))
         for name, axis in name_items(slot(exploration, "space", None))
     }
 
@@ -1804,17 +1776,17 @@ def _speed_text(conduction_speed):
 
     A speed is not a time: routing it through :func:`time_text` prints "3 mm_per_ms" or, where the unit is undeclared, the seconds default applied to a velocity.
     """
+    from tvbo.utils.units import unit_to_symbol
+
     value = slot(conduction_speed, "value", None)
     if not value:
         return "none"
-    unit = str(slot(conduction_speed, "unit", None) or "mm/ms").replace("_per_", "/")
-    return f"{format_number(value)} {unit}"
+    return f"{format_number(value)} {unit_to_symbol(slot(conduction_speed, 'unit', None) or 'mm/ms')}"
 
 
 def _reference_text(experiment):
     """The paper figure(s) an experiment targets, from its declared references."""
-    refs = slot(experiment, "references", None) or []
-    refs = refs if isinstance(refs, (list, tuple)) else [refs]
+    refs = as_list(slot(experiment, "references", None) or None)
     out = [str(slot(r, "label", None) or slot(r, "name", None) or r).strip() for r in refs]
     return ", ".join(r for r in out if r)
 
@@ -1841,6 +1813,18 @@ def _edge_delay_text(net, unit=None):
     return f"{time_text(delays[0], unit)}-{time_text(delays[-1], unit)}"
 
 
+def _run_frame(experiment):
+    """``(network, integrator, time unit, node count)`` of an experiment, the frame both its table row and its settings sentence describe.
+
+    The node count is the declared ``number_of_nodes`` or ``number_of_regions``, else the length of an explicit ``nodes`` list, else None.
+    """
+    net, integ = (slot(experiment, "network") or slot(experiment, "connectivity")), slot(experiment, "integration")
+    nodes = slot(net, "number_of_nodes", None) or slot(net, "number_of_regions", None)
+    if nodes is None and present(slot(net, "nodes", None)):
+        nodes = len(slot(net, "nodes"))
+    return net, integ, _integration_unit(integ), nodes
+
+
 def experiment_facts(experiment, shared_parameters=()):
     """Ordered ``{column: cell}`` of everything an experiment can differ from its siblings in.
 
@@ -1848,14 +1832,9 @@ def experiment_facts(experiment, shared_parameters=()):
 
     Only parameters *every* member of the family defines are included. A parameter a variant introduces has no counterpart in the base and would leave a hole in the column, which is the one thing a merged table must not do; the variant's own delta describes it instead.
     """
-    net, integ = (slot(experiment, "network") or slot(experiment, "connectivity")), slot(experiment, "integration")
-    unit = _integration_unit(integ)
+    net, integ, unit, nodes = _run_frame(experiment)
     swept = sweep_axes(experiment)
     facts = {"Exp": str(slot(experiment, "id", "")), "Fig": _reference_text(experiment)}
-
-    nodes = slot(net, "number_of_nodes", None) or slot(net, "number_of_regions", None)
-    if nodes is None and present(slot(net, "nodes", None)):
-        nodes = len(slot(net, "nodes"))
     facts["Nodes"] = "" if nodes is None else str(nodes)
     facts["Delays"] = _edge_delay_text(net, unit) or _speed_text(slot(net, "conduction_speed"))
     facts["Method"] = str(slot(integ, "method", "") or "")
@@ -1911,12 +1890,7 @@ def settings_sentence(experiment):
 
     Solver, step, duration, transient, network size and swept range are stated here so a recipe's authored ``description:`` never has to restate them — the numbers a description repeats are the numbers that go stale when the recipe changes. What the description says about *why* an experiment exists is left untouched.
     """
-    net, integ = (slot(experiment, "network") or slot(experiment, "connectivity")), slot(experiment, "integration")
-    unit = _integration_unit(integ)
-    nodes = slot(net, "number_of_nodes", None) or slot(net, "number_of_regions", None)
-    if nodes is None and present(slot(net, "nodes", None)):
-        nodes = len(slot(net, "nodes"))
-
+    _, integ, unit, nodes = _run_frame(experiment)
     clauses = []
     if nodes:
         clauses.append(f"{nodes} node" + ("s" if int(nodes) != 1 else ""))
@@ -1957,7 +1931,7 @@ def pipeline_text(pipeline):
 
     A step is named by what the recipe *calls* it, not by the library function it happens to dispatch to. Reading ``callable`` first printed Deco2014's five-step BOLD pipeline as ``? → ? → fftconvolve → ? → ?`` — every step declares a ``name`` and only the convolution also names an implementation, so the one step that resolved showed a scipy entry point where the reader wanted "convolve".
     """
-    steps = pipeline if isinstance(pipeline, (list, tuple)) else ([pipeline] if pipeline else [])
+    steps = as_list(pipeline or None)
     names = [
         slot(s, "name", None)
         or slot(s, "label", None)
@@ -1987,9 +1961,7 @@ def _observation_row(name, obs, observed_names):
 
     Sampling arrives as ``(label, value)`` pairs rather than joined text so the table can drop the ones every observation shares.
     """
-    sources = slot(obs, "source", None)
-    sources = sources if isinstance(sources, (list, tuple)) else ([sources] if sources else [])
-    names = [str(slot(s, "name", None) or s) for s in sources]
+    names = [str(slot(s, "name", None) or s) for s in as_list(slot(obs, "source", None) or None)]
     derived = any(n in observed_names for n in names)
     sampling = tuple((label, str(slot(obs, attr))) for attr, label in _SAMPLING_SLOTS if slot(obs, attr, None) is not None)
     return (
@@ -2155,17 +2127,9 @@ def unrendered_equations(source):
         ``(line number, equation source)`` for each hand-written display equation, in
         document order. Empty when the report renders all of its mathematics.
     """
-    text = Path(source).read_text(encoding="utf-8") if _looks_like_path(source) else str(source)
+    text = Path(source).read_text(encoding="utf-8") if looks_like_path(source) else str(source)
     prose = _PYTHON_CELL.sub(lambda m: "\n" * m.group(0).count("\n"), text)
     return [(prose[: m.start()].count("\n") + 1, " ".join(m.group(1).split())) for m in _DISPLAY_MATH.finditer(prose)]
-
-
-def _looks_like_path(source):
-    """Whether *source* names a file rather than being the document text itself."""
-    if isinstance(source, Path):
-        return True
-    text = str(source)
-    return "\n" not in text and len(text) < 4096 and Path(text).is_file()
 
 
 def captioned(table, caption, anchor, format="markdown", anchors=None):
@@ -2238,6 +2202,8 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
     short_caption = "Parameter values for the {} model*.".format(param_setting.model.label.first().replace("_", "-"))
 
     long_caption = short_caption + " " + "UID is the unique identifier of the parameter in the ontology."
+
+    import pandas as pd
 
     report_table = pd.DataFrame()
     report_table.index.name = "Parameter"

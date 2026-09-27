@@ -10,30 +10,11 @@ A mixin *can* hook construction — see :mod:`tvbo.behaviour` on ``__post_init__
 
 from __future__ import annotations
 
+from tvbo.behaviour._runtime import Catalogued
 
-class IntegratorBehaviour:
+
+class IntegratorBehaviour(Catalogued):
     """Ontology metadata, rendering and loading for an integrator."""
-
-    @classmethod
-    def from_file(cls, filepath: str) -> IntegratorBehaviour:
-        """Load an Integrator from a YAML file."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.load(str(filepath), target_class=cls)
-
-    @classmethod
-    def from_db(cls, name: str) -> IntegratorBehaviour:
-        """Load an Integrator by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("Integrator", name)))
-
-    @classmethod
-    def list_db(cls) -> list[str]:
-        """List available integrators in the tvbo database."""
-        from tvbo.data.registry import list_entries
-
-        return list_entries("Integrator")
 
     @property
     def metadata(self):
@@ -186,17 +167,3 @@ class IntegratorBehaviour:
         if self.stochastic and self.noise_wrapper is not None:
             params["noise"] = self.noise_wrapper.execute()
         return local_vars[self.class_name](**params)
-
-    def to_yaml(self, filepath: str | None = None):
-        """Serialize the integrator to YAML, optionally writing it to a file.
-
-        Args:
-            filepath:
-                Destination path to write to; when `None`, the YAML is returned instead.
-
-        Returns:
-            The YAML string, or the result of writing to `filepath`.
-        """
-        from tvbo.utils import to_yaml as _to_yaml
-
-        return _to_yaml(self, filepath)

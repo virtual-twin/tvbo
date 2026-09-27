@@ -1,6 +1,6 @@
 """Node-vector network references (``network.positions`` / ``network.instrength``).
 
-The node-level analogue of the connectome-matrix refs: an observation source, a pipeline-callable argument, or an observer (``dynamics``) parameter may reference a per-node vector derived from the network, which is embedded once as a module constant. The subtle correctness point is that ``parse_reference`` splits ``network.positions`` into ``('network', 'positions')`` — so ``ref_to_code`` resolves the BARE key ``'positions'``, while ``collect_network_node_arrays`` scans the FULL ``'network.positions'`` string. ``node_label`` must accept both forms or the emitted constant name and the resolved reference silently disagree (the callable then gets a ``kwargs.get('positions')`` -> ``None`` instead of the embedded vector).
+The node-level analogue of the connectome-matrix refs: an observation source, a pipeline-callable argument, or an observer (``dynamics``) parameter may reference a per-node vector derived from the network, which is embedded once as a module constant. The subtle correctness point is that ``parse_reference`` splits ``network.positions`` into ``('network', 'positions')`` — so a resolver handed the parsed reference sees the BARE key ``'positions'``, while ``collect_network_node_arrays`` scans the FULL ``'network.positions'`` string. ``node_label`` must accept both forms or the emitted constant name and the resolved reference silently disagree (the callable then gets a ``kwargs.get('positions')`` -> ``None`` instead of the embedded vector).
 """
 
 from types import SimpleNamespace as NS
@@ -17,7 +17,7 @@ from tvbo.templates.tvboptim.utils import (
 
 @pytest.mark.parametrize("ref", ["network.positions", "positions", "network.instrength", "instrength"])
 def test_node_label_accepts_both_qualified_and_bare(ref):
-    """Both the full `network.X` form (collect) and the bare `X` key that parse_reference hands ref_to_code resolve to the same measure."""
+    """Both the full `network.X` form (collect) and the bare `X` key parse_reference yields resolve to the same measure."""
     assert node_label(ref) == ref.split(".")[-1]
 
 
@@ -35,14 +35,14 @@ def test_node_const_names():
 
 
 def test_emitted_constant_name_matches_resolved_reference():
-    """The name collect/emit uses (node_const on the full-form measure) is identical to the name ref_to_code resolves to (node_const on the parse_reference-stripped key).
+    """The name collect/emit uses (node_const on the full-form measure) is identical to the name the parsed reference resolves to (node_const on the parse_reference-stripped key).
 
     This is the exact invariant the prefix bug broke.
     """
     for full in ("network.positions", "network.instrength"):
         emitted = node_const(node_label(full))  # collect / emit side (full form)
         stripped_key = full.split(".", 1)[1]  # parse_reference('network.X') -> ('network','X')
-        resolved = node_const(node_label(stripped_key))  # ref_to_code side (bare key)
+        resolved = node_const(node_label(stripped_key))  # parsed-reference side (bare key)
         assert node_label(stripped_key) is not None, "bare key must resolve (the prefix bug)"
         assert emitted == resolved
 

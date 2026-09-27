@@ -10,73 +10,31 @@
 Core simulation classes: dynamics, coupling, noise, continuation, observation, perturbation, equation, functions, experiment, study, network, and atlas.
 """
 
-__all__ = [
-    "Atlas",
-    "Continuation",
-    "Coupling",
-    "Dynamics",
-    "Function",
-    "LossFunction",
-    "Model",
-    "Network",
-    "Noise",
-    "SimulationExperiment",
-    "SimulationStudy",
-    "SimulationTool",
-]
+_LAZY_IMPORTS = {
+    "Atlas": ("tvbo.classes.atlas", "Atlas"),
+    "Continuation": ("tvbo.classes.continuation", "Continuation"),
+    "Coupling": ("tvbo.classes.coupling", "Coupling"),
+    "Dynamics": ("tvbo.classes.dynamics", "Dynamics"),
+    "Function": ("tvbo.classes.function", "Function"),
+    "LossFunction": ("tvbo.classes.function", "LossFunction"),
+    "Model": ("tvbo.classes.dynamics", "Dynamics"),
+    "Network": ("tvbo.classes.network", "Network"),
+    "Noise": ("tvbo.classes.noise", "Noise"),
+    "SimulationExperiment": ("tvbo.classes.experiment", "SimulationExperiment"),
+    "SimulationStudy": ("tvbo.classes.study", "SimulationStudy"),
+    "SimulationTool": ("tvbo.classes.software", "SimulationTool"),
+}
+"""Each public name, as the module that defines it and the name it has there, imported on first access."""
+
+__all__ = sorted(_LAZY_IMPORTS)
 
 
 def __getattr__(name):
-    if name in ("Dynamics", "Model"):
-        from tvbo.classes.dynamics import Dynamics
+    if name not in _LAZY_IMPORTS:
+        raise AttributeError(f"module 'tvbo.classes' has no attribute {name!r}")
+    import importlib
 
-        globals()["Dynamics"] = Dynamics
-        globals()["Model"] = Dynamics
-        return Dynamics
-    if name == "Coupling":
-        from tvbo.classes.coupling import Coupling
-
-        globals()["Coupling"] = Coupling
-        return Coupling
-    if name == "Continuation":
-        from tvbo.classes.continuation import Continuation
-
-        globals()["Continuation"] = Continuation
-        return Continuation
-    if name in ("Function", "LossFunction"):
-        from tvbo.classes.function import Function, LossFunction
-
-        globals()["Function"] = Function
-        globals()["LossFunction"] = LossFunction
-        return globals()[name]
-    if name == "Noise":
-        from tvbo.classes.noise import Noise
-
-        globals()["Noise"] = Noise
-        return Noise
-    if name == "SimulationExperiment":
-        from tvbo.classes.experiment import SimulationExperiment
-
-        globals()["SimulationExperiment"] = SimulationExperiment
-        return SimulationExperiment
-    if name == "SimulationStudy":
-        from tvbo.classes.study import SimulationStudy
-
-        globals()["SimulationStudy"] = SimulationStudy
-        return SimulationStudy
-    if name == "SimulationTool":
-        from tvbo.classes.software import SimulationTool
-
-        globals()["SimulationTool"] = SimulationTool
-        return SimulationTool
-    if name == "Network":
-        from tvbo.classes.network import Network
-
-        globals()["Network"] = Network
-        return Network
-    if name == "Atlas":
-        from tvbo.classes.atlas import Atlas
-
-        globals()["Atlas"] = Atlas
-        return Atlas
-    raise AttributeError(f"module 'tvbo.classes' has no attribute {name!r}")
+    module, attr = _LAZY_IMPORTS[name]
+    value = getattr(importlib.import_module(module), attr)
+    globals()[name] = value
+    return value

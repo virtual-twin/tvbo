@@ -9,8 +9,10 @@
 
 from __future__ import annotations
 
+from tvbo.behaviour._runtime import Catalogued
 
-class ObservationBehaviour:
+
+class ObservationBehaviour(Catalogued):
     """A declared observation model's factory constructors, backend rendering and plots, on both generated forms."""
 
     _OP_COLORS = {
@@ -23,27 +25,6 @@ class ObservationBehaviour:
         "identity": "#f8fafc",
     }
     """Face colour per structural operation type of a pipeline step, for the flowchart boxes, in the order `_classify_pipeline` ranks them: a kernel generates a function over time (an HRF), a convolution folds two signals, a callable is any other external function, a projection maps over the node dimension, a temporal step averages or subsamples along time, a transform is any other equation, and identity is a passthrough. Every type `_step_op_type` names is a key here, so a box is coloured by lookup and never by fallback."""
-
-    @classmethod
-    def from_file(cls, path: str):
-        """Load an Observation from a YAML file."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.load(str(path), target_class=cls)
-
-    @classmethod
-    def from_db(cls, name: str):
-        """Load an Observation by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("Observation", name)))
-
-    @classmethod
-    def list_db(cls) -> list[str]:
-        """List the observation models available in the tvbo database."""
-        from tvbo.data.registry import list_entries
-
-        return list_entries("Observation")
 
     def render_code(self, format: str = "tvb"):
         """Generate backend code that creates this monitor.

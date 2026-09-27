@@ -10,7 +10,6 @@ Plotting utilities (colors, colormaps, ``multiview``) have moved to ``tvbo.plot.
 Analysis functions (``per_window_fc``, ``ttest_correlation_strength``) have moved to ``tvbo.analysis``.
 """
 
-import warnings
 from os.path import abspath, dirname, join
 
 import numpy as np
@@ -387,20 +386,23 @@ def is_array_valued(value) -> bool:
     return isinstance(value, (list, tuple, np.ndarray))
 
 
-def deep_merge(base: dict, override: dict) -> dict:
+def deep_merge(base: dict, override: dict, *, drop_null: bool = False) -> dict:
     """Recursively merge ``override`` onto ``base``, returning a new dict.
 
-    Nested dicts are merged key-by-key, so an override can replace a single leaf while inheriting its siblings from ``base`` — e.g. ``{parameters: {a: {value:
-    1}}}`` overrides only ``a.value`` and keeps every other parameter from ``base``. Any key whose two sides are not both dicts is taken from ``override``. Neither input is mutated.
+    Nested dicts are merged key-by-key, so an override can replace a single leaf while inheriting its siblings from ``base`` — e.g. ``{parameters: {a: {value: 1}}}`` overrides only ``a.value`` and keeps every other parameter from ``base``. Any key whose two sides are not both dicts is taken from ``override``. Neither input is mutated.
 
     This is the field-level precedence used when a spec sourced by ``iri`` is refined by inline metadata: the inline value supervenes and the source (registry entry / ontology default) fills the gaps.
+
+    With ``drop_null`` an override value of ``None`` removes the key at that level instead of setting it, which is how a variant declared as the difference from a curated record drops a slot it does not want (``optimizations: null``).
     """
     out = dict(base)
     if not override:
         return out
     for k, v in override.items():
-        if isinstance(v, dict) and isinstance(out.get(k), dict):
-            out[k] = deep_merge(out[k], v)
+        if v is None and drop_null:
+            out.pop(k, None)
+        elif isinstance(v, dict) and isinstance(out.get(k), dict):
+            out[k] = deep_merge(out[k], v, drop_null=drop_null)
         else:
             out[k] = v
     return out

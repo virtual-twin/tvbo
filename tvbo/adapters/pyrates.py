@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from tvbo.adapters.base import BaseAdapter, dense_matrix
+from tvbo.adapters.smallscale.lowering import node_dynamics_name
 from tvbo.codegen.code import inline_functions
 
 # Single source of truth (forward map + derived reverse) lives in tvbo/codegen/pyrates.py; re-imported here and used by the model template so the rename mapping is defined exactly once. See PYRATES_REPL there.
@@ -587,9 +588,7 @@ class PyRatesAdapter(BaseAdapter):
             default_dyn = next(iter(dynamics_dict), None)
             for node in network.nodes:
                 label = str(getattr(node, "label", None) or f"node_{node.id}").replace(" ", "_").replace("-", "_")
-                dyn_name = (
-                    node.dynamics if isinstance(node.dynamics, str) else getattr(node.dynamics, "name", None)
-                ) or default_dyn
+                dyn_name = node_dynamics_name(node, default_dyn)
                 if dyn_name:
                     nmap.setdefault(dyn_name, {"op": f"{dyn_name}_op", "nodes": []})
                     nmap[dyn_name]["nodes"].append(label)
@@ -803,7 +802,7 @@ class PyRatesAdapter(BaseAdapter):
                 safe_label = str(node_label).replace(" ", "_").replace("-", "_")
                 prefix = f"{safe_label}_"
 
-                dyn_name = node.dynamics if isinstance(node.dynamics, str) else getattr(node.dynamics, "name", None)
+                dyn_name = node_dynamics_name(node, None)
                 dyn = dynamics.get(dyn_name) if dyn_name else default_dyn
 
                 if dyn and dyn.output:
@@ -970,7 +969,7 @@ class PyRatesAdapter(BaseAdapter):
                 safe_label = str(node_label).replace(" ", "_").replace("-", "_")
 
                 inline = None if isinstance(node.dynamics, str) else node.dynamics
-                dyn_name = node.dynamics if inline is None else getattr(inline, "name", None)
+                dyn_name = node_dynamics_name(node, None)
 
                 if dyn_name:
                     var = target_var or _legacy_input_variable(inline or dynamics.get(dyn_name))

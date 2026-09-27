@@ -14,10 +14,11 @@ from tvbo.templates.tvboptim.utils import (
     materialise_lazy_params,
     normalize_coupling_aliases, resolve_coupling_input_map,
     get_node_state_overrides, render_jax_default, get_mode_layout,
-    get_all_observations_from_algo, network_axis_leaf, network_leaf_is_matrix,
+    get_all_observations_from_algo, get_include_info, get_all_hyperparams, network_axis_leaf, network_leaf_is_matrix,
+    classify_network_obs_inputs, coupling_param_keys,
     initial_conditions_axis_sv, noise_axis_param,
     graph_selection, observation_dims, parameter_keypath,
-    has_host_pipeline, pipeline_stage_is_host, data_source_arrays, selection_settings,
+    has_host_pipeline, pipeline_stage_is_host, data_source_arrays, selection_settings, monitor_class_name,
 )
 import numpy as np
 import re
@@ -123,6 +124,8 @@ ci_coupling_map, func_to_first_ci = resolve_coupling_input_map(model, all_coupli
 
 # Translate function-name coupling key to ci name for tvboptim state access
 _to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
+# The shared dotted-reference resolver, bound to this experiment's couplings and external inputs.
+_parameter_keypath = lambda ref: parameter_keypath(ref, couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys)
 
 # Check if any coupling has delays
 has_delay = any(c.delayed for c in all_couplings.values() if c)
@@ -161,7 +164,7 @@ time_si_factor = unit_to_si_factor(time_unit)
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
-from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, resolve_reduction, streaming_block_size, streaming_post_eval_plan, edge_label, edge_const, node_label, node_const
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, resolve_reductions, streaming_block_size, streaming_post_eval_plan, edge_label, edge_const, node_label, node_const
 solver_kwargs_str = resolve_solver_kwargs(integration, dt)
 # A forward scan honours coupling_evaluation but not the gradient kwargs, so only this one is passed.
 _ce = getattr(integration, 'coupling_evaluation', None) if integration else None
@@ -291,7 +294,7 @@ if _ini is not None and str(getattr(_ini, 'method', '') or '') == 'from_working_
     _rnpts = int(_rn) if _rn else int(round((_rhi - _rlo) / float(_rdom.step))) + 1
     _rtr = float(getattr(integration, 'transient_time', 0.0) or 0.0)
     from_working_point = {
-        'path': parameter_keypath(_rax.parameter, couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys),
+        'path': _parameter_keypath(_rax.parameter),
         'lo': _rlo, 'hi': _rhi, 'n': _rnpts,
         'settle': _rtr if _rtr > 0 else float(integration.duration),
     }
@@ -1059,30 +1062,12 @@ for expl in exploration_list:
         _nit = getattr(_alg, 'n_iterations', None)
         assert _nit is not None, f"algorithm '{_alg_name}' missing n_iterations"
         # Classified as the flat path does, so the exploration call site forwards the same inputs.
-        _alg_inp, _alg_netobs = [], []
-        for _on in get_all_observations_from_algo(_alg, _exp_algos):
-            _od = observations_dict.get(_on)
-            if _od is None:
-                continue
-            if getattr(_od, 'data_source', None) is not None:
-                _alg_inp.append(_on)
-                continue
-            _s = getattr(_od, 'source', None)
-            if isinstance(_s, (list, tuple)):
-                _s = _s[0] if _s else None
-            if _s is not None and hasattr(_s, 'name'):
-                _s = _s.name
-            if _s and (str(_s).startswith('network.observations.')
-                       or str(_s).startswith('dataset.subject')):
-                _alg_netobs.append(_on)
+        _alg_inp, _alg_netobs = classify_network_obs_inputs(get_all_observations_from_algo(_alg, _exp_algos), observations_dict)
         _sp = getattr(_alg, 'simulation_period', None)
         if _sp is None:
             raise ValueError(f"Algorithm '{_alg_name}' requires 'simulation_period' in YAML")
         # Every update rule's target with the coupling it lives on (None = dynamics), so each cell records the value its tuning reached.
-        _tgt_cp2k = {}
-        for _tck, _tco in ((getattr(getattr(experiment, 'network', None), 'coupling', None) or {}).items()):
-            for _tpn in ((getattr(_tco, 'parameters', None) or {}).keys()):
-                _tgt_cp2k[str(_tpn)] = _to_ci_key(_tck)
+        _tgt_cp2k = coupling_param_keys(getattr(getattr(experiment, 'network', None), 'coupling', None), _to_ci_key)
         _tgt_algos = [_alg] + [_exp_algos.get(str(getattr(_inc, 'algorithm', _inc))) for _inc in (getattr(_alg, 'includes', None) or [])]
         _targets = []
         for _ta in [_a for _a in _tgt_algos if _a is not None]:
@@ -1114,7 +1099,7 @@ for expl in exploration_list:
             _adom = _axis.domain
             assert _adom is not None and _adom.lo is not None and _adom.hi is not None, \
                 f"nsga2 axis '{_axis.parameter}' requires domain lo/hi"
-            _apath = parameter_keypath(_axis.parameter, couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys)
+            _apath = _parameter_keypath(_axis.parameter)
             _nsga_axes.append({
                 'path': _apath, 'lo': float(_adom.lo), 'hi': float(_adom.hi),
                 'transform': str(getattr(_axis, 'transform', None) or 'none'),
@@ -1220,7 +1205,7 @@ for _opt in optim_list:
     _fps = []
     for _fp in (_opt.free_parameters or []):
         _fpn = str(_fp.parameter).rsplit('.', 1)[-1]
-        _fpath = parameter_keypath(_fp.parameter, couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys)
+        _fpath = _parameter_keypath(_fp.parameter)
         _dom = getattr(_fp, 'domain', None)
         def _bnd(v):
             if v is None:
@@ -1890,14 +1875,7 @@ def _stimulus_samples(name):
         )
     return jnp.asarray(_STIMULUS_DATA[name])
 <%
-    _seed_coupling_home = {}
-    for _ck, _cobj in (all_couplings or {}).items():
-        _cparams = getattr(_cobj, "parameters", None) or {}
-        _pnames = list(_cparams.keys()) if hasattr(_cparams, "keys") \
-            else [getattr(_p, "name", None) for _p in _cparams]
-        for _pn in _pnames:
-            if _pn:
-                _seed_coupling_home[_pn] = _ck
+    _seed_coupling_home = coupling_param_keys(all_couplings)
 %>\
 % if _seed_coupling_home:
 
@@ -1967,8 +1945,9 @@ def _realign_state_auxiliaries(sol, params):
     The gate is deliberately narrow. Stream only when every raw observation is itself a streaming reduction and every derived observation is computable from the streamed values alone, so that nothing needs `result` and nothing is lost by never forming it. A single non-streaming observation keeps the whole experiment on the materialise path byte for byte.
 </%doc>
 <%
-    from tvbo.templates.tvboptim.utils import streaming_post_eval_plan as _spep
-    _base_plan = _spep(experiment)
+    # Every observation's reduction, resolved once: the plan, the axis names, each exploration's stream gate and the included observation and algorithm modules all read this result.
+    _reductions = resolve_reductions(experiment)
+    _base_plan = streaming_post_eval_plan(experiment, _reductions)
     _base_stream_names = _base_plan['names']
     _raw_obs = [n for n in observation_names
                 if n not in network_observation_names and n not in derived_observation_names]
@@ -1979,7 +1958,7 @@ def _realign_state_auxiliaries(sol, params):
                     and set(derived_observation_names) <= set(_base_plan['deliverables']))
     _base_bs = _base_plan['period_in_steps'] or streaming_block_size([])
     # Axis names for EVERY observation, from the reduction each one declares — independent of which reducers stream, so a materialised observer is labelled too.
-    _obs_dims = observation_dims(experiment) or {}
+    _obs_dims = observation_dims(experiment, _reductions) or {}
     # A tuned target an algorithm-wired exploration records per cell is per node or per edge as its parameter declares, which names its axes the way an observation's are named.
     for _xi in explorations:
         for _xa in _xi.get('algorithms', []):
@@ -2176,7 +2155,7 @@ def run_simulation(
 % elif obs_name in derived_observation_names:
 % else:
 <%
-    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+    obs_class = monitor_class_name(obs_name)
 %>
         observations.${obs_name} = _warmed(${obs_class}(), result_transient)(result)
 % endif
@@ -2206,7 +2185,7 @@ def run_simulation(
 % endif
     )
 
-<%include file="tvbo-tvboptim-observation.py.mako" />
+<%include file="tvbo-tvboptim-observation.py.mako" args="reductions=_reductions"/>
 
 % if network_observation_names and _edge_bound_obs:
 # A connectome-matrix network observation aliases the constant the observation module just embedded, under its own name — emitted after the include, where that constant comes into existence.
@@ -2460,7 +2439,7 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
 
     # Regular observations derive from simulation state (via source attribute)
     # They do NOT have source_observation - that's only for DerivedObservation
-    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+    obs_class = monitor_class_name(obs_name)
 
     # Get pipeline info
     pipeline_call = None
@@ -2678,7 +2657,7 @@ ${render_analysis_observations(analysis_observations_dict, coupling_keys, solver
 % endif
 
 
-<%include file="tvbo-tvboptim-algorithm.py.mako" />
+<%include file="tvbo-tvboptim-algorithm.py.mako" args="stream_plan=_base_plan"/>
 
 
 % if has_optimization:
@@ -2725,8 +2704,7 @@ has_bounds = fp_lo is not None or fp_hi is not None
 fp_init = fp.get('initial_value', None)
 # State keypath the parameter is marked on, resolved from its declared scope (the parser split the reference on its last dot, so scope + name recovers it losslessly).
 _fp_scope = fp.get('coupling_key', None) or fp.get('dynamics_key', None)
-fp_path = parameter_keypath(f"{_fp_scope}.{fp_name}" if _fp_scope else fp_name,
-                            couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys)
+fp_path = _parameter_keypath(f"{_fp_scope}.{fp_name}" if _fp_scope else fp_name)
 fp_scope_name = fp_path.rsplit('.', 1)[0]
 # Format bounds for code generation (None -> jnp.inf)
 lo_str = f'{fp_lo}' if fp_lo is not None else '-jnp.inf'
@@ -2886,7 +2864,7 @@ def run_optimization(
     # When every recorded observable is a dynamics observer they fold into the integrator carry, dropping peak memory from O(batch·n_time·n_node) to O(batch·block·n_node); an element-slot axis, injected noise or a wired algorithm forces the post-scan path.
     _rec_stream = [r for r in expl['record'] if r not in analysis_observation_names]
     _all_recorded_streaming = bool(_rec_stream) and all(
-        resolve_reduction(_all_observations.get(r)) is not None for r in _rec_stream
+        _reductions.get(r) is not None for r in _rec_stream
     )
     _element_axes_present = any(ax.get('element_idx') is not None for ax in expl['axes'])
     _seed_axis_present = any(ax.get('is_seed') for ax in expl['axes'])
@@ -2899,11 +2877,11 @@ def run_optimization(
         and not expl.get('algorithms')
     )
     _stream_names = _rec_stream
-    _stream_bs = streaming_block_size([resolve_reduction(_all_observations.get(r), experiment) for r in _rec_stream], declared=expl.get('block_size'))
+    _stream_bs = streaming_block_size([_reductions.get(r) for r in _rec_stream], declared=expl.get('block_size'))
     # The scan is the measured window now that the settle is its own, so a reducer folds every sample it sees.
     _stream_skip = 0
     # An exploration bundling every declared observation streams only when all of them are trajectory-free; one that needs the raw trajectory keeps the whole set on the materialise path.
-    _bundle_plan = streaming_post_eval_plan(experiment) if bundles_observations else {'names': [], 'deliverables': [], 'period_in_steps': None}
+    _bundle_plan = _base_plan if bundles_observations else {'names': [], 'deliverables': [], 'period_in_steps': None}
     _bundle_stream_names = _bundle_plan['names']
     _bundled_all = set(observation_names) | set(derived_observation_names)
     _bundle_covered = set(_bundle_stream_names) | set(_bundle_plan['deliverables']) | set(network_observation_names)
@@ -3237,7 +3215,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 %>
 % for obs in sorted(simulated_obs):
 <%
-    obs_class = ''.join(word.capitalize() for word in obs.split('_'))
+    obs_class = monitor_class_name(obs)
 %>
     _${obs}_monitor = _warmed(${obs_class}(), settle)
 % endfor
@@ -3278,7 +3256,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 <%
     # Check if this is a derived observation (no class exists - computed from other obs)
     is_derived_obs = obs_name in derived_observation_names if obs_name else False
-    obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
+    obs_class = monitor_class_name(obs_name) if obs_name else ''
 %>
 % if not obs_name:
 <%doc>
@@ -4079,7 +4057,7 @@ def run_experiment(
 % elif obs_name in derived_observation_names:
 % else:
 <%
-    obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
+    obs_class = monitor_class_name(obs_name)
 %>
         observations.${obs_name} = _warmed(${obs_class}(), result_transient)(result)
 % endif
@@ -4232,52 +4210,6 @@ def run_experiment(
         return sorted_names
 
     sorted_algo_names = get_sorted_algorithms()
-
-    def get_include_info(inc):
-        """Extract algorithm name and argument overrides from AlgorithmInclude."""
-        if hasattr(inc, 'algorithm'):
-            algo_name = str(inc.algorithm.name) if hasattr(inc.algorithm, 'name') else str(inc.algorithm)
-            args = {}
-            inc_args = getattr(inc, 'arguments', None) or []
-            if hasattr(inc_args, 'values'):
-                inc_args = list(inc_args.values())
-            for arg in inc_args:
-                args[str(getattr(arg, 'name', ''))] = getattr(arg, 'value', None)
-            return algo_name, args
-        return str(inc), {}
-
-    def get_all_hyperparams_exp(algo, alg_dict):
-        """Get all hyperparameters including from included algorithms.
-        Returns list of (name, value) tuples.
-        """
-        all_hp = {}
-        # First, add hyperparameters from COMBINED included algorithms (with overrides).
-        # Nested includes are skipped — their hyperparameters are passed inside the
-        # generated run_<outer>() to the inner run_<inner>() call, not on the outer
-        # signature, so exposing them here would pass an unexpected kwarg.
-        for inc in (getattr(algo, 'includes', None) or []):
-            if str(getattr(inc, 'mode', 'combined') or 'combined') == 'nested':
-                continue
-            inc_name, arg_overrides = get_include_info(inc)
-            inc_algo = alg_dict.get(inc_name)
-            if inc_algo:
-                inc_hp = getattr(inc_algo, 'hyperparameters', None) or []
-                if hasattr(inc_hp, 'values'):
-                    inc_hp = list(inc_hp.values())
-                for hp in inc_hp:
-                    hp_name = str(getattr(hp, 'name', ''))
-                    # Use override if present, else use original value
-                    if hp_name in arg_overrides:
-                        all_hp[hp_name] = arg_overrides[hp_name]
-                    else:
-                        all_hp[hp_name] = getattr(hp, 'value', None)
-        # Then add this algorithm's own hyperparameters (override included)
-        direct_hp = getattr(algo, 'hyperparameters', None) or []
-        if hasattr(direct_hp, 'values'):
-            direct_hp = list(direct_hp.values())
-        for hp in direct_hp:
-            all_hp[str(getattr(hp, 'name', ''))] = getattr(hp, 'value', None)
-        return all_hp
 %>
         # Define which algorithms to run
         if run_all_algorithms:
@@ -4305,7 +4237,7 @@ def run_experiment(
     algo_name = safe_name(getattr(algo, 'name', 'algorithm'))
 
     # Get ALL hyperparameters including from included algorithms
-    hyperparams_dict = get_all_hyperparams_exp(algo, algorithms_dict)
+    hyperparams_dict = get_all_hyperparams(algo, algorithms_dict)
     n_iterations = getattr(algo, 'n_iterations', None)
     if n_iterations is None:
         raise ValueError(f"Algorithm '{algo_name}' missing required 'n_iterations' in YAML")
@@ -4340,38 +4272,16 @@ def run_experiment(
 
     obs_names = list(get_obs_names_with_includes(algo))
 
-    # Determine which observations require external data:
-    # 1. Observations with data_source (external file)
-    # 2. Network observations (source starts with 'network.observations.')
-    input_names = []
-    network_obs_inputs = []  # Network observations that are module-level constants
-    for obs_name in obs_names:
-        obs_def = observations_dict.get(obs_name)
-        if obs_def:
-            # Check for data_source (external file)
-            if hasattr(obs_def, 'data_source') and obs_def.data_source is not None:
-                input_names.append(obs_name)
-            else:
-                # Check for network observation (from BIDS). `source` is
-                # multivalued; for raw observations there is exactly one entry.
-                _src = getattr(obs_def, 'source', None)
-                if isinstance(_src, (list, tuple)):
-                    _src = _src[0] if _src else None
-                if _src is not None and hasattr(_src, 'name'):
-                    _src = _src.name
-                # Both forms are bound as module-level globals by _bind_network_observations, so both must be forwarded as external inputs.
-                if _src and (str(_src).startswith('network.observations.')
-                             or str(_src).startswith('dataset.subject')):
-                    network_obs_inputs.append(obs_name)
+    # The observations handed in from outside: data_source inputs, and network/dataset observations bound as module-level constants.
+    input_names, network_obs_inputs = classify_network_obs_inputs(obs_names, observations_dict)
 
     # Get dependencies for this algorithm
     algo_deps = algorithms_deps.get(algo_name, [])
     has_deps = len(algo_deps) > 0
 
-    # Shared with the algorithm template so the two sides cannot drift: non-empty `names` means the post-tuning model folds in-carry and materialises no trajectory.
-    _pp = streaming_post_eval_plan(experiment)
-    _pp_names = _pp['names']
-    _pp_bs = _pp['period_in_steps']
+    # The plan the algorithm template reads too, so the two sides cannot drift: non-empty `names` means the post-tuning model folds in-carry and materialises no trajectory.
+    _pp_names = _base_plan['names']
+    _pp_bs = _base_plan['period_in_steps']
 %>
             if algorithm_name == '${algo_name}':
                 # Create algorithm-specific model_fn with simulation_period
@@ -4472,12 +4382,7 @@ def run_experiment(
     # Own rules plus combined includes (a nested inner tunes inside the outer call, not across stages); each entry is (param_name, coupling_key or None), where None lives on state.dynamics.
     reset_targets = []
     if any_stage_resets:
-        _cp2k = {}
-        _net_r = experiment.network
-        if _net_r and getattr(_net_r, 'coupling', None):
-            for _ck_r, _co_r in _net_r.coupling.items():
-                for _pn_r in ((getattr(_co_r, 'parameters', None) or {})).keys():
-                    _cp2k[str(_pn_r)] = _to_ci_key(_ck_r)
+        _cp2k = coupling_param_keys(getattr(experiment.network, 'coupling', None), _to_ci_key)
         _rule_algos = [algo]
         for inc in (getattr(algo, 'includes', None) or []):
             if str(getattr(inc, 'mode', 'combined') or 'combined') == 'nested':

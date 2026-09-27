@@ -97,8 +97,8 @@ class ModelingToolkitAdapter(BaseAdapter):
         ensure_packages(*MTK_PACKAGES)
 
         # 2. Generate Julia code, strip plotting
-        code = self.render_code(**kwargs)
-        code = _strip_plot_lines(code)
+        ctx = self.render_context(**kwargs)
+        code = _strip_plot_lines(self.render_template(ctx))
 
         # 3. Change Julia working directory to YAML source dir
         source = getattr(exp, "_source_file", None)
@@ -115,8 +115,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         # 5. Extract solution
         t, u, sol = extract_ode_solution()
 
-        # 6. Reshape to TVBO convention
-        ctx = self.prepare_context()
+        # 6. Reshape to TVBO convention, by the context the code was rendered from
         sv_names = ctx["sv_names"]
         n_sv = ctx["n_sv"]
         n_nodes = ctx["n_nodes"]

@@ -13,14 +13,15 @@ One declared function had two runtime classes — one in ``classes/function`` th
 from __future__ import annotations
 
 import importlib
-import os
 from collections.abc import Callable
 
 import sympy
 from sympy import Eq, IndexedBase, Lambda, Symbol, lambdify
 
+from tvbo.behaviour._runtime import Catalogued
 
-class FunctionBehaviour:
+
+class FunctionBehaviour(Catalogued):
     """Everything a declared function does, on both generated forms."""
 
     @classmethod
@@ -29,20 +30,6 @@ class FunctionBehaviour:
         from jsonasobj2 import as_dict
 
         return cls(**as_dict(func))
-
-    @classmethod
-    def from_file(cls, path: str | os.PathLike):
-        """Load a Function from a YAML file."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.load(str(path), cls)
-
-    @classmethod
-    def from_string(cls, yaml_str: str):
-        """Load a Function from a YAML string."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.loads(yaml_str, cls)
 
     @classmethod
     def from_python(cls, function_instance, **kwargs):
@@ -59,20 +46,6 @@ class FunctionBehaviour:
 
         kwargs = functioninstance2metadata(ontology_instance, **kwargs)
         return cls(**kwargs)
-
-    @classmethod
-    def from_db(cls, name: str):
-        """Load a Function by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("Function", name)))
-
-    @classmethod
-    def list_db(cls) -> list[str]:
-        """List the functions available in the tvbo database."""
-        from tvbo.data.registry import list_entries
-
-        return list_entries("Function")
 
     @property
     def resolved_callable(self):
@@ -544,26 +517,8 @@ class FunctionBehaviour:
 class LossFunctionBehaviour(FunctionBehaviour):
     """A loss function is a function with an aggregation: everything `FunctionBehaviour` does, plus how a per-element loss is reduced to a scalar."""
 
-    @classmethod
-    def from_datamodel(cls, func):
-        """Create a LossFunction from a generated record of one."""
-        from jsonasobj2 import as_dict
-
-        return cls(**as_dict(func))
-
-    @classmethod
-    def from_file(cls, path: str | os.PathLike):
-        """Load a LossFunction from a YAML file."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.load(str(path), cls)
-
-    @classmethod
-    def from_string(cls, yaml_str: str):
-        """Load a LossFunction from a YAML string."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.loads(yaml_str, cls)
+    CATEGORY = "Function"
+    """Loss functions are filed with the functions they are; the database has no category of its own for them."""
 
     @property
     def sympy_expression(self):
@@ -581,16 +536,6 @@ class LossFunctionBehaviour(FunctionBehaviour):
         func_calls = re.findall(r"(\w+)\s*\(", rhs)
         inner_funcs = [f for f in func_calls if f not in ["Sum", "Mean", "sqrt", "exp", "log", "abs", "mean", "std"]]
         return parse_eq(self.equation, functions=inner_funcs)
-
-    @property
-    def latex(self) -> str:
-        """Return LaTeX representation of the loss function equation."""
-        expr = self.sympy_expression
-        if expr is None:
-            return ""
-        from sympy import latex
-
-        return latex(expr)
 
     def render_code(
         self,
@@ -635,14 +580,6 @@ class LossFunctionBehaviour(FunctionBehaviour):
             inner_func_names=inner_func_names,
         )
 
-    def to_jax(self, **kwargs) -> str:
-        """Generate JAX code for this loss function."""
-        return self.render_code(format="jax", **kwargs)
-
-    def to_numpy(self, **kwargs) -> str:
-        """Generate NumPy code for this loss function."""
-        return self.render_code(format="numpy", **kwargs)
-
     def to_callable(
         self,
         format: str = "jax",
@@ -668,33 +605,10 @@ class LossFunctionBehaviour(FunctionBehaviour):
         callable
             The generated loss function as a callable
         """
-        code = self.render_code(
-            format=format,
-            user_functions=user_functions,
-            inner_func_names=inner_func_names,
-        )
+        from tvbo.codegen.functions import callable_from_code
 
-        # Start with user-provided namespace or empty dict
-        if namespace is None:
-            namespace = {}
-        else:
-            # Copy to avoid mutating the user's dict
-            namespace = dict(namespace)
-
-        # Always add required imports for the format
-        if format == "jax":
-            import jax
-            import jax.numpy as jnp
-
-            namespace.setdefault("jax", jax)
-            namespace.setdefault("jnp", jnp)
-        elif format == "numpy":
-            import numpy as np
-
-            namespace.setdefault("np", np)
-
-        exec(code, namespace)
-        return namespace[str(self.name)]
+        code = self.render_code(format=format, user_functions=user_functions, inner_func_names=inner_func_names)
+        return callable_from_code(code, str(self.name), format=format, namespace=namespace)
 
     def __repr__(self) -> str:
         rhs = self.equation.rhs if self.equation else None

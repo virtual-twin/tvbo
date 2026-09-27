@@ -297,7 +297,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         """
         import xarray as xr
 
-        self.refuse_unrenderable()
+        ctx = self.render_context(**kwargs)
 
         from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
@@ -313,8 +313,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         ensure_packages(*REQUIRED_PACKAGES)
 
         # 2. Generate Julia code, strip plotting
-        code = self.render_code(**kwargs)
-        code = _strip_plot_lines(code)
+        code = _strip_plot_lines(self.render_template(ctx))
 
         # 3. Change Julia working directory to YAML source dir so that readdlm("Norm_G_DTI.txt") etc. resolve correctly.
         source = getattr(exp, "_source_file", None)
@@ -333,16 +332,12 @@ class NetworkDynamicsAdapter(BaseAdapter):
         # 5. Extract solution
         t, u, sol = extract_ode_solution()
 
-        # 6. Reshape to TVBO convention
-        ctx = self.prepare_context()
+        # 6. Reshape to TVBO convention, by the context the code was rendered from
         sv_names = ctx["sv_names"]
-        ctx["n_sv"]
         n_nodes = ctx["n_nodes"]
         is_hetero = ctx.get("is_heterogeneous", False)
 
         if is_hetero:
-            from tvbo.run.julia import run_julia_code
-
             dynamics_dict = ctx["dynamics_dict"]
             node_dynamics_map = ctx["node_dynamics_map"]
             nodes = ctx["nodes"]

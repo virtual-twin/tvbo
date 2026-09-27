@@ -20,7 +20,8 @@ from matplotlib.animation import FuncAnimation
 
 import tvbo.jax.xarray_pytrees  # noqa: F401 – registers xr types as JAX pytrees
 from tvbo.classes.network import Network
-from tvbo.utils import Bunch, format_pytree_as_string
+from tvbo.data.experiment_result_io import RESULT_SECTIONS, write_container
+from tvbo.utils import Bunch, as_list, format_pytree_as_string, keyed_items, network_couplings
 from tvbo.utils.pytree import Pytree
 
 logger = logging.getLogger(__name__)
@@ -179,6 +180,18 @@ def _node_coords(dims, shape, nodes) -> dict:
     return {d: labels for i, d in enumerate(dims) if d in _NODE_AXES and shape[i] == len(labels)}
 
 
+def _node_array_dims(shape, node_count=None):
+    """The node axes an array of *shape* sits on: ``["node"]`` for a per-node vector, ``["node_i", "node_j"]`` for a per-edge matrix, else ``None``.
+
+    *node_count*, a zero-argument callable answering the network's node count, makes the claim size-checked: the axes are named only when every one has that many entries, so a matrix with a single node-sized axis is never read as per-edge. It is called only for a vector or matrix shape, so an array of any other rank never pays for resolving the labels behind it.
+    """
+    dims = {1: ["node"], 2: ["node_i", "node_j"]}.get(len(shape))
+    if dims is None or node_count is None:
+        return dims
+    n = node_count()
+    return dims if n and all(s == n for s in shape) else None
+
+
 def _inner_dims(post_trial_shape, ts_arr, declared=None):
     """Axis names for one exploration cell's payload, and the coords they carry.
 
@@ -308,7 +321,7 @@ def _axis_points_dataarray(name, points):
     An axis of whole arrays coordinates its grid dimension on the point INDEX (an xarray coordinate is a 1-D index of scalars), and that index is meaningless once the run ends unless the points ride along — recovering WHICH matrix a cell used otherwise needs the builder that produced them. The leading dim takes the axis's own name with ``arange(n)`` coords, so it aligns with the grid dimension when merged into a result Dataset and a cell's coordinate value selects its point directly. Inner dims follow the node-array convention (``node`` for per-node vectors, ``node_i``/``node_j`` for per-edge matrices).
     """
     a = np.asarray(points)
-    inner = {1: ["node"], 2: ["node_i", "node_j"]}.get(a.ndim - 1, [f"{name}_d{i}" for i in range(a.ndim - 1)])
+    inner = _node_array_dims(a.shape[1:]) or [f"{name}_d{i}" for i in range(a.ndim - 1)]
     return xr.DataArray(a, dims=[name, *inner], coords={name: np.arange(a.shape[0])}, name=name)
 
 
@@ -371,33 +384,13 @@ def _stacked_to_dataarray(
         }
     if cell_coords is not None or (grid_dims and not _full_grid):
         n_points = arr.shape[0]
-        inner_shape = arr.shape[1:]
         coords = {}
         for k, v in (cell_coords or grid_coords).items():
             vv = np.asarray(v)
             if vv.ndim == 1 and vv.shape[0] == n_points:
                 coords[k] = ("point", vv)
-        has_trial = n_trials > 1 and len(inner_shape) > 0 and inner_shape[0] == n_trials
-        if has_trial:
-            trial_dims = ["trial"]
-            coords["trial"] = np.arange(n_trials)
-            post_trial_shape = inner_shape[1:]
-        else:
-            trial_dims = []
-            post_trial_shape = inner_shape
-        ts_arr = None
-        if intrinsic_ts is not None:
-            ts_arr = np.asarray(intrinsic_ts)
-            while ts_arr.ndim > 1:
-                ts_arr = ts_arr[0]
-        inner_dims, inner_coords = _inner_dims(post_trial_shape, ts_arr, dims)
-        coords.update(inner_coords)
-        while inner_dims and arr.shape[-1] == 1 and inner_dims != list(dims or []):
-            arr = arr[..., 0]
-            inner_dims = inner_dims[:-1]
-        all_dims = ["point"] + trial_dims + inner_dims
-        coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
-        da = xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+        arr, payload_dims, payload_coords = _payload_layout(arr, arr.shape[1:], n_trials, intrinsic_ts, dims, nodes)
+        da = xr.DataArray(data=arr, dims=["point", *payload_dims], coords={**coords, **payload_coords}, name=name)
         if not _to_grid:
             return da
         try:
@@ -430,34 +423,33 @@ def _stacked_to_dataarray(
         arr = arr[0]
         inner_shape = inner_shape[1:]
 
-    coords = dict(grid_coords)
+    arr, payload_dims, payload_coords = _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes)
+    return xr.DataArray(data=arr, dims=[*grid_dims, *payload_dims], coords={**grid_coords, **payload_coords}, name=name)
 
-    has_trial = n_trials > 1 and len(inner_shape) > 0 and inner_shape[0] == n_trials
-    if has_trial:
+
+def _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes):
+    """``(arr, dims, coords)`` for the per-cell payload trailing a stacked exploration array, whatever leads it.
+
+    *inner_shape* is the shape after the leading ``point`` or grid axes. A leading axis of length *n_trials* becomes ``trial``; the rest are named by :func:`_inner_dims` against the time vector *intrinsic_ts* carries (its first row when it is stacked per cell) and the DECLARED *dims*. Trailing singleton inner axes are dropped, so an axis that carries no information (a mode or node of size 1) is not fabricated — but never a declared axis: a single-node observation still has a node axis, because it said so. Node labels ride on whichever inner axis is a node axis (:func:`_node_coords`). Returns *arr* with the dropped axes squeezed out.
+    """
+    coords = {}
+    trial_dims = []
+    if n_trials > 1 and len(inner_shape) > 0 and inner_shape[0] == n_trials:
         trial_dims = ["trial"]
         coords["trial"] = np.arange(n_trials)
-        post_trial_shape = inner_shape[1:]
-    else:
-        trial_dims = []
-        post_trial_shape = inner_shape
-
+        inner_shape = inner_shape[1:]
     ts_arr = None
     if intrinsic_ts is not None:
         ts_arr = np.asarray(intrinsic_ts)
         while ts_arr.ndim > 1:
             ts_arr = ts_arr[0]
-
-    inner_dims, inner_coords = _inner_dims(post_trial_shape, ts_arr, dims)
+    inner_dims, inner_coords = _inner_dims(inner_shape, ts_arr, dims)
     coords.update(inner_coords)
-
-    # Drop trailing singleton inner dims so we don't fabricate axes that don't actually carry information (e.g. mode/node when size 1) — but never a DECLARED axis: a single-node observation still has a node axis, because it said so.
     while inner_dims and arr.shape[-1] == 1 and inner_dims != list(dims or []):
         arr = arr[..., 0]
         inner_dims = inner_dims[:-1]
-
-    all_dims = grid_dims + trial_dims + inner_dims
     coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
-    return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+    return arr, trial_dims + inner_dims, coords
 
 
 def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim="point"):
@@ -468,12 +460,11 @@ def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim=
     Args:
         source: a directory to scan with *pattern*, or an explicit list of paths.
         pattern: glob for shard files when *source* is a directory.
-        to_grid: pivot the flat ``point`` dim into one dim per parameter.
+        to_grid: pivot the flat ``point`` dim onto the swept parameters (:func:`_pivot_points`).
         point_dim: name of the flat cell dimension written by the shards.
 
     Returns:
-        The concatenated ``DataArray`` (flat ``point`` dim), or the gridded one
-        when ``to_grid`` is set.
+        The concatenated ``DataArray`` (flat ``point`` dim), or the pivoted one when ``to_grid`` is set.
     """
     import glob
     import os
@@ -487,12 +478,20 @@ def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim=
         raise FileNotFoundError(f"no shard files matched {source!r} (pattern {pattern!r})")
 
     combined = xr.concat([xr.open_dataarray(p) for p in paths], dim=point_dim)
-    if not to_grid:
-        return combined
+    return _pivot_points(combined, point_dim) if to_grid else combined
+
+
+def _pivot_points(combined, point_dim):
+    """Shard cells concatenated along *point_dim*, addressed by the coordinates they carry along it.
+
+    Several coordinates pivot the flat dim into one dim per parameter, the full rectangular grid addressed by value, so shard order is irrelevant. A single coordinate (a one-parameter sweep, or a branch restart's ``branch_point`` index) is a flat, ordered sequence rather than a grid: it is sorted by that coordinate and made the dimension, since ``unstack`` needs a multi-index. With none, the cells stay flat.
+    """
     coord_names = [c for c in combined.coords if point_dim in combined[c].dims and c != point_dim]
-    if not coord_names:
-        return combined
-    return combined.set_index({point_dim: coord_names}).unstack(point_dim)
+    if len(coord_names) >= 2:
+        return combined.set_index({point_dim: coord_names}).unstack(point_dim)
+    if len(coord_names) == 1:
+        return combined.sortby(coord_names[0]).swap_dims({point_dim: coord_names[0]})
+    return combined
 
 
 def reassemble_experiment_results(
@@ -544,16 +543,7 @@ def reassemble_experiment_results(
                 )
     if sidecar_names:
         datasets = [ds.drop_vars(sidecar_names) for ds in datasets]
-    combined = xr.concat(datasets, dim=point_dim)
-    coord_names = [c for c in combined.coords if point_dim in combined[c].dims and c != point_dim]
-    if len(coord_names) >= 2:
-        # Multi-parameter sweep: pivot the flat point dim into one dim per parameter, addressing the full rectangular grid by value (order-independent).
-        grid = combined.set_index({point_dim: coord_names}).unstack(point_dim)
-    elif len(coord_names) == 1:
-        # A single ordering coordinate (a one-parameter sweep, or a branch-restart's ``branch_point`` index) is a flat, ordered sequence — not a grid to pivot. Sort by it so shard order is irrelevant, then make it the dimension. (unstack needs a multi-index, so it cannot handle the single-coordinate case at all.)
-        grid = combined.sortby(coord_names[0]).swap_dims({point_dim: coord_names[0]})
-    else:
-        grid = combined
+    grid = _pivot_points(xr.concat(datasets, dim=point_dim), point_dim)
     for k, da in sidecars.items():
         # Shards suffix the sidecar's dim (`<axis>__point`) to keep it clear of the flat per-point coordinate; on the pivoted grid the axis IS a dimension, so the name goes back and the sidecar aligns with it.
         grid[k] = da.rename({d: str(d)[: -len("__point")] for d in da.dims if str(d).endswith("__point")})
@@ -563,8 +553,7 @@ def reassemble_experiment_results(
 
     os.makedirs(out_dir, exist_ok=True)
     h5_path = os.path.join(out_dir, f"{stem}.h5")
-    encoding = {name: {"zlib": True, "complevel": 4} for name in grid.data_vars} if compress else None
-    grid.to_netcdf(h5_path, engine="h5netcdf", encoding=encoding)
+    write_container(grid, h5_path, compress)
     written = [h5_path]
 
     if sidecar is not None and os.path.exists(os.fspath(sidecar)):
@@ -1944,35 +1933,17 @@ def _free_param_names(source) -> set:
     These are the parameters an algorithm tunes (e.g. wLRE / wFFI / J_i for EIB); their fitted values are the operating point a ``from_experiment`` warm-start reloads as a prior location (persisted as ``estimate__<param>`` in :meth:`ExperimentResult.save`).
     State variables are never parameters, so filtering to these can never collide with the settled ``<sv>_final`` state observations. Empty set when *source* is absent.
     """
-    names: set = set()
     if source is None:
-        return names
-
-    def _vals(coll):
-        if coll is None:
-            return []
-        return list(coll.values()) if hasattr(coll, "values") else list(coll)
-
-    def _add_free(params):
-        for p in _vals(params):
-            if getattr(p, "free", False) and getattr(p, "name", None):
-                names.add(p.name)
-
-    def _couplings(obj):
-        # network.coupling is a name->Coupling dict; experiment.coupling is a single Coupling. Accept dict / list / single object so either shape resolves.
-        if obj is None:
-            return []
-        if hasattr(obj, "values"):
-            return list(obj.values())
-        if isinstance(obj, (list, tuple)):
-            return list(obj)
-        return [obj]
-
-    _add_free(getattr(getattr(source, "dynamics", None), "parameters", None))
-    net = getattr(source, "network", None)
-    for c in _couplings(getattr(net, "coupling", None)) + _couplings(getattr(source, "coupling", None)):
-        _add_free(getattr(c, "parameters", None))
-    return names
+        return set()
+    # A lone `coupling` on the source (an experiment's default-coupling view) is one more owner.
+    couplings = [*network_couplings(getattr(source, "network", None)).values(), *as_list(getattr(source, "coupling", None))]
+    owners = [getattr(source, "dynamics", None), *couplings]
+    return {
+        p.name
+        for owner in owners
+        for p in as_list(getattr(owner, "parameters", None))
+        if getattr(p, "free", False) and getattr(p, "name", None)
+    }
 
 
 def _algo_tuned_params(source) -> dict:
@@ -1980,24 +1951,14 @@ def _algo_tuned_params(source) -> dict:
 
     A parameter counts as fit by an algorithm when an ``update_rule`` targets it — the algorithm's own rules or, recursively, those of an algorithm it ``includes``. Lets ``estimate__<param>`` be sourced from the algorithm that actually tunes a parameter rather than one that merely carries it at its initial value (e.g. a FIC pre-pass that holds ``wLRE``/``wFFI`` fixed must not shadow the EIB pass that fits them). Empty dict when *source* exposes no introspectable algorithms; each present algorithm maps to a (possibly empty) set.
     """
-
-    def _as_list(coll):
-        if coll is None:
-            return []
-        if hasattr(coll, "values"):
-            return list(coll.values())
-        if isinstance(coll, (list, tuple)):
-            return list(coll)
-        return [coll]
-
     algos = getattr(source, "algorithms", None)
     if not algos:
         return {}
-    by_name = algos if hasattr(algos, "get") else {str(getattr(a, "name", i)): a for i, a in enumerate(_as_list(algos))}
+    by_name = dict(keyed_items(algos, "algorithms"))
 
     def _targets(algo):
         out = set()
-        for rule in _as_list(getattr(algo, "update_rules", None)):
+        for rule in as_list(getattr(algo, "update_rules", None)):
             tp = getattr(rule, "target_parameter", None)
             nm = getattr(tp, "name", None) or (str(tp) if tp is not None else None)
             if nm:
@@ -2010,7 +1971,7 @@ def _algo_tuned_params(source) -> dict:
             return set()
         seen.add(name)
         out = _targets(algo)
-        for inc in _as_list(getattr(algo, "includes", None)):
+        for inc in as_list(getattr(algo, "includes", None)):
             inc_name = getattr(inc, "algorithm", None)
             inc_name = getattr(inc_name, "name", None) or inc_name
             if inc_name:
@@ -2045,7 +2006,7 @@ class ExperimentResult:
         Back-reference to input specification.
     """
 
-    _output_sections = {"integration", "algorithms", "optimizations", "explorations", "continuations", "inferences"}
+    _output_sections = frozenset(RESULT_SECTIONS.values())
 
     def __init__(
         self,
@@ -2061,58 +2022,34 @@ class ExperimentResult:
         **kwargs,
     ):
         self._extras = {}
+        sections = {
+            "integration": integration,
+            "explorations": explorations,
+            "algorithms": algorithms,
+            "optimizations": optimizations,
+            "continuations": continuations,
+            "inferences": inferences,
+        }
+        # A results bunch leaves every key that is not a section (state, model_fn, timings, …) in extras.
+        reserved = {*RESULT_SECTIONS.values(), "data_sources"}
 
         # ── Backward compat: ExperimentResult(results_bunch, experiment_name=...) ──
         experiment_name = kwargs.pop("experiment_name", None)
         if integration is not None and not isinstance(integration, SimulationResult) and hasattr(integration, "keys"):
-            results = integration
-            integration = results.get("integration")
-            algorithms = results.get("algorithms", algorithms)
-            optimizations = results.get("optimizations", optimizations)
-            explorations = results.get("explorations", explorations)
-            continuations = results.get("continuations", continuations)
-            inferences = results.get("inferences", inferences)
-            # Preserve extra keys (state, model_fn, timings, etc.)
-            for k, v in results.items():
-                if k not in (
-                    "integration",
-                    "algorithms",
-                    "optimizations",
-                    "explorations",
-                    "continuations",
-                    "inferences",
-                    "data_sources",
-                ):
-                    self._extras[k] = v
+            results, sections["integration"] = integration, None
+            sections = {k: results.get(k, given) for k, given in sections.items()}
+            self._extras.update({k: v for k, v in results.items() if k not in reserved})
 
-        # Also handle keyword: ExperimentResult(results=bunch, ...)
+        # Also handle keyword: ExperimentResult(results=bunch, ...), where an explicitly passed section wins.
         results_kw = kwargs.pop("results", None)
-        if results_kw is not None and integration is None:
-            if hasattr(results_kw, "keys"):
-                integration = results_kw.get("integration")
-                algorithms = algorithms or results_kw.get("algorithms")
-                optimizations = optimizations or results_kw.get("optimizations")
-                explorations = explorations or results_kw.get("explorations")
-                continuations = continuations or results_kw.get("continuations")
-                inferences = inferences or results_kw.get("inferences")
-                for k, v in results_kw.items():
-                    if k not in (
-                        "integration",
-                        "algorithms",
-                        "optimizations",
-                        "explorations",
-                        "continuations",
-                        "inferences",
-                        "data_sources",
-                    ):
-                        self._extras[k] = v
+        if results_kw is not None and sections["integration"] is None and hasattr(results_kw, "keys"):
+            sections = {k: given or results_kw.get(k) for k, given in sections.items()}
+            self._extras.update({k: v for k, v in results_kw.items() if k not in reserved})
 
+        integration = sections.pop("integration")
         self.integration = integration
-        self.algorithms = algorithms or {}
-        self.optimizations = optimizations or {}
-        self.explorations = explorations or {}
-        self.continuations = continuations or {}
-        self.inferences = inferences or {}
+        for section, value in sections.items():
+            setattr(self, section, value or {})
         self.data_sources = data_sources or {}
         self.name = name or experiment_name
         self.source = source
@@ -2138,13 +2075,7 @@ class ExperimentResult:
                 integration._units = units
 
     # Singular-to-plural aliases for back-compat with docs/notebooks that access result.exploration.X / result.optimization.X / etc.
-    _singular_aliases = {
-        "exploration": "explorations",
-        "optimization": "optimizations",
-        "algorithm": "algorithms",
-        "continuation": "continuations",
-        "inference": "inferences",
-    }
+    _singular_aliases = {singular: plural for singular, plural in RESULT_SECTIONS.items() if singular != plural}
 
     def __getattr__(self, name):
         if name.startswith("_"):
@@ -2313,6 +2244,10 @@ class ExperimentResult:
                     raw = getattr(getattr(self.source, "network", None), "node_labels", None)
                 _labels_cache.append([str(lbl) for lbl in raw] if raw is not None and len(raw) else None)
             return _labels_cache[0]
+
+        def _node_count():
+            """How many node labels :func:`_node_labels` resolves, for a size-checked :func:`_node_array_dims`."""
+            return len(_node_labels() or ())
 
         # ── collect every output as a data-variable ──────────────────────────
         by_output: dict[tuple, xr.DataArray] = {}
@@ -2491,11 +2426,8 @@ class ExperimentResult:
                 return ("iteration", *rest)
             if len(shape) == 1:
                 return ("iteration",)
-            trailing = {2: ["node"], 3: ["node_i", "node_j"]}.get(len(shape))
-            n_nodes = len(_node_labels() or ()) if trailing else 0
-            if trailing and n_nodes and all(s == n_nodes for s in shape[1:]):
-                return ("iteration", *trailing)
-            return None
+            trailing = _node_array_dims(shape[1:], _node_count)
+            return ("iteration", *trailing) if trailing else None
 
         for algo_name, algo in (self.algorithms or {}).items():
             post = getattr(algo, "post_tuning", None)
@@ -2535,9 +2467,7 @@ class ExperimentResult:
                     if a.dtype == object or a.size == 0:
                         continue
                     # Label per-node vectors / per-edge matrices so the consumer reconciles by label with `.sel`; anything else (scalar) stays unlabelled.
-                    label_dims = {1: ["node"], 2: ["node_i", "node_j"]}.get(a.ndim)
-                    nn = len(_node_labels() or ()) if label_dims else 0
-                    da = _numeric_da(key, a, dims=label_dims if (nn and all(s == nn for s in a.shape)) else None)
+                    da = _numeric_da(key, a, dims=_node_array_dims(a.shape, _node_count))
                     if da is not None:
                         data_vars[key] = da
 
@@ -2554,43 +2484,47 @@ class ExperimentResult:
                 return None
             return da.copy(data=text.reshape(da.shape))
 
-        # Continuation branches (bifurcation results) persist through the SAME native Dataset — no per-figure array dump. Each branch keeps its own ``step`` dimension (renamed unique) so multiple branches and the sweep grid coexist; the continuation parameter and observables become data variables.
-        for cont_name, bifres in (self.continuations or {}).items():
-            to_ds = getattr(bifres, "to_dataset", None)
-            if not callable(to_ds):
-                continue
-            cds = to_ds()
-            if "step" not in getattr(cds, "sizes", {}):
-                continue
-            dim = f"continuation__{_san(cont_name)}__step"
-            cds = cds.rename({"step": dim}).reset_coords()  # ICS coord (e.g. G) → data var
-            for vname, da in cds.data_vars.items():
+        def _branch_vars(prefix, branch):
+            """``(n_steps, variables)`` for one continuation branch stored under *prefix*, or None when it has no stepped dataset.
+
+            The branch keeps its own ``step`` dimension, renamed ``<prefix>__step`` so several branches and the sweep grid coexist, and its coordinates (the continuation parameter, e.g. ``G``) become data variables beside its observables.
+            """
+            to_ds = getattr(branch, "to_dataset", None)
+            bds = to_ds() if callable(to_ds) else None
+            if "step" not in getattr(bds, "sizes", {}):
+                return None
+            step = f"{prefix}__step"
+            bds = bds.rename({"step": step}).reset_coords()
+            variables = {}
+            for vname, da in bds.data_vars.items():
                 stored = _storable(da)
                 if stored is not None:
-                    data_vars[f"continuation__{_san(cont_name)}__{_san(vname)}"] = stored
+                    variables[f"{prefix}__{_san(vname)}"] = stored
+            return bds.sizes[step], variables
 
-            # Child periodic-orbit branches (from a Hopf point) hang off the equilibrium branch in ``periodic_orbits`` and were previously dropped by the save, so a PO branch's amplitude envelope (max/min per state var) and period never reached the ``.h5``. Serialize each under a nested ``__<po>__`` name so the full bifurcation diagram (Fig-2 periodic branch, Fig-3A period divergence) is reproducible from ``tvbo run`` alone.
+        # Continuation branches (bifurcation results) persist through the SAME native Dataset — no per-figure array dump.
+        for cont_name, bifres in (self.continuations or {}).items():
+            cont_prefix = f"continuation__{_san(cont_name)}"
+            branch = _branch_vars(cont_prefix, bifres)
+            if branch is None:
+                continue
+            _, branch_vars = branch
+            data_vars.update(branch_vars)
+
+            # Child periodic-orbit branches (from a Hopf point) hang off the equilibrium branch in ``periodic_orbits``; each is stored under a nested ``__<po>__`` name, so a PO branch's amplitude envelope (max/min per state var) and period reach the ``.h5`` and the full bifurcation diagram is reproducible from ``tvbo run`` alone.
             for i, po in enumerate(getattr(bifres, "periodic_orbits", None) or []):
-                po_to_ds = getattr(po, "to_dataset", None)
-                if not callable(po_to_ds):
+                po_prefix = f"{cont_prefix}__{_san(getattr(po, 'name', None) or f'po{i}')}"
+                po_branch = _branch_vars(po_prefix, po)
+                if po_branch is None:
                     continue
-                po_ds = po_to_ds()
-                if "step" not in getattr(po_ds, "sizes", {}):
-                    continue
-                po_name = _san(getattr(po, "name", None) or f"po{i}")
-                pdim = f"continuation__{_san(cont_name)}__{po_name}__step"
-                po_ds = po_ds.rename({"step": pdim}).reset_coords()
-                for vname, da in po_ds.data_vars.items():
-                    stored = _storable(da)
-                    if stored is not None:
-                        data_vars[f"continuation__{_san(cont_name)}__{po_name}__{_san(vname)}"] = stored
+                n_po, po_vars = po_branch
+                data_vars.update(po_vars)
 
                 # Orbit waveforms: the adapter attaches ``orbit_profiles`` ([n_steps, n_phase, n_vars], phase-resampled over one period) when the engine reconstructs them. Serialize as one 3-D var so every orbit's actual E(t)/x(t)/u(t) profile (Fig-3B morphologies, Fig-3C orbit) is reproducible.
                 prof = getattr(po, "orbit_profiles", None)
                 if prof is not None:
                     prof = np.asarray(prof, dtype=float)
-                    n_po = po_ds.sizes.get(pdim)
-                    if prof.ndim == 3 and (n_po is None or prof.shape[0] == n_po):
+                    if prof.ndim == 3 and prof.shape[0] == n_po:
                         _mdl = getattr(po, "model", None)
                         _svs = getattr(_mdl, "state_variables", None)
                         if hasattr(_svs, "keys"):
@@ -2600,10 +2534,12 @@ class ExperimentResult:
                         else:
                             _vn = []
                         _vn = (_vn + [f"v{j}" for j in range(len(_vn), prof.shape[2])])[: prof.shape[2]]
-                        _pdim = f"continuation__{_san(cont_name)}__{po_name}__phase"
-                        _vdim = f"continuation__{_san(cont_name)}__{po_name}__var"
-                        data_vars[f"continuation__{_san(cont_name)}__{po_name}__profile"] = xr.DataArray(
-                            prof, dims=[pdim, _pdim, _vdim], coords={_pdim: np.linspace(0.0, 1.0, prof.shape[1]), _vdim: _vn}
+                        _pdim = f"{po_prefix}__phase"
+                        _vdim = f"{po_prefix}__var"
+                        data_vars[f"{po_prefix}__profile"] = xr.DataArray(
+                            prof,
+                            dims=[f"{po_prefix}__step", _pdim, _vdim],
+                            coords={_pdim: np.linspace(0.0, 1.0, prof.shape[1]), _vdim: _vn},
                         )
 
         # Spiking backends (Brian2) carry a raster in ``_extras["spikes"]`` — persist it so a spiking run reproduces from the container: per-population spike times + neuron indices as flat 1D variables (each population its own length), plus the population firing rates and sizes on a shared ``population`` axis, and the run window in the Dataset attrs. General to any spiking run; guarded on the presence of spikes.
@@ -2704,10 +2640,7 @@ class ExperimentResult:
                 }
             )
             h5 = os.path.join(out_dir, f"{stem}.h5")
-            # Grids of trajectories/observations compress well (repeated structure, smooth fields), so gzip-deflate by default; `compress=False` opts out for max write speed. complevel 4 is the deflate speed/size sweet spot.
-            encoding = {name: {"zlib": True, "complevel": 4} for name in ds.data_vars} if compress else None
-            # Single self-describing format; a write failure raises, no lossy fallback.
-            ds.to_netcdf(h5, engine="h5netcdf", encoding=encoding)
+            write_container(ds, h5, compress)
             written.append(h5)
 
         if not is_shard and written and self.source is not None and hasattr(self.source, "freeze_yaml"):

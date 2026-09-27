@@ -4,19 +4,13 @@ Consumes the shared small-scale lowering core (:mod:`tvbo.adapters.smallscale`) 
 
 Two connectivity lowerings, chosen per edge by the ``connectivity`` rule:
 
-**all_to_all → O(N) population sums.** Every post-synaptic neuron sees the same sum
-over pre-synaptic gating, so the gate lives on the *pre-synaptic* neuron and a size-1 "hub" `NeuronGroup` accumulates the population sum once (via a ``(summed)`` `Synapses`), read by every post-synaptic neuron through a ``linked_var``. This is the hand-written Deco 2014 `deco_column.py` structure — it runs the 160E+40I column in seconds where the enumerated LEMS network needs ~190 s per 100 ms in jLEMS.
+**all_to_all → O(N) population sums.** Every post-synaptic neuron sees the same sum over pre-synaptic gating, so the gate lives on the *pre-synaptic* neuron and a size-1 "hub" `NeuronGroup` accumulates the population sum once (via a ``(summed)`` `Synapses`), read by every post-synaptic neuron through a ``linked_var``. This is the hand-written Deco 2014 `deco_column.py` structure — it runs the 160E+40I column in seconds where the enumerated LEMS network needs ~190 s per 100 ms in jLEMS.
 
-**random / one_to_one → real sparse `Synapses`.** A genuinely sparse projection cannot
-be a single population sum (each target sees a different subset), so it is emitted as a Brian2 `Synapses` with ``connect(p=…)`` / ``connect(j='i')``. Following the canonical
-Brian2 idioms: the delivered conductance decays on the *post-synaptic* `NeuronGroup` (``dg/dt=-g/tau``) and is incremented event-driven by ``on_pre`` (spike-gated, not summed every step); short-term-plasticity state (u, x) lives *on the synapse* as ``(event-driven)`` variables, mutated in ``on_pre`` in the recipe's declared order, so any facilitation/depression convention is honoured per connection.
+**random / one_to_one → real sparse `Synapses`.** A genuinely sparse projection cannot be a single population sum (each target sees a different subset), so it is emitted as a Brian2 `Synapses` with ``connect(p=…)`` / ``connect(j='i')``. Following the canonical Brian2 idioms: the delivered conductance decays on the *post-synaptic* `NeuronGroup` (``dg/dt=-g/tau``) and is incremented event-driven by ``on_pre`` (spike-gated, not summed every step); short-term-plasticity state (u, x) lives *on the synapse* as ``(event-driven)`` variables, mutated in ``on_pre`` in the recipe's declared order, so any facilitation/depression convention is honoured per connection.
 
 Supported synapse forms:
   * ``neuroml:expOneSynapse`` — single-exponential conductance (AMPA, GABA), either lowering;
-  * a custom conductance synapse extending ``baseConductanceBasedSynapse`` whose current is
-    *linear* in a single gate: all_to_all lowers any such gate (e.g. the saturating NMDA
-    with Mg block); the sparse path additionally requires that gate to be a pure decaying
-    conductance (``dg/dt=-g/tau``), with the remaining state variables the per-synapse STP;
+  * a custom conductance synapse extending ``baseConductanceBasedSynapse`` whose current is *linear* in a single gate: all_to_all lowers any such gate (e.g. the saturating NMDA with Mg block); the sparse path additionally requires that gate to be a pure decaying conductance (``dg/dt=-g/tau``), with the remaining state variables the per-synapse STP;
   * ``neuroml:poissonFiringSynapse`` — independent Poisson background → `PoissonInput`.
 
 Anything outside this set (non-Poisson spike sources, constant-current inputs, a summed-gate current nonlinear in its gate, or a sparse synapse whose gate is not a pure decay) raises a clear ``NotImplementedError`` rather than mis-simulating.
@@ -26,8 +20,11 @@ from __future__ import annotations
 
 from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.smallscale.lowering import (
+    EVENT_SOURCE_TYPES,
+    POISSON_INPUT_TYPES,
     classify_node_role,
     group_nodes_by_dynamics,
+    nml_type,
     safe_id,
 )
 from tvbo.codegen.code import render_expression
@@ -53,25 +50,14 @@ def _shift_onto_integration_clock(quantity, transient_ms):
 
 
 # ── Brian2 role vocabulary ────────────────────────────────────────────
-_POISSON_TYPES = frozenset({"poissonFiringSynapse", "transientPoissonFiringSynapse"})
-# Spike (event) sources other than Poisson — recognised so they raise rather than being silently mistaken for a cell population (they carry no membrane `v`).
-_SPIKE_SOURCE_TYPES = frozenset(
-    {
-        "spikeGenerator",
-        "spikeGeneratorRandom",
-        "spikeGeneratorRefPoisson",
-        "spikeGeneratorPoisson",
-        "spikeArray",
-        "SpikeSourcePoisson",
-    }
-)
-_CURRENT_INPUT_TYPES = frozenset({"pulseGenerator", "pulseGeneratorDL", "sineGenerator", "rampGenerator"})
-# Timed current pulses that lower to a rectangular current window (delay, duration, amplitude). Sine/ramp generators are recognised as current inputs but not yet lowered.
 _PULSE_TYPES = frozenset({"pulseGenerator", "pulseGeneratorDL"})
+"""Timed current pulses, which lower to a rectangular current window (delay, duration, amplitude)."""
+
 _BRIAN2_ROLE_VOCAB = {
-    "current_input": _CURRENT_INPUT_TYPES,
-    "event_source": _POISSON_TYPES | _SPIKE_SOURCE_TYPES,
+    "current_input": _PULSE_TYPES | {"sineGenerator", "rampGenerator"},
+    "event_source": POISSON_INPUT_TYPES | EVENT_SOURCE_TYPES,
 }
+"""The inputs Brian2 tells apart from cell populations. Poisson inputs lower to a `PoissonInput` and pulses to a current window; sine and ramp generators and the other spike sources are recognised so that they raise, rather than being mistaken for a cell population with no membrane `v`."""
 _EXP_ONE_TYPES = frozenset({"expOneSynapse"})
 
 # Unit strings that denote a dimensionless (unitless) parameter.
@@ -131,11 +117,6 @@ _UNIT_TO_BRIAN2 = {
 }
 
 
-def _nml_type(dyn):
-    iri = getattr(dyn, "iri", "") or ""
-    return iri.split(":", 1)[1] if iri.startswith("neuroml:") else ""
-
-
 def _params(dyn):
     """``{name: (value, unit)}`` for a Dynamics/edge's parameters."""
     out = {}
@@ -189,6 +170,229 @@ def _brian2_const(value, unit):
     return f"{value} * {bu}"
 
 
+def _dict_literal(entries):
+    """A dict literal for a script, ``{'key': value, ...}``, each value written as the code it already is."""
+    return "{" + ", ".join(f"'{k}': {v}" for k, v in entries) + "}"
+
+
+def _ns_literal(ns):
+    """A namespace ``{name: (value, unit)}`` as a script literal of Brian2 constants."""
+    return _dict_literal((k, _brian2_const(v, u)) for k, (v, u) in ns.items())
+
+
+def _monitor_literal(populations):
+    """The script's spike monitors of *populations*, as ``{'pop': mon_pop, ...}``."""
+    return _dict_literal((p, f"mon_{p}") for p in populations)
+
+
+# ── Symbolic synapse reduction ────────────────────────────────────────
+
+
+def _symbols(names):
+    """``{name: Symbol}`` for a synapse's declared names and the membrane ``v``: the locals its expressions parse against."""
+    import sympy as sp
+
+    return {n: sp.Symbol(n) for n in [*names, "v"]}
+
+
+def _parse(rhs, syms):
+    """A declared right-hand side as a SymPy expression, its names bound to *syms* rather than to SymPy built-ins."""
+    import sympy as sp
+
+    return sp.sympify(str(rhs), locals=syms)
+
+
+def _inline_derived(dvs, syms):
+    """The synapse current ``i`` with every derived variable it references substituted in, to a fixed point."""
+    dv_exprs = {n: _parse(dv.equation.rhs, syms) for n, dv in dvs.items()}
+    i_expr = dv_exprs["i"]
+    for _ in range(len(dv_exprs) + 1):
+        sub = {syms[n]: e for n, e in dv_exprs.items() if n != "i" and syms[n] in i_expr.free_symbols}
+        if not sub:
+            break
+        i_expr = i_expr.subs(sub)
+    return i_expr
+
+
+def _linear_gate(i_expr, svs, syms):
+    """The state variables the current ``i`` references, and whether ``i`` is linear in them.
+
+    Returns ``(gates, linear)``. *linear* holds only for exactly one gate in which ``i`` is linear with no offset, ``i = coeff(v) * gate``: the form both a population sum and a delivered conductance need.
+    """
+    import sympy as sp
+
+    gates = [n for n in svs if syms[n] in i_expr.free_symbols]
+    if len(gates) != 1:
+        return gates, False
+    g = syms[gates[0]]
+    return gates, not (sp.simplify(sp.diff(i_expr, g)).has(g) or sp.simplify(i_expr.subs(g, 0)) != 0)
+
+
+def _affect_assignments(events, syms):
+    """Every ``lhs = rhs`` the synapse's events assign, in declared order, as ``(lhs, parsed rhs)``."""
+    assignments = []
+    for ev in events.values():
+        affect = getattr(getattr(ev, "affect", None), "rhs", None)
+        if not affect:
+            continue
+        for piece in str(affect).split(";"):
+            if "=" in piece:
+                lhs, rhs = (part.strip() for part in piece.split("=", 1))
+                assignments.append((lhs, _parse(rhs, syms)))
+    return assignments
+
+
+def _event_driven_lines(names, svs, syms):
+    """The per-synapse ``(event-driven)`` equations of the state variables *names*, with their initial values and every name the equations reference."""
+    lines, init, refs = [], {}, set()
+    for n in names:
+        rhs = _parse(svs[n].equation.rhs, syms)
+        refs |= {s.name for s in rhs.free_symbols}
+        lines.append(f"d{n}/dt = {render_expression(str(rhs), format='brian2')} : 1 (event-driven)")
+        iv = getattr(svs[n], "initial_value", None)
+        if iv is not None:
+            init[n] = float(iv)
+    return lines, init, refs
+
+
+def _on_pre(steps, deliver):
+    """One edge's ``on_pre`` code: each delivered increment written by *deliver*, each synapse-local update as it stands, in declared order."""
+    return "\n".join(deliver(increment) if increment is not None else update for increment, update in steps)
+
+
+def _summed_form(syn, sparams):
+    """The edge-independent reduction of an all-to-all custom conductance synapse.
+
+    Its parsed gate ODEs and spike-event assignments, and the current ``i`` with the derived variables inlined, required to be linear in its one gate because an all-to-all conductance is delivered as a population sum.
+    """
+    svs, dvs = syn.state_variables, syn.derived_variables
+    if not svs:
+        raise NotImplementedError(f"Synapse {getattr(syn, 'name', syn)!r}: no state variables to render.")
+    if "i" not in dvs:
+        raise NotImplementedError(f"Synapse {getattr(syn, 'name', syn)!r}: no current derived variable 'i'.")
+    syms = _symbols([*svs, *dvs, *sparams])
+    odes = {n: _parse(sv.equation.rhs, syms) for n, sv in svs.items()}
+    affects = _affect_assignments(syn.events, syms)
+    i_expr = _inline_derived(dvs, syms)
+    summed, linear = _linear_gate(i_expr, svs, syms)
+    if len(summed) != 1:
+        raise NotImplementedError(
+            f"Synapse {getattr(syn, 'name', syn)!r}: the current must reference exactly one gating "
+            f"variable to lower to a population sum, found {summed}."
+        )
+    if not linear:
+        raise NotImplementedError(
+            f"Synapse {getattr(syn, 'name', syn)!r}: current is not linear in the gating variable "
+            f"{summed[0]!r}; an all-to-all population sum requires linearity."
+        )
+    return {"syms": syms, "odes": odes, "affects": affects, "i": i_expr, "gate": summed[0]}
+
+
+def _delta_form(syn, sparams, edge_idx):
+    """The edge-independent reduction of an instantaneous (delta) PSC synapse.
+
+    Its per-synapse STP equations, and its spike event as ``on_pre`` steps for `_on_pre`: the membrane jump kept as its bare increment, for each edge to scale by its own weight. The jump is delivered as ``v_post += weight * (increment) * mV``, the weight carrying the mV amplitude, so the increment must be dimensionless: one that holds a residual ``v`` or a parameter with a voltage or current unit is rejected here, as the membrane-noise path does, rather than failing deep inside Brian2.
+    """
+    import sympy as sp
+
+    svs = syn.state_variables
+    syms = _symbols([*svs, *sparams])
+    # Short-term-plasticity vars (all state vars — a delta synapse has no conductance gate) become per-synapse (event-driven) equations.
+    model_lines, init, syn_ref = _event_driven_lines(list(svs), svs, syms)
+    steps, delivered = [], False
+    for lhs, expr in _affect_assignments(syn.events, syms):
+        if lhs == "v":  # deliver the membrane jump
+            incr = sp.simplify(expr - syms["v"])
+            unitful = sorted(
+                s.name
+                for s in incr.free_symbols
+                if s.name == "v" or (s.name in sparams and _unit_of(sparams[s.name]) not in _DIMENSIONLESS_UNITS)
+            )
+            if unitful:
+                raise NotImplementedError(
+                    f"Delta synapse (edge {edge_idx}): the membrane-jump increment "
+                    f"'{incr}' is not dimensionless (unit-valued: {unitful}). The jump is "
+                    f"delivered as 'v_post += weight*(increment)*mV', so put the mV "
+                    f"amplitude in the edge weight and keep the event increment "
+                    f"dimensionless (e.g. 'v = v + u*x')."
+                )
+            syn_ref |= {s.name for s in incr.free_symbols}
+            steps.append((render_expression(str(incr), format="brian2"), None))
+            delivered = True
+        elif lhs in svs:  # synapse-local STP update
+            syn_ref |= {s.name for s in expr.free_symbols}
+            steps.append((None, f"{lhs} = {render_expression(str(expr), format='brian2')}"))
+    if not delivered:
+        raise NotImplementedError(
+            f"Delta synapse (edge {edge_idx}): its spike event must assign the post-synaptic "
+            f"membrane 'v' (e.g. 'v = v + J*u*x') to deliver a jump; none found."
+        )
+    syn_consts = {p: sparams[p] for p in sparams if p in syn_ref}
+    return {"model": "\n".join(model_lines), "steps": steps, "syn_consts": syn_consts, "init": init}
+
+
+def _sparse_form(syn, sparams, edge_idx):
+    """The edge-independent reduction of a custom conductance synapse on a sparse projection.
+
+    The current ``i`` must be linear in one gate whose ODE is a pure decay; the remaining state is per-synapse STP. Returns the current and the gate ODE for each edge to rename onto its own post-synaptic conductance, the STP equations, and the spike event as ``on_pre`` steps for `_on_pre`, the conductance increment kept bare for each edge to scale by its own weight.
+    """
+    import sympy as sp
+
+    svs, dvs = syn.state_variables, syn.derived_variables
+    if "i" not in dvs:
+        raise NotImplementedError(f"Sparse synapse (edge {edge_idx}): no current derived variable 'i'.")
+    syms = _symbols([*svs, *dvs, *sparams])
+    # Inline derived variables into i; the single state var in i is the gate g (linear).
+    i_expr = _inline_derived(dvs, syms)
+    gate, linear = _linear_gate(i_expr, svs, syms)
+    if len(gate) != 1:
+        raise NotImplementedError(
+            f"Sparse synapse (edge {edge_idx}): the current must reference exactly one gating variable, found {gate}."
+        )
+    g = gate[0]
+    gsym = syms[g]
+    if not linear:
+        raise NotImplementedError(f"Sparse synapse (edge {edge_idx}): current is not linear in the gate {g!r}.")
+
+    # The gate ODE must be a pure decay -g/tau (params only) — sparse delivery accumulates onto a decaying post-synaptic conductance; a saturating gate (e.g. NMDA) cannot.
+    g_ode = _parse(svs[g].equation.rhs, syms)
+    param_syms = {syms[p] for p in sparams}
+    if (
+        sp.simplify(g_ode.subs(gsym, 0)) != 0
+        or sp.simplify(sp.diff(g_ode, gsym)).has(gsym)
+        or not (g_ode.free_symbols - {gsym}) <= param_syms
+    ):
+        raise NotImplementedError(
+            f"Sparse synapse (edge {edge_idx}): gate {g!r} ODE {str(svs[g].equation.rhs)!r} "
+            f"is not a pure decay -{g}/tau; the sparse path needs a decaying post-synaptic conductance "
+            f"(use all_to_all for a saturating summed gate)."
+        )
+
+    # Synapse-side: the OTHER state vars (u, x) are per-synapse (event-driven).
+    stp_vars = [n for n in svs if n != g]
+    model_lines, init, syn_ref = _event_driven_lines(stp_vars, svs, syms)
+
+    # The spike event, in the recipe's declared order: the g-increment is delivered to the post-synaptic conductance, u/x updates run on the synapse.
+    steps = []
+    for lhs, expr in _affect_assignments(syn.events, syms):
+        syn_ref |= {s.name for s in expr.free_symbols} - {g}
+        if lhs == g:  # deliver the increment (rhs - g)
+            steps.append((render_expression(str(sp.simplify(expr - gsym)), format="brian2"), None))
+        elif lhs in stp_vars:  # synapse-local STP update
+            steps.append((None, f"{lhs} = {render_expression(str(expr), format='brian2')}"))
+    syn_consts = {p: sparams[p] for p in sparams if p in syn_ref}
+    return {
+        "syms": syms,
+        "gate": g,
+        "i": i_expr,
+        "g_ode": g_ode,
+        "model": "\n".join(model_lines),
+        "steps": steps,
+        "syn_consts": syn_consts,
+        "init": init,
+    }
+
+
 class Brian2Adapter(BaseAdapter):
     """Render/run a small-scale spiking network natively in Brian2."""
 
@@ -199,8 +403,7 @@ class Brian2Adapter(BaseAdapter):
 
         Population firing rates (from Brian2 ``SpikeMonitor``) are the primary output — the exact quantity the Deco 2014 replication targets — and are exposed both as ``result.integration.observations.firing_rate_<pop>`` and, raw, under ``result._extras``.
 
-        ``codegen_target`` defaults to ``"numpy"`` (no C compilation, portable);
-        pass ``"cython"`` for the faster compiled path where the toolchain allows.
+        ``codegen_target`` defaults to ``"numpy"`` (no C compilation, portable); pass ``"cython"`` for the faster compiled path where the toolchain allows.
         """
         import brian2
         import numpy as np
@@ -220,17 +423,15 @@ class Brian2Adapter(BaseAdapter):
         if seed is None:
             seed = model.get("seed")
         net, meta = _instantiate(model, seed=seed, record_v=record_v)
-        duration = model["duration_ms"]  # the MEASURED window, milliseconds
         if model.get("ramp"):
             return self._run_ramp(net, meta, model)
-        # `duration` is the MEASURED window and `transient_time` is prepended to it, so the run is their sum and raising the settle never shortens the data. The settle is therefore also the offset of the measurement clock, which is what every time payload below is reported on.
-        settle = model.get("transient_ms") or 0.0
-        total, measured = settle + duration, duration
-        net.run(total * ms)
+        # The settle is the offset of the measurement clock, which is what every time payload below is reported on.
+        settle, measured = model["transient_ms"], model["measured_ms"]
+        net.run(model["total_ms"] * ms)
 
         rates, spikes = {}, {}
         for name, mon in meta["spike_monitors"].items():
-            n = model["populations"][name]["size"]
+            n = model["sizes"][name]
             t = np.asarray(mon.t / ms)
             counts = int((t >= settle).sum())
             window_s = measured / 1000.0
@@ -244,8 +445,8 @@ class Brian2Adapter(BaseAdapter):
         )
         result._extras["rates"] = rates
         result._extras["spikes"] = spikes
-        result._extras["sizes"] = {name: model["populations"][name]["size"] for name in rates}
-        result._extras["duration_ms"] = duration
+        result._extras["sizes"] = dict(model["sizes"])
+        result._extras["duration_ms"] = measured
         result._extras["dt_ms"] = model["dt_ms"]
         # Written into the saved Dataset's attrs, so a file on disk says which clock its times are on rather than leaving a reader to infer it from a settle it cannot see.
         result._extras["transient_ms"] = settle
@@ -279,17 +480,9 @@ class Brian2Adapter(BaseAdapter):
         from tvbo.data.types import Bunch, ExperimentResult, ExplorationResult, SimulationResult
 
         ramp = model["ramp"]
-        step, settle = model["duration_ms"], model.get("transient_ms") or 0.0
-        if step <= 0:
-            raise ValueError(
-                f"ramp {ramp['name']!r} measures a firing rate over integration.duration, which is "
-                f"{step:g} — there is no window to count spikes in. `duration` is the MEASURED window "
-                "and `transient_time` is the settle prepended to it, so a point that should only relax "
-                "wants transient_time, not duration: 0."
-            )
+        step, settle = model["measured_ms"], model["transient_ms"]
         groups = {o.name: o for o in net.objects if hasattr(o, "namespace")}
-        keep = {r[len("firing_rate_") :] for r in ramp["record"] if r.startswith("firing_rate_")}
-        mons = {n: m for n, m in meta["spike_monitors"].items() if not keep or n in keep}
+        mons = {n: meta["spike_monitors"][n] for n in ramp["populations"]}
         window_s, rates = step / 1000.0, {n: [] for n in mons}
         for value in ramp["values"]:
             for pop, key in ramp["handles"]:
@@ -299,8 +492,8 @@ class Brian2Adapter(BaseAdapter):
             counted = {n: int(m.num_spikes) for n, m in mons.items()}
             net.run(step * ms)
             for n, mon in mons.items():
-                size = model["populations"][n]["size"]
-                # An empty population has no rate rather than a division; the window itself is guarded above.
+                size = model["sizes"][n]
+                # An empty population has no rate rather than a division; the window itself is validated with the ramp.
                 rates[n].append((int(mon.num_spikes) - counted[n]) / (window_s * size) if size else 0.0)
         axis = Bunch(name=ramp["parameter"], explored_values=np.asarray(ramp["values"]), n=len(ramp["values"]))
         expl = ExplorationResult(
@@ -326,8 +519,7 @@ class Brian2Adapter(BaseAdapter):
     def prepare_context(self):
         """Reduce the experiment to a backend-neutral Brian2 build description.
 
-        Returns a dict the template renders and ``_instantiate`` builds:
-        ``populations`` (per cell pop: eqs data, namespace, poisson, size), ``hubs`` (summed-gate accumulators), ``duration_ms``, ``dt_ms``.
+        Returns a dict the template renders and ``_instantiate`` builds: ``populations`` (per cell pop: eqs data, namespace, poisson, size) and their ``sizes``, ``hubs`` (summed-gate accumulators), ``synapses`` and ``probes`` (sparse projections and their observation probes), the clock (``dt_ms``, the settle ``transient_ms``, the ``measured_ms`` window after it and their sum ``total_ms``), and the validated continuation ``ramp`` or None.
         """
         exp = self.experiment
         network = exp.network
@@ -338,7 +530,7 @@ class Brian2Adapter(BaseAdapter):
         integration = getattr(exp, "integration", None)
         ts_factor = float(time_unit_factor((network, integration, exp), _BRIAN2_CLOCK))
         dt_ms = float(getattr(integration, "step_size", 0.02) or 0.02) * ts_factor
-        duration_ms = float(getattr(integration, "duration", 1000.0) or 1000.0) * ts_factor
+        measured_ms = float(getattr(integration, "duration", 1000.0) or 1000.0) * ts_factor
         transient_ms = float(getattr(integration, "transient_time", 0.0) or 0.0) * ts_factor
 
         default_name = getattr(exp.dynamics, "name", None) or "dynamics"
@@ -354,7 +546,7 @@ class Brian2Adapter(BaseAdapter):
             dyn_obj = dyn_lib.get(dyn_name) or (exp.dynamics if dyn_name == default_name else None)
             role, nml = classify_node_role(dyn_name, dyn_obj, _BRIAN2_ROLE_VOCAB)
             if role == "event_source":
-                if nml not in _POISSON_TYPES:
+                if nml not in POISSON_INPUT_TYPES:
                     raise NotImplementedError(
                         f"Brian2 backend does not yet handle the spike source {nml!r} "
                         f"(dynamics {dyn_name!r}); only Poisson backgrounds are supported."
@@ -410,6 +602,7 @@ class Brian2Adapter(BaseAdapter):
         synapses = []  # sparse Synapses descriptors (random / one_to_one)
         probes = []  # observation probes for synapses with recorded internal state (u, x)
         weight_handles = {}  # edge label -> [(target pop, namespace key holding that edge's weight)]
+        forms = {}  # synapse name -> its edge-independent symbolic reductions, shared by every edge it serves
 
         for edge_idx, edge in enumerate(edges):
             src = getattr(edge, "source", None)
@@ -456,14 +649,15 @@ class Brian2Adapter(BaseAdapter):
             if syn is None:
                 raise NotImplementedError(f"Edge {edge_idx} has no resolvable synapse dynamics.")
             prefix = safe_id(getattr(edge_dyn, "name", None) or str(edge_dyn))
+            memo = forms.setdefault(str(edge_dyn), {})
 
             if rule_norm == "all_to_all":
-                self._add_conductance_synapse(populations, hubs, src_pop, tgt_pop, syn, prefix, weight)
+                self._add_conductance_synapse(populations, hubs, src_pop, tgt_pop, syn, prefix, weight, memo)
                 if getattr(edge, "label", None):
                     weight_handles.setdefault(str(edge.label), []).append((tgt_pop, f"w_{src_pop}__{prefix}"))
             elif rule_norm in ("random", "one_to_one"):
                 self._add_sparse_synapse(
-                    populations, synapses, probes, src_pop, tgt_pop, syn, prefix, weight, edge, edge_idx, rule_norm
+                    populations, synapses, probes, src_pop, tgt_pop, syn, prefix, weight, edge, edge_idx, rule_norm, memo
                 )
             else:
                 shown = "none (a single explicit connection)" if rule is None else repr(rule)
@@ -475,22 +669,25 @@ class Brian2Adapter(BaseAdapter):
         return {
             "label": getattr(exp, "label", None),
             "populations": populations,
+            "sizes": {name: pop["size"] for name, pop in populations.items()},
             "hubs": hubs,
             "synapses": synapses,
             "probes": probes,
-            "duration_ms": duration_ms,
+            # `duration` is the MEASURED window and `transient_time` is prepended to it, so the run is their sum and raising the settle never shortens the data.
+            "measured_ms": measured_ms,
             "transient_ms": transient_ms,
+            "total_ms": transient_ms + measured_ms,
             "dt_ms": dt_ms,
             "weight_handles": weight_handles,
-            "ramp": self._ramp_spec(weight_handles),
+            "ramp": self._ramp_spec(weight_handles, populations, measured_ms),
             # Resolved once here, so the rendered script and run() build identical connectivity.
             "seed": getattr(getattr(exp, "execution", None), "random_seed", None),
         }
 
-    def _ramp_spec(self, weight_handles):
+    def _ramp_spec(self, weight_handles, populations, measured_ms):
         """The declared quasi-static ramp, or None when the experiment declares no such protocol.
 
-        An `Exploration` with ``strategy: continuation`` is a protocol rather than a grid: its single axis lists the values in the ORDER they are applied and the simulator state carries from one point to the next, so a hysteresis loop is declared by listing the parameter up and back down. Each point runs for the experiment's integration duration, of which the declared ``transient_time`` settles the state and the remainder is measured. The axis addresses one labelled projection's weight as ``network.edges.<label>.weight``, which is what keeps the sweep off every other synapse of the same dynamics.
+        An `Exploration` with ``strategy: continuation`` is a protocol rather than a grid: its single axis lists the values in the ORDER they are applied and the simulator state carries from one point to the next, so a hysteresis loop is declared by listing the parameter up and back down. Each point settles for the declared ``transient_time`` and then measures for the integration ``duration``, which must therefore be positive. The axis addresses one labelled projection's weight as ``network.edges.<label>.weight``, which is what keeps the sweep off every other synapse of the same dynamics.
         """
         expls = getattr(self.experiment, "explorations", None) or {}
         items = list(expls.items()) if hasattr(expls, "items") else [(getattr(e, "name", None), e) for e in expls]
@@ -525,13 +722,22 @@ class Brian2Adapter(BaseAdapter):
         if label not in weight_handles:
             known = sorted(weight_handles) or ["(none — no edge carries a label)"]
             raise KeyError(f"No all-to-all edge is labelled {label!r}; labelled projections are {known}.")
+        if measured_ms <= 0:
+            raise ValueError(
+                f"ramp {str(name)!r} measures a firing rate over integration.duration, which is "
+                f"{measured_ms:g} — there is no window to count spikes in. `duration` is the MEASURED window "
+                "and `transient_time` is the settle prepended to it, so a point that should only relax "
+                "wants transient_time, not duration: 0."
+            )
+        record = [str(r) for r in (getattr(expl, "record", None) or [])]
+        keep = {r[len("firing_rate_") :] for r in record if r.startswith("firing_rate_")}
         return {
             "name": str(name),
             "parameter": parameter,
             "values": [float(v) for v in values],
             "handles": weight_handles[label],
-            # Which per-population rates the ramp keeps; empty means every population's.
-            "record": [str(r) for r in (getattr(expl, "record", None) or [])],
+            # The populations whose rates the ramp reports: those its `record` names, or every one when it names none.
+            "populations": [p for p in populations if not keep or p in keep],
         }
 
     def _add_poisson(self, pop, bg_name, bg_obj, dyn_lib, weight):
@@ -604,14 +810,14 @@ class Brian2Adapter(BaseAdapter):
             )
         return fraction
 
-    def _add_conductance_synapse(self, populations, hubs, src_pop, tgt_pop, syn, prefix, weight):
+    def _add_conductance_synapse(self, populations, hubs, src_pop, tgt_pop, syn, prefix, weight, memo):
         """Reduce one all-to-all conductance synapse to gate + hub + current term.
 
-        The gate lives on the *source* population (one per source pop and synapse dynamics, shared across all of that source's projections of this dynamics — e.g. an E pool's recurrent and long-range AMPA read the same pre-synaptic gate). The *target*-side terms (summed gate ``S``, weight, current) are keyed additionally by the source pop, so the same dynamics arriving at one pool from two different sources (recurrent + long-range) don't overwrite each other.
+        The gate lives on the *source* population (one per source pop and synapse dynamics, shared across all of that source's projections of this dynamics — e.g. an E pool's recurrent and long-range AMPA read the same pre-synaptic gate). The *target*-side terms (summed gate ``S``, weight, current) are keyed additionally by the source pop, so the same dynamics arriving at one pool from two different sources (recurrent + long-range) don't overwrite each other. *memo* holds the synapse's edge-independent reductions.
         """
         src = populations[src_pop]
         tgt = populations[tgt_pop]
-        nml = _nml_type(syn)
+        nml = nml_type(syn, "")
         sparams = _params(syn)
 
         gate_prefix = prefix  # source-side (shared per source pop)
@@ -636,7 +842,7 @@ class Brian2Adapter(BaseAdapter):
             current = f"{cconst('w')} * {cconst('gbase')} * ({cconst('erev')} - v) * S_{cur_prefix}"
             summed_var = f"S_{cur_prefix}"
         else:
-            r = self._reduce_custom(syn, sparams, gate_prefix, cur_prefix)
+            r = self._reduce_custom(syn, sparams, gate_prefix, cur_prefix, memo)
             summed_gate = r["summed_gate"]
             src["gate_odes"].update(r["gate_odes"])
             for g, incr in r["increments"].items():
@@ -654,29 +860,20 @@ class Brian2Adapter(BaseAdapter):
         tgt["linked"][summed_var] = (hub_name, field)
         tgt["current_terms"].append(current)
 
-    def _reduce_custom(self, syn, sparams, gate_prefix, cur_prefix):
+    def _reduce_custom(self, syn, sparams, gate_prefix, cur_prefix, memo):
         """Reduce a custom conductance synapse's declared dynamics to Brian2 form.
 
-        Renames the pre-synaptic gate ODEs / spike increments with *gate_prefix* (they live on the source pop, shared across its projections of this dynamics) and the post-synaptic current with *cur_prefix* (keyed by source pop, so two sources of the same dynamics onto one target stay distinct). Inlines the derived variables into the current ``i`` once, and — because an all-to-all conductance is delivered as a *population sum* — requires ``i`` to be linear in the summed gate. Returns the source gate ODEs/increments, the target current (gate replaced by the summed ``S`` and ``weight`` applied outside), the target linked-var name, and which constants belong to the gate vs current.
+        Renames the pre-synaptic gate ODEs / spike increments with *gate_prefix* (they live on the source pop, shared across its projections of this dynamics) and the post-synaptic current with *cur_prefix* (keyed by source pop, so two sources of the same dynamics onto one target stay distinct). The current ``i`` has its derived variables inlined and, because an all-to-all conductance is delivered as a *population sum*, must be linear in the summed gate; that analysis depends on the synapse alone, so it runs once and is kept in *memo*. Returns the source gate ODEs/increments, the target current (gate replaced by the summed ``S`` and ``weight`` applied outside), the target linked-var name, and which constants belong to the gate vs current.
         """
         import sympy as sp
 
-        svs = syn.state_variables
-        dvs = syn.derived_variables
-        events = syn.events
-        if not svs:
-            raise NotImplementedError(f"Synapse {getattr(syn, 'name', syn)!r}: no state variables to render.")
-        if "i" not in dvs:
-            raise NotImplementedError(f"Synapse {getattr(syn, 'name', syn)!r}: no current derived variable 'i'.")
-
-        local = list(svs) + list(dvs) + list(sparams)
-        syms = {n: sp.Symbol(n) for n in local + ["v"]}
+        if "summed" not in memo:
+            memo["summed"] = _summed_form(syn, sparams)
+        form = memo["summed"]
+        syms, g = form["syms"], form["gate"]
         # Gate side renames with gate_prefix; current side with cur_prefix.
-        gate_rename = {syms[n]: sp.Symbol(f"{n}_{gate_prefix}") for n in list(svs) + list(sparams)}
+        gate_rename = {syms[n]: sp.Symbol(f"{n}_{gate_prefix}") for n in list(syn.state_variables) + list(sparams)}
         gate_rename[syms["v"]] = syms["v"]
-
-        def parse(rhs):
-            return sp.sympify(str(rhs), locals=syms)
 
         # Gate ODEs + spike increments (source side); track referenced constant names.
         gate_odes, increments, gate_ref = {}, {}, set()
@@ -686,52 +883,23 @@ class Brian2Adapter(BaseAdapter):
             gate_ref.update(s.name for s in renamed.free_symbols)
             return render_expression(str(renamed), format="brian2")
 
-        for n, sv in svs.items():
-            gate_odes[f"{n}_{gate_prefix}"] = _record(parse(sv.equation.rhs))
-        for ev in events.values():
-            affect = getattr(getattr(ev, "affect", None), "rhs", None)
-            if not affect:
-                continue
-            for piece in str(affect).split(";"):
-                if "=" in piece:
-                    lhs, rhs = piece.split("=", 1)
-                    increments[f"{lhs.strip()}_{gate_prefix}"] = _record(parse(rhs))
-
-        # Inline the derived variables into `i` (fixed point).
-        dv_exprs = {n: parse(dv.equation.rhs) for n, dv in dvs.items()}
-        i_expr = dv_exprs["i"]
-        for _ in range(len(dv_exprs) + 1):
-            sub = {syms[n]: e for n, e in dv_exprs.items() if n != "i" and syms[n] in i_expr.free_symbols}
-            if not sub:
-                break
-            i_expr = i_expr.subs(sub)
-
-        summed = [n for n in svs if syms[n] in i_expr.free_symbols]
-        if len(summed) != 1:
-            raise NotImplementedError(
-                f"Synapse {getattr(syn, 'name', syn)!r}: the current must reference exactly one gating "
-                f"variable to lower to a population sum, found {summed}."
-            )
-        g = syms[summed[0]]
-        # The population sum is only valid when i = coeff(v) * gate (linear, no offset).
-        if sp.simplify(sp.diff(i_expr, g)).has(g) or sp.simplify(i_expr.subs(g, 0)) != 0:
-            raise NotImplementedError(
-                f"Synapse {getattr(syn, 'name', syn)!r}: current is not linear in the gating variable "
-                f"{summed[0]!r}; an all-to-all population sum requires linearity."
-            )
+        for n, expr in form["odes"].items():
+            gate_odes[f"{n}_{gate_prefix}"] = _record(expr)
+        for lhs, expr in form["affects"]:
+            increments[f"{lhs}_{gate_prefix}"] = _record(expr)
 
         # Current side: params -> cur_prefix, the gate -> the summed target var S_{cur_prefix}.
         cur_rename = {syms[n]: sp.Symbol(f"{n}_{cur_prefix}") for n in sparams}
         cur_rename[syms["v"]] = syms["v"]
-        cur_rename[g] = sp.Symbol(f"S_{cur_prefix}")
-        current_expr = sp.Symbol(f"w_{cur_prefix}") * i_expr.subs(cur_rename)
+        cur_rename[syms[g]] = sp.Symbol(f"S_{cur_prefix}")
+        current_expr = sp.Symbol(f"w_{cur_prefix}") * form["i"].subs(cur_rename)
         current = render_expression(str(current_expr), format="brian2")
         current_ref = {s.name for s in current_expr.free_symbols}
 
         gate_all = {f"{n}_{gate_prefix}": sparams[n] for n in sparams}
         cur_all = {f"{n}_{cur_prefix}": sparams[n] for n in sparams}
         return {
-            "summed_gate": f"{summed[0]}_{gate_prefix}",
+            "summed_gate": f"{g}_{gate_prefix}",
             "summed_var": f"S_{cur_prefix}",
             "gate_odes": gate_odes,
             "increments": increments,
@@ -742,24 +910,21 @@ class Brian2Adapter(BaseAdapter):
 
     # --------------------------------------------------------------- sparse projections
     def _add_sparse_synapse(
-        self, populations, synapses, probes, src_pop, tgt_pop, syn, prefix, weight, edge, edge_idx, rule_norm
+        self, populations, synapses, probes, src_pop, tgt_pop, syn, prefix, weight, edge, edge_idx, rule_norm, memo
     ):
         """Emit one genuinely-sparse projection as a Brian2 ``Synapses``.
 
         Three synapse forms are lowered, chosen by the synapse's declared dynamics:
 
-        * a **decaying conductance** (``expOneSynapse`` or a custom synapse whose current ``i``
-          is linear in a single pure-decay gate) — the delivered conductance decays on the
-          *target* ``NeuronGroup`` and is incremented event-driven by ``on_pre``;
-        * an **instantaneous (delta) PSC** — a synapse with no continuous current ``i`` whose
-          spike event jumps the post-synaptic membrane ``v`` directly (current-based, no conductance and no synaptic time constant), e.g. the Mongillo/Amit-Brunel form.
+        * a **decaying conductance** (``expOneSynapse`` or a custom synapse whose current ``i`` is linear in a single pure-decay gate) — the delivered conductance decays on the *target* ``NeuronGroup`` and is incremented event-driven by ``on_pre``;
+        * an **instantaneous (delta) PSC** — a synapse with no continuous current ``i`` whose spike event jumps the post-synaptic membrane ``v`` directly (current-based, no conductance and no synaptic time constant), e.g. the Mongillo/Amit-Brunel form.
 
         Short-term-plasticity state (u, x) lives on the synapse as ``(event-driven)`` variables, mutated in ``on_pre`` in the recipe's declared order, so any facilitation/depression convention is honoured per connection. ``all_to_all`` keeps the O(N) hub path.
 
-        Each projection's Brian2 objects are named by ``(synapse, source, target)`` so the block-structured networks (several edges sharing one synapse dynamics between different sub-population pairs) never collide on a name.
+        Each projection's Brian2 objects are named by ``(synapse, source, target)`` so the block-structured networks (several edges sharing one synapse dynamics between different sub-population pairs) never collide on a name, and they share the synapse's edge-independent reductions through *memo*.
         """
         tgt = populations[tgt_pop]
-        nml = _nml_type(syn)
+        nml = nml_type(syn, "")
         sparams = _params(syn)
         gkey = f"{prefix}_from_{src_pop}_to_{tgt_pop}"
         gvar = f"gsyn_{gkey}"
@@ -801,7 +966,7 @@ class Brian2Adapter(BaseAdapter):
 
         if "i" not in (syn.derived_variables):
             # Instantaneous (delta) PSC: the spike event jumps v_post directly; no conductance.
-            r = self._reduce_delta_sparse(syn, sparams, float(weight), edge_idx)
+            r = self._reduce_delta_sparse(syn, sparams, float(weight), edge_idx, memo)
             synapses.append(
                 {
                     "name": f"syn_{gkey}",
@@ -818,7 +983,7 @@ class Brian2Adapter(BaseAdapter):
             return
 
         # Custom conductance synapse (STP): decaying post-synaptic conductance + per-synapse u/x.
-        r = self._reduce_custom_sparse(syn, sparams, gvar, float(weight), edge_idx)
+        r = self._reduce_custom_sparse(syn, sparams, gvar, float(weight), edge_idx, memo)
         tgt["gate_odes"][gvar] = r["decay"]
         tgt["namespace"].update(r["cur_consts"])
         tgt["current_terms"].append(r["current"])
@@ -871,177 +1036,56 @@ class Brian2Adapter(BaseAdapter):
             }
         )
 
-    def _reduce_delta_sparse(self, syn, sparams, weight, edge_idx):
+    def _reduce_delta_sparse(self, syn, sparams, weight, edge_idx, memo):
         """Reduce an instantaneous (delta) PSC synapse to the sparse per-synapse Brian2 form.
 
-        A delta synapse has no continuous current: an arriving spike jumps the post-synaptic membrane by an amount set in the spike event as ``v = v + <expr>`` (current-based, no conductance, no synaptic time constant — the Mongillo/Amit-Brunel form). The jump is delivered as ``v_post += weight * (<expr> - v) * mV`` (so ``weight`` is the PSP jump amplitude in mV, signed: negative for inhibitory projections). Any other event pieces act on the synapse's own short-term-plasticity variables (u, x), which live on the synapse as ``(event-driven)`` equations and are updated in the recipe's declared order — so facilitation-before-release is honoured and the delivered jump uses the updated u.
+        A delta synapse has no continuous current: an arriving spike jumps the post-synaptic membrane by an amount set in the spike event as ``v = v + <expr>`` (current-based, no conductance, no synaptic time constant — the Mongillo/Amit-Brunel form). The jump is delivered as ``v_post += weight * (<expr> - v) * mV`` (so ``weight`` is the PSP jump amplitude in mV, signed: negative for inhibitory projections). Any other event pieces act on the synapse's own short-term-plasticity variables (u, x), which live on the synapse as ``(event-driven)`` equations and are updated in the recipe's declared order — so facilitation-before-release is honoured and the delivered jump uses the updated u. Only the weight is the edge's own; the rest is reduced once per synapse and kept in *memo*.
         """
-        import sympy as sp
+        if "delta" not in memo:
+            memo["delta"] = _delta_form(syn, sparams, edge_idx)
+        form = memo["delta"]
+        return {
+            "model": form["model"],
+            "on_pre": _on_pre(form["steps"], lambda incr: f"v_post += {weight} * ({incr}) * mV"),
+            "syn_consts": dict(form["syn_consts"]),
+            "init": dict(form["init"]),
+        }
 
-        svs = syn.state_variables
-        events = syn.events
-        syms = {n: sp.Symbol(n) for n in list(svs) + list(sparams) + ["v"]}
-
-        def parse(rhs):
-            return sp.sympify(str(rhs), locals=syms)
-
-        # Short-term-plasticity vars (all state vars — a delta synapse has no conductance gate) become per-synapse (event-driven) equations.
-        model_lines, init, syn_ref = [], {}, set()
-        for n, sv in svs.items():
-            rhs = parse(sv.equation.rhs)
-            syn_ref |= {s.name for s in rhs.free_symbols}
-            model_lines.append(
-                f"{n} = {render_expression(str(rhs), format='brian2')} : 1 (event-driven)".replace(f"{n} =", f"d{n}/dt =", 1)
-            )
-            iv = getattr(sv, "initial_value", None)
-            if iv is not None:
-                init[n] = float(iv)
-
-        vsym = syms["v"]
-        on_pre, delivered = [], False
-        for ev in events.values():
-            affect = getattr(getattr(ev, "affect", None), "rhs", None)
-            if not affect:
-                continue
-            for piece in str(affect).split(";"):
-                if "=" not in piece:
-                    continue
-                lhs, rhs = (s.strip() for s in piece.split("=", 1))
-                expr = parse(rhs)
-                if lhs == "v":  # deliver the membrane jump
-                    incr = sp.simplify(expr - vsym)
-                    # The jump is delivered as ``v_post += weight * (incr) * mV`` (weight carries the mV amplitude), so ``incr`` must be dimensionless. A parameter carrying a voltage/current unit — or a residual ``v`` — would make the delivered term dimensionally inconsistent and fail deep inside Brian2; reject it here with a clear message, as the membrane-noise path does.
-                    unitful = sorted(
-                        s.name
-                        for s in incr.free_symbols
-                        if s.name == "v" or (s.name in sparams and _unit_of(sparams[s.name]) not in _DIMENSIONLESS_UNITS)
-                    )
-                    if unitful:
-                        raise NotImplementedError(
-                            f"Delta synapse (edge {edge_idx}): the membrane-jump increment "
-                            f"'{incr}' is not dimensionless (unit-valued: {unitful}). The jump is "
-                            f"delivered as 'v_post += weight*(increment)*mV', so put the mV "
-                            f"amplitude in the edge weight and keep the event increment "
-                            f"dimensionless (e.g. 'v = v + u*x')."
-                        )
-                    syn_ref |= {s.name for s in incr.free_symbols}
-                    on_pre.append(f"v_post += {weight} * ({render_expression(str(incr), format='brian2')}) * mV")
-                    delivered = True
-                elif lhs in svs:  # synapse-local STP update
-                    syn_ref |= {s.name for s in expr.free_symbols}
-                    on_pre.append(f"{lhs} = {render_expression(str(expr), format='brian2')}")
-        if not delivered:
-            raise NotImplementedError(
-                f"Delta synapse (edge {edge_idx}): its spike event must assign the post-synaptic "
-                f"membrane 'v' (e.g. 'v = v + J*u*x') to deliver a jump; none found."
-            )
-        syn_consts = {p: sparams[p] for p in sparams if p in syn_ref}
-        return {"model": "\n".join(model_lines), "on_pre": "\n".join(on_pre), "syn_consts": syn_consts, "init": init}
-
-    def _reduce_custom_sparse(self, syn, sparams, gvar, weight, edge_idx):
+    def _reduce_custom_sparse(self, syn, sparams, gvar, weight, edge_idx, memo):
         """Reduce a custom conductance synapse to the sparse per-synapse Brian2 form.
 
-        The single gate in the current ``i`` must be a PURE DECAYING conductance (``dg/dt = -g/tau``): it becomes the post-synaptic decaying variable ``gvar``, delivered by ``on_pre``. The remaining state variables (STP u, x) become per-synapse ``(event-driven)`` equations, mutated in ``on_pre``. The spike event's conductance increment is delivered as ``gvar_post += weight*(increment)``; its u/x updates run on the synapse, all emitted in the recipe's declared order so any facilitation/depression convention is honoured.
+        The single gate in the current ``i`` must be a PURE DECAYING conductance (``dg/dt = -g/tau``): it becomes the post-synaptic decaying variable ``gvar``, delivered by ``on_pre``. The remaining state variables (STP u, x) become per-synapse ``(event-driven)`` equations, mutated in ``on_pre``. The spike event's conductance increment is delivered as ``gvar_post += weight*(increment)``; its u/x updates run on the synapse, all emitted in the recipe's declared order so any facilitation/depression convention is honoured. Only ``gvar`` and the weight are the edge's own; the rest is reduced once per synapse and kept in *memo*.
         """
         import sympy as sp
 
-        svs = syn.state_variables
-        dvs = syn.derived_variables
-        events = syn.events
-        if "i" not in dvs:
-            raise NotImplementedError(f"Sparse synapse (edge {edge_idx}): no current derived variable 'i'.")
-        syms = {n: sp.Symbol(n) for n in list(svs) + list(dvs) + list(sparams) + ["v"]}
-
-        def parse(rhs):
-            return sp.sympify(str(rhs), locals=syms)
-
-        # Inline derived variables into i; the single state var in i is the gate g (linear).
-        dv_exprs = {n: parse(dv.equation.rhs) for n, dv in dvs.items()}
-        i_expr = dv_exprs["i"]
-        for _ in range(len(dv_exprs) + 1):
-            sub = {syms[n]: e for n, e in dv_exprs.items() if n != "i" and syms[n] in i_expr.free_symbols}
-            if not sub:
-                break
-            i_expr = i_expr.subs(sub)
-        gate = [n for n in svs if syms[n] in i_expr.free_symbols]
-        if len(gate) != 1:
-            raise NotImplementedError(
-                f"Sparse synapse (edge {edge_idx}): the current must reference exactly one gating variable, found {gate}."
-            )
-        g = gate[0]
-        gsym = syms[g]
-        if sp.simplify(sp.diff(i_expr, gsym)).has(gsym) or sp.simplify(i_expr.subs(gsym, 0)) != 0:
-            raise NotImplementedError(f"Sparse synapse (edge {edge_idx}): current is not linear in the gate {g!r}.")
-
-        # The gate ODE must be a pure decay -g/tau (params only) — sparse delivery accumulates onto a decaying post-synaptic conductance; a saturating gate (e.g. NMDA) cannot.
-        g_ode = parse(svs[g].equation.rhs)
-        param_syms = {syms[p] for p in sparams}
-        if (
-            sp.simplify(g_ode.subs(gsym, 0)) != 0
-            or sp.simplify(sp.diff(g_ode, gsym)).has(gsym)
-            or not (g_ode.free_symbols - {gsym}) <= param_syms
-        ):
-            raise NotImplementedError(
-                f"Sparse synapse (edge {edge_idx}): gate {g!r} ODE {str(svs[g].equation.rhs)!r} "
-                f"is not a pure decay -{g}/tau; the sparse path needs a decaying post-synaptic conductance "
-                f"(use all_to_all for a saturating summed gate)."
-            )
-
+        if "sparse" not in memo:
+            memo["sparse"] = _sparse_form(syn, sparams, edge_idx)
+        form = memo["sparse"]
+        syms = form["syms"]
         # Target-side renames (g -> gvar, params -> gvar-suffixed) for the decay ODE + current.
-        cur_rename = {gsym: sp.Symbol(gvar), syms["v"]: syms["v"], **{syms[p]: sp.Symbol(f"{p}_{gvar}") for p in sparams}}
-        decay = render_expression(str(g_ode.subs(cur_rename)), format="brian2")
-        current_expr = i_expr.subs(cur_rename)
-        current = render_expression(str(current_expr), format="brian2")
-        cur_ref = {s.name for s in current_expr.free_symbols} | {s.name for s in g_ode.subs(cur_rename).free_symbols}
-        cur_consts = {f"{p}_{gvar}": sparams[p] for p in sparams if f"{p}_{gvar}" in cur_ref}
-
-        # Synapse-side: the OTHER state vars (u, x) are per-synapse (event-driven).
-        stp_vars = [n for n in svs if n != g]
-        model_lines, init, syn_ref = [], {}, set()
-        for n in stp_vars:
-            rhs = parse(svs[n].equation.rhs)
-            syn_ref |= {s.name for s in rhs.free_symbols}
-            model_lines.append(
-                f"{n} = {render_expression(str(rhs), format='brian2')} : 1 (event-driven)".replace(f"{n} =", f"d{n}/dt =", 1)
-            )
-            iv = getattr(svs[n], "initial_value", None)
-            if iv is not None:
-                init[n] = float(iv)
-
-        # on_pre: the spike event, in the recipe's declared order. The g-increment is delivered to the post-synaptic conductance; u/x updates run on the synapse.
-        on_pre = []
-        for ev in events.values():
-            affect = getattr(getattr(ev, "affect", None), "rhs", None)
-            if not affect:
-                continue
-            for piece in str(affect).split(";"):
-                if "=" not in piece:
-                    continue
-                lhs, rhs = (s.strip() for s in piece.split("=", 1))
-                expr = parse(rhs)
-                syn_ref |= {s.name for s in expr.free_symbols} - {g}
-                if lhs == g:  # deliver the increment (rhs - g)
-                    incr = sp.simplify(expr - gsym)
-                    on_pre.append(f"{gvar}_post += {weight} * ({render_expression(str(incr), format='brian2')})")
-                elif lhs in stp_vars:  # synapse-local STP update
-                    on_pre.append(f"{lhs} = {render_expression(str(expr), format='brian2')}")
-        syn_consts = {p: sparams[p] for p in sparams if p in syn_ref}
+        cur_rename = {
+            syms[form["gate"]]: sp.Symbol(gvar),
+            syms["v"]: syms["v"],
+            **{syms[p]: sp.Symbol(f"{p}_{gvar}") for p in sparams},
+        }
+        decay_expr = form["g_ode"].subs(cur_rename)
+        current_expr = form["i"].subs(cur_rename)
+        cur_ref = {s.name for s in current_expr.free_symbols} | {s.name for s in decay_expr.free_symbols}
         return {
-            "decay": decay,
-            "current": current,
-            "cur_consts": cur_consts,
-            "model": "\n".join(model_lines),
-            "on_pre": "\n".join(on_pre),
-            "syn_consts": syn_consts,
-            "init": init,
+            "decay": render_expression(str(decay_expr), format="brian2"),
+            "current": render_expression(str(current_expr), format="brian2"),
+            "cur_consts": {f"{p}_{gvar}": sparams[p] for p in sparams if f"{p}_{gvar}" in cur_ref},
+            "model": form["model"],
+            "on_pre": _on_pre(form["steps"], lambda incr: f"{gvar}_post += {weight} * ({incr})"),
+            "syn_consts": dict(form["syn_consts"]),
+            "init": dict(form["init"]),
         }
 
 
 def assemble_eqs(pop):
     """The Brian2 ``Equations`` block for a cell population.
 
-    Membrane ODE + a summed drive ``iSyn`` + the pre-synaptic gate ODEs (dimensionless) + any linked summed-gate variables. Shared by the in-process ``run`` path and the generated script so the two never diverge. A conductance-based cell's drive is a current (``amp``);
-    a current-based cell (one declaring a membrane time constant ``tau_m``, whose membrane is ``(-v + ... + iSyn)/tau_m``) has a voltage drive (``volt``) — the Mongillo/Amit-Brunel form.
+    Membrane ODE + a summed drive ``iSyn`` + the pre-synaptic gate ODEs (dimensionless) + any linked summed-gate variables. Shared by the in-process ``run`` path and the generated script so the two never diverge. A conductance-based cell's drive is a current (``amp``); a current-based cell (one declaring a membrane time constant ``tau_m``, whose membrane is ``(-v + ... + iSyn)/tau_m``) has a voltage drive (``volt``) — the Mongillo/Amit-Brunel form.
     """
     drive_unit = "volt" if "tau_m" in pop["cell_params"] else "amp"
     membrane = f"dv/dt = ({pop['v_rhs']})"

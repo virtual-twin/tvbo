@@ -112,7 +112,11 @@ def locate_exp_container(results_root, source_id, subject=None) -> Path:
 
     A per-subject cohort is answered per subject. With ``subject`` given, the shard carrying that ``sub-`` entity is returned, and its absence raises: a per-subject run reading another subject's shard is a plausible wrong answer that nothing downstream can detect. Without ``subject`` the first shard is returned, the whole-cohort read being :func:`cohort_shards`.
     """
-    cands, is_cohort = _exp_candidates(results_root, source_id)
+    return _pick(*_exp_candidates(results_root, source_id), results_root, source_id, subject)
+
+
+def _pick(cands, is_cohort, results_root, source_id, subject=None) -> Path:
+    """The container a reader with *subject* takes out of :func:`_exp_candidates`' answer, by the rules :func:`locate_exp_container` states."""
     if subject is not None and is_cohort:
         wanted = f"sub-{str(subject).removeprefix('sub-')}_"
         own = [p for p in cands if p.name.startswith(wanted)]
@@ -132,9 +136,13 @@ def cohort_shards(results_root, source_id) -> dict[str, Path] | None:
 
     The whole-cohort read behind a DataRef that names a per-subject experiment from a context with no subject of its own (a study analysis): every shard, keyed by the ``sub-`` entity its name carries, in subject order.
     """
+    return _shards_by_subject(*_exp_candidates(results_root, source_id))
+
+
+def _shards_by_subject(cands, is_cohort) -> dict[str, Path] | None:
+    """:func:`_exp_candidates`' answer as ``{subject: shard}`` when it is a cohort, else ``None``."""
     import re
 
-    cands, is_cohort = _exp_candidates(results_root, source_id)
     if not is_cohort:
         return None
     subject_prefix = re.compile(_SUBJECT_PREFIX)
@@ -268,9 +276,13 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None, subjec
 
     ``subject`` is the reading run's own subject: against a per-subject cohort it selects that subject's shard (:func:`locate_exp_container`), and it is inert for every other kind of container.
     """
-    where = _where(ref, results_root, fallback_experiment)
+    return _container_at(_where(ref, results_root, fallback_experiment), subject)
+
+
+def _container_at(where, subject=None, candidates=None) -> Path:
+    """The container a resolved WHERE (:func:`_where`) names; *candidates* reuses an experiment's :func:`_exp_candidates` answer already in hand."""
     if where[0] == "exp":
-        return locate_exp_container(where[1], where[2], subject=subject)
+        return _pick(*(candidates or _exp_candidates(where[1], where[2])), where[1], where[2], subject)
     if where[0] == "ana":
         return locate_analysis_container(where[1], where[2])
     return where[1]
@@ -432,9 +444,13 @@ def sel_dict(ref) -> dict:
 
     Both spellings resolve: the keyed dict a study writes (``sel: {variable: phi}``) and the list of Arguments a dataclass build produces.
     """
-    sel = getattr(ref, "sel", None) or []
-    items = sel.items() if hasattr(sel, "items") else [(getattr(a, "name", None), a) for a in sel]
-    return {str(name): getattr(arg, "value", arg) for name, arg in items if name is not None}
+    from tvbo.utils import keyed_items
+
+    return {
+        str(name): getattr(arg, "value", arg)
+        for name, arg in keyed_items(getattr(ref, "sel", None), "sel")
+        if name is not None
+    }
 
 
 def reconcile_mode(ref) -> str:
@@ -463,21 +479,20 @@ def resolve_dataref(
 
     A reference to a per-subject COHORT is read per subject. ``subject`` (the reading run's own, e.g. a per-subject experiment sourcing its fitted parameters) selects that subject's shard. Without one (a study analysis) the reference means the whole cohort: the selected array of every shard, stacked along a leading ``subject`` dimension whose coordinate is the ``sub-`` entity of each shard, so the reader never sees one subject posing as the cohort.
 
-    For a *local* reference (no WHERE) raises via :func:`locate_container`; callers test :func:`is_local_ref` first and route those to the in-run resolver.
+    A *local* reference (no WHERE) raises, as it does in :func:`locate_container`; callers test :func:`is_local_ref` first and route those to the in-run resolver.
     """
     import xarray as xr
 
-    if subject is None:
-        where = _where(ref, results_root, fallback_experiment)
-        shards = cohort_shards(where[1], where[2]) if where[0] == "exp" else None
-        if shards:
-            parts = [_read_one(xr, path, ref, stacking=True) for path in shards.values()]
-            da = xr.concat(parts, dim="subject", coords="minimal", compat="override", join="outer")
-            da = da.assign_coords(subject=list(shards))
-            return _finish(da, ref, alias_map, model_labels)
+    where = _where(ref, results_root, fallback_experiment)
+    candidates = _exp_candidates(where[1], where[2]) if where[0] == "exp" else None
+    shards = _shards_by_subject(*candidates) if candidates and subject is None else None
+    if shards:
+        parts = [_read_one(xr, path, ref, stacking=True) for path in shards.values()]
+        da = xr.concat(parts, dim="subject", coords="minimal", compat="override", join="outer")
+        da = da.assign_coords(subject=list(shards))
+        return _finish(da, ref, alias_map, model_labels)
 
-    path = locate_container(ref, results_root=results_root, fallback_experiment=fallback_experiment, subject=subject)
-    out = _read_one(xr, path, ref)
+    out = _read_one(xr, _container_at(where, subject, candidates), ref)
     if not isinstance(out, xr.DataArray):
         return out
     return _finish(out, ref, alias_map, model_labels)

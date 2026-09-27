@@ -22,12 +22,15 @@ from typing import TYPE_CHECKING
 
 from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.smallscale.lowering import (
+    CURRENT_INPUT_TYPES,
+    EVENT_SOURCE_TYPES,
     assign_cell_population,
     classify_node_role,
     expand_edge_connections,
     expand_input_targets,
     group_nodes_by_dynamics,
     merge_params,
+    nml_type,
     safe_id,
 )
 from tvbo.adapters.smallscale.lowering import (
@@ -517,15 +520,6 @@ _CONTINUOUS_SYNAPSE_TYPES = frozenset(
 )
 
 
-def _nml_type_name(dynamics):
-    """Extract the NeuroML type name from a dynamics IRI (e.g. 'neuroml:ionChannelHH' → 'ionChannelHH')."""
-    iri = getattr(dynamics, "iri", None) or ""
-    if ":" not in iri:
-        return None
-    prefix, name = iri.split(":", 1)
-    return name if prefix == "neuroml" else None
-
-
 def _is_custom_nml_type(dynamics):
     """Return True if this dynamics needs a custom LEMS ComponentType definition.
 
@@ -730,7 +724,7 @@ def _render_custom_component_type(dynamics, role_slot=None):
     Unit handling: Constants honour the parameter's own ``unit``.
     TIME_SCALE / VOLT_SCALE are only auto-added when not present in params.
     """
-    type_name = _nml_type_name(dynamics)
+    type_name = nml_type(dynamics)
     if not type_name:
         return ""
 
@@ -823,7 +817,7 @@ def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude
     key_name : str
         Name of this node (parent's components dict key). indent : int Current indentation (spaces). custom_types : dict or None Collector for custom ComponentType definitions {type_name: xml_str}. exclude_params : set or None Parameter names to skip (e.g. channelPopulation attrs).
     """
-    type_name = _nml_type_name(dynamics)
+    type_name = nml_type(dynamics)
     if not type_name:
         return []
 
@@ -885,10 +879,9 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
     if custom_types is None:
         custom_types = {}
 
-    iri = getattr(dyn, "iri", None) or ""
-    if not iri.startswith("neuroml:"):
+    cell_type = nml_type(dyn)
+    if cell_type is None:
         return None
-    cell_type = iri.split(":", 1)[1]
 
     # Flat cell types: render as simple <type id="..." params.../> with no children
     _FLAT_CELL_TYPES = {
@@ -945,7 +938,7 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
     segments = {}
     segment_groups = {}
     for comp_name, comp in components.items():
-        comp_type = _nml_type_name(comp) or ""
+        comp_type = nml_type(comp, "")
         if comp_type in _CHANNEL_TYPES:
             channels[comp_name] = comp
         elif comp_type in CURRENT_INPUT_TYPES:
@@ -1034,7 +1027,7 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
     conc_xmls = []
     species_xmls = []
     for cm_name, cm in conc_models.items():
-        cm_type = _nml_type_name(cm)
+        cm_type = nml_type(cm)
         cm_params = cm.parameters or {}
         attrs = [f'id="{safe_id(cm_name)}"', f'type="{cm_type}"']
         for p_name, p_val in cm_params.items():
@@ -1189,39 +1182,6 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
 
 # ── Standard NeuroML input type detection ────────────────────────────
 
-# Current injection sources: standalone <Component>, injected via <explicitInput> poissonFiringSynapse / transientPoissonFiringSynapse are combined spike+synapse components applied via <explicitInput destination="synapses">.
-CURRENT_INPUT_TYPES = frozenset(
-    {
-        "pulseGenerator",
-        "pulseGeneratorDL",
-        "compoundPulseGenerator",
-        "compoundInput",
-        "sineGenerator",
-        "sineGeneratorDL",
-        "rampGenerator",
-        "rampGeneratorDL",
-        "voltageClamp",
-        "voltageClampTriple",
-        "poissonFiringSynapse",
-        "transientPoissonFiringSynapse",
-        "timedSynapticInput",
-    }
-)
-
-# Event (spike) sources: become <population> with synapticConnection
-EVENT_SOURCE_TYPES = frozenset(
-    {
-        "spikeGenerator",
-        "spikeGeneratorRandom",
-        "spikeGeneratorRefPoisson",
-        "spikeGeneratorPoisson",
-        "spikeArray",
-        "SpikeSourcePoisson",
-    }
-)
-
-ALL_INPUT_TYPES = CURRENT_INPUT_TYPES | EVENT_SOURCE_TYPES
-
 # Which resolved NeuroML types the shared lowering treats as current-injection or event sources; anything else becomes a cell population. Brian2 supplies its own.
 _NEUROML_ROLE_VOCAB = {
     "current_input": CURRENT_INPUT_TYPES,
@@ -1240,8 +1200,7 @@ def _render_compound_input_children(dyn_obj, indent=8):
     pad = " " * indent
     lines = []
     for comp_name, comp_obj in components.items():
-        comp_iri = getattr(comp_obj, "iri", "") or ""
-        comp_type = comp_iri.split(":", 1)[1] if comp_iri.startswith("neuroml:") else str(comp_name)
+        comp_type = nml_type(comp_obj, str(comp_name))
         comp_id = safe_id(str(comp_name))
         attr_parts = [f'id="{comp_id}"']
         params = getattr(comp_obj, "parameters", None) or {}
@@ -1885,14 +1844,9 @@ def build_std_lems_context(experiment):
     if _extends_base(iri) is not None:
         return _build_hier_custom_context(experiment)
 
-    if not iri.startswith("neuroml:"):
+    cell_type = nml_type(dyn)
+    if cell_type is None:
         return None
-
-    cell_type = iri.split(":", 1)[1]
-
-    # Common integration parameters
-    getattr(experiment, "integration", None)
-    getattr(experiment, "label", None)
 
     if cell_type in ("fitzHughNagumoCell", "fitzHughNagumo1969Cell"):
         return _build_std_fhn_context(experiment, cell_type)
@@ -2006,9 +1960,6 @@ def _build_std_cell_context(experiment):
         "sim_target": sim_target,
         "quantity_prefix": quantity_prefix,
     }
-
-
-# ``_connectivity_pairs`` moved to ``tvbo.adapters.smallscale.lowering`` (imported above as ``connectivity_pairs``) — the shared allToAll lowering.
 
 
 def _build_std_network_context(experiment):
@@ -2305,7 +2256,7 @@ def _build_std_network_context(experiment):
 
         syn_type = None
         if resolved_syn_dyn:
-            nml = _nml_type_name(resolved_syn_dyn)
+            nml = nml_type(resolved_syn_dyn)
             syn_type = nml or str(edge_coupling)
         elif edge_coupling:
             coup_name = getattr(edge_coupling, "name", None) or str(edge_coupling)
@@ -2394,7 +2345,7 @@ def _build_std_network_context(experiment):
     for pop in populations:
         _pop_dyn = dynamics_lib.get(pop["dyn_name"])
         if _pop_dyn:
-            _t = _nml_type_name(_pop_dyn)
+            _t = nml_type(_pop_dyn)
             if _t:
                 _used_nml_types.add(_t)
     for sid in synapse_set.values():
@@ -2410,7 +2361,7 @@ def _build_std_network_context(experiment):
     # Render standalone synapse components from dynamics_lib
     rendered_syn_ids = set(synapse_set.values())
     for dlib_name, dlib_obj in dynamics_lib.items():
-        dlib_type = _nml_type_name(dlib_obj)
+        dlib_type = nml_type(dlib_obj)
         if dlib_type and dlib_type in _SYNAPSE_TYPES:
             sid = safe_id(dlib_name)
             if sid not in rendered_syn_ids:
@@ -2756,10 +2707,8 @@ def _build_network_context(experiment):
             syn_type = f"syn{edge_idx}"
 
         # The NeuroML ComponentType a standard synapse instantiates. Distinct from the synapse's own id: an edge referencing a library entry by name carries the type on that entry's `iri`, not in the edge.
-        syn_nml_type = None
-        _syn_iri = getattr(resolved_edge_dyn, "iri", "") or ""
-        if _syn_iri.startswith("neuroml:"):
-            syn_nml_type = _syn_iri.split(":", 1)[1]
+        syn_nml_type = nml_type(resolved_edge_dyn)
+        if syn_nml_type is not None:
             # A standard synapse carries its values on the library entry; the edge supplies only per-connection weight/delay, so without this the component would be emitted with no parameters at all.
             for pn, pv in normalize_params(getattr(resolved_edge_dyn, "parameters", None)).items():
                 val = getattr(pv, "value", pv)
@@ -2832,8 +2781,7 @@ def _build_network_context(experiment):
                     stacklevel=2,
                 )
                 continue
-            ref_iri = getattr(ref_dyn, "iri", "") or ""
-            ref_nml_type = ref_iri.split(":", 1)[1] if ref_iri.startswith("neuroml:") else target
+            ref_nml_type = nml_type(ref_dyn, target)
             ref_params = {}
             for pn, pv in normalize_params(getattr(ref_dyn, "parameters", None)).items():
                 val = getattr(pv, "value", pv)
@@ -2960,12 +2908,6 @@ def build_lems_context(experiment):
     time_scale = ts_enum if ts_enum in ("s", "ms", "us") else "ms"
 
     from tvbo.utils.units import unit_to_lems_dimension, unit_to_lems_symbol
-
-    def _svs_have_physical_units(svs):
-        """True if at least one state variable has a non-dimensionless unit."""
-        return any(unit_to_lems_dimension(getattr(sv, "unit", None)) != "none" for sv in svs.values())
-
-    _model_has_time_units = _svs_have_physical_units(svs)
 
     # All symbol names — override SymPy built-ins (I, gamma, lambda, …)
     all_names = (
@@ -3125,7 +3067,21 @@ def build_lems_context(experiment):
         has_network=net_ctx is not None,
     )
 
-    def _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names):
+    def _component_type_context(ct_dyn, dyn_id, ct_params):
+        """The context a network ComponentType renders from, shared by cell and synapse types.
+
+        *ct_params* are the parameters the type is emitted with, which for a synapse carry its edge's overrides. `Dynamics` declares no clock of its own, so every ComponentType uses the scope's time scale, and SEC supplies it only to purely numeric equations: against dimensioned time constants it double-counts.
+        """
+        ct_svs = ct_dyn.state_variables or {}
+        ct_dvs = ct_dyn.in_dependency_order("derived_variables")
+        ct_coupling_inputs = ct_dyn.coupling_inputs
+        ct_all_names = (
+            [str(k) for k in ct_params.keys()]
+            + [str(k) for k in ct_svs.keys()]
+            + [str(k) for k in ct_dvs.keys()]
+            + [str(ci) for ci in ct_coupling_inputs]
+        )
+        ct_fn_names = list((ct_dyn.functions).keys())
         ct_bodies = function_bodies(ct_dyn)
 
         def ct_lems_expr(e):
@@ -3140,9 +3096,6 @@ def build_lems_context(experiment):
             e = inline_functions(e, ct_bodies)
             return sympy_to_lems(e, parameters=ct_all_names)
 
-        return ct_lems_expr
-
-    def _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr_fn):
         def ct_parse_pw(equation):
             try:
                 expr = parse_eq(equation, parameters=ct_all_names, functions=ct_fn_names)
@@ -3155,73 +3108,42 @@ def build_lems_context(experiment):
                 for val, cond in expr.args:
                     if getattr(cond, "func", None) is sympy_Eq:
                         continue
-                    cond_str = None if cond == sympy_S.true else ct_lems_expr_fn(cond)
-                    val_str = ct_lems_expr_fn(val)
+                    cond_str = None if cond == sympy_S.true else ct_lems_expr(cond)
+                    val_str = ct_lems_expr(val)
                     cases.append((cond_str, val_str))
                 return cases
             except Exception:
                 return None
 
-        return ct_parse_pw
+        return {
+            "dyn": ct_dyn,
+            "dyn_id": dyn_id,
+            "params": ct_params,
+            "svs": ct_svs,
+            "dvs": ct_dvs,
+            "events": ct_dyn.events,
+            "coupling_inputs": ct_coupling_inputs,
+            "sv_names_set": set(str(k) for k in ct_svs.keys()),
+            "needs_sec": time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs),
+            "lems_expr": ct_lems_expr,
+            "states_an_expression": states_an_expression,
+            "_parse_piecewise": ct_parse_pw,
+            "lems_dim": unit_to_lems_dimension,
+            "lems_sym": unit_to_lems_symbol,
+        }
 
     # When multi-population network exists, build per-cell-type contexts
     if net_ctx:
         cell_contexts = {}
         for ct_name, ct_dyn in net_ctx["cell_types"].items():
-            ct_params = ct_dyn.parameters or {}
-            ct_svs = ct_dyn.state_variables or {}
-            ct_dvs = ct_dyn.in_dependency_order("derived_variables")
-            ct_events = ct_dyn.events
-            ct_coupling_inputs = ct_dyn.coupling_inputs
-            ct_sv_names_set = set(str(k) for k in ct_svs.keys())
-
-            ct_all_names = (
-                [str(k) for k in ct_params.keys()]
-                + [str(k) for k in ct_svs.keys()]
-                + [str(k) for k in ct_dvs.keys()]
-                + [str(ci) for ci in ct_coupling_inputs]
-            )
-            ct_fn_names = list((ct_dyn.functions).keys())
-
-            _svs_have_physical_units(ct_svs)
-
-            ct_lems_expr = _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names)
-            ct_parse_pw = _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr)
-
+            ct_ctx = _component_type_context(ct_dyn, safe_id(ct_name), ct_dyn.parameters or {})
             # Detect threshold (spike-emitting) events for this node type
             threshold_event_names = [
-                k for k, v in ct_events.items() if getattr(getattr(v, "condition", None), "rhs", None) is not None
+                k for k, v in ct_ctx["events"].items() if getattr(getattr(v, "condition", None), "rhs", None) is not None
             ]
-
-            # `Dynamics` declares no clock of its own, so every ComponentType uses the scope's.
-            ct_time_scale = str(time_scale)
-            # SEC supplies the time scale only for purely numeric equations; against dimensioned time constants it double-counts.
-            ct_needs_sec = ct_time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs)
-
-            def ct_lems_dim(u):
-                """Return the LEMS dimension name for a cell ComponentType unit."""
-                return unit_to_lems_dimension(u)
-
-            def ct_lems_sym_fn(u):
-                """Return the LEMS unit symbol for a cell ComponentType value."""
-                return unit_to_lems_symbol(u)
-
             cell_contexts[ct_name] = {
-                "dyn": ct_dyn,
-                "dyn_id": safe_id(ct_name),
-                "params": ct_params,
-                "svs": ct_svs,
-                "dvs": ct_dvs,
-                "events": ct_events,
-                "coupling_inputs": ct_coupling_inputs,
-                "sv_names_set": ct_sv_names_set,
-                "needs_sec": ct_needs_sec,
-                "lems_expr": ct_lems_expr,
-                "states_an_expression": states_an_expression,
-                "_parse_piecewise": ct_parse_pw,
-                "lems_dim": ct_lems_dim,
-                "lems_sym": ct_lems_sym_fn,
-                "regime_data": _build_regime_data(ct_events),
+                **ct_ctx,
+                "regime_data": _build_regime_data(ct_ctx["events"]),
                 # Node-level flags for LEMS network rendering
                 "is_synapse": False,
                 "has_threshold_events": bool(threshold_event_names),
@@ -3235,10 +3157,9 @@ def build_lems_context(experiment):
             # A Dynamics that only parameterises a standard NeuroML type is emitted as that built-in component; a custom ComponentType is for one that brings its own equations.
             has_own_dynamics = bool(getattr(rdyn, "state_variables", None) or getattr(rdyn, "derived_variables", None))
             if rdyn and has_own_dynamics and syn["id"] not in cell_contexts:
-                ct_dyn = rdyn
                 ct_name = syn["id"]
                 # Edge parameters override the library Dynamics' values.
-                ct_params = dict(ct_dyn.parameters or {})
+                ct_params = dict(rdyn.parameters or {})
                 for _pn, _pinfo in (syn.get("params") or {}).items():
                     if _pn not in ct_params or not isinstance(_pinfo, dict):
                         continue
@@ -3247,31 +3168,17 @@ def build_lems_context(experiment):
                     if _pinfo.get("unit") is not None:
                         _p.unit = _pinfo["unit"]
                     ct_params[_pn] = _p
-                ct_svs = ct_dyn.state_variables or {}
-                ct_dvs = ct_dyn.in_dependency_order("derived_variables")
-                ct_events = ct_dyn.events
-                ct_coupling_inputs = ct_dyn.coupling_inputs
-                ct_sv_names_set = set(str(k) for k in ct_svs.keys())
-                ct_fn_names = list((ct_dyn.functions).keys())
-                _svs_have_physical_units(ct_svs)
-                ct_all_names = (
-                    [str(k) for k in ct_params.keys()]
-                    + [str(k) for k in ct_svs.keys()]
-                    + [str(k) for k in ct_dvs.keys()]
-                    + [str(ci) for ci in ct_coupling_inputs]
-                )
-                ct_lems_expr = _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names)
-                ct_parse_pw = _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr)
+                ct_ctx = _component_type_context(rdyn, ct_name, ct_params)
 
                 # Synapse-specific: events without a condition are external spike triggers
                 external_event_names = [
-                    k for k, ev in ct_events.items() if not getattr(getattr(ev, "condition", None), "rhs", None)
+                    k for k, ev in ct_ctx["events"].items() if not getattr(getattr(ev, "condition", None), "rhs", None)
                 ]
                 # Exposure / InstanceRequirement detection
-                has_v_req = any(str(ci) == "v" for ci in ct_coupling_inputs)
+                has_v_req = any(str(ci) == "v" for ci in ct_ctx["coupling_inputs"])
 
                 # Ground the synapse's base type and its inherited exposures / parameters / requirements in the NeuroML ontology contract, so a conductance-based synapse (extends baseConductanceBasedSynapse, exposing g) emits as well as the current-based baseSynapse default.
-                syn_extends = _extends_base(getattr(ct_dyn, "iri", "")) or "baseSynapse"
+                syn_extends = _extends_base(getattr(rdyn, "iri", "")) or "baseSynapse"
                 syn_contract = _base_type_meta(syn_extends)
                 # baseSynapse descendants carry a per-connection `weight`; it scales the emitted current, keeping it outside a saturating gate.
                 syn_weighted_exposure = "i" if "baseSynapse" in (syn_contract.get("chain") or ()) else None
@@ -3281,32 +3188,8 @@ def build_lems_context(experiment):
                 if "v" in syn_contract.get("requirements", {}):
                     has_v_req = False
 
-                syn_needs_sec = time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs)
-
-                def syn_lems_dim(u):
-                    """Return the LEMS dimension name for a synapse ComponentType unit."""
-                    return unit_to_lems_dimension(u)
-
-                def syn_lems_sym_fn(u):
-                    """Return the LEMS unit symbol for a synapse ComponentType value."""
-                    return unit_to_lems_symbol(u)
-
                 cell_contexts[ct_name] = {
-                    "dyn": ct_dyn,
-                    "dyn_id": ct_name,
-                    "params": ct_params,
-                    "svs": ct_svs,
-                    "dvs": ct_dvs,
-                    "events": ct_events,
-                    "coupling_inputs": ct_coupling_inputs,
-                    "sv_names_set": ct_sv_names_set,
-                    "needs_sec": syn_needs_sec,
-                    "lems_expr": ct_lems_expr,
-                    "states_an_expression": states_an_expression,
-                    "_parse_piecewise": ct_parse_pw,
-                    "lems_dim": syn_lems_dim,
-                    "lems_sym": syn_lems_sym_fn,
-                    # Synapse-specific extras
+                    **ct_ctx,
                     "is_synapse": True,
                     "has_v_req": has_v_req,
                     "external_event_names": external_event_names,
@@ -3317,8 +3200,6 @@ def build_lems_context(experiment):
                     "has_threshold_events": False,
                     "threshold_event_names": [],
                 }
-        # Re-store with synapse contexts included
-        ctx["cell_contexts"] = cell_contexts
 
         # `synapse=` resolves against components, so a custom one must name its `<id>_inst`.
         custom_syn_ids = {sid for sid, sctx in cell_contexts.items() if sctx.get("is_synapse")}
@@ -3627,19 +3508,8 @@ class NeuroMLAdapter(BaseAdapter):
 
         if _is_std_network:
             # Build output column names from network structure
-            from collections import OrderedDict
-
-            _groups = OrderedDict()
-            for node in _net_nodes:
-                nd = getattr(node, "dynamics", None)
-                dname = (getattr(nd, "name", None) or str(nd)) if nd else "dynamics"
-                _groups.setdefault(dname, []).append(node)
-
-            for dname, gnodes in _groups.items():
-                _dobj = _net_dyn_lib.get(dname)
-                _diri = getattr(_dobj, "iri", "") or ""
-                _dnml = _diri.split(":", 1)[1] if _diri.startswith("neuroml:") else dname
-                if _dnml in CURRENT_INPUT_TYPES or _dnml in EVENT_SOURCE_TYPES:
+            for dname, gnodes in group_nodes_by_dynamics(_net_nodes, "dynamics").items():
+                if classify_node_role(dname, _net_dyn_lib.get(dname), _NEUROML_ROLE_VOCAB)[0] != "cell":
                     continue
                 # Respect record flag on nodes (default True)
                 recorded = [n for n in gnodes if getattr(n, "record", None) is not False]
@@ -3654,9 +3524,7 @@ class NeuroMLAdapter(BaseAdapter):
             net_ctx = None
             cell_contexts = {}
         elif uses_std:
-            iri = getattr(self.experiment.dynamics, "iri", "") or ""
-            nml_type = iri.split(":", 1)[1] if ":" in iri else ""
-            if nml_type in ("fitzHughNagumoCell", "fitzHughNagumo1969Cell"):
+            if nml_type(self.experiment.dynamics, "") in ("fitzHughNagumoCell", "fitzHughNagumo1969Cell"):
                 sv_names = list((self.experiment.dynamics.state_variables or {}).keys()) or ["V", "W"]
             else:
                 sv_names = ["v"]

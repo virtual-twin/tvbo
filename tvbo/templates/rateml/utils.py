@@ -240,13 +240,6 @@ def has_boundaries(model) -> bool:
     return any(_enforced_clamp(sv) is not None for sv in model.state_variables.values())
 
 
-def get_initial_value(sv) -> float:
-    """Get initial value for state variable, with sensible default."""
-    from tvbo.utils import initial_value
-
-    return initial_value(sv)
-
-
 def get_domain_str(obj) -> str:
     """Get domain as 'lo, hi' string for state variable initialization."""
     domain = getattr(obj, "domain", None)

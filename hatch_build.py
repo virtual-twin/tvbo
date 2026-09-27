@@ -70,7 +70,7 @@ def generate_datamodel(root: str | Path) -> None:
     (out_dir / "tvbo_datamodel.schema.json").write_text(json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-# `boundaries` also implies `enforce: clamp`; yaml_loader._fold_state_variable_domains owns it.
+# `boundaries` also implies `enforce: clamp`; yaml_loader._fold_one_state_variable_domain owns it.
 _SEMANTIC_ALIASES = ("range", "boundaries")
 
 

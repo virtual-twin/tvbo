@@ -14,7 +14,6 @@ from pathlib import Path
 import typer
 
 import tvbo
-from tvbo.utils import study_layout as layout_rules
 
 app = typer.Typer(name="study", no_args_is_help=True)
 
@@ -95,6 +94,8 @@ def init(
 
     ``--slim`` writes only what a human authors (:data:`SLIM_ROLES`), for a study that demonstrates something rather than being archived.
     """
+    from tvbo.utils import study_layout as layout_rules
+
     record = layout_rules.load_layout()
     templates = _checked_templates(template, record)
     root = (parent / name).resolve()
@@ -176,6 +177,8 @@ def show_layout(
 
     ``--sync`` is how documentation stops restating the layout: a file carrying the layout markers gets the current tree written into them, so a tree in prose can no longer fall behind the record.
     """
+    from tvbo.utils import study_layout as layout_rules
+
     record = layout_rules.load_layout()
     templates = _checked_templates(template, record)
     if sync:

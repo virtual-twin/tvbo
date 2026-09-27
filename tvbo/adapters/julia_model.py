@@ -88,18 +88,23 @@ def equation_rhs_text(model) -> str:
     )
 
 
-def needs_special_functions(model) -> bool:
-    """True if any equation calls a SpecialFunctions.jl function (erf, gamma, …)."""
-    rhs = equation_rhs_text(model)
-    return any(re.search(rf"\b{fn}\s*\(", rhs) for fn in JULIA_SPECIAL_FUNCTIONS)
+def needs_special_functions(rhs_text: str) -> bool:
+    """True if *rhs_text*, a model's `equation_rhs_text`, calls a SpecialFunctions.jl function (erf, gamma, …)."""
+    return any(re.search(rf"\b{fn}\s*\(", rhs_text) for fn in JULIA_SPECIAL_FUNCTIONS)
 
 
-def needs_nanmath(model) -> bool:
-    """True if any equation contains a ``Piecewise``.
+def needs_nanmath(rhs_text: str) -> bool:
+    """True if *rhs_text*, a model's `equation_rhs_text`, contains a ``Piecewise``.
 
     The Julia printer routes domain-restricted powers inside Piecewise branches through NaNMath (NaN instead of DomainError, matching numpy/JAX), so those models must ``import NaNMath``.
     """
-    return "Piecewise" in equation_rhs_text(model)
+    return "Piecewise" in rhs_text
+
+
+def julia_tuple_items(items) -> str:
+    """*items* joined as the inside of a Julia tuple, with the trailing comma a one-element tuple needs."""
+    items = list(items)
+    return ", ".join(items) + ("," if len(items) == 1 else "")
 
 
 def make_renderer(model, fmt="julia"):
@@ -121,6 +126,19 @@ def make_renderer(model, fmt="julia"):
         )
 
     return render
+
+
+def _shared_parts(model, jl) -> dict:
+    """The context both model-function layouts build alike: the model's functions, derived parameters and derived variables rendered through *jl*, and the optional Julia packages its equations need, sniffed from one `equation_rhs_text`."""
+    rhs_text = equation_rhs_text(model)
+    return {
+        "func_name": model.name,
+        "needs_special": needs_special_functions(rhs_text),
+        "needs_nanmath": needs_nanmath(rhs_text),
+        "functions": [(str(name), [str(a) for a in f.arguments], jl(f.equation)) for name, f in model.functions.items()],
+        "derived_params": [(dp.name, jl(dp.equation)) for dp in model.in_dependency_order("derived_parameters").values()],
+        "derived_vars": [(dv.name, jl(dv.equation)) for dv in model.in_dependency_order("derived_variables").values()],
+    }
 
 
 def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
@@ -170,11 +188,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
         unpack.append(f"{name} = {arg_x}[{idx}]")
         dfun.append((f"dx[{idx}] =", jl(s.equation)))
 
-    functions = []
-    for fname, fdef in (model.functions).items():
-        functions.append((str(fname), [str(a) for a in fdef.arguments], jl(fdef.equation)))
-    derived_params = [(dp.name, jl(dp.equation)) for dp in model.in_dependency_order("derived_parameters").values()]
-    derived_vars = [(dv.name, jl(dv.equation)) for dv in model.in_dependency_order("derived_variables").values()]
+    shared = _shared_parts(model, jl)
 
     # A per-node parameter becomes a `<name>_vec` gathered at the top of the loop; scalars stay scalar.
     pval_parts, destructure_names, pernode_gather = [], [], []
@@ -191,15 +205,13 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
         else:
             pval_parts.append(f"{p.name} = {v}")
             destructure_names.append(p.name)
-    param_values = ", ".join(pval_parts) + ("," if len(pval_parts) == 1 else "")
-    destructure = ", ".join(destructure_names) + ("," if len(destructure_names) == 1 else "")
 
     u0 = []
     for s in model.state_variables.values():
         u0.extend([initial_value(s)] * n_nodes)
 
     # Recorded along the branch: every state variable plus any derived variable in ``output``, each reduced across nodes to a max and a mean.
-    dv_names = {name for name, _ in derived_vars}
+    dv_names = {name for name, _ in shared["derived_vars"]}
     record_obs = list(sv)
     for o in [str(o) for o in (model.output)]:
         if o in dv_names and o not in record_obs:
@@ -223,17 +235,13 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
                 record_obs.append(name)
 
     return {
-        "func_name": model.name,
+        **shared,
         "arg_x": arg_x,
-        "destructure": destructure,
-        "needs_special": needs_special_functions(model),
-        "needs_nanmath": needs_nanmath(model),
-        "functions": functions,
-        "derived_params": derived_params,
-        "derived_vars": derived_vars,
+        "destructure_names": destructure_names,
+        "destructure": julia_tuple_items(destructure_names),
         "unpack": unpack,
         "dfun": dfun,
-        "param_values": param_values,
+        "param_values": julia_tuple_items(pval_parts),
         "u0": u0,
         "n_modes": 1,
         "network_mode": True,
@@ -291,24 +299,12 @@ def build_model_context(model, network=None, constraints=None) -> dict:
         else:
             unpack = [f"{', '.join(sv)} = {arg_x}"]
 
-    # Custom functions (e.g. Sigm): (name, [args], body).
-    functions = []
-    for fname, fdef in (model.functions).items():
-        fargs = [str(name) for name in fdef.arguments]
-        functions.append((str(fname), fargs, jl(fdef.equation)))
-
-    # Derived parameters and derived variables (conditional ones folded to ifelse).
-    derived_params = [(dp.name, jl(dp.equation)) for dp in model.in_dependency_order("derived_parameters").values()]
-    derived_vars = [(dv.name, jl(dv.equation)) for dv in model.in_dependency_order("derived_variables").values()]
-
     # `p = (...)` parameter tuple (coupling terms default to 0.0 for single-node).
     pval_parts = [f"{p.name} = {p.value}" for p in model.parameters.values()]
     pval_parts += [f"{c} = 0.0" for c in coupling]
-    param_values = ", ".join(pval_parts) + ("," if len(pval_parts) == 1 else "")
 
     # NamedTuple destructuring on the parameter struct.
     destructure_names = params + coupling
-    destructure = ", ".join(destructure_names) + ("," if len(destructure_names) == 1 else "")
 
     # Initial conditions, mode-expanded (each SV repeated n_modes times).
     u0 = []
@@ -317,17 +313,13 @@ def build_model_context(model, network=None, constraints=None) -> dict:
             u0.append(initial_value(s))
 
     return {
-        "func_name": model.name,
+        **_shared_parts(model, jl),
         "arg_x": arg_x,
-        "destructure": destructure,
-        "needs_special": needs_special_functions(model),
-        "needs_nanmath": needs_nanmath(model),
-        "functions": functions,
-        "derived_params": derived_params,
-        "derived_vars": derived_vars,
+        "destructure_names": destructure_names,
+        "destructure": julia_tuple_items(destructure_names),
         "unpack": unpack,
         "dfun": dfun,
-        "param_values": param_values,
+        "param_values": julia_tuple_items(pval_parts),
         "u0": u0,
         "n_modes": n_modes,
     }

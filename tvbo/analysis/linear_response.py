@@ -26,37 +26,48 @@ from typing import Any
 import numpy as np
 import sympy as sp
 
-from tvbo.parse.expression import parse_eq
+
+def _coupling_split(model):
+    """``(network, local)``: the model's coupling-input names, split by whether the input is local (non-network)."""
+    cpl_inputs = dict(getattr(model, "coupling_inputs", {}) or {})
+    local = [c for c, ci in cpl_inputs.items() if getattr(ci, "local", False)]
+    return [c for c in cpl_inputs if c not in local], local
+
+
+def _parsed(model, group):
+    """``{name: rhs}`` of one equation group of the model's cached symbolic form, parsed once against the model's own symbol scope (so a name like ``gamma`` is a Symbol, not a function)."""
+    return {name: eq.rhs for name, eq in model.symbolic_system.form(notation="symbol")[group].items()}
+
+
+def _unfolded(model, expressions):
+    """*expressions* (``{name: expr}``) with the derived-variable chain inlined and local (non-network) coupling inputs zeroed.
+
+    Each result is in state variables, network-coupling inputs and parameters only. The chain is inlined with the codebase's canonical inliner, once per derived variable plus one, so a derived variable that reads another unfolds completely.
+    """
+    from tvbo.classes.equation import substitute_function_in_state_equations
+
+    dvars = _parsed(model, "derived-variables")
+    out = dict(expressions)
+    for _ in range(len(dvars) + 1):
+        substitute_function_in_state_equations(out, dvars)
+    zero_local = {sp.Symbol(c): 0 for c in _coupling_split(model)[1]}
+    return {name: expr.subs(zero_local) for name, expr in out.items()}
 
 
 def _dfun_symbols(model):
-    """Return (state_syms, net_coupling_names, source_var, per-node f expressions).
+    """Return (state_vars, state_syms, net_coupling_names, source_var, per-node f expressions).
 
-    ``f`` are the state-variable RHS with the derived-variable chain fully unfolded and local (non-network) coupling inputs zeroed — so each ``f_k`` is expressed in state variables, network-coupling inputs, and parameters only.
+    ``f`` are the state-variable RHS through :func:`_unfolded` — so each ``f_k`` is expressed in state variables, network-coupling inputs, and parameters only.
     """
     svs = list(model.state_variables)
-    cpl_inputs = dict(getattr(model, "coupling_inputs", {}) or {})
-    net_cpls = [c for c, ci in cpl_inputs.items() if not getattr(ci, "local", False)]
-    local_cpls = [c for c, ci in cpl_inputs.items() if getattr(ci, "local", False)]
+    net_cpls, _ = _coupling_split(model)
     source_var = next(
         (n for n, sv in model.state_variables.items() if getattr(sv, "coupling_variable", False)),
         svs[0],
     )
-
-    from tvbo.classes.equation import substitute_function_in_state_equations
-
-    # Against the model's symbol scope, so a name like `gamma` resolves to a Symbol not a function.
-    scope = model.get_symbolic_elements()
-    dvars = {n: parse_eq(dv.equation, local_dict=scope) for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
-    zero_local = {sp.Symbol(c): 0 for c in local_cpls}
-
-    # Inline the derived-variable chain into the state equations with the codebase's canonical inliner, iterated to unfold nested references (a derived var may reference another), then zero local (non-network) coupling inputs.
-    sv_eqs = {v: parse_eq(model.state_variables[v].equation, local_dict=scope) for v in svs}
-    for _ in range(len(dvars) + 1):
-        substitute_function_in_state_equations(sv_eqs, dvars)
-    state_syms = [sp.Symbol(v) for v in svs]
-    f = [sv_eqs[v].subs(zero_local) for v in svs]
-    return svs, state_syms, net_cpls, source_var, f
+    rhs = _parsed(model, "state-equations")
+    f = _unfolded(model, {v: rhs[v] for v in svs})
+    return svs, [sp.Symbol(v) for v in svs], net_cpls, source_var, [f[v] for v in svs]
 
 
 def jacobian_terms(model):
@@ -81,19 +92,10 @@ def jacobian_terms(model):
 
 def constraint_expr(model, var_name):
     """Unfolded symbolic expression of a derived variable (e.g. the FIC constraint variable ``I_E``), in state variables, network-coupling inputs and parameters — same unfolding as :func:`_dfun_symbols` uses for the RHS (derived-variable chain inlined, local coupling zeroed), so it prints against the same symbol set (``ctx['syms']``). Used to emit the constraint residual of a constraint-defined operating point (Deco FIC: ``I_E = target``, with ``J_i`` the free parameter), solved deterministically alongside the fixed point."""
-    from tvbo.classes.equation import substitute_function_in_state_equations
-
-    cpl_inputs = dict(getattr(model, "coupling_inputs", {}) or {})
-    local_cpls = [c for c, ci in cpl_inputs.items() if getattr(ci, "local", False)]
-    # Parse against the model scope (canonical path) — builtin-colliding names stay Symbols.
-    scope = model.get_symbolic_elements()
-    dvars = {n: parse_eq(dv.equation, local_dict=scope) for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
+    dvars = _parsed(model, "derived-variables")
     if var_name not in dvars:
         raise KeyError(f"constraint variable '{var_name}' is not a derived variable of the model")
-    expr = {var_name: dvars[var_name]}
-    for _ in range(len(dvars) + 1):
-        substitute_function_in_state_equations(expr, dvars)
-    return expr[var_name].subs({sp.Symbol(c): 0 for c in local_cpls})
+    return _unfolded(model, {var_name: dvars[var_name]})[var_name]
 
 
 def observable_terms(model, name):
@@ -103,13 +105,14 @@ def observable_terms(model, name):
 
     Returns the per-node Jacobian of ``y`` with respect to the state variables (``Hloc``, ``1 × n_sv``) and with respect to the network coupling inputs (``Hcpl``, ``1 × n_cpl``); the latter scatters through the connectome exactly as ``Jcpl`` does, so an observable reading a coupling term stays correct.
     """
-    svs, state_syms, net_cpls, _, _ = _dfun_symbols(model)
+    svs = list(model.state_variables)
+    state_syms = [sp.Symbol(v) for v in svs]
     if name in svs:
         expr = sp.Symbol(name)
     else:
         expr = constraint_expr(model, name)
     row = sp.Matrix([expr])
-    cpl_syms = [sp.Symbol(c) for c in net_cpls]
+    cpl_syms = [sp.Symbol(c) for c in _coupling_split(model)[0]]
     return {
         "Hloc": row.jacobian(state_syms),
         "Hcpl": row.jacobian(cpl_syms) if cpl_syms else sp.zeros(1, 0),

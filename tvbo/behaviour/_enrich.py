@@ -29,12 +29,11 @@ def _unset(value) -> bool:
 def _schema_class(cls) -> str:
     """The schema class *cls* is, which is not always what Python calls it.
 
-    Every table read here is keyed by the schema — the curated database's categories, the keyed collections — and a runtime subclass is still the schema class it extends:
-    a subclass is still the schema class it extends. The dataclasses state it outright; for the Pydantic models the generated class is the one that names it.
+    Every table read here is keyed by the schema — the curated database's categories, the keyed collections — and a runtime subclass is still the schema class it extends. The dataclasses state it outright in a ``class_name`` string; for the Pydantic models the generated class is the one that names it, and a ``class_name`` found there is a behaviour's own attribute (``IntegratorBehaviour.class_name`` is the backend class an integrator emits), so only a string is taken as the statement.
     """
     declared = getattr(cls, "class_name", None)
-    if declared:
-        return str(declared)
+    if isinstance(declared, str) and declared:
+        return declared
     for base in cls.__mro__:
         if base.__module__.startswith("tvbo.datamodel."):
             return base.__name__

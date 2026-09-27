@@ -4,12 +4,9 @@ A ``Procedural`` generator describes a network construction as an ordered DAG of
 
 Two properties make it declarative rather than a lowering dialect:
 
-**Nothing is built from expression strings.** Each step's options are schema *fields*, and
-this module constructs the SymPy tree directly (``Function("pairwise_distance")(pos)``).
-That is not a stylistic choice: SymPy's parser cannot represent keyword arguments at all, silently collapses ``M[M != 0]`` to ``True``, and turns an unregistered head into implicit multiplication (``eigvals(M)`` -> ``M*eigvals``) with no error. Building nodes directly makes all three unreachable. The single exception is the ``equation`` step, whose ``rhs`` is author-written algebra — which is what the parser is actually for.
+**Nothing is built from expression strings.** Each step's options are schema *fields*, and this module constructs the SymPy tree directly (``Function("pairwise_distance")(pos)``). That is not a stylistic choice: SymPy's parser cannot represent keyword arguments at all, silently collapses ``M[M != 0]`` to ``True``, and turns an unregistered head into implicit multiplication (``eigvals(M)`` -> ``M*eigvals``) with no error. Building nodes directly makes all three unreachable. The single exception is the ``equation`` step, whose ``rhs`` is author-written algebra — which is what the parser is actually for.
 
-**The deterministic/stochastic split is inferred, not declared.** ``partition`` computes
-which steps transitively depend on the generator's seed. A backend evaluates the deterministic prefix once and traces only the stochastic suffix per realisation, so sweeping N network realisations costs N x (the seeded tail), not N x (the whole construction). The boundary is a property of the DAG, so every backend gets the same answer.
+**The deterministic/stochastic split is inferred, not declared.** ``partition`` computes which steps transitively depend on the generator's seed. A backend evaluates the deterministic prefix once and traces only the stochastic suffix per realisation, so sweeping N network realisations costs N x (the seeded tail), not N x (the whole construction). The boundary is a property of the DAG, so every backend gets the same answer.
 """
 
 from __future__ import annotations
@@ -276,9 +273,6 @@ _STEP_BUILDERS = {
     "sample": _step_sample,
     "stochastic_mask": _step_stochastic_mask,
 }
-
-# Step types whose result depends on the generator's PRNG state. A step is also seeded when it references a seeded intermediate; `partition` takes that closure.
-_SEEDED_TYPES = {"stochastic_mask"}
 
 
 def build(spec: Mapping[str, Any]) -> list[tuple[str, sp.Expr]]:

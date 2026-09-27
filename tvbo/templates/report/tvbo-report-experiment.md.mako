@@ -23,7 +23,7 @@ Context Variables:
 </%doc>
 <%
 from sympy import latex, Eq, Symbol
-from tvbo.utils import report
+from tvbo.utils import as_list, report
 from tvbo.parse.expression import parse_eq
 
 # ── Short-hands ──
@@ -42,17 +42,7 @@ if net and hasattr(net, 'coupling') and net.coupling:
     elif isinstance(net.coupling, list):
         net_couplings = {getattr(c, 'name', f'coupling_{i}'): c for i, c in enumerate(net.coupling)}
 
-def _to_dict(obj):
-    """Normalize None / list / dict into a dict keyed by .name."""
-    if not obj:
-        return {}
-    if isinstance(obj, dict):
-        return obj
-    if isinstance(obj, list):
-        return {getattr(item, 'name', f'item_{i}'): item for i, item in enumerate(obj)}
-    return {}
-
-_all_observations = _to_dict(getattr(exp, 'observations', None))
+_all_observations = dict(report.name_items(getattr(exp, 'observations', None)))
 # Split into raw vs derived for the report layout.
 def _obs_is_derived(o):
     obs_names = set(_all_observations.keys())
@@ -63,10 +53,10 @@ def _obs_is_derived(o):
     return False
 observations = {n: o for n, o in _all_observations.items() if not _obs_is_derived(o)}
 derived_observations = {n: o for n, o in _all_observations.items() if _obs_is_derived(o)}
-functions = _to_dict(getattr(exp, 'functions', None))
-optimizations = _to_dict(getattr(exp, 'optimizations', None))
-explorations = _to_dict(getattr(exp, 'explorations', None))
-algorithms = _to_dict(getattr(exp, 'algorithms', None))
+functions = dict(report.name_items(getattr(exp, 'functions', None)))
+optimizations = dict(report.name_items(getattr(exp, 'optimizations', None)))
+explorations = dict(report.name_items(getattr(exp, 'explorations', None)))
+algorithms = dict(report.name_items(getattr(exp, 'algorithms', None)))
 execution = getattr(exp, 'execution', None)
 references = getattr(exp, 'references', []) or []
 
@@ -86,53 +76,14 @@ def _p(obj, name, default=None):
 def _present(value):
     return value not in (None, '', [], {})
 
-def _as_list(value):
-    if not value:
-        return []
-    if isinstance(value, str):
-        return [value]
-    if hasattr(value, 'values'):
-        return list(value.values())
-    return list(value) if isinstance(value, (list, tuple, set)) else [value]
-
-def _items(value):
-    if not value:
-        return []
-    if hasattr(value, 'items'):
-        return list(value.items())
-    if hasattr(value, 'values'):
-        return [(_p(item, 'name', f'item_{idx}'), item) for idx, item in enumerate(value.values())]
-    if isinstance(value, list):
-        return [(_p(item, 'name', f'item_{idx}'), item) for idx, item in enumerate(value)]
-    return []
-
-# Cell formatters live in the adapter (tvbo.utils.report) to avoid duplicating
-# them across the report templates; alias for the local call sites below.
-_unit_text = report.unit_text
-_range_text = report.range_text
-_distribution_text = report.distribution_text
-_metadata_text = report.metadata_text
-_flag_text = report.flag_text
-
 def _name_text(value):
     if value is None:
         return '—'
     return str(_p(value, 'name', value))
 
-def _argument_items(arguments):
-    if not arguments:
-        return []
-    if hasattr(arguments, 'items'):
-        return list(arguments.items())
-    if hasattr(arguments, 'values'):
-        return [(_p(arg, 'name', f'arg_{idx}'), arg) for idx, arg in enumerate(arguments.values())]
-    if isinstance(arguments, list):
-        return [(_p(arg, 'name', f'arg_{idx}'), arg) for idx, arg in enumerate(arguments)]
-    return []
-
 def _arguments_text(arguments):
     parts = []
-    for arg_name, arg in _argument_items(arguments):
+    for arg_name, arg in report.name_items(arguments):
         value = _p(arg, 'value', None)
         unit = _p(arg, 'unit', None)
         desc = _p(arg, 'description', '')
@@ -206,20 +157,6 @@ def eq_latex(lhs, rhs, extra_symbols=None):
         return latex(Eq(lhs_sym, rhs_parsed), mul_symbol='dot')
     except Exception:
         return f"{lhs} = {rhs}"
-
-def deriv_latex(var_name, rhs, extra_symbols=None):
-    """Create LaTeX for a derivative equation."""
-    if not rhs:
-        return ''
-    try:
-        syms = list(all_param_names) + (extra_symbols or [])
-        rhs_parsed = parse_eq(str(rhs), parameters=syms, functions=all_func_names)
-        var_latex = latex(Symbol(var_name))
-        if derivative_notation == 'dot':
-            return f"\\dot{{{var_latex}}} = {latex(rhs_parsed, mul_symbol='dot')}"
-        return f"\\frac{{d{var_latex}}}{{dt}} = {latex(rhs_parsed, mul_symbol='dot')}"
-    except Exception:
-        return f"d{var_name}/dt = {rhs}"
 
 def _get_func_args(func):
     """Extract argument name list from a Function object."""
@@ -368,7 +305,7 @@ ${report.unit_verdict_table(unit_verdicts)}
 |:----------|:-----------|:-----|:------------|
 % for name, dp in dparams.items():
 <% dp_eq = getattr(dp, 'equation', None); dp_rhs = getattr(dp_eq, 'rhs', '') if dp_eq else ''; dp_desc = _p(dp, 'description', '') or 'Derived' %>\
-| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | ${_unit_text(_p(dp, 'unit', None)) or report.derived_unit_text(derived_units, name)} | ${dp_desc} |
+| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | ${report.unit_text(_p(dp, 'unit', None)) or report.derived_unit_text(derived_units, name)} | ${dp_desc} |
 % endfor
 % endif
 
@@ -397,13 +334,13 @@ out_names = [n for n in out_names if n not in dvars]
 
 | Input | Source | Dimension | Keys | Description |
 |:------|:-------|----------:|:-----|:------------|
-% for input_name, input_obj in _items(coupling_inputs):
-| ${input_name} | ${_p(input_obj, 'source', '—') or '—'} | ${_p(input_obj, 'dimension', 1)} | ${', '.join(_as_list(_p(input_obj, 'keys', []))) or '—'} | ${_p(input_obj, 'description', '') or ''} |
+% for input_name, input_obj in report.name_items(coupling_inputs):
+| ${input_name} | ${_p(input_obj, 'source', '—') or '—'} | ${_p(input_obj, 'dimension', 1)} | ${', '.join(as_list(_p(input_obj, 'keys') or None)) or '—'} | ${_p(input_obj, 'description', '') or ''} |
 % endfor
 
 % endif
 % if observed:
-**Observed Variables:** ${', '.join([str(name) for name, _ in _items(observed)])}
+**Observed Variables:** ${', '.join([str(name) for name, _ in report.name_items(observed)])}
 
 % endif
 % if events:
@@ -437,9 +374,9 @@ coordinate_space = _p(net, 'coordinate_space', None)
 distance_unit = _p(net, 'distance_unit', None)
 time_unit = _p(net, 'time_unit', None)
 weights = _p(net, 'weights', None)
-nodes = _as_list(_p(net, 'nodes', []))
-edges = _as_list(_p(net, 'edges', []))
-edge_matrix_files = _as_list(_p(net, 'edge_matrix_files', []))
+nodes = as_list(_p(net, 'nodes') or None)
+edges = as_list(_p(net, 'edges') or None)
+edge_matrix_files = as_list(_p(net, 'edge_matrix_files') or None)
 graph_generator = _p(net, 'graph_generator', None)
 
 def _matrix_summary(matrix):
@@ -545,7 +482,7 @@ incoming = _p(cpl_obj, 'incoming_states', [])
 if isinstance(incoming, str):
     incoming = [incoming]
 incoming = list(incoming) if incoming else []
-local_states = _as_list(_p(cpl_obj, 'local_states', []))
+local_states = as_list(_p(cpl_obj, 'local_states') or None)
 
 cpl_params_obj = _p(cpl_obj, 'parameters', {})
 if isinstance(cpl_params_obj, dict):
@@ -693,8 +630,8 @@ state_wise_sigma = _p(integ, 'state_wise_sigma', []) or []
 scipy_ode_base = _p(integ, 'scipy_ode_base', False)
 number_of_stages = _p(integ, 'number_of_stages', None)
 delayed_integration = _p(integ, 'delayed', None)
-integration_params = _items(_p(integ, 'parameters', {}))
-intermediate_expressions = _items(_p(integ, 'intermediate_expressions', []))
+integration_params = report.name_items(_p(integ, 'parameters', {}))
+intermediate_expressions = report.name_items(_p(integ, 'intermediate_expressions', []))
 update_expression = _p(integ, 'update_expression', None)
 %>\
 
@@ -775,7 +712,7 @@ for attr, label in (('name', 'name'), ('noise_type', 'type'), ('axis', 'axis'), 
         noise_bits.append(f"{label}={value}")
 noise_distribution = _p(noise, 'distribution', None)
 if noise_distribution:
-    noise_bits.append(_distribution_text(noise_distribution))
+    noise_bits.append(report.distribution_text(noise_distribution))
 %>
 ${'Additive' if noise_additive else 'Multiplicative'} Gaussian noise: $d\mathbf{x} = f(\mathbf{x},t)\,dt + \sigma\,d\mathbf{W}_t$
 
@@ -929,7 +866,7 @@ expl_label = _p(expl, 'label', expl_name)
 expl_desc = _p(expl, 'description', '')
 expl_mode = _p(expl, 'mode', 'product')
 expl_n_par = _p(expl, 'n_parallel', 1)
-expl_axes = _as_list(_p(expl, 'space', None))
+expl_axes = as_list(_p(expl, 'space') or None)
 ep_items = [(str(_p(a, 'parameter', '?')).split('.', 1)[-1], a) for a in expl_axes]
 observable = _p(expl, 'observable', None)
 %>\
@@ -1348,7 +1285,7 @@ for attr, label in (('input', 'input'), ('output', 'output'), ('apply_on_dimensi
         func_meta.append((label, _name_text(value)))
 if _p(func, 'callable', None):
     func_meta.append(('callable', _callable_text(func)))
-requirements = _as_list(_p(func, 'requirements', []))
+requirements = as_list(_p(func, 'requirements') or None)
 if requirements:
     func_meta.append(('requirements', ', '.join([str(item) for item in requirements])))
 aggregate = _p(func, 'aggregate', None)
@@ -1356,7 +1293,7 @@ if aggregate:
     func_meta.append(('aggregate', f"{_p(aggregate, 'type', 'mean')} over {_p(aggregate, 'over', '?')}"))
 time_range = _p(func, 'time_range', None)
 if time_range:
-    func_meta.append(('time range', _range_text(time_range)))
+    func_meta.append(('time range', report.range_text(time_range)))
 # Equation-level parameters
 eq_params = getattr(func_eq, 'parameters', None) if func_eq else None
 if hasattr(eq_params, 'values'):

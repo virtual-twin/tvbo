@@ -275,37 +275,38 @@ class LazyArrayStore:
     def _template_edges(self) -> list:
         return template_edges(self._meta.get("edges", []) or [])
 
+    def _open_handle(self):
+        """A fresh read handle on the store — an HDF5 file or a Zarr group — or ``None`` for a CSV, which has none to hold."""
+        if self._ext in (".h5", ".hdf5"):
+            import h5py
+
+            return h5py.File(self._path, "r")
+        if self._ext == ".zarr" or self._path.is_dir():
+            import zarr
+
+            return zarr.open(str(self._path), mode="r")
+        return None
+
     @contextmanager
     def _open(self):
         """The open store, held for the duration if a ``with store:`` block already holds it."""
         if self._handle is not None:
             yield self._handle
             return
-        if self._ext in (".h5", ".hdf5"):
-            import h5py
-
-            with h5py.File(self._path, "r") as f:
-                yield f
-        elif self._ext == ".zarr" or self._path.is_dir():
-            import zarr
-
-            yield zarr.open(str(self._path), "r")
-        else:
+        handle = self._open_handle()
+        if handle is None:
             raise KeyError(f"{self._path} is not an array store")
+        try:
+            yield handle
+        finally:
+            if hasattr(handle, "close"):
+                handle.close()
 
     def __enter__(self):
         """Hold the file open for the block. Nesting is counted, so an inner block cannot close the handle the outer one is still reading through."""
         self._depth += 1
-        if self._handle is not None:
-            return self
-        if self._ext in (".h5", ".hdf5"):
-            import h5py
-
-            self._handle = h5py.File(self._path, "r")
-        elif self._ext == ".zarr" or self._path.is_dir():
-            import zarr
-
-            self._handle = zarr.open(str(self._path), "r")
+        if self._handle is None:
+            self._handle = self._open_handle()
         return self
 
     def __exit__(self, *exc):

@@ -97,14 +97,14 @@ def active_stimulus_events(experiment: Any) -> list:
     Selects stimulus/continuous/discrete events from ``experiment.events``, excluding any event that a ``fisher`` analysis observation names as its ``target``: that event is metadata for the linear-response computation (stimulated variable, node mask, swept amplitude) and is never integrated in time, so it must not emit an ExternalInput class.
     Raises ``ValueError`` when an active event's name cannot spell the ``<name>Input`` class the stimulus template emits for it, which would otherwise land as a syntax error in the generated module rather than as a message about the recipe.
     """
-    items = list(experiment.events.items()) if getattr(experiment, "events", None) else []
+    items = keyed_items(getattr(experiment, "events", None), "events")
 
     def _is_input(ev):
         et = str(getattr(ev, "event_type", "stimulus") or "stimulus").lower()
         return ("stimul" in et) or (et in ("continuous", "discrete"))
 
     targets = set()
-    for obs in (getattr(experiment, "observations", None) or {}).values():
+    for _name, obs in keyed_items(getattr(experiment, "observations", None), "observations"):
         an = getattr(obs, "analysis", None)
         if an is not None and str(getattr(an, "type", "") or "") == "fisher":
             t = getattr(an, "target", None)
@@ -1075,6 +1075,18 @@ def time_argument_ms(argument: Any, default: float) -> float:
     return value
 
 
+def obs_source(obs: Any) -> str | None:
+    """An observation's first ``source`` entry as a string, or None when it declares none."""
+    src = as_list(get_attr(obs, "source"))
+    return str(src[0]) if src else None
+
+
+def is_streaming(obs: Any) -> bool:
+    """True when an observation opts into streaming with ``reduce: streaming``."""
+    rm = get_attr(obs, "reduce")
+    return rm is not None and str(getattr(rm, "value", rm)) == "streaming"
+
+
 def _integration_dt(experiment: Any) -> float | None:
     """The experiment's integration step in ms, or ``None`` when there is no grid.
 
@@ -1103,8 +1115,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
     Returns a reduction dict tagged ``kind: 'convolution'`` carrying the lifted constants (source, HRF-kernel call, decimation stride, TR stride, Volterra ``k_1``/``V_0``); the convolution branch of ``render_reduction`` emits the reducer from it. Called bare (no ``experiment``) only as the ``is this streaming?`` predicate — that path stays side-effect-free and returns the tag without resolving function defaults.
     """
     name = str(get_attr(obs, "name", "observation"))
-    src = as_list(get_attr(obs, "source"))
-    source = str(src[0]) if src else None
+    source = obs_source(obs)
     red: dict[str, Any] = {"kind": "convolution", "source": source}
     if experiment is None:
         # Predicate call ("is this a streaming reduction?"): stay side-effect-free and skip the function-default lookups that need the experiment. Non-None is enough.
@@ -1116,17 +1127,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
             f"Observation {name!r} declares reduce: streaming but has no pipeline; "
             "streaming is currently supported for the HRF-Volterra BOLD pipeline only."
         )
-    exp_funcs = get_attr(experiment, "functions")
-
-    def _func(fname):
-        if exp_funcs is None:
-            return None
-        if hasattr(exp_funcs, "get"):
-            return exp_funcs.get(fname)
-        for f in exp_funcs:
-            if str(get_attr(f, "name", "")) == fname:
-                return f
-        return None
+    _func = functions_by_name(experiment).get
 
     def _fname_of(step):
         fn = get_attr(step, "function")
@@ -1136,10 +1137,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
         return next((st for st in pipeline if _fname_of(st) == fname), None)
 
     def _arg_val(argcoll, key):
-        if not argcoll:
-            return None
-        items = argcoll.items() if hasattr(argcoll, "items") else ((str(get_attr(a, "name", "")), a) for a in argcoll)
-        for k, a in items:
+        for k, a in keyed_items(argcoll, "arguments"):
             if str(k) == key:
                 return get_attr(a, "value", a)
         return None
@@ -1237,10 +1235,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
 
 def functions_by_name(experiment: Any) -> dict[str, Any]:
     """The experiment's functions keyed by name, whichever form the slot holds."""
-    fns = get_attr(experiment, "functions", {})
-    if hasattr(fns, "items"):
-        return {str(k): v for k, v in fns.items()}
-    return {str(get_attr(f, "name", "")): f for f in (fns or [])}
+    return {str(k): v for k, v in keyed_items(get_attr(experiment, "functions"), "functions")}
 
 
 def kernel_support_steps(step_name: str, step_arguments: Any, fns: dict[str, Any], dt: float) -> int:
@@ -1350,8 +1345,7 @@ def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
     import sympy as sp
 
     name = str(get_attr(obs, "name", "observation"))
-    src = as_list(get_attr(obs, "source"))
-    source = str(src[0]) if src else None
+    source = obs_source(obs)
     if source is None:
         raise ValueError(f"Observation {name!r} declares aggregation + reduce: streaming but has no source to reduce over.")
     agg = get_attr(obs, "aggregation", None)
@@ -1440,8 +1434,7 @@ def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
     from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 
     name = str(get_attr(obs, "name", "observation"))
-    src = as_list(get_attr(obs, "source"))
-    source = str(src[0]) if src else None
+    source = obs_source(obs)
     if source is None:
         raise ValueError(
             f"Observation {name!r} declares a compute_fc pipeline + reduce: streaming but has no source to reduce over."
@@ -1457,9 +1450,7 @@ def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
 
     # compute_fc `skip_t` (initial samples dropped before correlating), read off the step arguments (dict-keyed or a legacy list of named args).
     skip_t = 0
-    args = get_attr(step, "arguments", None) or {}
-    items = args.items() if hasattr(args, "items") else ((str(get_attr(a, "name", "")), a) for a in args)
-    for aname, arg in items:
+    for aname, arg in keyed_items(get_attr(step, "arguments", None), "arguments"):
         if str(aname) == "skip_t":
             # a named-arg object carries `.value`; a plain keyed-dict entry IS the scalar.
             _v = get_attr(arg, "value", arg)
@@ -1508,16 +1499,13 @@ def _resolve_subsample_stream(obs: Any, experiment: Any = None) -> dict[str, Any
         return None
 
     name = str(get_attr(obs, "name", "observation"))
-    src = as_list(get_attr(obs, "source"))
-    source = str(src[0]) if src else None
+    source = obs_source(obs)
     red: dict[str, Any] = {"kind": "stride", "source": source, "windowed": False}
     if experiment is None:
         return red  # predicate call ("is this streaming?"): stay side-effect-free
 
     def _arg(step, key):
-        args = get_attr(step, "arguments", None) or {}
-        items = args.items() if hasattr(args, "items") else ((str(get_attr(a, "name", "")), a) for a in args)
-        for k, a in items:
+        for k, a in keyed_items(get_attr(step, "arguments", None), "arguments"):
             if str(k) == key:
                 return get_attr(a, "value", a)
         return None
@@ -1644,19 +1632,23 @@ def _derived_dims(obs: Any, src_dims: tuple) -> tuple | None:
     return dims
 
 
-def observation_dims(experiment: Any) -> dict[str, tuple]:
+def observation_dims(experiment: Any, reductions: dict[str, Any] | None = None) -> dict[str, tuple]:
     """Every observation's declared axis names, keyed by observation name.
 
     An observation's own ``dims:`` wins wherever it is declared: a ``pipeline`` of user functions has an output shape only its author knows, and nothing here may infer one from a length. Otherwise :func:`reduction_dims` names the axes of ONE reduction, asked of every observation an experiment declares, so the result container labels all of them and not only the ``reduce: streaming`` subset. An observation that neither declares its axes nor reduces into known ones is absent, and the container falls back to its positional template for that one alone.
 
     Derived observations are then given the axes their pipeline leaves on the observations they source (:data:`_PIPELINE_STEP_KINDS`): elementwise through an ``equation`` step, re-declared by a named step that reshapes. Sources that disagree, sources that are themselves unlabelled, and pipelines whose steps are not all recognised leave the derived observation unlabelled rather than guessed. Iterating to a fixed point handles a chain of derived-of-derived in any declaration order.
+
+    *reductions* is :func:`resolve_reductions` of the same experiment, for a caller that already holds it; without it each undeclared observation's reduction is resolved here.
     """
-    obs = get_attr(experiment, "observations") or {}
-    obs_by_name = dict(obs.items()) if hasattr(obs, "items") else {str(get_attr(o, "name")): o for o in obs}
+    obs_by_name = {str(n): o for n, o in keyed_items(get_attr(experiment, "observations"), "observations")}
     dims: dict[str, tuple] = {}
     for n, o in obs_by_name.items():
         declared = as_list(get_attr(o, "dims"))
-        d = tuple(str(x) for x in declared) if declared else reduction_dims(resolve_reduction(o, experiment))
+        if declared:
+            d = tuple(str(x) for x in declared)
+        else:
+            d = reduction_dims(reductions.get(n) if reductions is not None else resolve_reduction(o, experiment))
         if d:
             dims[str(n)] = d
     changed = True
@@ -1682,7 +1674,7 @@ def observation_dims(experiment: Any) -> dict[str, tuple]:
 def _partition_group_count(pdef: dict[str, Any], gather: str) -> int:
     """Group count for a `partition` = the leading axis of its (n_groups, n) gather table.
 
-    Fixed at codegen: from the declared shape's literal leading dim, the literal value's outer length, or the leading dim of the materialised (produced/sourced) gather artifact.
+    Fixed at codegen: from the declared shape's literal leading dim, the literal value's outer length, or the leading dim of the materialised (produced/sourced) gather artifact, read from its header so the table itself is never loaded.
     """
     shape = pdef.get("shape")
     if shape is not None:
@@ -1699,12 +1691,10 @@ def _partition_group_count(pdef: dict[str, Any], gather: str) -> int:
             pass
     lazy = pdef.get("lazy")
     if lazy:
-        import numpy as np
-
-        from tvbo.data import param_io
+        from tvbo.data.matrix_io import LazyArrayStore
 
         path, key = lazy
-        return int(np.asarray(param_io.read_artifact(path, key)).shape[0])
+        return int(LazyArrayStore(Path(path), {}).info(key).shape[0])
     raise ValueError(
         f"partition gather {gather!r}: cannot determine the group count from its shape ({shape!r}), "
         "value, or materialised artifact; declare a literal (n_groups, n) leading dimension."
@@ -1756,8 +1746,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     A ``partition`` lifts the observer into a GROUPED reduction (``kind: 'wave'``): the per-step chain is written once for a single group, vmapped over the partition axis, and folded to per-group scalar metrics.
     """
     # Opt-in streaming of a post-scan observation: lifted to a block reducer instead of the dynamics-observer recurrence path below. A cumulative mean/std/variance over a source (no HRF/BOLD pipeline) synthesizes a running-moment accumulator; an HRF-Volterra BOLD pipeline lifts the convolution reducer. An observation that declares its own `dynamics` is already a reducer; `reduce: streaming` on it opts that reducer into the post-tuning carry (streaming_post_eval_plan) rather than selecting a pipeline-lifted one, so the observer path below owns it.
-    _rm = get_attr(obs, "reduce")
-    if _rm is not None and str(getattr(_rm, "value", _rm)) == "streaming" and get_attr(obs, "dynamics") is None:
+    if is_streaming(obs) and get_attr(obs, "dynamics") is None:
         _agg = get_attr(obs, "aggregation", None)
         _agg = str(getattr(_agg, "value", _agg) or "").lower()
         _pipe = as_list(get_attr(obs, "pipeline"))
@@ -1778,8 +1767,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     dyn = get_attr(obs, "dynamics")
     if dyn is None:
         return None
-    src = as_list(get_attr(obs, "source"))
-    source = str(src[0]) if src else None
+    source = obs_source(obs)
 
     svs = get_attr(dyn, "state_variables")
     sv_pairs = list(svs.items()) if hasattr(svs, "items") else []
@@ -2119,7 +2107,16 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     return red
 
 
-def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
+def resolve_reductions(experiment: Any) -> dict[str, dict[str, Any] | None]:
+    """Every observation's :func:`resolve_reduction`, keyed by observation name.
+
+    Resolving parses each observer symbolically and materialises its sourced constants, so a template resolves the set once and hands the result to :func:`streaming_post_eval_plan`, :func:`observation_dims` and the observation partials rather than letting each resolve it again.
+    """
+    observations = keyed_items(get_attr(experiment, "observations"), "observations")
+    return {str(n): resolve_reduction(o, experiment) for n, o in observations}
+
+
+def streaming_post_eval_plan(experiment: Any, reductions: dict[str, Any] | None = None) -> dict[str, Any]:
     """Plan a streaming post-tuning evaluation for a fitting experiment.
 
     A ``reduce: streaming`` observation (currently HRF-Volterra BOLD) is folded into the integrator carry via ``prepare(reduce=...)`` in the algorithm post-tuning evaluation, so the full-length fit trajectory is never materialised (the memory bomb an FC group fit hits at the paper's real per-stage duration). This resolves, once for the whole experiment:
@@ -2130,23 +2127,20 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
 
     Observation AXIS NAMES are not part of this plan: they describe every observation an experiment declares, streamed or materialised, so :func:`observation_dims` answers that independently and the caller asks it directly.
 
-    Both the experiment template (which builds the streaming ``post_model_fn``) and the algorithm template (which consumes it) call this, so the two sides cannot drift.
+    Both the experiment template (which builds the streaming ``post_model_fn``) and the algorithm template (which consumes it) read this one plan, so the two sides cannot drift. *reductions* is :func:`resolve_reductions` of the same experiment, for a caller that already holds it.
     """
-    obs = get_attr(experiment, "observations") or {}
-    obs_by_name = dict(obs.items()) if hasattr(obs, "items") else {str(get_attr(o, "name")): o for o in obs}
-
-    def _is_streaming(o: Any) -> bool:
-        _rm = get_attr(o, "reduce")
-        return _rm is not None and str(getattr(_rm, "value", _rm)) == "streaming"
+    obs_by_name = {str(n): o for n, o in keyed_items(get_attr(experiment, "observations"), "observations")}
+    if reductions is None:
+        reductions = resolve_reductions(experiment)
 
     def _obs_sources(o):
         return [str(get_attr(s, "name", s)) for s in as_list(get_attr(o, "source"))]
 
     streaming = {}
     for n, o in obs_by_name.items():
-        r = resolve_reduction(o, experiment)
+        r = reductions.get(n)
         # Fold in-carry reducers: a reduce: streaming observation (BOLD / stat stream) OR a `partition` grouped reduction (kind 'wave'), which writes per-group metrics into a sample-indexed carry the same way — so the base/post-eval run never materialises the trajectory to vmap every frame at once. A plain dynamics observer stays materialised. An observation whose every source is another observation or a static network/dataset reference is never a fold, whatever it declares: only the raw trajectory has reducers, so such an observation is served by the deliverables closure below, computed from the streamed values it sources.
-        if r is None or r.get("windowed") or not (_is_streaming(o) or r.get("kind") == "wave"):
+        if r is None or r.get("windowed") or not (is_streaming(o) or r.get("kind") == "wave"):
             continue
         srcs = _obs_sources(o)
         if srcs and all(s in obs_by_name or s.startswith("network.") or s.startswith("dataset.") for s in srcs):
@@ -2991,6 +2985,11 @@ def is_external_observation(obs: Any) -> bool:
     return is_network_observation(obs)
 
 
+def monitor_class_name(name: Any) -> str:
+    """The class an observation's monitor is emitted as: its snake_case name in CamelCase, one word per underscore-separated part."""
+    return "".join(word.capitalize() for word in str(name).split("_"))
+
+
 SOURCE_ARG_NAMES = ("data", "X", "x", "input", "timeseries", "a")
 """Names by which a pipeline step's first argument refers to the series it is handed rather than to a constant."""
 
@@ -3727,10 +3726,45 @@ def get_all_hyperparams(algo: Any, algorithms_dict: dict) -> dict:
     return all_hp
 
 
+def classify_network_obs_inputs(obs_names: Any, observations: dict) -> tuple[list[str], list[str]]:
+    """Split an algorithm's observations into the two kinds it is handed from outside the simulation.
+
+    Returns ``(input_names, network_obs_inputs)`` in the order of *obs_names*: an observation declaring a ``data_source`` is a run-time input, and one whose first ``source`` is a ``network.observations.*`` or ``dataset.subject.*`` reference is a module-level constant that ``_bind_network_observations`` binds, which the algorithm is passed as well. Names absent from *observations* are skipped.
+    """
+    input_names: list[str] = []
+    network_obs_inputs: list[str] = []
+    for name in obs_names:
+        obs = observations.get(name)
+        if not obs:
+            continue
+        if getattr(obs, "data_source", None) is not None:
+            input_names.append(name)
+            continue
+        src = getattr(obs, "source", None)
+        if isinstance(src, (list, tuple)):
+            src = src[0] if src else None
+        if src is not None and hasattr(src, "name"):
+            src = src.name
+        if src and (str(src).startswith("network.observations.") or str(src).startswith("dataset.subject")):
+            network_obs_inputs.append(name)
+    return input_names, network_obs_inputs
+
+
+def coupling_param_keys(couplings: Any, key_fn: Any = None) -> dict[str, Any]:
+    """Each coupling parameter's name mapped to the key of the coupling that declares it.
+
+    *key_fn* turns a coupling's key into the one the caller addresses it by (the coupling-input name tvboptim's state is keyed on, say); without it the coupling's own key is kept. A name two couplings declare maps to the later one.
+    """
+    keys: dict[str, Any] = {}
+    for coupling_key, coupling in keyed_items(couplings, "couplings"):
+        for name, _param in keyed_items(get_attr(coupling, "parameters"), "parameters"):
+            if name:
+                keys[str(name)] = key_fn(coupling_key) if key_fn else coupling_key
+    return keys
+
+
 def edge_const(label: str) -> str:
     """Module-constant identifier holding the embedded matrix for ``label``."""
-    import re
-
     return "_network_edge_" + re.sub(r"\W", "_", label)
 
 
@@ -3906,6 +3940,22 @@ def parameter_keypath(ref: Any, *, couplings: Any = (), coupling_key: Any = None
     return f"dynamics.{leaf}"
 
 
+def _network_const_refs(experiment: Any, observer_params: bool = False) -> list:
+    """Every value by which an observation may reference a network array, in declaration order.
+
+    That is each observation's ``source`` entries and its pipeline-step argument values and, with ``observer_params``, the ``source`` of each of its observer (``dynamics``) parameters. The edge and node collectors both scan this one walk and keep the references they recognise.
+    """
+    refs: list = []
+    for _name, obs in keyed_items(get_attr(experiment, "observations", None), "observations"):
+        refs += as_list(get_attr(obs, "source", None))
+        for stage in as_list(get_attr(obs, "pipeline", None)):
+            refs += [get_attr(arg, "value", None) for _k, arg in keyed_items(get_attr(stage, "arguments", None), "arguments")]
+        if observer_params:
+            params = get_attr(get_attr(obs, "dynamics", None), "parameters", None)
+            refs += [get_attr(p, "source", None) for _k, p in keyed_items(params, "parameters")]
+    return refs
+
+
 def collect_network_edge_arrays(experiment: Any) -> dict[str, list]:
     """Embed connectome matrices referenced by observations as ``{label: nested list}``.
 
@@ -3914,8 +3964,6 @@ def collect_network_edge_arrays(experiment: Any) -> dict[str, list]:
     import numpy as np
 
     net = get_attr(experiment, "network", None)
-    obs_map = get_attr(experiment, "observations", None) or {}
-    obs_iter = obs_map.values() if hasattr(obs_map, "values") else obs_map
     arrays: dict[str, list] = {}
 
     def add(val: Any) -> None:
@@ -3934,13 +3982,8 @@ def collect_network_edge_arrays(experiment: Any) -> dict[str, list]:
             )
         arrays[lab] = np.asarray(mat, dtype=float).tolist()
 
-    for obs in obs_iter:
-        for src in get_attr(obs, "source", None) or []:
-            add(src)
-        for stage in get_attr(obs, "pipeline", None) or []:
-            stage_args = get_attr(stage, "arguments", None) or {}
-            for arg in stage_args.values() if hasattr(stage_args, "values") else stage_args:
-                add(get_attr(arg, "value", None))
+    for ref in _network_const_refs(experiment):
+        add(ref)
     return arrays
 
 
@@ -3951,7 +3994,7 @@ _NETWORK_NODE_MEASURES = ("positions", "instrength", "labels")
 def node_label(ref: Any) -> str | None:
     """Canonical per-node vector name for a ``network.<measure>`` reference, else None.
 
-    Recognises ``network.positions`` (region centroids, ``(n_nodes, 3)``) and ``network.instrength`` (weighted in-degree, ``(n_nodes,)``). Accepts BOTH the fully-qualified ``network.positions`` form (observation source / collect scan) and the bare ``positions`` key that ``parse_reference`` hands ``ref_to_code`` (it splits ``network.X`` into ``('network', 'X')``) — mirroring ``edge_label``, so the emitted constant name and the resolved reference cannot disagree.
+    Recognises ``network.positions`` (region centroids, ``(n_nodes, 3)``) and ``network.instrength`` (weighted in-degree, ``(n_nodes,)``). Accepts BOTH the fully-qualified ``network.positions`` form (observation source / collect scan) and the bare ``positions`` key the observation template's ``parse_reference`` yields (it splits ``network.X`` into ``('network', 'X')``) — mirroring ``edge_label``, so the emitted constant name and the resolved reference cannot disagree.
     Also accepts the explicit ``nodes.<attr>`` form for any attribute name — the node-side twin of ``edges.<label>`` — which resolves to a named per-node array carried by the network (node ``parameters``, or a ``nodes/<attr>`` dataset in the companion store).
 
     Returns None for everything else (edge matrices, state variables, ``network.observations.*``), which callers route through their normal path.
@@ -3968,8 +4011,6 @@ def node_label(ref: Any) -> str | None:
 
 def node_const(label: str) -> str:
     """Module-constant identifier holding the embedded per-node vector for ``label``."""
-    import re
-
     return "_network_node_" + re.sub(r"\W", "_", label)
 
 
@@ -3982,8 +4023,6 @@ def collect_network_node_arrays(experiment: Any) -> dict[str, list]:
     from tvbo.data import param_io
 
     net = get_attr(experiment, "network", None)
-    obs_map = get_attr(experiment, "observations", None) or {}
-    obs_iter = obs_map.values() if hasattr(obs_map, "values") else obs_map
     arrays: dict[str, list] = {}
 
     def _resolve(measure: str):
@@ -4003,15 +4042,6 @@ def collect_network_node_arrays(experiment: Any) -> dict[str, list]:
             )
         arrays[lab] = vec.tolist()
 
-    for obs in obs_iter:
-        for src in get_attr(obs, "source", None) or []:
-            add(src)
-        for stage in get_attr(obs, "pipeline", None) or []:
-            stage_args = get_attr(stage, "arguments", None) or {}
-            for arg in stage_args.values() if hasattr(stage_args, "values") else stage_args:
-                add(get_attr(arg, "value", None))
-        dyn = get_attr(obs, "dynamics", None)
-        pmap = (get_attr(dyn, "parameters", None) or {}) if dyn is not None else {}
-        for p in pmap.values() if hasattr(pmap, "values") else pmap:
-            add(get_attr(p, "source", None))
+    for ref in _network_const_refs(experiment, observer_params=True):
+        add(ref)
     return arrays

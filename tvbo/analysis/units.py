@@ -19,7 +19,7 @@ from typing import Any
 
 import sympy as sp
 
-from tvbo.utils.units import unit_dimensions, unit_expression
+from tvbo.utils.units import unit_expression
 
 CONSISTENT = "consistent"
 INCONSISTENT = "inconsistent"
@@ -354,11 +354,3 @@ def check_units(model, strictness: str = "dimensional", time_unit: str | None = 
             )
         )
     return verdicts
-
-
-def dimension_exponents(unit) -> dict:
-    """ISO 80000-1 base-dimension exponents of a declared unit, for reporting (U25).
-
-    `dim Q = L²MT⁻³I⁻¹` is what makes an inconsistency legible: `L²MT⁻³I⁻¹` against `L²MT⁻⁴I⁻¹` shows where the discrepancy is, where "voltage vs something else" does not.
-    """
-    return unit_dimensions(unit)

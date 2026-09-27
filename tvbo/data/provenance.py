@@ -29,21 +29,18 @@ def now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
-def _alnum(text: str) -> str:
-    return "".join(c for c in str(text) if c.isalnum())
-
-
 def prov_label(produced_by: str) -> str:
     """The ``prov-<label>`` grouping key for the producer named by ``produced_by``.
 
     Built from the producer's own IRI scope, so a record set and the ``DataRef`` that reaches the same container agree on which thing produced it. ``tvbo:exp/<study>/exp-3`` gives ``exp3``; ``tvbo:ana/<study>/fcGradient`` gives ``anafcGradient``.
     """
+    from tvbo.adapters.bids import entity_value
     from tvbo.data.dataref import iri_scope
 
     kind, _study, name = iri_scope(produced_by)
     if kind is None:
-        return _alnum(produced_by) or "run"
-    return _alnum(name) if kind == "exp" else f"{kind}{_alnum(name)}"
+        return entity_value(produced_by) or "run"
+    return entity_value(name) if kind == "exp" else f"{kind}{entity_value(name)}"
 
 
 def digest_of(path: Path) -> datamodel.Digest | None:
@@ -134,13 +131,16 @@ def _invocation() -> str:
     return " ".join([Path(sys.argv[0]).name, *sys.argv[1:]])
 
 
-def _under(path, root) -> bool:
-    """Whether ``path`` is inside ``root``, which decides if a reference can name it relatively."""
+def _study_name(path, root) -> str:
+    """*path* named relative to the study *root* when it lies inside it, else absolutely — both resolved first.
+
+    The one spelling both ends of a ``prov:used`` edge name a container by, so the graph cannot read one artifact as two.
+    """
+    path, root = Path(path).resolve(), Path(root).resolve()
     try:
-        Path(path).resolve().relative_to(Path(root).resolve())
+        return str(path.relative_to(root))
     except ValueError:
-        return False
-    return True
+        return str(path)
 
 
 def _as_mapping(prov: datamodel.Provenance) -> dict:
@@ -202,15 +202,14 @@ def input_containers(refs, *, results_root, study_root) -> list[str]:
     from tvbo.utils import as_list
 
     out: list[str] = []
-    root = Path(study_root).resolve()
     for ref in as_list(refs):
         if ref is None:
             continue
         try:
-            path = Path(dataref.locate_container(ref, results_root=results_root)).resolve()
+            path = dataref.locate_container(ref, results_root=results_root)
         except Exception:  # noqa: BLE001 — an unresolvable binding is a missing edge, never a failed run
             continue
-        name = str(path.relative_to(root)) if _under(path, root) else str(path)
+        name = _study_name(path, study_root)
         if name not in out:
             out.append(name)
     return out
@@ -260,9 +259,7 @@ def read_records(study_root: Path | str) -> dict[str, dict]:
                 {
                     "act": activity,
                     "ent": {
-                        "container": str(container.relative_to(study_root))
-                        if _under(container, study_root)
-                        else str(container),
+                        "container": _study_name(container, study_root),
                         "produced_by": activity.get("iri"),
                         "outputs": record.get("outputs"),
                     },

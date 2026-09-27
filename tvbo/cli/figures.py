@@ -11,8 +11,6 @@ from pathlib import Path
 
 import typer
 
-from tvbo.utils import as_list, sanitize_name
-
 from . import _common
 
 app = typer.Typer(name="figure", no_args_is_help=True)
@@ -23,7 +21,7 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
 
     A spec with a top-level ``panels:`` (and no study markers) is a standalone ``Figure``; otherwise it is loaded as a ``SimulationStudy`` and its ``figures`` slot is returned. *kind* is ``"figure"`` or ``"study"`` so the caller can phrase the empty case correctly.
     """
-    from tvbo.utils import yaml_loader
+    from tvbo.utils import as_list, yaml_loader
 
     data = yaml_loader.load_as_dict(str(spec_path))
     if not isinstance(data, dict):
@@ -48,7 +46,7 @@ def figure_origins(spec_path: Path) -> dict[str, Path]:
 
     A figure record included from another study names its ``code_modules``, its captured ``source`` and the ``path`` it draws relative to *that* study, and including it somewhere else must not change what those mean. So an included figure renders against the study its fragment lives in, and one written inline renders against the spec, which is what each already says. A fragment that belongs to no study — a spec kept beside the manuscript that includes it — is left out, so it renders against the including spec exactly as if it had been written there.
     """
-    from tvbo.utils import yaml_loader
+    from tvbo.utils import as_list, yaml_loader
     from tvbo.utils.study_layout import study_root
 
     try:
@@ -87,6 +85,7 @@ def figure_outputs(figure, out_dir: Path) -> tuple[str, Path, Path]:
     The renderer and every consumer that has to find a rendered figure afterwards ask this, so a figure's file name is derived in one place rather than re-spelled wherever it is looked up.
     """
     from tvbo.adapters import bsplot
+    from tvbo.utils import sanitize_name
 
     name = getattr(figure, "name", None) or "figure"
     return name, out_dir / f"{name}.{bsplot.output_format(figure)}", out_dir / "scripts" / f"plot_{sanitize_name(name)}.py"
@@ -170,7 +169,7 @@ def render(
 
     from tvbo.utils.study_layout import study_path
 
-    base = base_dir.expanduser().resolve() if base_dir else spec_path.resolve().parent
+    base = base_dir.expanduser().resolve() if base_dir else _common.spec_dir(spec)
     # The record's figures directory, so this command and `tvbo run` write where the report reads.
     out_dir = out.expanduser().resolve() if out else study_path("figures", root=base)
 
@@ -228,7 +227,7 @@ def caption(
     from tvbo.utils.study_layout import study_path
 
     figures = _select(figures, name, spec_path)
-    out_dir = out.expanduser().resolve() if out else study_path("figures", root=spec_path.resolve().parent)
+    out_dir = out.expanduser().resolve() if out else study_path("figures", root=_common.spec_dir(spec))
     for figure in figures:
         fig_name = getattr(figure, "name", None) or "figure"
         if not bsplot.compose_caption(figure):
@@ -272,7 +271,7 @@ def compare(
     spec_path = Path(spec).expanduser()
     if not spec_path.is_file():
         _common.die(f"No such spec file: {spec_path}")
-    base = base_dir.expanduser().resolve() if base_dir else spec_path.resolve().parent
+    base = base_dir.expanduser().resolve() if base_dir else _common.spec_dir(spec)
     fig_dir = figures_dir.expanduser().resolve() if figures_dir else study_path("figures", root=base)
     # The audit lands in the study's local notes, which nothing tracks or publishes.
     out_dir = out.expanduser().resolve() if out else study_path("notes", root=base) / "figure-compare"

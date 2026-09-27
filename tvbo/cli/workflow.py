@@ -9,10 +9,9 @@ import re
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import typer
-from mako.template import Template
 
 from . import _common
 from . import _workflow as _wf
@@ -20,120 +19,113 @@ from ._backends import list_backends
 
 app = typer.Typer(name="workflow", no_args_is_help=True)
 
+BackendOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--backend", "-b", help="Execution backend; default: the experiment's declared execution.backend, else tvboptim."
+    ),
+]
+ExperimentOpt = Annotated[str | None, typer.Option("--experiment")]
+OutputOpt = Annotated[Path | None, typer.Option("-o", "--output", help="Output directory.")]
+SetOpt = Annotated[list[str], typer.Option("--set")]
+StdoutOpt = Annotated[bool, typer.Option("--stdout", help="Print artefact only; do not write a kit.")]
+PackOpt = Annotated[
+    bool,
+    typer.Option("--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
+]
+BundleSelectOpt = Annotated[
+    list[str],
+    typer.Option(
+        "--bundle-select",
+        help="Override: add a BIDS entity to disambiguate when a subject directory holds several files matching the observation's query (not needed when the query already names one file). Repeatable. Implies --bundle-dataset.",
+    ),
+]
+_BUNDLE_DATASET_HELP = "Copy the fan-out's per-subject dataset files into the kit ({where}) and point dataset.bids_root at them, so the kit is self-contained — no separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects."
+BundleDatasetOpt = Annotated[bool, typer.Option("--bundle-dataset", help=_BUNDLE_DATASET_HELP.format(where="spec/dataset/"))]
+
 
 _TEMPLATES = Path(__file__).resolve().parent.parent / "templates" / "workflow"
 
 
 def _parse_overrides(items: list[str]) -> dict[str, Any]:
-    """Parse ``--slurm.account=foo`` / ``--container=img`` style strings.
+    """Parse ``--set slurm.account=foo`` / ``--set container=img`` style strings.
 
-    Accepts both ``key=value`` and the same with a leading ``--`` (for convenience when users pipe things in). Dotted keys are nested.
+    Accepts both ``key=value`` and the same with a leading ``--`` (for convenience when users pipe things in). Dotted keys are nested, and each value is coerced by :func:`_common.coerce_value` (a JSON list or object such as a ``setup`` command list, a bool, an int, a float, else the raw string).
     """
     out: dict[str, Any] = {}
     records: list[dict[str, Any]] = []
     for raw in items:
-        s = raw.lstrip("-")
-        if "=" not in s:
-            raise typer.BadParameter(f"override {raw!r} must be of the form key=value")
-        k, _, v = s.partition("=")
+        k, v = _common.parse_assignment(raw, "--set")
         records.append({"key": k, "value": v, "source": "flag"})
         target = out
         parts = k.split(".")
         for p in parts[:-1]:
             target = target.setdefault(p, {})
-        # Coerce the value: JSON for a list/object literal (e.g. a `setup` command list), else bool/int/float, else the raw string.
-        coerced: Any = v
-        if v.lstrip()[:1] in ("[", "{"):
-            try:
-                coerced = json.loads(v)
-            except ValueError:
-                coerced = v
-        elif v.lower() in {"true", "false"}:
-            coerced = v.lower() == "true"
-        else:
-            try:
-                coerced = int(v)
-            except ValueError:
-                try:
-                    coerced = float(v)
-                except ValueError:
-                    coerced = v
-        target[parts[-1]] = coerced
+        target[parts[-1]] = _common.coerce_value(v)
     return {"merged": out, "records": records}
 
 
-def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
-    """Load *spec* and pick the experiment to plan against.
-
-    Returns ``(study_obj_or_none, experiment_obj, study_key)``.
-    """
+def _load_spec(spec: str):
+    """Load a Study or Experiment *spec* as ``(study_or_none, obj, study_key)``; the key falls back to the spec's kind."""
     kind, obj = _common.resolve_spec(spec)
-    if kind == "study":
-        exps = getattr(obj, "experiments", None) or getattr(obj, "simulation_experiments", None) or []
-        items = list(exps.values()) if hasattr(exps, "values") else list(exps)
-        if not items:
-            _common.die(f"Study {spec!r} has no experiments.")
-        if experiment_arg is not None:
-            wanted = [e for e in items if experiment_arg in _common.experiment_ids(e)]
-            if not wanted:
-                _common.die(f"No experiment named {experiment_arg!r} in study.")
-            exp = wanted[0]
-        elif len(items) == 1:
-            exp = items[0]
-        else:
-            ids = ", ".join(sorted(_common.experiment_key(e) for e in items))
-            _common.die(
-                f"Study {spec!r} has {len(items)} experiments ({ids}); a single-kit "
-                "engine will not silently pick the first.\n"
-                "Emit the WHOLE study as one Snakemake DAG with "
-                "`tvbo workflow snakemake <spec>` (no --experiment), or pass "
-                "`--experiment <id>` to emit exactly one."
-            )
-        # Prefer the *runtime* experiment (has render/render_code/render_yaml) over the datamodel object, so the kit can freeze the backend script + YAML snapshot.
-        if not hasattr(exp, "render") and hasattr(obj, "get_experiment"):
-            sel = (
-                getattr(exp, "id", None)
-                or getattr(exp, "key", None)
-                or getattr(exp, "name", None)
-                or getattr(exp, "label", None)
-            )
-            try:
-                exp = obj.get_experiment(sel)
-            except Exception as e:
-                _common.die(
-                    f"Could not resolve experiment {sel!r} to a runnable object: {e}\n"
-                    "If the recipe references custom modules, make them importable "
-                    "(run from their directory or set PYTHONPATH)."
-                )
-        return obj, exp, getattr(obj, "key", None) or "study"
-
-    if kind == "experiment":
-        return None, obj, getattr(obj, "key", None) or "experiment"
-
-    _common.die(f"`tvbo workflow` requires a Study or Experiment SPEC; got kind={kind!r}.")
+    if kind not in ("study", "experiment"):
+        _common.die(f"`tvbo workflow` requires a Study or Experiment SPEC; got kind={kind!r}.")
+    return (obj if kind == "study" else None), obj, getattr(obj, "key", None) or kind
 
 
-def _build_plan(spec: str, *, engine: str, backend: str, experiment: str | None, overrides: list[str]):
-    """Return ``(plan, experiment_obj)``."""
-    study, exp, study_key = _resolve_study_and_experiment(spec, experiment)
-    base = _wf.merge_workflow_spec(study, exp)
-    parsed = _parse_overrides(overrides)
-    spec_dict = _deep_merge(base, parsed["merged"])
-    plan = _wf.plan(
+def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
+    """Load *spec* and pick the ONE experiment a single-kit engine plans against.
+
+    Returns ``(study_obj_or_none, experiment_obj, study_key)``. A study with several experiments must be narrowed to exactly one with ``--experiment``: the engine never silently picks the first.
+    """
+    study, obj, study_key = _load_spec(spec)
+    if study is None:
+        return None, obj, study_key
+    records = _common.select_experiments(study, experiment_arg)
+    if not records:
+        _common.die(f"Study {spec!r} has no experiments.")
+    if len(records) > 1:
+        ids = ", ".join(sorted(_common.experiment_key(e) for e in records))
+        _common.die(
+            f"Study {spec!r} has {len(records)} experiments ({ids}); a single-kit engine will not silently pick the first.\nEmit the WHOLE study as one Snakemake DAG with `tvbo workflow snakemake <spec>` (no --experiment), or pass `--experiment <id>` to emit exactly one."
+        )
+    return study, _common.runtime_experiment(study, records[0]), study_key
+
+
+def _study_experiments(spec: str, experiment: str | None):
+    """Resolve the runtime experiments a study/experiment SPEC fans out over.
+
+    Returns ``(study_or_none, [runtime_experiments], study_key)``. A study yields all its experiments (or the ``--experiment`` id/label subset); a bare experiment SPEC yields a single-item list.
+    """
+    study, obj, study_key = _load_spec(spec)
+    if study is None:
+        return None, [obj], study_key
+    return study, [_common.runtime_experiment(study, r) for r in _common.select_experiments(study, experiment)], study_key
+
+
+def _plan_for(study, exp, parsed: dict, *, spec: str, study_key, backend: str | None, engine: str, selector: str | None):
+    """Plan *exp* under the study's workflow block, refined by the experiment's own block and then by the parsed ``--set`` overrides."""
+    from tvbo.utils import deep_merge
+
+    return _wf.plan(
         study_key=str(study_key),
         experiment=exp,
         backend=backend,
         engine=engine,
-        workflow_spec=spec_dict,
+        workflow_spec=deep_merge(_wf.merge_workflow_spec(study, exp), parsed["merged"]),
         overrides=parsed["records"],
         source_spec=spec,
-        experiment_selector=experiment,
+        experiment_selector=selector,
     )
-    return plan, exp
 
 
-from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (shared recursive merge)
-from tvbo.utils import keyed_items  # noqa: E402  (every keyed collection is read through it)
+def _build_plan(spec: str, *, engine: str, backend: str, experiment: str | None, overrides: list[str]):
+    """Return ``(plan, experiment_obj)`` for the one experiment a single-kit engine emits."""
+    study, exp, study_key = _resolve_study_and_experiment(spec, experiment)
+    parsed = _parse_overrides(overrides)
+    return _plan_for(
+        study, exp, parsed, spec=spec, study_key=study_key, backend=backend, engine=engine, selector=experiment
+    ), exp
 
 
 def _build_plans(spec: str, *, engine: str, backend: str, experiment: str | None, overrides: list[str]):
@@ -143,22 +135,13 @@ def _build_plans(spec: str, *, engine: str, backend: str, experiment: str | None
     """
     study, experiments, study_key = _study_experiments(spec, experiment)
     parsed = _parse_overrides(overrides)
-    built = []
-    for exp in experiments:
-        base = _wf.merge_workflow_spec(study, exp)
-        spec_dict = _deep_merge(base, parsed["merged"])
-        plan = _wf.plan(
-            study_key=str(study_key),
-            experiment=exp,
-            backend=backend,
-            engine=engine,
-            workflow_spec=spec_dict,
-            overrides=parsed["records"],
-            source_spec=spec,
-            experiment_selector=experiment,
+    return study, [
+        (
+            _plan_for(study, exp, parsed, spec=spec, study_key=study_key, backend=backend, engine=engine, selector=experiment),
+            exp,
         )
-        built.append((plan, exp))
-    return study, built
+        for exp in experiments
+    ]
 
 
 def _plan_payload(plan) -> dict:
@@ -211,17 +194,10 @@ def _print_plan_block(plan, *, show_study: bool = True) -> None:
 
 
 def _render_template(rel: str, **ctx) -> str:
+    from mako.template import Template
+
     tpl = Template(filename=str(_TEMPLATES / rel), strict_undefined=False, imports=["import os"])
     return tpl.render(now=_dt.datetime.now().isoformat(timespec="seconds"), **ctx)
-
-
-def _write_or_stdout(text: str, output: Path | None) -> None:
-    if output is None:
-        typer.echo(text)
-        return
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(text, encoding="utf-8")
-    _common.info(f"wrote {output}")
 
 
 _ARTEFACT_NAME = {
@@ -265,6 +241,7 @@ def _freeze_referenced_networks(experiment, spec_dir: Path, restore: list[tuple[
     """
     from tvbo.classes.network import Network
     from tvbo.data.registry import database_dir
+    from tvbo.utils import keyed_items
 
     source_file = getattr(experiment, "_source_file", None)
     try:
@@ -360,8 +337,7 @@ def _freeze_spec_yaml(
 def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
     """Copy the recipe's custom callable/builder modules into the kit's ``code/``.
 
-    A recipe references user code by bare module name (``callable: {module:
-    my_analysis}`` / ``builder: {module: my_networks}``). Those modules are importable at emit time (on the author's ``PYTHONPATH``) but are not installed packages, so the frozen spec cannot resolve them on a compute node unless they travel with the kit. Each referenced module that resolves to a **local** ``.py`` file (not under ``site-packages``/``dist-packages`` — installed deps are provisioned via ``requirements.txt``/``environment.yml`` instead) is copied into ``code/``. Returns True if anything was bundled (the sbatch then puts ``code`` on ``PYTHONPATH``).
+    A recipe references user code by bare module name (``callable: {module: my_analysis}`` / ``builder: {module: my_networks}``). Those modules are importable at emit time (on the author's ``PYTHONPATH``) but are not installed packages, so the frozen spec cannot resolve them on a compute node unless they travel with the kit. Each referenced module that resolves to a **local** ``.py`` file (not under ``site-packages``/``dist-packages`` — installed deps are provisioned via ``requirements.txt``/``environment.yml`` instead) is copied into ``code/``. Returns True if anything was bundled (the sbatch then puts ``code`` on ``PYTHONPATH``).
     """
     import re
 
@@ -445,44 +421,32 @@ def _local_module_deps(mod, seen: set[str]):
         yield from _local_module_deps(dep, seen)
 
 
-def _parse_bundle_select(items: list[str]) -> dict[str, str]:
-    """Parse ``--bundle-select atlas=HCPMMP1`` entries into a BIDS-entity dict.
+def _bundle_request(bundle_dataset: bool, items: list[str]) -> dict[str, str] | None:
+    """The ``--bundle-dataset`` / ``--bundle-select`` flags as the entity overrides a bundle copies with, or ``None`` when neither asks for one.
 
-    Each key is a BIDS entity as it appears in the target filename (``atlas``, ``desc``, ``cohort``, ``tpl`` …) or ``suffix``; the pairs pin exactly which per-subject file a bundle copies when a subject directory holds several variants.
+    Each ``--bundle-select`` key is a BIDS entity as it appears in the target filename (``atlas``, ``desc``, ``cohort``, ``tpl`` …) or ``suffix``; the pairs pin exactly which per-subject file a bundle copies when a subject directory holds several variants, and giving one implies ``--bundle-dataset``.
     """
-    out: dict[str, str] = {}
-    for raw in items:
-        s = raw.lstrip("-")
-        if "=" not in s:
-            raise typer.BadParameter(f"--bundle-select {raw!r} must be KEY=VALUE (e.g. atlas=HCPMMP1).")
-        k, _, v = s.partition("=")
-        out[k.strip()] = v.strip()
-    return out
+    if not (bundle_dataset or items):
+        return None
+    pairs = (_common.parse_assignment(raw, "--bundle-select", "KEY=VALUE (e.g. atlas=HCPMMP1)") for raw in items)
+    return {k: v.strip() for k, v in pairs}
 
 
-def _bundle_selection(experiment, cli_select: dict | None) -> dict | None:
-    """Resolve whether to bundle this experiment's dataset, and with what selection.
+def _bundle_dataset(experiment, dest_dir: Path, cli_select: dict | None) -> str | None:
+    """Copy the fan-out's per-subject dataset files into the kit when a bundle is requested; return the new root.
 
-    Bundling is requested either on the command line (``--bundle-dataset``, which passes at least ``{}``) or declaratively in the recipe (``dataset.bundle: true``).
-    The metadata flag makes a self-contained kit the recipe's own intent, so the packaging command needs no bundle flag. Returns the entity-override dict to pass to :func:`_bundle_dataset` (``{}`` = resolve purely from the observation's BIDS query), or ``None`` when neither source requests a bundle.
-    """
-    if cli_select is not None:
-        return cli_select
-    ds = getattr(experiment, "dataset", None)
-    return {} if (ds is not None and getattr(ds, "bundle", None)) else None
+    A bundle is requested on the command line (*cli_select*, the entity overrides :func:`_bundle_request` returns, at least ``{}``) or declaratively in the recipe (``dataset.bundle: true``), which makes a self-contained kit the recipe's own intent so the packaging command needs no flag. Returns ``None`` when neither asks.
 
-
-def _bundle_dataset(experiment, dest_dir: Path, entity_overrides: dict | None) -> str | None:
-    """Copy the fan-out's per-subject dataset files into the kit; return the new root.
-
-    Resolves each enumerated subject's empirical target (sidecar + payload) through the experiment's dataset query — tightened by *entity_overrides* — and copies it under
-    *dest_dir* as ``sub-<id>/<file>``, so a kit carries exactly the data its fan-out
-    consumes and nothing else. *dest_dir* is a sibling of the frozen spec, so its bare name is the relative ``dataset.bids_root`` to record. Returns that name, or None when there is no dataset-sourced target to bundle.
+    Resolves each enumerated subject's empirical target (sidecar + payload) through the experiment's dataset query — tightened by the entity overrides — and copies it under *dest_dir* as ``sub-<id>/<file>``, so a kit carries exactly the data its fan-out consumes and nothing else. *dest_dir* is a sibling of the frozen spec, so its bare name is the relative ``dataset.bids_root`` to record. Returns that name, or None when there is no dataset-sourced target to bundle.
 
     A *requested* bundle that cannot be resolved (a missing file, an over-tight ``--bundle-select``) is a hard error: silently keeping the machine-specific root would ship a kit that fails on every node — the exact hazard this removes.
     """
     import shutil
 
+    ds = getattr(experiment, "dataset", None)
+    if cli_select is None and not (ds is not None and getattr(ds, "bundle", None)):
+        return None
+    entity_overrides = cli_select or {}
     try:
         manifest = experiment.dataset_bundle_files(entity_overrides)
     except (FileNotFoundError, ValueError) as exc:
@@ -520,8 +484,6 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
 
     The slurm array shards a sweep and lets the backend vectorize each shard (``--shard``); it has NO per-cell ``--pin`` fan-out. An experiment that EXPLICITLY declares ``distribute.workflow`` over model/coupling parameters asked for per-cell fan-out (e.g. a non-jittable host observation computed once per cell) — slurm would silently vectorize it, tracing that host observation inside the vmap (TracerArrayConversionError). Such an experiment is rejected here with a pointer to ``tvbo workflow snakemake``, which fans one ``--pin`` per cell (see ``_emit_snakemake_study``'s fan-out note).
     """
-    from tvbo import export as _export
-
     # Explicit per-cell distribute.workflow fan-out is snakemake-only (see docstring).
     _explicit_wf = set((plan.workflow_spec.get("distribute") or {}).get("workflow") or [])
     _fanned_params = [
@@ -543,49 +505,31 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
     (out_dir / "spec").mkdir(exist_ok=True)
 
     spec_dir = out_dir / "spec"
+    spec_path = spec_dir / f"{plan.experiment_key}.yaml"
     # Before the error-swallowing spec freeze, so a bundling failure is a hard error the user sees.
-    _sel = _bundle_selection(experiment, bundle_select)
-    bundle_root = _bundle_dataset(experiment, spec_dir / "dataset", _sel) if _sel is not None else None
+    bundle_root = _bundle_dataset(experiment, spec_dir / "dataset", bundle_select)
     spec_relpath = None
     bundled_code = False
     try:
-        yaml_text = _freeze_spec_yaml(experiment, spec_dir, workflow_spec=plan.workflow_spec, dataset_bids_root=bundle_root)
-        spec_path = spec_dir / f"{plan.experiment_key}.yaml"
-        spec_path.write_text(yaml_text, encoding="utf-8")
+        bundled_code = _freeze_experiment_spec(
+            experiment, spec_path, out_dir, workflow_spec=plan.workflow_spec, bundle_root=bundle_root
+        )
         spec_relpath = str(spec_path.relative_to(out_dir))
-        bundled_code = _bundle_callable_modules(yaml_text, out_dir)
     except typer.Exit:
         raise  # a deliberate abort (an unresolvable data_source network) is fatal, not a skipped snapshot
     except Exception as exc:
         _common.info(f"(could not snapshot YAML spec: {exc})")
 
-    # 2) Frozen backend script with __main__ component
-    script_path = None
-    try:
-        fmt = _export.resolve(plan.backend.name)
-        ext = (fmt.extension or ".py").lstrip(".")
-        code = experiment.render(format=plan.backend.name)
-        script_path = out_dir / "scripts" / f"{plan.experiment_key}.{ext}"
-        script_path.write_text(code, encoding="utf-8")
-        _common.info(f"wrote {script_path.relative_to(out_dir)}")
-        _staged = _bundle_script_artifacts(code, out_dir)
-        if _staged:
-            _common.info(f"staged {_staged} producer constant(s) → constants/")
-    except Exception as exc:
-        _common.info(f"(could not render backend script for {plan.backend.name!r}: {exc})")
+    script_relpath = _freeze_backend_script(experiment, out_dir, plan.backend.name, plan.experiment_key)
 
-    # 3) Workflow artefact
     artefact = out_dir / _ARTEFACT_NAME[engine]
     # BIDS result stem (no subject) so the engine can declare the exact output a per-subject `tvbo run` writes (sub-<subject>_<stem>.h5), not a bare result.h5.
-    try:
-        result_stem = experiment.get_result_stem()
-    except Exception:
-        result_stem = "result"
+    result_stem = _result_stem(experiment)
     text = _render_template(
         _TEMPLATE_PATH[engine],
         plan=plan,
         block=plan.engine_block,
-        script_relpath=str(script_path.relative_to(out_dir)) if script_path else None,
+        script_relpath=script_relpath,
         spec_relpath=spec_relpath,
         bundled_code=bundled_code,
         result_stem=result_stem,
@@ -595,11 +539,6 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
 
     # A single-task array writes the canonical result directly, so it needs no gather job.
     if engine == "slurm" and plan.n_array_tasks > 1:
-        # BIDS-style result stem (pybids), matching what a local ExperimentResult.save writes.
-        try:
-            result_stem = experiment.get_result_stem()
-        except Exception:
-            result_stem = "result"
         finalize = out_dir / "finalize.sbatch"
         finalize.write_text(
             _render_template("slurm/finalize.sbatch.mako", plan=plan, block=plan.engine_block, result_stem=result_stem),
@@ -607,34 +546,58 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
         )
         _common.info(f"wrote {finalize.relative_to(out_dir)}")
 
-    # 3b) Environment files (pip + conda) rendered via Mako from the experiment's declared environment.requirements, so the kit provisions the right env.
-    if plan.pip_specs:
-        (out_dir / "requirements.txt").write_text(_render_template("requirements.txt.mako", plan=plan), encoding="utf-8")
-        (out_dir / "environment.yml").write_text(_render_template("environment.yml.mako", plan=plan), encoding="utf-8")
-        _common.info("wrote requirements.txt + environment.yml")
-    # 3c) When a container AND requirements are both declared, emit a one-time setup.sh that layers the declared deps onto the base image (see needs_container_layer) — so a study adds `igl` without rebuilding the SIF. Engine-independent: the Slurm run.sbatch and every Snakemake rule both prepend the layer to PYTHONPATH.
-    if plan.needs_container_layer:
-        setup = out_dir / "setup.sh"
-        setup.write_text(_render_template("setup.sh.mako", plan=plan), encoding="utf-8")
-        setup.chmod(0o755)
-        _common.info("wrote setup.sh (layers declared requirements onto the container)")
-
-    # 4) README
+    # A container with declared requirements gets a setup.sh layering them onto the base image, so a study adds `igl` without rebuilding the SIF.
+    _write_env_files(out_dir, plan, setup=plan.needs_container_layer)
     _write_readme(
         out_dir,
         engine=engine,
         plans=[plan],
-        script_relpath=str(script_path.relative_to(out_dir)) if script_path else None,
+        script_relpath=script_relpath,
         spec_layout=spec_relpath or f"spec/{plan.experiment_key}.yaml",
     )
     return out_dir
 
 
+def _result_stem(experiment) -> str:
+    """The BIDS result stem (no subject) a local ``ExperimentResult.save`` writes for *experiment*, or ``result`` when it cannot be derived."""
+    try:
+        return experiment.get_result_stem()
+    except Exception:
+        return "result"
+
+
+def _freeze_experiment_spec(
+    experiment, spec_path: Path, out_dir: Path, *, workflow_spec: dict, bundle_root: str | None
+) -> bool:
+    """Freeze *experiment* to *spec_path* and copy the custom modules it names into the kit's ``code/``; True when any module was copied.
+
+    Its connectome and every network an observation reads are saved beside *spec_path* (see :func:`_freeze_spec_yaml`), which also records *workflow_spec* as the effective ``workflow`` block and *bundle_root* — the relative root of a dataset already bundled there — as ``dataset.bids_root``.
+    """
+    yaml_text = _freeze_spec_yaml(experiment, spec_path.parent, workflow_spec=workflow_spec, dataset_bids_root=bundle_root)
+    spec_path.write_text(yaml_text, encoding="utf-8")
+    return _bundle_callable_modules(yaml_text, out_dir)
+
+
+def _write_env_files(out_dir: Path, plan, *, setup: bool) -> None:
+    """Write the kit's environment files from *plan*'s declared ``environment.requirements``.
+
+    ``requirements.txt`` + ``environment.yml`` whenever requirements are declared, and — when *setup* — a one-time ``setup.sh`` that provisions them into a venv (on the container image when one is declared), which the Slurm ``run.sbatch`` and every Snakemake rule put on ``PYTHONPATH``.
+    """
+    if plan.pip_specs:
+        (out_dir / "requirements.txt").write_text(_render_template("requirements.txt.mako", plan=plan), encoding="utf-8")
+        (out_dir / "environment.yml").write_text(_render_template("environment.yml.mako", plan=plan), encoding="utf-8")
+        _common.info("wrote requirements.txt + environment.yml")
+    if setup:
+        path = out_dir / "setup.sh"
+        path.write_text(_render_template("setup.sh.mako", plan=plan), encoding="utf-8")
+        path.chmod(0o755)
+        _common.info("wrote setup.sh (provisions declared requirements into a venv)")
+
+
 def _write_readme(out_dir: Path, *, engine: str, plans, script_relpath: str | None, spec_layout: str) -> None:
     """Write the kit's README covering every experiment frozen into it.
 
-    *plans* holds one plan per frozen experiment, and *spec_layout* is where the
-    emitter actually put the frozen specs — ``spec/<key>.yaml`` for a one-file kit, ``spec/<experiment>/experiment.yaml`` for the per-experiment directories the snakemake emitter writes (it uses those for a single experiment too, so the layout follows the emitter, not the plan count). Provenance is summed over the whole list, so a study kit reports its real totals rather than whichever experiment happened to be frozen last.
+    *plans* holds one plan per frozen experiment, and *spec_layout* is where the emitter actually put the frozen specs — ``spec/<key>.yaml`` for a one-file kit, ``spec/<experiment>/experiment.yaml`` for the per-experiment directories the snakemake emitter writes (it uses those for a single experiment too, so the layout follows the emitter, not the plan count). Provenance is summed over the whole list, so a study kit reports its real totals rather than whichever experiment happened to be frozen last.
     """
     plans = list(plans)
     text = _render_template(
@@ -656,14 +619,9 @@ def _write_readme(out_dir: Path, *, engine: str, plans, script_relpath: str | No
 @app.command("plan", help="Show the resolved workflow plan (no artefact emitted).")
 def plan_cmd(
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name (Study or Experiment)."),
-    backend: str = typer.Option(
-        None,
-        "--backend",
-        "-b",
-        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
-    ),
+    backend: BackendOpt = None,
     engine: str = typer.Option("local", "--engine", "-e"),
-    experiment: str = typer.Option(None, "--experiment"),
+    experiment: ExperimentOpt = None,
     override: list[str] = typer.Option(
         [], "--set", help="Override a workflow spec key, e.g. ``--set slurm.account=foo`` (repeatable)."
     ),
@@ -701,34 +659,6 @@ def plan_cmd(
         typer.echo(f"total ({scope}) : {len(plans)} experiments, {total_cells} workflow cells, {total_tasks} array task(s)")
 
 
-def _study_experiments(spec: str, experiment: str | None):
-    """Resolve the runtime experiments a study/experiment SPEC fans out over.
-
-    Returns ``(study_or_none, [runtime_experiments], study_key)``. A study yields all its experiments (or the ``--experiment`` id/label subset); a bare experiment SPEC yields a single-item list.
-    """
-    kind, obj = _common.resolve_spec(spec)
-    if kind != "study":
-        _study, exp, study_key = _resolve_study_and_experiment(spec, experiment)
-        return None, [exp], study_key
-    raw = getattr(obj, "experiments", None) or getattr(obj, "simulation_experiments", None) or []
-    items = list(raw.values()) if hasattr(raw, "values") else list(raw)
-    if experiment is not None:
-        wanted = {s.strip() for s in str(experiment).split(",") if s.strip()}
-        items = [e for e in items if wanted & _common.experiment_ids(e)]
-        if not items:
-            _common.die(f"No experiment(s) matching {experiment!r} in study.")
-    resolved = []
-    for e in items:
-        if not hasattr(e, "render") and hasattr(obj, "get_experiment"):
-            sel = getattr(e, "id", None) or getattr(e, "key", None) or getattr(e, "name", None) or getattr(e, "label", None)
-            try:
-                e = obj.get_experiment(sel)
-            except Exception as exc:
-                _common.die(f"Could not resolve experiment {sel!r} to a runnable object: {exc}")
-        resolved.append(e)
-    return obj, resolved, getattr(obj, "key", None) or "study"
-
-
 def _study_figures(study) -> list:
     """The study's ``Figure`` objects as a list, or ``[]`` when it declares none.
 
@@ -739,14 +669,6 @@ def _study_figures(study) -> list:
     from tvbo.utils import as_list
 
     return as_list(getattr(study, "figures", None))
-
-
-def _figure_code_modules(figs) -> set[str]:
-    """The ``code_modules`` every figure declares — modules whose import registers the figures' custom panels/transforms. Bundled into the kit's ``code/`` so a figure's ``plot.py`` can ``import`` them on a compute node (they are local study helpers, not installed packages)."""
-    names: set[str] = set()
-    for fig in figs:
-        names.update(str(m) for m in (getattr(fig, "code_modules", None) or []))
-    return names
 
 
 def _figure_base_dir(study, out_dir: Path) -> str:
@@ -792,10 +714,9 @@ def _bundle_script_artifacts(code: str, out_dir: Path) -> int:
 
 
 def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: str) -> str | None:
-    """Freeze *experiment*'s pre-rendered backend script under ``out_dir/scripts/<key>.<ext>``.
+    """Freeze *experiment*'s pre-rendered backend script under ``out_dir/scripts/<key>.<ext>``, staging every array it loads into ``constants/``.
 
-    Mirrors the single-experiment kit's script freeze (`_emit_kit` step 2): the rendered tvboptim/jax/… code imports only stable tvbo runtime modules (never codegen), so a rule can execute it as-is via ``tvbo run … --rendered`` — no code generation on the node.
-    Returns the kit-relative path, or ``None`` when the render fails, in which case the rule falls back to re-rendering from the frozen spec.
+    The rendered tvboptim/jax/… code imports only stable tvbo runtime modules (never codegen), so a kit executes it as-is via ``tvbo run … --rendered`` — no code generation on the node. Returns the kit-relative path, or ``None`` when the render fails, in which case the kit falls back to re-rendering from the frozen spec.
     """
     from tvbo import export as _export
 
@@ -807,13 +728,20 @@ def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: st
         scripts_dir.mkdir(parents=True, exist_ok=True)
         path = scripts_dir / f"{key}.{ext}"
         path.write_text(code, encoding="utf-8")
-        _bundle_script_artifacts(code, out_dir)
         rel = str(path.relative_to(out_dir))
         _common.info(f"wrote {rel}")
+        staged = _bundle_script_artifacts(code, out_dir)
+        if staged:
+            _common.info(f"staged {staged} producer constant(s) → constants/")
         return rel
     except Exception as exc:
         _common.info(f"(could not render backend script for {backend_name!r}: {exc})")
         return None
+
+
+def _rule_key(name) -> str:
+    """*name* spelled as the identifier part of a Snakemake rule name: every character that is not an ASCII letter or digit becomes ``_``."""
+    return re.sub(r"[^0-9A-Za-z]", "_", str(name))
 
 
 def _emit_snakemake_study(
@@ -836,6 +764,11 @@ def _emit_snakemake_study(
     if not stdout:
         out_dir.mkdir(parents=True, exist_ok=True)
     parsed = _parse_overrides(override)
+    # Run modifiers rather than workflow-block fields, so they leave the overrides before any plan or freeze reads them.
+    max_iterations = parsed["merged"].pop("max_iterations", None)
+    if parsed["merged"].pop("smoke", False) and max_iterations is None:
+        max_iterations = 1
+    benchmark = bool(parsed["merged"].pop("benchmark", True))
 
     def _san(s):
         return "".join(c if (c.isalnum() or c in ".-") else "_" for c in str(s))
@@ -849,33 +782,13 @@ def _emit_snakemake_study(
                 _key_of[str(_ref)] = _k
 
     exp_plans, block, plans, bundled_code = [], {}, [], False
+    study_rule = _rule_key(study_key)
     for exp in experiments:
         key = _san(_common.experiment_key(exp))
-        base = _wf.merge_workflow_spec(study, exp)
-        spec_dict = _deep_merge(base, parsed["merged"])
-        # A run modifier, not a workflow-block field, so it is popped before the plan and freeze.
-        _max_iter = spec_dict.pop("max_iterations", None)
-        if spec_dict.pop("smoke", False) and _max_iter is None:
-            _max_iter = 1
-        # Engine-native benchmarking: each rule carries Snakemake's `benchmark:` directive (near-zero-overhead resource TSV). ON by default; --no-benchmark / --set benchmark=false opts out. A run modifier, not a workflow-block field, so pop it before the plan/freeze.
-        _benchmark = bool(spec_dict.pop("benchmark", True))
-        plan = _wf.plan(
-            study_key=str(study_key),
-            experiment=exp,
-            backend=backend,
-            engine="snakemake",
-            workflow_spec=spec_dict,
-            overrides=parsed["records"],
-            source_spec=spec,
-            experiment_selector=key,
-        )
+        plan = _plan_for(study, exp, parsed, spec=spec, study_key=study_key, backend=backend, engine="snakemake", selector=key)
         # Study-level block for the shipped profile: the cluster identity (partition/account) is a property of the run, not of one experiment, so take the first experiment that declares one — matching how the Snakefile's global `container:` keys off exp_plans[0]. Per-rule resources come from each plan's own block (see exp_plans below).
         block = block or (plan.engine_block or {})
         plans.append(plan)
-        try:
-            result_stem = exp.get_result_stem()
-        except Exception:
-            result_stem = "result"
         # A fanned `parameters` sweep can't be frozen (see the docstring's fan-out note).
         _fanned_parameter = any(ax.kind == "parameters" for ax in plan.workflow_axes)
         scripts_relpath = None
@@ -884,12 +797,14 @@ def _emit_snakemake_study(
         else:
             edir = out_dir / "spec" / key
             edir.mkdir(parents=True, exist_ok=True)  # non-connectome freeze doesn't create it
-            _sel = _bundle_selection(exp, bundle_select)
-            bundle_root = _bundle_dataset(exp, edir / "dataset", _sel) if _sel is not None else None
-            yaml_text = _freeze_spec_yaml(exp, edir, workflow_spec=spec_dict, dataset_bids_root=bundle_root)
-            (edir / "experiment.yaml").write_text(yaml_text, encoding="utf-8")
+            bundle_root = _bundle_dataset(exp, edir / "dataset", bundle_select)
             # Custom callable/builder modules the recipe references travel with the kit (shared code/ dir), so `tvbo run` resolves them on the node.
-            bundled_code = _bundle_callable_modules(yaml_text, out_dir) or bundled_code
+            bundled_code = (
+                _freeze_experiment_spec(
+                    exp, edir / "experiment.yaml", out_dir, workflow_spec=plan.workflow_spec, bundle_root=bundle_root
+                )
+                or bundled_code
+            )
             spec_relpath, select = f"spec/{key}/experiment.yaml", None
             # Freeze the pre-rendered backend script ALONGSIDE the spec, so the SAME kit runs either way: `--code-source frozen` runs `scripts/<key>.<ext>` with no codegen on the node. A render failure is non-fatal — the spec path still works; the rule falls back to it when the script is absent.
             if not _fanned_parameter:
@@ -900,13 +815,11 @@ def _emit_snakemake_study(
                     f"experiment {key}: {len(plan.workflow_axes)} fanned parameter axis(es) → spec-mode per cell (no frozen script)"
                 )
         # Study-prefixed so the snakemake plugin's hardcoded `--comment=rule_<name>` still maps a queued job to its study+experiment (the slurm engine tags jobs directly; skip when standalone).
-        _ekey = key.replace("-", "_").replace(".", "_")
-        _skey = _san(str(study_key)).replace("-", "_").replace(".", "_")
-        _rule_name = ("exp_" + _ekey) if _skey == _ekey else (_skey + "_exp_" + _ekey)
+        exp_rule = _rule_key(key)
         exp_plans.append(
             {
                 "key": key,
-                "rule_name": _rule_name,
+                "rule_name": ("exp_" + exp_rule) if study_rule == exp_rule else (study_rule + "_exp_" + exp_rule),
                 "spec_relpath": spec_relpath,
                 # Pre-rendered backend script (frozen alongside the spec); None in --stdout mode or if the render failed, in which case the rule always uses the spec.
                 "scripts_relpath": scripts_relpath,
@@ -916,11 +829,11 @@ def _emit_snakemake_study(
                 # The plan resolves an unset backend to the experiment's execution.backend (else tvboptim); emit that resolved name, never the raw None — otherwise the rule renders `--backend=None` and every cell dies at backend resolution.
                 "backend": plan.backend.name,
                 # Smoke iteration cap threaded to the rule's `tvbo run --max-iterations` (None => uncapped).
-                "max_iterations": _max_iter,
-                # Engine-native benchmarking: attach Snakemake's `benchmark:` directive to the rule.
-                "benchmark": _benchmark,
+                "max_iterations": max_iterations,
+                # Snakemake's native `benchmark:` directive (a near-zero-overhead resource TSV per cell); on unless --no-benchmark / --set benchmark=false.
+                "benchmark": benchmark,
                 "out_dir": plan.out_dir,
-                "result_stem": result_stem,
+                "result_stem": _result_stem(exp),
                 "container": plan.container,
                 # Whether this rule's `tvbo run` must prepend the requirements venv (setup.sh built it — native, or on the image) to PYTHONPATH — see needs_env_layer.
                 "needs_env_layer": plan.needs_env_layer,
@@ -940,14 +853,16 @@ def _emit_snakemake_study(
     # Figures are resolved BEFORE the Snakefile renders: their outputs join the default target (so `tvbo workflow submit` renders them right after the grid) and their custom-panel code_modules bundle into code/ (so plot.py imports resolve on a node).
     figs = _study_figures(study)
     fig_base = _figure_base_dir(study, out_dir)
+    from tvbo.utils import deep_merge
+
     # Figures inherit the study workflow WITH the `--set` overrides merged in (same effective config the experiment rules get), so a `--set slurm.venv=…`/partition/etc. reaches the render rule too — otherwise the figure runs in the wrong (system) interpreter.
-    fig_workflow = _deep_merge(_wf._as_plain_dict(getattr(study, "workflow", None)), parsed["merged"] or {})
+    fig_workflow = deep_merge(_wf._as_plain_dict(getattr(study, "workflow", None)), parsed["merged"])
     figure_outputs: list[str] = []
     if figs:
         from tvbo.adapters import figure_workflow
 
         if not stdout:
-            fig_mods = _figure_code_modules(figs)
+            fig_mods = _common.figure_code_modules(figs)
             fig_bundled = _bundle_modules(fig_mods, out_dir) if fig_mods else []
             if fig_bundled:
                 bundled_code = True
@@ -983,30 +898,20 @@ def _emit_snakemake_study(
         return None
     (out_dir / "Snakefile").write_text(text, encoding="utf-8")
     _common.info(f"wrote Snakefile ({len(exp_plans)} experiment rule(s))")
-    # The study path builds its own artefacts rather than going through _emit_kit, so this mirrors it.
-    _kit0 = plans[0] if plans else None
-    if _kit0 is not None and _kit0.pip_specs:
-        (out_dir / "requirements.txt").write_text(_render_template("requirements.txt.mako", plan=_kit0), encoding="utf-8")
-        (out_dir / "environment.yml").write_text(_render_template("environment.yml.mako", plan=_kit0), encoding="utf-8")
-        _common.info("wrote requirements.txt + environment.yml")
-    if _kit0 is not None and _kit0.needs_env_layer:
-        setup = out_dir / "setup.sh"
-        setup.write_text(_render_template("setup.sh.mako", plan=_kit0), encoding="utf-8")
-        setup.chmod(0o755)
-        _common.info("wrote setup.sh (provisions declared requirements into a venv)")
-    # Match the Snakefile's global `container:` directive (keyed on the first experiment): when it is emitted, enable Apptainer in the profile so the run needs no extra flag; when it is not, leave the profile container-free.
-    _kit_plan = plans[0] if plans else None
-    # A differing per-experiment image becomes that rule's own `container:` directive, but binds reach Apptainer through Snakemake's single `--apptainer-args`, which is per-run and cannot vary per rule. Say so rather than drop it silently: a task missing a bind fails at import time, far from the declaration that was ignored.
-    if _kit_plan is not None:
-        _divergent = sorted({p.experiment_key for p in plans[1:] if p.container_exec_flags != _kit_plan.container_exec_flags})
+    # The first experiment speaks for the kit: its requirements become the kit's environment files, and its container — the Snakefile's global `container:` — the one the profile enables Apptainer for.
+    head = plans[0] if plans else None
+    if head is not None:
+        _write_env_files(out_dir, head, setup=head.needs_env_layer)
+        # A differing per-experiment image becomes that rule's own `container:` directive, but binds reach Apptainer through Snakemake's single `--apptainer-args`, which is per-run and cannot vary per rule, so say so rather than drop them silently.
+        _divergent = sorted({p.experiment_key for p in plans[1:] if p.container_exec_flags != head.container_exec_flags})
         if _divergent:
             _common.warn(
                 f"experiments {', '.join(_divergent)} declare container_binds/container_args "
-                f"differing from {_kit_plan.experiment_key}'s; Snakemake applies one "
-                f"--apptainer-args per run, so {_kit_plan.experiment_key}'s are used for all "
+                f"differing from {head.experiment_key}'s; Snakemake applies one "
+                f"--apptainer-args per run, so {head.experiment_key}'s are used for all "
                 "rules. Emit those experiments as their own kit if they need different binds."
             )
-    _write_snakemake_profile(out_dir, block, plan=_kit_plan)
+    _write_snakemake_profile(out_dir, block, plan=head)
     if plans:
         _write_readme(
             out_dir, engine="snakemake", plans=plans, script_relpath=None, spec_layout="spec/<experiment>/experiment.yaml"
@@ -1186,17 +1091,7 @@ def _kits_root(spec: str) -> Path:
     """
     from tvbo.utils.study_layout import study_path
 
-    return study_path("kits", root=_spec_source_dir(spec) or Path.cwd())
-
-
-def _spec_source_dir(spec: str) -> Path | None:
-    """Directory a spec's relative paths mean, or ``None`` when the spec is not a file.
-
-    ``resolve_spec`` also accepts a CURIE (``study:Deco2014``), a bare database name and a ``file://`` URL; ``Path(spec).parent`` on any of those silently yields the cwd, which would resolve the manifest's relative paths against whatever directory the CLI happened to run in.
-    """
-    raw = spec[len("file://") :] if spec.startswith("file://") else spec
-    path = Path(raw).expanduser()
-    return path.resolve().parent if path.is_file() else None
+    return study_path("kits", root=_common.spec_dir(spec) or Path.cwd())
 
 
 def _finalize_kit(out_dir: Path, *, pack: bool, source_dir: Path | None = None) -> Path:
@@ -1239,7 +1134,7 @@ def _emit(
             bundle_select=bundle_select,
             code_source=code_source,
         )
-        return _finalize_kit(out_dir, pack=pack, source_dir=_spec_source_dir(spec)) if out_dir is not None else None
+        return _finalize_kit(out_dir, pack=pack, source_dir=_common.spec_dir(spec)) if out_dir is not None else None
     plan, exp = _build_plan(spec, engine=engine, backend=backend, experiment=experiment, overrides=override)
     if stdout:
         text = _render_template(_TEMPLATE_PATH[engine], plan=plan, block=plan.engine_block, script_relpath=None)
@@ -1252,7 +1147,7 @@ def _emit(
         parts = [plan.experiment_key] if plan.study_key == plan.experiment_key else [plan.study_key, plan.experiment_key]
         out_dir = _kits_root(spec).joinpath(*parts, engine)
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir, bundle_select=bundle_select)
-    return _finalize_kit(out_dir, pack=pack, source_dir=_spec_source_dir(spec))
+    return _finalize_kit(out_dir, pack=pack, source_dir=_common.spec_dir(spec))
 
 
 _LAUNCHER = {"slurm": "sbatch", "snakemake": "snakemake", "nextflow": "nextflow"}
@@ -1274,8 +1169,6 @@ def _resolve_launcher(name: str) -> str | None:
 
 def _experiment_targets(kit_dir: Path, experiment: str) -> list:
     """Map a ``--experiment`` selector (``'41,50'``) to a study kit's Snakemake rule targets (``exp_41 exp_50``), so ONE full-study pack runs any subset of its experiments at submit time. Validated against the kit's Snakefile — a typo or an experiment not in the pack fails here, not with an opaque Snakemake ``MissingRuleException`` mid-run."""
-    import re
-
     snakefile = kit_dir / _ARTEFACT_NAME["snakemake"]
     if not snakefile.is_file():
         _common.die(f"--experiment needs the kit's {snakefile.name} to validate against, and {kit_dir} has none.")
@@ -1284,7 +1177,7 @@ def _experiment_targets(kit_dir: Path, experiment: str) -> list:
     rules.discard("all")
     targets, missing = [], []
     for tok in (t.strip() for t in str(experiment).split(",") if t.strip()):
-        key = re.sub(r"[^0-9A-Za-z]", "_", tok)
+        key = _rule_key(tok)
         match = [r for r in rules if r == "exp_" + key or r.endswith("_exp_" + key)]
         if match:
             targets.append(match[0])
@@ -1312,8 +1205,7 @@ def _execute_engine_artefact(
     """Submit/execute a rendered workflow artefact for *engine*.
 
     Runs from the artefact's own directory so the generated script can use the relative ``spec/`` and ``scripts/`` paths of an emitted kit. *slurm_array* restricts a Slurm submission to an index or range (``'0'`` for a single smoke task, ``'0-3'`` for four); ignored for non-Slurm engines. *dry_run* asks the engine to resolve and report the work without running or queueing it — each engine spells that differently, so it maps to the engine's own flag.
-    *profile* (Snakemake only) overrides the kit's shipped ``profile/`` with a named
-    or path profile — e.g. a site profile like ``cubi-v1`` that carries the cluster's canonical executor config; the Snakefile's per-rule ``resources:`` apply on top of whichever profile is used. *cores* (Snakemake only) forces a LOCAL run on that many cores (``'all'`` for every core), overriding only the profile's executor — its container/bind/retry settings still apply — the native local-testing path; the SAME kit submits to the scheduler on HPC when *cores* is unset.
+    *profile* (Snakemake only) overrides the kit's shipped ``profile/`` with a named or path profile — e.g. a site profile like ``cubi-v1`` that carries the cluster's canonical executor config; the Snakefile's per-rule ``resources:`` apply on top of whichever profile is used. *cores* (Snakemake only) forces a LOCAL run on that many cores (``'all'`` for every core), overriding only the profile's executor — its container/bind/retry settings still apply — the native local-testing path; the SAME kit submits to the scheduler on HPC when *cores* is unset.
     """
     # Resolve to an absolute launcher so a venv-installed console script is found even when that venv's bin/ is not on PATH (see :func:`_resolve_launcher`).
     exe = _resolve_launcher(_LAUNCHER.get(engine, "")) or _LAUNCHER.get(engine, "")
@@ -1371,8 +1263,7 @@ def _execute_emitted(
 ) -> None:
     """Execute a generated workflow artefact inside *out_dir*.
 
-    For Slurm this submits the array job and then chains the gather job (``finalize.sbatch``) with an ``afterok`` dependency, so the run converges to one reassembled result with no manual step. With *dry_run* nothing is queued:
-    the engine only reports the work it would do, so the Slurm chain is skipped (there is no array job id to depend on). *profile* overrides the Snakemake profile and *cores* forces a local Snakemake run (see :func:`_execute_engine_artefact`).
+    For Slurm this submits the array job and then chains the gather job (``finalize.sbatch``) with an ``afterok`` dependency, so the run converges to one reassembled result with no manual step. With *dry_run* nothing is queued: the engine only reports the work it would do, so the Slurm chain is skipped (there is no array job id to depend on). *profile* overrides the Snakemake profile and *cores* forces a local Snakemake run (see :func:`_execute_engine_artefact`).
     """
     if engine == "slurm" and not dry_run:
         # The chain submits the whole array; it has no per-experiment target, so an ignored selector would burn the study's allocation on work nobody asked for.
@@ -1434,36 +1325,16 @@ def _detect_engine_from_kit(kit_dir: Path) -> str | None:
 @app.command("slurm", help="Emit a self-contained sbatch kit (artefact + scripts + spec).")
 def slurm(
     spec: str = typer.Argument(...),
-    backend: str = typer.Option(
-        None,
-        "--backend",
-        "-b",
-        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
-    ),
-    experiment: str = typer.Option(None, "--experiment"),
-    output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
-    override: list[str] = typer.Option([], "--set"),
-    stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
-    pack: bool = typer.Option(
-        False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."
-    ),
-    bundle_dataset: bool = typer.Option(
-        False,
-        "--bundle-dataset",
-        help="Copy the fan-out's per-subject dataset files into the kit (spec/dataset/) "
-        "and point dataset.bids_root at them, so the kit is self-contained — no "
-        "separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects.",
-    ),
-    bundle_select: list[str] = typer.Option(
-        [],
-        "--bundle-select",
-        help="Override: add a BIDS entity to disambiguate when a subject directory holds "
-        "several files matching the observation's query (not needed when the query "
-        "already names one file). Repeatable. Implies --bundle-dataset.",
-    ),
+    backend: BackendOpt = None,
+    experiment: ExperimentOpt = None,
+    output: OutputOpt = None,
+    override: SetOpt = (),
+    stdout: StdoutOpt = False,
+    pack: PackOpt = False,
+    bundle_dataset: BundleDatasetOpt = False,
+    bundle_select: BundleSelectOpt = (),
 ) -> None:
     """Emit a self-contained sbatch kit (`run.sbatch` + scripts + frozen spec)."""
-    sel = _parse_bundle_select(bundle_select) if (bundle_dataset or bundle_select) else None
     _emit(
         "slurm",
         spec=spec,
@@ -1473,7 +1344,7 @@ def slurm(
         override=override,
         stdout=stdout,
         pack=pack,
-        bundle_select=sel,
+        bundle_select=_bundle_request(bundle_dataset, bundle_select),
     )
 
 
@@ -1487,19 +1358,12 @@ def _validate_code_source(value):
 @app.command("snakemake", help="Emit a self-contained Snakemake kit (Snakefile + scripts + spec).")
 def snakemake(
     spec: str = typer.Argument(...),
-    backend: str = typer.Option(
-        None,
-        "--backend",
-        "-b",
-        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
-    ),
-    experiment: str = typer.Option(None, "--experiment"),
-    output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
-    override: list[str] = typer.Option([], "--set"),
-    stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
-    pack: bool = typer.Option(
-        False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."
-    ),
+    backend: BackendOpt = None,
+    experiment: ExperimentOpt = None,
+    output: OutputOpt = None,
+    override: SetOpt = (),
+    stdout: StdoutOpt = False,
+    pack: PackOpt = False,
     benchmark: bool | None = typer.Option(
         None,
         "--benchmark/--no-benchmark",
@@ -1531,22 +1395,11 @@ def snakemake(
         callback=_validate_code_source,
     ),
     bundle_dataset: bool = typer.Option(
-        False,
-        "--bundle-dataset",
-        help="Copy the fan-out's per-subject dataset files into the kit (spec/<exp>/dataset/) "
-        "and point dataset.bids_root at them, so the kit is self-contained — no "
-        "separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects.",
+        False, "--bundle-dataset", help=_BUNDLE_DATASET_HELP.format(where="spec/<exp>/dataset/")
     ),
-    bundle_select: list[str] = typer.Option(
-        [],
-        "--bundle-select",
-        help="Override: add a BIDS entity to disambiguate when a subject directory holds "
-        "several files matching the observation's query (not needed when the query "
-        "already names one file). Repeatable. Implies --bundle-dataset.",
-    ),
+    bundle_select: BundleSelectOpt = (),
 ) -> None:
     """Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec)."""
-    sel = _parse_bundle_select(bundle_select) if (bundle_dataset or bundle_select) else None
     # Run-modifier flags are sugar for the equivalent `--set` overrides (threaded into the rule at emit): keep the kit the single source of truth, no separate config.
     override = [
         *override,
@@ -1563,7 +1416,7 @@ def snakemake(
         override=override,
         stdout=stdout,
         pack=pack,
-        bundle_select=sel,
+        bundle_select=_bundle_request(bundle_dataset, bundle_select),
         code_source=code_source,
     )
 
@@ -1571,36 +1424,16 @@ def snakemake(
 @app.command("nextflow", help="Emit a self-contained Nextflow kit (main.nf + scripts + spec).")
 def nextflow(
     spec: str = typer.Argument(...),
-    backend: str = typer.Option(
-        None,
-        "--backend",
-        "-b",
-        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
-    ),
-    experiment: str = typer.Option(None, "--experiment"),
-    output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
-    override: list[str] = typer.Option([], "--set"),
-    stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
-    pack: bool = typer.Option(
-        False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."
-    ),
-    bundle_dataset: bool = typer.Option(
-        False,
-        "--bundle-dataset",
-        help="Copy the fan-out's per-subject dataset files into the kit (spec/dataset/) "
-        "and point dataset.bids_root at them, so the kit is self-contained — no "
-        "separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects.",
-    ),
-    bundle_select: list[str] = typer.Option(
-        [],
-        "--bundle-select",
-        help="Override: add a BIDS entity to disambiguate when a subject directory holds "
-        "several files matching the observation's query (not needed when the query "
-        "already names one file). Repeatable. Implies --bundle-dataset.",
-    ),
+    backend: BackendOpt = None,
+    experiment: ExperimentOpt = None,
+    output: OutputOpt = None,
+    override: SetOpt = (),
+    stdout: StdoutOpt = False,
+    pack: PackOpt = False,
+    bundle_dataset: BundleDatasetOpt = False,
+    bundle_select: BundleSelectOpt = (),
 ) -> None:
     """Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec)."""
-    sel = _parse_bundle_select(bundle_select) if (bundle_dataset or bundle_select) else None
     _emit(
         "nextflow",
         spec=spec,
@@ -1610,7 +1443,7 @@ def nextflow(
         override=override,
         stdout=stdout,
         pack=pack,
-        bundle_select=sel,
+        bundle_select=_bundle_request(bundle_dataset, bundle_select),
     )
 
 
@@ -1626,8 +1459,7 @@ def finalize(
 ) -> None:
     """Gather sharded HPC outputs into one self-describing ``ExperimentResult``.
 
-    Concatenates each array task's slice by parameter value into the full grid a local run produces, and writes it as ``<stem>.h5`` (keyed groups) plus a ``<stem>.yaml`` sidecar (the frozen, fully-overridden spec) — the same HDF5-plus-YAML layout as a network. No manual post-processing is needed;
-    emitted kits submit this automatically as a dependent gather job.
+    Concatenates each array task's slice by parameter value into the full grid a local run produces, and writes it as ``<stem>.h5`` (keyed groups) plus a ``<stem>.yaml`` sidecar (the frozen, fully-overridden spec) — the same HDF5-plus-YAML layout as a network. No manual post-processing is needed; emitted kits submit this automatically as a dependent gather job.
     """
     from tvbo.data.types import reassemble_experiment_results
 
@@ -1644,15 +1476,10 @@ def finalize(
 def run_workflow(
     engine: str = typer.Argument(..., help="Execution engine: slurm | snakemake | nextflow."),
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name (Study or Experiment)."),
-    backend: str = typer.Option(
-        None,
-        "--backend",
-        "-b",
-        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
-    ),
-    experiment: str = typer.Option(None, "--experiment"),
-    output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
-    override: list[str] = typer.Option([], "--set"),
+    backend: BackendOpt = None,
+    experiment: ExperimentOpt = None,
+    output: OutputOpt = None,
+    override: SetOpt = (),
     array: str = typer.Option(
         None,
         "--array",
@@ -1706,7 +1533,7 @@ def run_workflow(
         return
     effective_overrides = list(override)
     if engine == "slurm" and array is not None:
-        override_keys = {s.lstrip("-").split("=", 1)[0] for s in effective_overrides if "=" in s}
+        override_keys = {_common.parse_assignment(s, "--set")[0] for s in effective_overrides}
         chunk_keys = {"distribute.chunk", "chunk", "slurm.array_chunk"}
         if not (override_keys & chunk_keys):
             plan_preview, _exp = _build_plan(
@@ -1732,17 +1559,20 @@ def run_workflow(
     )
     if out_dir is None:
         _common.die("failed to emit workflow kit")
-    if array is not None and array_throttle is not None:
-        array = f"{array}%{array_throttle}"
     # The emitted kit already defaults to code_source; export it too so a non-default choice reaches the job even on an executor that only forwards the environment.
     _execute_emitted(
         engine,
         out_dir,
-        slurm_array=array,
+        slurm_array=_slurm_array(array, array_throttle),
         profile=profile,
         cores=cores,
         code_source=code_source if code_source != "spec" else None,
     )
+
+
+def _slurm_array(array: str | None, throttle: int | None) -> str | None:
+    """The ``--array`` spec Slurm is handed: *array*, capped at *throttle* concurrent tasks when both are given."""
+    return f"{array}%{throttle}" if array is not None and throttle is not None else array
 
 
 def _tar_extractall_safe(tar, dest: Path) -> None:
@@ -1893,14 +1723,12 @@ def submit_kit(
             f"Install it in the same environment as tvbo, or run this where "
             f"{launcher} is available" + (" (a Slurm login node)." if eng == "slurm" else ".")
         )
-    if array is not None and array_throttle is not None:
-        array = f"{array}%{array_throttle}"
     # Before submitting, so a containerized kit needs no manual setup step; idempotent and cheap.
     _provision_env_layer(kit, dry_run=dry_run)
     _execute_emitted(
         eng,
         kit,
-        slurm_array=array,
+        slurm_array=_slurm_array(array, array_throttle),
         dry_run=dry_run,
         profile=profile,
         cores=cores,

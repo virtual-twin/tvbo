@@ -7,8 +7,7 @@ A backend template cannot know which imports its output will need: whether ``Bou
 
 So the templates emit the imports their features *may* need and this pass removes the ones the assembled module does not reference. The decision is made from the finished source, which is the only place the answer is actually known.
 
-Imports are pruned **in place**, never hoisted. Order is load-bearing in generated code:
-the tvboptim module sets ``JAX_PLATFORMS`` in ``os.environ`` and only then imports jax, so moving that import above the assignment would silently change which device the experiment runs on.
+Imports are pruned **in place**, never hoisted. Order is load-bearing in generated code: the tvboptim module sets ``JAX_PLATFORMS`` in ``os.environ`` and only then imports jax, so moving that import above the assignment would silently change which device the experiment runs on.
 
 The same reasoning applies to local scaffolding a template emits for downstream code that a given spec does not produce — ``n_nodes = weights.shape[0]`` ahead of thirty conditional uses, none of which fired. :func:`prune_dead_assignments` removes those, but only when the right-hand side cannot do anything besides compute a value: dropping ``initial_state = copy.deepcopy(state)`` would skip the copy, so a call is never touched however plainly unread its result is.
 
@@ -18,6 +17,7 @@ Both passes are deliberately conservative — they drop a name only when the mod
 from __future__ import annotations
 
 import ast
+import functools
 
 __all__ = [
     "prune",
@@ -44,54 +44,46 @@ def _docstrings(tree: ast.AST) -> set[int]:
     return out
 
 
-def _names_in_string(text: str) -> set[str]:
+@functools.lru_cache(maxsize=4096)
+def _names_in_string(text: str) -> frozenset[str]:
     """Names *text* refers to, if it is code; nothing if it is prose.
 
     A string can genuinely reach a name — ``getattr(mod, "TimeSeries")``, an ``eval``-ed expression — and such a string is always valid Python. Prose is not: ``"Coupling terms"`` and ``"Additive coefficient for the second state-variable"`` do not parse, and treating the words in them as references is what kept ``Coupling`` and ``Additive`` imported into generated models that only ever used them in a ``doc=``.
 
-    Parsing rather than word-splitting is what separates the two, and it costs nothing in safety: every string that could actually resolve a name still does.
+    Parsing rather than word-splitting is what separates the two, and it costs nothing in safety: every string that could actually resolve a name still does. Generated modules repeat the same literals across every function, so the answer is cached, and it is a ``frozenset`` because a cached value must not be mutated by its caller.
     """
     for mode in ("eval", "exec"):
         try:
             parsed = ast.parse(text, mode=mode)
         except (SyntaxError, ValueError):
             continue
-        return {n.id for n in ast.walk(parsed) if isinstance(n, ast.Name)} | {
+        return frozenset(n.id for n in ast.walk(parsed) if isinstance(n, ast.Name)) | frozenset(
             n.attr for n in ast.walk(parsed) if isinstance(n, ast.Attribute)
-        }
-    return set()
+        )
+    return frozenset()
 
 
-def _referenced(tree: ast.AST, source: str) -> set[str]:
-    """Every identifier the module could be referring to, outside its import statements.
+def _node_reads(node: ast.AST, prose: set[int]) -> frozenset[str]:
+    """Names *node* itself refers to: a ``Name``'s identifier, or what a non-docstring string literal names when it is code.
 
-    Attribute chains contribute their root (``jnp`` for ``jnp.exp``), which is the name an import binds. Non-docstring string literals contribute the names they refer to when they are code (see :func:`_names_in_string`), so a class reached by name through ``getattr`` keeps its import. Docstrings are excluded outright: prose naming a class is not a use of it, and counting it as one kept ``AbstractMonitor`` imported into modules that never touch it.
-
-    Decorators, base classes and annotations are already ``Name``/``Attribute`` nodes.
-    Comments are not part of the AST, so a name mentioned only in one cannot keep its import alive — deliberate, since that is what ``# noqa`` is for.
+    An attribute chain needs no case of its own: its root is a ``Name`` that every walk reaches in turn, and that root is the name an import binds (``jnp`` for ``jnp.exp``). A string contributes through :func:`_names_in_string`, so a class reached by name through ``getattr`` keeps its import. Docstrings (*prose*, from :func:`_docstrings`) are excluded outright: prose naming a class is not a use of it, and counting it as one kept ``AbstractMonitor`` imported into modules that never touch it.
     """
-    names: set[str] = set()
-    strings: list[str] = []
-    prose = _docstrings(tree)
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.Import, ast.ImportFrom)):
-            continue
-        if isinstance(node, ast.Name):
-            names.add(node.id)
-        elif isinstance(node, ast.Attribute):
-            root = node
-            while isinstance(root, ast.Attribute):
-                root = root.value
-            if isinstance(root, ast.Name):
-                names.add(root.id)
-        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in prose:
-            strings.append(node.value)
-    for text in strings:
-        names.update(_names_in_string(text))
-    return names
+    if isinstance(node, ast.Name):
+        return frozenset((node.id,))
+    if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in prose:
+        return _names_in_string(node.value)
+    return frozenset()
 
 
-def _visible_reads(tree: ast.AST) -> set[str]:
+def _referenced(tree: ast.AST, prose: set[int]) -> set[str]:
+    """Every identifier the module could be referring to, as :func:`_node_reads` counts one.
+
+    Decorators, base classes and annotations are already ``Name``/``Attribute`` nodes, and an import statement holds neither, so it never counts as a use of what it binds. Comments are not part of the AST, so a name mentioned only in one cannot keep its import alive — deliberate, since that is what ``# noqa`` is for.
+    """
+    return {name for node in ast.walk(tree) for name in _node_reads(node, prose)}
+
+
+def _visible_reads(tree: ast.AST, prose: set[int]) -> set[str]:
     """Names read somewhere a module-level binding would actually resolve them.
 
     A read inside a function that binds the same name locally resolves to *that* binding, not the module's — Python decides this per function, so a single nested ``import os`` makes every ``os`` in that function local. Counting such reads against the module keeps a top-level ``import os`` that nothing outside the function uses.
@@ -99,21 +91,11 @@ def _visible_reads(tree: ast.AST) -> set[str]:
     Only a *function* body shadows, and only its own body. A class body does not form a scope its methods can see, so ``pi = 3`` in a class leaves ``x * pi`` in a method resolving to the module's ``pi``. Decorators, argument defaults and annotations are evaluated in the enclosing scope, before the function's locals exist, so they are read with the outer set too. Treating either as shadowing dropped an import the generated module then failed on with ``NameError``.
     """
     found: set[str] = set()
-    prose = _docstrings(tree)
 
     def note(node: ast.AST, shadowed: frozenset[str]) -> None:
-        if isinstance(node, ast.Name):
-            if node.id not in shadowed:
-                found.add(node.id)
-        elif isinstance(node, ast.Attribute):
-            root = node
-            while isinstance(root, ast.Attribute):
-                root = root.value
-            if isinstance(root, ast.Name) and root.id not in shadowed:
-                found.add(root.id)
-        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
-            if id(node) not in prose:
-                found.update(_names_in_string(node.value))
+        # A local binding shadows a read by name, never one a string makes.
+        if not (isinstance(node, ast.Name) and node.id in shadowed):
+            found.update(_node_reads(node, prose))
 
     def walk(node: ast.AST, shadowed: frozenset[str]) -> None:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
@@ -193,23 +175,32 @@ def _import_nodes(tree: ast.AST) -> list[ast.Import | ast.ImportFrom]:
     )
 
 
+def _unused_aliases(tree: ast.AST):
+    """Each import statement binding a name nothing refers to, with the aliases it should keep.
+
+    ``from __future__`` imports and star imports are never reported, because dropping either changes semantics. A module-level import is only kept by a read a module-level binding can reach (:func:`_visible_reads`); a nested one by any reference at all.
+    """
+    prose = _docstrings(tree)
+    used = _referenced(tree, prose)
+    visible = _visible_reads(tree, prose)
+    for node in _import_nodes(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "__future__":
+            continue
+        if any(a.name == "*" for a in node.names):
+            continue
+        reachable = visible if node.col_offset == 0 else used
+        keep = [a for a in node.names if _bound_names(a) in reachable]
+        if len(keep) < len(node.names):
+            yield node, keep
+
+
 def unused_import_names(source: str) -> set[str]:
     """Names *source* imports but never refers to. Empty when *source* does not parse."""
     try:
         tree = ast.parse(source)
     except SyntaxError:
         return set()
-    used = _referenced(tree, source)
-    visible = _visible_reads(tree)
-    unused = set()
-    for node in _import_nodes(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "__future__":
-            continue
-        reachable = visible if node.col_offset == 0 else used
-        for alias in node.names:
-            if alias.name != "*" and _bound_names(alias) not in reachable:
-                unused.add(_bound_names(alias))
-    return unused
+    return {_bound_names(a) for node, keep in _unused_aliases(tree) for a in node.names if a not in keep}
 
 
 def prune_unused_imports(source: str) -> str:
@@ -224,22 +215,11 @@ def prune_unused_imports(source: str) -> str:
     except SyntaxError:
         return source
 
-    used = _referenced(tree, source)
-    visible = _visible_reads(tree)
     sizes = _block_sizes(tree)
     lines = source.split("\n")
     replacements: dict[int, list[str]] = {}
 
-    for node in _import_nodes(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "__future__":
-            continue
-        if any(a.name == "*" for a in node.names):
-            continue
-        # A module-level import is only kept by a read a module-level binding can reach.
-        reachable = visible if node.col_offset == 0 else used
-        keep = [a for a in node.names if _bound_names(a) in reachable]
-        if len(keep) == len(node.names):
-            continue
+    for node, keep in _unused_aliases(tree):
         if not _owns_its_lines(node, lines):
             continue
         if not keep and _last_in_block(node, sizes):
@@ -339,23 +319,14 @@ def _assigned_once(scope: ast.AST) -> dict[str, int]:
     return counts
 
 
-def _read_names(tree: ast.AST) -> set[str]:
-    """Names *tree* loads, plus every identifier-shaped word in a non-docstring string."""
-    prose = _docstrings(tree)
+def _read_names(tree: ast.AST, prose: set[int]) -> set[str]:
+    """Names *tree* loads or declares ``global``/``nonlocal``, plus the names a non-docstring string refers to."""
     names: set[str] = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
-            names.add(node.id)
-        elif isinstance(node, ast.Attribute):
-            root = node
-            while isinstance(root, ast.Attribute):
-                root = root.value
-            if isinstance(root, ast.Name):
-                names.add(root.id)
-        elif isinstance(node, (ast.Global, ast.Nonlocal)):
+        if isinstance(node, (ast.Global, ast.Nonlocal)):
             names.update(node.names)
-        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in prose:
-            names.update(_names_in_string(node.value))
+        elif not isinstance(node, ast.Name) or isinstance(node.ctx, ast.Load):
+            names.update(_node_reads(node, prose))
     return names
 
 
@@ -373,10 +344,11 @@ def prune_dead_assignments(source: str) -> str:
 
     lines = source.split("\n")
     sizes = _block_sizes(tree)
+    prose = _docstrings(tree)
     drop: set[int] = set()
 
     for scope in (n for n in ast.walk(tree) if isinstance(n, _PRUNABLE_SCOPES)):
-        read = _read_names(scope)
+        read = _read_names(scope, prose)
         bound = _assigned_once(scope)
         for node in _own_nodes(scope):
             if not isinstance(node, ast.Assign) or len(node.targets) != 1:

@@ -67,13 +67,6 @@ def splash(ctx: typer.Context) -> None:
     typer.echo(ctx.get_help())
 
 
-def _first_field(text: str, field: str) -> str | None:
-    for line in text.splitlines():
-        if line.startswith(f"{field}:"):
-            return line.split(":", 1)[1].strip().strip('"')
-    return None
-
-
 def _spec_text(spec: str | None) -> str:
     """The raw text of *spec* — a file, a CURIE, or a database name."""
     if not spec:

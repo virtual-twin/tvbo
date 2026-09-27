@@ -36,7 +36,7 @@ def _declared_aliases():
 # ── completeness: no declared alias is silently inert ────────────────
 
 
-# `range`/`boundaries` -> `domain` carry extra semantics (clamp, distribution) and are resolved by yaml_loader._fold_state_variable_domains instead.
+# `range`/`boundaries` -> `domain` carry extra semantics (clamp, distribution) and are resolved by yaml_loader._fold_one_state_variable_domain instead.
 _SEMANTIC = {"range", "boundaries"}
 
 

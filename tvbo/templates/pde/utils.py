@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import sympy as sp
 
+from tvbo.utils import as_list
+
 _OPERATOR_NAMES = ("laplacian", "div", "grad", "lap")
 
 _TOP_OPERATORS = ("laplacian", "lap", "div")
@@ -56,36 +58,22 @@ def _scalar(value):
         return None
 
 
-def _parameter_table(field_dynamics) -> dict:
-    """``{name: scalar}`` for every declared parameter that has a usable value.
+def _split_parameters(owner) -> tuple[dict, set]:
+    """*owner*'s named parameters, split into ``({name: scalar}, {per-vertex field names})``.
 
-    Non-scalar parameters (a per-vertex field) stay out of the table on purpose: they are resolved at run time against the mesh, and baking one into generated source would inline an array the size of the surface.
+    A parameter with a usable scalar value goes in the table. The rest are per-vertex fields and stay out of it on purpose: they are resolved at run time against the mesh, and baking one into generated source would inline an array the size of the surface.
     """
-    params = getattr(field_dynamics, "parameters", None) or {}
-    items = params.values() if hasattr(params, "values") else params
-    table = {}
-    for p in items:
+    scalars, fields = {}, set()
+    for p in as_list(getattr(owner, "parameters", None)):
         name = getattr(p, "name", None)
         if not name:
             continue
         val = _scalar(p)
-        if val is not None:
-            table[str(name)] = val
-    return table
-
-
-def _field_parameters(field_dynamics) -> set:
-    """Names of parameters that are per-vertex fields rather than scalars."""
-    params = getattr(field_dynamics, "parameters", None) or {}
-    items = params.values() if hasattr(params, "values") else params
-    out = set()
-    for p in items:
-        name = getattr(p, "name", None)
-        if not name:
-            continue
-        if _scalar(p) is None:
-            out.add(str(name))
-    return out
+        if val is None:
+            fields.add(str(name))
+        else:
+            scalars[str(name)] = val
+    return scalars, fields
 
 
 def _mesh_path(mesh, experiment) -> str:
@@ -117,13 +105,11 @@ def _field_sources(field_dynamics, experiment) -> dict:
 
     from tvbo.data import param_io
 
-    params = getattr(field_dynamics, "parameters", None) or {}
-    items = params.values() if hasattr(params, "values") else params
     source_file = getattr(experiment, "_source_file", None)
     source_dir = Path(source_file).parent if source_file else None
 
     out = {}
-    for p in items:
+    for p in as_list(getattr(field_dynamics, "parameters", None)):
         name = str(getattr(p, "name", "") or "")
         if not name or _scalar(p) is not None or not param_io.is_lazy(p):
             continue
@@ -137,15 +123,13 @@ def _event_table(experiment, parameters: dict) -> dict:
 
     A stimulus is a declared function of time, so it is substituted into the equation that names it rather than carried through as an opaque symbol. What the solver evaluates each step is then the RHS the recipe prints with the stimulus written out, and there is no second description of the drive that could disagree with the first.
     """
-    events = getattr(experiment, "events", None) or {}
-    items = events.values() if hasattr(events, "values") else events
     table = {}
-    for event in items:
+    for event in as_list(getattr(experiment, "events", None)):
         name = str(getattr(event, "name", "") or "")
         text = _rhs_text(getattr(event, "equation", None))
         if not name or not text:
             continue
-        own = _parameter_table(event)
+        own, _ = _split_parameters(event)
         clashing = [k for k, v in own.items() if parameters.get(k, v) != v]
         if clashing:
             raise FieldPlanError(
@@ -293,8 +277,7 @@ def field_assembly_plan(experiment) -> dict:
     if len(set(names)) != len(names):
         raise FieldPlanError(f"duplicate field state-variable names: {names}")
 
-    parameters = _parameter_table(fd)
-    field_params = _field_parameters(fd)
+    parameters, field_params = _split_parameters(fd)
     events = _event_table(experiment, parameters)
 
     blocks, explicit_rows, legacy = [], {}, False

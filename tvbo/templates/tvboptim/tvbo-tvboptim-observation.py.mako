@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-<%doc>TVB-Optim Observation Template. Context: experiment (SimulationExperiment).</%doc>
+<%doc>TVB-Optim Observation Template. Context: experiment (SimulationExperiment); `reductions` is the experiment's resolve_reductions when the including template already holds it.</%doc>
+<%page args="reductions=None"/>\
 <%
 from tvbo.codegen import render_expression
 from tvbo.adapters.observation_sampling import tvb_iround as _tvb_iround
@@ -11,6 +12,7 @@ from tvbo.templates.tvboptim.utils import (
     node_label as _node_label, node_const as _node_const, collect_network_node_arrays,
     functions_by_name as _functions_by_name, kernel_support_steps as _kernel_support_steps,
     _assert_transient_on_sample_grid, assert_measured_window_is_stable, emission_period_steps,
+    monitor_class_name,
 )
 
 model = experiment.dynamics
@@ -119,55 +121,6 @@ def parse_reference(val, step_names=None, current_obs_name=None):
         return ('literal', float(val) if '.' in val else int(val))
     except ValueError:
         return ('literal', val)
-
-def ref_to_code(ref_type, ref_val, state_idx=None):
-    """Convert reference to Python code expression."""
-    if ref_type == 'step':
-        return f"_outputs['{ref_val}']"
-    if ref_type == 'data_source':
-        return f"_DATA_SOURCES['{ref_val}']"
-    if ref_type == 'input':
-        return f"_outputs['{ref_val}']"
-    if ref_type == 'source_data':
-        # Reference to source observation data (already in _outputs['data'] or _outputs)
-        return "_outputs.get('data', _outputs)"
-    if ref_type == 'statevar':
-        # Recorded variable referenced by name: slice its column from the trajectory.
-        return f"result.data[:, {ref_val}, :]"
-    if ref_type == 'network':
-        # network.observations.BoldCorrelation → _network_observations['BoldCorrelation']
-        # ref_val is 'observations.BoldCorrelation'
-        if ref_val.startswith('observations.'):
-            obs_key = ref_val.split('.', 1)[1]
-            return f"_network_observations['{obs_key}']"
-        # Resolves to the connectivity matrix embedded once as a module constant, so a callable can receive the connectome.
-        _label = _edge_label(ref_val)
-        if _label:
-            return _edge_const(_label)
-        # The per-node analogue of the edge-matrix path, so a callable can receive region centroids or in-strength.
-        _nlabel = _node_label(ref_val)
-        if _nlabel:
-            return _node_const(_nlabel)
-        # For other network properties, use kwargs
-        return f"kwargs.get('{ref_val}')"
-    if ref_type == 'integration':
-        if ref_val == 'transient':
-            raise ValueError(
-                "`integration.transient` is not a data channel: the settle runs as its own scan, so its "
-                "trajectory is not in the window a pipeline is handed. A kernel that needs the settle declares "
-                "it — the warm-up is taken at the input and eaten by the kernel — and everything else reads "
-                "`integration.result`, the measured window."
-            )
-        if ref_val == 'result':
-            if state_idx is not None:
-                # Slice to source state and squeeze state dimension → (time, nodes)
-                return f"_result.data[:, {state_idx}, :]"
-            return "_result.data"
-        return f"_result_{ref_val}"
-    if ref_type == 'observation':
-        obs_name, key = ref_val
-        return f"_{obs_name}_result['{key}']"
-    return repr(ref_val)
 
 # =============================================================================
 
@@ -316,126 +269,6 @@ def is_kernel_generator(step_name):
     fn_def = functions_by_name.get(step_name)
     return fn_def and get_attr(fn_def, 'time_range')
 
-def can_precompute(step):
-    """Check if a pipeline step can be precomputed (no data dependency).
-
-    A step can be precomputed if:
-    1. It's a kernel generator (has time_range), OR
-    2. It has no arguments that reference runtime data (integration.*, observation.*, etc.)
-
-    Currently we only precompute kernel generators since they're the most common case.
-    """
-    step_name = step.get('name')
-    if is_kernel_generator(step_name):
-        return True
-    return False
-
-def get_precompute_call(step):
-    """Generate the function call for precomputation."""
-    step_name = step['name']
-    args = step.get('arguments', {})
-
-    # Build keyword arguments (only literals, no data references)
-    kwargs = []
-    for name, val in args.items():
-        ref_type, ref_val = parse_reference(val)
-        if ref_type == 'literal':
-            if isinstance(ref_val, str):
-                kwargs.append(f"{name}='{ref_val}'")
-            else:
-                kwargs.append(f"{name}={ref_val}")
-
-    return f"{step_name}({', '.join(kwargs)})"
-
-def build_vmap_call(callable_ref, step, step_names, current_obs_name, state_idx):
-    """Build a double-vmap-wrapped callable for apply_on_dimension: node.
-
-    For 3D data (time, state, node), wraps with double vmap:
-    - Outer vmap: iterate over states (axis=1)
-    - Inner vmap: iterate over nodes (axis=1 of each state slice)
-
-    For fftconvolve:
-        jax.vmap(lambda y: jax.vmap(lambda x: fftconvolve(x, kernel, mode), in_axes=1, out_axes=1)(y), in_axes=1, out_axes=1)(data)
-    """
-    args = step['arguments']
-    arg_names = list(args.keys())
-
-    # First argument is the data being vmapped over
-    data_arg = arg_names[0] if arg_names else 'x'
-    data_val = args.get(data_arg)
-    ref_type, ref_val = parse_reference(data_val, step_names=step_names, current_obs_name=current_obs_name)
-    data_code = ref_to_code(ref_type, ref_val, state_idx=state_idx)
-
-    # Remaining arguments are constants (kernel, mode, etc.)
-    const_args = []
-    for name in arg_names[1:]:
-        val = args[name]
-        ref_type, ref_val = parse_reference(val, step_names=step_names, current_obs_name=current_obs_name)
-        if ref_type == 'literal':
-            # Quote strings
-            if isinstance(ref_val, str):
-                const_args.append(f"'{ref_val}'")
-            else:
-                const_args.append(str(ref_val))
-        else:
-            const_args.append(ref_to_code(ref_type, ref_val, state_idx=state_idx))
-
-    const_str = ', '.join(const_args) if const_args else ''
-    inner_call = f"{callable_ref}(x, {const_str})" if const_str else f"{callable_ref}(x)"
-
-    # Double vmap for 3D data (time, state, node)
-    inner_vmap = f"jax.vmap(lambda x: {inner_call}, in_axes=1, out_axes=1)"
-    return f"jax.vmap(lambda y: {inner_vmap}(y), in_axes=1, out_axes=1)({data_code})"
-
-# =============================================================================
-
-# =============================================================================
-def build_step_call(step, step_input, step_names=None, current_obs_name=None, state_idx=None, is_first_step=False):
-    """Build the function call for a pipeline step.
-
-    For inline callables (step has 'callable'), use only explicit arguments.
-    For defined functions, may add implicit input if needed.
-
-    If is_first_step=True and an argument has no value, default to _outputs['data']
-    (which comes from observation source or integration.result).
-    """
-    args = step['arguments']
-    arg_names = step.get('arg_names', [])
-    keyword = []
-    obs_deps = set()
-    has_inline_callable = step.get('callable') is not None
-
-    # Build keyword args from explicit arguments
-    for name, val in args.items():
-        ref_type, ref_val = parse_reference(val, step_names=step_names, current_obs_name=current_obs_name)
-        code = ref_to_code(ref_type, ref_val, state_idx=state_idx)
-
-        if ref_type == 'observation':
-            obs_deps.add(ref_val[0])
-
-        keyword.append(f"{name}={code}")
-
-    # Handle arguments that have names but no values
-    # For first step, default to _outputs['data'] (from source)
-    for name in arg_names:
-        if name not in args:
-            if is_first_step and name in ('data', 'X', 'x', 'input', 'timeseries'):
-                # First step's primary input defaults to observation source data
-                keyword.append(f"{name}=_outputs['data']")
-
-    # For inline callables, use ONLY explicit arguments - no implicit input
-    # For defined functions without explicit args, may need implicit input
-    if not has_inline_callable and not args and not arg_names and not is_kernel_generator(step['name']):
-        # Parse step_input as a reference
-        ref_type, ref_val = parse_reference(step_input, step_names=step_names, current_obs_name=current_obs_name)
-        input_code = ref_to_code(ref_type, ref_val, state_idx=state_idx)
-        if ref_type == 'literal' and isinstance(ref_val, str):
-            input_code = f"_outputs['{ref_val}']"
-        keyword.insert(0, input_code)  # As positional first arg
-
-    call_args = ', '.join(keyword)
-    return call_args, obs_deps
-
 # =============================================================================
 
 # =============================================================================
@@ -499,7 +332,7 @@ for obs_name, obs in observations.items():
         # Resolved once from the observation's generic `parameters` slot, so any parametric aggregation reads its values by name.
         'agg_params': dict(iter_parameter_values(get_attr(obs, 'parameters'))),
         # A dynamics observer resolves to a streaming reducer; None means the pipeline path applies.
-        'reduction': resolve_reduction(obs, experiment),
+        'reduction': reductions[obs_name] if reductions is not None else resolve_reduction(obs, experiment),
     }
 
     # Check for class_reference first (takes precedence over pipeline)
@@ -576,27 +409,6 @@ for fname, fdef in functions_by_name.items():
         module = get_attr(c, 'module')
         if module:
             callable_imports.setdefault(module, set())
-
-# Determine unique top-level modules to import
-top_level_modules = set()
-for module in callable_imports.keys():
-    top_level_modules.add(module.split('.')[0])
-
-# =============================================================================
-
-# =============================================================================
-# Identify pipeline steps that can be precomputed (no data dependency)
-
-precomputable_steps = {}  # {step_name: {'call': 'fn(...)', 'const_name': '_PRECOMPUTED_...'}}
-
-for obs in obs_list:
-    for step in obs.get('pipeline', []):
-        step_name = step.get('name')
-        if step_name and can_precompute(step) and step_name not in precomputable_steps:
-            precomputable_steps[step_name] = {
-                'call': get_precompute_call(step),
-                'const_name': f'_PRECOMPUTED_{step_name.upper()}',
-            }
 
 # =============================================================================
 # Check for Network Observations (loaded from BIDS or edge data)
@@ -827,10 +639,26 @@ ${ind}${sname} = jnp.mean((_null_${sname} ${_cmp} _obs_${sname}) * 1.0, axis=0)
 ${ind}_new_${s['name']} = ${jc(s['update'])}
 % endfor
 </%def>\
+<%def name="render_observer_constants(rpars, kind)">\
+<%doc>
+    Bind each observer constant by name in the reducer closure the init/update/finalize triple shares: a literal inlines, and a sourced or produced operator is read once through `_load_constant`, so a large array never enters the generated source. `kind` names the observer in the error a constant that reached render unmaterialised raises.
+</%doc>\
+<%
+    from tvbo.templates.tvboptim.utils import render_jax_default
+%>\
+% for _pname, _pdef in rpars.items():
+% if _pdef.get('lazy'):
+    ${_pname} = _load_constant(${repr(_pdef['lazy'][0])}, ${repr(_pdef['lazy'][1])})
+% elif 'value' in _pdef:
+    ${_pname} = ${render_jax_default(_pdef['value'])}
+% else:
+<% raise ValueError("%s constant %r reached render unmaterialised; call resolve_reduction(obs, experiment) so a sourced/produced constant is written before emission" % (kind, _pname)) %>
+% endif
+% endfor
+</%def>\
 <%def name="render_recurrence_reduction(red, name, s_idx, dt)">\
 <%
     from tvbo.codegen import render_expression
-    from tvbo.templates.tvboptim.utils import render_jax_default
     _is_median = red.get('statistic', 'mean') == 'median'
     _period_steps = red.get('period_steps')
     # A pure accumulator folds the sample at skip; a memory-dependent observer has no predecessor there, so it starts after.
@@ -858,15 +686,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
     # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
 % if _rpars:
     # Bound by name in the closure the init/update/finalize triple shares: a literal inlines, a sourced operator is read once so a large array never enters this source.
-% for _pname, _pdef in _rpars.items():
-% if _pdef.get('lazy'):
-    ${_pname} = _load_constant(${repr(_pdef['lazy'][0])}, ${repr(_pdef['lazy'][1])})
-% elif 'value' in _pdef:
-    ${_pname} = ${render_jax_default(_pdef['value'])}
-% else:
-<% raise ValueError("observer constant %r reached render unmaterialised; call resolve_reduction(obs, experiment) so a sourced/produced constant is written before emission" % _pname) %>
-% endif
-% endfor
+${render_observer_constants(_rpars, 'observer')}\
 % endif
 % for _fname, _fdef in red['functions'].items():
     def ${_fname}(${", ".join(_fdef['args'])}):
@@ -985,7 +805,6 @@ ${render_observer_states(red['states'], _jc, _ind)}\
 </%doc>\
 <%
     from tvbo.codegen import render_expression
-    from tvbo.templates.tvboptim.utils import render_jax_default
     _G = red['n_groups']
     _period = red['period_steps']
     _src = red['source']
@@ -1005,15 +824,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
     # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
 % if _rpars:
     # A literal inlines and a sourced operator is read once, so a large array never enters this source.
-% for _pname, _pdef in _rpars.items():
-% if _pdef.get('lazy'):
-    ${_pname} = _load_constant(${repr(_pdef['lazy'][0])}, ${repr(_pdef['lazy'][1])})
-% elif 'value' in _pdef:
-    ${_pname} = ${render_jax_default(_pdef['value'])}
-% else:
-<% raise ValueError("wave observer constant %r reached render unmaterialised; call resolve_reduction(obs, experiment)" % _pname) %>
-% endif
-% endfor
+${render_observer_constants(_rpars, 'wave observer')}\
 % endif
 % for _fname, _fdef in red.get('functions', {}).items():
     def ${_fname}(${", ".join(_fdef['args'])}):
@@ -1217,7 +1028,7 @@ from ${module} import ${class_name} as _Ext${class_name}
     # Regular observations don't have source_observation - that's only for DerivedObservation
     pipeline = obs['pipeline']
     class_ref = obs.get('class_reference')
-    class_name = ''.join(word.capitalize() for word in obs_name.split('_'))
+    class_name = monitor_class_name(obs_name)
 
     # Check if source is from network.observations (static data from BIDS)
     is_network_observation = obs_source and str(obs_source).startswith('network.observations.')
@@ -1360,24 +1171,9 @@ class ${class_name}(eqx.Module):
 class ${class_name}(AbstractMonitor):
     """${obs['label'] or obs_name} observation (dynamics observer)."""
     dt: float = eqx.field(static=True, default=${dt})
-% if obs['reduction'].get('kind') == 'convolution':
-    def __init__(self, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
-        self.voi = voi
-        self.period = period if period is not None else dt
-        self.dt = dt
-
-    def __call__(self, result):
-        # One block over the whole window equals the value the grid streams: the settle warms the HRF ring in-band and its BOLD samples are dropped at finalize. The settle is DERIVED from the window handed in rather than declared, because this call holds that window: a caller integrating a shorter one -- a fitting loop's tuning window -- would otherwise be cut by a settle it never ran.
-        _data = result.data if hasattr(result, 'data') else result
-        _init, _update, _finalize = _reduction_${obs_name}(
-            s_var=${state_idx}, dt=self.dt, skip=max(0, _data.shape[0] - ${n_measured}))
-        _acc = _init(_data[0], _data.shape[0])
-        _acc = _update(_acc, _data)
-        return _finalize(_acc)
-% else:
 
 <%
-    # a monitor reports at its declared period; a folded statistic collapses to one value (dt)
+    # a monitor reports at its declared period; a folded statistic or a convolution collapses to one value (dt)
     _obs_period = repr(float(to_numeric(obs['period']))) if obs['reduction'].get('kind') == 'monitor' else 'dt'
 %>\
     def __init__(self, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
@@ -1393,7 +1189,6 @@ class ${class_name}(AbstractMonitor):
         _acc = _init(_data[0], _data.shape[0])
         _acc = _update(_acc, _data)
         return _finalize(_acc)
-% endif
 
 % else:
 ## =============================================================================
@@ -1516,7 +1311,7 @@ class ${class_name}(AbstractMonitor):
 
 
 % for ref_obs in referenced_observations:
-        self._${ref_obs}_monitor = ${ref_obs.replace('_', ' ').title().replace(' ', '')}(voi=voi, dt=dt)
+        self._${ref_obs}_monitor = ${monitor_class_name(ref_obs)}(voi=voi, dt=dt)
 % endfor
 
 % if _carries_warmup:
@@ -1726,7 +1521,7 @@ class ${class_name}(AbstractMonitor):
                 prefix, attr = arg_val.split('.', 1)
                 _elabel, _nlabel = _edge_label(arg_val), _node_label(arg_val)
                 if prefix == 'network' and (_elabel or _nlabel):
-                    # A connectome matrix or per-node vector, embedded once as a module constant — the same resolution ref_to_code gives a callable step, so a declared function can take the network too.
+                    # A connectome matrix or per-node vector, embedded once as a module constant, so a declared function can take the network too.
                     call_parts.append(f"{arg_name}={_edge_const(_elabel) if _elabel else _node_const(_nlabel)}")
                 elif prefix in referenced_observations:
                     # Reference to observation's named output (e.g., simulated_psd.frequencies)

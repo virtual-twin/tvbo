@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tvbo.adapters.base import ContinuationAdapter
+from tvbo.adapters.julia_model import build_model_context
 
 if TYPE_CHECKING:
     from tvbo.analysis.bifurcation import BifurcationResult
@@ -107,6 +108,8 @@ class BifurcationKitAdapter(ContinuationAdapter):
     A continuation backend: it renders one ``(Dynamics, Continuation)`` pair at a time rather than a whole network context, so it takes its pair resolution from [`ContinuationAdapter`](#tvbo.adapters.base.ContinuationAdapter).
     """
 
+    TEMPLATE = "tvbo-julia-BifurcationKit.jl.mako"
+
     # ── Context preparation ──────────────────────────────────────────────
 
     @staticmethod
@@ -150,6 +153,18 @@ class BifurcationKitAdapter(ContinuationAdapter):
         ctx["p_min"] = p_min
         ctx["p_max"] = p_max
         ctx["p_start"] = p_default
+
+        # -- Model function, and what each continuation step records --
+        mc = build_model_context(model, ctx["network"], constraints=ctx["constraints"])
+        ctx["mc"] = mc
+        # The record closure takes the continuation parameter as its argument, so it destructures every other one from `p`.
+        ctx["record_destructure"] = ", ".join(name for name in mc["destructure_names"] if name != ICS)
+        if ctx["network"] is None:
+            ctx["record_fields"] = ", ".join(f"{name} = x[{i + 1}]" for i, name in enumerate(model.state_variables))
+        else:
+            ctx["record_fields"] = ", ".join(
+                f"{name}_max = _{name}_max, {name}_mean = _{name}_sum / N" for name in mc["record_obs"]
+            )
 
         # -- Initial state (use schema defaults when unspecified) --
         from tvbo.datamodel.schema import InitialState
@@ -297,30 +312,12 @@ class BifurcationKitAdapter(ContinuationAdapter):
 
     # ── Public API ───────────────────────────────────────────────────────
 
-    def render_code(self, model=None, continuation=None, **kwargs) -> str:
-        """Render BifurcationKit Julia code for a single continuation.
-
-        Parameters
-        ----------
-        model : Dynamics, optional
-            The dynamics model. Defaults to ``experiment.dynamics``.
-        continuation : Continuation, optional
-            The continuation spec. Defaults to first in experiment.
-        **kwargs
-            Extra context passed to the Mako template.
-        """
-        from tvbo import templates
-
-        model = model or self.experiment.dynamics
-        continuation = self.resolve_continuation(continuation)
-
-        # A multi-node network on the experiment ⇒ continue the coupled system.
+    def render_continuation(self, model, continuation, **kwargs) -> str:
+        """BifurcationKit Julia for *continuation* on *model*, continuing the coupled system where the experiment declares a multi-node network; *kwargs* is extra context for `_prepare_context`."""
         network = getattr(self.experiment, "network", None)
-        constraints = self._derive_constraints(model)
-        ctx = self._prepare_context(model, continuation, network=network, constraints=constraints, **kwargs)
-
-        template = templates.lookup.get_template("tvbo-julia-BifurcationKit.jl.mako")
-        return template.render(**ctx)
+        return super().render_continuation(
+            model, continuation, network=network, constraints=self._derive_constraints(model), **kwargs
+        )
 
     def _derive_constraints(self, model):
         """Derive constraint-defined free parameters for the continuation.
@@ -380,45 +377,19 @@ class BifurcationKitAdapter(ContinuationAdapter):
             return str(fp[0].name)
         return None
 
-    def run(self, **kwargs) -> BifurcationResult | dict[str, BifurcationResult]:
-        """Run bifurcation analysis for each continuation in the experiment.
-
-        Iterates over ``experiment.continuations``, resolves the dynamics model for each, renders BifurcationKit Julia code, executes it, and wraps the result in ``BifurcationResult`` objects.
-
-        Returns:
-        -------
-        BifurcationResult or dict[str, BifurcationResult]
-            Single result if one continuation, dict if multiple.
-        """
+    def run_one(self, model, cont, name, **kwargs) -> BifurcationResult:
+        """Render *cont* on *model* as BifurcationKit Julia, execute it, and wrap the branch in a `BifurcationResult`, with its periodic-orbit and codim-2 branches where it declares any."""
         from tvbo.analysis import BifurcationResult
         from tvbo.run.julia import extract_bifurcation_result, run_julia_code
 
-        conts = self.continuations()
-        if not conts:
-            raise ValueError(
-                "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
-            )
+        run_julia_code(self.render_continuation(model, cont, **kwargs))
 
-        results = {}
-        for name, cont in conts.items():
-            model = self.resolve_dynamics(cont)
-            code = self.render_code(model=model, continuation=cont, **kwargs)
-
-            run_julia_code(code)
-
-            br_obj = extract_bifurcation_result()
-            ICS = self._get_ics(cont)
-            bif_res = BifurcationResult(br=br_obj, model=model, ICS=ICS, **kwargs)
-
-            if getattr(cont, "branches", None):
-                bif_res.periodic_orbits = self._extract_periodic_orbits(model, ICS=ICS, **kwargs)
-                bif_res.codim2_curves = self._extract_codim2_results(model, ICS=ICS, **kwargs)
-
-            results[name] = bif_res
-
-        if len(results) == 1:
-            return next(iter(results.values()))
-        return results
+        ICS = self._get_ics(cont)
+        bif_res = BifurcationResult(br=extract_bifurcation_result(), model=model, ICS=ICS, **kwargs)
+        if getattr(cont, "branches", None):
+            bif_res.periodic_orbits = self._extract_periodic_orbits(model, ICS=ICS, **kwargs)
+            bif_res.codim2_curves = self._extract_codim2_results(model, ICS=ICS, **kwargs)
+        return bif_res
 
     # ── Private helpers ──────────────────────────────────────────────────
 

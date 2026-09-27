@@ -383,9 +383,9 @@ def _fold_range_boundaries(rng, boundaries):
 
 
 def _resolve_dynamics_aliases(d: dict) -> dict:
-    """Normalize a Dynamics kwargs/metadata dict through the SINGLE shared route.
+    """Normalize a Dynamics kwargs/metadata dict the way every load path does.
 
-    Every construction path — ``Dynamics(**dict)``, ``from_file``, ``from_string`` and the network/experiment coercion helpers — funnels through here, so they apply identical conveniences and cannot drift.
+    This is ``yaml_loader._normalize_loaded``, the normalisation ``load_as_dict`` already applies to what ``from_file`` and ``from_string`` read, offered to the network/experiment coercion helpers, which may hold a dict no loader has seen; so every route applies identical conveniences and none can drift.
 
     It applies only what a class cannot: the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries`` gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}`` lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``), so clamping stays opt-in. Declared slot aliases — ``righthandside`` → ``rhs`` among them — are folded by the dialect at construction, at every nesting level, from the schema's own ``aliases:``.
 

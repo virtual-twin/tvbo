@@ -5,6 +5,8 @@ Extracts Python logic from Mako templates for cleaner, testable code.
 
 import keyword
 
+from tvbo.utils import as_list
+
 
 def is_name(text: str) -> bool:
     """Whether *text* can stand as an identifier: Python's own rule, minus its keywords.
@@ -69,16 +71,13 @@ def gathered_states(model, coupling=None):
 
     Args:
         model: The :class:`~tvbo.classes.dynamics.Dynamics` declaring the states.
-        coupling: The coupling whose ``incoming_states`` overrides the default, or
-            ``None`` to use the model's ``coupling_variable`` states.
+        coupling: The coupling whose ``incoming_states`` overrides the default, or ``None`` to use the model's ``coupling_variable`` states.
 
     Returns:
         list[str]: State-variable names, ordered as the gathered rows are.
     """
     names = list(model.state_variables.keys())
-    declared = getattr(coupling, "incoming_states", None) or [] if coupling is not None else []
-    if isinstance(declared, str):
-        declared = [declared]
+    declared = as_list(getattr(coupling, "incoming_states", None))
     declared = [s if isinstance(s, str) else getattr(s, "name", str(s)) for s in declared]
     declared = [s for s in dict.fromkeys(declared) if s in names]
     if declared:
@@ -176,7 +175,7 @@ def referenced_parameters(model, names=None, within=None):
     return [name for name in (model.parameters if names is None else names) if str(name) in reading]
 
 
-def coupling_bindings(model, coupling, incoming=(), local=()):
+def coupling_bindings(model, coupling):
     r"""Resolve which names a coupling's ``pre``/``post`` bodies must bind, and to what.
 
     A coupling expression may name a source state three ways, and they are distinct references, not spellings of one:
@@ -188,30 +187,27 @@ def coupling_bindings(model, coupling, incoming=(), local=()):
     ``u_i``
         the *target* node's own current value, ``current_state[i]``.
 
-    A difference coupling (``u_j - u_i``) needs the last two together, which is why the bare name cannot stand in for either. Word-boundary matching keeps the three apart:
-    ``\\bu\\b`` does not match the ``u`` inside ``u_j``, so a pre-expression written only in subscripts binds no unread bare name. This mirrors ``state_aliases_j`` / ``state_aliases_i`` in :func:`tvbo.templates.tvboptim.utils.resolve_coupling_spec`.
+    A difference coupling (``u_j - u_i``) needs the last two together, which is why the bare name cannot stand in for either. Word-boundary matching keeps the three apart: ``\\bu\\b`` does not match the ``u`` inside ``u_j``, so a pre-expression written only in subscripts binds no unread bare name. This mirrors ``state_aliases_j`` / ``state_aliases_i`` in :func:`tvbo.templates.tvboptim.utils.resolve_coupling_spec`.
 
     Args:
         model: The dynamics declaring the state variables.
-        coupling: The coupling whose expressions are being emitted.
-        incoming: Declared source-state names.
-        local: Declared target-local state names.
+        coupling: The coupling whose expressions are being emitted; its ``incoming_states`` and ``local_states`` declare the source and target-local state names.
 
     Returns:
-        dict: ``cvar_names`` (gather order), ``cvar_index``, ``sv_index``, ``bare``
-        (states read by bare name), ``pre_j``/``pre_i``/``post_i`` (alias, index) pairs.
+        dict: ``cvar_names`` (gather order, which is the order ``x_j`` holds its rows in, not ``vec_states`` order), ``cvar_index``, ``sv_index``, ``vec_states`` (the declared incoming then local names, as ``resolve_coupling_spec`` resolves them), ``bare`` (states read by bare name), ``pre_j``/``pre_i``/``post_i`` (alias, index) pairs, ``pre_rhs``, ``needs_x_i``/``needs_x_j`` (whether ``pre`` reads the target's own rows or the gathered ones), ``is_list_expr`` (whether ``pre`` is a list of components) and ``gx_indices`` (one per component of a multi-component ``pre``, which reduces to one ``gx_k`` each for ``post`` to address; empty for a single one).
 
     Raises:
-        ValueError: a local state the model does not declare, or a source state that is
-            read but never transmitted — both of which would emit an unbound name.
+        ValueError: a local state the model does not declare, or a source state that is read but never transmitted — both of which would emit an unbound name.
     """
-    import re
+    from tvbo.templates.tvboptim.utils import parse_list_elements
 
+    incoming = as_list(getattr(coupling, "incoming_states", None))
+    local = as_list(getattr(coupling, "local_states", None))
     states = list(model.state_variables.keys())
     sv_index = {name: i for i, name in enumerate(states)}
     cvar_names = gathered_states(model, coupling)
     cvar_index = {name: i for i, name in enumerate(cvar_names)}
-    vec_states = list(dict.fromkeys(list(incoming) + list(local)))
+    vec_states = list(dict.fromkeys(incoming + local))
 
     unknown = [s for s in local if s not in sv_index]
     if unknown:
@@ -223,11 +219,9 @@ def coupling_bindings(model, coupling, incoming=(), local=()):
 
     pre_rhs = str(coupling.pre_expression.rhs) if coupling.pre_expression else ""
     post_rhs = str(coupling.post_expression.rhs) if coupling.post_expression else ""
+    read_bare = referenced(vec_states, pre_rhs)
 
-    def bare(name, text):
-        return re.search(rf"\b{re.escape(name)}\b", text) is not None
-
-    ungathered = [s for s in vec_states if s not in cvar_index and s not in local and bare(s, pre_rhs)]
+    ungathered = [s for s in read_bare if s not in cvar_index and s not in local]
     if ungathered:
         raise ValueError(
             f"coupling `pre_expression` reads {ungathered} as a source state, but only "
@@ -236,15 +230,22 @@ def coupling_bindings(model, coupling, incoming=(), local=()):
             f"the model), or read the target's own value as {[s + '_i' for s in ungathered]}."
         )
 
+    is_list_expr = pre_rhs.strip().startswith("[") and pre_rhs.strip().endswith("]")
+    n_pre = len(parse_list_elements(pre_rhs.strip())) if is_list_expr else 1
     return {
         "cvar_names": cvar_names,
         "cvar_index": cvar_index,
         "sv_index": sv_index,
         "vec_states": vec_states,
-        "bare": [s for s in vec_states if s in cvar_index and bare(s, pre_rhs)],
+        "bare": [s for s in read_bare if s in cvar_index],
         "pre_j": [(f"{s}_j", cvar_index[s]) for s in vec_states if f"{s}_j" in pre_rhs and s in cvar_index],
         "pre_i": [(f"{s}_i", sv_index[s]) for s in vec_states if f"{s}_i" in pre_rhs and s in sv_index],
         "post_i": [(f"{s}_i", sv_index[s]) for s in vec_states if f"{s}_i" in post_rhs and s in sv_index],
+        "pre_rhs": pre_rhs,
+        "needs_x_i": "x_i" in pre_rhs,
+        "needs_x_j": "x_j" in pre_rhs or any(str(name) in pre_rhs for name in vec_states),
+        "is_list_expr": is_list_expr,
+        "gx_indices": list(range(n_pre)) if n_pre > 1 else [],
     }
 
 

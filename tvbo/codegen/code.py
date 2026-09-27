@@ -21,84 +21,64 @@ from tvbo.parse.expression import parse_eq
 logger = logging.getLogger(__name__)
 
 
+def _qualify(module, names):
+    """Prefix a SymPy name table with a printer's module, or leave it bare without one.
+
+    An empty module is how a printer says its target resolves the array vocabulary itself — see [`_ArrayFunctionPrinterMixin._afn`](#_ArrayFunctionPrinterMixin).
+    """
+    prefix = f"{module}." if module else ""
+    return {name: prefix + target for name, target in names.items()}
+
+
+_MODULE_ARRAY_FUNCTIONS = {
+    name: name
+    for name in (
+        # reductions
+        "sum",
+        "mean",
+        "std",
+        "var",
+        "max",
+        "min",
+        "abs",
+        "prod",
+        "cumsum",
+        "diff",
+        "argmax",
+        "argmin",
+        # shape / construction / manipulation
+        "concatenate",
+        "stack",
+        "vstack",
+        "hstack",
+        "pad",
+        "roll",
+        "flip",
+        "reshape",
+        "transpose",
+        "expand_dims",
+        "squeeze",
+        "take",
+        "tile",
+        "repeat",
+        "arange",
+        "zeros",
+        "ones",
+        "where",
+        "clip",
+        "any",
+        "all",
+        "dot",
+        "matmul",
+    )
+}
+"""The array vocabulary NumPy and JAX both spell as the module function of the same name, unqualified; each printer prefixes it with its own module through `_qualify`."""
+
+
 # The ARRAY_FUNCTIONS of `tvbo.parse.expression` to their per-format implementations, consumed through `known_functions`.
 ARRAY_FUNCTION_MAPPINGS = {
-    "jax": {
-        # reductions
-        "sum": "jnp.sum",
-        "mean": "jnp.mean",
-        "std": "jnp.std",
-        "var": "jnp.var",
-        "max": "jnp.max",
-        "min": "jnp.min",
-        "abs": "jnp.abs",
-        "prod": "jnp.prod",
-        "cumsum": "jnp.cumsum",
-        "diff": "jnp.diff",
-        "argmax": "jnp.argmax",
-        "argmin": "jnp.argmin",
-        # shape / construction / manipulation
-        "concatenate": "jnp.concatenate",
-        "stack": "jnp.stack",
-        "vstack": "jnp.vstack",
-        "hstack": "jnp.hstack",
-        "pad": "jnp.pad",
-        "roll": "jnp.roll",
-        "flip": "jnp.flip",
-        "reshape": "jnp.reshape",
-        "transpose": "jnp.transpose",
-        "expand_dims": "jnp.expand_dims",
-        "squeeze": "jnp.squeeze",
-        "take": "jnp.take",
-        "tile": "jnp.tile",
-        "repeat": "jnp.repeat",
-        "arange": "jnp.arange",
-        "zeros": "jnp.zeros",
-        "ones": "jnp.ones",
-        "where": "jnp.where",
-        "clip": "jnp.clip",
-        "any": "jnp.any",
-        "all": "jnp.all",
-        "dot": "jnp.dot",
-        "matmul": "jnp.matmul",
-    },
-    "numpy": {
-        "sum": "np.sum",
-        "mean": "np.mean",
-        "std": "np.std",
-        "var": "np.var",
-        "max": "np.max",
-        "min": "np.min",
-        "abs": "np.abs",
-        "prod": "np.prod",
-        "cumsum": "np.cumsum",
-        "diff": "np.diff",
-        "argmax": "np.argmax",
-        "argmin": "np.argmin",
-        "concatenate": "np.concatenate",
-        "stack": "np.stack",
-        "vstack": "np.vstack",
-        "hstack": "np.hstack",
-        "pad": "np.pad",
-        "roll": "np.roll",
-        "flip": "np.flip",
-        "reshape": "np.reshape",
-        "transpose": "np.transpose",
-        "expand_dims": "np.expand_dims",
-        "squeeze": "np.squeeze",
-        "take": "np.take",
-        "tile": "np.tile",
-        "repeat": "np.repeat",
-        "arange": "np.arange",
-        "zeros": "np.zeros",
-        "ones": "np.ones",
-        "where": "np.where",
-        "clip": "np.clip",
-        "any": "np.any",
-        "all": "np.all",
-        "dot": "np.dot",
-        "matmul": "np.matmul",
-    },
+    "jax": _qualify("jnp", _MODULE_ARRAY_FUNCTIONS),
+    "numpy": _qualify("np", _MODULE_ARRAY_FUNCTIONS),
     "julia": {
         "sum": "sum",
         "mean": "mean",
@@ -314,54 +294,8 @@ def _afp_mode_sum(p, expr):
     return p._reduce_axis("sum", p._print(expr.args[0]), -1, keepdims=True)
 
 
-def _afp_outer(p, expr):
-    """``outer(a, b)`` -> rank-1 outer product ``a_i b_j`` (a mean/co-moment update)."""
-    return p._outer(p._print(expr.args[0]), p._print(expr.args[1]))
-
-
-def _afp_diag(p, expr):
-    """``diag(M)`` -> the main diagonal of matrix ``M`` as a vector."""
-    return p._diag(p._print(expr.args[0]))
-
-
-def _afp_zero_diagonal(p, expr):
-    """``zero_diagonal(M)`` -> ``M`` with its main diagonal set to 0 (e.g. FC self-links)."""
-    return p._zero_diagonal(p._print(expr.args[0]))
-
-
-def _afp_matmul(p, expr):
-    """``matmul(A, B)`` -> ordinary matrix product ``A @ B`` (e.g. ``Xᵀ X`` co-moment)."""
-    return p._matmul(p._print(expr.args[0]), p._print(expr.args[1]))
-
-
-def _afp_strided_convolve(p, expr):
-    """``strided_convolve(X, k, s)`` -> the ``'valid'`` convolution of ``X`` (leading time axis) with kernel ``k``, evaluated ONLY at output indices ``[s::s]``.
-
-    Fuses a full convolution and a strided subsample: computing just the retained outputs is a small ``(n_kept, len(k))`` window matmul instead of an FFT over the whole signal, so it avoids the FFT buffer entirely. Trailing axes are preserved (per-node), matching ``fftconvolve(..., 'valid')[s::s]``.
-    """
-    return p._strided_convolve(p._print(expr.args[0]), p._print(expr.args[1]), p._print(expr.args[2]))
-
-
-def _afp_take(p, expr):
-    """``take(x, idx)`` -> gather ``x`` by an integer index array; the result takes the shape of ``idx`` (a 2-D k-ring neighbour gather, a scatter-read, …)."""
-    return p._gather(p._print(expr.args[0]), p._print(expr.args[1]))
-
-
-def _afp_sum_axis(p, expr):
-    """``sum_axis(x, axis)`` -> reduce a single axis (e.g. the numerator of an axis-1 masked mean). ``axis`` must be an integer literal (a compile-time array axis)."""
-    axis = expr.args[1]
-    if not getattr(axis, "is_Integer", False):
-        raise ValueError(f"sum_axis(x, axis): axis must be an integer literal, got {axis!r}.")
-    return p._reduce_axis("sum", p._print(expr.args[0]), int(axis))
-
-
-def _afp_pearson(p, expr):
-    """``pearson(x, y)`` -> Pearson correlation of two FLAT/1-D operands (the reduction is over all elements). This is the per-step, node-collapsing correlation an observer needs (e.g. corr(in-strength, flow-potential) for one timestep); it is NOT a columnwise correlation of 2-D operands. Distinct from the loss-helper ``correlation`` in ``codegen/functions.py``, which is a preserved call to a generated function, not an inline-expanded expression primitive."""
-    return p._pearson(p._print(expr.args[0]), p._print(expr.args[1]))
-
-
 def _afp_arity(expr, n, signature):
-    """Check a graph-construction primitive's argument count.
+    """Check a primitive's argument count.
 
     Indexing ``expr.args`` blind raises a bare ``IndexError: tuple index out of range`` from inside the printer, naming neither the primitive nor the step that wrote it.
     """
@@ -370,55 +304,38 @@ def _afp_arity(expr, n, signature):
     return expr.args
 
 
-def _afp_grid_positions(p, expr):
-    """``grid_positions(nx, ny, x_extent, y_extent)`` -> the [nx*ny, 2] coordinates of a regular 2-D lattice spanning [0, x_extent] x [0, y_extent].
+def _literal_axis(axis, signature):
+    """*axis* as an ``int``, refusing anything but an integer literal, because an array axis is fixed when the code is compiled."""
+    if not getattr(axis, "is_Integer", False):
+        raise ValueError(f"{signature}: axis must be an integer literal, got {axis!r}.")
+    return int(axis)
 
-    Node ORDER is part of the contract, not an implementation detail: row ``k`` is ``(x[k // ny], y[k % ny])`` (x-major). A connectome's row order is its node identity, so a layout that ordered nodes differently would silently permute every downstream per-node quantity.
+
+def _afp_forward(primitive, arity, signature):
+    """Build the handler for a primitive that prints its *arity* arguments and hands them to the printer method *primitive*.
+
+    What the operation means is documented on that method, which is also what a backend overrides; *signature* names the call in the arity error.
     """
-    args = _afp_arity(expr, 4, "grid_positions(nx, ny, x_extent, y_extent)")
-    return p._grid_positions(*[p._print(a) for a in args])
+
+    def handler(p, expr):
+        return getattr(p, primitive)(*map(p._print, _afp_arity(expr, arity, signature)))
+
+    handler.__name__ = f"_afp_{signature.split('(')[0]}"
+    handler.__doc__ = f"``{signature}`` -> ``{primitive}``."
+    return handler
 
 
-def _afp_pairwise_distance(p, expr):
-    """``pairwise_distance(pos)`` -> the [n, n] euclidean distance matrix between the rows of ``pos`` ([n, d] positions). The distance kernel every spatially-embedded generator starts from (Koller's 2-D sheet, Roberts 2019, Pang 2023)."""
-    args = _afp_arity(expr, 1, "pairwise_distance(pos)")
-    return p._pairwise_distance(p._print(args[0]))
-
-
-def _afp_fill_diagonal(p, expr):
-    """``fill_diagonal(M, v)`` -> ``M`` with its main diagonal replaced by ``v``.
-
-    The declarative form of "no self-connections": a generator sets the diagonal to ``inf`` before a decaying distance kernel (so the kernel evaluates to 0 there) or to 0 after one. Generalises ``zero_diagonal``, which is the v=0 special case.
-    """
-    args = _afp_arity(expr, 2, "fill_diagonal(M, value)")
-    return p._fill_diagonal(p._print(args[0]), p._print(args[1]))
-
-
-def _afp_gaussian_pdf(p, expr):
-    """``gaussian_pdf(pos, mean, cov)`` -> isotropic multivariate-normal density evaluated at each row of ``pos``. ``mean`` is a coordinate tuple and ``cov`` an isotropic scalar variance, matching the sink/source Gaussian fields that build a spatial gradient."""
-    args = _afp_arity(expr, 3, "gaussian_pdf(pos, mean, cov)")
-    return p._gaussian_pdf(p._print(args[0]), p._print(args[1]), p._print(args[2]))
+def _afp_sum_axis(p, expr):
+    """``sum_axis(x, axis)`` -> reduce a single axis (e.g. the numerator of an axis-1 masked mean). ``axis`` must be an integer literal (a compile-time array axis)."""
+    axis = _literal_axis(expr.args[1], "sum_axis(x, axis)")
+    return p._reduce_axis("sum", p._print(expr.args[0]), axis)
 
 
 def _afp_normalize(p, expr):
     """``normalize(M, axis)`` -> ``M`` divided by its sum along ``axis`` (column-normalised in-strength when axis=0). ``axis`` must be an integer literal, as for ``sum_axis``."""
     args = _afp_arity(expr, 2, "normalize(M, axis)")
-    axis = args[1]
-    if not getattr(axis, "is_Integer", False):
-        raise ValueError(f"normalize(M, axis): axis must be an integer literal, got {axis!r}.")
-    return p._normalize(p._print(args[0]), int(axis))
-
-
-def _afp_minmax_rescale(p, expr):
-    """``minmax_rescale(x, lo, hi)`` -> ``x`` affinely mapped from its own [min, max] onto [lo, hi] (e.g. a difference-of-Gaussians field rescaled to [-1, 1] as a gradient template)."""
-    args = _afp_arity(expr, 3, "minmax_rescale(x, lo, hi)")
-    return p._minmax_rescale(p._print(args[0]), p._print(args[1]), p._print(args[2]))
-
-
-def _afp_eigvals(p, expr):
-    """``eigvals(M)`` -> the eigenvalues of ``M`` (spectral-radius rescaling of a reservoir substrate reads ``max(abs(eigvals(M)))``)."""
-    args = _afp_arity(expr, 1, "eigvals(M)")
-    return p._eigvals(p._print(args[0]))
+    axis = _literal_axis(args[1], "normalize(M, axis)")
+    return p._normalize(p._print(args[0]), axis)
 
 
 def _afp_sample(distribution, n_params):
@@ -457,22 +374,22 @@ _ARRAY_FUNCTION_PRINTERS = {
     "transpose": _afp_transpose,
     "mode_dot": _afp_mode_dot,
     "mode_sum": _afp_mode_sum,
-    "outer": _afp_outer,
-    "diag": _afp_diag,
-    "zero_diagonal": _afp_zero_diagonal,
-    "matmul": _afp_matmul,
-    "strided_convolve": _afp_strided_convolve,
-    "take": _afp_take,
+    "outer": _afp_forward("_outer", 2, "outer(a, b)"),
+    "diag": _afp_forward("_diag", 1, "diag(M)"),
+    "zero_diagonal": _afp_forward("_zero_diagonal", 1, "zero_diagonal(M)"),
+    "matmul": _afp_forward("_matmul", 2, "matmul(A, B)"),
+    "strided_convolve": _afp_forward("_strided_convolve", 3, "strided_convolve(X, k, s)"),
+    "take": _afp_forward("_gather", 2, "take(x, idx)"),
     "sum_axis": _afp_sum_axis,
-    "pearson": _afp_pearson,
+    "pearson": _afp_forward("_pearson", 2, "pearson(x, y)"),
     # Graph-construction primitives (Procedural GraphGenerator DAG).
-    "grid_positions": _afp_grid_positions,
-    "pairwise_distance": _afp_pairwise_distance,
-    "fill_diagonal": _afp_fill_diagonal,
-    "gaussian_pdf": _afp_gaussian_pdf,
+    "grid_positions": _afp_forward("_grid_positions", 4, "grid_positions(nx, ny, x_extent, y_extent)"),
+    "pairwise_distance": _afp_forward("_pairwise_distance", 1, "pairwise_distance(pos)"),
+    "fill_diagonal": _afp_forward("_fill_diagonal", 2, "fill_diagonal(M, value)"),
+    "gaussian_pdf": _afp_forward("_gaussian_pdf", 3, "gaussian_pdf(pos, mean, cov)"),
     "normalize": _afp_normalize,
-    "minmax_rescale": _afp_minmax_rescale,
-    "eigvals": _afp_eigvals,
+    "minmax_rescale": _afp_forward("_minmax_rescale", 3, "minmax_rescale(x, lo, hi)"),
+    "eigvals": _afp_forward("_eigvals", 1, "eigvals(M)"),
     "sample_normal": _afp_sample("normal", 2),
     "sample_uniform": _afp_sample("uniform", 2),
     "sample_lognormal": _afp_sample("lognormal", 2),
@@ -552,16 +469,20 @@ class _ArrayFunctionPrinterMixin:
         return f"{self._afn('dot')}({a}, {b})"
 
     def _outer(self, a, b):
+        """``outer(a, b)``: the rank-1 outer product ``a_i b_j`` (a mean/co-moment update)."""
         return f"{self._afn('outer')}({a}, {b})"
 
     def _diag(self, base):
+        """``diag(M)``: the main diagonal of matrix ``M`` as a vector."""
         return f"{self._afn('diag')}({base})"
 
     def _zero_diagonal(self, base):
+        """``zero_diagonal(M)``: ``M`` with its main diagonal set to 0 (e.g. FC self-links)."""
         # ``M - diag(diag(M))``: extract the diagonal, embed it back as a diagonal matrix, subtract -> exact-zero diagonal (M_ii - M_ii), off-diagonal untouched. Byte-identical to a scatter-set of the diagonal to 0.
         return f"({base} - {self._afn('diag')}({self._afn('diag')}({base})))"
 
     def _matmul(self, a, b):
+        """``matmul(A, B)``: the ordinary matrix product ``A @ B`` (e.g. the ``Xᵀ X`` co-moment)."""
         # Parenthesize both operands: `@` and `/`/`*` share precedence and left-associate, so `A @ B/c` would parse as `(A @ B)/c`. matmul(hhd, pg/nrm) must stay hhd @ (pg/nrm).
         return f"(({a}) @ ({b}))"
 
@@ -570,6 +491,7 @@ class _ArrayFunctionPrinterMixin:
         return f"{self._afn(fn)}({base}, axis={axis}{kw})"
 
     def _gather(self, base, idx):
+        """``take(x, idx)``: gather ``x`` by an integer index array; the result takes the shape of ``idx`` (a 2-D k-ring neighbour gather, a scatter-read, …)."""
         # numpy/jax: `take` with an int index array returns the index array's shape (a fancy-index gather). JuliaPrinter overrides for 1-based indexing.
         return f"{self._afn('take')}({base}, {idx})"
 
@@ -578,6 +500,8 @@ class _ArrayFunctionPrinterMixin:
         """`||p_i - p_j||`: broadcast `[n,1,d]` against `[1,n,d]` and reduce the coordinate axis.
 
         Built from `_expand_dims` rather than a literal `[:, None, :]` slice, so the expansion carries no Python indexing syntax and a backend that spells broadcasting differently overrides `_expand_dims` alone instead of re-deriving the formula. That is the pattern for this whole group: expressed through the reduction and array primitives above, so a backend implementing those inherits these for free.
+
+        ``pairwise_distance(pos)`` gives the [n, n] euclidean distance matrix between the rows of ``pos`` ([n, d] positions): the distance kernel every spatially-embedded generator starts from (Koller's 2-D sheet, Roberts 2019, Pang 2023).
         """
         rows = self._expand_dims(pos, 1)
         cols = self._expand_dims(pos, 0)
@@ -587,7 +511,9 @@ class _ArrayFunctionPrinterMixin:
         return f"{self._afn('expand_dims')}({base}, {axis})"
 
     def _grid_positions(self, nx, ny, x_extent, y_extent):
-        """Coordinates of a regular lattice, ordered x-major (row k = (x[k//ny], y[k%ny])).
+        """``grid_positions(nx, ny, x_extent, y_extent)``: the [nx*ny, 2] coordinates of a regular lattice spanning [0, x_extent] x [0, y_extent], ordered x-major (row k = (x[k//ny], y[k%ny])).
+
+        Node ORDER is part of the contract, not an implementation detail. A connectome's row order is its node identity, so a layout that ordered nodes differently would silently permute every downstream per-node quantity.
 
         Built from a flat index rather than meshgrid+reshape so the expansion needs only arange/stack, which every backend's function table already carries.
 
@@ -604,6 +530,8 @@ class _ArrayFunctionPrinterMixin:
         """``base`` with its main diagonal replaced by ``value``, off-diagonal untouched.
 
         Written as a ``where`` over an identity mask rather than an in-place scatter so it stays functional and therefore valid under jax tracing.
+
+        ``fill_diagonal(M, v)`` is the declarative form of "no self-connections": a generator sets the diagonal to ``inf`` before a decaying distance kernel (so the kernel evaluates to 0 there) or to 0 after one. It generalises ``zero_diagonal``, which is the v=0 special case.
         """
         eye = f"{self._afn('eye')}({self._shape(base, 0)})"
         return self._where3(f"{eye} > 0", value, base)
@@ -611,7 +539,7 @@ class _ArrayFunctionPrinterMixin:
     def _gaussian_pdf(self, pos, mean, cov):
         """Isotropic multivariate-normal density at each row of ``pos``.
 
-        ``exp(-||p - mu||^2 / 2c) / (2*pi*c)^(d/2)``, with ``cov`` the isotropic scalar variance (covariance matrix ``cov * I``).
+        ``exp(-||p - mu||^2 / 2c) / (2*pi*c)^(d/2)``, with ``mean`` a coordinate tuple and ``cov`` the isotropic scalar variance (covariance matrix ``cov * I``), matching the sink/source Gaussian fields that build a spatial gradient.
         """
         d = f"({pos} - {self._afn('asarray')}({mean}))"
         sq = f"{self._afn('sum')}({d}**2, axis=-1)"
@@ -627,7 +555,7 @@ class _ArrayFunctionPrinterMixin:
         return f"({base} / {self._where3(f'{total} == 0', '1', total)})"
 
     def _minmax_rescale(self, x, lo, hi):
-        """``x`` affinely mapped from its own [min, max] onto [lo, hi].
+        """``x`` affinely mapped from its own [min, max] onto [lo, hi] (e.g. a difference-of-Gaussians field rescaled to [-1, 1] as a gradient template).
 
         A constant input has zero span; it maps to the MIDPOINT of the target interval rather than dividing by zero. That keeps a degenerate field neutral (a flat field rescaled to [-1, 1] becomes 0, matching what a hand-written generator special-cases it to) instead of emitting NaN everywhere.
         """
@@ -639,6 +567,7 @@ class _ArrayFunctionPrinterMixin:
         return self._where3(f"{span} == 0", midpoint, scaled)
 
     def _eigvals(self, base):
+        """``eigvals(M)``: the eigenvalues of ``M`` (spectral-radius rescaling of a reservoir substrate reads ``max(abs(eigvals(M)))``)."""
         return f"{self._linalg('eigvals')}({base})"
 
     def _linalg(self, name):
@@ -655,6 +584,10 @@ class _ArrayFunctionPrinterMixin:
         return f"{rng}.{distribution}({', '.join(params)}{shape_arg})"
 
     def _pearson(self, x, y):
+        """``pearson(x, y)``: the Pearson correlation of two FLAT/1-D operands, reduced over all elements.
+
+        This is the per-step, node-collapsing correlation an observer needs (e.g. corr(in-strength, flow-potential) for one timestep); it is NOT a columnwise correlation of 2-D operands. Distinct from the loss-helper ``correlation`` in ``codegen/functions.py``, which is a preserved call to a generated function, not an inline-expanded expression primitive.
+        """
         # Pearson r over the shared axis, expanded into the reduction primitives so it is backend-agnostic: sum(xc*yc) / sqrt(sum(xc^2)*sum(yc^2)), xc = x - mean(x).
         xc = f"({x} - {self._afn('mean')}({x}))"
         yc = f"({y} - {self._afn('mean')}({y}))"
@@ -666,6 +599,10 @@ class _ArrayFunctionPrinterMixin:
         return f"{self._afn('mean')}({X}.reshape(-1, {w}, *{X}.shape[1:]), axis=1)"
 
     def _strided_convolve(self, X, k, s):
+        """``strided_convolve(X, k, s)``: the ``'valid'`` convolution of ``X`` (leading time axis) with kernel ``k``, evaluated ONLY at output indices ``[s::s]``.
+
+        Fuses a full convolution and a strided subsample: computing just the retained outputs is a small ``(n_kept, len(k))`` window matmul instead of an FFT over the whole signal, so it avoids the FFT buffer entirely. Trailing axes are preserved (per-node), matching ``fftconvolve(..., 'valid')[s::s]``.
+        """
         # 'valid' convolution X⊛k sampled only at the [s::s] output indices. Build the retained windows by gathering the leading (time) axis with the index grid kept[:, None] + arange(len(k)), then contract the reversed kernel over the window axis; trailing axes (nodes, …) ride along via tensordot. Equivalent to fftconvolve(X, k, 'valid')[s::s] to FFT roundoff, and byte-identical to a direct full 'valid' convolution then [s::s] — no FFT buffer.
         af = self._afn
         kept = f"{af('arange')}({s}, {X}.shape[0] - {k}.shape[0] + 1, {s})"
@@ -712,15 +649,6 @@ class _ArrayFunctionPrinterMixin:
         return f"{rng}.astype(int)"
 
 
-def _qualify(module, names):
-    """Prefix a SymPy name table with a printer's module, or leave it bare without one.
-
-    An empty module is how a printer says its target resolves the array vocabulary itself — see [`_ArrayFunctionPrinterMixin._afn`](#_ArrayFunctionPrinterMixin).
-    """
-    prefix = f"{module}." if module else ""
-    return {name: prefix + target for name, target in names.items()}
-
-
 class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
     """NumPy code printer for TVBO symbolic expressions.
 
@@ -739,10 +667,7 @@ class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
         self._kf.update({"erfc": "scipy.special.erfc"})
         self._kf.update({"erf": "scipy.special.erf"})
         super().__init__(settings=settings)
-        # The table is authored `np.`-prefixed, so a module-less printer would emit `np.sum`.
-        self.known_functions.update(
-            _qualify(module, {name: target.removeprefix("np.") for name, target in ARRAY_FUNCTION_MAPPINGS["numpy"].items()})
-        )
+        self.known_functions.update(_qualify(module, _MODULE_ARRAY_FUNCTIONS))
 
     def _module_format(self, fqn, register=True):
         """Drop the separator SymPy leaves behind when this printer has no module.
@@ -771,8 +696,7 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
         self._kf.update({"erfc": "jsp.special.erfc"})
         self._kf.update({"erf": "jsp.special.erf"})
         super().__init__(settings=settings)
-        # Add array function mappings
-        self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["jax"])
+        self.known_functions.update(_qualify(module, _MODULE_ARRAY_FUNCTIONS))
         # Context for broadcasting inference
         self._index_context = None  # Set by top-level print to enable broadcasting
 
@@ -1544,17 +1468,29 @@ class TVBEquationPrinter(NumPyPrinter):
         super().__init__(settings=settings, module="")
 
 
+_PRINTERS = {
+    "numpy": NumPyPrinter,
+    "jax": JaxPrinter,
+    "julia": JuliaPrinter,
+    "mtk": MTKPrinter,
+    "fortran": FortranPrinter,
+    "python": PythonCodePrinter,
+    "brian2": Brian2Printer,
+    "tvb": TVBEquationPrinter,
+    "sympy": StrPrinter,
+    "symbolic": StrPrinter,
+    "pyrates": StrPrinter,
+}
+"""The printer class for each target format that needs nothing but its settings; `lems` also takes the parameter names and is built in `get_printer`."""
+
+
 def get_printer(format, parameters=None, order=None):
     """Return a code printer instance for the given target format.
 
     Args:
-        format: Target output format. One of `numpy`, `jax`, `julia`, `mtk`,
-            `fortran`, `python`, `brian2`, `tvb`, `lems`, or
-            `sympy`/`symbolic`/`pyrates`.
-        parameters: Parameter names passed to `LEMSPrinter`; used only for the
-            `lems` format.
-        order: Term ordering passed to the printer; `none` preserves source term
-            order. When omitted the printer's default ordering is used.
+        format: Target output format. One of `numpy`, `jax`, `julia`, `mtk`, `fortran`, `python`, `brian2`, `tvb`, `lems`, or `sympy`/`symbolic`/`pyrates`.
+        parameters: Parameter names passed to `LEMSPrinter`; used only for the `lems` format.
+        order: Term ordering passed to the printer; `none` preserves source term order. When omitted the printer's default ordering is used.
 
     Returns:
         A configured printer instance for `format`.
@@ -1562,31 +1498,13 @@ def get_printer(format, parameters=None, order=None):
     Raises:
         ValueError: If `format` is not a supported output format.
     """
-    # order='none' preserves source term order; default keeps prior behaviour.
     extra = {} if order is None else {"order": order}
-
-    if format == "numpy":
-        return NumPyPrinter(settings=extra) if extra else NumPyPrinter()
-    elif format == "jax":
-        return JaxPrinter(settings=extra) if extra else JaxPrinter()
-    elif format == "julia":
-        return JuliaPrinter(settings=extra) if extra else JuliaPrinter()
-    elif format == "mtk":
-        return MTKPrinter(settings=extra) if extra else MTKPrinter()
-    elif format == "fortran":
-        return FortranPrinter(settings=extra) if extra else FortranPrinter()
-    elif format == "python":
-        return PythonCodePrinter(settings=extra) if extra else PythonCodePrinter()
-    elif format == "brian2":
-        return Brian2Printer(settings=extra) if extra else Brian2Printer()
-    elif format == "tvb":
-        return TVBEquationPrinter(settings=extra) if extra else TVBEquationPrinter()
-    elif format == "lems":
+    if format == "lems":
         return LEMSPrinter(settings={"parameters": parameters or [], **extra})
-    elif format in ["sympy", "symbolic", "pyrates"]:
-        return StrPrinter(settings=extra) if extra else StrPrinter()
-    else:
+    printer = _PRINTERS.get(format)
+    if printer is None:
         raise ValueError(f"Unsupported format: {format}")
+    return printer(settings=extra or None)
 
 
 def render_expression(

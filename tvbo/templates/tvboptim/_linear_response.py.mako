@@ -3,6 +3,14 @@
 
     Resolution — the symbolic per-node RHS / Jacobians and the state/coupling/parameter layout — comes from tvbo.analysis.linear_response.linear_response_context (Python). These <%def>s emit only the code STRUCTURE, rendering each symbolic entry via render_expression, so the same metadata prints to any backend (a Julia partial would emit Julia). No Python string-emit. `ctx` is the linear_response_context dict.
 </%doc>\
+<%!
+from tvbo.codegen import render_expression
+
+
+def _jc(ctx, expr):
+    """One symbolic entry printed as JAX against the context's symbol table."""
+    return render_expression(expr, format='jax', parameters=ctx['syms'])
+%>\
 <%def name="lr_node_unpack(ctx)">\
 <%doc>
     Per-node unpack: state from `s`, coupling from `c`, parameters from the bunch `p_` (heterogeneous per-node params gathered by the traced node index `_i`).
@@ -21,25 +29,27 @@
 % endif
 % endfor
 </%def>\
+<%def name="lr_network_inputs(ctx)">\
+<%doc>
+    The network a per-node function is vmapped over: weights `_W`, state `_X`, node count `_N`, and the long-range coupling `_C`, one row per coupling input. Every coupling input reads the same connectome matvec of the source state, so it is computed once and broadcast to the rows.
+</%doc>\
+    _W = jnp.asarray(weights); _X = jnp.asarray(x); _N = _W.shape[0]
+% if ctx['n_cpl']:
+    _C = jnp.broadcast_to(_W @ _X[${ctx['src_k']}], (${ctx['n_cpl']}, _N))
+% else:
+    _C = jnp.zeros((0, _N))
+% endif
+</%def>\
 <%def name="lr_vf(ctx, name='_lr_vf')">\
 <%doc>
     Deterministic network vector field dy/dt = f(y): per-node RHS vmapped over nodes, long-range coupling = connectome matvec. Settling it gives the operating point.
 </%doc>\
-<%
-    from tvbo.codegen import render_expression
-    _jc = lambda e: render_expression(e, format='jax', parameters=ctx['syms'])
-%>\
 def ${name}_node(s, c, p_, _i):
 ${self.lr_node_unpack(ctx)}\
-    return jnp.array([${', '.join(_jc(e) for e in ctx['rhs'])}])
+    return jnp.array([${', '.join(_jc(ctx, e) for e in ctx['rhs'])}])
 
 def ${name}(x, weights, p):
-    _W = jnp.asarray(weights); _X = jnp.asarray(x); _N = _W.shape[0]
-% if ctx['n_cpl']:
-    _C = jnp.stack([_W @ _X[${ctx['src_k']}] for _ in range(${ctx['n_cpl']})])
-% else:
-    _C = jnp.zeros((0, _N))
-% endif
+${self.lr_network_inputs(ctx)}\
     _F = jax.vmap(lambda i: ${name}_node(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))
     return _F.T
 </%def>\
@@ -48,10 +58,8 @@ def ${name}(x, weights, p):
     Network Jacobian A at an operating point x: per-node local block ∂f/∂state (Jloc) on the block-diagonal + coupling block ∂f/∂coupling (Jcpl) scattered by the connectome.
 </%doc>\
 <%
-    from tvbo.codegen import render_expression
-    _jc = lambda e: render_expression(e, format='jax', parameters=ctx['syms'])
     n_sv, n_cpl, src_k = ctx['n_sv'], ctx['n_cpl'], ctx['src_k']
-    _mat = lambda M, ncol: '[' + ', '.join('[' + ', '.join(_jc(M[k, l]) for l in range(ncol)) + ']' for k in range(n_sv)) + ']'
+    _mat = lambda M, ncol: '[' + ', '.join('[' + ', '.join(_jc(ctx, M[k, l]) for l in range(ncol)) + ']' for k in range(n_sv)) + ']'
 %>\
 def ${name}_jloc(s, c, p_, _i):
 ${self.lr_node_unpack(ctx)}\
@@ -64,12 +72,7 @@ ${self.lr_node_unpack(ctx)}\
 % endif
 
 def ${name}(x, weights, p):
-    _W = jnp.asarray(weights); _X = jnp.asarray(x); _N = _W.shape[0]
-% if n_cpl:
-    _C = jnp.stack([_W @ _X[${src_k}] for _ in range(${n_cpl})])
-% else:
-    _C = jnp.zeros((0, _N))
-% endif
+${self.lr_network_inputs(ctx)}\
     _Jl = jax.vmap(lambda i: ${name}_jloc(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))
 % if n_cpl:
     _Jc = jax.vmap(lambda i: ${name}_jcpl(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))
@@ -85,43 +88,38 @@ def ${name}(x, weights, p):
 % endfor
     return _A
 </%def>\
+<%def name="lr_fixed_point(out, p, vf, jac, dt, n_settle, n_newton, prefix='_lr_', ind='')">\
+<%doc>
+    Settle the noise-free vector field `vf` from `_lr_x0` under the parameters `p` and bind the result to `out`, then polish it with `n_newton` Newton steps on the symbolic Jacobian `jac` (none when `n_newton` is 0). The settle reaches the right basin; Newton removes its O(dt) residual, so the fixed point matches an fsolve solve, which matters near a bifurcation and under stimulus, where the covariance and Fisher information are sensitive to sub-percent error in it. `prefix` names the emitted step functions and `ind` is the caller's indentation.
+</%doc>\
+${ind}def ${prefix}settle(_x, _):
+${ind}    return _x + ${dt} * ${vf}(_x, _lr_weights, ${p}), None
+${ind}${out} = jax.lax.scan(${prefix}settle, _lr_x0, None, length=${n_settle})[0]
+% if n_newton:
+${ind}def ${prefix}newton(_x, _):
+${ind}    _f = ${vf}(_x, _lr_weights, ${p})
+${ind}    _J = ${jac}(_x, _lr_weights, ${p})
+${ind}    return _x - jnp.linalg.solve(_J, _f.reshape(-1)).reshape(_x.shape), None
+${ind}${out} = jax.lax.scan(${prefix}newton, ${out}, None, length=${n_newton})[0]
+% endif
+</%def>\
 <%def name="lr_operating_point(ctx, dt=0.1, n_settle=200000, n_newton=8, vf='_lr_vf', jac='_lr_jacobian', time_scale=1.0e-3)">\
 <%doc>
     Operating point: settle the noise-free vector field to the deterministic fixed point and linearise (Jacobian A). Emitted ONCE — the covariance/psd/fisher observables below are all linear-algebra solves on this shared A, so the FP settle and eig assembly run a single time. Binds _lr_fp (fixed point) and _lr_A (Jacobian) using _lr_weights/_lr_params/_lr_x0 (set by the caller). Reuses the module-level ${vf}/${jac}. The Jacobian carries the model's native rate units (per-ms by convention); rescaling it to per-second HERE (once) makes every downstream quantity — stationary covariance, power spectrum (Hz), Fisher information — physical, rather than each observable re-deriving the unit conversion. `time_scale` is seconds per model time unit (from integration.unit), so this is metadata-driven, not hardcoded.
 </%doc>\
-def _lr_settle(_x, _):
-    return _x + ${dt} * ${vf}(_x, _lr_weights, _lr_params), None
-_lr_fp = jax.lax.scan(_lr_settle, _lr_x0, None, length=${n_settle})[0]
-def _lr_newton(_x, _):
-    """One Newton step onto the exact fixed point, reusing the symbolic Jacobian.
-
-    The settle above reaches the right basin; Newton removes its O(dt) residual so the operating point matches an fsolve solve — which matters near a bifurcation and under stimulus, where the covariance and Fisher information are sensitive to sub-percent error in it.
-    """
-    _f = ${vf}(_x, _lr_weights, _lr_params)
-    _J = ${jac}(_x, _lr_weights, _lr_params)
-    return _x - jnp.linalg.solve(_J, _f.reshape(-1)).reshape(_x.shape), None
-_lr_fp = jax.lax.scan(_lr_newton, _lr_fp, None, length=${n_newton})[0]
+${self.lr_fixed_point('_lr_fp', '_lr_params', vf, jac, dt, n_settle, n_newton)}\
 _lr_A = ${jac}(_lr_fp, _lr_weights, _lr_params) / ${time_scale}   # per-(model time unit) -> per-second
 </%def>\
 <%def name="lr_constraint_fn(ctx, name, expr)">\
 <%doc>
     A derived-variable expression (e.g. the FIC constraint variable I_E) as a per-node function of (state, network coupling, params) — same structure/symbols as the vector field, but returning the scalar quantity per node. Used to form the constraint residual of a constraint-defined operating point. `expr` is the unfolded sympy expression from linear_response.constraint_expr.
 </%doc>\
-<%
-    from tvbo.codegen import render_expression
-    _jc = lambda e: render_expression(e, format='jax', parameters=ctx['syms'])
-%>\
 def ${name}_node(s, c, p_, _i):
 ${self.lr_node_unpack(ctx)}\
-    return ${_jc(expr)}
+    return ${_jc(ctx, expr)}
 
 def ${name}(x, weights, p):
-    _W = jnp.asarray(weights); _X = jnp.asarray(x); _N = _W.shape[0]
-% if ctx['n_cpl']:
-    _C = jnp.stack([_W @ _X[${ctx['src_k']}] for _ in range(${ctx['n_cpl']})])
-% else:
-    _C = jnp.zeros((0, _N))
-% endif
+${self.lr_network_inputs(ctx)}\
     return jax.vmap(lambda i: ${name}_node(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))
 </%def>\
 <%def name="lr_constrained_operating_point(ctx, free_param, constraint_fn, target, dt=0.1, n_settle=200000, n_newton=15, vf='_lr_vf', jac='_lr_jacobian', time_scale=1.0e-3)">\
@@ -129,9 +127,7 @@ def ${name}(x, weights, p):
     Constraint-defined operating point (Deco FIC — the paper's fsolve on the steady-state, NOT a stochastic tuning loop). Solve the EXTENDED system for (state, free_param) simultaneously: f(state; theta) = 0                       (n_sv·N deterministic fixed-point equations) constraint(state; theta) - target = 0     (N equations, e.g. I_E = target) by Newton with an autodiff Jacobian (exact, backend-agnostic) — reusing ${vf}/${jac}/${constraint_fn}. Warm-start the state from a noise-off settle at the default free-param value. Binds _lr_fp (state) and rebinds _lr_params with the solved free_param, so the covariance/psd/fisher below linearise at the tuned operating point with NO change. Vmaps across a parameter sweep (each cell solves in ms).
 </%doc>\
 <% n_sv = ctx['n_sv'] %>\
-def _lr_csettle(_x, _):
-    return _x + ${dt} * ${vf}(_x, _lr_weights, _lr_params), None
-_lr_s0 = jax.lax.scan(_lr_csettle, _lr_x0, None, length=${n_settle})[0]
+${self.lr_fixed_point('_lr_s0', '_lr_params', vf, jac, dt, n_settle, 0, prefix='_lr_c')}\
 _lr_N = _lr_weights.shape[0]
 _lr_theta0 = jnp.broadcast_to(jnp.asarray(getattr(_lr_params, '${free_param}')), (_lr_N,))
 def _lr_cresidual(_z):
@@ -164,27 +160,20 @@ _lr_A = ${jac}(_lr_fp, _lr_weights, _lr_params) / ${time_scale}
     The observation row H = ∂y/∂x of a declared observable y, per node, scattered into an (N, n_sv·N) matrix the same way the coupling Jacobian is. Lets the linear response be read out through any declared cascade (a BOLD signal, a firing rate) instead of stopping at the state vector — the covariance of y is then H Σ Hᵀ.
 </%doc>\
 <%
-    from tvbo.codegen import render_expression
-    _jc = lambda e: render_expression(e, format='jax', parameters=ctx['syms'])
     n_sv, n_cpl, src_k = ctx['n_sv'], ctx['n_cpl'], ctx['src_k']
 %>\
 def ${name}_hloc(s, c, p_, _i):
 ${self.lr_node_unpack(ctx)}\
-    return jnp.array([${', '.join(_jc(terms['Hloc'][0, l]) for l in range(n_sv))}])
+    return jnp.array([${', '.join(_jc(ctx, terms['Hloc'][0, l]) for l in range(n_sv))}])
 % if n_cpl:
 
 def ${name}_hcpl(s, c, p_, _i):
 ${self.lr_node_unpack(ctx)}\
-    return jnp.array([${', '.join(_jc(terms['Hcpl'][0, cix]) for cix in range(n_cpl))}])
+    return jnp.array([${', '.join(_jc(ctx, terms['Hcpl'][0, cix]) for cix in range(n_cpl))}])
 % endif
 
 def ${name}(x, weights, p):
-    _W = jnp.asarray(weights); _X = jnp.asarray(x); _N = _W.shape[0]
-% if n_cpl:
-    _C = jnp.stack([_W @ _X[${src_k}] for _ in range(${n_cpl})])
-% else:
-    _C = jnp.zeros((0, _N))
-% endif
+${self.lr_network_inputs(ctx)}\
     _Hl = jax.vmap(lambda i: ${name}_hloc(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))
 % if n_cpl:
     _Hc = jax.vmap(lambda i: ${name}_hcpl(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))
@@ -198,21 +187,28 @@ def ${name}(x, weights, p):
 % endfor
     return _H
 </%def>\
+<%def name="lr_lyapunov(A, Q, ind='    ')">\
+<%doc>
+    The continuous Lyapunov solve A S + S Aᵀ + Q = 0 by eigendecomposition, S = V M Vᴴ with M = -(V⁻¹QV⁻ᴴ)/(λᵢ+λ̄ⱼ): backend-independent (jnp.linalg.eig/inv), no scipy. Binds the eigenvalues `_lam`, which a caller's Hurwitz guard reads, and the full stationary state covariance `_S`, at the caller's indentation `ind`.
+</%doc>\
+${ind}_lam, _V = jnp.linalg.eig(${A})
+${ind}_Vi = jnp.linalg.inv(_V)
+${ind}_M = -(_Vi @ ${Q}.astype(_V.dtype) @ _Vi.conj().T) / (_lam[:, None] + jnp.conj(_lam)[None, :])
+${ind}_S = (_V @ _M @ _V.conj().T).real
+</%def>\
 <%def name="lr_covariance(ctx, name, sigma, return_='covariance', obs_fn=None)">\
 <%doc>
-    Continuous Lyapunov Σ solve on the shared A (Deco 2014 Fig 5, Eq 24): A Σ + Σ Aᵀ + Q = 0, by eigendecomposition Σ = V M Vᴴ, M = -(V⁻¹QV⁻ᴴ)/(λᵢ+λ̄ⱼ) — backend-independent (jnp.linalg.eig/inv), no scipy. Returns the covariance of the DECLARED observable: the first state block by default (Deco's excitatory gating), otherwise H Σ Hᵀ through the observation row. A stationary covariance exists only when A is Hurwitz (all eigenvalues in the left half-plane); past a bifurcation the operating point is unstable, so the result is masked to NaN (jittable guard, survives vmap over a grid) rather than returning a meaningless non-PSD matrix.
+    Continuous Lyapunov Σ solve on the shared A (Deco 2014 Fig 5, Eq 24): A Σ + Σ Aᵀ + Q = 0, through lr_lyapunov. Returns the covariance of the DECLARED observable: the first state block by default (Deco's excitatory gating), otherwise H Σ Hᵀ through the observation row. A stationary covariance exists only when A is Hurwitz (all eigenvalues in the left half-plane); past a bifurcation the operating point is unstable, so the result is masked to NaN (jittable guard, survives vmap over a grid) rather than returning a meaningless non-PSD matrix.
 </%doc>\
 def ${name}(A):
     _n = A.shape[0]; _N = _n // ${ctx['n_sv']}
 ${self.lr_noise_matrix(ctx, sigma)}\
-    _lam, _V = jnp.linalg.eig(A)
-    _Vi = jnp.linalg.inv(_V)
-    _M = -(_Vi @ _Q.astype(_V.dtype) @ _Vi.conj().T) / (_lam[:, None] + jnp.conj(_lam)[None, :])
+${self.lr_lyapunov('A', '_Q')}\
 % if obs_fn:
     _H = ${obs_fn}(_lr_fp, _lr_weights, _lr_params)
-    _P = _H @ (_V @ _M @ _V.conj().T).real @ _H.T
+    _P = _H @ _S @ _H.T
 % else:
-    _P = (_V @ _M @ _V.conj().T).real[:_N, :_N]
+    _P = _S[:_N, :_N]
 % endif
     _P = jnp.where(jnp.max(_lam.real) < 0.0, _P, jnp.nan)   # no stationary covariance if A not Hurwitz
 % if return_ == 'correlation':
@@ -249,19 +245,11 @@ def ${name}():
     _base = jnp.broadcast_to(jnp.asarray(getattr(_lr_params, '${stim_var}')), (_N,))
     def _moments(_dI):
         _p = Bunch({**_lr_params, '${stim_var}': _base + _dI * _mask})   # stimulus as per-node input
-        def _settle(_x, _):
-            return _x + ${dt} * ${vf}(_x, _lr_weights, _p), None
-        _fp = jax.lax.scan(_settle, _lr_x0, None, length=${n_settle})[0]
-        def _newton(_x, _):                                             # polish to the exact stimulated FP
-            _f = ${vf}(_x, _lr_weights, _p)
-            _J = ${jac}(_x, _lr_weights, _p)
-            return _x - jnp.linalg.solve(_J, _f.reshape(-1)).reshape(_x.shape), None
-        _fp = jax.lax.scan(_newton, _fp, None, length=${n_newton})[0]
+${self.lr_fixed_point('_fp', '_p', vf, jac, dt, n_settle, n_newton, prefix='_', ind=' ' * 8)}\
         _A = ${jac}(_fp, _lr_weights, _p) / ${time_scale}               # per-second Jacobian at ΔI
-        _lam, _V = jnp.linalg.eig(_A); _Vi = jnp.linalg.inv(_V)
         _Qn = (${sigma} ** 2) * jnp.eye(_A.shape[0])
-        _M = -(_Vi @ _Qn.astype(_V.dtype) @ _Vi.conj().T) / (_lam[:, None] + jnp.conj(_lam)[None, :])
-        _P = (_V @ _M @ _V.conj().T).real[:_N, :_N]                      # excitatory covariance
+${self.lr_lyapunov('_A', '_Qn', ' ' * 8)}\
+        _P = _S[:_N, :_N]                                               # excitatory covariance
 % if profile_fn:
         return _fp[0], _P, ${profile_fn}(_fp, _lr_weights, _p)          # μ = S_e block, P, evoked profile
 % else:

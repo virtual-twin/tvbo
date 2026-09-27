@@ -7,7 +7,6 @@ Split out of [`DynamicsBehaviour`](dynamics.qmd) only to keep one file readable;
 
 from __future__ import annotations
 
-import copy as _copy
 import os
 from os.path import basename, dirname, join, splitext
 from typing import TYPE_CHECKING
@@ -15,7 +14,11 @@ from typing import TYPE_CHECKING
 import numpy as np
 from sympy import Eq, Symbol
 
+from tvbo.behaviour._runtime import Catalogued, Copyable
+
 if TYPE_CHECKING:
+    import owlready2
+
     from tvbo.datamodel.schema import Dynamics
 
 
@@ -40,26 +43,23 @@ expression = _Lazy("tvbo.parse.expression")
 model_helpers = _Lazy("tvbo.classes.dynamics")
 nx = _Lazy("networkx")
 ontology = _Lazy("tvbo.ontology.owl")
-owlready2 = _Lazy("owlready2")
 perturbation = _Lazy("tvbo.classes.perturbation")
 plt = _Lazy("matplotlib.pyplot")
 query = _Lazy("tvbo.ontology.query")
 report = _Lazy("tvbo.utils.report")
 templater = _Lazy("tvbo.codegen.templater")
 templates = _Lazy("tvbo.templates")
-tvbo_datamodel = _Lazy("tvbo.datamodel.schema")
 utils = _Lazy("tvbo.utils")
 yaml_loader = _Lazy("tvbo.utils.yaml_loader")
 _equation_mod = _Lazy("tvbo.classes.equation")
-_pdm = _Lazy("tvbo.datamodel.pydantic")
 
 
-class DynamicsRuntime:
+class DynamicsRuntime(Catalogued, Copyable):
     """Construction, code generation, simulation, plotting and reporting for a model."""
 
     # Factory constructors
     @classmethod
-    def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics):
+    def from_datamodel(cls, model_meta: Dynamics):
         """Create from a datamodel Dynamics instance by copying its already-normalized state (avoids ``_as_dict`` re-init crash on ``inlined_as_dict`` fields)."""
         inst = cls.__new__(cls)
         inst.__dict__.update(model_meta.__dict__)
@@ -94,9 +94,7 @@ class DynamicsRuntime:
         Returns:
             The instance parsed from the file.
         """
-        data = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str(path)))
-        model_helpers._resolve_dynamics_aliases(data)
-        return cls(**data)
+        return cls(**yaml_loader.strip_envelope(yaml_loader.load_as_dict(str(path))))
 
     @classmethod
     def from_string(cls, str: str) -> Dynamics:
@@ -108,9 +106,7 @@ class DynamicsRuntime:
         Returns:
             The instance parsed from the string.
         """
-        data = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str)) or {}
-        model_helpers._resolve_dynamics_aliases(data)
-        return cls(**data)
+        return cls(**(yaml_loader.strip_envelope(yaml_loader.load_as_dict(str)) or {}))
 
     # ── Platform retrieval ────────────────────────────────────────
 
@@ -196,13 +192,6 @@ class DynamicsRuntime:
 
         data = from_pyrates_yaml(path, operator_key=operator_key)
         return cls(**data)
-
-    @classmethod
-    def from_db(cls, name: str) -> Dynamics:
-        """Load a Dynamics model by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("Dynamics", name)))
 
     @classmethod
     def list_db(cls, model_type: str | None = None) -> list[str]:
@@ -1891,57 +1880,3 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
 
         with open(join(opath, f"{self.name}." + extension), "w") as f:
             f.write(self.generate_report(format=format))
-
-    def copy(self, **overrides) -> Dynamics:
-        """Return a deep copy of this experiment.
-
-        Use keyword overrides to set attributes on the returned copy.
-
-        Errors are not swallowed; if a field can't be copied, an exception is raised.
-        """
-        new_obj = _copy.deepcopy(self)
-        for k, v in overrides.items():
-            setattr(new_obj, k, v)
-        return new_obj
-
-    def __copy__(self):
-        """A shallow copy, through the generated form's own protocol where it has one.
-
-        Pydantic implements the copy hooks itself and ``model_copy()`` routes through them, so building a clone with ``cls.__new__`` leaves ``__pydantic_extra__`` unset and the first assignment raises. The LinkML dataclasses have no hook, hence the manual path.
-        """
-        inherited = getattr(super(), "__copy__", None)
-        if inherited is not None:
-            return inherited()
-        cls = self.__class__
-        clone = cls.__new__(cls)
-        for k, v in self.__dict__.items():
-            setattr(clone, k, v)
-        return clone
-
-    def __deepcopy__(self, memo):
-        """A deep copy, through the generated form's own protocol where it has one.
-
-        See [`__copy__`](#__copy__): reconstructing a Pydantic model by hand is what its own hook exists to avoid.
-        """
-        import dataclasses
-
-        inherited = getattr(super(), "__deepcopy__", None)
-        if inherited is not None:
-            return inherited(memo)
-
-        cls = self.__class__
-        # For dataclasses, we need to copy all fields, not just __dict__ __dict__ may not include fields that are still at their default values
-        data = {}
-        if dataclasses.is_dataclass(self):
-            for field in dataclasses.fields(self):
-                value = getattr(self, field.name, None)
-                data[field.name] = _copy.deepcopy(value, memo)
-        else:
-            # Fallback for non-dataclass
-            for k, v in self.__dict__.items():
-                data[k] = _copy.deepcopy(v, memo)
-
-        # Create clone using proper constructor to ensure all defaults are set
-        clone = cls(**data)
-        memo[id(self)] = clone
-        return clone

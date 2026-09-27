@@ -13,8 +13,10 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
+    from tvbo.analysis.bifurcation import BifurcationResult
     from tvbo.classes.experiment import SimulationExperiment
 
+from tvbo.adapters.smallscale.lowering import node_dynamics_name
 from tvbo.templates.base.utils import (
     collect_param_distributions,
     collect_sv_distributions,
@@ -113,8 +115,7 @@ def require_edge_attributes(network, backend: str, needs) -> None:
 class BaseAdapter:
     """Base class for backend adapters.
 
-    Provides shared metadata processing that all code-generation backends need:
-    dynamics library, node-dynamics mapping, coupling resolution, graph info, initial state parsing, etc.
+    Provides shared metadata processing that all code-generation backends need: dynamics library, node-dynamics mapping, coupling resolution, graph info, initial state parsing, etc.
 
     A backend states what makes it different — its `TEMPLATE`, and a `prepare_context` override where the shared context will not do — rather than restating how rendering works. `render_code` is inherited from here by every adapter that renders one template from one context.
     """
@@ -122,9 +123,7 @@ class BaseAdapter:
     TEMPLATE: str = ""
     """The Mako template this backend renders, relative to the template lookup root.
 
-    Declaring it is what lets `render_code` be inherited. An adapter that renders more
-    than one template — NeuroML picks between four by what the dynamics declares — states
-    that choice in its own `render_code` instead.
+    Declaring it is what lets `render_code` be inherited. An adapter that renders more than one template — NeuroML picks between four by what the dynamics declares — states that choice in its own `render_code` instead.
     """
 
     REQUIRED_EDGE_ATTRIBUTES: tuple[str, ...] = ("weight",)
@@ -143,8 +142,25 @@ class BaseAdapter:
             **kwargs: Extra context, overriding the prepared context per key.
 
         Returns:
-            The rendered source, unformatted — normalising is the caller's step, and the
-            backends whose output is not Python have nothing to normalise it with.
+            The rendered source, unformatted — normalising is the caller's step, and the backends whose output is not Python have nothing to normalise it with.
+
+        Raises:
+            NotImplementedError: If the adapter declares no `TEMPLATE`.
+        """
+        return self.render_template(self.render_context(**kwargs))
+
+    def render_context(self, **kwargs) -> dict:
+        """The context `render_code` renders: `prepare_context`, overridden per key by *kwargs*, once `refuse_unrenderable` has passed the declaration.
+
+        A backend that runs the source it renders reads the result layout off this same context rather than preparing a second one.
+        """
+        self.refuse_unrenderable()
+        context = self.prepare_context()
+        context.update(kwargs)
+        return context
+
+    def render_template(self, context: dict) -> str:
+        """`TEMPLATE` rendered with *context*.
 
         Raises:
             NotImplementedError: If the adapter declares no `TEMPLATE`.
@@ -156,9 +172,6 @@ class BaseAdapter:
                 f"{type(self).__name__} declares no TEMPLATE. Set one, or override "
                 "render_code where the backend chooses its template per experiment."
             )
-        self.refuse_unrenderable()
-        context = self.prepare_context()
-        context.update(kwargs)
         return templates.lookup.get_template(self.TEMPLATE).render(**context)
 
     # ── Dynamics library ─────────────────────────────────────────────────
@@ -192,13 +205,7 @@ class BaseAdapter:
         model = exp.dynamics
         default_name = model.name if model else None
         nodes = getattr(exp.network, "nodes", None) or []
-        mapping = {}
-        for node in nodes:
-            dyn_name = None
-            if hasattr(node, "dynamics") and node.dynamics:
-                dyn_name = str(node.dynamics)
-            mapping[node.id] = dyn_name or default_name
-        return mapping
+        return {node.id: node_dynamics_name(node, default_name) for node in nodes}
 
     def is_heterogeneous(
         self,
@@ -222,8 +229,6 @@ class BaseAdapter:
 
         The one place a backend asks what couplings an experiment has, so that a template never derives it: a template that reads the model itself is a second answer to a question this class already answers, and the two drift. A backend needing them keyed differently overrides this and calls up — see ``TvboptimAdapter``.
         """
-        from tvbo.utils import network_couplings
-
         return OrderedDict(network_couplings(getattr(self.experiment, "network", None)))
 
     def get_default_coupling(self, all_couplings: OrderedDict | None = None):
@@ -278,9 +283,7 @@ class BaseAdapter:
     @staticmethod
     def is_stochastic_dynamics(dynamics_dict: OrderedDict) -> bool:
         """Detect a stochastic system: any state variable with a positive noise amplitude."""
-        return any(
-            BaseAdapter.get_noise_sigmas(dyn) and max(BaseAdapter.get_noise_sigmas(dyn)) > 0 for dyn in dynamics_dict.values()
-        )
+        return any(max(BaseAdapter.get_noise_sigmas(dyn), default=0.0) > 0 for dyn in dynamics_dict.values())
 
     # ── Graph / network ──────────────────────────────────────────────────
 
@@ -493,8 +496,7 @@ class BaseAdapter:
     def collect_events(self) -> list:
         """Collect all events from experiment, nodes, and edges.
 
-        Returns a list of (event, source) tuples where source is one of:
-        'experiment', 'node:{id}', 'edge:{idx}'.
+        Returns a list of (event, source) tuples where source is one of: 'experiment', 'node:{id}', 'edge:{idx}'.
         """
         exp = self.experiment
         events = []
@@ -561,6 +563,7 @@ class BaseAdapter:
 
         network_info = self.get_network_info()
         integration_info = self.get_integration_info()
+        dt = integration_info["dt"]
 
         is_hetero = self.is_heterogeneous(dynamics_dict, node_dynamics_map)
         is_stoch = self.is_stochastic_dynamics(dynamics_dict)
@@ -586,7 +589,7 @@ class BaseAdapter:
 
         # Vertex derived-variable names (union across all dynamics)
         vertex_dv_names = []
-        for dyn in [*dynamics_dict.values(), model]:
+        for dyn in dynamics_dict.values():
             for dv_name in dyn.in_dependency_order("derived_variables"):
                 if str(dv_name) not in vertex_dv_names:
                     vertex_dv_names.append(str(dv_name))
@@ -595,9 +598,7 @@ class BaseAdapter:
         import re
 
         tstops = set()
-        for dyn in list(dynamics_dict.values()) + [model]:
-            if not dyn:
-                continue
+        for dyn in dynamics_dict.values():
             for dv in (dyn.derived_variables).values():
                 for branch in getattr(dv.equation, "conditionals", None) or []:
                     cond = getattr(branch, "condition", "") or ""
@@ -644,14 +645,15 @@ class BaseAdapter:
             "is_heterogeneous": is_hetero,
             "is_stochastic": is_stoch,
             # Integration
-            "dt": integration_info["dt"],
+            "dt": dt,
             "duration": integration_info["duration"],
             "transient_time": integration_info["transient_time"],
             "total_duration": integration_info["total_duration"],
             "n_transient": integration_info["n_transient"],
             "n_measured": integration_info["n_measured"],
             "solver_method": integration_info["method"],
-            "fixed_step": self.is_fixed_step(integration_info["method"]),
+            # The step and save keywords of a DifferentialEquations.jl `solve` call, which refuses a fixed-step method without `dt`.
+            "solve_kwargs": f"dt={dt}, saveat={dt}" if self.is_fixed_step(integration_info["method"]) else f"saveat={dt}",
             "needs_stiff": ("auto" in str(integration_info["method"]).lower()),
             # Graph
             "needs_weighted": network_info["has_edge_matrix"],
@@ -681,9 +683,9 @@ class BaseAdapter:
 
 
 class ContinuationAdapter(BaseAdapter):
-    """A backend that renders one continuation at a time.
+    """A backend that renders and runs one continuation at a time.
 
-    The bifurcation backends do not render a whole experiment: they take a `(dynamics, continuation)` pair, once per continuation the experiment declares. Each resolved that pair the same way, in three copies of the same twelve lines — so the resolution lives here and a backend states only what it does with the result.
+    The bifurcation backends do not render a whole experiment: they take a `(dynamics, continuation)` pair, once per continuation the experiment declares. This class resolves each pair, runs every one the experiment declares, and renders a pair through `TEMPLATE`, so a backend states only what it does with one resolved pair: `run_one`, and the context `_prepare_context` gives its template or a `render_continuation` of its own.
     """
 
     def continuations(self) -> dict:
@@ -719,3 +721,45 @@ class ContinuationAdapter(BaseAdapter):
         if experiment.dynamics is not None:
             return experiment.dynamics
         raise ValueError(f"Cannot resolve dynamics for continuation {continuation!r}.")
+
+    def run(self, **kwargs) -> BifurcationResult | dict[str, BifurcationResult]:
+        """Run every continuation the experiment declares, each through `run_one` on the dynamics `resolve_dynamics` finds for it.
+
+        Args:
+            **kwargs: Forwarded to every `run_one`.
+
+        Returns:
+            The one result when the experiment declares one continuation, else every result keyed by continuation name.
+
+        Raises:
+            ValueError: If the experiment declares no continuation.
+        """
+        continuations = self.continuations()
+        if not continuations:
+            raise ValueError(
+                "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
+            )
+        results = {
+            name: self.run_one(self.resolve_dynamics(cont), cont, name, **kwargs) for name, cont in continuations.items()
+        }
+        return next(iter(results.values())) if len(results) == 1 else results
+
+    def run_one(self, model, continuation, name: str, **kwargs) -> BifurcationResult:
+        """Run *continuation* on *model*; *name* is the key `run` files the result under."""
+        raise NotImplementedError(f"{type(self).__name__} runs no continuation.")
+
+    def render_code(self, model=None, continuation=None, **kwargs) -> str:
+        """This backend's source for one continuation.
+
+        *model* defaults to the experiment's own dynamics, whatever dynamics the continuation names, and *continuation* to the experiment's first; *kwargs* is extra context for `render_continuation`.
+        """
+        return self.render_continuation(model or self.experiment.dynamics, self.resolve_continuation(continuation), **kwargs)
+
+    def render_continuation(self, model, continuation, **kwargs) -> str:
+        """The source for *continuation* on *model*, both already resolved: `TEMPLATE` rendered with `_prepare_context`."""
+        return self.render_template(self._prepare_context(model, continuation, **kwargs))
+
+    @staticmethod
+    def _prepare_context(model, continuation, **kwargs) -> dict:
+        """The template context for *continuation* on *model*: the pair, and *kwargs* as extra context."""
+        return {"model": model, "continuation": continuation, **kwargs}
