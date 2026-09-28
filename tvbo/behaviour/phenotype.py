@@ -15,10 +15,10 @@ from pathlib import Path
 
 import numpy as np
 
-from tvbo.behaviour._runtime import Catalogued, RuntimeAttributes
+from tvbo.behaviour._runtime import RuntimeAttributes, YamlDocument
 
 
-class PhenotypeBehaviour(Catalogued, RuntimeAttributes):
+class PhenotypeBehaviour(YamlDocument, RuntimeAttributes):
     """A cohort's per-subject phenotype scores, on both generated forms.
 
     The record is the YAML-side descriptor — subjects, measure names, provenance, optional Cognitive Atlas IRIs via ``measure_specs`` — and the values live in an h5 companion beside it, ``measures/<measure>`` as a 1-D array of ``len(subjects)``, read on first use through :attr:`values`. BIDS-aligned with the ``phenotype/`` directory standard.

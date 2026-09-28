@@ -1,6 +1,6 @@
 """One integration method, one canonical name, whatever the recipe spells it.
 
-The schema advertises ``rk4`` as a method (``Integrator.method``: "Integration method (euler, heun, rk4, etc.)"), and the tvboptim adapter accepted it, so recipes wrote it and ran. The ontology that holds the method's symbolic update expression knew only ``RungeKutta4thOrder``, so the same recipe rendered on tvboptim and died in the tvb template on ``'NoneType' object has no attribute 'equation'`` — the spelling had left ``update_expression`` unfilled three layers up, and nothing on the way down said so.
+Recipes write ``rk4`` as a method, and the tvboptim adapter accepted it, so they ran. The ontology that holds the method's symbolic update expression knew only ``RungeKutta4thOrder``, so the same recipe rendered on tvboptim and died in the tvb template on ``'NoneType' object has no attribute 'equation'`` — the spelling had left ``update_expression`` unfilled three layers up, and nothing on the way down said so.
 
 The spellings were also written out five separate times: once in the adapter and once in each of four mako templates, disagreeing about which they accepted, and two of them resolving an unknown method to ``Euler`` — silently integrating a fourth-order recipe by a first-order scheme. So the table is now one table, and a miss raises.
 """

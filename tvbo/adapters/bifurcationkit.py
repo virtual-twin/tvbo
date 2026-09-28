@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tvbo.adapters.base import ContinuationAdapter
-from tvbo.adapters.julia_model import build_model_context
+from tvbo.adapters.julia_model import build_model_context, julia_solver
 
 if TYPE_CHECKING:
     from tvbo.analysis.bifurcation import BifurcationResult
@@ -78,6 +78,19 @@ def _get_option(obj, name):
     return None
 
 
+def _julia_solver(method):
+    """The DifferentialEquations.jl solver a declared `Solver.method` names (`julia_solver`), or ``None`` where none is declared."""
+    method = _str(method)
+    return julia_solver(method) if method else None
+
+
+def _julia_ordinal(index):
+    """A `source_point` index as a Julia index into the special points of its kind — ``3``, ``end``, ``end-1`` — or ``None`` for every point."""
+    if index is None:
+        return None
+    return str(index) if index > 0 else "end" if index == -1 else f"end{index + 1}"
+
+
 def _cont_kwargs(c):
     """Build list of 'jl_key = value' strings from a Continuation object."""
     args = []
@@ -95,9 +108,9 @@ def _newton_kwargs(c):
     args = []
     if c is None:
         return args
-    if c.newton_tol is not None:
+    if getattr(c, "newton_tol", None) is not None:
         args.append(f"tol = {c.newton_tol}")
-    if c.newton_max_iterations is not None:
+    if getattr(c, "newton_max_iterations", None) is not None:
         args.append(f"max_iterations = {c.newton_max_iterations}")
     return args
 
@@ -152,7 +165,6 @@ class BifurcationKitAdapter(ContinuationAdapter):
         ctx["ICS"] = ICS
         ctx["p_min"] = p_min
         ctx["p_max"] = p_max
-        ctx["p_start"] = p_default
 
         # -- Model function, and what each continuation step records --
         mc = build_model_context(model, ctx["network"], constraints=ctx["constraints"])
@@ -171,7 +183,7 @@ class BifurcationKitAdapter(ContinuationAdapter):
 
         iss = (cont.initial_state if cont else None) or InitialState()
         ctx["iss_duration"] = _get(iss, "duration")
-        ctx["iss_solver"] = _str(_get(iss, "solver.method"))
+        ctx["iss_solver"] = _julia_solver(_get(iss, "solver.method"))
         ctx["iss_atol"] = _get(iss, "abs_tol")
         ctx["iss_rtol"] = _get(iss, "rel_tol")
 
@@ -203,18 +215,18 @@ class BifurcationKitAdapter(ContinuationAdapter):
             br_raw = cont.branches
             branches_raw = list(br_raw.values()) if isinstance(br_raw, dict) else list(br_raw)
 
-        # Separate PO branches from codim-2 branches
         po_branches = []
         codim2_branches = []
         for b in branches_raw:
-            bc = getattr(b, "continuation", None)
-            has_fp2 = bc and getattr(bc, "free_parameters", None)
-            if has_fp2:
+            if BifurcationKitAdapter.is_codim2(b, cont):
                 codim2_branches.append(BifurcationKitAdapter._prepare_codim2_branch(b, cont))
             else:
                 po_branches.append(BifurcationKitAdapter._prepare_branch(b))
         ctx["branches"] = po_branches
         ctx["codim2_branches"] = codim2_branches
+        # BifurcationKit continues a parameter as a Float64, so each one a branch continues in starts as one, whatever literal the model declares.
+        start = {ICS: p_default, **{c2["ICS2"]: model.parameters[c2["ICS2"]].value for c2 in codim2_branches}}
+        ctx["start_params"] = ", ".join(f"{name} = {float(value)}" for name, value in start.items())
 
         return ctx
 
@@ -232,22 +244,8 @@ class BifurcationKitAdapter(ContinuationAdapter):
         po_cp.append("save_sol_every_step = 1")
         po_cp_str = ", ".join(po_cp)
 
-        # Source point. This path emits a periodic-orbit continuation, which BifurcationKit starts from a Hopf point; a branch naming any other kind is refused here rather than being emitted as a Hopf switch that finds nothing and reports nothing.
-        source = br.source_point
-        kind = str(source).split(":")[0] if source else "hopf"
-        if kind != "hopf":
-            raise ValueError(
-                f"periodic-orbit branch {getattr(br, 'name', '?')!r} declares source_point {source!r}, and a "
-                "periodic orbit is continued from a Hopf point. Equilibrium branch switching at a branch point "
-                "or a fold is not emitted by this backend; declare `hopf:<n>` or `hopf:all`, or continue the "
-                "other equilibrium directly by seeding it (`initial_state: {method: given}`)."
-            )
-        all_hopf = source == "hopf:all" if source else False
-        if source and ":" in source:
-            hopf_idx_str = source.split(":")[1]
-            hopf_idx = int(hopf_idx_str) if hopf_idx_str.lstrip("-").isdigit() else None
-        else:
-            hopf_idx = None
+        # A branch declaring no source point continues from the last Hopf point.
+        hopf_idx = BifurcationKitAdapter.periodic_orbit_source(br, "hopf:-1")
 
         # Discretization (use schema defaults when unspecified)
         from tvbo.datamodel.schema import Discretization
@@ -266,7 +264,7 @@ class BifurcationKitAdapter(ContinuationAdapter):
         parallel = _get_param(disc, "parallel")
 
         # ODE solver for flow-based methods (shooting, poincaré)
-        ode_solver = _str(_get(disc, "ode_solver.method"))
+        ode_solver = _julia_solver(_get(disc, "ode_solver.method"))
         ode_abstol = _get(disc, "ode_solver.abs_tol")
         ode_reltol = _get(disc, "ode_solver.rel_tol")
         ode_time_span = float(_get_param(disc, "ode_time_span") or 1000.0)
@@ -293,9 +291,7 @@ class BifurcationKitAdapter(ContinuationAdapter):
 
         return dict(
             po_cp_args_str=po_cp_str,
-            source=source,
-            all_hopf=all_hopf,
-            hopf_idx=hopf_idx,
+            hopf_idx_jl=_julia_ordinal(hopf_idx),
             method=method,
             mesh_intervals=mesh_intervals,
             degree=degree,
@@ -324,8 +320,7 @@ class BifurcationKitAdapter(ContinuationAdapter):
 
         Reuses the *existing* declarations (no new schema): a parameter marked ``free: true`` on the model, together with an activity-target ``TuningObjective`` on one of the experiment's algorithms, defines a constraint ``target_variable = target_value``. Each such free parameter (e.g. the FIC ``J_i``) is promoted by the emitter to an unknown state block whose defining equation is that residual (see ``_build_network_context``).
 
-        Returns a list of ``{"parameter", "target_variable", "target_value"}``;
-        empty when no parameter is free (E-E / FFI variants ⇒ plain continuation).
+        Returns a list of ``{"parameter", "target_variable", "target_value"}``; empty when no parameter is free (E-E / FFI variants ⇒ plain continuation).
         """
         from tvbo.utils import as_list
 
@@ -476,35 +471,34 @@ class BifurcationKitAdapter(ContinuationAdapter):
 
     @staticmethod
     def _prepare_codim2_branch(br, parent_cont):
-        """Pre-compute context for a codim-2 branch."""
+        """Pre-compute context for a codim-2 branch of *parent_cont*, continued in the parent's primary parameter and the second `ContinuationAdapter.codim2_parameter` names.
+
+        Raises:
+            ValueError: If *br* is not a two-parameter continuation (`ContinuationAdapter.is_codim2`).
+        """
         bc = br.continuation
-        fp2 = getattr(bc, "free_parameters", None) or {}
-        if isinstance(fp2, dict) and fp2:
-            fp2_first = next(iter(fp2.values()))
-        elif isinstance(fp2, list) and fp2:
-            fp2_first = fp2[0]
-        else:
-            raise ValueError("Codim-2 branch requires free_parameters.")
+        fp2 = BifurcationKitAdapter.codim2_parameter(br, parent_cont)
+        if fp2 is None:
+            raise ValueError(
+                f"codim-2 branch {getattr(br, 'name', '?')!r} frees no parameter besides the primary it inherits; "
+                "declare the second parameter in its continuation's free_parameters."
+            )
 
-        ICS2 = str(fp2_first.name)
-        p2_min = float(fp2_first.domain.lo) if fp2_first.domain else -20
-        p2_max = float(fp2_first.domain.hi) if fp2_first.domain else 20
+        ICS2 = str(fp2.name)
+        p2_min = float(fp2.domain.lo) if fp2.domain else -20
+        p2_max = float(fp2.domain.hi) if fp2.domain else 20
 
-        source = getattr(br, "source_point", None) or "hopf:all"
-        source_type = source.split(":")[0]  # 'hopf' or 'fold'
-        all_source = ":all" in source
-
-        # Source index (Julia 1-based)
-        source_idx_jl = None
-        if not all_source and ":" in source:
-            idx_str = source.split(":")[1]
-            if idx_str.lstrip("-").isdigit():
-                idx = int(idx_str)
-                source_idx_jl = idx if idx >= 0 else f"end{idx + 1}" if idx != -1 else "end"
+        kind, index = BifurcationKitAdapter.source_point(br, "hopf:all")
 
         # Codim-2 ContinuationPar args
         cp_args = [f"p_min = {p2_min}", f"p_max = {p2_max}"]
         cp_args.extend(_cont_kwargs(bc))
+        # The eigenvalue count and the Newton options follow the model's dimension and scale, so a branch declaring none takes the parent's.
+        if getattr(bc, "nev", None) is None and getattr(parent_cont, "nev", None) is not None:
+            cp_args.append(f"nev = {parent_cont.nev}")
+        newton = _newton_kwargs(bc) or _newton_kwargs(parent_cont)
+        if newton:
+            cp_args.append(f"newton_options = NewtonPar({', '.join(newton)})")
         if not any("ds =" in a for a in cp_args):
             cp_args.append("ds = 0.01")
         if not any("dsmax" in a.lower() for a in cp_args):
@@ -530,9 +524,10 @@ class BifurcationKitAdapter(ContinuationAdapter):
             "ICS2": ICS2,
             "p2_min": p2_min,
             "p2_max": p2_max,
-            "source_type": source_type,
-            "all_source": all_source,
-            "source_idx_jl": source_idx_jl,
+            "source_type": BifurcationKitAdapter.SOURCE_KINDS[kind],
+            # BifurcationKit labels a fold on an equilibrium branch `:bp` as readily as `:fold`, so a fold or branch-point source selects both.
+            "is_fold": kind in ("LP", "BP"),
+            "source_idx_jl": _julia_ordinal(index),
             "codim2_cp_str": codim2_cp_str,
             "codim2_kwargs_str": codim2_kwargs_str,
         }

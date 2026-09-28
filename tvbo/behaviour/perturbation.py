@@ -11,12 +11,12 @@ import logging
 
 import numpy as np
 
-from tvbo.behaviour._runtime import Catalogued
+from tvbo.behaviour._runtime import YamlDocument
 
 logger = logging.getLogger(__name__)
 
 
-class StimulusBehaviour(Catalogued):
+class StimulusBehaviour(YamlDocument):
     """Loading, symbolic reading, rendering and plotting for an exogenous stimulus."""
 
     @classmethod

@@ -24,7 +24,7 @@ tvbo run SPEC
 | Flag | Default | Purpose |
 |------|---------|---------|
 | `--backend, -b` | `tvboptim` | Execution backend. See [`tvbo workflow backends`](../4-run/Backends.qmd) for the full list. |
-| `--out-dir, -o` | _(none)_ | Directory to write results into. When omitted, no files are written. |
+| `--out-dir, -o` | _(study results dir)_ | Directory to write results into. When omitted, results go to the study dataset's results directory (`derivatives/tvbo` under the recipe's study root). With a non-local `--engine` it is also where the workflow kit is written. |
 | `--experiment` | _(all)_ | If SPEC is a Study, run only this experiment (by `key`/`name`/`label`/numeric `id`). A comma-list (`2,3,20,30`) runs several. |
 | `--duration` | _(spec)_ | Override `integration.duration` in milliseconds (shorthand for `--set integration.duration=…`). |
 | `--set` | _(none, repeatable)_ | Override any experiment metadata field for this run only — the recipe file is not touched. Dotted `PATH` traverses attributes and keyed collections; `VALUE` is coerced (bool/int/float/JSON). See [Overriding metadata](#overriding-metadata-for-a-run---set). |
@@ -97,13 +97,13 @@ tvbo run experiment:JR_MEG --backend jax \
     --container ghcr.io/the-virtual-brain/tvbo:0.7.0 -o ./out
 ```
 
-If `singularity` is on `PATH` (or `SINGULARITY_BIND` is set), the command re-execs as:
+`IMAGE` is resolved the way a workflow kit resolves its `container`: `tvbo` (or `default`) names the image matching the running CLI, a registry reference written without a transport (`ghcr.io/…:tag`) is pulled as `docker://ghcr.io/…:tag`, and a local `.sif` path or a reference that names its transport (`docker://`, `oras://`, `library://`) is used as written. If `singularity` is on `PATH` (or `SINGULARITY_BIND` is set), the command re-execs as:
 
 ```bash
-singularity exec --bind $PWD:$PWD <image> tvbo <original argv>
+singularity exec --env TVBO_IN_CONTAINER=1 --bind $PWD:$PWD docker://<image> tvbo <original argv>
 ```
 
-Otherwise it falls back to Docker:
+Otherwise it falls back to Docker, which takes the reference without `docker://` and cannot run a local `.sif`:
 
 ```bash
 docker run --rm -e TVBO_IN_CONTAINER=1 -v $PWD:$PWD -w $PWD <image> tvbo <original argv>
@@ -122,9 +122,11 @@ tvbo run experiment:JR_MEG --engine slurm --backend jax -o ./run-001
 is equivalent to:
 
 ```bash
-tvbo workflow slurm experiment:JR_MEG --backend jax -o ./run-001/run.sbatch
+tvbo workflow slurm experiment:JR_MEG --backend jax -o ./run-001 --set out_dir=$PWD/run-001
 sbatch ./run-001/run.sbatch
 ```
+
+The kit is written to `./run-001` and every task writes its results there too, resolved against the directory the command runs in. `--container IMAGE` reaches the kit the same way, as `--set container=IMAGE`, so every task runs inside that image.
 
 For `snakemake` and `nextflow`, only the artefact is written — no automatic launcher is invoked. See [HPC patterns](../3-generate/workflows/hpc.qmd) for the full lifecycle.
 

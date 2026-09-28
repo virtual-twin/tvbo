@@ -80,13 +80,11 @@ def solver_weights(network, apply_transforms: bool = False, delayed: bool | None
 def _build_graph(network: Network, delays: bool = True, max_delay: float | None = None):
     """Build a tvboptim graph from a tvbo Network, by what the network measures.
 
-    - tract lengths present → ``DenseLengthGraph`` (delays = lengths /
-      conduction_speed, so conduction speed is a live sweepable/differentiable leaf);
+    - tract lengths present → ``DenseLengthGraph`` (delays = lengths / conduction_speed, so conduction speed is a live sweepable/differentiable leaf);
     - only explicit per-edge delays → ``DenseDelayGraph``;
     - no delays (or *delays* False) → ``DenseGraph``.
 
-    ``max_delay`` sets the graph's ``max_delay_bound`` (static history-buffer size);
-    ``None`` defaults it to the build-speed maximum delay.
+    ``max_delay`` sets the graph's ``max_delay_bound`` (static history-buffer size); ``None`` defaults it to the build-speed maximum delay.
     """
     import jax.numpy as jnp
     from jax.experimental.sparse import BCOO
@@ -206,32 +204,20 @@ def to_tvboptim(
     network : Network
         tvbo Network instance with weights (and optionally lengths) matrices.
     delays : bool or None, default=None
-        Whether to include delay matrices in the graph.  When ``None``
-        (default), auto-inferred from ``network.coupling``: uses delays
-        only when at least one coupling has ``delayed=True``.
+        Whether to include delay matrices in the graph. When ``None`` (default), auto-inferred from ``network.coupling``: uses delays only when at least one coupling has ``delayed=True``.
     return_type : str, default="network"
-        ``"network"`` — return a full ``tvboptim.experimental.network_dynamics.Network``
-        (requires *dynamics* and *coupling*).
+        ``"network"`` — return a full ``tvboptim.experimental.network_dynamics.Network`` (requires *dynamics* and *coupling*).
         ``"graph"`` — return only the ``DenseGraph`` / ``DenseDelayGraph``.
     dynamics : AbstractDynamics, optional
-        tvboptim dynamics instance. If not given, auto-extracted from
-        ``network.dynamics``.
+        tvboptim dynamics instance. If not given, auto-extracted from ``network.dynamics``.
     coupling : AbstractCoupling | dict, optional
-        tvboptim coupling instance(s). If not given, auto-extracted from
-        ``network.coupling``.
+        tvboptim coupling instance(s). If not given, auto-extracted from ``network.coupling``.
     noise : AbstractNoise, optional
         tvboptim noise instance. Optional.
     max_delay : float, optional
-        Concrete upper bound on the delay, forwarded to ``DenseDelayGraph`` to
-        size the static history buffer. Pass it when the delays are meant to
-        vary differentiably (e.g. ``delays = lengths / speed`` with ``speed``
-        optimised) so the buffer length stays static while the delays may be
-        JAX tracers. When ``None``, derived from the concrete delays.
+        Concrete upper bound on the delay, forwarded to ``DenseDelayGraph`` to size the static history buffer. Pass it when the delays are meant to vary differentiably (e.g. ``delays = lengths / speed`` with ``speed`` optimised) so the buffer length stays static while the delays may be JAX tracers. When ``None``, derived from the concrete delays.
     interpolate_delays : bool, default=False
-        When True, enable linear interpolation between bracketing history steps
-        on every delayed coupling, making the coupling differentiable w.r.t. the
-        continuous delay (and hence conduction speed). Requires the ``"roll"``
-        buffer strategy (the default).
+        When True, enable linear interpolation between bracketing history steps on every delayed coupling, making the coupling differentiable w.r.t. the continuous delay (and hence conduction speed). Requires the ``"roll"`` buffer strategy (the default).
     **kwargs
         Extra keyword arguments forwarded to the tvboptim ``Network`` constructor.
 
@@ -420,15 +406,11 @@ def to_heterogeneous_network(
     network : Network
         A heterogeneous tvbo Network (``is_heterogeneous(network)`` is True).
     dynamics_lib : mapping, optional
-        ``{name: Dynamics}`` resolving each ``Node.dynamics`` reference.
-        Defaults to ``network.dynamics``.
+        ``{name: Dynamics}`` resolving each ``Node.dynamics`` reference. Defaults to ``network.dynamics``.
     default_dynamics : str, optional
-        Name used for nodes that declare no ``dynamics`` of their own
-        (``Node.dynamics`` is optional — the experiment's dynamics is the
-        documented fallback).
-    delays, max_delay
-        Forwarded to :func:`_build_graph`; ``delays=None`` auto-infers from the
-        network's couplings (any ``delayed=True``).
+        Name used for nodes that declare no ``dynamics`` of their own (``Node.dynamics`` is optional — the experiment's dynamics is the documented fallback).
+    delays, max_delay : optional
+        Forwarded to :func:`_build_graph`; ``delays=None`` auto-infers from the network's couplings (any ``delayed=True``).
     """
     from tvboptim.experimental.network_dynamics import (
         HeterogeneousNetwork,
@@ -633,25 +615,22 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
     """Run a heterogeneous ``SimulationExperiment`` on tvboptim, in process.
 
     Builds a ``HeterogeneousNetwork`` from the experiment's network, integrates with a native fixed-step solver, and returns an ``ExperimentResult`` whose integration ``TimeSeries`` carries a per-group variable union (see :func:`_heterogeneous_solution_to_dataarray`). This is the P1 path that lets ``exp.run("tvboptim")`` handle heterogeneous networks without the codegen experiment template (that is a later milestone). *seed* overrides the recipe's ``execution.random_seed``. Unknown ``kwargs`` (e.g. ``benchmark``, ``mode``) are accepted and ignored.
+
+    The window is `BaseAdapter.get_integration_info`'s, as on every other backend: ``transient_time`` is integrated ahead of the measured ``duration`` in the same scan, and the result's ``.data`` is the measured window with the settle kept on ``.transient``.
     """
     from tvboptim.experimental.network_dynamics import prepare, solvers
 
-    from tvbo.adapters.base import BaseAdapter
     from tvbo.data.types import ExperimentResult, SimulationResult
 
+    adapter = TvboptimAdapter(experiment)
     network = experiment.network
-    lib = dynamics_lib if dynamics_lib is not None else BaseAdapter(experiment).build_dynamics_dict()
+    lib = dynamics_lib if dynamics_lib is not None else adapter.build_dynamics_dict()
     default_dyn = next(iter(lib), None) if dynamics_lib is None else None
     het = to_heterogeneous_network(network, dynamics_lib=lib, default_dynamics=default_dyn)
 
-    integ = getattr(experiment, "integration", None)
-    dur = getattr(integ, "duration", None)
-    dt = getattr(integ, "step_size", None)
-    dur = 1000.0 if dur is None else float(dur)
-    dt = 0.1 if dt is None else float(dt)
-    method = getattr(integ, "method", None)
-    method = "Heun" if method is None else str(getattr(method, "text", method))
-    n_steps = max(1, int(round(dur / dt)))
+    window = adapter.get_integration_info()
+    dt, method, n_transient = window["dt"], window["method"], window["n_transient"]
+    n_steps = max(1, n_transient + window["n_measured"])
     _cls = solver_class(method)
     if _cls == "DiffraxSolver":  # takes the diffrax solver to wrap, not a block size, so it is not buildable here
         raise NotImplementedError(
@@ -665,14 +644,15 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
 
         solver = CorrelatedNoiseSolver(solver, _factors, axis=_axis)
 
-    simulate, config = prepare(het, solver, t0=0.0, t1=dur, dt=dt)
+    # One scan over (-settle, duration] on the measurement clock: the settle ends at t = 0 and `n_transient` cuts it off `.data`.
+    simulate, config = prepare(het, solver, t0=-n_transient * dt, t1=window["duration"], dt=dt)
     if seed is None:
         seed = getattr(getattr(experiment, "execution", None), "random_seed", None)
     _seed_group_noise(config, het, 0 if seed is None else seed)
     sol = simulate(config)
     da = _heterogeneous_solution_to_dataarray(sol, het, network)
     return ExperimentResult(
-        integration=SimulationResult(data=da),
+        integration=SimulationResult(data=da, n_transient=n_transient),
         source=experiment,
         name=getattr(experiment, "label", None),
     )

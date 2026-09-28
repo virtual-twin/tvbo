@@ -199,6 +199,36 @@ def test_a_declared_time_unit_scales_the_emitted_clock(tmp_path):
     assert "net.run(1500000.0 * ms)" in script
 
 
+RAMP_EXPLORATION = """
+explorations:
+  EI_ramp:
+    strategy: continuation
+    space:
+      - parameter: network.edges.EI.weight
+        explored_values: [0.5, 1.0, 0.5]
+"""
+"""A continuation ramp over the column's E->I AMPA projection, up and back down."""
+
+
+def test_a_zero_length_ramp_is_refused(tmp_path):
+    """`duration: 0` declares a measured window with nothing in it, not an absent duration: a ramp counts each point's spikes over that window, so it is refused rather than run for a default second."""
+    from tvbo.adapters.brian2 import Brian2Adapter
+
+    recipe = DECO_COLUMN_YAML.replace(
+        "{source: 2, target: 3, dynamics: AMPA_rec_I, connectivity: all_to_all,",
+        "{source: 2, target: 3, dynamics: AMPA_rec_I, connectivity: all_to_all, label: EI,",
+    ).replace("duration: 1000.0, transient_time: 500.0", "duration: 0.0, transient_time: 50.0")
+    path = tmp_path / "ramp.yaml"
+    path.write_text(recipe + RAMP_EXPLORATION)
+    exp = SimulationExperiment.from_file(str(path))
+
+    with pytest.raises(ValueError, match="there is no window to count spikes in"):
+        Brian2Adapter(exp).prepare_context()
+    exp.integration.duration = 20.0
+    ctx = Brian2Adapter(exp).prepare_context()
+    assert ctx["measured_ms"] == 20.0 and ctx["ramp"]["values"] == [0.5, 1.0, 0.5]
+
+
 class TestBrian2Render:
     """`render("brian2")` emits a valid, self-contained, runnable Brian2 script."""
 

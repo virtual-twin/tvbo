@@ -155,6 +155,12 @@ def _render_pyrates_bifurcation(exp, **kw):
     return PyRatesBifurcationAdapter(exp).render_code(**kw)
 
 
+def _render_numcont(exp, **kw):
+    from tvbo.adapters.numcont import NumContAdapter
+
+    return NumContAdapter(exp).render_code(**kw)
+
+
 def _render_neuroml(exp, **kw):
     from tvbo.adapters.neuroml import NeuroMLAdapter
 
@@ -285,8 +291,16 @@ _BUILTINS = [
         ".py",
         "text/x-python",
         _render_pyrates_bifurcation,
-        aliases=("pyrates-bif", "pycobi", "bifurcation-pyrates", "auto", "auto-07p"),
+        aliases=("pyrates-bif", "pycobi", "bifurcation-pyrates"),
         language="python",
+    ),
+    ExportFormat(
+        "numcont",
+        "AUTO-07p model (Fortran)",
+        ".f90",
+        "text/x-fortran",
+        _render_numcont,
+        aliases=("auto", "auto-07p", "auto07p", "bifurcation-auto7p", "bifurcation-numcont"),
     ),
     # code: rateml
     ExportFormat(

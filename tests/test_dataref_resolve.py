@@ -400,7 +400,7 @@ def test_two_runs_of_one_experiment_under_the_root_raise_rather_than_pick_one(tm
     (tmp_path / "archive" / "kit_a" / "results" / "34").mkdir(parents=True)
     (tmp_path / "archive" / "kit_a" / "results" / "34" / "exp-34_desc-Model_result.h5").write_bytes(b"")
 
-    with pytest.raises(FileNotFoundError, match="different runs of the same experiment"):
+    with pytest.raises(dr.AmbiguousContainerError, match="different runs of the same experiment"):
         dr.locate_exp_container(tmp_path, 34)
 
     # Narrowing the root to the canonical container resolves it.
@@ -430,7 +430,7 @@ def test_the_same_subject_shard_in_two_directories_still_raises(tmp_path):
         (tmp_path / sub).mkdir()
         (tmp_path / sub / "sub-01_exp-34_desc-Model_result.h5").write_bytes(b"")
 
-    with pytest.raises(FileNotFoundError, match="different runs of the same experiment"):
+    with pytest.raises(dr.AmbiguousContainerError, match="different runs of the same experiment"):
         dr.locate_exp_container(tmp_path, 34)
 
 
@@ -442,7 +442,7 @@ def test_an_aggregate_container_beside_a_shard_still_raises(tmp_path):
     (tmp_path / "exp-34_desc-Model_result.h5").write_bytes(b"")
     (tmp_path / "sub-01_exp-34_desc-Model_result.h5").write_bytes(b"")
 
-    with pytest.raises(FileNotFoundError, match="different runs of the same experiment"):
+    with pytest.raises(dr.AmbiguousContainerError, match="different runs of the same experiment"):
         dr.locate_exp_container(tmp_path, 34)
 
 

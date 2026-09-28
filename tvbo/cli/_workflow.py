@@ -49,13 +49,29 @@ def default_container_ref() -> str:
     return f"docker://{image}:{_default_container_tag()}"
 
 
-def resolve_container_ref(raw: Any) -> str | None:
-    """Resolve a recipe's declared ``container`` into an engine-ready reference.
+_LOCAL_IMAGE_SUFFIXES = (".sif", ".simg", ".img")
+_IMAGE_TRANSPORTS = ("docker-daemon:", "docker-archive:", "oci:", "oci-archive:")
 
-    A concrete image — a local ``.sif``/``.simg`` path or a registry reference that already carries a ``:tag`` or ``@digest`` — passes through unchanged: the author pinned it. Anything that leaves the version open is filled in with :func:`default_container_ref` so an unpinned reference pulls the version-matched image rather than failing to resolve:
+
+def _is_bare_registry_reference(val: str) -> bool:
+    """Whether *val* names a registry image without the transport that pulls it, as ``ghcr.io/org/img:tag`` or ``ubuntu:22.04`` do.
+
+    A URI (``docker://``, ``oras://``, ``library://``), a Singularity transport (``docker-daemon:``, ``oci:`` …) or a local image file (a ``.sif``/``.simg``/``.img`` name, a path that exists, or one starting ``/``, ``.`` or ``~``) already says how to fetch it.
+    """
+    if "://" in val or val.startswith(_IMAGE_TRANSPORTS):
+        return False
+    if val.startswith(("/", ".", "~")) or val.endswith(_LOCAL_IMAGE_SUFFIXES):
+        return False
+    return not os.path.exists(os.path.expanduser(val))
+
+
+def resolve_container_ref(raw: Any) -> str | None:
+    """Resolve a recipe's declared ``container`` into a reference ``singularity exec`` / ``apptainer exec`` can pull.
+
+    A local ``.sif``/``.simg`` path, or a reference that names its transport and already carries a ``:tag`` or ``@digest``, passes through unchanged: the author pinned it. A registry reference written without a transport (``ghcr.io/org/tvbo:0.7.0``, the spelling Docker takes) gains ``docker://``, since Singularity reads a bare name as a local file path. Anything that leaves the version open is filled in with :func:`default_container_ref` so an unpinned reference pulls the version-matched image rather than failing to resolve:
 
     - the symbolic requests ``tvbo`` / ``default``;
-    - a tvbo registry reference with no tag (``docker://…/tvbo``).
+    - a registry reference with no tag (``docker://…/tvbo`` or ``ghcr.io/…/tvbo``).
 
     No container declared ⇒ ``None``: tasks run in the surrounding environment (bare, or the requirements venv ``setup.sh`` provisions — see :attr:`WorkflowPlan.needs_env_layer`).
     ``requirements`` are provisioned by whichever substrate the ``container`` field selects; they do NOT force a container of their own.
@@ -65,6 +81,8 @@ def resolve_container_ref(raw: Any) -> str | None:
         return None
     if val in ("tvbo", "default"):
         return default_container_ref()
+    if _is_bare_registry_reference(val):
+        val = f"docker://{val}"
     if val.startswith("docker://"):
         # A tag or digest lives in the final path segment; its absence means the reference names an image stream without pinning a version.
         last = val[len("docker://") :].rsplit("/", 1)[-1]

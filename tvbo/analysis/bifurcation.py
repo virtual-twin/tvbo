@@ -11,8 +11,7 @@ hopf_indices / bp_indices : list[int]
 hopf_steps / bp_steps : list[int]
     Corresponding continuation step values.
 periodic_orbits : list[BifurcationResult | Any]
-    If periodic orbits were computed in Julia (`po_results`), each periodic orbit branch is wrapped as a child
-    BifurcationResult when possible; otherwise the raw Julia object is stored.
+    If periodic orbits were computed in Julia (`po_results`), each periodic orbit branch is wrapped as a child BifurcationResult when possible; otherwise the raw Julia object is stored.
 
 Backend extractors convert a backend-native object — a PyCoBi ``ODESystem``, an AUTO-07p ``bifDiag`` — into the unified DataFrame schema this class consumes, as ``backend_object → _extract_<backend>_df(...) → BifurcationResult(df=...)``. They sit at module level rather than nested in subclasses, which makes that flow explicit and lets one set of plotting, legend and export code serve every backend without inheritance.
 
@@ -93,6 +92,7 @@ _TY_ALIASES_FALLBACK = {
     "bp": "BP",
     "branchpoint": "BP",
     "branch-point": "BP",
+    "branch_point": "BP",
     # PO codim-1
     "pd": "PD",
     "period-doubling": "PD",
@@ -225,9 +225,7 @@ def resolve_coord(df, expr, state_var_index=None, po_orbits=None):
     Accepts:
       * a column name in ``df`` (e.g. ``'x'``, ``'param'``)
       * a sympy-parseable expression of column names (e.g. ``'V**2 + W'``)
-      * a reduction call ``'minmax(V)'`` / ``'avg(V)'`` / ``'norm(V)'``
-        which uses the PO orbit meshes if available, else falls back to
-        the column itself.
+      * a reduction call ``'minmax(V)'`` / ``'avg(V)'`` / ``'norm(V)'`` which uses the PO orbit meshes if available, else falls back to the column itself.
 
     Returns a pandas Series (or ndarray for minmax → shape (2, N)).
     """
@@ -723,12 +721,7 @@ class BifurcationResult:
         bd : auto.bifDiag
             The codim-1 equilibrium continuation result.
         codim2_raw : list, optional
-            ``[(name, source_type, fp1_name, fp2_name, R_c2), …]`` —
-            codim-2 fold/Hopf/BP curves produced by
-            ``NumContAdapter._run_codim2_branches``. Each entry is wrapped
-            as a child ``BifurcationResult`` and attached to
-            ``self.codim2_curves`` with metadata (``_source_type``,
-            ``_fp2_name``) that ``_plot_codim2`` consumes.
+            ``[(name, source_type, fp1_name, fp2_name, R_c2), …]`` — codim-2 fold/Hopf/BP curves produced by ``NumContAdapter._run_codim2_branches``. Each entry is wrapped as a child ``BifurcationResult`` and attached to ``self.codim2_curves`` with metadata (``_source_type``, ``_fp2_name``) that ``_plot_codim2`` consumes.
         """
         sv_names = list(model.state_variables.keys()) if model else []
         df = _extract_auto_df(bd, sv_names, ICS)
@@ -789,9 +782,7 @@ class BifurcationResult:
         Parameters
         ----------
         types : iterable[str], optional
-            Restrict markers to these canonical TYs (e.g. ``['LP','HB']``).
-            By default every TY found in ``df.specialpoint`` is plotted
-            (except ``endpoint``).
+            Restrict markers to these canonical TYs (e.g. ``['LP','HB']``). By default every TY found in ``df.specialpoint`` is plotted (except ``endpoint``).
         """
         if ax is None or "specialpoint" not in self.df.columns:
             return
@@ -840,13 +831,9 @@ class BifurcationResult:
 
         Args:
             ax: Matplotlib axes to draw on.
-            ICS: Free (continuation) parameter name; accepted for parity with
-                the other plot methods and not used here.
-            VOI: Variable of interest plotted on the y-axis; resolved to a
-                default branch column when `None`.
-            **kwargs: Line-style overrides forwarded to `matplotlib` (e.g.
-                `linewidth`/`lw`, `color`, `linestyle`); continuation-config
-                keys are filtered out before plotting.
+            ICS: Free (continuation) parameter name; accepted for parity with the other plot methods and not used here.
+            VOI: Variable of interest plotted on the y-axis; resolved to a default branch column when `None`.
+            **kwargs: Line-style overrides forwarded to `matplotlib` (e.g. `linewidth`/`lw`, `color`, `linestyle`); continuation-config keys are filtered out before plotting.
         """
         VOI = self._resolve_voi(VOI)
         if self.df.empty:
@@ -944,12 +931,9 @@ class BifurcationResult:
 
         Args:
             ax: Matplotlib axes to draw on.
-            ICS: Free (continuation) parameter name, passed through to the
-                underlying calls.
-            VOI: Variable of interest plotted on the y-axis; resolved to a
-                default branch column when `None`.
-            **kwargs: Style overrides forwarded to `plot_branch` and
-                `plot_special_points`.
+            ICS: Free (continuation) parameter name, passed through to the underlying calls.
+            VOI: Variable of interest plotted on the y-axis; resolved to a default branch column when `None`.
+            **kwargs: Style overrides forwarded to `plot_branch` and `plot_special_points`.
         """
         VOI = self._resolve_voi(VOI)
         self.plot_branch(ax, ICS=ICS, VOI=VOI, **kwargs)
@@ -995,9 +979,7 @@ class BifurcationResult:
         Returns:
         -------
         list[dict]
-            Each dict has keys: ``param`` (float), state variable names
-            (1D arrays of the orbit trace), and ``t`` (mesh times).
-            Returns empty list if orbit data is unavailable.
+            Each dict has keys: ``param`` (float), state variable names (1D arrays of the orbit trace), and ``t`` (mesh times). Returns empty list if orbit data is unavailable.
         """
         if self.br is None:
             return []
@@ -1087,14 +1069,10 @@ class BifurcationResult:
 
         Args:
             ax: Existing axes to draw on; a new figure is created when `None`.
-            ICS: Label for the x-axis (the free/continuation parameter);
-                defaults to `self.ICS` or `"param"`.
-            VOI: Variable of interest plotted on the y-axis; resolved to a
-                default branch column when `None`.
-            save: File path to write the figure to (at 500 dpi); skipped when
-                `None`.
-            **kwargs: Style overrides forwarded to `plot_branch` and
-                `plot_special_points`.
+            ICS: Label for the x-axis (the free/continuation parameter); defaults to `self.ICS` or `"param"`.
+            VOI: Variable of interest plotted on the y-axis; resolved to a default branch column when `None`.
+            save: File path to write the figure to (at 500 dpi); skipped when `None`.
+            **kwargs: Style overrides forwarded to `plot_branch` and `plot_special_points`.
 
         Returns:
             The matplotlib axes the diagram was drawn on.
@@ -1744,8 +1722,7 @@ class BifurcationResult:
         dynamics : Dynamics
             Model whose parameter is being swept.
         parameter : str
-            Parameter name (must exist in ``dynamics.parameters`` and
-            match this result's continuation parameter).
+            Parameter name (must exist in ``dynamics.parameters`` and match this result's continuation parameter).
         values : sequence of float
             Parameter values, one per frame.
         *dims, **plot_kwargs
@@ -1761,24 +1738,17 @@ class BifurcationResult:
         marker_kwargs : dict, optional
             Style overrides for the moving marker.
         simulation : bool
-            If true, overlay a trajectory computed with
-            :class:`tvbo.classes.experiment.SimulationExperiment` for each
-            frame. This keeps animated trajectories on the same backend path
-            as full experiments instead of using ``Dynamics.run``.
+            If true, overlay a trajectory computed with :class:`tvbo.classes.experiment.SimulationExperiment` for each frame. This keeps animated trajectories on the same backend path as full experiments instead of using ``Dynamics.run``.
         simulation_duration, simulation_dt : float
             Integration settings used when ``simulation`` is true.
         simulation_backend : str
             Backend passed to ``SimulationExperiment.run``.
         simulation_initial_values : dict or callable, optional
-            State-variable initial values used for each simulated frame. If a
-            callable is supplied, it receives the current parameter value and
-            returns a mapping for that frame. Returning ``None`` skips the
-            simulated trajectory for that frame.
+            State-variable initial values used for each simulated frame. If a callable is supplied, it receives the current parameter value and returns a mapping for that frame. Returning ``None`` skips the simulated trajectory for that frame.
         trajectory_kwargs : dict, optional
             Style overrides for simulated trajectory overlays.
         show_periodic_orbit : bool
-            Draw the current periodic orbit in phase-plane coordinates when a
-            periodic-orbit ring is also available in the bifurcation panel.
+            Draw the current periodic orbit in phase-plane coordinates when a periodic-orbit ring is also available in the bifurcation panel.
         orbit_kwargs : dict, optional
             Style overrides for the phase-plane periodic-orbit circle.
 

@@ -141,7 +141,7 @@ network:
     - Norm_G_DTI.txt
 ```
 
-This loads the matrix via `readdlm()` and constructs a `SimpleWeightedDiGraph` with per-edge weights.
+The matrix is read when the network loads, target-by-source like every tvbo connectome matrix (`W[i, j]` is the edge j → i), and reaches NetworkDynamics.jl as the edges of a `SimpleDiGraph` with their weights. A file written row = source, the way Graphs.jl reads it, declares a `transpose` weight transform, as the FitzHugh–Nagumo example does.
 
 ## Graph Results and Animation
 

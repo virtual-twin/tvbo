@@ -140,14 +140,16 @@ class TestCodeGeneration:
         code = exp.render_code("networkdynamics")
         assert "watts_strogatz" in code
 
-    def test_fhn_uses_weighted_digraph(self):
-        """FHN example uses SimpleWeightedDiGraph from connectivity file."""
+    def test_fhn_builds_its_digraph_from_the_network_matrix(self):
+        """FHN example's connectivity file is read into the network, whose weights the script emits edge by edge."""
         from tvbo import SimulationExperiment
 
         yaml_path = os.path.join(EXAMPLES_DIR, "fitzhugh_nagumo.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
-        assert "SimpleWeightedDiGraph" in code or "readdlm" in code
+        assert "g = SimpleDiGraph(SimpleWeightedDiGraph(W))" in code
+        assert "s.p.e[1:ne(g), :w] = edge_weights" in code
+        assert "readdlm" not in code
 
     def test_fhn_uses_directed_coupling(self):
         """FHN example uses Directed edge coupling (not AntiSymmetric)."""
@@ -158,14 +160,15 @@ class TestCodeGeneration:
         code = exp.render_code("networkdynamics")
         assert "Directed(" in code
 
-    def test_diffusion_uses_antisymmetric(self):
-        """Diffusion example uses AntiSymmetric edge coupling."""
+    def test_diffusion_uses_directed_edges_both_ways(self):
+        """Diffusion example's undirected generated graph becomes a digraph carrying each edge both ways, with the Directed edge model."""
         from tvbo import SimulationExperiment
 
         yaml_path = os.path.join(EXAMPLES_DIR, "diffusion.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
-        assert "AntiSymmetric(" in code
+        assert "g = SimpleDiGraph(barabasi_albert(" in code
+        assert "Directed(" in code and "AntiSymmetric(" not in code
 
     # -- 2D Diffusion specific tests --
 
@@ -177,8 +180,8 @@ class TestCodeGeneration:
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
         assert "StateMask(1:2)" in code
-        # State variable order follows LinkML normalized dict ordering
-        assert "sym = [:phi, :x]" in code
+        # State variables keep their declared order
+        assert "sym = [:x, :phi]" in code
 
     def test_diffusion_2d_broadcast_esum(self):
         """2D diffusion: vertex uses broadcasting (dx .= esum) for multi-dim coupling."""
@@ -197,7 +200,7 @@ class TestCodeGeneration:
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
         assert "e_dst .=" in code
-        assert "outsym = [:flow_phi, :flow_x]" in code
+        assert "outsym = [:flow_x, :flow_phi]" in code
 
     def test_diffusion_2d_no_variable_shadowing(self):
         """2D diffusion: function arg doesn't shadow state var 'x'."""
@@ -207,7 +210,7 @@ class TestCodeGeneration:
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
         assert "function Diffusion2D_f!(dx, _x, esum" in code
-        assert "phi, x = _x" in code
+        assert "x, phi = _x" in code
 
     def test_diffusion_2d_uses_barabasi_albert_10(self):
         """2D diffusion: 10-node Barabási-Albert network."""
@@ -260,12 +263,9 @@ class TestCodeGeneration:
         yaml_path = os.path.join(EXAMPLES_DIR, "heterogeneous_kuramoto.yaml")
         exp = SimulationExperiment.from_file(yaml_path)
         code = exp.render_code("networkdynamics")
-        # KuramotoInertia has sym = [:omega, :theta] (alphabetical) but g = StateMask(2:2)
-        assert "sym = [:omega, :theta]" in code
-        # Should be in the KuramotoInertia section
-        code.split("vertex_KuramotoInertia")[1]
-        # g=2:2 means only theta (at index 2) is output
-        assert "StateMask(2:2)" in code
+        # KuramotoInertia declares theta then omega, and only theta (index 1) couples
+        assert "sym = [:theta, :omega]" in code
+        assert "StateMask(1:1)" in code.split("vertex_KuramotoInertia = VertexModel(")[1]
 
     def test_heterogeneous_kuramoto_per_node_params(self):
         """Per-node omega0 parameters are set via NWState."""

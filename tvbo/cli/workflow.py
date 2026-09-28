@@ -13,6 +13,8 @@ from typing import Annotated, Any
 
 import typer
 
+from tvbo.run import study as _study_run
+
 from . import _common
 from . import _workflow as _wf
 from ._backends import list_backends
@@ -81,7 +83,8 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
     study, obj, study_key = _load_spec(spec)
     if study is None:
         return None, obj, study_key
-    records = _common.select_experiments(study, experiment_arg)
+    with _common.fatal():
+        records = _study_run.select_experiments(study, experiment_arg)
     if not records:
         _common.die(f"Study {spec!r} has no experiments.")
     if len(records) > 1:
@@ -89,7 +92,8 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
         _common.die(
             f"Study {spec!r} has {len(records)} experiments ({ids}); a single-kit engine will not silently pick the first.\nEmit the WHOLE study as one Snakemake DAG with `tvbo workflow snakemake <spec>` (no --experiment), or pass `--experiment <id>` to emit exactly one."
         )
-    return study, _common.runtime_experiment(study, records[0]), study_key
+    with _common.fatal():
+        return study, _study_run.runtime_experiment(study, records[0]), study_key
 
 
 def _study_experiments(spec: str, experiment: str | None):
@@ -100,7 +104,12 @@ def _study_experiments(spec: str, experiment: str | None):
     study, obj, study_key = _load_spec(spec)
     if study is None:
         return None, [obj], study_key
-    return study, [_common.runtime_experiment(study, r) for r in _common.select_experiments(study, experiment)], study_key
+    with _common.fatal():
+        return (
+            study,
+            [_study_run.runtime_experiment(study, r) for r in _study_run.select_experiments(study, experiment)],
+            study_key,
+        )
 
 
 def _plan_for(study, exp, parsed: dict, *, spec: str, study_key, backend: str | None, engine: str, selector: str | None):
@@ -862,7 +871,7 @@ def _emit_snakemake_study(
         from tvbo.adapters import figure_workflow
 
         if not stdout:
-            fig_mods = _common.figure_code_modules(figs)
+            fig_mods = _study_run.figure_code_modules(figs)
             fig_bundled = _bundle_modules(fig_mods, out_dir) if fig_mods else []
             if fig_bundled:
                 bundled_code = True
@@ -1091,7 +1100,7 @@ def _kits_root(spec: str) -> Path:
     """
     from tvbo.utils.study_layout import study_path
 
-    return study_path("kits", root=_common.spec_dir(spec) or Path.cwd())
+    return study_path("kits", root=_study_run.spec_base(spec))
 
 
 def _finalize_kit(out_dir: Path, *, pack: bool, source_dir: Path | None = None) -> Path:
@@ -1134,7 +1143,7 @@ def _emit(
             bundle_select=bundle_select,
             code_source=code_source,
         )
-        return _finalize_kit(out_dir, pack=pack, source_dir=_common.spec_dir(spec)) if out_dir is not None else None
+        return _finalize_kit(out_dir, pack=pack, source_dir=_study_run.spec_dir(spec)) if out_dir is not None else None
     plan, exp = _build_plan(spec, engine=engine, backend=backend, experiment=experiment, overrides=override)
     if stdout:
         text = _render_template(_TEMPLATE_PATH[engine], plan=plan, block=plan.engine_block, script_relpath=None)
@@ -1147,7 +1156,7 @@ def _emit(
         parts = [plan.experiment_key] if plan.study_key == plan.experiment_key else [plan.study_key, plan.experiment_key]
         out_dir = _kits_root(spec).joinpath(*parts, engine)
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir, bundle_select=bundle_select)
-    return _finalize_kit(out_dir, pack=pack, source_dir=_common.spec_dir(spec))
+    return _finalize_kit(out_dir, pack=pack, source_dir=_study_run.spec_dir(spec))
 
 
 _LAUNCHER = {"slurm": "sbatch", "snakemake": "snakemake", "nextflow": "nextflow"}

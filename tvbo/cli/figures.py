@@ -11,6 +11,8 @@ from pathlib import Path
 
 import typer
 
+from tvbo.run import study as _study_run
+
 from . import _common
 
 app = typer.Typer(name="figure", no_args_is_help=True)
@@ -66,74 +68,6 @@ def figure_origins(spec_path: Path) -> dict[str, Path]:
     return origins
 
 
-def register_figure_code(base: Path) -> None:
-    """Put a root's ``code/`` on ``sys.path``, so a figure rendering against it can import the modules its ``code_modules`` names.
-
-    Called for whichever root a figure actually renders against: its own, or — for a record ``!include``d from another study — that study's, which the including spec knows nothing about. Without it a figure resolves against the right root and still cannot find its panels.
-    """
-    from tvbo.utils import register_recipe_code_paths
-    from tvbo.utils.study_layout import study_path
-
-    code_dir = study_path("code", root=base)
-    if code_dir.is_dir():
-        register_recipe_code_paths(None, {"path": str(code_dir)})
-
-
-def figure_outputs(figure, out_dir: Path) -> tuple[str, Path, Path]:
-    """``(name, image, script)`` for *figure* under *out_dir* — where the render writes, named once.
-
-    The renderer and every consumer that has to find a rendered figure afterwards ask this, so a figure's file name is derived in one place rather than re-spelled wherever it is looked up.
-    """
-    from tvbo.adapters import bsplot
-    from tvbo.utils import sanitize_name
-
-    name = getattr(figure, "name", None) or "figure"
-    return name, out_dir / f"{name}.{bsplot.output_format(figure)}", out_dir / "scripts" / f"plot_{sanitize_name(name)}.py"
-
-
-def render_figures(figures, base_dir: Path, out_dir: Path, origins: dict[str, Path] | None = None) -> list[Path]:
-    """Emit + run each figure's render script and return the written images.
-
-    The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the study root each layer's ``used`` IRI resolves against, whose results directory holds the containers; ``origins`` overrides it per figure, for a record ``!include``d from another study (see :func:`figure_origins`).
-
-    Every figure is attempted before anything is raised, so one broken declaration reports itself alongside the others rather than hiding the thirteen behind it; the run still fails, naming all of them.
-
-    The image lands directly in ``out_dir`` — the one place the report and every other consumer reads a figure from — while its self-contained, editable ``plot_<name>.py`` goes to ``out_dir/scripts/``. Both are regenerable and gitignored together; separating them just keeps a study with many figures from interleaving twice as many files in the directory people actually browse. The subdirectory is deliberately NOT called ``code``: in a study that name means the authored, tracked, importable code the recipe references by bare module name, which this is not.
-    """
-    from tvbo.adapters import bsplot
-
-    out_dir.mkdir(parents=True, exist_ok=True)
-    script_dir = out_dir / "scripts"
-    script_dir.mkdir(parents=True, exist_ok=True)
-    written: list[Path] = []
-    failed: list[str] = []
-    attempted = 0
-    for figure in figures:
-        attempted += 1  # counted here, not re-derived: `figures` may be an iterator the loop has consumed
-        name, outfile, script_path = figure_outputs(figure, out_dir)
-        base = (origins or {}).get(name, base_dir)
-        register_figure_code(Path(base))
-        try:
-            bsplot.render(figure, base_dir=str(base), outfile=str(outfile), script_path=str(script_path))
-        except Exception as e:  # noqa: BLE001 — every figure is attempted, then the whole set of failures is raised at once
-            failed.append(f"{name}: {type(e).__name__}: {e}")
-            _common.info(f"{name} FAILED ({type(e).__name__}: {e})")
-            continue
-        _common.info(f"wrote {outfile}")
-        _common.info(f"wrote {script_path}")
-        written.append(outfile)
-        # Caption partial beside the image, for `{{< include >}}` in the prose.
-        try:
-            cap = bsplot.write_caption(figure, out_dir, name=name) if bsplot.compose_caption(figure) else None
-            if cap:
-                _common.info(f"wrote {cap}")
-        except Exception as e:  # noqa: BLE001 — a caption must never lose a rendered figure
-            _common.info(f"caption for {name} not written ({type(e).__name__}: {e})")
-    if failed:
-        raise RuntimeError("{} of {} figures did not render:\n  {}".format(len(failed), attempted, "\n  ".join(failed)))
-    return written
-
-
 @app.command("render", help="Render declarative figures from a Figure or SimulationStudy YAML.")
 def render(
     spec: str = typer.Argument(
@@ -169,7 +103,7 @@ def render(
 
     from tvbo.utils.study_layout import study_path
 
-    base = base_dir.expanduser().resolve() if base_dir else _common.spec_dir(spec)
+    base = base_dir.expanduser().resolve() if base_dir else _study_run.spec_dir(spec)
     # The record's figures directory, so this command and `tvbo run` write where the report reads.
     out_dir = out.expanduser().resolve() if out else study_path("figures", root=base)
 
@@ -180,7 +114,7 @@ def render(
         return
 
     figures = _select(figures, name, spec_path)
-    render_figures(figures, base, out_dir, figure_origins(spec_path))
+    _study_run.render_figures(figures, base, out_dir, figure_origins(spec_path))
 
 
 def _select(figures, name: str | None, spec_path: Path) -> list:
@@ -227,7 +161,7 @@ def caption(
     from tvbo.utils.study_layout import study_path
 
     figures = _select(figures, name, spec_path)
-    out_dir = out.expanduser().resolve() if out else study_path("figures", root=_common.spec_dir(spec))
+    out_dir = out.expanduser().resolve() if out else study_path("figures", root=_study_run.spec_dir(spec))
     for figure in figures:
         fig_name = getattr(figure, "name", None) or "figure"
         if not bsplot.compose_caption(figure):
@@ -271,7 +205,7 @@ def compare(
     spec_path = Path(spec).expanduser()
     if not spec_path.is_file():
         _common.die(f"No such spec file: {spec_path}")
-    base = base_dir.expanduser().resolve() if base_dir else _common.spec_dir(spec)
+    base = base_dir.expanduser().resolve() if base_dir else _study_run.spec_dir(spec)
     fig_dir = figures_dir.expanduser().resolve() if figures_dir else study_path("figures", root=base)
     # The audit lands in the study's local notes, which nothing tracks or publishes.
     out_dir = out.expanduser().resolve() if out else study_path("notes", root=base) / "figure-compare"
@@ -284,7 +218,7 @@ def compare(
 
     sections, summary_rows = [], []
     for figure in figures:
-        fname, ours, _ = figure_outputs(figure, fig_dir)
+        fname, ours, _ = _study_run.figure_outputs(figure, fig_dir)
         theirs = ref if (ref and ref.is_file()) else reference_image_for(figure, ref or base)
         if not ours.exists():
             _common.info(f"skip {fname}: not rendered ({ours})")

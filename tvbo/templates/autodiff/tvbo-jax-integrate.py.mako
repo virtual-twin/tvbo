@@ -14,7 +14,7 @@ elif 'integration' in context.keys():
 else:
     raise ValueError("No integration metadata found")
 
-stochastic = integration.noise is not None
+stochastic = (experiment.run_noise if 'experiment' in context.keys() else integration.noise) is not None
 is_delayed = experiment.horizon > 1 if 'experiment' in context.keys() else integration.delayed
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 

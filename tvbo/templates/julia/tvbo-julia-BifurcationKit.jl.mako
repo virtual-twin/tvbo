@@ -9,7 +9,7 @@ svs = list(model.state_variables.values())
 <%include file="/tvbo-julia-model.jl.mako" args="mc=mc" />
 ##
 # Override continuation parameter to start within [p_min, p_max]
-p = merge(p, (${ICS} = ${float(p_start)},))
+p = merge(p, (${start_params},))
 
 # Initial conditions from model defaults (network: n_nodes blocks per state var)
 x0 = [
@@ -136,19 +136,11 @@ hopf_indices = Int[]
 for (i, sp) in enumerate(br.specialpoint)
     sp.type == :hopf && push!(hopf_indices, i)
 end
-% if br0['all_hopf']:
+% if br0['hopf_idx_jl'] is None:
 # Using all Hopf points
-% elif br0['hopf_idx'] is not None:
-if !isempty(hopf_indices)
-% if br0['hopf_idx'] < 0:
-    hopf_indices = [hopf_indices[end${'+' + str(br0['hopf_idx'] + 1) if br0['hopf_idx'] != -1 else ''}]]
-% else:
-    hopf_indices = [hopf_indices[${br0['hopf_idx']}]]
-% endif
-end
 % else:
 if !isempty(hopf_indices)
-    hopf_indices = [hopf_indices[end]]
+    hopf_indices = [hopf_indices[${br0['hopf_idx_jl']}]]
 end
 % endif
 
@@ -277,30 +269,23 @@ codim2_results = Any[]
 % for c2 in codim2_branches:
 <%
 src_type = c2['source_type']
-## In BifurcationKit.jl, fold points can be :bp or :fold.
-## Hopf points are :hopf.
-is_fold = src_type in ('fold', 'branch_point', 'bp')
 %>\
 # Codim-2 branch: ${c2['name']} (${src_type} → ${c2['ICS2']})
 begin
     local _bif_indices = Int[]
     for (i, sp) in enumerate(br.specialpoint)
-% if is_fold:
+% if c2['is_fold']:
         (sp.type == :bp || sp.type == :fold) && push!(_bif_indices, i)
 % else:
         sp.type == :${src_type} && push!(_bif_indices, i)
 % endif
     end
 
-% if c2['all_source']:
+% if c2['source_idx_jl'] is None:
     # All ${src_type} points
-% elif c2['source_idx_jl'] is not None:
-    if !isempty(_bif_indices)
-        _bif_indices = [_bif_indices[${c2['source_idx_jl']}]]
-    end
 % else:
     if !isempty(_bif_indices)
-        _bif_indices = [_bif_indices[end]]
+        _bif_indices = [_bif_indices[${c2['source_idx_jl']}]]
     end
 % endif
 

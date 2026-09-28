@@ -355,7 +355,7 @@ def test_an_experiment_known_only_by_key_still_matches_a_numeric_used_edge(calls
     """
     from types import SimpleNamespace
 
-    from tvbo.cli._common import experiment_ids
+    from tvbo.run.study import experiment_ids
 
     exp = SimpleNamespace(key="exp-1")
     analyses = [_analysis("reduction", "spectrum", {"n": {"used": {"experiment": "exp-1", "output": "w"}}})]

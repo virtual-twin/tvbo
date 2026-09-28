@@ -1,24 +1,9 @@
-# =============================================================================
-# Stress on Truss
-# =============================================================================
-# Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/
-#
-# 2D truss structure: point masses connected by stiff springs (beams).
-# Demonstrates:
-#   - Heterogeneous vertices: FreeVertex (4 SVs) + FixedVertex (0 SVs)
-#   - 2D coupling with insym/outsym
-#   - Observed function (obsf) for beam force magnitude
-#   - Per-edge parameters (beam rest lengths L)
-# =============================================================================
+# Stress on a truss (NetworkDynamics.jl Stress on Truss tutorial)
 
 id: 106
 label: "Stress on Truss"
 description: >
-    Time evolution of a 2D truss structure: point masses connected by
-    stiff springs. Free vertices have position (x, y) and velocity (vx, vy)
-    as state variables; fixed vertices output their constant position.
-    Beams exert forces proportional to deviation from rest length.
-    Recreates the NetworkDynamics.jl Stress on Truss tutorial.
+    Time evolution of a 2D truss structure: point masses connected by stiff springs. Free vertices have position (x, y) and velocity (vx, vy) as state variables; fixed vertices output their constant position. Beams exert forces proportional to deviation from rest length. Recreates the NetworkDynamics.jl Stress on Truss tutorial.
 references:
     - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/stress_on_truss/"
 
@@ -27,10 +12,7 @@ dynamics:
     name: FreeVertex
     label: "Free vertex (point mass)"
     description: >
-        Point mass with position (x, y) and velocity (vx, vy).
-        dx/dt = vx, dy/dt = vy,
-        dvx/dt = (Fx_sum - γ·vx) / M,
-        dvy/dt = (Fy_sum - γ·vy) / M - g.
+        Point mass with position (x, y) and velocity (vx, vy). dx/dt = vx, dy/dt = vy, dvx/dt = (Fx_sum - γ·vx) / M, dvy/dt = (Fy_sum - γ·vy) / M - g.
     system_type: continuous
     autonomous: true
     parameters:
@@ -100,9 +82,7 @@ network:
             name: FixedVertex
             label: "Fixed vertex (support)"
             description: >
-                Fixed support point. No internal dynamics, outputs constant
-                position (xfix, yfix) as coupling variables.
-                Uses NoFeedForward since it ignores edge inputs.
+                Fixed support point. No internal dynamics, outputs constant position (xfix, yfix) as coupling variables. Uses NoFeedForward since it ignores edge inputs.
             system_type: continuous
             autonomous: true
             parameters:
@@ -121,11 +101,7 @@ network:
 
     label: "11-node truss structure"
     description: >
-        2D truss: 5 bottom nodes, 5 top nodes (shifted), 1 hanging mass.
-        Bottom: (0,0), (1,0), (2,0), (3,0), (4,0).
-        Top: (1.2,1), (2.2,1), (3.2,1), (4.2,1), (5.2,1).
-        Hanging: (6,−1). Nodes 1 and 4 are fixed supports.
-        18 beams connecting adjacent nodes.
+        2D truss: 5 bottom nodes, 5 top nodes (shifted), 1 hanging mass. Bottom: (0,0), (1,0), (2,0), (3,0), (4,0). Top: (1.2,1), (2.2,1), (3.2,1), (4.2,1), (5.2,1). Hanging: (6,−1). Nodes 1 and 4 are fixed supports. 18 beams connecting adjacent nodes.
     number_of_nodes: 11
     nodes:
         # Bottom row (nodes 1-5, indices 0-4)
@@ -354,10 +330,7 @@ network:
             name: BeamForce
             label: "Stiff spring (beam)"
             description: >
-                Antisymmetric beam force: F = K·(L - d) in the direction
-                of the beam. d = |pos_dst - pos_src|.
-                Outputs 2D force vector [Fx, Fy].
-                Has an observed function for absolute force |F|.
+                Antisymmetric beam force: F = K·(L - d) in the direction of the beam. d = |pos_dst - pos_src|. Outputs 2D force vector [Fx, Fy]. Has an observed function for absolute force |F|.
             delayed: false
             parameters:
                 K:

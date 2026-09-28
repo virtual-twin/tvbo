@@ -1,31 +1,7 @@
 <%
 model = context['model']
-
-sv_names = list(model.state_variables.keys())
-param_names = list(model.parameters.keys())
-ct_names = list(model.coupling_inputs.keys()) if model.coupling_inputs else []
-dv_names = list(model.in_dependency_order('derived_variables').keys()) if model.derived_variables else []
-dp_names = list(model.in_dependency_order('derived_parameters').keys()) if model.derived_parameters else []
-
-# Single-node continuation zeroes every coupling input: otherwise undeclared in Fortran.
-coupling_zero = list(ct_names)
-
-# Fortran is case-insensitive and FUNC's own arguments are in scope, so a symbol colliding with either is renamed for the whole emission.
-reserved = {"ndim", "u", "icp", "par", "ijac", "f", "dfdu", "dfdp"}
-emitted = sv_names + param_names + dv_names + dp_names
-lowered = [name.lower() for name in emitted]
-
-
-def rename(name):
-    """*name* as Fortran may declare it: suffixed when it collides with FUNC's own arguments, or when another emitted symbol differs from it only in case (`A` keeps the name, `a` becomes `alow`)."""
-    if name.lower() in reserved:
-        return name + "_par"
-    if name[0].islower() and lowered.count(name.lower()) > 1:
-        return name + "low"
-    return name
-
-
-replace = {name: rename(name) for name in emitted}
+replace = context['replace']
+coupling_zero = context['coupling_zero']
 
 # Fortran has no closures, so model functions such as Sigm are inlined into every right-hand side.
 render_eq = lambda obj: model.render_equation(obj, format='fortran', inline_functions=True, replace=replace, remove=coupling_zero)

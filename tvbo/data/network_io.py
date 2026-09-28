@@ -27,7 +27,6 @@ from tvbo.data.matrix_io import (
     LazyArrayStore,
     auto_format,
     edge_name,
-    read_edge,
     template_edges,
     write_matrix,
 )
@@ -56,25 +55,6 @@ SENSOR_PATTERNS = [
 ]
 
 # ── Helpers ───────────────────────────────────────────────────────────
-
-
-_template_edges = template_edges
-
-
-def _read_edges(store, meta: dict) -> tuple[dict, dict]:
-    """Every template-edge matrix and its edge parameters, from an open store.
-
-    Names come from the sidecar when it declares any, else from the store's own ``edges/`` listing. Each edge is read through :func:`tvbo.data.matrix_io.read_edge`, in its stored format.
-    """
-    edges = template_edges(meta.get("edges", []))
-    names = [edge_name(e) for e in edges] if edges else (list(store["edges"]) if "edges" in store else [])
-    arrays, params = {}, {}
-    for name in names:
-        try:
-            arrays[name], params[name] = read_edge(store, name)
-        except KeyError:
-            continue
-    return arrays, params
 
 
 def _write_dimension_labels(dataset, meta: dict, column_labels: list[str]):
@@ -116,8 +96,8 @@ def _write_dimension_labels(dataset, meta: dict, column_labels: list[str]):
 def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
     """Write all template-edge matrices + edge parameters to a store."""
     edge_meta = {}
-    for e in _template_edges(meta.get("edges", [])):
-        edge_meta[e.get("name") or e.get("label")] = e
+    for e in template_edges(meta.get("edges", [])):
+        edge_meta[edge_name(e)] = e
 
     store.attrs["tvbo_class"] = "tvbo:Network"
     store.attrs["sidecar_file"] = str(meta.get("_sidecar_name", ""))
@@ -635,8 +615,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     if arrays:
         from tvbo.classes.network import _LENGTH_MEASURES, _WEIGHT_MEASURES
 
-        names = [te.get("name") or te.get("label") for te in _template_edges(meta.get("edges", []))]
-        names = [nm for nm in names if nm]
+        names = [edge_name(te) for te in template_edges(meta.get("edges", []))]
         nameset = set(names)
         if "weight" in arrays and "weight" not in nameset:
             w_name = next((nm for nm in names if nm.lower() in _WEIGHT_MEASURES), None) or next(
@@ -675,8 +654,8 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
 
     elif binary_format == "csv":
         # CSV: one file = one matrix = first template edge only
-        edges = _template_edges(meta.get("edges", []))
-        name = (edges[0].get("name") or edges[0].get("label")) if edges else next(iter(arrays))
+        edges = template_edges(meta.get("edges", []))
+        name = edge_name(edges[0]) if edges else next(iter(arrays))
         np.savetxt(companion, arrays[name], delimiter=" ", fmt="%.8g")
 
     meta.pop("_sidecar_name", None)

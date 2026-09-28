@@ -241,6 +241,15 @@ def _lems_time_unit(*scopes):
     return unit if unit in ("s", "ms", "us") else "ms"
 
 
+def _lems_clock(experiment):
+    """The LEMS ``<Simulation>`` clock, ``(step, length)``, read through `BaseAdapter.get_integration_info` like every other backend's window.
+
+    ``length`` is the measured ``duration``: a declared settle is refused by `NeuroMLAdapter.refuse_unrenderable`, which every render passes first.
+    """
+    window = BaseAdapter(experiment).get_integration_info()
+    return window["dt"], window["duration"]
+
+
 def _dynamics_has_time_units(params, svs, dvs):
     """Whether the TimeDerivative equations use time-dimensioned parameters.
 
@@ -1583,8 +1592,7 @@ def _build_hier_custom_context(experiment):
     integration = getattr(experiment, "integration", None)
 
     # ── Integration settings ──
-    dt = integration.step_size if integration else 0.01
-    duration = integration.duration if integration else 1000.0
+    dt, duration = _lems_clock(experiment)
     time_unit = _lems_time_unit(integration)
 
     label = getattr(experiment, "label", None)
@@ -1861,8 +1869,7 @@ def _build_std_fhn_context(experiment, cell_type):
     svs = dyn.state_variables or {}
 
     integration = getattr(experiment, "integration", None)
-    dt = integration.step_size if integration else 0.01
-    duration = integration.duration if integration else 200.0
+    dt, duration = _lems_clock(experiment)
     time_scale = _lems_time_unit(integration)
 
     dyn_id = safe_id(dyn.name or "fhn")
@@ -1915,8 +1922,7 @@ def _build_std_cell_context(experiment):
     params = dyn.parameters or {}
 
     integration = getattr(experiment, "integration", None)
-    dt = integration.step_size if integration else 0.01
-    duration = integration.duration if integration else 1000.0
+    dt, duration = _lems_clock(experiment)
     time_scale = _lems_time_unit(integration)
 
     label = getattr(experiment, "label", None)
@@ -1978,8 +1984,7 @@ def _build_std_network_context(experiment):
 
     # Integration parameters
     integration = getattr(experiment, "integration", None)
-    dt = integration.step_size if integration else 0.01
-    duration = integration.duration if integration else 1000.0
+    dt, duration = _lems_clock(experiment)
     time_scale = _lems_time_unit(integration)
 
     label = getattr(experiment, "label", None)
@@ -2898,8 +2903,7 @@ def build_lems_context(experiment):
     integration = getattr(experiment, "integration", None)
     network = getattr(experiment, "network", None)
     n_nodes = int(network.number_of_nodes) if network and hasattr(network, "number_of_nodes") else 1
-    dt = integration.step_size if integration else 0.01
-    duration = integration.duration if integration else 1000.0
+    dt, duration = _lems_clock(experiment)
     from tvbo.utils.units import normalize_unit, time_unit_of
 
     raw_ts = time_unit_of(getattr(experiment, "network", None), integration, experiment)
@@ -3249,6 +3253,9 @@ class NeuroMLAdapter(BaseAdapter):
     STD_NETWORK_TEMPLATE = "neuroml/tvbo-neuroml-std-network-lems.xml.mako"
     HIER_CUSTOM_TEMPLATE = "neuroml/tvbo-neuroml-hier-custom-lems.xml.mako"
 
+    DELAY_CARRIERS = ("delay",)
+    """Edge attributes a delayed coupling is lowered from: an explicit per-edge ``delay``, emitted on its connection. Nothing here derives a delay from a tract length, so a network carrying lengths alone would integrate instantaneous."""
+
     def __init__(self, source=None):
         from tvbo.classes.dynamics import Dynamics
         from tvbo.classes.experiment import SimulationExperiment
@@ -3260,36 +3267,52 @@ class NeuroMLAdapter(BaseAdapter):
             source = SimulationExperiment(dynamics=source)
         super().__init__(source)
 
+    def refuse_unrenderable(self) -> None:
+        """`BaseAdapter.refuse_unrenderable`, and a declared settle.
+
+        LEMS times every input from the start of the run and reports the whole of it, so a positive ``transient_time`` would put each declared onset inside the settle and hand the settle back as measurement.
+
+        Raises:
+            ValueError: Where the network lacks an edge attribute this backend reads.
+            NotImplementedError: If the experiment declares a positive ``transient_time``.
+        """
+        super().refuse_unrenderable()
+        settle = self.get_integration_info()["transient_time"]
+        if settle > 0:
+            raise NotImplementedError(
+                f"the NeuroML backend has no settle: integration.transient_time is {settle:g}, and LEMS times every input "
+                "from the start of the run and reports the whole of it. Declare transient_time: 0, or run a backend that cuts the settle."
+            )
+
     def _ctx(self, **extra):
-        """Return ``build_lems_context()`` merged with any caller-supplied extras."""
-        ctx = build_lems_context(self.experiment)
-        ctx.update(extra)
-        return ctx
+        """``build_lems_context()`` merged with any caller-supplied extras, once `refuse_unrenderable` has passed the declaration."""
+        self.refuse_unrenderable()
+        return {**build_lems_context(self.experiment), **extra}
 
     def render_code(self, use_standard_types=False, **kwargs) -> str:
         """Render a complete, self-contained LEMS simulation file (``<Lems>`` root).
+
+        Refuses first, through `refuse_unrenderable`, as every other backend's `render_context` does, so a declaration this backend would drop part of is never emitted as well-formed LEMS for the rest.
 
         Parameters
         ----------
         use_standard_types : bool
             When True and the dynamics uses NeuroML standard types (``iri: neuroml:*``), emit standard components with ``<Include file="Cells.xml"/>`` etc.  These includes are resolved by jNeuroML at runtime but NOT by the Python ``lems`` validator, so this should only be True when the output is destined for ``run()``.
         """
-        if use_standard_types and self.experiment:
-            ctx = build_std_lems_context(self.experiment)
-            if ctx is not None:
-                from tvbo import templates
-
-                if ctx.get("is_hier_custom"):
-                    tpl = templates.lookup.get_template(self.HIER_CUSTOM_TEMPLATE)
-                elif ctx["is_network"]:
-                    tpl = templates.lookup.get_template(self.STD_NETWORK_TEMPLATE)
-                else:
-                    tpl = templates.lookup.get_template(self.STD_LEMS_TEMPLATE)
-                return tpl.render(**ctx)
         from tvbo import templates
 
-        template = templates.lookup.get_template(self.TEMPLATE)
-        return template.render(experiment=self.experiment, **self._ctx(**kwargs))
+        self.refuse_unrenderable()
+        ctx = build_std_lems_context(self.experiment) if use_standard_types and self.experiment else None
+        if ctx is None:
+            template = templates.lookup.get_template(self.TEMPLATE)
+            return template.render(experiment=self.experiment, **{**build_lems_context(self.experiment), **kwargs})
+        if ctx.get("is_hier_custom"):
+            tpl = templates.lookup.get_template(self.HIER_CUSTOM_TEMPLATE)
+        elif ctx["is_network"]:
+            tpl = templates.lookup.get_template(self.STD_NETWORK_TEMPLATE)
+        else:
+            tpl = templates.lookup.get_template(self.STD_LEMS_TEMPLATE)
+        return tpl.render(**ctx)
 
     def render_neuroml(self, **kwargs) -> str:
         """Render a NeuroML v2 document (``<neuroml>`` root).

@@ -592,14 +592,14 @@ def test_a_caption_failure_does_not_abort_the_render_loop(tmp_path, monkeypatch)
     An exception composing figure 1's caption stopped the loop, so every later figure went unrendered even though the images written so far were fine.
     """
     from tvbo.adapters import bsplot
-    from tvbo.cli import figures as figures_cli
+    from tvbo.run import study as study_run
 
     rendered: list = []
     monkeypatch.setattr(bsplot, "render", lambda fig, **kw: rendered.append(getattr(fig, "name", None)))
     monkeypatch.setattr(bsplot, "compose_caption", lambda fig: (_ for _ in ()).throw(AttributeError("bad panel shape")))
 
     figs = [SimpleNamespace(name="fig-a", format="png"), SimpleNamespace(name="fig-b", format="png")]
-    written = figures_cli.render_figures(figs, tmp_path, tmp_path / "figures")
+    written = study_run.render_figures(figs, tmp_path, tmp_path / "figures")
     assert rendered == ["fig-a", "fig-b"]
     assert len(written) == 2
 
@@ -607,15 +607,14 @@ def test_a_caption_failure_does_not_abort_the_render_loop(tmp_path, monkeypatch)
 def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monkeypatch):
     """A failed stage means the containers are stale or absent.
 
-    Emitting anyway reported numbers the run did not produce, and exited 0. The boolean ``_run_whole_study`` already returned was simply discarded.
+    Emitting anyway reported numbers the run did not produce, and exited 0. Every study's run reports whether its analysis stage held, and a tree run must act on that.
     """
-    import typer
-
-    from tvbo.cli import run as run_cli
+    from tvbo.data import study_manifest
+    from tvbo.run import study as study_run
 
     emitted: list = []
-    monkeypatch.setattr(run_cli, "_run_whole_study", lambda *a, **k: False)
-    monkeypatch.setattr(run_cli, "emit_manifest", lambda *a, **k: emitted.append(a) or (tmp_path / "m.yml", []), raising=False)
+    monkeypatch.setattr(study_run, "run_study", lambda *a, **k: False)
+    monkeypatch.setattr(study_manifest, "emit_manifest", lambda *a, **k: emitted.append(a) or (tmp_path / "m.yml", []))
 
     spec = tmp_path / "collection.yaml"
     (tmp_path / "nested").mkdir()
@@ -624,8 +623,8 @@ def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monke
         "title: Demo\nstudies:\n  - !include nested/toy.yaml\nresults:\n  - {key: parcels, value: '379', source: s}\n"
     )
     obj = tvbo.SimulationStudy.from_file(str(spec))
-    with pytest.raises((SystemExit, typer.Exit, typer.BadParameter)):
-        run_cli._run_tree(obj, str(spec), tmp_path / "output")
+    with pytest.raises(study_run.StudyRunError, match="manifest was NOT written"):
+        study_run.run_tree(obj, str(spec), tmp_path / "output")
     assert not emitted, "the manifest was written from a failed run"
 
 

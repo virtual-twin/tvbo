@@ -47,8 +47,6 @@ from tvbo.run.graph import GraphRunner as _Network
 from tvbo.utils import Bunch, as_list, initial_value, keyed_items, network_couplings, normalize_params, traverse_metadata
 from tvbo.utils.source import current_source_file
 
-logger = logging.getLogger(__name__)
-
 sessionid = 1
 
 
@@ -444,7 +442,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             self.network._resolve(source_dir=source_dir)
 
         if not getattr(self, "integration", None):
-            self.integration = Integrator(method="Heun")
+            self.integration = Integrator()
         self.integration.enrich()
 
     @classmethod
@@ -476,7 +474,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         else:
             obj.__dict__.setdefault("dynamics", None)
 
-        integ = getattr(obj, "integration", None) or Integrator(method="Heun")
+        integ = getattr(obj, "integration", None) or Integrator()
         integ.enrich()
         obj.__dict__["integration"] = integ
 
@@ -613,18 +611,12 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         Returns:
             A new `SimulationExperiment` populated from the file.
         """
-        import yaml
-
-        from tvbo.utils import register_recipe_code_paths, yaml_loader
+        from tvbo.utils import register_recipe_code_paths
         from tvbo.utils.source import loading_from
 
         with loading_from(filepath) as source_file:
             register_recipe_code_paths(source_file)
-            data_as_dict = yaml_loader.load_as_dict(filepath) or {}
-            # Drop private/provenance keys (e.g. _source_file) — not schema slots, so a round-tripped render_yaml() spec reloads cleanly.
-            if isinstance(data_as_dict, dict):
-                data_as_dict = {k: v for k, v in data_as_dict.items() if not str(k).startswith("_")}
-            exp = yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
+            exp = cls._from_document(filepath)
             exp._source_file = source_file
         return exp
 
@@ -655,12 +647,34 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         ...     A: {value: 3.25}
         ... ''')
         """
-        import yaml
+        return cls._from_document(yaml_string)
 
+    @classmethod
+    def from_dict(cls, data: dict) -> "SimulationExperiment":
+        """Create a SimulationExperiment from a mapping already in hand, such as a raw experiment a study kept from its own parse.
+
+        Normalised as a loaded document is, on a copy, so the caller's mapping is left untouched however construction merges registry entries into what it is handed; nothing is dumped and reparsed, so every mapping keeps its declared order.
+
+        Args:
+            data: The experiment as a mapping, in any spelling a YAML recipe may use.
+
+        Returns:
+            A new `SimulationExperiment` populated from the mapping.
+        """
+        return cls._from_document(data)
+
+    @classmethod
+    def _from_document(cls, source) -> "SimulationExperiment":
+        """The one construction path `from_file`, `from_string` and `from_dict` share.
+
+        *source* is parsed at most once and normalised by `yaml_loader.load_as_dict`, which works on a copy; its private keys (`_source_file`, …) are dropped, since they are no schema slots, so a round-tripped `to_yaml()` reloads cleanly. The mapping then goes straight to the constructor, so every mapping keeps the order its author declared it in.
+        """
         from tvbo.utils import yaml_loader
 
-        data_as_dict = yaml_loader.load_as_dict(yaml_string) or {}
-        return yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
+        data = yaml_loader.load_as_dict(source) or {}
+        if isinstance(data, dict):
+            data = {k: v for k, v in data.items() if not str(k).startswith("_")}
+        return yaml_loader.construct(data, cls)
 
     # ── Platform retrieval ────────────────────────────────────────
 
@@ -842,48 +856,29 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
     @property
     def noise_sigma_array(self) -> np.ndarray:
-        """Per-state-variable noise sigma values.
+        """Per-state-variable noise sigma, one entry per state variable in model order.
 
-        Preference order:
-        1) sigma from each state variable's noise.parameters["sigma"].value 2) fallback to integration-level noise.parameters["sigma"].value 3) default 0.0
-
-        Returns an array with one entry per state variable in model order.
+        Each state variable's own declared amplitude (an explicit ``0`` included), else the integration's, else ``0.0``, every one read by `tvbo.utils.noise_sigma`, so `sigma` and `nsig` mean here what they mean on every backend. A read only: nothing is written back into the record.
         """
-        sigmas: list[float] = []
+        from tvbo.utils import noise_sigma
 
-        for sv in self.dynamics.state_variables.values():
-            sigma = 0.0
-            if sv.noise:
-                try:
-                    sigma = float(sv.noise.parameters["sigma"].value)
-                except Exception as e:
-                    logger.debug("Error retrieving sigma for state variable %s: %s", sv.name, e)
+        shared = noise_sigma(getattr(self.integration, "noise", None))
+        fallback = 0.0 if shared is None else shared
+        own = (noise_sigma(getattr(sv, "noise", None)) for sv in self.dynamics.state_variables.values())
+        return np.asarray([fallback if sigma is None else sigma for sigma in own], dtype=float)
 
-            if sigma == 0.0:
-                try:
-                    integ_meta = getattr(self.integration, "metadata", None)
-                    integ_noise = getattr(integ_meta, "noise", None)
-                    inparams = getattr(integ_noise, "parameters", None)
-                    if (
-                        inparams is not None
-                        and isinstance(inparams, dict)
-                        and "sigma" in inparams
-                        and hasattr(inparams["sigma"], "value")
-                    ):
-                        sigma = float(inparams["sigma"].value)
-                except Exception as e:
-                    logger.debug("Error retrieving integration-level sigma: %s", e)
+    @property
+    def run_noise(self):
+        """The noise process a run draws from, or ``None`` for a deterministic run.
 
-            sigmas.append(float(sigma))
+        The integration's declared noise when it declares one; otherwise, when only state variables declare an amplitude, a default `Noise` standing for them, which carries the process settings (additive, seed) every backend then applies. Built on each read and never stored, so reading it cannot change what the experiment serialises to or what a later reader of `integration.noise` sees.
+        """
+        declared = self.integration.noise_wrapper
+        if declared is not None or not any(sigma > 0 for sigma in self.noise_sigma_array):
+            return declared
+        from tvbo.classes.noise import Noise
 
-        if np.any(np.asarray(sigmas, dtype=float) > 0):
-            self.integration.state_wise_sigma = sigmas
-            if not self.integration.noise:
-                from tvbo.classes.noise import Noise
-
-                self.integration.noise = Noise()
-
-        return np.asarray(sigmas, dtype=float)
+        return Noise()
 
     def __str__(self):
         return self.label if self.label else f"SimulationExperiment{self.id}"
@@ -1043,7 +1038,6 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         Returns:
             A `SimulationState` carrying initial conditions, network, `dt`, step count, noise, and parameters.
         """
-        _ = self.noise_sigma_array
         parameters = self.get_parameters_collection(
             keys_to_exclude=[
                 "derived_parameters",
@@ -1061,8 +1055,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             network=self.network,
             dt=self.integration.step_size,
             nt=int(np.ceil(self.integration.duration / self.integration.step_size)),
-            # Provide a JAX-pytree-friendly Noise wrapper (or None)
-            noise=self.integration.noise_wrapper,
+            noise=self.run_noise,
             parameters=parameters,
             stimulus=None,
             monitor_parameters=None,

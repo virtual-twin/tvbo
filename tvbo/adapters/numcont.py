@@ -65,8 +65,7 @@ def _warmup_to_steady_state(model, cont) -> np.ndarray:
 
     Honors ``cont.initial_state.method`` (default ``time_integration``):
 
-    - ``time_integration`` (default): run ``Dynamics.run(format='python')``
-      for ``initial_state.duration`` time units and return the final state.
+    - ``time_integration`` (default): run ``Dynamics.run(format='python')`` for ``initial_state.duration`` time units and return the final state.
     - ``given``: return the schema defaults verbatim (no integration).
     - other methods: fall back to schema defaults (not yet implemented).
     """
@@ -143,14 +142,41 @@ def _po_par(cont, po_cont, key, default):
     return override if override is not None else _cont_par(po_cont, key, default)
 
 
-def _po_continuation(cont):
-    """The nested :class:`Continuation` a ``hopf:`` BranchSwitch declares for its periodic-orbit branch, or ``None``."""
+def _branches(cont) -> dict:
+    """*cont*'s branch switches keyed by name, however the declaration held them."""
     branches = getattr(cont, "branches", None) or {}
-    entries = branches.values() if isinstance(branches, dict) else branches
-    for branch in entries:
-        if str(getattr(branch, "source_point", "") or "").lower().startswith("hopf"):
-            return getattr(branch, "continuation", None)
-    return None
+    if isinstance(branches, dict):
+        return branches
+    return {getattr(bs, "name", f"branch_{i}"): bs for i, bs in enumerate(branches)}
+
+
+def _declared_sources(cont) -> list:
+    """``(name, branch, kind, index)`` for every branch of *cont* that declares a source point, read by `ContinuationAdapter.source_point`.
+
+    A branch declaring none is started by nothing here: AUTO continues periodic orbits from every Hopf point unless a periodic-orbit branch selects some.
+    """
+    return [
+        (name, branch, *ContinuationAdapter.source_point(branch, ""))
+        for name, branch in _branches(cont).items()
+        if getattr(branch, "source_point", None)
+    ]
+
+
+def _po_branch(cont):
+    """The periodic-orbit :class:`BranchSwitch` *cont* declares — its first one-parameter branch from a Hopf point — and the Hopf index it selects, or ``(None, None)``."""
+    return next(
+        (
+            (branch, index)
+            for _, branch, kind, index in _declared_sources(cont)
+            if kind == "HB" and not ContinuationAdapter.is_codim2(branch, cont)
+        ),
+        (None, None),
+    )
+
+
+def _n_labelled(bundle, label: str) -> int:
+    """How many special points labelled *label* the AUTO *bundle* carries across all its branches, which is the range AUTO's 1-based ordinals (``HB2``) address."""
+    return sum(len(branch.labels.by_label.get(label, {}) or {}) for branch in bundle)
 
 
 def _orbit_profiles(solutions, sv_names, n_phase=101):
@@ -184,6 +210,23 @@ class NumContAdapter(ContinuationAdapter):
 
     TEMPLATE = "tvbo-auto7p.py.mako"
 
+    FUNC_ARGUMENTS = ("ndim", "u", "icp", "par", "ijac", "f", "dfdu", "dfdp")
+    """The arguments of AUTO's ``FUNC`` subroutine, in scope wherever the emitted model's symbols are, so a symbol spelled like one is renamed (`ContinuationAdapter.fortran_names`)."""
+
+    @staticmethod
+    def _prepare_context(model, continuation, **kwargs) -> dict:
+        """The template context for *continuation* on *model*: the shared pair, the Fortran name of every symbol the template declares (``replace``), and the coupling inputs a single node zeroes (``coupling_zero``)."""
+        context = ContinuationAdapter._prepare_context(model, continuation, **kwargs)
+        emitted = [
+            *model.state_variables,
+            *model.parameters,
+            *(model.in_dependency_order("derived_variables") if model.derived_variables else ()),
+            *(model.in_dependency_order("derived_parameters") if model.derived_parameters else ()),
+        ]
+        context["replace"] = ContinuationAdapter.fortran_names(emitted, reserved=NumContAdapter.FUNC_ARGUMENTS)
+        context["coupling_zero"] = list(model.coupling_inputs or ())
+        return context
+
     # ── Public API ───────────────────────────────────────────────────────
 
     def run_one(self, model, cont, cont_name, **kwargs):
@@ -206,7 +249,7 @@ class NumContAdapter(ContinuationAdapter):
         workdir = tempfile.mkdtemp(prefix=f"tvbo_numcont_{model.name}_")
         f90_path = os.path.join(workdir, "model.f90")
         with open(f90_path, "w") as fh:
-            fh.write(self.render_code(model=model, continuation=cont))
+            fh.write(self.render_continuation(model, cont))
 
         # 2. Build common AUTO arguments
         parnames = _build_parnames(model)
@@ -261,39 +304,37 @@ class NumContAdapter(ContinuationAdapter):
                 R_eq = auto.merge(R_eq + R_eq_neg)
             auto.sv(R_eq, cont_name)
 
-            # 4. Periodic-orbit continuation from each Hopf point
+            # 4. Periodic-orbit continuation from the Hopf points the periodic-orbit branch selects, every one where the continuation declares none
+            po_branch, hopf_index = _po_branch(cont)
+            po_cont = getattr(po_branch, "continuation", None)
             po_results = []
             po_profiles = []
-            for _i, br in enumerate(R_eq):
-                hbs = br.labels.by_label.get("HB", {})
-                n_hb = len(hbs) if hbs else 0
-                for k in range(n_hb):
-                    po_cont = _po_continuation(cont)
-                    kwargs_po = dict(
-                        data=R_eq(f"HB{k + 1}"),
-                        EPSL=kwargs_eq["EPSL"],
-                        EPSU=kwargs_eq["EPSU"],
-                        EPSS=kwargs_eq["EPSS"],
-                        IPS=2,
-                        ISP=2,
-                        ISW=1,
-                        ICP=[fp_name, "PERIOD"],
-                        RL0=p_min,
-                        RL1=p_max,
-                        NMX=int(_po_par(cont, po_cont, "NMX", 400)),
-                        NPR=1,
-                        DS=float(_po_par(cont, po_cont, "DS", 0.01)),
-                        DSMAX=float(_po_par(cont, po_cont, "DSMAX", 0.1)),
-                        DSMIN=float(_po_par(cont, po_cont, "DSMIN", 1e-6)),
-                        IADS=1,
-                        MXBF=int(_cont_par(cont, "MXBF", 50)),
-                        IID=0,
-                    )
-                    R_po = auto.run(**kwargs_po)
-                    po_name = f"{cont_name}_HB{k}"
-                    auto.sv(R_po, po_name)
-                    po_results.append((po_name, R_po))
-                    po_profiles.append(_orbit_profiles(R_po(), list(model.state_variables)))
+            for ordinal in self.select_points(range(1, _n_labelled(R_eq, "HB") + 1), hopf_index):
+                kwargs_po = dict(
+                    data=R_eq(f"HB{ordinal}"),
+                    EPSL=kwargs_eq["EPSL"],
+                    EPSU=kwargs_eq["EPSU"],
+                    EPSS=kwargs_eq["EPSS"],
+                    IPS=2,
+                    ISP=2,
+                    ISW=1,
+                    ICP=[fp_name, "PERIOD"],
+                    RL0=p_min,
+                    RL1=p_max,
+                    NMX=int(_po_par(cont, po_cont, "NMX", 400)),
+                    NPR=1,
+                    DS=float(_po_par(cont, po_cont, "DS", 0.01)),
+                    DSMAX=float(_po_par(cont, po_cont, "DSMAX", 0.1)),
+                    DSMIN=float(_po_par(cont, po_cont, "DSMIN", 1e-6)),
+                    IADS=1,
+                    MXBF=int(_cont_par(cont, "MXBF", 50)),
+                    IID=0,
+                )
+                R_po = auto.run(**kwargs_po)
+                po_name = f"{cont_name}_HB{ordinal - 1}"
+                auto.sv(R_po, po_name)
+                po_results.append((po_name, R_po))
+                po_profiles.append(_orbit_profiles(R_po(), list(model.state_variables)))
 
             # 5. Codim-2 fold (and Hopf, BP) continuation from BranchSwitch specs
             codim2_results = self._run_codim2_branches(
@@ -332,78 +373,25 @@ class NumContAdapter(ContinuationAdapter):
     def _run_codim2_branches(self, *, auto, R_eq, cont, fp_name, kwargs_eq):
         """Run codim-2 fold/Hopf/BP continuations declared via ``cont.branches``.
 
-        Each :class:`~tvbo.classes.continuation.BranchSwitch` with ``source_point`` of the form ``'fold:N'`` / ``'fold:all'`` / ``'fold:-1'`` (or ``hopf:`` / ``bp:`` analogues) triggers a separate AUTO restart from that special point with ``ISW=2`` (fold/Hopf continuation) and two free parameters drawn from the sub- continuation's ``free_parameters`` slot.
+        Each :class:`~tvbo.classes.continuation.BranchSwitch` that `ContinuationAdapter.is_codim2` reads as a two-parameter continuation triggers a separate AUTO restart, with ``ISW=2`` (fold/Hopf continuation) and ``ICP`` the primary *fp_name* and the branch's second parameter (`ContinuationAdapter.codim2_parameter`), from every special point its ``source_point`` selects — ``'fold:1'``, ``'hopf:all'``, ``'bp:-1'``, read by `ContinuationAdapter.source_point` — and in both directions where the branch declares ``bothside``. AUTO bounds the principal parameter by ``RL0``/``RL1``, so the primary keeps the equilibrium continuation's bounds (*kwargs_eq*) and the second parameter's domain stops the curve through ``UZSTOP``. The step is the nested continuation's where it declares one, else the equilibrium continuation's.
 
         Returns a list of ``(name, source_type, fp1_name, fp2_name, R_c2)`` tuples consumed by :meth:`BifurcationResult.from_auto`.
         """
-        branches = getattr(cont, "branches", None) or {}
-        if not branches:
-            return []
-        if not isinstance(branches, dict):
-            # Coerce list-of-BranchSwitch → name-keyed dict
-            branches = {getattr(bs, "name", f"branch_{i}"): bs for i, bs in enumerate(branches)}
-
         out = []
-        for bname, bswitch in branches.items():
-            src = getattr(bswitch, "source_point", None) or ""
-            src_lower = src.lower()
-
-            # Identify which special-point label AUTO uses + ISW value
-            if src_lower.startswith("fold"):
-                label_prefix = "LP"
-                source_type = "fold"
-            elif src_lower.startswith("hopf"):
-                label_prefix = "HB"
-                source_type = "hopf"
-            elif src_lower.startswith("bp"):
-                label_prefix = "BP"
-                source_type = "bp"
-            else:
-                # PO branch from Hopf is handled separately above; ignore here
+        for bname, bswitch, kind, index in _declared_sources(cont):
+            fp2 = self.codim2_parameter(bswitch, cont)
+            if fp2 is None:
                 continue
-
-            sub_cont = getattr(bswitch, "continuation", None)
-            if sub_cont is None:
-                continue
-            fps_raw = getattr(sub_cont, "free_parameters", None)
-            fps = list(fps_raw.values()) if isinstance(fps_raw, dict) else (list(fps_raw) if fps_raw else [])
-            if len(fps) < 2:
-                continue
-            fp1_name = str(fps[0].name)
-            fp2_name = str(fps[1].name)
-
-            def _dom(fp, default=10.0):
-                dom = getattr(fp, "domain", None)
-                lo = float(dom.lo) if dom and dom.lo is not None else -default
-                hi = float(dom.hi) if dom and dom.hi is not None else default
-                return lo, hi
-
-            fp2_lo, fp2_hi = _dom(fps[1])
-
-            # Parse 'fold:1', 'fold:all', 'fold:-1', 'fold' (default: all)
-            spec = src.split(":", 1)[1].strip() if ":" in src else "all"
-            # AUTO addresses special points by 1-based ordinal across all branches, so size the range.
-            n_total = 0
-            for br in R_eq:
-                lbls = br.labels.by_label.get(label_prefix, {}) or {}
-                n_total += len(lbls)
-
-            if n_total == 0:
-                continue
-
-            if spec in ("all", "*", ""):
-                ordinals = list(range(1, n_total + 1))
-            else:
-                try:
-                    n = int(spec)
-                    if n == -1:
-                        ordinals = [n_total]
-                    elif 1 <= n <= n_total:
-                        ordinals = [n]
-                    else:
-                        ordinals = []
-                except ValueError:
-                    ordinals = []
+            # AUTO labels a special point by its canonical code (LP, HB, BP) and restarts from it with ISW=2.
+            label_prefix = kind
+            source_type = self.SOURCE_KINDS[kind]
+            sub_cont = bswitch.continuation
+            fp1_name = fp_name
+            fp2_name = str(fp2.name)
+            dom = getattr(fp2, "domain", None)
+            fp2_lo = float(dom.lo) if dom and dom.lo is not None else -10.0
+            fp2_hi = float(dom.hi) if dom and dom.hi is not None else 10.0
+            ordinals = self.select_points(range(1, _n_labelled(R_eq, label_prefix) + 1), index)
 
             for ordinal in ordinals:
                 lab = ordinal  # AUTO ordinal label
@@ -418,17 +406,20 @@ class NumContAdapter(ContinuationAdapter):
                         ISW=2,
                         ILP=0,
                         ICP=[fp1_name, fp2_name],
-                        RL0=fp2_lo,
-                        RL1=fp2_hi,
+                        RL0=kwargs_eq["RL0"],
+                        RL1=kwargs_eq["RL1"],
+                        UZSTOP={fp2_name: [fp2_lo, fp2_hi]},
                         NMX=int(_cont_par(sub_cont, "NMX", 400)),
                         NPR=1,
                         DS=float(_cont_par(sub_cont, "DS", 0.01)),
-                        IADS=int(_cont_par(sub_cont, "IADS", 0)),
+                        DSMAX=float(_cont_par(sub_cont, "DSMAX", kwargs_eq["DSMAX"])),
+                        DSMIN=float(_cont_par(sub_cont, "DSMIN", kwargs_eq["DSMIN"])),
+                        IADS=int(_cont_par(sub_cont, "IADS", kwargs_eq["IADS"])),
                         MXBF=int(_cont_par(sub_cont, "MXBF", 50)),
                         IID=0,
                     )
                     R_c2 = auto.run(**kwargs_c2)
-                    if bool(getattr(sub_cont, "bothside", False)):
+                    if bool(getattr(bswitch, "bothside", False)):
                         R_c2_neg = auto.run(**dict(kwargs_c2, DS=-kwargs_c2["DS"]))
                         R_c2 = auto.merge(R_c2 + R_c2_neg)
                     c2_name = f"{bname}_{label_prefix}{lab}"

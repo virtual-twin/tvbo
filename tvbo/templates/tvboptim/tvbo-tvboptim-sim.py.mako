@@ -66,8 +66,8 @@ from tvbo.adapters.tvboptim import solver_class as _solver_class
 method = integration.method or 'euler'
 solver_class = _solver_class(method)
 dt = float(integration.step_size) if integration.step_size else 0.1
-has_noise = integration.noise is not None
-noise_sigma = np.asarray(experiment.noise_sigma_array).flatten().tolist() if hasattr(experiment, 'noise_sigma_array') else [0.1]
+has_noise = experiment.run_noise is not None
+noise_sigma = experiment.noise_sigma_array.tolist()
 
 # Network metadata
 n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)

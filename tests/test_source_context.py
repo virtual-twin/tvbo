@@ -84,7 +84,7 @@ def test_from_file_resolves_edge_matrix_files_against_the_recipe_not_the_cwd(tmp
     exp = SimulationExperiment.from_file(str(recipe))
 
     assert exp.network.number_of_nodes == 3
-    assert len(exp.network.edges) == int(np.count_nonzero(_WEIGHTS))
+    np.testing.assert_array_equal(np.asarray(exp.network.matrix("weight", apply_transforms=False)), _WEIGHTS)
     assert exp._source_file == str(recipe.resolve())
     assert exp.network._source_dir == str(tmp_path.resolve())
     assert not hasattr(SimulationExperiment, "_pending_source_file")

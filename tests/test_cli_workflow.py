@@ -592,11 +592,29 @@ def test_concrete_container_reference_passes_through_unchanged():
     for ref in (
         "~/work/tvbo-dev.sif",
         "/abs/img.simg",
+        "tvbo-dev.sif",
         "docker://ghcr.io/virtual-twin/tvbo:dev",
         "docker://ghcr.io/virtual-twin/tvbo:0.5.3",
         "docker://ghcr.io/virtual-twin/tvbo@sha256:abc",
+        "oras://ghcr.io/virtual-twin/tvbo-sif:0.5.3",
+        "library://virtual-twin/tvbo/tvbo:0.5.3",
+        "docker-daemon:tvbo:dev",
     ):
         assert resolve_container_ref(ref) == ref
+
+
+def test_a_registry_reference_without_a_transport_is_pulled_as_a_docker_image(monkeypatch, tmp_path):
+    """`ghcr.io/org/tvbo:0.7.0` is how Docker spells an image, but Singularity reads a name with no transport as a local file path, so the kit gets `docker://` in front; a local image file with no recognised suffix still passes through."""
+    from tvbo.cli._workflow import resolve_container_ref
+
+    monkeypatch.setenv("TVBO_CONTAINER_TAG", "9.9.9")
+    assert resolve_container_ref("ghcr.io/the-virtual-brain/tvbo:0.7.0") == "docker://ghcr.io/the-virtual-brain/tvbo:0.7.0"
+    assert resolve_container_ref("ghcr.io/virtual-twin/tvbo@sha256:abc") == "docker://ghcr.io/virtual-twin/tvbo@sha256:abc"
+    assert resolve_container_ref("ghcr.io/virtual-twin/tvbo") == "docker://ghcr.io/virtual-twin/tvbo:9.9.9"
+    local = tmp_path / "tvbo-image"
+    local.write_bytes(b"")
+    monkeypatch.chdir(tmp_path)
+    assert resolve_container_ref("tvbo-image") == "tvbo-image"
 
 
 def test_unpinned_reference_resolves_to_version_matched_image(monkeypatch):

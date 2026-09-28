@@ -100,7 +100,7 @@ def flatten_reservoir(
     inner_rhs = _pluck(state_spec, "equation", "rhs") or ""
     activation = _activation_from_rhs(inner_rhs)
     tau = float(_param_value(inner.get("parameters", {}), "tau", 1.0))
-    noise_sigma = float(_pluck(state_spec, "noise", "parameters", "sigma", "value", default=0.0) or 0.0)
+    noise_sigma = _declared_sigma(state_spec.get("noise"))
 
     # --- reservoir recurrence W_int (via the typed-DAG resolver) --------------
     gg = subnet["graph_generator"]
@@ -122,13 +122,7 @@ def flatten_reservoir(
     W_int = catalog.run_generator("RandomReservoir", gg_params, seed=gg.get("seed"))["weights"]
 
     # --- macro SC + long-range coupling gain kappa ----------------------------
-    SC = np.asarray(catalog.load_matrix(net["iri"]), dtype=float)
-    for tr in net.get("transforms") or []:
-        rhs = _pluck(tr, "equation", "rhs") or ""
-        if "max(W)" in rhs.replace(" ", "").replace("/max(W)", "/max(W)"):
-            m = SC.max()
-            if m > 0:
-                SC = SC / m
+    SC = _macro_weights(net)
     R = SC.shape[0]
 
     # Guard the dense Kronecker assembly below: W_global is a dense (R·n)² float64 matrix, so memory grows quadratically in the flat node count.
@@ -191,6 +185,28 @@ def flatten_reservoir(
     )
     fr.noise_sigma = noise_sigma  # type: ignore[attr-defined]
     return fr
+
+
+def _macro_weights(net: dict):
+    """The macro structural connectivity, with every weight transform the network declares applied.
+
+    Applied by `Network` itself, which runs a declared `transforms:` entry through `tvbo.codegen.transforms`, so a transform means here exactly what it means on every backend however it is written — ``weight / max(weight)``, a masked reduction, or a callable.
+    """
+    from tvbo.classes.network import Network
+    from tvbo.graph_generators import catalog
+
+    network = Network.from_matrix(weights=catalog.load_matrix(net["iri"]), transforms=net.get("transforms") or [])
+    return network.matrix("weight", format="dense")
+
+
+def _declared_sigma(noise: dict | None) -> float:
+    """The noise amplitude a state variable declares, read by `tvbo.utils.noise_sigma` so `sigma` and `nsig` mean what they mean on every backend; ``0.0`` when it declares none."""
+    if not noise:
+        return 0.0
+    from tvbo.classes.noise import Noise
+    from tvbo.utils import noise_sigma
+
+    return noise_sigma(Noise(**noise)) or 0.0
 
 
 def _folded_integration(exp: dict, subnet: dict) -> dict:

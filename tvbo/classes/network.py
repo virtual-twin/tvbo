@@ -82,6 +82,16 @@ def _array_key(name: str) -> str:
     return name if "/" in name else f"edges/{name}"
 
 
+def _resident_form(data):
+    """``data`` as the resident set holds it: a scipy sparse matrix stays sparse, anything else becomes an ndarray.
+
+    Callers pass loaded matrices through this rather than ``np.asarray``, which wraps a sparse matrix in a 0-d object array.
+    """
+    from scipy import sparse
+
+    return data if sparse.issparse(data) else np.asarray(data)
+
+
 def _edge_name(key: str) -> str | None:
     """The edge a companion path names, or ``None`` where it names something else — the inverse of :func:`_array_key`.
 
@@ -320,10 +330,10 @@ def get_normative_connectome_data(
 
     Returns:
     -------
-    weights : np.ndarray
-        Connection strength matrix (N x N)
-    lengths : np.ndarray or None
-        Tract length matrix (N x N), or None if not available
+    weights : np.ndarray or scipy.sparse matrix
+        Connection strength matrix (N x N), in the format the database stores it.
+    lengths : np.ndarray, scipy.sparse matrix or None
+        Tract length matrix (N x N) in its stored format, or None if not available
     nodes : list of Node, optional
         Only when ``with_nodes=True``: the sidecar's labelled + positioned
         region nodes, so the network is keyed by region (alignment by label,
@@ -472,32 +482,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         has_edges = "edges" in kwargs and kwargs["edges"]
         has_edge_files = "edge_matrix_files" in kwargs and kwargs["edge_matrix_files"]
 
-        # Load edge_matrix_files into edges
+        _edge_file_weights = None
         if has_edge_files and not has_edges:
-            edge_files = kwargs["edge_matrix_files"]
-            source_dir = current_source_dir()
-
-            emf = edge_files[0]
-            fpath = str(emf)
-            if source_dir and not os.path.isabs(fpath):
-                fpath = os.path.join(source_dir, fpath)
-
-            w_arr = np.loadtxt(fpath, delimiter=",")
-            n_nodes = w_arr.shape[0]
-            edges = []
-            for i in range(n_nodes):
-                for j in range(n_nodes):
-                    if w_arr[i, j] != 0:
-                        edges.append(
-                            tvbo_datamodel.Edge(
-                                source=i,
-                                target=j,
-                                parameters=[tvbo_datamodel.Parameter(name="weight", value=float(w_arr[i, j]))],
-                            )
-                        )
-            kwargs["edges"] = edges
-            kwargs["number_of_nodes"] = n_nodes
-            has_edges = True
+            _edge_file_weights = self._read_edge_matrix_file(kwargs["edge_matrix_files"])
+            kwargs["number_of_nodes"] = _edge_file_weights.shape[0]
 
         # Normalise an inline string parcellation -> Parcellation dict so the parent constructor accepts it. Materialisation of normative data happens later in self._resolve().
         if not has_nodes and not has_edges and not has_edge_files:
@@ -559,6 +547,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         super().__init__(**kwargs)
 
         self._reattach_inline_edge_couplings(_detached_couplings)
+
+        if _edge_file_weights is not None:
+            self.set_matrix("weight", _edge_file_weights)
 
         # Stash raw template specs (plain dicts) for expansion in _resolve.
         object.__setattr__(self, "_node_template_spec", _nt_spec)
@@ -892,15 +883,15 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             if isinstance(result, dict):
                 if "weights" not in result:
                     raise TypeError("graph_generator materialiser dict must include a `weights` key.")
-                weights = np.asarray(result["weights"])
-                lengths = np.asarray(result["lengths"]) if result.get("lengths") is not None else None
+                weights = _resident_form(result["weights"])
+                lengths = _resident_form(result["lengths"]) if result.get("lengths") is not None else None
                 node_params = result.get("node_parameters") or result.get("node_params") or None
                 node_labels = result.get("node_labels")
                 if node_labels is not None and len(node_labels) == 0:  # emptiness by length: a label array has no truth value
                     node_labels = None
             elif isinstance(result, tuple) and len(result) in (2, 3):
-                weights = np.asarray(result[0])
-                lengths = np.asarray(result[1]) if result[1] is not None else None
+                weights = _resident_form(result[0])
+                lengths = _resident_form(result[1]) if result[1] is not None else None
                 node_params = result[2] if len(result) == 3 else None
             else:
                 raise TypeError(
@@ -1091,9 +1082,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if not self.edges:
             self.edges = []
         self.number_of_nodes = n_nodes
-        self.set_array("edges/weight", np.asarray(w_arr))
+        self.set_array("edges/weight", w_arr)
         if l_arr is not None:
-            self.set_array("edges/length", np.asarray(l_arr))
+            self.set_array("edges/length", l_arr)
 
     # Multi-scale resolution                                               #
     def _expand_node_template(self) -> None:
@@ -1660,6 +1651,26 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         object.__setattr__(self, "_bids_dir", str(bids_dir))
         return self
 
+    @staticmethod
+    def _read_edge_matrix_file(edge_files) -> np.ndarray:
+        """The weight matrix an ``edge_matrix_files`` entry holds: a comma-separated square matrix, target-by-source like every matrix a Network takes (``W[i, j]`` is the weight of the edge j -> i).
+
+        The path resolves against the recipe being loaded. One file is the weight matrix; more than one, a non-square matrix, or a non-finite entry is refused by name rather than read partially.
+        """
+        files = [str(f) for f in (edge_files if isinstance(edge_files, (list, tuple)) else [edge_files])]
+        if len(files) != 1:
+            raise ValueError(f"`edge_matrix_files` holds the one weight matrix; got {len(files)} files: {files}.")
+        fpath = files[0]
+        source_dir = current_source_dir()
+        if source_dir and not os.path.isabs(fpath):
+            fpath = os.path.join(source_dir, fpath)
+        weights = np.loadtxt(fpath, delimiter=",")
+        if weights.ndim != 2 or weights.shape[0] != weights.shape[1]:
+            raise ValueError(f"`edge_matrix_files` {files[0]!r} is not a square matrix: shape {weights.shape}.")
+        if not np.isfinite(weights).all():
+            raise ValueError(f"`edge_matrix_files` {files[0]!r} has non-finite entries.")
+        return weights
+
     def load_matrix(
         self,
         weights: np.ndarray,
@@ -1684,7 +1695,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         Network
             Self (for chaining).
         """
-        weights = np.asarray(weights)
+        weights = _resident_form(weights)
         n_nodes = weights.shape[0]
 
         self.set_array("edges/weight", weights)
@@ -4090,9 +4101,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
         The one write into the resident set. A scipy sparse matrix is kept sparse; anything else becomes an ndarray. Declares no template edge — :meth:`set_matrix` does, for an edge matrix that should reach the sidecar.
         """
-        from scipy import sparse
-
-        self._resident()[_array_key(path)] = data if sparse.issparse(data) else np.asarray(data)
+        self._resident()[_array_key(path)] = _resident_form(data)
 
     def array(self, path: str):
         """The array at ``path``, resident or read from the companion on first use; ``None`` when there is neither.

@@ -11,7 +11,7 @@ from tvbo.templates.tvboptim.utils import (
     edge_label as _edge_label, edge_const as _edge_const, collect_network_edge_arrays,
     node_label as _node_label, node_const as _node_const, collect_network_node_arrays,
     functions_by_name as _functions_by_name, kernel_support_steps as _kernel_support_steps,
-    _assert_transient_on_sample_grid, assert_measured_window_is_stable, emission_period_steps,
+    _assert_transient_on_sample_grid, assert_measured_window_is_stable, streaming_time_periods,
     monitor_class_name,
 )
 
@@ -801,7 +801,7 @@ ${render_observer_states(red['states'], _jc, _ind)}\
 </%def>\
 <%def name="render_wave_reduction(red, name, s_idx, dt)">\
 <%doc>
-    Grouped wave-metrics reducer (Observation whose value collapses BOTH time and the node axis into per-group scalars — the cortical wave detector: proportion_waves, proportion_directed, rho per hemisphere). Unlike the per-node recurrence, the output is keyed by (group, metric), not node, so it cannot come from `template.shape[-1]`. The heavy per-emitted-step math (gradient → angular-similarity → surrogate → HHD → correlation) is the SAME declarative DV chain the other observers use — incl. the permutation surrogate (render_surrogate) — and produces one (n_groups,) vector per named output (`corr`, `wave_present`, `sig_corr`). Only the outer carry is bespoke: a monitor-style (n_ds, n_groups) buffer per output (n_ds is the downsampled sample count — small, so buffering is cheap and duration is never materialised at node resolution), reduced at finalize to the three metrics via exact masked statistics (`nanmedian` over wave-present samples is Koller's rho, no binning). One block per grid cell; blocks are period-aligned (streaming_post_eval_plan), matching the stride reducer. TRAVELING-WAVE GATE (active iff the chain has pgn0/1/2 and a `real_face_mask` param): a standing field passes Koller's per-frame test yet does not travel, so the carry also holds a running O(faces) post-transient sum of the per-face unit gradient direction, and finalize zeroes a group's proportion_waves when its direction dispersion mean_faces(1-|time-mean dir|) < 0.06. The non-gated path is byte-identical; byte-consistent with the host cortical_wave_metrics gate.
+    Grouped wave-metrics reducer (Observation whose value collapses BOTH time and the node axis into per-group scalars — the cortical wave detector: proportion_waves, proportion_directed, rho per hemisphere). Unlike the per-node recurrence, the output is keyed by (group, metric), not node, so it cannot come from `template.shape[-1]`. The heavy per-emitted-step math (gradient → angular-similarity → surrogate → HHD → correlation) is the SAME declarative DV chain the other observers use — incl. the permutation surrogate (render_surrogate) — and produces one (n_groups,) vector per named output (`corr`, `wave_present`, `sig_corr`). Only the outer carry is bespoke: a monitor-style (n_ds, n_groups) buffer per output (n_ds is the downsampled sample count — small, so buffering is cheap and duration is never materialised at node resolution), reduced at finalize to the three metrics via exact masked statistics (`nanmedian` over wave-present samples is Koller's rho, no binning). One block per grid cell; blocks are period-aligned (streaming_post_eval_plan), matching the stride reducer. PROPAGATION GATE (emitted iff the partition declares `propagation`, resolved into `red['propagation']`): a standing field passes a per-frame wave test yet does not travel, so the carry also holds a running O(elements) post-transient sum of the declared per-element unit `direction` components, and finalize zeroes a group's proportion_waves when its `mask`-weighted direction dispersion mean(1-|time-mean dir|) falls below `min_dispersion`. A partition without the gate emits the plain reducer.
 </%doc>\
 <%
     from tvbo.codegen import render_expression
@@ -815,10 +815,11 @@ ${render_observer_states(red['states'], _jc, _ind)}\
     _rparams = ([d['name'] for d in _derived] + list(_rpars) + [_src, 'dt'])
     _rufuncs = {f: f for f in red.get('functions', {})}
     _jc = lambda e: render_expression(e, format='jax', user_functions=_rufuncs, parameters=_rparams)
-    # Traveling-wave gate (see render_wave_reduction docstring): active iff the chain exposes pgn0/1/2 and a real_face_mask param.
-    _dvnames = [d['name'] for d in _derived]
-    _gate = ('real_face_mask' in _rpars) and all(('pgn%d' % _k) in _dvnames for _k in range(3))
-    _pthr = 0.06
+    # Propagation gate (see the docstring): the resolved gate or None, its direction components, the names a block unpacks them into, and the `_sample` return suffix.
+    _gate = red.get('propagation')
+    _gdir = _gate['direction'] if _gate else []
+    _gp = ['_p%d' % _k for _k in range(len(_gdir))]
+    _gret = ''.join(', ' + _d for _d in _gdir)
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
     # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
@@ -835,7 +836,7 @@ ${render_observer_constants(_rpars, 'wave observer')}\
     # The per-timestep body is written once for a single group and vmapped over the partition axis, so the surrogate stays a per-vertex max-T inside the vmap.
     def _detect(${", ".join([_src] + _gv['over'])}):
 ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
-        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0${', pgn0, pgn1, pgn2' if _gate else ''}
+        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0${_gret}
     def _sample(_theta_all):
         ${_src}_g = _theta_all[${_gv['gather']}]   # (n_groups, nv) per-group vertex gather
         return jax.vmap(_detect, in_axes=(0,) * ${1 + len(_gv['over'])})(${_src}_g, ${", ".join(_gv['over'])})
@@ -843,13 +844,13 @@ ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
     def _sample(${_src}):
         # One downsampled sample gives (n_groups,) per named output, an already group-batched body producing it directly.
 ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
-        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0${', pgn0, pgn1, pgn2' if _gate else ''}
+        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0${_gret}
 % endif
     def _init(template, n_steps):
         _n_ds = len(range(_period - 1, n_steps, _period))
         _z = jnp.zeros((_n_ds, ${_G}))
 % if _gate:
-        return (_z, _z, _z, jnp.array(0), jnp.zeros((${_G}, 3, real_face_mask.shape[-1])), jnp.array(0.0))
+        return (_z, _z, _z, jnp.array(0), jnp.zeros((${_G}, ${len(_gdir)}, ${_gate['mask']}.shape[-1])), jnp.array(0.0))
 % else:
         return (_z, _z, _z, jnp.array(0))
 % endif
@@ -866,7 +867,7 @@ ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
                 f"{_period}-step downsample periods; size streaming blocks from period_in_steps.")
         _theta = block[_period - 1 :: _period, s_var, :]        # downsample to (_m, n)
 % if _gate:
-        _c, _w, _s, _p0, _p1, _p2 = jax.vmap(_sample)(_theta)   # scalars (_m, G); unit gradient dir (_m, G, nf)
+        _c, _w, _s, ${', '.join(_gp)} = jax.vmap(_sample)(_theta)   # scalars (_m, G); unit direction components (_m, G, n_elements)
 % else:
         _c, _w, _s = jax.vmap(_sample)(_theta)                  # batched update over the block's frames; block_size bounds the batch (tvboptim's native per-block fold)
 % endif
@@ -875,9 +876,9 @@ ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
         _wave_buf = jax.lax.dynamic_update_slice(_wave_buf, _w, (_row, 0))
         _sig_buf = jax.lax.dynamic_update_slice(_sig_buf, _s, (_row, 0))
 % if _gate:
-        # running post-transient sum of the per-face unit gradient direction (O(faces), no per-frame buffer)
-        _keepm = (_row + jnp.arange(_theta.shape[0]) >= (skip // _period)).astype(_p0.dtype)
-        _dir = _dir + jnp.sum(_keepm[:, None, None, None] * jnp.stack([_p0, _p1, _p2], axis=2), axis=0)
+        # running post-transient sum of the per-element unit direction (O(elements), no per-frame buffer)
+        _keepm = (_row + jnp.arange(_theta.shape[0]) >= (skip // _period)).astype(${_gp[0]}.dtype)
+        _dir = _dir + jnp.sum(_keepm[:, None, None, None] * jnp.stack([${', '.join(_gp)}], axis=2), axis=0)
         _dcnt = _dcnt + jnp.sum(_keepm)
         return (_corr_buf, _wave_buf, _sig_buf, _count + block.shape[0], _dir, _dcnt)
 % else:
@@ -893,10 +894,10 @@ ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
         _corr_buf, _wave_buf, _sig_buf = _corr_buf[_keep:], _wave_buf[_keep:], _sig_buf[_keep:]
         _nw = _wave_buf.sum(0)                                   # (n_groups,) wave-present count
 % if _gate:
-        # traveling-wave gate: direction-dispersion over real faces; standing field (< _pthr) -> zero wave count
-        _Rf = jnp.linalg.norm(_dir / jnp.maximum(_dcnt, 1.0), axis=1)                       # (G, nf)
-        _dd = jnp.sum(real_face_mask * (1.0 - _Rf), axis=1) / jnp.sum(real_face_mask, axis=1)
-        _nw = jnp.where(_dd >= ${_pthr}, _nw, 0.0)              # standing -> no traveling waves
+        # propagation gate: mask-weighted direction dispersion below the declared minimum -> zero wave count
+        _Rf = jnp.linalg.norm(_dir / jnp.maximum(_dcnt, 1.0), axis=1)                       # (G, n_elements)
+        _dd = jnp.sum(${_gate['mask']} * (1.0 - _Rf), axis=1) / jnp.sum(${_gate['mask']}, axis=1)
+        _nw = jnp.where(_dd >= ${repr(_gate['min_dispersion'])}, _nw, 0.0)              # standing -> no traveling waves
 % endif
         _pw = _nw / _wave_buf.shape[0]                           # proportion of waves
         _pd = jnp.where(_nw > 0, (_sig_buf * _wave_buf).sum(0) / _nw, jnp.nan)  # proportion directed
@@ -1695,13 +1696,14 @@ class ${class_name}(AbstractMonitor):
                   for o in obs_list if o.get('reduction') is not None]
     _warmed_streams = [o['name'] for o in obs_list
                        if (o.get('reduction') or {}).get('kind') == 'convolution']
+    _stream_periods = streaming_time_periods(obs_list)
 %>
 % if _streaming:
 
 
 _STREAMING_PERIODS = {
-% for _sname, _sidx in _streaming:
-    ${repr(_sname)}: ${repr(emission_period_steps(next(o['reduction'] for o in obs_list if o['name'] == _sname)))},
+% for _sname, _speriod in _stream_periods.items():
+    ${repr(_sname)}: ${repr(_speriod)},
 % endfor
 }
 """Integration steps between consecutive samples of each streamed observable, or ``None`` where it folds time away.

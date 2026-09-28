@@ -10,7 +10,7 @@ from pathlib import Path
 
 import numpy as np
 
-from tvbo.data.network_io import _template_edges
+from tvbo.data.matrix_io import edge_name, template_edges
 
 
 def _get(obj, key, default=None):
@@ -114,8 +114,8 @@ def to_bep017(network, output_dir):
     atlas = base_entities.get("atlas", "unknown")
 
     edges = network.edges or []
-    for e in _template_edges(edges):
-        name = _get(e, "label")
+    for e in template_edges(edges):
+        name = edge_name(e)
         if name not in arrays:
             continue
 

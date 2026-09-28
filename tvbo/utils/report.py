@@ -290,34 +290,36 @@ def recipe_param(experiment, name, group: str = "dynamics"):
     return value_of(normalize_params(getattr(holder, "parameters", None)).get(name))
 
 
-def _result_files(out_dir, experiment: str | None, suffix: str) -> list[Path]:
-    """Result files of ``experiment`` in the flat results directory ``out_dir``.
+def _result_container(out_dir, experiment) -> Path | None:
+    """The saved result of ``experiment`` under ``out_dir``, or None when it has not been run.
 
-    ``exp-<id>[_<entities>]_result.<suffix>``, with the ``_`` boundary so ``exp-1`` never matches ``exp-10``, and the network companion excluded by name — opening one instead of the result is the failure this exists to prevent. With no ``experiment`` every result in the directory is a candidate.
+    Located by :func:`tvbo.data.dataref.locate_exp_container`, the lookup every cross-experiment reader shares, so a report reads the container a figure and a warm start read. Several runs of the experiment under ``out_dir`` raise :class:`tvbo.data.dataref.AmbiguousContainerError` rather than opening whichever sorts first.
     """
-    root = Path(out_dir)
-    if not root.is_dir():
-        return []
-    pattern = f"exp-{experiment}_*result{suffix}" if experiment else f"*result{suffix}"
-    from tvbo.utils.study_layout import is_network_companion
+    from tvbo.data.dataref import locate_exp_container
 
-    return [f for f in sorted(root.glob(pattern)) if not is_network_companion(f)]
+    try:
+        return locate_exp_container(out_dir, experiment)
+    except FileNotFoundError:
+        return None
 
 
-def open_result(out_dir, experiment: str | None = None):
+def open_result(out_dir, experiment):
     """The result container of an experiment, or None when it has not been run."""
     import xarray as xr
 
-    files = _result_files(out_dir, experiment, ".h5")
-    return xr.open_dataset(files[0], engine="h5netcdf") if files else None
+    path = _result_container(out_dir, experiment)
+    return None if path is None else xr.open_dataset(path, engine="h5netcdf")
 
 
-def result_sidecar(out_dir, experiment: str) -> dict:
+def result_sidecar(out_dir, experiment) -> dict:
     """The YAML sidecar `tvbo run` wrote beside a result, or an empty dict."""
     import yaml
 
-    files = _result_files(out_dir, experiment, ".yaml")
-    return yaml.safe_load(files[0].read_text()) if files else {}
+    from tvbo.data.dataref import sidecar_path
+
+    path = _result_container(out_dir, experiment)
+    sidecar = None if path is None else sidecar_path(path)
+    return yaml.safe_load(sidecar.read_text()) if sidecar is not None and sidecar.is_file() else {}
 
 
 def sidecar_value(meta: dict, *path):

@@ -7,7 +7,7 @@ from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, is_external_observation,
     get_include_info, get_all_observations_from_algo, get_all_hyperparams,
-    streaming_post_eval_plan, selection_settings, monitor_class_name, coupling_param_keys,
+    streaming_post_eval_plan, selection_settings, monitor_class_name, coupling_param_keys, set_literal,
 )
 
 # Backend key this template targets — used for streaming-reducer registry lookups.
@@ -764,7 +764,7 @@ def run_${algo_name}(
             post_tuning = None
             post_tuning_observations = compute_all_observations(
                 None, state,
-                only=${repr(set(_pp_names) | set(_pp_deliverables))}, precomputed=_stream_vals,
+                only=${set_literal(list(_pp_names) + list(_pp_deliverables))}, precomputed=_stream_vals,
 % if external_inputs:
                 network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
 % endif

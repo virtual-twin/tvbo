@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 
 from tvbo.classes.network import Network
-from tvbo.cli.run import _apply_metadata_overrides
+from tvbo.run.study import apply_overrides
 
 
 class _Experiment:
@@ -29,14 +29,14 @@ def test_a_resolved_network_is_invalidated_by_an_override_beneath_it():
     net = _network()
     net._resolved = True
     net.set_array("edges/weight", np.ones((3, 3)))
-    _apply_metadata_overrides(_Experiment(net), ["network.number_of_nodes=4"])
+    apply_overrides(_Experiment(net), [("network.number_of_nodes", 4)])
     assert net._resolved is False and "edges/weight" not in net.arrays
 
 
 def test_the_override_value_itself_still_lands():
     net = _network()
     net._resolved = True
-    _apply_metadata_overrides(_Experiment(net), ["network.number_of_nodes=4"])
+    apply_overrides(_Experiment(net), [("network.number_of_nodes", 4)])
     assert net.number_of_nodes == 4
 
 
@@ -46,7 +46,7 @@ def test_produced_matrices_are_dropped_too():
     net._resolved = True
     object.__setattr__(net, "_producers_resolved", True)
     object.__setattr__(net, "_arrays", {"weight": np.eye(3)})
-    _apply_metadata_overrides(_Experiment(net), ["network.number_of_nodes=4"])
+    apply_overrides(_Experiment(net), [("network.number_of_nodes", 4)])
     assert net._get_arrays() == {}
 
 
@@ -62,7 +62,7 @@ def test_an_override_nowhere_near_a_network_invalidates_nothing():
     net = _network()
     net._resolved = True
     exp = _Exp(net)
-    _apply_metadata_overrides(exp, ["execution.random_seed=7"])
+    apply_overrides(exp, [("execution.random_seed", 7)])
     assert exp.execution.random_seed == 7
     assert net._resolved is True
 
@@ -76,7 +76,7 @@ def test_the_innermost_materialised_object_wins():
 
     a, b = _network(), _network()
     a._resolved = b._resolved = True
-    _apply_metadata_overrides(_Exp(a, b), ["a.number_of_nodes=4"])
+    apply_overrides(_Exp(a, b), [("a.number_of_nodes", 4)])
     assert a._resolved is False and b._resolved is True
 
 
@@ -99,6 +99,6 @@ def test_a_graph_generator_parameter_is_reachable_and_invalidates():
         parameters={"connectome": {"name": "connectome", "value": "a.mat"}},
     )
     net._resolved = True
-    _apply_metadata_overrides(_Experiment(net), ["network.graph_generator.parameters.connectome.value=b.mat"])
+    apply_overrides(_Experiment(net), [("network.graph_generator.parameters.connectome.value", "b.mat")])
     assert net.graph_generator.parameters["connectome"].value == "b.mat"
     assert net._resolved is False

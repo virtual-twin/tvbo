@@ -63,6 +63,10 @@ def _source_id_int(value) -> int:
     return int(eid)
 
 
+class AmbiguousContainerError(LookupError):
+    """Several saved runs of one experiment answer a container lookup, so none can be chosen without guessing which run a reference meant."""
+
+
 _SUBJECT_PREFIX = r"^sub-([A-Za-z0-9]+)_"
 """The BIDS ``sub-<label>_`` entity a per-subject shard's file name starts with."""
 
@@ -70,7 +74,7 @@ _SUBJECT_PREFIX = r"^sub-([A-Za-z0-9]+)_"
 def _exp_candidates(results_root, source_id) -> tuple[list[Path], bool]:
     """Experiment ``source_id``'s saved containers under ``results_root``, and whether they are ONE per-subject cohort.
 
-    Globs by the ``exp-<id>_`` file stem, skipping the ``*network*`` sidecar; the ``_`` boundary is what keeps ``exp-1`` from matching ``exp-10``. Raises when nothing is found (the actionable "run experiment N first" error every consumer shares) and when the matches are DIFFERENT RUNS of the same experiment, because no rule here can say which one a spec meant.
+    Globs by the ``exp-<id>_`` file stem, skipping the ``*network*`` sidecar; the ``_`` boundary is what keeps ``exp-1`` from matching ``exp-10``. Raises ``FileNotFoundError`` when nothing is found (the actionable "run experiment N first" error every consumer shares) and :class:`AmbiguousContainerError` when the matches are DIFFERENT RUNS of the same experiment, because no rule here can say which one a spec meant — two types, so a reader that treats a missing result as "not run yet" cannot swallow the ambiguity along with it.
 
     A per-subject COHORT is not that case: the fan-out writes one ``sub-<id>_exp-<N>_…_result.h5`` shard per subject into a single directory, so the glob legitimately matches many files that differ only in their ``sub-`` entity. A cohort is recognised only when EVERY candidate carries a ``sub-`` entity, they collapse to one stem, and no name repeats: an aggregate container beside a shard collapses to that same stem while being a different run, and a repeated name is one shard copied into two directories.
     """
@@ -94,7 +98,7 @@ def _exp_candidates(results_root, source_id) -> tuple[list[Path], bool]:
     if len(cands) > 1 and not is_cohort:
         listed = "\n  ".join(str(p) for p in cands[:10])
         more = f"\n  … and {len(cands) - 10} more" if len(cands) > 10 else ""
-        raise FileNotFoundError(
+        raise AmbiguousContainerError(
             f"cross-experiment sourcing: {len(cands)} saved results for experiment "
             f"{source_id} under {root}, which are different runs of the same experiment:"
             f"\n  {listed}{more}\n"

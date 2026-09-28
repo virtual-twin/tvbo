@@ -260,7 +260,7 @@ ${"%" + "YAML 1.2"}
 #############################################
 % for op_name, dyn_model in operators.items():
 
-${pyrates_model.render_operator(dyn_model, op_name)}
+${pyrates_model.render_operator(dyn_model, op_name, fortran=fortran)}
 % endfor
 
 #############################################

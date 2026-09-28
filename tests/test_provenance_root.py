@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from tvbo.cli.run import _provenance_root
+from tvbo.run.study import provenance_root
 
 
 def _study(root: Path) -> Path:
@@ -21,7 +21,7 @@ def test_a_study_keeps_its_own_prov_even_when_the_data_goes_elsewhere(tmp_path):
     """The documented rule: a recorded input is named relative to the STUDY, so `-o` must not move the frame."""
     study = _study(tmp_path / "study")
     (study / "recipe.yaml").write_text("tvbo_class: tvbo:SimulationStudy\n")
-    assert _provenance_root(str(study / "recipe.yaml"), tmp_path / "elsewhere") == study
+    assert provenance_root(str(study / "recipe.yaml"), tmp_path / "elsewhere") == study
 
 
 def test_a_spec_below_the_root_still_records_in_the_study(tmp_path):
@@ -30,7 +30,7 @@ def test_a_spec_below_the_root_still_records_in_the_study(tmp_path):
     nested = study / "recipes"
     nested.mkdir()
     (nested / "recipe.yaml").write_text("tvbo_class: tvbo:SimulationStudy\n")
-    assert _provenance_root(str(nested / "recipe.yaml"), None) == study
+    assert provenance_root(str(nested / "recipe.yaml"), None) == study
 
 
 def test_a_spec_in_no_study_records_beside_its_results(tmp_path):
@@ -39,7 +39,7 @@ def test_a_spec_in_no_study_records_beside_its_results(tmp_path):
     database.mkdir(parents=True)
     (database / "Curated.yaml").write_text("id: 8\n")
     out = tmp_path / "run"
-    assert _provenance_root(str(database / "Curated.yaml"), out) == out.resolve()
+    assert provenance_root(str(database / "Curated.yaml"), out) == out.resolve()
 
 
 def test_with_no_output_directory_it_falls_back_to_the_spec(tmp_path):
@@ -47,4 +47,43 @@ def test_with_no_output_directory_it_falls_back_to_the_spec(tmp_path):
     database = tmp_path / "database" / "experiments"
     database.mkdir(parents=True)
     (database / "Curated.yaml").write_text("id: 8\n")
-    assert _provenance_root(str(database / "Curated.yaml"), None) == database.resolve()
+    assert provenance_root(str(database / "Curated.yaml"), None) == database.resolve()
+
+
+def test_a_redirected_run_of_a_spec_in_no_study_records_where_it_wrote(tmp_path):
+    """`SimulationStudy.run(root=...)` writes into another root, and nothing else frames what it wrote there."""
+    database = tmp_path / "database" / "experiments"
+    database.mkdir(parents=True)
+    (database / "Curated.yaml").write_text("id: 8\n")
+    build = tmp_path / "_build"
+    assert provenance_root(str(database / "Curated.yaml"), None, base=build) == build.resolve()
+
+
+def test_a_study_frames_its_records_wherever_the_run_writes(tmp_path):
+    """A redirected run of a spec inside a study still names its inputs relative to that study."""
+    study = _study(tmp_path / "study")
+    (study / "recipe.yaml").write_text("tvbo_class: tvbo:SimulationStudy\n")
+    assert provenance_root(str(study / "recipe.yaml"), None, base=tmp_path / "_build") == study
+
+
+def test_an_analysis_records_in_the_frame_its_experiments_do(tmp_path, monkeypatch):
+    """With no `-o`, an analysis container is named in the same frame as the experiment containers it reads, not in the results directory it was written to."""
+    import tvbo.data.analysis_io as analysis_io
+    import tvbo.run.study as study_run
+
+    database = tmp_path / "database" / "experiments"
+    database.mkdir(parents=True)
+    spec = database / "Curated.yaml"
+    spec.write_text("id: 8\n")
+    root = study_run.results_root(str(spec), None)
+    frames = []
+
+    def _written(analyses, results_root=None, *, on_start=None, on_done=None, **_):
+        on_done("probe", Path(results_root) / "ana-probe_result.h5")
+        return []
+
+    monkeypatch.setattr(analysis_io, "run_analyses", _written)
+    monkeypatch.setattr(study_run, "_emit_provenance", lambda ctx, *a, **k: frames.append(ctx["study_root"]))
+    study_run._run_study_analyses(None, [object()], str(spec), root, stage="after")
+
+    assert frames == [provenance_root(str(spec), None)]

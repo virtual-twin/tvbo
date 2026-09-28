@@ -14,11 +14,12 @@ from tvbo.templates.tvboptim.utils import (
     materialise_lazy_params,
     normalize_coupling_aliases, resolve_coupling_input_map,
     get_node_state_overrides, render_jax_default, get_mode_layout,
-    get_all_observations_from_algo, get_include_info, get_all_hyperparams, network_axis_leaf, network_leaf_is_matrix,
+    get_all_observations_from_algo, get_transitive_observations_from_algo, get_include_info, get_all_hyperparams, network_axis_leaf, network_leaf_is_matrix,
     classify_network_obs_inputs, coupling_param_keys,
     initial_conditions_axis_sv, noise_axis_param,
     graph_selection, observation_dims, parameter_keypath,
     has_host_pipeline, pipeline_stage_is_host, data_source_arrays, selection_settings, monitor_class_name,
+    analysis_settings, set_literal,
 )
 import numpy as np
 import re
@@ -578,21 +579,14 @@ has_lyapunov = any(str(getattr(o.analysis, 'type', '') or '') == 'lyapunov' for 
 def _lyap_meta(_rn, _ctx):
     """Resolve a recorded Lyapunov analysis observation to backend-agnostic metadata.
 
-    Shared by the two per-cell restart paths — the warm-start scan's post-scan pass and
-    the from_experiment:branch restart — so both read segment_time / n_steps / n_exponents
-    identically. ``_ctx`` names the caller for the error message.
+    Shared by the two per-cell restart paths — the warm-start scan's post-scan pass and the from_experiment:branch restart — which read its settings through utils.analysis_settings, as the analysis-observation renderer does. ``_ctx`` names the caller for the error message.
     """
     _an = analysis_observations_dict[_rn].analysis
     _atype = str(getattr(_an, 'type', '') or '')
     assert _atype == 'lyapunov', (
         f"{_ctx} records analysis observation '{_rn}' of type '{_atype}'; only 'lyapunov' "
         "is restartable per branch point (it is seeded from each point's settled state).")
-    _ap = {str(k): (v.value if hasattr(v, 'value') else v)
-           for k, v in (getattr(_an, 'parameters', None) or {}).items()}
-    return {'name': _rn, 'type': _atype,
-            'segment_time': float(_ap.get('segment_time', 1.0)),
-            'n_steps': int(_ap.get('n_steps', _ap.get('n', 10))),
-            'n_exponents': int(_ap.get('n_exponents', _ap.get('k', 1)))}
+    return {'name': _rn, 'type': _atype, **analysis_settings(_an, _rn)}
 # `reduce: trials` consumes another observation's TRIAL-STACKED output (n_trials, ...) host-side after the ensemble map, so it is excluded from the per-solve observers.
 trial_reduced_dict = {n: o for n, o in _all_observations.items()
                       if str(getattr(o, 'reduce', '') or '') == 'trials'}
@@ -3145,7 +3139,7 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
         @jax.jit
         def observable_fn(s):
             result = _expl_model_fn(s)
-            return compute_all_observations(result, s, only=${repr(set(_stream_names))})
+            return compute_all_observations(result, s, only=${set_literal(_stream_names)})
 % elif expl.get('record'):
 <%
     # The recorded observations and everything they transitively depend on through `source` or a pipeline argument; anything else is skipped so it never traces inside the observable.
@@ -4247,30 +4241,7 @@ def run_experiment(
     if algo_sim_period is None:
         raise ValueError(f"Algorithm '{algo_name}' requires 'simulation_period' in YAML")
 
-    # Observations - include from this algorithm AND any included algorithms
-    def get_obs_names_with_includes(alg):
-        """Get observation names from algorithm and all its includes."""
-        obs_set = set()
-        # This algorithm's observations
-        obs_raw = getattr(alg, 'observations', None) or []
-        if hasattr(obs_raw, '__iter__') and not isinstance(obs_raw, str):
-            for o in obs_raw:
-                obs_set.add(str(o))
-        elif obs_raw:
-            obs_set.add(str(obs_raw))
-        # Included algorithms' observations (combined-mode only; nested includes
-        # compute their observations inside their own inner loop, and their
-        # external inputs are passed there — not on the outer signature).
-        for inc in (getattr(alg, 'includes', None) or []):
-            if str(getattr(inc, 'mode', 'combined') or 'combined') == 'nested':
-                continue
-            inc_algo_name = str(inc.algorithm.name) if hasattr(inc, 'algorithm') and hasattr(inc.algorithm, 'name') else str(getattr(inc, 'algorithm', inc))
-            inc_algo = algorithms_dict.get(inc_algo_name)
-            if inc_algo:
-                obs_set.update(get_obs_names_with_includes(inc_algo))
-        return obs_set
-
-    obs_names = list(get_obs_names_with_includes(algo))
+    obs_names = get_transitive_observations_from_algo(algo, algorithms_dict)
 
     # The observations handed in from outside: data_source inputs, and network/dataset observations bound as module-level constants.
     input_names, network_obs_inputs = classify_network_obs_inputs(obs_names, observations_dict)

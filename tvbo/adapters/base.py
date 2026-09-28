@@ -7,6 +7,7 @@ Backend-specific adapters (NetworkDynamics, PyRates, etc.) inherit from BaseAdap
 from __future__ import annotations
 
 import ast
+import re
 from collections import OrderedDict
 from typing import TYPE_CHECKING
 
@@ -330,60 +331,38 @@ class BaseAdapter:
         nodes = getattr(network, "nodes", None) or []
         edges_list = getattr(network, "edges", None) or []
 
-        # Edge matrix files
-        emf_list = getattr(network, "edge_matrix_files", None) or []
-        emf_names = []
-        for f in emf_list:
-            if hasattr(f, "name") and f.name:
-                emf_names.append(str(f.name))
-            elif isinstance(f, str):
-                emf_names.append(f)
-            else:
-                fname = getattr(f, "file_name", None) or getattr(f, "path", None)
-                if fname:
-                    emf_names.append(str(fname))
-
-        has_edge_matrix = len(emf_names) > 0
-        has_explicit_edges = len(edges_list) > 0
-        is_directed = has_edge_matrix or (graph_gen and getattr(graph_gen, "directed", False))
-
         return {
             "n_nodes": n_nodes,
             "nodes": nodes,
             "graph_gen": graph_gen,
             "has_graph_generator": bool(graph_gen and getattr(graph_gen, "type", None)),
-            "edges_list": edges_list,
-            "emf_names": emf_names,
-            "has_edge_matrix": has_edge_matrix,
-            "has_explicit_edges": has_explicit_edges,
-            "is_directed": is_directed,
+            "has_explicit_edges": len(edges_list) > 0,
         }
 
-    def build_weight_matrix(self, edges_list, n_nodes: int, threshold: int = 50) -> np.ndarray | None:
-        """The dense weight matrix a template emits when it cannot name a graph generator.
+    def listed_edges(self) -> list[tuple[int, int, object]]:
+        """The network's explicit edges as ``(source row, target row, edge)``, in declaration order.
 
-        Explicit edges are densified once there are more than *threshold* of them, below which a template lists them one by one. A network that carries its connectome as a matrix has no edge objects at all — every builder-generated one is like this — so the matrix is read from the network itself. Without that fallback the templates find no weights, no edges and no nameable generator, and the last branch of each builds an unweighted complete graph: the run succeeds and integrates a different network.
+        Endpoints are resolved from `Node.id` through `Network.node_index_map`, the resolution `Network.matrix` applies, so a template that lists edges one by one addresses the same rows as the matrix it would otherwise emit. An edge without both endpoints is a template edge naming a companion matrix, not a connection, and is left out.
         """
-        if not edges_list:
-            W = dense_matrix(getattr(self.experiment, "network", None), "weight")
-            return W if W is not None and W.size > 1 else None
-        if len(edges_list) <= threshold:
+        network = getattr(self.experiment, "network", None)
+        placed = [e for e in (getattr(network, "edges", None) or []) if e.source is not None and e.target is not None]
+        index_map = network.node_index_map() if placed else {}
+        return [(index_map.get(e.source, e.source), index_map.get(e.target, e.target), e) for e in placed]
+
+    def build_weight_matrix(self, listed_edges, threshold: int = 50) -> np.ndarray | None:
+        """The weight matrix a template emits as a literal, source-by-target: ``W[i, j]`` is the weight of the edge ``i → j``, the orientation ``SimpleWeightedDiGraph(W)`` reads.
+
+        `Network.matrix` is the one reading of the connectome — endpoints through `Network.node_index_map`, weights through `edge_param`, declared transforms applied — and it is target-by-source, the coupling convention, so it is transposed once here. ``None`` where the network lists at most *threshold* explicit edges (`listed_edges`), which a template emits one by one, and where it carries no matrix with more than one entry. A network that carries its connectome as a matrix has no edge objects at all — every builder-generated one is like this — and without its matrix the templates find no weights, no edges and no nameable generator, and the last branch of each builds an unweighted complete graph: the run succeeds and integrates a different network.
+        """
+        if listed_edges and len(listed_edges) <= threshold:
             return None
-        W = np.zeros((n_nodes, n_nodes))
-        for e in edges_list:
-            w = 1.0
-            params = getattr(e, "parameters", None) or []
-            for p in params:
-                pname = getattr(p, "name", None) or (p.get("name") if isinstance(p, dict) else None)
-                if pname == "weight":
-                    w = float(getattr(p, "value", None) or (p.get("value") if isinstance(p, dict) else 1.0))
-            W[e.source, e.target] = w
-        return W
+        W = dense_matrix(getattr(self.experiment, "network", None), "weight")
+        return W.T if W is not None and W.size > 1 else None
 
     # ── Integration ──────────────────────────────────────────────────────
 
-    # Solvers that advance by a step the caller supplies. A backend whose solver interface is adaptive by default (DifferentialEquations.jl) refuses one of these unless it is also handed `dt`, so every template that emits a solve call needs the distinction.
-    FIXED_STEP_METHODS = frozenset({"Euler", "Heun", "Midpoint", "RK4", "RungeKutta4thOrder", "Identity", "EulerHeun"})
+    FIXED_STEP_METHODS = frozenset({"Euler", "Heun", "RungeKutta4thOrder", "Identity"})
+    """The canonical methods (`tvbo.utils.INTEGRATION_METHODS`) that advance by the step the recipe declares rather than choosing their own. A backend whose solver interface adapts by default (DifferentialEquations.jl) has to be told the step and told not to adapt it, so every template that emits a solve call needs the distinction."""
 
     @classmethod
     def is_fixed_step(cls, method) -> bool:
@@ -391,39 +370,49 @@ class BaseAdapter:
         return cls.canonical_integration_method(method) in cls.FIXED_STEP_METHODS
 
     @staticmethod
-    def canonical_integration_method(method, default: str = "Tsit5") -> str:
-        """*method* under the curated integrator's own name, matched case-insensitively.
+    def declared_integration(integration, slot: str):
+        """*integration*'s *slot*, or the schema's default for it (`Integrator`'s ``ifabsent``) where the slot, or the integration itself, is absent or ``None``.
 
-        An unrecognised name is returned unchanged rather than replaced: a backend may legitimately name a solver TVB-O does not curate (``Tsit5``, ``TRBDF2``), and silently rewriting it would be worse than passing it through.
+        The one source of integration defaults: a backend integrates exactly the window the recipe would serialise to, and an explicit ``None`` reads like a slot left out rather than failing on ``float(None)``.
         """
-        from tvbo.data.registry import list_entries
+        from tvbo.datamodel.schema import Integrator
 
-        name = str(method) if method else default
-        for entry in list_entries("Integrator"):
-            if entry.lower() == name.lower():
-                return entry
-        return name
+        value = getattr(integration, slot, None)
+        return getattr(Integrator(), slot) if value is None else value
+
+    @classmethod
+    def canonical_integration_method(cls, method) -> str:
+        """*method* under its canonical name, `tvbo.utils.integration_method`'s, or unchanged where tvbo does not know the spelling.
+
+        An unrecognised name is passed through rather than replaced: `Integrator.method` is an open vocabulary where the backend brings its own solver (``AutoTsit5``, ``TRBDF2``), and silently rewriting it would be worse than handing it on. An undeclared method is the schema's default (`declared_integration`).
+        """
+        from tvbo.utils import integration_method
+
+        name = str(method or cls.declared_integration(None, "method"))
+        return integration_method(name, strict=False) or name
 
     def get_integration_info(self) -> dict:
         """The window a backend integrates, and which part of it is settling rather than measurement.
 
         ``duration`` is the MEASURED window and ``transient_time`` is prepended to it, so the total a backend integrates is ``transient_time + duration`` and raising the settle never silently shortens the data. Resolved once here, because the settle is a property of the experiment rather than of any one backend: every backend that needs it in steps wants the same ``round(transient_time / dt)``, and three copies of that arithmetic is how two of them came to disagree about what ``duration`` meant.
 
-        ``method`` is returned in the curated integrator's own spelling. Backends that emit the method name as an identifier -- every Julia template names the solver as a symbol -- cannot each carry their own casing table, and the declared name reaches here in whatever case it was written: the default is ``euler`` while the curated entry is ``Euler``, which lowered to an undefined Julia symbol in the NetworkDynamics and ModelingToolkit templates alike.
+        ``method`` is returned under its canonical name (`canonical_integration_method`), whatever spelling the recipe wrote: ``euler``, ``rk4`` and ``RungeKutta4thOrder`` each reach a backend as the one name its solver table is keyed by, so no backend carries a spelling table of its own.
+
+        A slot the recipe leaves out or writes ``None``, and every slot of an experiment without an integration, is the schema's default (`declared_integration`).
 
         Returns:
             ``dt``, ``duration`` (measured), ``method`` (canonicalised), ``transient_time``, ``total_duration`` (``transient_time + duration``, the window to integrate), and the same split in integration steps as ``n_transient`` and ``n_measured`` -- the first of which is the cut index between the two.
         """
         from tvbo.adapters.observation_sampling import tvb_iround
 
-        integration = self.experiment.integration
-        dt = float(integration.step_size) if integration else 0.01
-        duration = float(integration.duration) if integration else 1000.0
-        transient = float(getattr(integration, "transient_time", 0.0) or 0.0) if integration else 0.0
+        integration = getattr(self.experiment, "integration", None)
+        dt = float(self.declared_integration(integration, "step_size"))
+        duration = float(self.declared_integration(integration, "duration"))
+        transient = float(self.declared_integration(integration, "transient_time"))
         return {
             "dt": dt,
             "duration": duration,
-            "method": self.canonical_integration_method(getattr(integration, "method", None) if integration else None),
+            "method": self.canonical_integration_method(self.declared_integration(integration, "method")),
             "transient_time": transient,
             "total_duration": transient + duration,
             "n_transient": tvb_iround(transient / dt) if dt else 0,
@@ -549,6 +538,8 @@ class BaseAdapter:
 
         The shape below is the shared one, not a contract every adapter keeps: a backend whose template needs something else entirely overrides this — `Brian2Adapter` returns a spiking build description — so a caller wanting *this* shape must build the adapter it belongs to rather than a bare `BaseAdapter`.
         """
+        from tvbo.adapters.julia_model import julia_solver
+
         exp = self.experiment
         model = exp.dynamics
 
@@ -564,16 +555,13 @@ class BaseAdapter:
         network_info = self.get_network_info()
         integration_info = self.get_integration_info()
         dt = integration_info["dt"]
+        method = integration_info["method"]
 
         is_hetero = self.is_heterogeneous(dynamics_dict, node_dynamics_map)
         is_stoch = self.is_stochastic_dynamics(dynamics_dict)
 
-        # Weight matrix for large explicit-edge networks
-        W = self.build_weight_matrix(network_info["edges_list"], network_info["n_nodes"])
-
-        # Coupling weight parameter detection
-        cparam_names = list((coupling.parameters or {}).keys()) if coupling else []
-        weight_sym = "w" if "w" in cparam_names else ("weight" if "weight" in cparam_names else None)
+        listed_edges = self.listed_edges()
+        W = self.build_weight_matrix(listed_edges)
 
         # Distribution info
         dist_info = self.collect_all_distributions(dynamics_dict)
@@ -595,8 +583,6 @@ class BaseAdapter:
                     vertex_dv_names.append(str(dv_name))
 
         # Auto-extract tstops from conditional derived-variable breakpoints
-        import re
-
         tstops = set()
         for dyn in dynamics_dict.values():
             for dv in (dyn.derived_variables).values():
@@ -634,11 +620,8 @@ class BaseAdapter:
             "nodes": network_info["nodes"],
             "graph_gen": network_info["graph_gen"],
             "has_graph_generator": network_info["has_graph_generator"],
-            "edges_list": network_info["edges_list"],
-            "emf_names": network_info["emf_names"],
-            "has_edge_matrix": network_info["has_edge_matrix"],
+            "listed_edges": listed_edges,
             "has_explicit_edges": network_info["has_explicit_edges"],
-            "is_directed": network_info["is_directed"],
             # State
             "sv_names": list(model.state_variables.keys()),
             "n_sv": len(model.state_variables),
@@ -651,14 +634,12 @@ class BaseAdapter:
             "total_duration": integration_info["total_duration"],
             "n_transient": integration_info["n_transient"],
             "n_measured": integration_info["n_measured"],
-            "solver_method": integration_info["method"],
-            # The step and save keywords of a DifferentialEquations.jl `solve` call, which refuses a fixed-step method without `dt`.
-            "solve_kwargs": f"dt={dt}, saveat={dt}" if self.is_fixed_step(integration_info["method"]) else f"saveat={dt}",
-            "needs_stiff": ("auto" in str(integration_info["method"]).lower()),
+            "solver_method": julia_solver(method),
+            # The step keywords of a DifferentialEquations.jl `solve` call: a fixed-step method is handed the declared step and told not to adapt it.
+            "solve_kwargs": f"dt={dt}, adaptive=false, saveat={dt}" if self.is_fixed_step(method) else f"saveat={dt}",
+            "needs_stiff": "auto" in method.lower(),
             # Graph
-            "needs_weighted": network_info["has_edge_matrix"],
             "weight_matrix": W,
-            "weight_sym": weight_sym,
             # Distributions
             "dist_info": dist_info,
             "needs_random": needs_random,
@@ -722,8 +703,196 @@ class ContinuationAdapter(BaseAdapter):
             return experiment.dynamics
         raise ValueError(f"Cannot resolve dynamics for continuation {continuation!r}.")
 
+    def prepare(self, model, continuation, name: str | None = None):
+        """*model* as *continuation* starts on it, after `refuse_unrunnable` has checked the pair: `start_dynamics`.
+
+        `run` and `render_code` hand every backend the model this returns, so a spec no backend runs is refused, by name, before anything is rendered or run, and every backend starts from the same parameter values.
+        """
+        self.refuse_unrunnable(model, continuation, name)
+        return self.start_dynamics(model, continuation)
+
+    @staticmethod
+    def refuse_unrunnable(model, continuation, name: str | None = None) -> None:
+        """Refuse a *continuation* of *model* that no continuation backend runs, naming it by *name*, else by its own.
+
+        Raises:
+            ValueError: If the continuation, or the nested continuation of one of its branches, frees a parameter *model* does not declare; if it starts from ``initial_state.method: from_branch``, which no backend implements; or if it frees more than one parameter itself, since a two-parameter continuation is a branch of a one-parameter one (`is_codim2`).
+        """
+        from tvbo.utils import as_list
+
+        if continuation is None:
+            return
+        label = name or getattr(continuation, "name", None) or "?"
+        freed = as_list(getattr(continuation, "free_parameters", None))
+        nested = [
+            fp
+            for branch in as_list(getattr(continuation, "branches", None))
+            for fp in as_list(getattr(getattr(branch, "continuation", None), "free_parameters", None))
+        ]
+        declared = list(getattr(model, "parameters", None) or {})
+        unknown = list(dict.fromkeys(str(fp.name) for fp in (*freed, *nested) if str(fp.name) not in declared))
+        if unknown:
+            raise ValueError(
+                f"continuation {label!r} frees {', '.join(map(repr, unknown))}, which the dynamics "
+                f"{getattr(model, 'name', None)!r} does not declare; its parameters are {', '.join(declared) or 'none'}."
+            )
+        method = getattr(getattr(continuation, "initial_state", None), "method", None)
+        if method is not None and str(method) == "from_branch":
+            raise ValueError(
+                f"continuation {label!r} declares initial_state.method 'from_branch', which no continuation backend "
+                "implements. A continuation from a special point of another is a branch of that continuation: declare it "
+                "under its `branches`, with the `source_point` it starts from ('fold:1', 'hopf:all') and a nested "
+                "`continuation` freeing the second parameter."
+            )
+        if len(freed) > 1:
+            raise ValueError(
+                f"continuation {label!r} frees {len(freed)} parameters ({', '.join(str(fp.name) for fp in freed)}), and a "
+                "continuation frees one. A two-parameter continuation is a branch of it, started from one of its special "
+                "points: declare the second parameter in the `free_parameters` of a branch's nested `continuation`, with "
+                "the `source_point` it starts from."
+            )
+
+    @staticmethod
+    def start_dynamics(model, continuation):
+        """*model* with each parameter *continuation* frees set to the ``value`` it declares there, which is where the continuation starts; *model* itself where it declares none.
+
+        The declared values replace the model's in a copy, so every backend integrates to its starting equilibrium and starts continuing from them, and the experiment's own dynamics is left as it was.
+        """
+        from tvbo.utils import as_list
+
+        start = {
+            str(fp.name): fp.value
+            for fp in as_list(getattr(continuation, "free_parameters", None))
+            if getattr(fp, "value", None) is not None
+        }
+        if not start:
+            return model
+        model = model.copy()
+        for name, value in start.items():
+            model.parameters[name].value = value
+        return model
+
+    @staticmethod
+    def fortran_names(names, reserved=()) -> dict[str, str]:
+        """Each of *names* as Fortran may declare it, keyed by the name: the one renaming both AUTO-07p Fortran emitters apply.
+
+        Fortran is case-insensitive, so two names differing only in case are one symbol there. A name whose lowercase spelling is one of *reserved* (the enclosing subroutine's own arguments) is suffixed ``_par``; of names sharing a lowercase spelling, one starting in lowercase is suffixed ``low``, so ``A`` keeps its name and ``a`` becomes ``alow``. Every other name is its own.
+
+        Raises:
+            ValueError: If two of the Fortran names still differ only in case.
+        """
+        names = list(dict.fromkeys(str(name) for name in names))
+        reserved = {str(name).lower() for name in reserved}
+        lowered = [name.lower() for name in names]
+
+        def rename(name):
+            if name.lower() in reserved:
+                return name + "_par"
+            if name[0].islower() and lowered.count(name.lower()) > 1:
+                return name + "low"
+            return name
+
+        renamed = {name: rename(name) for name in names}
+        spelled: dict[str, list[str]] = {}
+        for name, fortran in renamed.items():
+            spelled.setdefault(fortran.lower(), []).append(name)
+        clashes = [group for group in spelled.values() if len(group) > 1]
+        if clashes:
+            raise ValueError(
+                "these names are one symbol in case-insensitive Fortran, and no rename separates them: "
+                + "; ".join(", ".join(f"{name!r} as {renamed[name]!r}" for name in group) for group in clashes)
+                + "."
+            )
+        return renamed
+
+    SOURCE_KINDS = {"HB": "hopf", "LP": "fold", "BP": "bp"}
+    """The special points a branch starts from, by canonical code (`tvbo.analysis.bifurcation.canonical_ty`), each with the name a result records its source by."""
+
+    @classmethod
+    def source_point(cls, branch, default: str) -> tuple[str, int | None]:
+        """Where *branch* starts — its `source_point`, or *default* where it declares none — as ``(kind, index)``.
+
+        The one reading of ``'<kind>:<index>'`` every continuation backend applies. ``kind`` is the canonical code of a `SOURCE_KINDS` special point, so ``hopf`` and ``HB`` name one kind. ``index`` is ``None`` for every point of that kind, written ``<kind>:all`` or a bare ``<kind>``, and otherwise the 1-based ordinal of one point, negative counting back from the last (`select_points`).
+
+        Raises:
+            ValueError: If the kind is none of `SOURCE_KINDS`, or the index is neither ``all`` nor a nonzero integer.
+        """
+        from tvbo.analysis.bifurcation import canonical_ty
+
+        declared = getattr(branch, "source_point", None)
+        text = str(default if declared in (None, "") else declared)
+        kind_text, _, index_text = text.partition(":")
+        kind = canonical_ty(kind_text)
+        index_text = index_text.strip()
+        index = int(index_text) if re.fullmatch(r"[+-]?\d+", index_text) else None
+        if kind not in cls.SOURCE_KINDS or index == 0 or (index is None and index_text.lower() not in ("", "all")):
+            names = ", ".join(sorted(cls.SOURCE_KINDS.values()))
+            raise ValueError(
+                f"branch {getattr(branch, 'name', '?')!r} declares source_point {text!r}; the accepted forms are "
+                f"'<kind>' or '<kind>:all' for every point of a kind, and '<kind>:<n>' for one, n = 1 the first and "
+                f"n = -1 the last, with <kind> one of {names}."
+            )
+        return kind, index
+
+    @classmethod
+    def periodic_orbit_source(cls, branch, default: str) -> int | None:
+        """The Hopf point a periodic-orbit *branch* starts from, as `source_point`'s index.
+
+        A periodic orbit is continued from a Hopf point, so a periodic-orbit branch naming any other kind is refused rather than emitted as a Hopf switch that finds nothing and reports nothing.
+
+        Raises:
+            ValueError: If the branch starts from a special point other than a Hopf point.
+        """
+        kind, index = cls.source_point(branch, default)
+        if kind != "HB":
+            raise ValueError(
+                f"periodic-orbit branch {getattr(branch, 'name', '?')!r} declares source_point {getattr(branch, 'source_point', None)!r}, and a "
+                "periodic orbit is continued from a Hopf point. Equilibrium branch switching at a branch point "
+                "or a fold is not emitted by this backend; declare `hopf:<n>` or `hopf:all`, or continue the "
+                "other equilibrium directly by seeding it (`initial_state: {method: given}`)."
+            )
+        return index
+
+    @classmethod
+    def is_codim2(cls, branch, parent) -> bool:
+        """Whether *branch* of the continuation *parent* is a two-parameter continuation, the one rule every continuation backend sorts its branches by.
+
+        It is when the branch's nested continuation frees a parameter other than *parent*'s first free parameter, which the branch inherits as its primary; the first such parameter is the second (`codim2_parameter`). The nested ``free_parameters`` may therefore list the second parameter alone (``[C]``) or after the inherited primary (``[p, C]``). A branch whose nested continuation frees nothing, or only the primary, continues a periodic orbit in the primary alone.
+        """
+        return cls.codim2_parameter(branch, parent) is not None
+
+    @staticmethod
+    def codim2_parameter(branch, parent):
+        """The `FreeParameter` a two-parameter *branch* of *parent* is continued in besides the primary it inherits, by `is_codim2`'s rule, or ``None`` for a one-parameter branch."""
+        from tvbo.utils import as_list
+
+        primary = next((str(fp.name) for fp in as_list(getattr(parent, "free_parameters", None))), None)
+        nested = as_list(getattr(getattr(branch, "continuation", None), "free_parameters", None))
+        return next((fp for fp in nested if str(fp.name) != primary), None)
+
+    @staticmethod
+    def select_points(points, index: int | None) -> list:
+        """The entries of *points* a `source_point` index selects: all of them for ``None``, else the one at that 1-based ordinal, negative counting back from the last.
+
+        A continuation that found no point of the kind selects none.
+
+        Raises:
+            ValueError: If *index* is past either end of a non-empty *points*.
+        """
+        points = list(points)
+        if index is None or not points:
+            return points
+        position = index - 1 if index > 0 else len(points) + index
+        if not 0 <= position < len(points):
+            raise ValueError(
+                f"source point {index} is out of range: the continuation found {len(points)} ({', '.join(map(str, points))})."
+            )
+        return [points[position]]
+
     def run(self, **kwargs) -> BifurcationResult | dict[str, BifurcationResult]:
-        """Run every continuation the experiment declares, each through `run_one` on the dynamics `resolve_dynamics` finds for it.
+        """Run every continuation the experiment declares, each through `run_one` on the dynamics `resolve_dynamics` finds for it, as `prepare` starts it.
+
+        Every continuation is prepared before any is run, so a spec `refuse_unrunnable` refuses fails before the first continuation starts.
 
         Args:
             **kwargs: Forwarded to every `run_one`.
@@ -732,31 +901,32 @@ class ContinuationAdapter(BaseAdapter):
             The one result when the experiment declares one continuation, else every result keyed by continuation name.
 
         Raises:
-            ValueError: If the experiment declares no continuation.
+            ValueError: If the experiment declares no continuation, or `refuse_unrunnable` refuses one.
         """
         continuations = self.continuations()
         if not continuations:
             raise ValueError(
                 "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
             )
-        results = {
-            name: self.run_one(self.resolve_dynamics(cont), cont, name, **kwargs) for name, cont in continuations.items()
-        }
+        models = {name: self.prepare(self.resolve_dynamics(cont), cont, name) for name, cont in continuations.items()}
+        results = {name: self.run_one(models[name], cont, name, **kwargs) for name, cont in continuations.items()}
         return next(iter(results.values())) if len(results) == 1 else results
 
     def run_one(self, model, continuation, name: str, **kwargs) -> BifurcationResult:
-        """Run *continuation* on *model*; *name* is the key `run` files the result under."""
+        """Run *continuation* on *model*, the pair `run` resolved and prepared; *name* is the key `run` files the result under."""
         raise NotImplementedError(f"{type(self).__name__} runs no continuation.")
 
     def render_code(self, model=None, continuation=None, **kwargs) -> str:
         """This backend's source for one continuation.
 
-        *model* defaults to the experiment's own dynamics, whatever dynamics the continuation names, and *continuation* to the experiment's first; *kwargs* is extra context for `render_continuation`.
+        *continuation* defaults to the experiment's first, and *model* to the dynamics `resolve_dynamics` finds for it — the dynamics `run` continues — and the pair is prepared as `run` prepares it (`prepare`), so the rendered source is the source that runs; *kwargs* is extra context for `render_continuation`.
         """
-        return self.render_continuation(model or self.experiment.dynamics, self.resolve_continuation(continuation), **kwargs)
+        continuation = self.resolve_continuation(continuation)
+        model = self.prepare(model or self.resolve_dynamics(continuation), continuation)
+        return self.render_continuation(model, continuation, **kwargs)
 
     def render_continuation(self, model, continuation, **kwargs) -> str:
-        """The source for *continuation* on *model*, both already resolved: `TEMPLATE` rendered with `_prepare_context`."""
+        """The source for *continuation* on *model*, both already resolved and prepared: `TEMPLATE` rendered with `_prepare_context`."""
         return self.render_template(self._prepare_context(model, continuation, **kwargs))
 
     @staticmethod

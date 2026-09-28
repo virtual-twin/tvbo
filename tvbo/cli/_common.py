@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json as _json
 import logging
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -73,75 +74,6 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
         except (FileNotFoundError, ValueError):
             continue
     raise typer.BadParameter(f"Could not resolve {spec!r}: not a path, CURIE, or known DB entry.")
-
-
-def experiment_ids(exp: Any) -> set[str]:
-    """The identifiers an experiment can be selected by on the CLI.
-
-    Its ``key``, ``name``, ``label``, and stringified ``id`` (dropping the empty ones), plus the bare numeric id those spell — ``exp-3``, ``exp3`` and ``3`` name one experiment, and an experiment carrying only ``key: exp-3`` must still answer to ``3``.
-    Normalising HERE and in ``analysis_io.dependencies`` is what lets the two sides of the staleness walk intersect; normalising one side only makes every dotted spelling match nothing, and an empty stale set reads exactly like a clean one.
-
-    Shared by ``tvbo run`` and ``tvbo workflow`` so ``--experiment`` matches the same way in both.
-    """
-    from tvbo.data.dataref import experiment_id
-
-    spellings = {
-        getattr(exp, "key", None),
-        getattr(exp, "name", None),
-        getattr(exp, "label", None),
-        str(getattr(exp, "id", "")),
-    } - {None, ""}
-    return spellings | {experiment_id(s) for s in spellings} - {None}
-
-
-def select_experiments(study: Any, ids: str | None = None) -> list:
-    """The experiment records of *study*, or the comma-separated *ids* subset of them.
-
-    An id is matched against every spelling :func:`experiment_ids` accepts, so ``--experiment`` selects the same way in every verb; a selector that matches nothing is fatal. The records are datamodel objects — :func:`runtime_experiment` turns each into one that can ``run`` and ``render``, which callers do one at a time so a long study never holds every materialised experiment at once.
-    """
-    from tvbo.utils import as_list
-
-    records = as_list(getattr(study, "experiments", None))
-    if ids is None:
-        return records
-    wanted = {s.strip() for s in str(ids).split(",") if s.strip()}
-    records = [e for e in records if wanted & experiment_ids(e)]
-    if not records:
-        die(f"No experiment(s) matching {ids!r} in study.")
-    return records
-
-
-def runtime_experiment(study: Any, record: Any) -> Any:
-    """*record* materialised through ``study.get_experiment``, which is keyed on its ``id``, or a fatal error naming what usually stops one from loading."""
-    if hasattr(record, "run") or not hasattr(study, "get_experiment"):
-        return record
-    record_id = getattr(record, "id", None)
-    try:
-        return study.get_experiment(record_id)
-    except Exception as e:
-        die(
-            f"Could not resolve experiment {record_id!r} to a runnable object: {e}\nIf the recipe references custom builder/analysis modules (e.g. `module: my_networks`), make them importable — run from their directory or set PYTHONPATH."
-        )
-
-
-def figure_code_modules(figures: Any) -> list[str]:
-    """The ``code_modules`` the *figures* declare, deduplicated in declaration order.
-
-    Importing one registers the custom panels and transforms its figures name, which is why ``tvbo run`` imports them before a study's experiments and ``tvbo workflow`` bundles them into a kit's ``code/``.
-    """
-    from tvbo.utils import as_list
-
-    return list(dict.fromkeys(str(m) for fig in as_list(figures) for m in as_list(getattr(fig, "code_modules", None))))
-
-
-def spec_dir(spec: str) -> Path | None:
-    """The directory a spec's relative paths mean, or ``None`` when the spec is not a file.
-
-    ``resolve_spec`` also accepts a CURIE (``study:Deco2014``), a bare database name and a ``file://`` URL; ``Path(spec).parent`` on any of those silently yields the cwd, which would resolve relative paths against whatever directory the CLI happened to run in.
-    """
-    raw = spec[len("file://") :] if spec.startswith("file://") else spec
-    path = Path(raw).expanduser()
-    return path.resolve().parent if path.is_file() else None
 
 
 def parse_assignment(raw: str, flag: str, form: str = "key=value") -> tuple[str, str]:
@@ -293,3 +225,17 @@ def die(msg: str, code: int = 1) -> None:
     else:
         typer.echo(f"error: {msg}", err=True)
     raise typer.Exit(code)
+
+
+@contextmanager
+def fatal():
+    """Report a :class:`tvbo.run.study.StudyRunError` raised inside the block through :func:`die`.
+
+    The library never exits the process, so the Python API sees an exception rather than ``typer.Exit``; this is where the command line turns that refusal into its error line and exit code 1. Every other exception propagates untouched.
+    """
+    from tvbo.run.study import StudyRunError
+
+    try:
+        yield
+    except StudyRunError as e:
+        die(str(e))

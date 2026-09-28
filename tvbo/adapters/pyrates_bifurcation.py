@@ -16,29 +16,15 @@ import uuid
 from typing import TYPE_CHECKING
 
 from tvbo.adapters.base import ContinuationAdapter
+from tvbo.codegen.pyrates import pyrates_names
 
 if TYPE_CHECKING:
     from tvbo.analysis.bifurcation import BifurcationResult
 
-# Same reserved-name mapping used by the PyRates YAML template
-PYRATES_REPL = {
-    "I": "I_",
-    "gamma": "gamma_",
-    "beta": "beta_",
-    "zeta": "zeta_",
-    "lambda": "lambda_",
-    "E": "E_",
-    "N": "N_",
-    "S": "S_",
-    "O": "O_",
-    "Q": "Q_",
-    "epsilon": "epsilon_",
-}
 
-
-def _pyrates_param_name(name):
-    """Apply the same renaming as the PyRates YAML template."""
-    return PYRATES_REPL.get(name, name)
+def _pyrates_param_name(model, name):
+    """*name*, a symbol of *model*, as the Fortran PyRates compiles for AUTO-07p declares it (`pyrates_names`)."""
+    return pyrates_names(model, fortran=True)[name]
 
 
 class PyRatesBifurcationAdapter(ContinuationAdapter):
@@ -50,11 +36,11 @@ class PyRatesBifurcationAdapter(ContinuationAdapter):
     # ── Public API ───────────────────────────────────────────────────────
 
     def render_continuation(self, model, continuation, **kwargs) -> str:
-        """Executable Python for the PyRates/PyCoBi bifurcation workflow of *continuation* on *model*."""
+        """Executable Python for the PyRates/PyCoBi bifurcation workflow of *continuation* on *model*, carrying *model*'s PyRates YAML as `run_one` compiles it."""
         fp = self._get_free_parameter(continuation, model)
         fp_name = fp["name"]
         p_min, p_max = fp["p_min"], fp["p_max"]
-        pyrates_fp_name = _pyrates_param_name(fp_name)
+        pyrates_fp_name = _pyrates_param_name(model, fp_name)
         auto_kwargs = self._cont_to_auto_kwargs(continuation, pyrates_fp_name, p_min, p_max)
 
         iss_duration = 10000.0
@@ -64,20 +50,16 @@ class PyRatesBifurcationAdapter(ContinuationAdapter):
                 iss_duration = float(d)
 
         sv_names = list(model.state_variables.keys())
+        yaml_literal = '"""' + self._pyrates_yaml(model).replace("\\", "\\\\").replace('"""', '\\"\\"\\"') + '"""'
 
         code = f'''\
 import os, re, shutil, sys, tempfile, uuid
 from pycobi import ODESystem
 from pyrates import clear
 from pyrates.frontend import CircuitTemplate
-from tvbo.codegen.pyrates import to_pyrates_yaml_string
-from tvbo import Dynamics
 
-# Load model
-model = Dynamics.from_ontology("{model.name}")
-
-# Export to PyRates YAML
-yaml_content = to_pyrates_yaml_string(model)
+# PyRates YAML of the model, as its Fortran backend compiles it
+yaml_content = {yaml_literal}
 tmpdir = tempfile.mkdtemp(prefix="tvbo_pyrates_bif_")
 pkg_name = f"_tvbo_prbif_{{uuid.uuid4().hex[:8]}}"
 pkg_path = os.path.join(tmpdir, pkg_name)
@@ -160,7 +142,8 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         fp = self._get_free_parameter(cont, model)
         fp_name = fp["name"]
         p_min, p_max = fp["p_min"], fp["p_max"]
-        pyrates_fp_name = _pyrates_param_name(fp_name)
+        names = pyrates_names(model, fortran=True)
+        pyrates_fp_name = names[fp_name]
 
         # Build circuit from TVBO model
         circuit, tmpdir, pkg_name = self._load_circuit(model)
@@ -230,10 +213,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             if cont.branches:
                 branches = list(cont.branches.values()) if isinstance(cont.branches, dict) else list(cont.branches)
                 for branch in branches:
-                    # Detect codim-2 branches (have sub-continuation with free_parameters)
-                    bc = getattr(branch, "continuation", None)
-                    has_fp2 = bc and getattr(bc, "free_parameters", None)
-                    if has_fp2:
+                    if self.is_codim2(branch, cont):
                         c2_res = self._run_codim2_branch(
                             ode,
                             p_cont,
@@ -242,6 +222,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
                             pyrates_fp_name,
                             p_min,
                             p_max,
+                            names=names,
                             state_var_names=state_var_names,
                             icp=icp,
                             fp_name=fp_name,
@@ -292,33 +273,14 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         return result
 
     def _run_branch(self, ode, p_cont, branch, cont, icp_name, p_min, p_max):
-        """Run a branch continuation (e.g., periodic orbits from Hopf)."""
-        source = getattr(branch, "source_point", "hopf:all") or "hopf:all"
-        all_hopf = source == "hopf:all"
-
-        # Get Hopf points from the continuation
-        hopf_points = self._find_special_points(ode, "param", "HB")
-        if not hopf_points:
-            return []
-
-        if all_hopf:
-            indices = list(range(len(hopf_points)))
-        else:
-            idx_str = source.split(":")[1] if ":" in source else "-1"
-            if idx_str.lstrip("-").isdigit():
-                idx = int(idx_str)
-                indices = [idx if idx >= 0 else len(hopf_points) + idx]
-            else:
-                indices = list(range(len(hopf_points)))
+        """Run a periodic-orbit branch from the Hopf points its `source_point` selects, every one where it declares none."""
+        hopf_index = self.periodic_orbit_source(branch, "hopf:all")
+        hopf_points = self.select_points(self._find_special_points(ode, "param", "HB"), hopf_index)
 
         bc = getattr(branch, "continuation", None)
         po_results = []
 
-        for i in indices:
-            if i < 0 or i >= len(hopf_points):
-                continue
-            hp_label = hopf_points[i]
-
+        for hp_label in hopf_points:
             try:
                 po_kwargs = self._cont_to_auto_kwargs(bc or cont, icp_name, p_min, p_max, is_po=True)
                 po_kwargs.setdefault("ISW", -1)  # Branch switching
@@ -352,6 +314,8 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         icp_name,
         p_min,
         p_max,
+        *,
+        names,
         state_var_names=None,
         icp=1,
         fp_name="param",
@@ -359,45 +323,26 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
     ):
         """Run a codim-2 continuation branch (fold or Hopf curve in 2-param space).
 
-        Uses AUTO-07p's ``ISW=2`` (branch switching) with two free parameters (``ICP=[p1, p2]``) to trace a fold or Hopf curve in the (p1, p2) plane.
+        Uses AUTO-07p's ``ISW=2`` (branch switching) with two free parameters (``ICP=[p1, p2]``) to trace a fold or Hopf curve in the (p1, p2) plane: ``p1`` the primary *cont* frees, named *icp_name* in the compiled Fortran, and ``p2`` the second `ContinuationAdapter.codim2_parameter` finds on *branch*, named there by *names* (`pyrates_names`).
         """
         from tvbo.analysis.bifurcation import BifurcationResult
 
         bc = branch.continuation
-        fp2 = getattr(bc, "free_parameters", None) or {}
-        if isinstance(fp2, dict) and fp2:
-            fp2_first = next(iter(fp2.values()))
-        elif isinstance(fp2, list) and fp2:
-            fp2_first = fp2[0]
-        else:
+        fp2 = self.codim2_parameter(branch, cont)
+        if fp2 is None:
             return []
 
-        fp2_name = str(fp2_first.name)
-        pyrates_fp2_name = _pyrates_param_name(fp2_name)
-        p2_min = float(fp2_first.domain.lo) if fp2_first.domain else -20.0
-        p2_max = float(fp2_first.domain.hi) if fp2_first.domain else 20.0
+        fp2_name = str(fp2.name)
+        pyrates_fp2_name = names[fp2_name]
+        p2_min = float(fp2.domain.lo) if fp2.domain else -20.0
+        p2_max = float(fp2.domain.hi) if fp2.domain else 20.0
 
-        source = getattr(branch, "source_point", None) or "fold:all"
-        source_type = source.split(":")[0]  # 'hopf' or 'fold'
-        all_source = ":all" in source
-
-        # Map source type to AUTO special point labels
-        sp_type_map = {"hopf": "HB", "fold": "LP", "branch_point": "BP"}
-        auto_sp = sp_type_map.get(source_type, source_type.upper())
-
-        source_points = self._find_special_points(ode, "param", auto_sp)
+        # AUTO labels a special point by its canonical code (LP, HB, BP).
+        kind, index = self.source_point(branch, "fold:all")
+        source_type = self.SOURCE_KINDS[kind]
+        source_points = self.select_points(self._find_special_points(ode, "param", kind), index)
         if not source_points:
             return []
-
-        if all_source:
-            indices = list(range(len(source_points)))
-        else:
-            idx_str = source.split(":")[1] if ":" in source else "-1"
-            if idx_str.lstrip("-").isdigit():
-                idx = int(idx_str)
-                indices = [idx if idx >= 0 else len(source_points) + idx]
-            else:
-                indices = list(range(len(source_points)))
 
         # Build AUTO kwargs for codim-2
         c2_kwargs = self._cont_to_auto_kwargs(bc or cont, icp_name, p_min, p_max)
@@ -408,18 +353,14 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         c2_kwargs["IPS"] = 1  # Equilibrium
         c2_kwargs["ILP"] = 0  # Don't detect folds again
         c2_kwargs["ISP"] = 2  # Detect bifurcations
-        # Second parameter bounds
-        c2_kwargs["RL0"] = min(p_min, p2_min)
-        c2_kwargs["RL1"] = max(p_max, p2_max)
+        # AUTO bounds the principal parameter by RL0/RL1, so the second parameter's domain stops the curve.
+        c2_kwargs["UZSTOP"] = {pyrates_fp2_name: [p2_min, p2_max]}
 
         if branch.bothside:
             c2_kwargs["bidirectional"] = True
 
         results = []
-        for i in indices:
-            if i < 0 or i >= len(source_points):
-                continue
-            sp_label = source_points[i]
+        for sp_label in source_points:
             try:
                 c2_name = f"codim2_{source_type}_{sp_label}"
                 c2_sols, c2_cont = ode.run(
@@ -477,36 +418,34 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
     # ── Helpers ──────────────────────────────────────────────────────────
 
     def _get_free_parameter(self, cont, model):
-        """Extract the free parameter info from a Continuation spec."""
+        """The primary free parameter of *cont* and its bounds: its own domain, else the model parameter's, else ``[-20, 20]``; a bound either leaves out is its default alone, and a declared bound of ``0`` is a bound."""
         fp_dict = cont.free_parameters if cont else None
-        if fp_dict:
-            fp_first = next(iter(fp_dict.values())) if isinstance(fp_dict, dict) else fp_dict[0]
-            name = str(fp_first.name)
-            if fp_first.domain:
-                p_min = float(fp_first.domain.lo) if fp_first.domain.lo else -20
-                p_max = float(fp_first.domain.hi) if fp_first.domain.hi else 20
-            elif name in model.parameters and model.parameters[name].domain:
-                dom = model.parameters[name].domain
-                p_min = float(dom.lo or -20)
-                p_max = float(dom.hi or 20)
-            else:
-                p_min, p_max = -20, 20
-        else:
+        if not fp_dict:
             raise ValueError("Continuation has no free_parameters defined.")
+        fp_first = next(iter(fp_dict.values())) if isinstance(fp_dict, dict) else fp_dict[0]
+        name = str(fp_first.name)
+        dom = fp_first.domain or (model.parameters[name].domain if name in model.parameters else None)
+        lo = getattr(dom, "lo", None)
+        hi = getattr(dom, "hi", None)
+        return {"name": name, "p_min": -20.0 if lo is None else float(lo), "p_max": 20.0 if hi is None else float(hi)}
 
-        return {"name": name, "p_min": p_min, "p_max": p_max}
+    @staticmethod
+    def _pyrates_yaml(model) -> str:
+        """*model*'s PyRates YAML as the AUTO-07p continuation compiles it, through PyRates's Fortran backend."""
+        from tvbo.codegen.pyrates import to_pyrates_yaml_string
+
+        return to_pyrates_yaml_string(model, fortran=True)
 
     def _load_circuit(self, model):
         """Load a PyRates CircuitTemplate from a TVBO Dynamics model."""
         from pyrates.frontend import CircuitTemplate
 
         from tvbo.adapters.pyrates import _patch_pyrates_networkx_backend
-        from tvbo.codegen.pyrates import to_pyrates_yaml_string
 
         # PyRates threads a ``backend`` kwarg into ComputeGraph that networkx >= 3.4's dispatch decorator intercepts; apply the shared dispatch patch (same one the main PyRates adapter uses) before the circuit is built and compiled.
         _patch_pyrates_networkx_backend()
 
-        yaml_content = to_pyrates_yaml_string(model)
+        yaml_content = self._pyrates_yaml(model)
 
         tmpdir = tempfile.mkdtemp(prefix="tvbo_pyrates_bif_")
         pkg_name = f"_tvbo_prbif_{uuid.uuid4().hex[:8]}"
@@ -565,8 +504,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         Parameters
         ----------
         icp_name : str
-            The PyRates-renamed parameter name. PyCoBi's ``_map_auto_kwargs``
-            resolves this to the correct numeric PAR index internally.
+            The PyRates-renamed parameter name. PyCoBi's ``_map_auto_kwargs`` resolves this to the correct numeric PAR index internally.
         """
         kw = {}
         kw["ICP"] = icp_name
@@ -609,12 +547,11 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             kw["EPSL"] = 1e-7
             kw["EPSU"] = 1e-7
 
+        # AUTO-07p's default Newton constants; PyRates's time-integration values (ITMX=2, NWTN=2) lose folds.
+        kw.update(ITNW=5, ITMX=9, NWTN=3)
         newton_max = getattr(cont, "newton_max_iterations", None)
         if newton_max is not None:
-            kw["ITMX"] = int(newton_max)
-            kw["ITNW"] = int(newton_max)
-        else:
-            kw["ITNW"] = 8  # Max Newton corrections per step
+            kw["ITMX"] = kw["ITNW"] = int(newton_max)
 
         # Additional standard settings
         kw.setdefault("NTST", 400)

@@ -2531,6 +2531,33 @@ classes:
                 required: true
                 description: >-
                   Per-group float derived variable whose masked median over wave-present timesteps is the reported rho.
+            propagation:
+                range: PropagationGate
+                inlined: true
+                description: >-
+                  Requires a group's waves to travel before they are counted. Absent, every wave-present timestep counts. See PropagationGate.
+
+    PropagationGate:
+        class_uri: tvbo:PropagationGate
+        description: >-
+          A propagation requirement on a grouped wave reduction. A per-timestep wave test cannot tell a standing field from a travelling one, since a standing field repeats the same spatial pattern every timestep. The reduction sums the per-element unit direction vector over the post-transient timesteps and computes each group's direction dispersion, the ``mask``-weighted mean over elements of 1 - |time-mean direction|: 0 for a direction field fixed in time, growing as the direction moves. A group whose dispersion falls below ``min_dispersion`` has no travelling waves, so its proportion of waves is 0 and its proportion-directed and rho are undefined (NaN).
+        attributes:
+            direction:
+                range: string
+                multivalued: true
+                required: true
+                description: >-
+                  Per-group derived variables that are the components of the per-element unit direction vector (for example the normalised phase gradient on each mesh face), one per spatial component, each of shape ``(n_elements,)``.
+            mask:
+                range: string
+                required: true
+                description: >-
+                  Observer parameter ``(n_groups, n_elements)`` weighting each element's contribution to its group's dispersion mean (1 for a real element, 0 for padding).
+            min_dispersion:
+                range: float
+                required: true
+                description: >-
+                  Smallest direction dispersion at which a group's waves count as travelling.
 
     Noise:
         class_uri: tvbo:Noise
@@ -3356,7 +3383,7 @@ classes:
             source_point:
                 range: string
                 description: >-
-                    Which bifurcation point to start from. Syntax: - 'hopf:-1' = last Hopf (default) - 'hopf:all' = all Hopf points - 'hopf:1' = first Hopf - 'fold:2' = second fold - integer = specific special point index
+                    The special points of the parent continuation the branch starts from, written '<kind>:<n>' for one point and '<kind>:all', or the bare '<kind>', for every point of that kind. <kind> is hopf, fold or bp; <n> is a nonzero integer counting from 1 for the first point, and negative counting back from -1 for the last. Anything else is refused. A periodic-orbit branch starts from Hopf points only.
 
             # --- Branching perturbation ---
             delta_p:
@@ -3414,7 +3441,7 @@ classes:
                 inlined: true
                 inlined_as_list: true
                 description: >-
-                    Parameters to vary. First parameter is primary (codim-1); second enables codim-2 continuation. Each Parameter has name + domain (Range with lo/hi bounds).
+                    The parameters the continuation varies, each a parameter of its dynamics with a domain (lo, hi) bounding it and an optional value it starts from, the dynamics' own value where none is given. A continuation an experiment declares frees one parameter. A two-parameter (codim-2) continuation is a branch of it: the branch's nested continuation frees the second parameter, listed alone or after the primary it inherits (for primary p and second C, [C] or [p, C]), and is continued from the special points the branch's source_point selects.
 
             # --- Step size control ---
             ds:
@@ -3536,7 +3563,7 @@ classes:
         class_uri: tvbo:Integrator
         is_a: Solver
         description: >-
-            Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits abs_tol, rel_tol from Solver. Overrides method default to 'euler'.
+            Fixed-step or adaptive ODE integrator with TVB-specific extensions (noise, transient time, etc.). Inherits abs_tol, rel_tol from Solver; `method` defaults to Heun.
         slots:
             - time_unit
             - unit
@@ -3550,8 +3577,8 @@ classes:
         attributes:
             method:
                 range: string
-                ifabsent: string(euler)
-                description: "Integration method (euler, heun, rk4, etc.)"
+                ifabsent: string(Heun)
+                description: "Integration method (Euler, Heun, RungeKutta4thOrder, or any spelling `tvbo.utils.integration_method` accepts); Heun when absent."
             step_size:
                 range: float
                 ifabsent: float(0.01220703125)
@@ -3689,7 +3716,7 @@ classes:
                 range: string
                 ifabsent: "string(directed)"
                 description: >-
-                    Edge symmetry type for NetworkDynamics.jl EdgeModel: 'directed' (default), 'antisymmetric', or 'symmetric'. AntiSymmetric edges flip sign for the reverse direction.
+                    Declared symmetry of the edge function: 'directed' (default), 'antisymmetric', or 'symmetric', shown in reports. Every backend evaluates each direction of a connection as its own directed edge, so it changes no simulation.
             outsym:
                 multivalued: true
                 range: string

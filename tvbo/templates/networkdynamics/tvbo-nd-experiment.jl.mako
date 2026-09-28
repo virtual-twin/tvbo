@@ -19,17 +19,18 @@ Supports:
   - Multi-dimensional coupling: outdim > 1 for broadcasting edge functions
   - Static vertices: dynamics with no state_variables
 
-Context: Pre-computed dict from BaseAdapter.prepare_context()
+Every graph is a SimpleDiGraph with the Directed edge model, and every edge carries the connection weight, so node i receives post(sum_j w_ij * pre(x_i, x_j)), the coupling every other backend integrates.
+
+Context: Pre-computed dict from NetworkDynamicsAdapter.prepare_context()
 </%doc>
-## Template args: all pre-computed by BaseAdapter.prepare_context()
+## Template args: all pre-computed by NetworkDynamicsAdapter.prepare_context()
 <%page args="experiment, model, network, integration, \
 dynamics_dict, node_dynamics_map, all_couplings, coupling, \
 coupling_vars, outdim, outsym_names, \
-n_nodes, nodes, graph_gen, has_graph_generator, edges_list, emf_names, \
-has_edge_matrix, has_explicit_edges, is_directed, \
+n_nodes, nodes, graph_gen, weight_matrix, \
+coupling_splits, edge_split, graph_form, graph_edges, edge_weights, edge_parameters, event_edges, edge_event_names, line_partners, node_rows, dealias, \
 sv_names, n_sv, is_heterogeneous, is_stochastic, \
-dt, duration, solver_method, solve_kwargs, needs_stiff, needs_weighted, \
-weight_matrix, weight_sym, \
+dt, duration, solver_method, solve_kwargs, needs_stiff, \
 dist_info, needs_random, dist_seed, \
 all_events, has_events, coupling_observed, find_fixpoint, \
 is_static, parse_node_parameters, get_noise_sigmas, graph_generator_call"/>
@@ -50,10 +51,6 @@ using ${julia_ode_package(solver_method)}
 % if needs_stiff:
 using OrdinaryDiffEqSDIRK
 % endif
-% if needs_weighted:
-using DelimitedFiles
-using SimpleWeightedGraphs
-% endif
 <%
 # SpecialFunctions for erf/erfc/…, NaNMath for domain-restricted powers in a Piecewise, each sniffed once per dynamics.
 _rhs_texts = [equation_rhs_text(dyn) for dyn in dynamics_dict.values()]
@@ -67,14 +64,21 @@ using SpecialFunctions
 import NaNMath
 % endif
 
+<%namespace name="edge" file="/tvbo-nd-edge.jl.mako"/>\
+% if any(split['post'] is not None for split in coupling_splits.values()):
+## ── Coupling post-expressions, each applied by a vertex to its summed edge input ──
+% for c_name in all_couplings:
+${edge.post_function(coupling_splits[c_name])}\
+% endfor
+
+% endif
 ## ── Vertex models (node dynamics) ───────────────────────────────────────────
 % for dyn_name, dyn in dynamics_dict.items():
 % if is_static(dyn):
 ## Static vertex: no dynamics, outputs parameter values
 <%
     static_params = list((dyn.parameters or {}).keys())
-    # Output symbols: use coupling vars from default model
-    # (static vertex must output the same symbols that edges expect)
+    # A static vertex outputs the coupling variables of the default model, the symbols the edges expect.
     static_outsyms = coupling_vars if coupling_vars else ['out']
     n_static_out = len(static_outsyms)
 %>
@@ -93,44 +97,33 @@ vertex_${dyn.name} = VertexModel(;
 )
 
 % else:
-<%include file="/tvbo-nd-vertex.jl.mako" args="model=dyn, all_couplings=all_couplings, outdim=outdim" />
+<%include file="/tvbo-nd-vertex.jl.mako" args="model=dyn, all_couplings=all_couplings, outdim=outdim, split=edge_split" />
 
 % endif
 % endfor
 
 ## ── Edge models (coupling) ──────────────────────────────────────────────────
 % for c_name, c in all_couplings.items():
-<%include file="/tvbo-nd-edge.jl.mako" args="coupling=c, is_directed=is_directed, outdim=outdim, outsym_names=outsym_names" />
+<%include file="/tvbo-nd-edge.jl.mako" args="coupling=c, split=coupling_splits[c_name], outdim=outdim, outsym_names=outsym_names" />
 
 % endfor
 
 ## ── Graph ───────────────────────────────────────────────────────────────────
-% if has_edge_matrix:
-G = readdlm("${emf_names[0]}", ',', Float64, '\n')
-g_weighted = SimpleWeightedDiGraph(G)
-edge_weights = getfield.(collect(edges(g_weighted)), :weight)
-g = SimpleDiGraph(g_weighted)
-% elif has_graph_generator:
-g = ${graph_generator_call(graph_gen, n_nodes, 'julia')}
-% elif weight_matrix is not None:
+% if graph_form == "generator":
+g = SimpleDiGraph(${graph_generator_call(graph_gen, n_nodes, 'julia')})
+% elif graph_form == "matrix":
 using SimpleWeightedGraphs
-<%
-import numpy as np
-W = weight_matrix
-%>
-W = [${'; '.join(' '.join(f'{W[i,j]:.6g}' for j in range(n_nodes)) for i in range(n_nodes))}]
+W = [${'; '.join(' '.join(f'{weight_matrix[i, j]:.6g}' for j in range(n_nodes)) for i in range(n_nodes))}]
 g = SimpleDiGraph(SimpleWeightedDiGraph(W))
-% elif has_explicit_edges:
-% if is_directed:
+edge_weights = Float64[${", ".join(repr(w) for w in edge_weights)}]
+% elif graph_form == "listed":
+## Each (source, target) edge in the order edges(g) visits them, the order edge_weights follows
 g = SimpleDiGraph(${n_nodes})
-% else:
-g = SimpleGraph(${n_nodes})
-% endif
-    % for e in edges_list:
-add_edge!(g, ${e.source + 1}, ${e.target + 1})
-    % endfor
-% else:
-% if n_nodes == 1:
+% for i, j in graph_edges:
+add_edge!(g, ${i + 1}, ${j + 1})
+% endfor
+edge_weights = Float64[${", ".join(repr(w) for w in edge_weights)}]
+% elif graph_form == "single":
 ## Single-node: self-loop with zero edge to avoid coupling feedback
 g = SimpleDiGraph(1)
 add_edge!(g, 1, 1)
@@ -150,65 +143,39 @@ edge_zero = EdgeModel(;
     name = :zero_coupling,
 )
 % else:
-g = complete_graph(${n_nodes})
-% endif
+g = complete_digraph(${n_nodes})
 % endif
 
 ## ── Network ─────────────────────────────────────────────────────────────────
 <%
 default_coupling_name = next(iter(all_couplings.keys())) if all_couplings else (coupling.name if coupling else 'Diffusion')
-has_weight_param = weight_sym is not None
-needs_dealias = is_heterogeneous or has_events
-# For single-node self-loop, use the zero edge to avoid coupling feedback
-edge_var = 'edge_zero' if n_nodes == 1 else f'edge_{default_coupling_name}'
+# The single-node graph's self-loop carries the zero edge, so the node gets no coupling feedback
+edge_var = 'edge_zero' if graph_form == "single" else f'edge_{default_coupling_name}'
 %>
 % if is_heterogeneous:
 ## Heterogeneous network: different vertex models per node
 vertex_array = VertexModel[vertex_${model.name} for _ in 1:${n_nodes}]
 % for node in nodes:
 % if node_dynamics_map.get(node.id, model.name) != model.name:
-vertex_array[${node.id + 1}] = vertex_${node_dynamics_map[node.id]}
+vertex_array[${node_rows[node.id] + 1}] = vertex_${node_dynamics_map[node.id]}
 % endif
 % endfor
 
 nw = Network(g, vertex_array, ${edge_var}; dealias=true)
-% elif needs_dealias:
+% elif dealias:
 nw = Network(g, vertex_${model.name}, ${edge_var}; dealias=true)
 % else:
 nw = Network(g, vertex_${model.name}, ${edge_var})
 % endif
-% if has_edge_matrix and has_weight_param:
 
-## Set per-edge weights from connectivity matrix
-p = NWParameter(nw)
-p.e[1:ne(g), :${weight_sym}] = edge_weights
-% endif
-
-## ── Per-node defaults (set on network before NWState) ───────────────────────
-% if find_fixpoint and is_heterogeneous:
-## Set per-node parameter defaults for find_fixpoint (heterogeneous)
+## ── Per-component defaults a fixpoint search starts from (set on network before NWState) ──
+% if find_fixpoint:
 % for node in nodes:
-<%
-    dyn_name = node_dynamics_map.get(node.id, model.name)
-    dyn = dynamics_dict[dyn_name]
-    node_idx = node.id + 1
-    node_params = parse_node_parameters(node)
-%>
-% for p_name, p_val in node_params.items():
-set_default!(nw, VIndex(${node_idx}, :${p_name}), ${p_val})
+% for p_name, p_val in parse_node_parameters(node).items():
+set_default!(nw, VIndex(${node_rows[node.id] + 1}, :${p_name}), ${p_val})
 % endfor
 % endfor
-% elif find_fixpoint and not is_heterogeneous:
-## Set per-node parameter defaults for find_fixpoint (homogeneous)
-% for node in nodes:
-<%
-    node_idx = node.id + 1
-    node_params = parse_node_parameters(node)
-%>
-% for p_name, p_val in node_params.items():
-set_default!(nw, VIndex(${node_idx}, :${p_name}), ${p_val})
-% endfor
-% endfor
+${edge_values(fixpoint=True)}\
 % endif
 
 ## ── Find fixpoint (steady-state initial conditions) ─────────────────────────
@@ -234,7 +201,7 @@ rng = MersenneTwister(${dist_seed})
 <%
     dyn_name = node_dynamics_map.get(node.id, model.name)
     dyn = dynamics_dict[dyn_name]
-    node_idx = node.id + 1
+    node_idx = node_rows[node.id] + 1
     node_state = getattr(node, 'state', None) or []
     state_items = node_state.values() if isinstance(node_state, dict) else node_state
     state_map = {}
@@ -303,46 +270,33 @@ for node in 1:nv(g)
 end
 % endfor
 % endif
-<%
-# Collect per-edge parameter overrides (skip 'weight' — handled by connectivity matrix)
-# IMPORTANT: SimpleGraph stores edges sorted by (min, max), so s.p.e[i, :param]
-# corresponds to the i-th edge in sorted order, not YAML insertion order.
-# We must sort edges the same way to assign parameters to the correct edges.
-edge_param_lines = []
-
-# Build list of (sorted_key, original_edge) to match SimpleGraph ordering
-edges_with_keys = []
-for edge in edges_list:
-    s_node = min(edge.source, edge.target) + 1
-    t_node = max(edge.source, edge.target) + 1
-    edges_with_keys.append(((s_node, t_node), edge))
-
-# Sort by (min_node, max_node) — same order as SimpleGraph edges()
-edges_with_keys.sort(key=lambda x: x[0])
-
-for i, (key, edge) in enumerate(edges_with_keys):
-    eparams = getattr(edge, 'parameters', None) or {}
-    if isinstance(eparams, dict):
-        for p_name, p_obj in eparams.items():
-            if p_name == 'weight':
-                continue
-            val = getattr(p_obj, 'value', None) if hasattr(p_obj, 'value') else p_obj
-            if val is not None:
-                edge_param_lines.append(f's.p.e[{i + 1}, :{p_name}] = {val}')
-    else:
-        for p in eparams:
-            ep = parse_node_parameters({'parameters': [p]}) if not isinstance(p, dict) else p
-            for p_name, p_val in (ep if isinstance(ep, dict) else {}).items():
-                if p_name == 'weight' or p_val is None:
-                    continue
-                edge_param_lines.append(f's.p.e[{i + 1}, :{p_name}] = {p_val}')
-%>
-% if edge_param_lines:
-
-## Per-edge parameter overrides
-% for line in edge_param_lines:
-${line}
+<%def name="on_line(ev)">\
+## The line-partner copy an edge event's affect ends with, where the graph carries undirected lines
+% if line_partners and str(ev.name) in edge_event_names:
+    on_line!(p, ctx, (${"".join(f":{name}, " for name in (ev.affect_parameters or []))}))
+% endif
+</%def>
+<%def name="edge_values(fixpoint)">\
+## Each edge's weight, on the coupling's weight parameter, and declared parameters, at the position edges(g) visits it in: network defaults for a fixpoint search, the state's parameters otherwise.
+% if edge_weights is not None and edge_split is not None:
+% if fixpoint:
+for (k, w) in enumerate(edge_weights)
+    set_default!(nw, EIndex(k, :${edge_split['weight']}), w)
+end
+% else:
+s.p.e[1:ne(g), :${edge_split['weight']}] = edge_weights
+% endif
+% endif
+% for k, p_name, p_val in edge_parameters:
+% if fixpoint:
+set_default!(nw, EIndex(${k}, :${p_name}), ${p_val})
+% else:
+s.p.e[${k}, :${p_name}] = ${p_val}
+% endif
 % endfor
+</%def>
+% if not find_fixpoint and (edge_weights is not None or edge_parameters):
+${edge_values(fixpoint=False)}\
 % endif
 
 ## ── Events / Callbacks ──────────────────────────────────────────────────────
@@ -353,6 +307,20 @@ ${line}
     preset_events = [(ev, src) for ev, src in all_events if str(getattr(ev.event_type, 'text', ev.event_type)) == 'preset_time']
     discrete_events = [(ev, src) for ev, src in all_events if str(getattr(ev.event_type, 'text', ev.event_type)) == 'discrete']
 %>
+% if line_partners:
+
+## An undirected line is two directed edges: an edge event's parameter changes are copied onto the line's other direction
+line_partner = Dict{Int, Int}(${", ".join(f"{a} => {b}" for a, b in line_partners.items())})
+function on_line!(p, ctx, psyms)
+    k = get(line_partner, ctx.eidx, 0)
+    k == 0 && return nothing
+    q = NWParameter(ctx.integrator)
+    for name in psyms
+        q.e[k, name] = p[name]
+    end
+    nothing
+end
+% endif
 % for ev, ev_src in continuous_events:
 <%
     cond_syms = ', '.join(f':{s}' for s in (ev.condition_states or []))
@@ -367,17 +335,17 @@ ${ev.name}_cond = ComponentCondition([${cond_syms}], [${cond_psyms}]) do u, p, t
 end
 ${ev.name}_affect = ComponentAffect([], [${affect_psyms}]) do u, p, ctx
     ${ev.affect.rhs}
+${on_line(ev)}\
 end
 ${ev.name}_cb = ContinuousComponentCallback(${ev.name}_cond, ${ev.name}_affect)
 % if ev.target_component == 'all_edges':
 for i in 1:ne(g)
     set_callback!(nw[EIndex(i)], ${ev.name}_cb)
 end
-% elif ev.target_component and ev.target_component.startswith('edge_'):
-<%
-    edge_idx = int(ev.target_component.split('_')[1])
-%>
-set_callback!(nw[EIndex(${edge_idx})], ${ev.name}_cb)
+% elif ev.target_component in event_edges:
+% for k in event_edges[ev.target_component]:
+set_callback!(nw[EIndex(${k})], ${ev.name}_cb)
+% endfor
 % endif
 % endfor
 % for ev, ev_src in preset_events:
@@ -388,8 +356,7 @@ set_callback!(nw[EIndex(${edge_idx})], ${ev.name}_cb)
 
 ## Preset-time callback: ${ev.name}
 <%
-    # Can reuse existing affect if same affect body
-    # Check if an identical affect was already defined
+    # An identical affect body already defined is reused.
     reuse_affect = None
     for prev_ev, _ in continuous_events:
         if str(prev_ev.affect.rhs) == str(ev.affect.rhs) and \
@@ -402,14 +369,14 @@ ${ev.name}_cb = PresetTimeComponentCallback(${times}, ${reuse_affect})
 % else:
 ${ev.name}_affect = ComponentAffect([], [${affect_psyms}]) do u, p, ctx
     ${ev.affect.rhs}
+${on_line(ev)}\
 end
 ${ev.name}_cb = PresetTimeComponentCallback(${times}, ${ev.name}_affect)
 % endif
-% if ev.target_component and ev.target_component.startswith('edge_'):
-<%
-    edge_idx = int(ev.target_component.split('_')[1])
-%>
-add_callback!(nw[EIndex(${edge_idx})], ${ev.name}_cb)
+% if ev.target_component in event_edges:
+% for k in event_edges[ev.target_component]:
+add_callback!(nw[EIndex(${k})], ${ev.name}_cb)
+% endfor
 % elif ev.target_component == 'all_edges':
 for i in 1:ne(g)
     add_callback!(nw[EIndex(i)], ${ev.name}_cb)
@@ -442,8 +409,6 @@ sol = solve(prob, EulerHeun(); dt=${dt}, saveat=${dt})
 ## ODEProblem from NWState: auto-extracts initial state, parameters, and callbacks
 u0 = NWState(nw)
 prob = ODEProblem(nw, u0, tspan)
-% elif has_edge_matrix and has_weight_param:
-prob = ODEProblem(nw, uflat(s), tspan, pflat(p))
 % else:
 prob = ODEProblem(nw, uflat(s), tspan, pflat(s))
 % endif

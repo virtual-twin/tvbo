@@ -1,8 +1,7 @@
 """Gillespie SSA backend — finite-size stochastic realization of a mean-field rate model.
 
 The backend (``tvbo/adapters/gillespie.py``) runs any relaxation rate model ``tau*X' = -X + F`` as a finite birth-death process: it derives the birth/death split (birth ``Omega*F/tau``, death ``n/tau``) and the between-event ODEs from the model's *own* equations — nothing model-specific.
-These tests pin: (1) the generic decomposition is correct on a Tsodyks-Markram rate model;
-(2) the mean-field limit — large system size ``Omega`` concentrates the activity on the deterministic fixed point (which only holds if the split is right); (3) noise scales as ``1/sqrt(Omega)``; (4) the backend requires ``execution.system_size``.
+These tests pin: (1) the generic decomposition is correct on a Tsodyks-Markram rate model; (2) the mean-field limit — large system size ``Omega`` concentrates the activity on the deterministic fixed point (which only holds if the split is right); (3) noise scales as ``1/sqrt(Omega)``; (4) the backend requires ``execution.system_size``.
 
 The model is declared inline (no external recipe) so the test is self-contained.
 """
@@ -117,3 +116,18 @@ def test_requires_system_size(tmp_path):
     exp = _experiment(tmp_path, system_size=None)
     with pytest.raises(ValueError, match="system_size"):
         exp.run(format="gillespie")
+
+
+def test_the_settle_is_the_head_of_one_run(tmp_path):
+    """`transient_time` is simulated ahead of `duration` in the same realisation and cut from its head: on the measurement clock `.data` opens on the state at t = 0 and the settle stays on `.transient` at negative times, sample for sample the run a settle-free recipe of the same total length records."""
+    settled = _experiment(tmp_path)
+    settled.integration.duration, settled.integration.transient_time = 20.0, 5.0
+    whole = _experiment(tmp_path)
+    whole.integration.duration = 25.0
+
+    sim = settled.run(format="gillespie").integration
+    reference = whole.run(format="gillespie").integration.data
+
+    assert sim.data.time.values[0] == 0.0 and sim.data.sizes["time"] == 401
+    assert sim.transient.data.sizes["time"] == 100 and sim.transient.data.time.values[0] == pytest.approx(-5.0)
+    np.testing.assert_array_equal(sim.full.values, reference.values)

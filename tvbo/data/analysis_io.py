@@ -592,8 +592,8 @@ def _kwargs_of(analysis, results_root) -> dict:
             continue
         try:
             out[key] = _dref.resolve_dataref(used, results_root=results_root)
-        except FileNotFoundError as e:
-            raise FileNotFoundError(f"analysis {name!r}, argument {key!r}: {e}") from e
+        except (FileNotFoundError, _dref.AmbiguousContainerError) as e:
+            raise type(e)(f"analysis {name!r}, argument {key!r}: {e}") from e
     return out
 
 

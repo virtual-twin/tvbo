@@ -529,9 +529,10 @@ class Brian2Adapter(BaseAdapter):
 
         integration = getattr(exp, "integration", None)
         ts_factor = float(time_unit_factor((network, integration, exp), _BRIAN2_CLOCK))
-        dt_ms = float(getattr(integration, "step_size", 0.02) or 0.02) * ts_factor
-        measured_ms = float(getattr(integration, "duration", 1000.0) or 1000.0) * ts_factor
-        transient_ms = float(getattr(integration, "transient_time", 0.0) or 0.0) * ts_factor
+        window = self.get_integration_info()
+        dt_ms = window["dt"] * ts_factor
+        measured_ms = window["duration"] * ts_factor
+        transient_ms = window["transient_time"] * ts_factor
 
         default_name = getattr(exp.dynamics, "name", None) or "dynamics"
         groups = group_nodes_by_dynamics(nodes, default_name)

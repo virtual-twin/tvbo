@@ -176,3 +176,49 @@ class TestCrossScaleClock:
         fr = multiscale.flatten_reservoir(_minimal_experiment())
 
         assert fr.integration == {"method": "Heun", "step_size": 1.0, "duration": 10, "transient_time": 0}
+
+
+class TestMacroWeightTransform:
+    """The network's declared weight transform applies as `Network` applies it, whatever it is spelled as.
+
+    Recognising a normalisation by searching the equation for ``max(W)`` left the curated spelling ``weight / max(weight)`` unapplied, so the long-range drive ran on the raw connectome.
+    """
+
+    @staticmethod
+    def _cross(fr):
+        """The long-range part of ``W_global``: everything but the block-diagonal recurrence."""
+        return fr.weights - np.kron(np.eye(fr.n_regions), np.full((fr.n_units, fr.n_units), 0.1))
+
+    def _flatten(self, monkeypatch, transforms):
+        sc = 4.0 * (np.ones((R, R)) - np.eye(R))
+        monkeypatch.setattr(catalog, "load_matrix", lambda source: sc)
+        spec = _minimal_experiment()
+        if transforms is not None:
+            spec["network"]["transforms"] = transforms
+        return multiscale.flatten_reservoir(spec)
+
+    def test_the_curated_normalisation_applies(self, patched_engine, monkeypatch):
+        raw = self._flatten(monkeypatch, None)
+        normalised = self._flatten(monkeypatch, [{"name": "weight", "equation": {"rhs": "weight / max(weight)"}}])
+
+        np.testing.assert_allclose(self._cross(normalised) * 4.0, self._cross(raw), rtol=1e-6)
+
+    def test_any_declared_weight_transform_applies(self, patched_engine, monkeypatch):
+        raw = self._flatten(monkeypatch, None)
+        halved = self._flatten(monkeypatch, [{"name": "weight", "equation": {"rhs": "weight / 2"}}])
+
+        np.testing.assert_allclose(self._cross(halved) * 2.0, self._cross(raw), rtol=1e-6)
+
+    def test_a_transform_of_another_attribute_leaves_the_weights_alone(self, patched_engine, monkeypatch):
+        raw = self._flatten(monkeypatch, None)
+        lengths = self._flatten(monkeypatch, [{"name": "length", "equation": {"rhs": "length / max(length)"}}])
+
+        np.testing.assert_allclose(lengths.weights, raw.weights)
+
+
+def test_the_unit_noise_amplitude_reads_nsig(patched_engine):
+    """`nsig` is the dispersion D = σ²/2, read by the one amplitude reader rather than ignored."""
+    spec = _minimal_experiment()
+    spec["dynamics"]["state_variables"]["x"]["noise"] = {"parameters": {"nsig": {"value": 0.5}}}
+
+    assert multiscale.flatten_reservoir(spec).noise_sigma == pytest.approx(1.0)

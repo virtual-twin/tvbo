@@ -15,15 +15,16 @@ from __future__ import annotations
 import numpy as np
 import sympy as sp
 
+from tvbo.adapters.base import BaseAdapter
 from tvbo.parse.expression import parse_eq
 from tvbo.utils import initial_value
 
 
-class GillespieAdapter:
-    """Run a mean-field rate `SimulationExperiment` as a finite-N birth-death process."""
+class GillespieAdapter(BaseAdapter):
+    """Run a mean-field rate `SimulationExperiment` as a finite-N birth-death process.
 
-    def __init__(self, experiment):
-        self.experiment = experiment
+    The window is `BaseAdapter.get_integration_info`'s: ``step_size`` is the output sampling cadence (events are drawn in continuous time), ``transient_time`` is simulated ahead of the measured ``duration``, and the recorded grid is on the measurement clock, so the settle carries negative timestamps and ``.data`` opens on the state at ``t = 0``.
+    """
 
     # -- symbolic model → numpy callables (birth flux + slow-variable RHS) -------------
     def _compile(self, model):
@@ -94,20 +95,19 @@ class GillespieAdapter:
                 None if dom is None else getattr(dom, "hi", None),
             )
 
-        integ = exp.integration
-        duration = float(integ.duration)
-        rec_dt = float(getattr(integ, "step_size", None) or 1e-3)  # output sampling cadence
+        window = self.get_integration_info()
+        rec_dt, n_settle = window["dt"], window["n_transient"]
 
         state = {n: initial_value(model.state_variables[n]) for n in sv_names}
         n_count = int(round(omega * state[activity]))
         rng = np.random.default_rng(seed)
 
-        nrec = int(duration / rec_dt) + 1
+        nrec = n_settle + window["n_measured"] + 1
         rec = np.full((nrec, len(sv_names)), np.nan)
         ri, t_rec, t = 0, 0.0, 0.0
         idx_activity = sv_names.index(activity)
 
-        while t < duration:
+        while ri < nrec:  # until the recorded grid, settle and measured window, is full
             state[activity] = n_count / omega
             args = [state[n] for n in sv_names]
             a_plus = omega * float(birth_fn(*args))
@@ -132,14 +132,14 @@ class GillespieAdapter:
                 ri += 1
                 t_rec += rec_dt
 
-        time = np.arange(ri) * rec_dt
+        time = (np.arange(ri) - n_settle) * rec_dt
         da = xr.DataArray(
             rec[:ri],
             dims=["time", "variable"],
             coords={"time": time, "variable": sv_names},
         )
         return ExperimentResult(
-            integration=SimulationResult(data=da),
+            integration=SimulationResult(data=da, n_transient=n_settle),
             source=exp,
             name=getattr(exp, "label", None),
         )

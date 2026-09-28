@@ -2517,6 +2517,8 @@ website:
                   - section: "Hand-written behaviour attached to the generated model classes."
                     href: api/behaviour/index.qmd
                     contents:
+                      - text: "Atlas"
+                        href: api/behaviour/atlas.qmd
                       - text: "Continuation"
                         href: api/behaviour/continuation.qmd
                       - text: "Coupling"
@@ -2527,12 +2529,22 @@ website:
                         href: api/behaviour/dynamics_runtime.qmd
                       - text: "Event"
                         href: api/behaviour/event.qmd
+                      - text: "Function"
+                        href: api/behaviour/function.qmd
                       - text: "Integrator"
                         href: api/behaviour/integrator.qmd
+                      - text: "Noise"
+                        href: api/behaviour/noise.qmd
+                      - text: "Observation"
+                        href: api/behaviour/observation.qmd
                       - text: "Perturbation"
                         href: api/behaviour/perturbation.qmd
+                      - text: "Phenotype"
+                        href: api/behaviour/phenotype.qmd
                       - text: "Software"
                         href: api/behaviour/software.qmd
+                      - text: "Study"
+                        href: api/behaviour/study.qmd
                   - section: "Classes"
                     href: api/classes/index.qmd
                     contents:
@@ -2773,6 +2785,8 @@ website:
                         href: api/run/graph.qmd
                       - text: "Julia"
                         href: api/run/julia.qmd
+                      - text: "Study"
+                        href: api/run/study.qmd
                   - section: "Templates"
                     contents:
                       - section: "PDE/FEM code-generation templates for TVBO field models."
@@ -2807,6 +2821,8 @@ website:
                         href: api/utils/pytree.qmd
                       - text: "Report"
                         href: api/utils/report.qmd
+                      - text: "Source"
+                        href: api/utils/source.qmd
                       - text: "Study Layout"
                         href: api/utils/study_layout.qmd
                       - text: "Units"

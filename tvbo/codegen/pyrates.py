@@ -74,6 +74,27 @@ _PYRATES_REPL_REVERSE = {safe: original for original, safe in PYRATES_REPL.items
 """PyRates-safe name back to the original TVBO name, derived so the two cannot drift."""
 
 
+def pyrates_names(model, fortran: bool = False) -> dict[str, str]:
+    """The name PyRates declares each symbol under: `PYRATES_REPL`'s, and with *fortran* the one `ContinuationAdapter.fortran_names` gives it besides.
+
+    PyRates reserves the names `PYRATES_REPL` suffixes. Its Fortran backend, which the AUTO-07p continuation compiles, is case-insensitive too, so with *fortran* the symbols of *model* whose PyRates names differ only in case are renamed apart (``A`` keeps its name, ``a`` becomes ``alow``), and the map covers every symbol *model* declares as well as every name `PYRATES_REPL` does.
+    """
+    if not fortran:
+        return PYRATES_REPL
+    from tvbo.adapters.base import ContinuationAdapter
+
+    symbols = [
+        *(model.derived_variables or {}),
+        *(model.state_variables or {}),
+        *(model.parameters or {}),
+        *(model.derived_parameters or {}),
+        *(getattr(model, "coupling_inputs", None) or {}),
+    ]
+    safe = {key: PYRATES_REPL.get(key, key) for key in symbols}
+    fortran_safe = ContinuationAdapter.fortran_names(safe.values())
+    return {**PYRATES_REPL, **{key: fortran_safe[name] for key, name in safe.items()}}
+
+
 def _unrename_pyrates(name: str) -> str:
     """Reverse PYRATES_REPL: restore original TVBO name from PyRates-safe name."""
     return _PYRATES_REPL_REVERSE.get(name, name)
@@ -142,8 +163,8 @@ def _pyrates_compatible(expr):
     )
 
 
-def _renamed_scope(model) -> dict:
-    """The model's own symbols, rebuilt under their PyRates-safe names.
+def _renamed_scope(model, repl: dict[str, str]) -> dict:
+    """The model's own symbols, rebuilt under their PyRates-safe names, those *repl* gives them.
 
     Equations are sympified against this so a declared name shadows SymPy's globals — without it PinskyRinzelCA3's ``chi`` parses as the hyperbolic cosine integral.
 
@@ -153,7 +174,7 @@ def _renamed_scope(model) -> dict:
 
     scope = {}
     for key, symbol in model.get_symbolic_elements().items():
-        safe = PYRATES_REPL.get(key, key)
+        safe = repl.get(key, key)
         if safe == key:
             scope[key] = symbol
         elif isinstance(symbol, sympy.Symbol):
@@ -163,27 +184,27 @@ def _renamed_scope(model) -> dict:
     return scope
 
 
-def operator_template(model, op_name: str | None = None) -> dict:
+def operator_template(model, op_name: str | None = None, fortran: bool = False) -> dict:
     """Resolve a Dynamics model into the fields of a PyRates ``OperatorTemplate``.
 
-    Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined (PyRates YAML has no user functions), and unsupported constructs are rewritten by :func:`_pyrates_compatible`.
+    Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through `pyrates_names`, functions are inlined (PyRates YAML has no user functions), and unsupported constructs are rewritten by :func:`_pyrates_compatible`.
 
     Equations are sympified against :func:`_renamed_scope`, keyed by the renamed spelling because renaming has already been applied to the equation strings.
 
     Args:
         model: The :class:`~tvbo.classes.dynamics.Dynamics` to convert.
         op_name: Operator name; defaults to ``<model name>_op``.
+        fortran: Whether the operator is compiled by PyRates's Fortran backend, which renames the symbols that differ only in case (`pyrates_names`).
 
     Returns:
-        dict: ``op_name``, ``description``, ``equations`` (list of strings) and
-        ``variables`` (name → PyRates spec).
+        dict: ``op_name``, ``description``, ``equations`` (list of strings) and ``variables`` (name → PyRates spec).
     """
     from tvbo.classes.equation import sympify as tvbo_sympify
     from tvbo.utils import initial_value, parameter_number
 
-    repl = PYRATES_REPL
+    repl = pyrates_names(model, fortran)
     name = model.name or "tvbo_model"
-    scope = _renamed_scope(model)
+    scope = _renamed_scope(model, repl)
 
     def compat(eq_str):
         return str(_pyrates_compatible(tvbo_sympify(eq_str, locals=scope)))
@@ -220,7 +241,7 @@ def operator_template(model, op_name: str | None = None) -> dict:
         variables[display] = "variable"
 
     for key in getattr(model, "coupling_inputs", None) or {}:
-        variables[key] = "input"
+        variables[repl.get(key, key)] = "input"
 
     description = (model.description or f"TVBO model: {name}").replace("\\", "\\\\").replace('"', "'")
     return {
@@ -303,6 +324,7 @@ def to_pyrates_yaml_string(
     dynamics: Dynamics | dict[str, Dynamics] | None = None,
     network: Network | None = None,
     filepath: str | None = None,
+    fortran: bool = False,
 ) -> str:
     """Export to complete PyRates experiment YAML (model + network, ready to run).
 
@@ -311,12 +333,13 @@ def to_pyrates_yaml_string(
     Parameters
     ----------
     dynamics : Dynamics or dict[str, Dynamics], optional
-        TVBO Dynamics model for single-node experiment, or a dictionary
-        of dynamics models keyed by name for heterogeneous networks.
+        TVBO Dynamics model for single-node experiment, or a dictionary of dynamics models keyed by name for heterogeneous networks.
     network : Network, optional
         TVBO Network for multi-node experiment.
     filepath : str, optional
         Path to write the YAML file. If None, returns the YAML string.
+    fortran : bool, optional
+        Whether the YAML is compiled by PyRates's Fortran backend, which the AUTO-07p continuation uses; its operators then rename the symbols that differ only in case (`pyrates_names`).
 
     Returns:
     -------
@@ -327,13 +350,11 @@ def to_pyrates_yaml_string(
 
     template = templates.lookup.get_template("tvbo-pyrates-experiment.yaml.mako")
 
-    # Handle dynamics as either a single model or a dictionary
     if isinstance(dynamics, dict):
         # dynamics is a library for heterogeneous networks
-        yaml_str = str(template.render(model=None, network=network, dynamics=dynamics))
+        yaml_str = str(template.render(model=None, network=network, dynamics=dynamics, fortran=fortran))
     else:
-        # dynamics is a single model
-        yaml_str = str(template.render(model=dynamics, network=network, dynamics={}))
+        yaml_str = str(template.render(model=dynamics, network=network, dynamics={}, fortran=fortran))
 
     if filepath:
         with open(filepath, "w", encoding="utf-8") as f:

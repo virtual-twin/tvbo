@@ -1689,38 +1689,34 @@ class _UsedOnly:
 def _container_path(iri, base_dir: Path) -> str:
     """Resolve a ``used`` edge's IRI/key to its result container under ``base_dir``.
 
-    One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. The ``_`` boundary keeps ``exp-1`` from matching ``exp-10`` and the network companion is skipped by name.
+    One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. Both are found by :mod:`tvbo.data.dataref` — :func:`~tvbo.data.dataref.locate_exp_container` for a run, :func:`~tvbo.data.dataref.locate_analysis_container` for an analysis — the lookups every cross-experiment reader shares, so a figure cannot read a different container than a warm start or a report does.
 
     An IRI that names a study (``tvbo:exp/<study>/exp-N``) is resolved against that study's root rather than ``base_dir``, so a figure owned by a study-of-studies can read a member's run; the name is matched within the tree the referring study belongs to and an unmatched or ambiguous one raises.
 
-    Returns ``""`` when the container is not there, which a panel declaring a ``placeholder`` relies on: the generated script draws the honest label instead of a plot, so a partially-run study still renders. A panel without a placeholder gets a named error from ``_open`` at render time. What is gone is the guessing — four candidate layouts tried in turn, which is how a figure came to read one run's experiments against another run's analyses.
+    Returns ``""`` when the container is not there, which a panel declaring a ``placeholder`` relies on: the generated script draws the honest label instead of a plot, so a partially-run study still renders. A panel without a placeholder gets a named error from ``_open`` at render time. Several runs of one experiment raise :class:`~tvbo.data.dataref.AmbiguousContainerError` instead, since drawing whichever sorts first is how a figure comes to show one run's experiments against another run's analyses.
     """
     if not iri:
         return ""
     from tvbo.adapters.bids import entity_value
     from tvbo.data.dataref import experiment_id as _experiment_id
-    from tvbo.data.dataref import iri_scope
-    from tvbo.utils.study_layout import is_network_companion, sibling_study_root, study_path
+    from tvbo.data.dataref import iri_scope, locate_analysis_container, locate_exp_container
+    from tvbo.utils.study_layout import sibling_study_root, study_path
 
     # An IRI naming a study names a container in THAT study's results, not in the referring study's: `tvbo:exp/Jansen1995/exp-1` read from the manuscript root must not find the root's own exp-1.
     _kind, owner, _name = iri_scope(iri)
     if owner:
         base_dir = sibling_study_root(owner, base_dir) or base_dir
     key = re.split(r"[:/#]", str(iri))[-1]  # last IRI segment (e.g. "exp-3" or "fig3")
-    # Only an experiment reference (exp-N / expN / bare N) yields an exp-<id> stem. A digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
-    eid = _experiment_id(iri)
-    if eid:
-        stems = [f"exp-{eid}"]
-    else:
-        # The writer's own stem comes first, built by the same `entity_value` the analysis container name is: an analysis named `abeta_transfer` is WRITTEN as `ana-abetatransfer_result.h5`, so a literal `ana-<name>` glob would never find it. The literal forms stay behind it for an IRI that is already a stem, and a key with no alphanumeric character names no container rather than raising.
-        written = entity_value(key)
-        stems = ([f"ana-{written}"] if written else []) + [f"ana-{key}", key]
     results = study_path("results", root=base_dir)
-    for stem in stems:
-        files = [f for f in sorted(results.glob(f"{stem}_*result.h5")) if not is_network_companion(f)]
-        if files:
-            return str(files[0].resolve())
-    return ""
+    # Only an experiment reference (exp-N / expN / bare N) names a run. A digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be misread as exp-1 — the strict matcher DataRef.experiment_id already uses decides.
+    eid = _experiment_id(iri)
+    if not eid and not entity_value(key):
+        return ""  # a key with no alphanumeric character names no analysis container
+    try:
+        path = locate_exp_container(results, eid) if eid else locate_analysis_container(results, key)
+    except FileNotFoundError:
+        return ""
+    return str(Path(path).resolve())
 
 
 # --------------------------------------------------------------------------- custom panels The ``custom`` escape hatch: a registered ``fn(fig, ax, ctx)`` draws a bespoke sub-panel the grammar can't (yet) express. ``ctx`` carries the resolved layers (container paths, transforms, selectors already resolved by ``build_context``) plus the panel's ``opts``, so a callable opens the container(s) itself and draws exactly what the paper needs. A study registers its own the same way it registers a transform.
@@ -1766,7 +1762,9 @@ def _sel_dict(used):
 
     A numeric selection uses ``method="nearest"`` (label-based nearest coordinate, e.g. the sampled K-values on a continuous sweep); a non-numeric one is an exact label match.
     """
-    resolved = _arg_dict(getattr(used, "sel", None))
+    from tvbo.data.dataref import sel_dict
+
+    resolved = {dim: _plain(value) for dim, value in sel_dict(used).items()}
     if not resolved:
         return None, None
 

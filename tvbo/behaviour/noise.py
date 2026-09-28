@@ -55,12 +55,6 @@ class NoiseBehaviour(RuntimeAttributes, Pytree):
         obj.sigma_vec = leaves.get("sigma_vec")
         return obj
 
-    @property
-    def parameters_dict(self):
-        """The noise parameters as a dict-like view, empty when unset."""
-        params = getattr(self, "parameters", None)
-        return params if isinstance(params, dict) else (params or {})
-
     STANDARD_EQUATIONS: ClassVar[dict[str, tuple[str, str]]] = {
         "gaussian": ("N", "sqrt(dt) * sigma * xi"),
         "ou": ("dN/dt", "-N/tau + sigma * xi"),
@@ -115,29 +109,22 @@ class NoiseBehaviour(RuntimeAttributes, Pytree):
 
     @property
     def nsig(self):
-        r"""The noise dispersion `nsig`, derived from `sigma` as $0.5\,\sigma^2$ if needed.
+        r"""The noise dispersion `nsig`, $0.5\,\sigma^2$ of the amplitude `sigma` reads.
 
-        Prefers an explicit `nsig` parameter; otherwise computes it from `sigma`. Returns `None` when neither is available.
+        One rule for both spellings, `tvbo.utils.noise_sigma`'s, so a declared `nsig` beside a declared `sigma` cannot mean a second amplitude. Returns `None` when neither is declared.
         """
-        value = _declared(self.parameters_dict, "nsig")
-        if value is not None:
-            return value
-        sigma = _declared(self.parameters_dict, "sigma")
-        return None if sigma is None else 0.5 * (sigma**2)
+        sigma = self.sigma
+        return None if sigma is None else 0.5 * sigma**2
 
     @property
     def sigma(self):
-        r"""The noise standard deviation `sigma`, derived from `nsig` as $\sqrt{2\,nsig}$ if needed.
+        r"""The noise standard deviation `sigma`, read by `tvbo.utils.noise_sigma`: a declared `sigma` as written, else $\sqrt{2\,nsig}$.
 
-        Prefers an explicit `sigma` parameter; otherwise computes it from `nsig`. Returns `None` when neither is available.
+        Returns `None` when neither is declared.
         """
-        import numpy as np
+        from tvbo.utils import noise_sigma
 
-        value = _declared(self.parameters_dict, "sigma")
-        if value is not None:
-            return value
-        nsig = _declared(self.parameters_dict, "nsig")
-        return None if nsig is None else np.sqrt(2 * nsig)
+        return noise_sigma(self)
 
     def render_code(self, format="tvb"):
         """Render the noise as source code for the requested backend.
@@ -168,14 +155,3 @@ class NoiseBehaviour(RuntimeAttributes, Pytree):
         exec(self.render_code(format=format), templater.exec_globals, local_vars)
         self._tvb = local_vars["Noise"]
         return self._tvb
-
-
-def _declared(parameters, name):
-    """The value a noise parameter states, or ``None`` when it does not state one.
-
-    A parameter arrives as a record with a ``value`` slot or as the plain mapping a terse recipe writes; one reader for both, so ``sigma`` and ``nsig`` cannot mean different things on the two spellings.
-    """
-    entry = parameters.get(name)
-    if entry is None:
-        return None
-    return entry.get("value") if isinstance(entry, dict) else getattr(entry, "value", None)

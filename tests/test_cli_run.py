@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from tvbo.cli import run as run_cli
+from tvbo.run import study as study_run
 
 
 @pytest.mark.parametrize(
@@ -83,6 +84,148 @@ def test_dispatch_to_engine_slurm_single_task_no_gather(monkeypatch, tmp_path: P
     assert not (kit_dir / "finalize.sbatch").exists()
 
 
+def test_dispatch_to_engine_carries_the_container_and_the_results_root_into_the_plan(monkeypatch, tmp_path: Path):
+    """``tvbo run --engine slurm --container IMG -o DIR`` emits a kit whose tasks run in IMG and write their results into DIR.
+
+    Both flags reach the plan as the assignments ``tvbo workflow --set`` parses, so each must be spelled as a bare key: written flag-style (``--set=container=…``) the key parses as ``set`` and the kit runs bare, writing into its own ``derivatives/tvbo/``. ``-o`` is relative to where the command runs, as it is for a local run, even though the tasks run from the kit directory.
+    """
+    from tvbo.cli import _workflow
+
+    monkeypatch.setattr(
+        "tvbo.cli.workflow.subprocess.run", lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
+    )
+    plans = []
+    real_plan = _workflow.plan
+    monkeypatch.setattr(_workflow, "plan", lambda *a, **k: plans.append(real_plan(*a, **k)) or plans[-1])
+    monkeypatch.chdir(tmp_path)
+
+    image = "ghcr.io/the-virtual-brain/tvbo:0.7.0"
+    run_cli._dispatch_to_engine(
+        "slurm",
+        spec="experiment:JR_MEG_FrequencyGradient_Optimization",
+        backend="jax",
+        experiment=None,
+        container=image,
+        out_dir=Path("run-001"),
+    )
+
+    results = (tmp_path / "run-001").resolve()
+    (plan,) = plans
+    assert plan.container == f"docker://{image}"
+    assert plan.out_dir == str(results)
+    sbatch = (results / "run.sbatch").read_text()
+    assert f"docker://{image} " in sbatch
+    assert f"-o {results}" in sbatch
+
+
+def _captured_reexec(monkeypatch, *, singularity: bool) -> list[list[str]]:
+    """Run `_reexec_in_container` with Singularity present or absent, capturing each command it would launch instead of launching it."""
+    import subprocess
+    from types import SimpleNamespace
+
+    monkeypatch.delenv("SINGULARITY_BIND", raising=False)
+    monkeypatch.setattr(
+        run_cli.shutil, "which", lambda name: "/usr/bin/singularity" if singularity and name == "singularity" else None
+    )
+    launched: list[list[str]] = []
+    monkeypatch.setattr(subprocess, "run", lambda cmd, *a, **k: launched.append(cmd) or SimpleNamespace(returncode=0))
+    return launched
+
+
+def test_container_reexec_hands_singularity_a_docker_reference_and_marks_the_inner_run(monkeypatch):
+    """`--container ghcr.io/…:tag` reaches `singularity exec` as `docker://ghcr.io/…:tag`, which Singularity pulls rather than reading as a local file, and the inner run carries `TVBO_IN_CONTAINER=1` so it does not re-exec again."""
+    launched = _captured_reexec(monkeypatch, singularity=True)
+    with pytest.raises(SystemExit):
+        run_cli._reexec_in_container("ghcr.io/the-virtual-brain/tvbo:0.7.0", ["run", "x.yaml"])
+    (cmd,) = launched
+    assert cmd[:4] == ["singularity", "exec", "--env", "TVBO_IN_CONTAINER=1"]
+    assert "docker://ghcr.io/the-virtual-brain/tvbo:0.7.0" in cmd
+    assert cmd[-3:] == ["tvbo", "run", "x.yaml"]
+
+
+def test_container_reexec_hands_docker_the_reference_without_its_transport(monkeypatch):
+    """Docker names a registry image without `docker://`, so a reference written either way runs the same image."""
+    launched = _captured_reexec(monkeypatch, singularity=False)
+    for image in ("ghcr.io/the-virtual-brain/tvbo:0.7.0", "docker://ghcr.io/the-virtual-brain/tvbo:0.7.0"):
+        with pytest.raises(SystemExit):
+            run_cli._reexec_in_container(image, ["run", "x.yaml"])
+    assert all(
+        "ghcr.io/the-virtual-brain/tvbo:0.7.0" in cmd and not any(c.startswith("docker://") for c in cmd) for cmd in launched
+    )
+    assert all(cmd[:2] == ["docker", "run"] and "TVBO_IN_CONTAINER=1" in cmd for cmd in launched)
+
+
+def test_container_reexec_refuses_a_local_image_docker_cannot_run(monkeypatch):
+    """Without Singularity a local `.sif` has no runtime, which is refused by name rather than handed to `docker run`."""
+    import typer
+
+    launched = _captured_reexec(monkeypatch, singularity=False)
+    with pytest.raises(typer.Exit) as exc:
+        run_cli._reexec_in_container("/images/tvbo.sif", ["run", "x.yaml"])
+    assert exc.value.exit_code == 1
+    assert launched == []
+
+
+def _sweep_spec(tmp_path: Path) -> Path:
+    """A one-node experiment on disk whose exploration sweeps a dynamics parameter."""
+    import yaml
+
+    spec = tmp_path / "sweep.yaml"
+    spec.write_text(
+        yaml.safe_dump(
+            {
+                "id": 1,
+                "label": "sweep",
+                "dynamics": {
+                    "name": "Osc",
+                    "system_type": "continuous",
+                    "output": ["x"],
+                    "parameters": {"a": {"value": 1.0}},
+                    "state_variables": {"x": {"equation": {"rhs": "-a*x"}, "initial_value": 0.1}},
+                },
+                "network": {"number_of_nodes": 1},
+                "integration": {"method": "heun", "step_size": 0.1, "duration": 1.0, "transient_time": 0.0},
+                "explorations": {
+                    "sweep_a": {
+                        "name": "sweep_a",
+                        "mode": "product",
+                        "record": ["x"],
+                        "space": [{"parameter": "Osc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}}],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return spec
+
+
+def test_a_shard_on_a_backend_the_registry_does_not_know_is_refused_by_name(tmp_path: Path):
+    """The capability registry raises ``ValueError`` for an unknown backend, and a shard then has no axis it can slice.
+
+    The refusal names the backend and every axis it would have to fan out, rather than a traceback from the registry lookup.
+    """
+    with pytest.raises(study_run.StudyRunError, match=r"'nosuch' is not in the backend capability registry.*Osc\.a"):
+        study_run.run_experiment(
+            _exp_with_sweep(),
+            str(tmp_path / "sweep.yaml"),
+            tmp_path / "out",
+            options=study_run.RunOptions(backend="nosuch", shard=(0, 2)),
+        )
+    assert not (tmp_path / "out").exists()
+
+
+def test_the_cli_reports_a_shard_on_an_unknown_backend_and_exits_1(tmp_path: Path):
+    from typer.testing import CliRunner
+
+    from tvbo.cli import app
+
+    res = CliRunner().invoke(app, ["run", str(_sweep_spec(tmp_path)), "--shard", "0/2", "--backend", "nosuch"])
+    assert res.exit_code == 1, res.output
+    assert isinstance(res.exception, SystemExit)
+    assert "is not in the backend capability registry" in res.output
+
+
 def test_unloadable_spec_reports_every_attempt(tmp_path: Path):
     """A spec that loads as nothing must say why, not blame the last fallback.
 
@@ -140,7 +283,7 @@ def _exp_with_sweep():
 def test_pin_sets_the_dynamics_param_and_drops_the_axis():
     """--pin must BOTH set the base parameter (so the representative run uses it) AND remove the axis from the sweep — else the exploration re-expands it and the cell is not a point."""
     exp = _exp_with_sweep()
-    run_cli._apply_axis_pins(exp, ["Osc.a=0.5"])
+    study_run.apply_axis_pins(exp, [("Osc.a", 0.5)])
     assert exp.dynamics.parameters["a"].value == 0.5  # base param set
     assert not (exp.explorations or {})  # emptied exploration removed
 
@@ -173,16 +316,25 @@ def test_pin_leaves_other_axes_sweeping():
             }
         },
     )
-    run_cli._apply_axis_pins(exp, ["Osc.a=0.5"])
+    study_run.apply_axis_pins(exp, [("Osc.a", 0.5)])
     assert exp.dynamics.parameters["a"].value == 0.5
     remaining = list(exp.explorations["g"].space or {})
     assert remaining and all("Osc.a" not in str(getattr(exp.explorations["g"].space[k], "parameter", k)) for k in remaining)
 
 
 def test_pin_rejects_a_malformed_arg():
-    exp = _exp_with_sweep()
-    with pytest.raises(Exception, match="parameter=value"):
-        run_cli._apply_axis_pins(exp, ["Osc.a"])  # no '='
+    """A pin with no ``=`` is a usage error before any experiment runs."""
+    import typer
+
+    with pytest.raises(typer.BadParameter, match="parameter=value"):
+        run_cli._assignments(["Osc.a"], "--pin", "parameter=value")
+
+
+def test_an_assignment_arrives_as_the_type_it_spells():
+    assert run_cli._assignments(["Osc.a=0.5", "network.name=x"], "--set", "path=value") == (
+        ("Osc.a", 0.5),
+        ("network.name", "x"),
+    )
 
 
 # ── smoke iteration cap (`tvbo run --max-iterations` / `--smoke`) ─────────────────────────
@@ -202,7 +354,7 @@ def test_max_iterations_caps_algorithms_and_stages_only_downward():
         },
         optimizations={"grad": SimpleNamespace(max_iterations=66)},
     )
-    run_cli._apply_max_iterations(exp, 1)
+    study_run.apply_max_iterations(exp, 1)
     assert exp.algorithms["fic"].n_iterations == 1
     assert exp.algorithms["fic_eib"].n_iterations == 1
     assert [s.n_iterations for s in exp.algorithms["fic_eib"].stages] == [1, 1]
@@ -210,13 +362,13 @@ def test_max_iterations_caps_algorithms_and_stages_only_downward():
 
     # A count already below the cap is left untouched.
     exp2 = SimpleNamespace(algorithms={"a": _algo(1)}, optimizations={})
-    run_cli._apply_max_iterations(exp2, 5)
+    study_run.apply_max_iterations(exp2, 5)
     assert exp2.algorithms["a"].n_iterations == 1
 
 
 def test_max_iterations_none_is_a_no_op():
     exp = SimpleNamespace(algorithms={"a": _algo(200)}, optimizations={})
-    run_cli._apply_max_iterations(exp, None)
+    study_run.apply_max_iterations(exp, None)
     assert exp.algorithms["a"].n_iterations == 200
 
 
@@ -231,13 +383,13 @@ def test_render_study_figures_renders_into_the_layouts_figures_dir(monkeypatch, 
         seen["out"] = Path(out_dir)
         return [Path(out_dir) / "f.png"]
 
-    monkeypatch.setattr("tvbo.cli.figures.render_figures", _fake_render)
+    monkeypatch.setattr(study_run, "render_figures", _fake_render)
 
     spec = tmp_path / "Study.yaml"
     spec.write_text("name: s\n", encoding="utf-8")
     study = SimpleNamespace(figures=[SimpleNamespace(name="Fig1")])
 
-    run_cli._render_study_figures(study, str(spec))
+    study_run.render_study_figures(study, str(spec))
 
     from tvbo.utils.study_layout import study_path
 
@@ -254,12 +406,12 @@ def test_render_study_figures_no_figures_is_a_no_op(monkeypatch, tmp_path: Path)
         nonlocal called
         called = True
 
-    monkeypatch.setattr("tvbo.cli.figures.render_figures", _fake_render)
+    monkeypatch.setattr(study_run, "render_figures", _fake_render)
     spec = tmp_path / "Study.yaml"
     spec.write_text("name: s\n", encoding="utf-8")
 
-    run_cli._render_study_figures(SimpleNamespace(figures=None), str(spec))
-    run_cli._render_study_figures(SimpleNamespace(figures=[]), str(spec))
+    study_run.render_study_figures(SimpleNamespace(figures=None), str(spec))
+    study_run.render_study_figures(SimpleNamespace(figures=[]), str(spec))
     assert called is False
 
 
@@ -269,12 +421,12 @@ def test_render_study_figures_swallows_render_error(monkeypatch, tmp_path: Path)
     def _boom(*a, **k):
         raise RuntimeError("no container")
 
-    monkeypatch.setattr("tvbo.cli.figures.render_figures", _boom)
+    monkeypatch.setattr(study_run, "render_figures", _boom)
     spec = tmp_path / "Study.yaml"
     spec.write_text("name: s\n", encoding="utf-8")
 
     # Must not raise.
-    run_cli._render_study_figures(SimpleNamespace(figures=[SimpleNamespace(name="Fig1")]), str(spec))
+    study_run.render_study_figures(SimpleNamespace(figures=[SimpleNamespace(name="Fig1")]), str(spec))
 
 
 def _die_raises(monkeypatch):

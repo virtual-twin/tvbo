@@ -151,3 +151,15 @@ def test_heterogeneous_run_regions_and_union():
     # union variable axis: the Driver group has no 'v', so its column is NaN
     driver_v = np.asarray(res.get_region("Driver").get_state_variable("v").data)
     assert np.all(np.isnan(driver_v))
+
+
+def test_heterogeneous_run_cuts_the_declared_settle():
+    """`transient_time` is integrated ahead of `duration` in the same scan, on the measurement clock: the settle ends at t = 0 and stays on `.transient`, `.data` opens one step later on the measured window alone, and together they are the trajectory a settle-free run of the same total length integrates."""
+    settled = _hetero_experiment()
+    settled.integration.duration, settled.integration.transient_time = 200.0, 100.0
+    sim = settled.run("tvboptim").integration
+    reference = _hetero_experiment().run("tvboptim").integration.data
+
+    assert sim.data.sizes["time"] == 2000 and float(sim.data.time[0]) == pytest.approx(0.1, abs=1e-4)
+    assert sim.transient.data.sizes["time"] == 1000 and float(sim.transient.data.time[-1]) == pytest.approx(0.0, abs=1e-4)
+    np.testing.assert_allclose(sim.full.values, reference.values, rtol=1e-6, equal_nan=True)

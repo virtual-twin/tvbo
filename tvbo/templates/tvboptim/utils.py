@@ -1545,7 +1545,7 @@ def emission_period_steps(red: dict[str, Any] | None) -> int | None:
 
     One reduction, one answer, because two things need it and they must not drift: a reducer that writes into a sample-indexed buffer needs a block size a slot boundary never falls inside, and the values it reports need timestamps. The period differs by kind -- ``ds_steps * tr_stride`` for a convolution (BOLD), ``ds_steps`` for a plain stride, ``period_steps`` for a monitor observer or a ``wave`` detector.
 
-    This is emphatically NOT the question "does the output carry a time axis". A ``wave`` reduction decimates on a period and then collapses those samples into per-group scalars: it needs the block alignment and it has no time axis. Gating this on :func:`reduction_dims` conflated the two and silently dropped a wave observation's block back to the 1000-step default, which is how the whole-trajectory vmap it exists to avoid comes back. :func:`emission_times` is where the time-axis question belongs.
+    This is emphatically NOT the question "does the output carry a time axis". A ``wave`` reduction decimates on a period and then collapses those samples into per-group scalars: it needs the block alignment and it has no time axis. Gating this on :func:`reduction_dims` conflated the two and silently dropped a wave observation's block back to the 1000-step default, which is how the whole-trajectory vmap it exists to avoid comes back. :func:`emission_time_period` is where the time-axis question belongs.
     """
     if red is None:
         return None
@@ -1582,17 +1582,33 @@ def streaming_block_size(reductions: Any, declared: Any = None, default: int = 1
     return declared
 
 
+def emission_time_period(red: dict[str, Any] | None) -> int | None:
+    """Integration steps between two consecutive samples of a reduction's ``time`` axis, or ``None`` for a reduction whose output has no time axis.
+
+    Having a period is not the same as reporting one sample per period: a ``wave`` detector decimates on a period and then folds those samples away, so the time axis is asked of :data:`_REDUCTION_DIMS` and only then the period of :func:`emission_period_steps`. Every stamp a streamed value receives, at codegen or in the generated module, goes through this one gate.
+    """
+    if "time" not in reduction_dims(red):
+        return None
+    return emission_period_steps(red)
+
+
 def emission_times(red: dict[str, Any] | None, n_samples: int, dt: float) -> list[float] | None:
     """The measurement-clock timestamp of each of ``n_samples`` output samples, or ``None`` for a reduction with no time axis.
 
-    A sample covers the period that ENDS at its timestamp -- sample m spans ``(m*period, (m+1)*period]`` and is stamped at the last step of it, established by perturbation on the pipeline monitor (a delta at measured step 250 is the last that moves sample 0; step 251 is the first that moves sample 1). Anchored to measurement, so the first sample lands one whole period after t = 0 whatever settle preceded the window.
-
-    Having a period is not the same as reporting one sample per period: a ``wave`` detector decimates on a period and then folds those samples away, so it is asked of :data:`_REDUCTION_DIMS` and not of the period.
+    A sample covers the period that ENDS at its timestamp -- sample m spans ``(m*period, (m+1)*period]`` and is stamped at the last step of it, established by perturbation on the pipeline monitor (a delta at measured step 250 is the last that moves sample 0; step 251 is the first that moves sample 1). Anchored to measurement, so the first sample lands one whole period after t = 0 whatever settle preceded the window. The period is :func:`emission_time_period`'s.
     """
-    period = emission_period_steps(red)
-    if period is None or "time" not in reduction_dims(red):
+    period = emission_time_period(red)
+    if period is None:
         return None
     return [(m + 1) * period * float(dt) for m in range(int(n_samples))]
+
+
+def streaming_time_periods(obs_list: list[dict[str, Any]]) -> dict[str, int | None]:
+    """Each streamed observation's :func:`emission_time_period`, keyed by name in declaration order.
+
+    *obs_list* is the observation template's resolved list; an entry streams when it carries a ``reduction``. The generated module stamps its streamed values from this table and nothing else, so a reduction without a time axis is never handed a time coordinate.
+    """
+    return {o["name"]: emission_time_period(o["reduction"]) for o in obs_list if o.get("reduction") is not None}
 
 
 def reduction_dims(red: dict[str, Any] | None) -> tuple:
@@ -1728,6 +1744,33 @@ def _toposort_derived(derived: list[dict[str, Any]], dv_names: set) -> list[dict
         placed.add(nxt["name"])
         remaining.remove(nxt)
     return ordered
+
+
+def _resolve_propagation_gate(
+    partition: Any, parameters: dict[str, Any], derived: list[dict[str, Any]], name: Any
+) -> dict[str, Any] | None:
+    """A partition's declared ``propagation`` gate as the wave reducer emits it, or ``None`` when the partition declares none.
+
+    Returns the ``direction`` derived-variable names in declared order, the ``mask`` parameter and the ``min_dispersion`` threshold. Each name must be one the observer defines: a direction component that is not a derived variable, or a mask that is not an observer parameter, raises here rather than emitting a reducer that reads an unbound name.
+    """
+    gate = get_attr(partition, "propagation", None)
+    if gate is None:
+        return None
+    direction = [str(d) for d in as_list(get_attr(gate, "direction"))]
+    mask = str(get_attr(gate, "mask"))
+    dv_names = {d["name"] for d in derived}
+    missing = [d for d in direction if d not in dv_names]
+    if missing:
+        raise ValueError(
+            f"Observation {name!r}: its `partition.propagation` direction components {missing} are not "
+            f"observer derived variables ({sorted(dv_names)}); name the per-element unit direction components."
+        )
+    if mask not in parameters:
+        raise ValueError(
+            f"Observation {name!r}: its `partition.propagation` mask {mask!r} is not an observer parameter "
+            f"({sorted(parameters)}); it must be the (n_groups, n_elements) element weights."
+        )
+    return {"direction": direction, "mask": mask, "min_dispersion": float(to_numeric(get_attr(gate, "min_dispersion")))}
 
 
 def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None:
@@ -2098,6 +2141,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
                 "wave_present": str(get_attr(partition, "waves")),
                 "sig_corr": str(get_attr(partition, "directed")),
                 "corr": str(get_attr(partition, "correlation")),
+                "propagation": _resolve_propagation_gate(partition, parameters, derived, get_attr(obs, "name", None)),
             }
         )
     # Deferred to here rather than to where `period_steps` is resolved, so the message names the consumer that will actually emit: a partitioned observer is a `wave` reducer, and both it and a plain monitor decimate on scan boundaries.
@@ -2355,6 +2399,45 @@ def resolve_config_access(dotted: str, coupling_keys: set[str], external_keys: s
     return parameter_keypath(dotted, couplings=coupling_keys, external=external_keys)
 
 
+_REQUIRED = object()
+
+_ANALYSIS_SETTINGS: dict[str, dict[str, tuple[Any, Any, str | None]]] = {
+    "lyapunov": {"segment_time": (float, _REQUIRED, None), "n_steps": (int, 10, "n"), "n_exponents": (int, 1, "k")},
+    "finite_difference": {
+        "delta": (float, 0.3, None),
+        "seeds": (int, 8, None),
+        "seed_base": (int, 0, None),
+        "stat": (str, "mean", None),
+    },
+    "gradient": {"mode": (str, "reverse", None)},
+}
+"""Each analysis type's settings as ``name: (cast, default, short alias)``; ``_REQUIRED`` marks a setting that has no meaningful default and must be declared."""
+
+
+def analysis_settings(analysis: Any, name: str) -> dict[str, Any]:
+    """An analysis's declared ``parameters`` resolved to the settings its type reads, for every renderer that emits it.
+
+    For a type in :data:`_ANALYSIS_SETTINGS` the result holds exactly that type's settings, each read under its name or its short alias (a Lyapunov ``n``/``k`` for ``n_steps``/``n_exponents``), cast, and defaulted where the setting has a default. A Lyapunov ``segment_time`` has none: it fixes the Benettin segment in the model's time unit, so an analysis that omits it raises here, naming the observation *name*, rather than measuring on a length nobody chose. Any other type (the linear-response family) gets its declared parameters as read, and its own resolver reads the keys it needs from them.
+    """
+    params = {
+        str(k): (v.value if hasattr(v, "value") else v) for k, v in (getattr(analysis, "parameters", None) or {}).items()
+    }
+    atype = str(getattr(analysis, "type", "") or "")
+    spec = _ANALYSIS_SETTINGS.get(atype)
+    if spec is None:
+        return params
+    settings: dict[str, Any] = {}
+    for key, (cast, default, alias) in spec.items():
+        value = params.get(key, params.get(alias, default) if alias else default)
+        if value is _REQUIRED:
+            raise ValueError(
+                f"{atype} analysis {name!r} declares no `{key}` parameter; it has no default, so declare it under "
+                f"analysis.parameters (e.g. `{key}: {{value: ...}}`)."
+            )
+        settings[key] = cast(value)
+    return settings
+
+
 def _analysis_wrt_access(wrt: list[str], coupling_keys: set[str]) -> str | None:
     """Resolve an analysis ``wrt`` reference to a config path (coupling/dynamics)."""
     return resolve_config_access(wrt[0], coupling_keys) if wrt else None
@@ -2377,7 +2460,7 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
     for name, aobs in lr_obs.items():
         an = aobs.analysis
         atype = str(an.type)
-        p = {str(k): (v.value if hasattr(v, "value") else v) for k, v in (getattr(an, "parameters", None) or {}).items()}
+        p = analysis_settings(an, name)
         if atype == "covariance":
             # `sigma` states a UNIFORM noise amplitude; omitting it takes the per-state amplitudes the model declares (ctx['noise']). `observable` names the declared quantity whose covariance is wanted — a state variable or any derived variable, so the response can be read out through a declared cascade (BOLD) rather than off the state vector. Omitting it keeps the first state block.
             observable = p.get("observable")
@@ -2484,22 +2567,22 @@ def render_analysis_observations(
         lines += _lr_tpl.get_def("lr_analysis_block").render(spec=_spec).strip("\n").split("\n")
 
     # Finite-difference observations that share the exact same per-seed computation (same target, wrt, delta, seeds, seed_base) reuse ONE ``jax.lax.map`` — matching the reference, which derives fd_mean and fd_sem from a single map — rather than recomputing the seeds once per reduction. Assign a shared group id per signature.
-    def _fd_signature(aobs):
+    def _fd_signature(name, aobs):
         an = aobs.analysis
-        p = {str(k): (v.value if hasattr(v, "value") else v) for k, v in (getattr(an, "parameters", None) or {}).items()}
+        p = analysis_settings(an, name)
         wrt = [str(w) for w in (getattr(an, "wrt", None) or [])]
         return (
             str(getattr(an, "target", None) or "loss"),
             _analysis_wrt_access(wrt, coupling_keys),
-            float(p.get("delta", 0.3)),
-            int(p.get("seeds", 8)),
-            int(p.get("seed_base", 0)),
+            p["delta"],
+            p["seeds"],
+            p["seed_base"],
         )
 
     fd_group = {}  # signature -> group id
-    for aobs in analysis_obs.values():
+    for name, aobs in analysis_obs.items():
         if str(getattr(aobs.analysis, "type", "") or "") == "finite_difference":
-            fd_group.setdefault(_fd_signature(aobs), f"fdgrp{len(fd_group)}")
+            fd_group.setdefault(_fd_signature(name, aobs), f"fdgrp{len(fd_group)}")
     fd_emitted: set[tuple] = set()
 
     for name, aobs in analysis_obs.items():
@@ -2507,15 +2590,12 @@ def render_analysis_observations(
         atype = str(getattr(an, "type", "") or "")
         if atype in _LR_TYPES:
             continue  # linear-response types are emitted together by lr_analysis_block (above)
-        params = {str(k): (v.value if hasattr(v, "value") else v) for k, v in (getattr(an, "parameters", None) or {}).items()}
+        params = analysis_settings(an, name)
         target = str(getattr(an, "target", None) or "loss")
         wrt = [str(w) for w in (getattr(an, "wrt", None) or [])]
         access = _analysis_wrt_access(wrt, coupling_keys)
         if atype == "lyapunov":
-            seg = float(params["segment_time"])
-            # Accept the declarative names (n_steps / n_exponents) and the short aliases (n / k). n_exponents defaults to 1 (the leading exponent).
-            n = int(params.get("n_steps", params.get("n", 10)))
-            k = int(params.get("n_exponents", params.get("k", 1)))
+            seg, n, k = params["segment_time"], params["n_steps"], params["n_exponents"]
             lines += [
                 f"# {name}: Benettin QR spectrum + leading Lyapunov vector on a segment solve.",
                 "# Same integrator config as the main sim (coupling_evaluation) so lambda_1",
@@ -2530,7 +2610,7 @@ def render_analysis_observations(
                 f"obs.{name}, obs.{name}_xi = benettin_spectrum_and_vectors(_le_solve, _le_cfg, t={seg}, n={n}, k={k})"
             )
         elif atype == "gradient":
-            mode = params.get("mode", "reverse")
+            mode = params["mode"]
             lines += [
                 f"# {name}: full (untruncated) {mode}-mode gradient of '{target}' wrt {wrt[0]}",
                 f"_asolve_{name}, _ = prepare(network, {solver_class}({solver_kwargs}), {window})",
@@ -2540,12 +2620,10 @@ def render_analysis_observations(
                 f"_, obs.{name} = jax.value_and_grad(_grad_of_{name})(state.{access})",
             ]
         elif atype == "finite_difference":
-            delta = float(params.get("delta", 0.3))
-            seeds = int(params.get("seeds", 8))
-            seed_base = int(params.get("seed_base", 0))
+            delta, seeds, seed_base = params["delta"], params["seeds"], params["seed_base"]
             # `stat` selects the reduction over the per-seed central differences: 'mean' (default) = the seed-averaged gradient estimate; 'sem' = its standard error (std / sqrt(seeds)). A mean/sem pair on the same settings shares the single per-seed map below, so the seeds are computed once (as in the reference).
-            stat = str(params.get("stat", "mean"))
-            sig = _fd_signature(aobs)
+            stat = params["stat"]
+            sig = _fd_signature(name, aobs)
             gid = fd_group[sig]
             arr = f"_fds_{gid}"
             if sig not in fd_emitted:
@@ -2588,6 +2666,15 @@ def render_adiabatic_signal(signal_expr: str, var_names: list[str]) -> str:
     return pattern.sub(lambda m: f"_r.ys[:, {index[m.group(0)]}, :]", str(signal_expr))
 
 
+def set_literal(names: Any) -> str:
+    """Python source for the set of *names*, its members sorted so the emitted bytes do not depend on ``PYTHONHASHSEED``.
+
+    An empty collection is ``set()``, since ``{}`` is an empty dict and would change what a consumer's membership test means.
+    """
+    members = sorted({str(n) for n in names})
+    return "{" + ", ".join(repr(n) for n in members) + "}" if members else "set()"
+
+
 def render_recorded_observable(
     record_names: list[str],
     derived_names: list[str],
@@ -2609,9 +2696,7 @@ def render_recorded_observable(
         # Restrict the per-cell computation to the recorded observations and their closure (passed by the caller), so non-recorded — possibly non-jittable — observations never execute inside this jitted observable.
         if only_obs is not None:
             _only = [n for n in only_obs if n not in channel]
-            # An empty closure must emit an empty *set* literal — "{}" is an empty dict, which would change compute_all_observations' `only=` semantics.
-            _only_lit = ("{{{}}}".format(", ".join(repr(n) for n in sorted(_only)))) if _only else "set()"
-            lines.append(f"_all_obs = compute_all_observations(result, s, only={_only_lit}, settle=settle)")
+            lines.append(f"_all_obs = compute_all_observations(result, s, only={set_literal(_only)}, settle=settle)")
         else:
             lines.append("_all_obs = compute_all_observations(result, s, settle=settle)")
     if any(n in analysis_set for n in record_names):
@@ -3100,19 +3185,19 @@ def get_observation_refs(observations_dict: dict[str, Any]) -> tuple[set[str], l
     return network_obs, valid_obs
 
 
-def get_observation_dependencies(obs_name: str, derived_obs_dict: dict[str, Any], all_observations: Any) -> set[str]:
-    """Observations that ``obs_name`` derives from — its ``source`` entries that are themselves observations (edges in the observation dependency graph).
+def get_observation_dependencies(obs_name: str, derived_obs_dict: dict[str, Any], all_observations: Any) -> list[str]:
+    """Observations that ``obs_name`` derives from — its ``source`` entries that are themselves observations (edges in the observation dependency graph), each once in declared order.
 
     ``all_observations`` is the full observation collection (its membership test filters sources down to observation references, ignoring result/state sources).
     """
-    deps: set[str] = set()
+    deps: list[str] = []
     dobs_def = derived_obs_dict.get(obs_name)
     if dobs_def:
         for src in dobs_def.source or []:
             key = getattr(src, "name", None) or src
             if key in all_observations:
-                deps.add(str(src.name) if hasattr(src, "name") else str(src))
-    return deps
+                deps.append(str(src.name) if hasattr(src, "name") else str(src))
+    return list(dict.fromkeys(deps))
 
 
 def toposort_observations(obs_names: list[str], derived_obs_dict: dict[str, Any], all_observations: Any) -> list[str]:
@@ -3698,6 +3783,22 @@ def get_all_observations_from_algo(algo: Any, algorithms_dict: dict) -> list[str
             seen.add(o_str)
 
     return obs
+
+
+def get_transitive_observations_from_algo(algo: Any, algorithms_dict: dict) -> list[str]:
+    """Every observation name an algorithm's outer loop computes, through combined includes at any depth.
+
+    Ordered as :func:`get_all_observations_from_algo` orders one level: each combined include's names (recursively, in include order) before the algorithm's own, each name once at its first appearance. The order is fixed by the declarations alone, so the generated code that lists these names is the same bytes under every ``PYTHONHASHSEED``. Nested includes are skipped, since their observations are computed in the inner algorithm's own loop and their inputs are passed there.
+    """
+    names: list[str] = []
+    for inc in as_list(getattr(algo, "includes", None)):
+        if _include_is_nested(inc):
+            continue
+        inc_algo = algorithms_dict.get(str(get_include_info(inc)[0]))
+        if inc_algo:
+            names += get_transitive_observations_from_algo(inc_algo, algorithms_dict)
+    names += [str(o) for o in as_list(getattr(algo, "observations", None))]
+    return list(dict.fromkeys(names))
 
 
 def get_all_hyperparams(algo: Any, algorithms_dict: dict) -> dict:

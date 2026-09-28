@@ -1,24 +1,9 @@
-# =============================================================================
-# Heterogeneous Kuramoto Network
-# =============================================================================
-# Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/
-#
-# Three different vertex types on the same graph:
-#   1. Kuramoto oscillator (nodes 2-4, 6-8): dtheta/dt = omega0 + esum
-#   2. Static node (node 1): output = theta_fix (no state variables)
-#   3. Kuramoto with inertia (node 5): 2D system with damping
-#
-# All vertices are coupled via K sin(theta_src - theta_dst).
-# =============================================================================
+# Kuramoto network with three vertex types (NetworkDynamics.jl Heterogeneous System tutorial)
 
 id: 104
 label: "Heterogeneous Kuramoto Network"
 description: >
-    Kuramoto oscillators with three vertex types: standard Kuramoto oscillators
-    (6 nodes), one static node with fixed phase output, and one oscillator
-    with inertia (second-order dynamics).  Demonstrates heterogeneous vertex
-    assignment on a Watts-Strogatz ring network.
-    Recreates the NetworkDynamics.jl Heterogeneous System tutorial.
+    Kuramoto oscillators with three vertex types: standard Kuramoto oscillators (6 nodes), one static node with fixed phase output, and one oscillator with inertia (second-order dynamics). Demonstrates heterogeneous vertex assignment on a Watts-Strogatz ring network. Recreates the NetworkDynamics.jl Heterogeneous System tutorial.
 references:
     - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/"
     - "Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators."
@@ -28,8 +13,7 @@ dynamics:
     name: Kuramoto
     label: "Kuramoto phase oscillator"
     description: >
-        Standard Kuramoto oscillator: dtheta/dt = omega0 + esum.
-        Output (coupling variable) is theta.
+        Standard Kuramoto oscillator: dtheta/dt = omega0 + esum. Output (coupling variable) is theta.
     system_type: continuous
     autonomous: true
     parameters:
@@ -57,8 +41,7 @@ dynamics:
 network:
     label: "8-node ring (Watts-Strogatz k=2, p=0)"
     description: >
-        Regular ring lattice: each node connected to 2 nearest neighbours.
-        Equivalent to watts_strogatz(8, 2, 0) in Graphs.jl.
+        Regular ring lattice: each node connected to 2 nearest neighbours. Equivalent to watts_strogatz(8, 2, 0) in Graphs.jl.
     number_of_nodes: 8
     graph_generator:
         name: watts_strogatz
@@ -73,10 +56,7 @@ network:
             name: StaticNode
             label: "Static vertex"
             description: >
-                No internal dynamics.  Outputs a fixed phase value theta_fix as
-                its coupling output.  Used for boundary conditions or fixed
-                reference oscillators.  Has no state variables — it is a pure
-                algebraic output node (ND.jl: ff=NoFeedForward()).
+                No internal dynamics.  Outputs a fixed phase value theta_fix as its coupling output.  Used for boundary conditions or fixed reference oscillators.  Has no state variables — it is a pure algebraic output node (ND.jl: ff=NoFeedForward()).
             system_type: continuous
             autonomous: true
             parameters:
@@ -93,9 +73,7 @@ network:
             name: KuramotoInertia
             label: "Kuramoto oscillator with inertia"
             description: >
-                Second-order Kuramoto oscillator with damping:
-                dtheta/dt = omega, domega/dt = omega0 - 1.0*omega + esum.
-                Only theta is the coupling output (g=1:1 in ND.jl).
+                Second-order Kuramoto oscillator with damping: dtheta/dt = omega, domega/dt = omega0 - 1.0*omega + esum. Only theta is the coupling output (g=1:1 in ND.jl).
             system_type: continuous
             autonomous: true
             parameters:
@@ -197,8 +175,7 @@ network:
             name: KuramotoCoupling
             label: "Kuramoto sinusoidal coupling"
             description: >
-                Antisymmetric coupling: K sin(theta_src - theta_dst).
-                The AntiSymmetric wrapper ensures g_src = -g_dst.
+                Antisymmetric coupling: K sin(theta_src - theta_dst). Each direction of a connection is its own edge, so each node receives its own term.
             delayed: false
             parameters:
                 K:

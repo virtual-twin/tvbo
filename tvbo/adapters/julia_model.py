@@ -15,20 +15,50 @@ from tvbo.codegen import render_expression
 from tvbo.parse.expression import parse_eq, states_an_expression
 from tvbo.utils import initial_value
 
-# Solver name → the minimal OrdinaryDiffEq sub-package that provides it. Splitting out the umbrella package keeps Julia precompilation cheap / avoids Bus errors.
+JULIA_SOLVERS = {
+    "Euler": "Euler",
+    "Heun": "Heun",
+    "RungeKutta4thOrder": "RK4",
+    "Dopri5": "DP5",
+    "Dopri853": "DP8",
+    "VODE": "VCABM",
+    "Identity": "FunctionMap",
+    "Tsit5": "Tsit5",
+}
+"""Every canonical integration method (`tvbo.utils.INTEGRATION_METHODS`) → the DifferentialEquations.jl solver that integrates by it.
+
+``VODE`` is SciPy's variable-coefficient solver, whose default method is Adams; ``VCABM`` is DifferentialEquations.jl's variable-coefficient Adams-Bashforth-Moulton. ``Identity`` is the map ``X_{t+1} = f(X_t)``, which ``FunctionMap`` steps on the same right-hand side.
+"""
+
 JULIA_SOLVER_PACKAGES = {
     "Tsit5": "OrdinaryDiffEqTsit5",
     "AutoTsit5": "OrdinaryDiffEqTsit5",
-    "DP5": "OrdinaryDiffEqTsit5",
+    "DP5": "OrdinaryDiffEqLowOrderRK",
     "Heun": "OrdinaryDiffEqLowOrderRK",
     "Euler": "OrdinaryDiffEqLowOrderRK",
     "Midpoint": "OrdinaryDiffEqLowOrderRK",
     "RK4": "OrdinaryDiffEqLowOrderRK",
     "BS3": "OrdinaryDiffEqLowOrderRK",
+    "DP8": "OrdinaryDiffEqHighOrderRK",
+    "VCABM": "OrdinaryDiffEqAdamsBashforthMoulton",
+    "FunctionMap": "OrdinaryDiffEqFunctionMap",
     "Vern7": "OrdinaryDiffEqVerner",
     "Rodas5": "OrdinaryDiffEqRosenbrock",
     "TRBDF2": "OrdinaryDiffEqSDIRK",
 }
+"""DifferentialEquations.jl solver → the minimal OrdinaryDiffEq sub-package that exports it; the umbrella package is the fallback. Loading a sub-package rather than the umbrella keeps Julia precompilation cheap."""
+
+
+def julia_solver(method) -> str:
+    """The DifferentialEquations.jl solver that integrates by *method*: `JULIA_SOLVERS`'s for a canonical method, else *method* itself.
+
+    A spelling tvbo does not know is a solver the recipe names for this backend (``AutoTsit5``, ``Rodas5``) and is handed to ``solve`` unchanged.
+    """
+    from tvbo.utils import integration_method
+
+    canonical = integration_method(method, strict=False)
+    return JULIA_SOLVERS[canonical] if canonical else str(method)
+
 
 # Elementary functions that require ``using SpecialFunctions`` in Julia.
 JULIA_SPECIAL_FUNCTIONS = (

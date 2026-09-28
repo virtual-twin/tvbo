@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from tvbo.adapters.base import BaseAdapter
+from tvbo.adapters.base import BaseAdapter, dense_matrix
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult, SimulationResult
@@ -126,6 +126,58 @@ def _extract_vertex_observables(
     return vertex_data
 
 
+def _graph_edges(i: int, j: int, edge) -> list[tuple[int, int]]:
+    """The `SimpleDiGraph` edges a listed edge ``i → j`` adds: both directions of an undirected edge, as `Network.matrix` mirrors it."""
+    if not edge.directed and i != j:
+        return [(i, j), (j, i)]
+    return [(i, j)]
+
+
+def _rhs(equation) -> str | None:
+    """*equation*'s right-hand side as text, or ``None`` where there is no equation."""
+    rhs = getattr(equation, "rhs", None)
+    return None if rhs is None else str(rhs).strip()
+
+
+def coupling_split(coupling) -> dict:
+    """Where each part of *coupling* is evaluated on NetworkDynamics.jl: the pre-expression on every edge, weighted by the connection, and the post-expression once per node, on the edges' sum.
+
+    Every edge carries a weight parameter, the one ``weight`` names, which the template sets from the connectome wherever the graph is built from it. A coupling that declares ``w`` or ``weight`` names that parameter itself: the connectome weight replaces the declared value, and the pre-expression, which already carries the factor, is emitted as declared, so a connection is weighted once. Any other coupling gets an implicit ``w``, default 1, which the edge multiplies into its pre-expression (``implicit_weight``). A declared weight the pre-expression does not read is refused, since the connectome would never reach the node, and so is an undeclared ``w`` it does read, which would be the implicit weight a second time.
+
+    A parameter lives where its expression is evaluated. ``edge_parameters`` are the ``(name, default)`` pairs the edge model carries: those the pre-expression or an edge observable reads and those nothing reads, which a callback may address, then the implicit weight. ``post_parameters`` are the ``(name, symbol, default)`` triples the vertex model carries for the post-expression, under ``<coupling>_<name>`` so they cannot collide with the node's own parameters; a parameter both expressions read is on both. ``post`` is the post-expression, or ``None`` where it is absent or the identity ``gx``, and ``post_function`` the Julia function the edge template defines for it.
+    """
+    from tvbo.templates.base.utils import referenced
+
+    declared = {str(name): getattr(p, "value", None) for name, p in (coupling.parameters or {}).items()}
+    pre = _rhs(coupling.pre_expression)
+    post = _rhs(coupling.post_expression)
+    post = None if post in (None, "gx") else post
+    observed = [_rhs(getattr(obs, "equation", None)) for obs in (getattr(coupling, "observed", None) or {}).values()]
+    weight = next((name for name in ("w", "weight") if name in declared), None)
+    if weight is not None and not referenced([weight], pre):
+        raise NotImplementedError(
+            f"coupling {coupling.name} declares `{weight}`, the per-edge weight the NetworkDynamics.jl templates set from the connectome, "
+            f"but its pre_expression {pre!r} does not read it, so no connection weight would reach a node. "
+            f"Write `{weight}` into the pre_expression, or rename the parameter so each edge is weighted for you."
+        )
+    if weight is None and referenced(["w"], pre):
+        raise NotImplementedError(
+            f"coupling {coupling.name}'s pre_expression {pre!r} reads `w` without declaring it, and `w` is the weight the NetworkDynamics.jl templates give every edge, so the connection would be weighted twice. "
+            "Declare `w` as the coupling's weight parameter, or rename the symbol."
+        )
+    on_edge = set(referenced(declared, pre, *observed))
+    on_node = referenced(declared, post)
+    edge_parameters = [(name, value) for name, value in declared.items() if name in on_edge or name not in on_node]
+    return {
+        "weight": weight or "w",
+        "implicit_weight": weight is None,
+        "edge_parameters": edge_parameters + ([("w", 1.0)] if weight is None else []),
+        "post": post,
+        "post_function": f"{coupling.name}_post",
+        "post_parameters": [(name, f"{coupling.name}_{name}", declared[name]) for name in on_node],
+    }
+
+
 class NetworkDynamicsAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via NetworkDynamics.jl (pyjulia).
 
@@ -142,11 +194,12 @@ class NetworkDynamicsAdapter(BaseAdapter):
         For free (dynamic) nodes: positions come from per-node ``state`` overrides (legacy ``initial_state`` arrays are also supported), at the indices marked ``coupling_variable=True``.
         For static (fixed) nodes: positions come from node parameter values (in parameter-definition order).
 
-        Returns shape ``(n_nodes, n_coupling_vars)``.
+        Returns shape ``(n_nodes, n_coupling_vars)``, one row per node in `node_rows` order.
         """
         dynamics_dict = self.build_dynamics_dict()
         node_dynamics_map = self.build_node_dynamics_map()
         nodes = list(self.experiment.network.nodes)
+        rows = self.node_rows()
         default_model = self.experiment.dynamics
 
         # Determine coupling var indices from the default (free) model
@@ -164,7 +217,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
                 params = self.parse_node_parameters(node)
                 if params:
                     vals = list(params.values())
-                    positions[node.id, : len(vals)] = [float(v) for v in vals[:n_cv]]
+                    positions[rows[node.id], : len(vals)] = [float(v) for v in vals[:n_cv]]
             else:
                 # Dynamic node: positions from per-node state at cv indices
                 node_state = getattr(node, "state", None)
@@ -190,7 +243,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
                 for j, idx in enumerate(cv_indices):
                     if idx < len(init_vals) and init_vals[idx] is not None:
-                        positions[node.id, j] = init_vals[idx]
+                        positions[rows[node.id], j] = init_vals[idx]
         return positions
 
     def get_fixed_nodes(self) -> set[int]:
@@ -233,8 +286,10 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         For free nodes: positions come from the coupling-variable columns of the properly shaped ``(time, variable, node)`` DataArray.
         For fixed nodes: positions are constant (from YAML parameters).
+        Nodes are laid out along the second axis in `node_rows` order.
         """
         dynamics_dict = ctx["dynamics_dict"]
+        rows = ctx["node_rows"]
         node_dynamics_map = ctx["node_dynamics_map"]
         nodes = ctx["nodes"]
         default_model = ctx["model"]
@@ -253,14 +308,142 @@ class NetworkDynamicsAdapter(BaseAdapter):
             dyn_name = node_dynamics_map[node.id]
             dyn = dynamics_dict[dyn_name]
             if self.is_static(dyn):
-                positions[:, node.id, :] = init_pos[node.id]
+                positions[:, rows[node.id], :] = init_pos[rows[node.id]]
             else:
                 for j, cv_name in enumerate(coupling_vars):
                     if cv_name in dyn.state_variables:
-                        positions[:, node.id, j] = ts.sel(variable=cv_name, node=node.id).values
+                        positions[:, rows[node.id], j] = ts.sel(variable=cv_name, node=node.id).values
         return positions
 
     # ── Code generation ──────────────────────────────────────────────────
+
+    def node_rows(self) -> dict[int, int]:
+        """``{Node.id: row}``, the 0-based position of each node's vertex, through `Network.node_index_map`, the resolution `listed_edges` and `Network.matrix` apply, so a node whose id is not its position lands on the vertex its edges address."""
+        network = getattr(self.experiment, "network", None)
+        return network.node_index_map() if network is not None else {}
+
+    def graph_layout(self, ctx: dict) -> dict:
+        """The graph the template builds, a `SimpleDiGraph` in every form, and the weight and parameters of each of its edges in the order ``edges(g)`` visits them.
+
+        ``graph_form`` follows one precedence: a curated generator, the weight matrix (`build_weight_matrix`, which an ``edge_matrix_files`` entry is read into when the network loads), the listed edges, a single node, a complete graph. Every form is directed, so the one `Directed` edge model serves every coupling and each node receives only what its incoming edges send: an undirected listed edge adds both directions, as `Network.matrix` mirrors it, the undirected graph a generator builds is converted with ``SimpleDiGraph`` before its edges are counted, and the complete graph is ``complete_digraph``. The matrix form is built from the matrix literal, ``SimpleDiGraph(SimpleWeightedDiGraph(W))`` over its nonzero entries, and the listed form from ``graph_edges``, its ``(source, target)`` rows; both are laid out in the order Graphs.jl visits a `SimpleDiGraph`'s edges, by source and then target, whatever order they were declared in.
+
+        ``edge_weights`` and ``edge_parameters`` follow that order, so position ``k`` is the ``k``-th edge ``edges(g)`` yields. A weight is the network's own matrix, `Network.matrix("weight")` with its declared transforms, read at ``[target, source]``, and goes onto the coupling's weight parameter (`coupling_split`). Any other parameter a listed edge declares lands at each position its edge occupies, the last declaration winning as it does in the matrix; one naming a parameter the edge model does not carry, the weight, a parameter only the post-expression reads or one the coupling does not declare, is refused. A generated, complete or single-node graph has no weights to set, so ``edge_weights`` is ``None`` and every edge keeps its weight parameter's default. ``event_edges``, ``edge_event_names`` and ``line_partners`` place the events attached to edges (`edge_events`).
+        """
+        listed = ctx["listed_edges"]
+        if ctx["has_graph_generator"]:
+            form = "generator"
+        elif ctx["weight_matrix"] is not None:
+            form = "matrix"
+        elif ctx["has_explicit_edges"]:
+            form = "listed"
+        else:
+            form = "single" if ctx["n_nodes"] == 1 else "complete"
+        layout = {"graph_form": form, "graph_edges": [], "edge_weights": None, "edge_parameters": []}
+        placed = [
+            (
+                i,
+                j,
+                edge,
+                {
+                    name: value
+                    for name, value in self.parse_node_parameters(edge).items()
+                    if name != "weight" and value is not None
+                },
+            )
+            for i, j, edge in listed
+        ]
+        declared = sorted({name for *_, params in placed for name in params})
+        split = ctx["edge_split"]
+        if split is not None:
+            carried = {name for name, _ in split["edge_parameters"]}
+            uncarried = [name for name in declared if name == split["weight"] or name not in carried]
+            if uncarried:
+                raise NotImplementedError(
+                    f"the edges declare a per-edge {', '.join(uncarried)}, which the NetworkDynamics.jl edge model does not carry: "
+                    f"`{split['weight']}` is set from the connectome weight, a parameter only the post-expression reads is applied at the node, once, to the summed input, "
+                    f"and the edge model carries only the coupling's own parameters ({', '.join(sorted(carried))}). "
+                    "Declare the connection strength as the edge's `weight`, and a post-expression parameter on the coupling."
+                )
+        if form not in ("matrix", "listed"):
+            if declared:
+                raise NotImplementedError(
+                    f"the NetworkDynamics.jl templates build this network's graph from its {form}, not from its listed edges, "
+                    f"so the per-edge {', '.join(declared)} those edges declare has no edge to land on. "
+                    "Declare the connectome as listed edges or as a weight matrix."
+                )
+            undirected = form == "complete" or (form == "generator" and not getattr(ctx["graph_gen"], "directed", False))
+            layout.update(self.edge_events(ctx["all_events"], [], [], generated=undirected))
+            return layout
+
+        if form == "matrix":
+            sources, targets = np.nonzero(ctx["weight_matrix"])
+            order = list(zip(sources.tolist(), targets.tolist(), strict=True))
+        else:
+            order = sorted({pair for i, j, edge, _ in placed for pair in _graph_edges(i, j, edge)})
+        weights = dense_matrix(self.experiment.network, "weight")
+        layout["graph_edges"] = order
+        layout["edge_weights"] = [float(weights[j, i]) for i, j in order]
+        position = {pair: k for k, pair in enumerate(order, start=1)}
+        occupied = [[position[pair] for pair in _graph_edges(i, j, edge) if pair in position] for i, j, edge, _ in placed]
+        values = {}
+        for (*_, params), positions in zip(placed, occupied, strict=True):
+            for k in positions:
+                values.update(((k, name), value) for name, value in params.items())
+        layout["edge_parameters"] = [(k, name, value) for (k, name), value in sorted(values.items())]
+        layout.update(self.edge_events(ctx["all_events"], [edge for *_, edge, _ in placed], occupied))
+        return layout
+
+    @staticmethod
+    def edge_events(events, edges, occupied, generated: bool = False) -> dict:
+        """Where the events attached to edges land, over the listed *edges* whose graph positions are *occupied*.
+
+        ``event_edges`` maps a target naming one listed edge to the graph position of its declared direction, ``source → target``: the edge whose ``label`` it is, or, as ``edge_<n>``, the ``n``-th listed edge counted from 1 in declaration order. ``edge_event_names`` are the events attached to edges, through such a target or ``all_edges``; any other target, a node label, is left to the template. An ``edge_<n>`` naming no listed edge with a place in the graph is refused.
+
+        An undirected line is two directed edges, and a callback changes only the component it runs on, so where an edge event is declared ``line_partners`` maps each direction of every undirected listed line to the other: the template copies an edge affect's parameter changes onto the partner, and the line trips as the one edge it was declared as. A callback on the partner as well would fire a second time at the same instant and save a second pair of points there. The lines of a *generated* undirected graph are known only to Julia, so an edge event on one is refused.
+        """
+        import re
+
+        labels = {str(edge.label): k for k, edge in enumerate(edges) if getattr(edge, "label", None)}
+        targets, names = {}, []
+        for event, _ in events:
+            target = getattr(event, "target_component", None)
+            numbered = re.fullmatch(r"edge_(\d+)", str(target))
+            k = labels.get(str(target), int(numbered.group(1)) - 1 if numbered else None)
+            if target != "all_edges" and k is None:
+                continue
+            if generated:
+                raise NotImplementedError(
+                    f"event {event.name} targets {target} on a generated graph, whose undirected edges the NetworkDynamics.jl templates build as two directed ones, so its affect would act on one direction of a line. "
+                    "Declare the connectome as listed edges, whose lines the templates trip as one."
+                )
+            if k is not None and (not 0 <= k < len(edges) or not occupied[k]):
+                raise NotImplementedError(
+                    f"event {event.name} targets {target}, which names no listed edge the NetworkDynamics.jl graph carries: "
+                    f"`edge_<n>` is the n-th of the {len(edges)} listed edges, counted from 1. Declare the edge in `network.edges`, or target `all_edges`."
+                )
+            if k is not None:
+                targets[str(target)] = occupied[k][:1]
+            names.append(str(event.name))
+        lines = [
+            positions for edge, positions in zip(edges, occupied, strict=True) if not edge.directed and len(positions) == 2
+        ]
+        partners = {a: b for pair in lines for a, b in (pair, pair[::-1])} if names else {}
+        return {"event_edges": targets, "edge_event_names": names, "line_partners": dict(sorted(partners.items()))}
+
+    def prepare_context(self) -> dict:
+        """The shared context, plus each coupling's split between edge and node (`coupling_split`), the graph the template builds (`graph_layout`), each node's vertex row (`node_rows`), and whether the network needs its component models copied per index.
+
+        ``coupling_splits`` is keyed like ``all_couplings``, and ``edge_split`` is the default coupling's, the one on the network's edges and so the one whose post-expression every vertex applies.
+
+        ``dealias`` is set wherever the template gives one component a value the others do not carry as a model default: per-node dynamics, events, and every ``set_default!`` a fixpoint search is seeded with.
+        """
+        ctx = super().prepare_context()
+        ctx["coupling_splits"] = {key: coupling_split(c) for key, c in ctx["all_couplings"].items()}
+        ctx["edge_split"] = next(iter(ctx["coupling_splits"].values()), None)
+        ctx.update(self.graph_layout(ctx))
+        ctx["node_rows"] = self.node_rows()
+        ctx["dealias"] = bool(ctx["is_heterogeneous"] or ctx["has_events"] or ctx["find_fixpoint"])
+        return ctx
 
     def refuse_unrenderable(self) -> None:
         """Raise where the emitted Julia would quietly integrate something other than what was declared.
@@ -336,6 +519,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         sv_names = ctx["sv_names"]
         n_nodes = ctx["n_nodes"]
         is_hetero = ctx.get("is_heterogeneous", False)
+        rows = ctx["node_rows"]
 
         if is_hetero:
             dynamics_dict = ctx["dynamics_dict"]
@@ -370,13 +554,13 @@ class NetworkDynamicsAdapter(BaseAdapter):
                 ]
                 if not node_ids:
                     continue
-                jl_ids = ", ".join(str(nid + 1) for nid in node_ids)
+                jl_ids = ", ".join(str(rows[nid] + 1) for nid in node_ids)
                 raw = run_julia_code(
                     f"hcat([getindex.(sol(sol.t; idxs=vidxs(sol, i, :{sv_name})).u, 1) for i in [{jl_ids}]]...)"
                 )
                 vals = np.array(raw, dtype=float)  # (n_t, len(node_ids))
                 for k, nid in enumerate(node_ids):
-                    data[:, sv_idx, nid] = vals[:, k]
+                    data[:, sv_idx, rows[nid]] = vals[:, k]
 
             da = xr.DataArray(
                 data=data,

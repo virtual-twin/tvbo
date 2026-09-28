@@ -414,10 +414,11 @@ class TestZarrRoundTrip:
 
 class TestEdgeParametersRoundTrip:
     def test_edge_params_h5_roundtrip(self):
-        """Edge parameters survive HDF5 write → read."""
+        """Edge parameters survive HDF5 write → read through the store the loader uses."""
         import h5py
 
-        from tvbo.data.network_io import _read_edges, _write_edges
+        from tvbo.data.matrix_io import LazyArrayStore
+        from tvbo.data.network_io import _write_edges
 
         weights = np.random.rand(4, 4).astype("float32")
         lengths = np.random.rand(4, 4).astype("float32") * 50
@@ -425,20 +426,16 @@ class TestEdgeParametersRoundTrip:
         arrays = {"streamlineCount": weights}
         edge_params = {"streamlineCount": {"tractLength": lengths}}
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as f:
-            path = Path(f.name)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "net.h5"
+            with h5py.File(path, "w") as hf:
+                _write_edges(hf, meta, arrays, edge_params)
 
-        with h5py.File(path, "w") as hf:
-            _write_edges(hf, meta, arrays, edge_params)
-
-        with h5py.File(path, "r") as hf:
-            loaded_arrays, loaded_params = _read_edges(hf, meta)
-
-        assert "streamlineCount" in loaded_arrays
-        np.testing.assert_allclose(loaded_arrays["streamlineCount"], weights, atol=1e-6)
-        assert "tractLength" in loaded_params["streamlineCount"]
-        np.testing.assert_allclose(loaded_params["streamlineCount"]["tractLength"], lengths, atol=1e-6)
-        path.unlink()
+            store = LazyArrayStore(path, meta)
+            assert store.names == ["streamlineCount"]
+            np.testing.assert_allclose(store["streamlineCount"], weights, atol=1e-6)
+            assert "tractLength" in store.edge_params_of("streamlineCount")
+            np.testing.assert_allclose(store.edge_params_of("streamlineCount")["tractLength"], lengths, atol=1e-6)
 
     def test_edge_params_network_roundtrip(self):
         """Edge params persist through Network save/load cycle."""

@@ -136,7 +136,7 @@ class SimulationStudyBehaviour(Catalogued):
     def from_file(cls, filepath):
         """Load a study from a local YAML file.
 
-        The document is read once, through `yaml_loader.load_as_dict`, which resolves anchors and `!include` fragments and normalises exactly as every other load path does, and it serves three readers. The study is constructed from a copy of it. Its raw experiment dicts are kept, so an experiment can be materialised through `SimulationExperiment.from_string`, the path that iri-sources dynamics and coupling from the registry, which constructing the record does not. And the nested studies are wired from it rather than by reloading each recipe: `!include` has already read every one of them, and a tree of twenty-odd studies parsed twice costs seconds on every command that only wants to know what it contains.
+        The document is read once, through `yaml_loader.load_as_dict`, which resolves anchors and `!include` fragments and normalises exactly as every other load path does, and it serves three readers. The study is constructed from a copy of it. Its raw experiment dicts are kept, so an experiment can be materialised through `SimulationExperiment.from_dict`, the path that iri-sources dynamics and coupling from the registry, which constructing the record does not, and that keeps every mapping in its declared order. And the nested studies are wired from it rather than by reloading each recipe: `!include` has already read every one of them, and a tree of twenty-odd studies parsed twice costs seconds on every command that only wants to know what it contains.
 
         The resolved absolute path is stored on the returned instance so that experiments materialised later can locate sibling data files, and the recipe's callable code is made importable — an explicit `code_source` when declared, else the `code/` directory beside the YAML — so custom builders and callables resolve by bare module name.
 
@@ -166,8 +166,7 @@ class SimulationStudyBehaviour(Catalogued):
         """Wrap a generated datamodel instance as a `SimulationStudy`.
 
         Args:
-            datamodel: A datamodel-level study whose fields are copied into the
-                user-facing class.
+            datamodel: A datamodel-level study whose fields are copied into the user-facing class.
 
         Returns:
             A `SimulationStudy` with the same field values as `datamodel`.
@@ -191,19 +190,23 @@ class SimulationStudyBehaviour(Catalogued):
     def run(self, root=None, *, backend: str | None = None, figures: bool = True):
         """Run the whole study in process — every experiment, its analyses, its declared figures — and return what it produced.
 
-        The Python entry point to what ``tvbo run <recipe>.yaml`` does from a shell, on the same orchestration, so a notebook and the CLI cannot drift apart. Use it wherever the containers are wanted as objects rather than as files: a docs page, a notebook, an embedding application.
+        The Python entry point to what ``tvbo run <recipe>.yaml`` does from a shell, through the same function (:func:`tvbo.run.study.run_study`), so a notebook and the CLI cannot drift apart: every container the run writes records the run in its sidecar either way. Use it wherever the containers are wanted as objects rather than as files: a docs page, a notebook, an embedding application.
+
+        A study-of-studies runs through the same tree walk the CLI takes: every nested study first, in its own directory, then this study's own content, then the results manifest — and each nested study's own `StudyResult` comes back under `StudyResult.studies`.
 
         Args:
             root: The study root this run writes into — containers land in its results directory, figures in its figures directory, and every layer's ``used:`` resolves against it. Defaults to the recipe's own directory, which is what the CLI uses; point it elsewhere to keep a run's outputs out of the tree the recipe is committed in.
             backend: Backend for each experiment that does not declare its own.
             figures: Render the study's declared ``figures:`` once the experiments finish.
 
-        A study-of-studies runs through the same branch the CLI takes: every nested study first, in its own directory, then this study's own content, then the results manifest — and each nested study's own `StudyResult` comes back under `StudyResult.studies`.
-
         Returns:
             A [`StudyResult`](#tvbo.classes.study.StudyResult) — the experiments' containers by id, the analyses by name, the rendered figures, and any nested studies.
+
+        Raises:
+            ValueError: The study was built in memory, so there is no recipe to resolve its relative paths against.
+            tvbo.run.study.StudyRunError: The run refused its input or could not finish; the message says why.
         """
-        from tvbo.cli.run import _has_nested, _run_tree, _run_whole_study, nested_root
+        from tvbo.run.study import RunOptions, has_nested, nested_root, run_study, run_tree
 
         spec = getattr(self, "_source_file", None)
         if not spec:
@@ -215,11 +218,11 @@ class SimulationStudyBehaviour(Catalogued):
         base = Path(root).resolve() if root is not None else recipe_dir
         base.mkdir(parents=True, exist_ok=True)
 
-        if not _has_nested(self):
-            _run_whole_study(self, str(spec), None, backend=backend, figures=figures, base=base)
+        if not has_nested(self):
+            run_study(self, str(spec), base=base, options=RunOptions(backend=backend), figures=figures)
             return self._collect(base)
 
-        _run_tree(self, str(spec), None, backend=backend, figures=figures, base=base)
+        run_tree(self, str(spec), backend=backend, figures=figures, base=base)
         nested_results = {}
         for label, nested in self.nested_studies():
             recipe = Path(getattr(nested, "_source_file", None) or spec)
@@ -232,13 +235,11 @@ class SimulationStudyBehaviour(Catalogued):
         Reading the outcome is separated from causing it so that a nested study, whose run this object did not drive, is described by exactly the same code as the study that owns it.
         """
         from tvbo.adapters.bsplot import compose_caption
-        from tvbo.cli.figures import figure_outputs
-        from tvbo.cli.run import study_path_for
+        from tvbo.classes.study import FigureImage, StudyResult
+        from tvbo.run.study import figure_outputs, study_path_for
         from tvbo.utils import as_list
 
         fig_dir = study_path_for("figures", base)
-        from tvbo.classes.study import FigureImage, StudyResult
-
         drawn = []
         for fig in as_list(getattr(self, "figures", None)):
             name, image, script = figure_outputs(fig, fig_dir)
@@ -277,22 +278,13 @@ class SimulationStudyBehaviour(Catalogued):
         Experiments that share a model share its equations and its symbol table; a model that merely varies a sibling contributes only its delta. Everything the experiments hold in common is stated once, and the comparison table carries only what actually differs — so a seven-experiment study stops emitting seven copies of the same six equations and three copies of the same parameter table.
 
         Args:
-            format: ``markdown`` / ``md`` (``\\tag`` numbering), ``qmd`` (Quarto
-                ``{#eq-…}`` / ``{#tbl-…}`` anchors), or ``pdf``.
-            part: ``main``, ``supplementary`` or ``all`` — which experiments carry their
-                full paragraph, read from each experiment's declared ``part``. Every
-                experiment appears in the comparison table regardless, so a demoted one
-                is still visible; ``part`` never changes what runs.
-            level: Heading depth of the model sections, so the block nests under the
-                section that hosts it; experiments sit one level deeper.
-            equations: ``semantic`` anchors on model and variable (stable when an
-                experiment is inserted), ``sequential`` anchors on the number, ``none``
-                leaves equations unnumbered.
-            orient: ``auto`` keeps the experiment table narrow, or pin it with ``rows`` /
-                ``columns`` (where the *experiments* go) so the Methods keeps its shape.
+            format: ``markdown`` / ``md`` (``\\tag`` numbering), ``qmd`` (Quarto ``{#eq-…}`` / ``{#tbl-…}`` anchors), or ``pdf``.
+            part: ``main``, ``supplementary`` or ``all`` — which experiments carry their full paragraph, read from each experiment's declared ``part``. Every experiment appears in the comparison table regardless, so a demoted one is still visible; ``part`` never changes what runs.
+            level: Heading depth of the model sections, so the block nests under the section that hosts it; experiments sit one level deeper.
+            equations: ``semantic`` anchors on model and variable (stable when an experiment is inserted), ``sequential`` anchors on the number, ``none`` leaves equations unnumbered.
+            orient: ``auto`` keeps the experiment table narrow, or pin it with ``rows`` / ``columns`` (where the *experiments* go) so the Methods keeps its shape.
             experiments: Optional explicit ids to describe; defaults to all of them.
-            outputfile: Write the render here; the extension (``.md`` / ``.qmd`` /
-                ``.pdf``) overrides ``format``.
+            outputfile: Write the render here; the extension (``.md`` / ``.qmd`` / ``.pdf``) overrides ``format``.
             derivative_notation: ``dot`` for :math:`\\dot x`, anything else for ``dx/dt``.
             mul_symbol: Passed to ``sympy.latex``.
         """
@@ -341,12 +333,10 @@ class SimulationStudyBehaviour(Catalogued):
         for exp_dm in exps:
             if getattr(exp_dm, "id", None) == experiment_id:
                 with loading_from(source_file):
-                    # Materialise through the YAML construction path so that iri-sourced components (dynamics, coupling) are merged from the registry — exactly as SimulationExperiment.from_file does. from_datamodel alone skips that resolution and would leave an iri-only dynamics unpopulated. Prefer the raw authored experiment dict (minimal, anchor-resolved) so the merge behaves identically to loading a standalone spec.
+                    # The document construction path merges iri-sourced dynamics and coupling from the registry, which from_datamodel skips; the raw authored dict goes in as declared, the record only when no raw dict was kept.
                     raw = raw_experiments.get(experiment_id)
                     if isinstance(raw, dict):
-                        import yaml
-
-                        exp = experiment.SimulationExperiment.from_string(yaml.safe_dump(raw))
+                        exp = experiment.SimulationExperiment.from_dict(raw)
                     else:
                         from linkml_runtime.dumpers import yaml_dumper
 

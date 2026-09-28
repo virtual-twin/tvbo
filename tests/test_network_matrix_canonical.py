@@ -174,3 +174,56 @@ def test_the_pytree_payload_is_the_connectivity_under_a_trace():
     object.__setattr__(net, "_arrays", {"edges/weight": jnp.asarray(traced), "edges/length": jnp.asarray(LENGTHS)})
     assert np.array_equal(np.asarray(net.matrix("weight")), traced)
     assert np.array_equal(np.asarray(net.matrix("length")), LENGTHS)
+
+
+def test_a_sparse_stored_atlas_connectome_stays_a_sparse_matrix():
+    """A parcellation whose database connectome is stored sparse resolves to a sparse N x N matrix, not a 0-d object array wrapping it."""
+    from scipy import sparse
+
+    net = Network(
+        parcellation={"atlas": {"name": "Schaefer2018"}},
+        tractogram={"name": "dTOR"},
+        bids={"segmentation": "17Networks", "scale": "600"},
+    )
+    weights = net.matrix("weight", apply_transforms=False)
+    assert sparse.issparse(weights)
+    assert weights.shape == (600, 600)
+    assert net.lengths_matrix.shape == (600, 600)
+
+
+def test_load_matrix_keeps_a_sparse_matrix_sparse():
+    from scipy import sparse
+
+    net = Network()
+    net.load_matrix(sparse.csr_matrix(COMPANION))
+    weights = net.matrix("weight", apply_transforms=False)
+    assert sparse.issparse(weights)
+    assert weights.shape == (2, 2)
+
+
+def test_an_edge_matrix_file_is_read_target_by_source(tmp_path):
+    """A matrix file holds the weights the way every matrix a Network takes does, ``W[i, j]`` being the edge j -> i, so an asymmetric file is neither transposed nor mirrored."""
+    matrix = np.array([[0.0, 2.0, 0.0], [5.0, 0.0, 0.0], [0.0, 7.0, 1.5]])
+    np.savetxt(tmp_path / "w.csv", matrix, delimiter=",")
+    net = Network(edge_matrix_files=[str(tmp_path / "w.csv")])
+    np.testing.assert_array_equal(np.asarray(net.matrix("weight", apply_transforms=False)), matrix)
+    assert net.number_of_nodes == 3
+
+
+@pytest.mark.parametrize(
+    ("content", "files", "message"),
+    [
+        ("0,1\n1,0\n", 2, "holds the one weight matrix"),
+        ("0,1,2\n1,0,2\n", 1, "not a square matrix"),
+        ("0,nan\n1,0\n", 1, "non-finite"),
+    ],
+)
+def test_an_edge_matrix_file_that_is_not_one_finite_square_matrix_is_refused(tmp_path, content, files, message):
+    """More than one file, a non-square matrix or a non-finite entry is refused by name rather than read partially."""
+    paths = []
+    for k in range(files):
+        path = tmp_path / f"w{k}.csv"
+        path.write_text(content)
+        paths.append(str(path))
+    with pytest.raises(ValueError, match=message):
+        Network(edge_matrix_files=paths)

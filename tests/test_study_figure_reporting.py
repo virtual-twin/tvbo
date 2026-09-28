@@ -12,7 +12,7 @@ from types import SimpleNamespace
 import pytest
 
 from tvbo.classes.study import StudyResult
-from tvbo.cli.run import _render_study_figures
+from tvbo.run import study as study_run
 
 
 def _study(*names):
@@ -46,14 +46,13 @@ def test_a_study_that_drew_everything_it_declared_adds_no_note(tmp_path):
 
 def test_a_render_failure_is_reported_above_the_default_level(tmp_path, monkeypatch, caplog):
     """At WARNING, because INFO is below the default threshold and a failure nobody is told about is a silent one."""
-    from tvbo.cli import figures as figures_mod
 
     def _boom(*args, **kwargs):
         raise RuntimeError("the mesh had no vertices")
 
-    monkeypatch.setattr(figures_mod, "render_figures", _boom)
-    with caplog.at_level(logging.WARNING, logger="tvbo.cli"):
-        _render_study_figures(_study("gradient"), str(tmp_path / "study.yaml"), base=Path(tmp_path))
+    monkeypatch.setattr(study_run, "render_figures", _boom)
+    with caplog.at_level(logging.WARNING, logger=study_run.__name__):
+        study_run.render_study_figures(_study("gradient"), str(tmp_path / "study.yaml"), base=Path(tmp_path))
     warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
     assert warnings, "a failed render logged nothing at WARNING or above"
     assert "the mesh had no vertices" in warnings[0].getMessage()

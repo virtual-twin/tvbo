@@ -169,7 +169,7 @@ class IncludedMapping(dict):
 
 
 for _dumper in (yaml.Dumper, yaml.SafeDumper):
-    # A dict subclass has no representer of its own, and the load path dumps the parsed document back to YAML for LinkML: without this an included fragment is a load-time crash rather than a mapping.
+    # A dict subclass has no representer of its own; without this an included fragment cannot be dumped back out as the mapping it is.
     _dumper.add_representer(IncludedMapping, lambda dumper, data: dumper.represent_dict(data))
 
 
@@ -587,10 +587,10 @@ def strip_envelope(data: Any) -> Any:
     return data
 
 
-def _preprocess(source: Any, base_dir: Path) -> str:
-    """Parse ``source`` with the TVBO loader and re-serialise to plain YAML.
+def _parse(source: Any, base_dir: Path) -> Any:
+    """*source* — a path, a YAML string, an open stream, or data already in hand — parsed with the TVBO loader and normalised.
 
-    The LinkML loader expects either a path it can open or a string it can hand to its own ``DupCheckYamlLoader``. To layer our extensions on top, we first parse with our loader, then re-serialise the fully-expanded data structure (no anchors, no includes, no merge keys) and let LinkML consume that.
+    Anchors, merge keys and ``!include`` are resolved against *base_dir*, and :func:`_normalize_loaded` applies the dict-level conveniences. The one parse every entry point shares, so none of them reads a document a second time.
     """
     LoaderCls = _make_loader_class(base_dir)
     if looks_like_path(source):
@@ -602,11 +602,15 @@ def _preprocess(source: Any, base_dir: Path) -> str:
         data = yaml.load(source, LoaderCls)
     else:
         data = source
-    # Fold slot aliases + lift the terse distribution shortcut (shared with the dict path so the two cannot diverge), then drop the file envelope, which only load_as_dict's dispatching callers need.
-    data = _normalize_loaded(data)
-    data = strip_envelope(data)
-    # Re-serialise using safe_dump so the LinkML loader sees pure data with no remaining anchors/merge keys/!include directives.
-    return yaml.safe_dump(data, sort_keys=False)
+    return _normalize_loaded(data)
+
+
+def construct(data: Any, target_class: type, **kwargs: Any) -> Any:
+    """Build *target_class* from a document :func:`load_as_dict` already parsed and normalised.
+
+    The file envelope (:data:`ENVELOPE_KEYS`) is dropped, since it belongs to no class, and the mapping goes straight to LinkML's constructor-class machinery, which dispatches on the target the way ``linkml_runtime.loaders.yaml_loader.load`` does. Nothing is parsed again, so every mapping reaches the class in the order its author declared it.
+    """
+    return _linkml_yaml_loader.load(strip_envelope(data), target_class, **kwargs)
 
 
 def load(source: Any, target_class: type, **kwargs: Any) -> Any:
@@ -614,36 +618,21 @@ def load(source: Any, target_class: type, **kwargs: Any) -> Any:
 
     Accepts the same arguments as the LinkML loader. Expands TVBO YAML extensions (``<<:`` merge keys, ``!include``) before delegating to LinkML's constructor-class machinery. Relative ``!include`` paths are resolved against the directory of ``source`` when ``source`` is a path; otherwise against the current working directory.
     """
-    base_dir = _base_dir_for(source)
-    expanded = _preprocess(source, base_dir)
-    return _linkml_yaml_loader.loads(expanded, target_class, **kwargs)
+    return construct(_parse(source, _base_dir_for(source)), target_class, **kwargs)
 
 
 def loads(source: str, target_class: type, **kwargs: Any) -> Any:
-    """Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.loads``."""
+    """Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.loads``; ``base_dir`` anchors relative ``!include`` paths, the current working directory when omitted."""
     base_dir = Path(kwargs.pop("base_dir", Path.cwd())).resolve()
-    expanded = _preprocess(source, base_dir)
-    return _linkml_yaml_loader.loads(expanded, target_class, **kwargs)
+    return construct(_parse(source, base_dir), target_class, **kwargs)
 
 
 def load_as_dict(source: Any, **kwargs: Any) -> dict:
     """Drop-in replacement for ``yaml_loader.load_as_dict``.
 
-    Returns a plain Python ``dict`` (or ``list`` of dicts) after applying the TVBO YAML extensions. Useful for callers that need to inspect or mutate the parsed structure before handing it to LinkML.
+    Returns a plain Python ``dict`` (or ``list`` of dicts) after applying the TVBO YAML extensions, normalised exactly as :func:`load` normalises before constructing, so the two cannot diverge. The file envelope survives, for a caller that dispatches on it. Useful for callers that need to inspect or mutate the parsed structure before handing it to :func:`construct`.
     """
-    base_dir = _base_dir_for(source)
-    LoaderCls = _make_loader_class(base_dir)
-    if looks_like_path(source):
-        with open(source) as fh:
-            data = yaml.load(fh, LoaderCls)
-    elif isinstance(source, str):
-        data = yaml.load(io.StringIO(source), LoaderCls)
-    elif hasattr(source, "read"):
-        data = yaml.load(source, LoaderCls)
-    else:
-        data = source
-    # Same normalisation as the string path, so the dict path used by from_file/from_db cannot diverge from the LinkML one; the envelope survives, for the caller to dispatch on.
-    return _normalize_loaded(data)
+    return _parse(source, _base_dir_for(source))
 
 
 def _base_dir_for(source: Any) -> Path:
