@@ -15,6 +15,8 @@ nodes:
     x: -37.6207
     y: 24.8707
     z: 41.2036
+  hemisphere: left
+  homologue: RH_Frontal
 - id: 1
   label: LH_Parietal
   record: true
@@ -23,6 +25,8 @@ nodes:
     x: -41.0702
     y: -57.6942
     z: 46.5274
+  hemisphere: left
+  homologue: RH_Parietal
 - id: 2
   label: LH_Temporal
   record: true
@@ -31,6 +35,8 @@ nodes:
     x: -58.4131
     y: -37.2
     z: -14.3113
+  hemisphere: left
+  homologue: RH_Temporal
 - id: 3
   label: LH_Occipital
   record: true
@@ -39,6 +45,8 @@ nodes:
     x: -22.7846
     y: -95.7363
     z: 3.9557
+  hemisphere: left
+  homologue: RH_Occipital
 - id: 4
   label: LH_Cingulate
   record: true
@@ -47,6 +55,8 @@ nodes:
     x: -10.1694
     y: -5.3576
     z: 41.9145
+  hemisphere: left
+  homologue: RH_Cingulate
 - id: 5
   label: LH_Insular
   record: true
@@ -55,6 +65,8 @@ nodes:
     x: -39.8844
     y: -5.6715
     z: 1.6012
+  hemisphere: left
+  homologue: RH_Insular
 - id: 6
   label: LH_Subcortical
   record: true
@@ -63,6 +75,8 @@ nodes:
     x: -16.974
     y: -10.5617
     z: -1.1242
+  hemisphere: left
+  homologue: RH_Subcortical
 - id: 7
   label: LH_Cerebellum
   record: true
@@ -71,6 +85,8 @@ nodes:
     x: -21.9443
     y: -48.6765
     z: -36.6292
+  hemisphere: left
+  homologue: RH_Cerebellum
 - id: 8
   label: RH_Frontal
   record: true
@@ -79,6 +95,8 @@ nodes:
     x: 42.2201
     y: 21.0428
     z: 44.2808
+  hemisphere: right
+  homologue: LH_Frontal
 - id: 9
   label: RH_Parietal
   record: true
@@ -87,6 +105,8 @@ nodes:
     x: 44.7988
     y: -52.0859
     z: 47.1199
+  hemisphere: right
+  homologue: LH_Parietal
 - id: 10
   label: RH_Temporal
   record: true
@@ -95,6 +115,8 @@ nodes:
     x: 61.3822
     y: -29.6388
     z: -14.7832
+  hemisphere: right
+  homologue: LH_Temporal
 - id: 11
   label: RH_Occipital
   record: true
@@ -103,6 +125,8 @@ nodes:
     x: 27.3736
     y: -92.3301
     z: 4.5954
+  hemisphere: right
+  homologue: LH_Occipital
 - id: 12
   label: RH_Cingulate
   record: true
@@ -111,6 +135,8 @@ nodes:
     x: 12.9704
     y: -15.9202
     z: 40.4678
+  hemisphere: right
+  homologue: LH_Cingulate
 - id: 13
   label: RH_Insular
   record: true
@@ -119,6 +145,8 @@ nodes:
     x: 41.109
     y: 0.3338
     z: 0.1481
+  hemisphere: right
+  homologue: LH_Insular
 - id: 14
   label: RH_Subcortical
   record: true
@@ -127,6 +155,8 @@ nodes:
     x: 16.3736
     y: -10.1392
     z: -0.8862
+  hemisphere: right
+  homologue: LH_Subcortical
 - id: 15
   label: RH_Cerebellum
   record: true
@@ -135,6 +165,8 @@ nodes:
     x: 14.6269
     y: -47.2187
     z: -36.3735
+  hemisphere: right
+  homologue: LH_Cerebellum
 edges:
 - label: weight
   format: dense

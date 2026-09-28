@@ -15,6 +15,8 @@ nodes:
     x: -24.4064
     y: -61.912
     z: -36.6256
+  hemisphere: left
+  homologue: right-cerebellum-cortex
 - id: 2
   label: left-thalamus
   record: true
@@ -23,6 +25,8 @@ nodes:
     x: -11.5002
     y: -18.4582
     z: 7.1412
+  hemisphere: left
+  homologue: right-thalamus
 - id: 3
   label: left-caudate
   record: true
@@ -31,6 +35,8 @@ nodes:
     x: -12.7352
     y: 10.402
     z: 9.8365
+  hemisphere: left
+  homologue: right-caudate
 - id: 4
   label: left-putamen
   record: true
@@ -39,6 +45,8 @@ nodes:
     x: -25.9604
     y: 1.3514
     z: 0.1749
+  hemisphere: left
+  homologue: right-putamen
 - id: 5
   label: left-pallidum
   record: true
@@ -47,6 +55,8 @@ nodes:
     x: -20.4778
     y: -4.4579
     z: -0.8174
+  hemisphere: left
+  homologue: right-pallidum
 - id: 6
   label: brain-stem
   record: true
@@ -63,6 +73,8 @@ nodes:
     x: -25.2057
     y: -21.8225
     z: -13.6436
+  hemisphere: left
+  homologue: right-hippocampus
 - id: 8
   label: left-amygdala
   record: true
@@ -71,6 +83,8 @@ nodes:
     x: -22.8538
     y: -4.4597
     z: -19.2704
+  hemisphere: left
+  homologue: right-amygdala
 - id: 9
   label: left-accumbens-area
   record: true
@@ -79,6 +93,8 @@ nodes:
     x: -8.3393
     y: 11.4619
     z: -7.7683
+  hemisphere: left
+  homologue: right-accumbens-area
 - id: 10
   label: left-ventraldc
   record: true
@@ -87,6 +103,8 @@ nodes:
     x: -10.2372
     y: -14.781
     z: -10.1059
+  hemisphere: left
+  homologue: right-ventraldc
 - id: 11
   label: right-cerebellum-cortex
   record: true
@@ -95,6 +113,8 @@ nodes:
     x: 24.7927
     y: -61.5357
     z: -36.7036
+  hemisphere: right
+  homologue: left-cerebellum-cortex
 - id: 12
   label: right-thalamus
   record: true
@@ -103,6 +123,8 @@ nodes:
     x: 11.6127
     y: -16.8757
     z: 7.1327
+  hemisphere: right
+  homologue: left-thalamus
 - id: 13
   label: right-caudate
   record: true
@@ -111,6 +133,8 @@ nodes:
     x: 13.2866
     y: 11.8
     z: 9.6942
+  hemisphere: right
+  homologue: left-caudate
 - id: 14
   label: right-putamen
   record: true
@@ -119,6 +143,8 @@ nodes:
     x: 26.5674
     y: 3.1727
     z: -0.3935
+  hemisphere: right
+  homologue: left-putamen
 - id: 15
   label: right-pallidum
   record: true
@@ -127,6 +153,8 @@ nodes:
     x: 21.2714
     y: -2.8005
     z: -0.9399
+  hemisphere: right
+  homologue: left-pallidum
 - id: 16
   label: right-hippocampus
   record: true
@@ -135,6 +163,8 @@ nodes:
     x: 26.5336
     y: -20.7203
     z: -13.7921
+  hemisphere: right
+  homologue: left-hippocampus
 - id: 17
   label: right-amygdala
   record: true
@@ -143,6 +173,8 @@ nodes:
     x: 23.2788
     y: -3.0473
     z: -19.6271
+  hemisphere: right
+  homologue: left-amygdala
 - id: 18
   label: right-accumbens-area
   record: true
@@ -151,6 +183,8 @@ nodes:
     x: 8.5218
     y: 12.6292
     z: -7.1511
+  hemisphere: right
+  homologue: left-accumbens-area
 - id: 19
   label: right-ventraldc
   record: true
@@ -159,6 +193,8 @@ nodes:
     x: 10.5958
     y: -14.2109
     z: -10.175
+  hemisphere: right
+  homologue: left-ventraldc
 - id: 20
   label: ctx_lh_g_and_s_frontomargin
   record: true
@@ -167,6 +203,8 @@ nodes:
     x: -24.0
     y: 61.0717
     z: -8.018
+  hemisphere: left
+  homologue: ctx_rh_g_and_s_frontomargin
 - id: 21
   label: ctx_lh_g_and_s_occipital_inf
   record: true
@@ -175,6 +213,8 @@ nodes:
     x: -38.2836
     y: -83.0171
     z: -9.6874
+  hemisphere: left
+  homologue: ctx_rh_g_and_s_occipital_inf
 - id: 22
   label: ctx_lh_g_and_s_paracentral
   record: true
@@ -183,6 +223,8 @@ nodes:
     x: -7.2356
     y: -35.3537
     z: 69.4461
+  hemisphere: left
+  homologue: ctx_rh_g_and_s_paracentral
 - id: 23
   label: ctx_lh_g_and_s_subcentral
   record: true
@@ -191,6 +233,8 @@ nodes:
     x: -56.3629
     y: -10.6463
     z: 15.3022
+  hemisphere: left
+  homologue: ctx_rh_g_and_s_subcentral
 - id: 24
   label: ctx_lh_g_and_s_transv_frontopol
   record: true
@@ -199,6 +243,8 @@ nodes:
     x: -16.0892
     y: 67.463
     z: -2.0906
+  hemisphere: left
+  homologue: ctx_rh_g_and_s_transv_frontopol
 - id: 25
   label: ctx_lh_g_and_s_cingul-ant
   record: true
@@ -207,6 +253,8 @@ nodes:
     x: -7.219
     y: 40.905
     z: 7.0314
+  hemisphere: left
+  homologue: ctx_rh_g_and_s_cingul-ant
 - id: 26
   label: ctx_lh_g_and_s_cingul-mid-ant
   record: true
@@ -215,6 +263,8 @@ nodes:
     x: -6.6139
     y: 16.9951
     z: 36.9201
+  hemisphere: left
+  homologue: ctx_rh_g_and_s_cingul-mid-ant
 - id: 27
   label: ctx_lh_g_and_s_cingul-mid-post
   record: true
@@ -223,6 +273,8 @@ nodes:
     x: -6.9033
     y: -11.2828
     z: 41.5185
+  hemisphere: left
+  homologue: ctx_rh_g_and_s_cingul-mid-post
 - id: 28
   label: ctx_lh_g_cingul-post-dorsal
   record: true
@@ -231,6 +283,8 @@ nodes:
     x: -3.03
     y: -38.6929
     z: 32.8713
+  hemisphere: left
+  homologue: ctx_rh_g_cingul-post-dorsal
 - id: 29
   label: ctx_lh_g_cingul-post-ventral
   record: true
@@ -239,6 +293,8 @@ nodes:
     x: -6.7789
     y: -49.4885
     z: 7.9672
+  hemisphere: left
+  homologue: ctx_rh_g_cingul-post-ventral
 - id: 30
   label: ctx_lh_g_cuneus
   record: true
@@ -247,6 +303,8 @@ nodes:
     x: -4.8326
     y: -80.1757
     z: 23.1777
+  hemisphere: left
+  homologue: ctx_rh_g_cuneus
 - id: 31
   label: ctx_lh_g_front_inf-opercular
   record: true
@@ -255,6 +313,8 @@ nodes:
     x: -50.105
     y: 11.9496
     z: 10.3457
+  hemisphere: left
+  homologue: ctx_rh_g_front_inf-opercular
 - id: 32
   label: ctx_lh_g_front_inf-orbital
   record: true
@@ -263,6 +323,8 @@ nodes:
     x: -45.3208
     y: 30.0249
     z: -9.4672
+  hemisphere: left
+  homologue: ctx_rh_g_front_inf-orbital
 - id: 33
   label: ctx_lh_g_front_inf-triangul
   record: true
@@ -271,6 +333,8 @@ nodes:
     x: -51.0645
     y: 30.8717
     z: 4.9089
+  hemisphere: left
+  homologue: ctx_rh_g_front_inf-triangul
 - id: 34
   label: ctx_lh_g_front_middle
   record: true
@@ -279,6 +343,8 @@ nodes:
     x: -37.4162
     y: 33.9899
     z: 35.5547
+  hemisphere: left
+  homologue: ctx_rh_g_front_middle
 - id: 35
   label: ctx_lh_g_front_sup
   record: true
@@ -287,6 +353,8 @@ nodes:
     x: -8.9765
     y: 29.0693
     z: 46.0935
+  hemisphere: left
+  homologue: ctx_rh_g_front_sup
 - id: 36
   label: ctx_lh_g_ins_lg_and_s_cent_ins
   record: true
@@ -295,6 +363,8 @@ nodes:
     x: -38.1326
     y: -6.1028
     z: -0.4616
+  hemisphere: left
+  homologue: ctx_rh_g_ins_lg_and_s_cent_ins
 - id: 37
   label: ctx_lh_g_insular_short
   record: true
@@ -303,6 +373,8 @@ nodes:
     x: -37.6087
     y: 10.0331
     z: -3.6818
+  hemisphere: left
+  homologue: ctx_rh_g_insular_short
 - id: 38
   label: ctx_lh_g_occipital_middle
   record: true
@@ -311,6 +383,8 @@ nodes:
     x: -37.9259
     y: -87.5018
     z: 13.1752
+  hemisphere: left
+  homologue: ctx_rh_g_occipital_middle
 - id: 39
   label: ctx_lh_g_occipital_sup
   record: true
@@ -319,6 +393,8 @@ nodes:
     x: -14.4854
     y: -91.9612
     z: 30.1997
+  hemisphere: left
+  homologue: ctx_rh_g_occipital_sup
 - id: 40
   label: ctx_lh_g_oc-temp_lat-fusifor
   record: true
@@ -327,6 +403,8 @@ nodes:
     x: -35.0602
     y: -54.8076
     z: -18.1465
+  hemisphere: left
+  homologue: ctx_rh_g_oc-temp_lat-fusifor
 - id: 41
   label: ctx_lh_g_oc-temp_med-lingual
   record: true
@@ -335,6 +413,8 @@ nodes:
     x: -10.4458
     y: -71.206
     z: -5.5908
+  hemisphere: left
+  homologue: ctx_rh_g_oc-temp_med-lingual
 - id: 42
   label: ctx_lh_g_oc-temp_med-parahip
   record: true
@@ -343,6 +423,8 @@ nodes:
     x: -22.7779
     y: -18.6288
     z: -25.4956
+  hemisphere: left
+  homologue: ctx_rh_g_oc-temp_med-parahip
 - id: 43
   label: ctx_lh_g_orbital
   record: true
@@ -351,6 +433,8 @@ nodes:
     x: -30.0351
     y: 37.0414
     z: -18.6018
+  hemisphere: left
+  homologue: ctx_rh_g_orbital
 - id: 44
   label: ctx_lh_g_pariet_inf-angular
   record: true
@@ -359,6 +443,8 @@ nodes:
     x: -43.3172
     y: -68.6398
     z: 41.3971
+  hemisphere: left
+  homologue: ctx_rh_g_pariet_inf-angular
 - id: 45
   label: ctx_lh_g_pariet_inf-supramar
   record: true
@@ -367,6 +453,8 @@ nodes:
     x: -58.3486
     y: -36.939
     z: 34.6425
+  hemisphere: left
+  homologue: ctx_rh_g_pariet_inf-supramar
 - id: 46
   label: ctx_lh_g_parietal_sup
   record: true
@@ -375,6 +463,8 @@ nodes:
     x: -25.1312
     y: -61.0393
     z: 60.1347
+  hemisphere: left
+  homologue: ctx_rh_g_parietal_sup
 - id: 47
   label: ctx_lh_g_postcentral
   record: true
@@ -383,6 +473,8 @@ nodes:
     x: -48.5895
     y: -24.1446
     z: 54.8891
+  hemisphere: left
+  homologue: ctx_rh_g_postcentral
 - id: 48
   label: ctx_lh_g_precentral
   record: true
@@ -391,6 +483,8 @@ nodes:
     x: -46.509
     y: -5.9234
     z: 49.8839
+  hemisphere: left
+  homologue: ctx_rh_g_precentral
 - id: 49
   label: ctx_lh_g_precuneus
   record: true
@@ -399,6 +493,8 @@ nodes:
     x: -4.7441
     y: -60.1616
     z: 45.9517
+  hemisphere: left
+  homologue: ctx_rh_g_precuneus
 - id: 50
   label: ctx_lh_g_rectus
   record: true
@@ -407,6 +503,8 @@ nodes:
     x: -3.8248
     y: 38.4238
     z: -22.5695
+  hemisphere: left
+  homologue: ctx_rh_g_rectus
 - id: 51
   label: ctx_lh_g_subcallosal
   record: true
@@ -415,6 +513,8 @@ nodes:
     x: -9.5127
     y: 9.1883
     z: -13.5187
+  hemisphere: left
+  homologue: ctx_rh_g_subcallosal
 - id: 52
   label: ctx_lh_g_temp_sup-g_t_transv
   record: true
@@ -423,6 +523,8 @@ nodes:
     x: -48.0589
     y: -17.4559
     z: 8.2527
+  hemisphere: left
+  homologue: ctx_rh_g_temp_sup-g_t_transv
 - id: 53
   label: ctx_lh_g_temp_sup-lateral
   record: true
@@ -431,6 +533,8 @@ nodes:
     x: -57.4003
     y: -6.3553
     z: -7.2621
+  hemisphere: left
+  homologue: ctx_rh_g_temp_sup-lateral
 - id: 54
   label: ctx_lh_g_temp_sup-plan_polar
   record: true
@@ -439,6 +543,8 @@ nodes:
     x: -40.3483
     y: 8.1018
     z: -19.141
+  hemisphere: left
+  homologue: ctx_rh_g_temp_sup-plan_polar
 - id: 55
   label: ctx_lh_g_temp_sup-plan_tempo
   record: true
@@ -447,6 +553,8 @@ nodes:
     x: -58.0488
     y: -37.1459
     z: 18.2355
+  hemisphere: left
+  homologue: ctx_rh_g_temp_sup-plan_tempo
 - id: 56
   label: ctx_lh_g_temporal_inf
   record: true
@@ -455,6 +563,8 @@ nodes:
     x: -52.3971
     y: -34.1496
     z: -25.5
+  hemisphere: left
+  homologue: ctx_rh_g_temporal_inf
 - id: 57
   label: ctx_lh_g_temporal_middle
   record: true
@@ -463,6 +573,8 @@ nodes:
     x: -61.3249
     y: -25.3671
     z: -13.037
+  hemisphere: left
+  homologue: ctx_rh_g_temporal_middle
 - id: 58
   label: ctx_lh_lat_fis-ant-horizont
   record: true
@@ -471,6 +583,8 @@ nodes:
     x: -42.3913
     y: 32.7663
     z: -2.8207
+  hemisphere: left
+  homologue: ctx_rh_lat_fis-ant-horizont
 - id: 59
   label: ctx_lh_lat_fis-ant-vertical
   record: true
@@ -479,6 +593,8 @@ nodes:
     x: -46.445
     y: 21.3861
     z: 10.3704
+  hemisphere: left
+  homologue: ctx_rh_lat_fis-ant-vertical
 - id: 60
   label: ctx_lh_lat_fis-post
   record: true
@@ -487,6 +603,8 @@ nodes:
     x: -41.2842
     y: -34.15
     z: 21.1458
+  hemisphere: left
+  homologue: ctx_rh_lat_fis-post
 - id: 61
   label: ctx_lh_pole_occipital
   record: true
@@ -495,6 +613,8 @@ nodes:
     x: -16.2053
     y: -100.7264
     z: -3.2525
+  hemisphere: left
+  homologue: ctx_rh_pole_occipital
 - id: 62
   label: ctx_lh_pole_temporal
   record: true
@@ -503,6 +623,8 @@ nodes:
     x: -31.7438
     y: 8.3073
     z: -41.267
+  hemisphere: left
+  homologue: ctx_rh_pole_temporal
 - id: 63
   label: ctx_lh_s_calcarine
   record: true
@@ -511,6 +633,8 @@ nodes:
     x: -15.7374
     y: -68.8105
     z: 5.6484
+  hemisphere: left
+  homologue: ctx_rh_s_calcarine
 - id: 64
   label: ctx_lh_s_central
   record: true
@@ -519,6 +643,8 @@ nodes:
     x: -38.5248
     y: -18.3079
     z: 47.443
+  hemisphere: left
+  homologue: ctx_rh_s_central
 - id: 65
   label: ctx_lh_s_cingul-marginalis
   record: true
@@ -527,6 +653,8 @@ nodes:
     x: -12.3835
     y: -38.0053
     z: 50.0885
+  hemisphere: left
+  homologue: ctx_rh_s_cingul-marginalis
 - id: 66
   label: ctx_lh_s_circular_insula_ant
   record: true
@@ -535,6 +663,8 @@ nodes:
     x: -30.5666
     y: 21.569
     z: -9.7416
+  hemisphere: left
+  homologue: ctx_rh_s_circular_insula_ant
 - id: 67
   label: ctx_lh_s_circular_insula_inf
   record: true
@@ -543,6 +673,8 @@ nodes:
     x: -40.6835
     y: -10.5521
     z: -5.0486
+  hemisphere: left
+  homologue: ctx_rh_s_circular_insula_inf
 - id: 68
   label: ctx_lh_s_circular_insula_sup
   record: true
@@ -551,6 +683,8 @@ nodes:
     x: -35.776
     y: 6.3584
     z: 11.8398
+  hemisphere: left
+  homologue: ctx_rh_s_circular_insula_sup
 - id: 69
   label: ctx_lh_s_collat_transv_ant
   record: true
@@ -559,6 +693,8 @@ nodes:
     x: -40.9084
     y: -19.3811
     z: -28.3737
+  hemisphere: left
+  homologue: ctx_rh_s_collat_transv_ant
 - id: 70
   label: ctx_lh_s_collat_transv_post
   record: true
@@ -567,6 +703,8 @@ nodes:
     x: -23.9819
     y: -82.5479
     z: -7.8354
+  hemisphere: left
+  homologue: ctx_rh_s_collat_transv_post
 - id: 71
   label: ctx_lh_s_front_inf
   record: true
@@ -575,6 +713,8 @@ nodes:
     x: -40.3037
     y: 26.0116
     z: 21.439
+  hemisphere: left
+  homologue: ctx_rh_s_front_inf
 - id: 72
   label: ctx_lh_s_front_middle
   record: true
@@ -583,6 +723,8 @@ nodes:
     x: -27.1817
     y: 47.3083
     z: 19.4748
+  hemisphere: left
+  homologue: ctx_rh_s_front_middle
 - id: 73
   label: ctx_lh_s_front_sup
   record: true
@@ -591,6 +733,8 @@ nodes:
     x: -23.7373
     y: 22.6406
     z: 46.3171
+  hemisphere: left
+  homologue: ctx_rh_s_front_sup
 - id: 74
   label: ctx_lh_s_interm_prim-jensen
   record: true
@@ -599,6 +743,8 @@ nodes:
     x: -51.4334
     y: -54.5265
     z: 37.1475
+  hemisphere: left
+  homologue: ctx_rh_s_interm_prim-jensen
 - id: 75
   label: ctx_lh_s_intrapariet_and_p_trans
   record: true
@@ -607,6 +753,8 @@ nodes:
     x: -34.9075
     y: -51.414
     z: 44.8004
+  hemisphere: left
+  homologue: ctx_rh_s_intrapariet_and_p_trans
 - id: 76
   label: ctx_lh_s_oc_middle_and_lunatus
   record: true
@@ -615,6 +763,8 @@ nodes:
     x: -32.1061
     y: -85.948
     z: 8.3716
+  hemisphere: left
+  homologue: ctx_rh_s_oc_middle_and_lunatus
 - id: 77
   label: ctx_lh_s_oc_sup_and_transversal
   record: true
@@ -623,6 +773,8 @@ nodes:
     x: -26.3851
     y: -82.69
     z: 22.3452
+  hemisphere: left
+  homologue: ctx_rh_s_oc_sup_and_transversal
 - id: 78
   label: ctx_lh_s_occipital_ant
   record: true
@@ -631,6 +783,8 @@ nodes:
     x: -40.694
     y: -68.579
     z: 7.7443
+  hemisphere: left
+  homologue: ctx_rh_s_occipital_ant
 - id: 79
   label: ctx_lh_s_oc-temp_lat
   record: true
@@ -639,6 +793,8 @@ nodes:
     x: -44.0357
     y: -50.7328
     z: -12.9207
+  hemisphere: left
+  homologue: ctx_rh_s_oc-temp_lat
 - id: 80
   label: ctx_lh_s_oc-temp_med_and_lingual
   record: true
@@ -647,6 +803,8 @@ nodes:
     x: -28.0735
     y: -46.5972
     z: -11.5485
+  hemisphere: left
+  homologue: ctx_rh_s_oc-temp_med_and_lingual
 - id: 81
   label: ctx_lh_s_orbital_lateral
   record: true
@@ -655,6 +813,8 @@ nodes:
     x: -41.4841
     y: 46.4036
     z: -3.4932
+  hemisphere: left
+  homologue: ctx_rh_s_orbital_lateral
 - id: 82
   label: ctx_lh_s_orbital_med-olfact
   record: true
@@ -663,6 +823,8 @@ nodes:
     x: -12.4184
     y: 26.4558
     z: -19.7254
+  hemisphere: left
+  homologue: ctx_rh_s_orbital_med-olfact
 - id: 83
   label: ctx_lh_s_orbital-h_shaped
   record: true
@@ -671,6 +833,8 @@ nodes:
     x: -24.6261
     y: 39.5289
     z: -16.4209
+  hemisphere: left
+  homologue: ctx_rh_s_orbital-h_shaped
 - id: 84
   label: ctx_lh_s_parieto_occipital
   record: true
@@ -679,6 +843,8 @@ nodes:
     x: -14.7876
     y: -68.1004
     z: 25.8391
+  hemisphere: left
+  homologue: ctx_rh_s_parieto_occipital
 - id: 85
   label: ctx_lh_s_pericallosal
   record: true
@@ -687,6 +853,8 @@ nodes:
     x: -4.6719
     y: -6.4706
     z: 15.4169
+  hemisphere: left
+  homologue: ctx_rh_s_pericallosal
 - id: 86
   label: ctx_lh_s_postcentral
   record: true
@@ -695,6 +863,8 @@ nodes:
     x: -41.5756
     y: -32.0865
     z: 46.892
+  hemisphere: left
+  homologue: ctx_rh_s_postcentral
 - id: 87
   label: ctx_lh_s_precentral-inf-part
   record: true
@@ -703,6 +873,8 @@ nodes:
     x: -44.5555
     y: 4.4786
     z: 31.2218
+  hemisphere: left
+  homologue: ctx_rh_s_precentral-inf-part
 - id: 88
   label: ctx_lh_s_precentral-sup-part
   record: true
@@ -711,6 +883,8 @@ nodes:
     x: -29.0827
     y: -9.2953
     z: 56.1585
+  hemisphere: left
+  homologue: ctx_rh_s_precentral-sup-part
 - id: 89
   label: ctx_lh_s_suborbital
   record: true
@@ -719,6 +893,8 @@ nodes:
     x: -6.9466
     y: 43.4199
     z: -13.0309
+  hemisphere: left
+  homologue: ctx_rh_s_suborbital
 - id: 90
   label: ctx_lh_s_subparietal
   record: true
@@ -727,6 +903,8 @@ nodes:
     x: -9.7122
     y: -48.6867
     z: 38.7621
+  hemisphere: left
+  homologue: ctx_rh_s_subparietal
 - id: 91
   label: ctx_lh_s_temporal_inf
   record: true
@@ -735,6 +913,8 @@ nodes:
     x: -53.7095
     y: -13.637
     z: -27.2072
+  hemisphere: left
+  homologue: ctx_rh_s_temporal_inf
 - id: 92
   label: ctx_lh_s_temporal_sup
   record: true
@@ -743,6 +923,8 @@ nodes:
     x: -50.4691
     y: -41.0099
     z: 7.1445
+  hemisphere: left
+  homologue: ctx_rh_s_temporal_sup
 - id: 93
   label: ctx_lh_s_temporal_transverse
   record: true
@@ -751,6 +933,8 @@ nodes:
     x: -51.7371
     y: -22.4901
     z: 6.1295
+  hemisphere: left
+  homologue: ctx_rh_s_temporal_transverse
 - id: 94
   label: ctx_rh_g_and_s_frontomargin
   record: true
@@ -759,6 +943,8 @@ nodes:
     x: 22.2577
     y: 62.2808
     z: -10.9596
+  hemisphere: right
+  homologue: ctx_lh_g_and_s_frontomargin
 - id: 95
   label: ctx_rh_g_and_s_occipital_inf
   record: true
@@ -767,6 +953,8 @@ nodes:
     x: 42.5309
     y: -75.9362
     z: -11.0983
+  hemisphere: right
+  homologue: ctx_lh_g_and_s_occipital_inf
 - id: 96
   label: ctx_rh_g_and_s_paracentral
   record: true
@@ -775,6 +963,8 @@ nodes:
     x: 6.7722
     y: -33.822
     z: 69.3321
+  hemisphere: right
+  homologue: ctx_lh_g_and_s_paracentral
 - id: 97
   label: ctx_rh_g_and_s_subcentral
   record: true
@@ -783,6 +973,8 @@ nodes:
     x: 56.6981
     y: -7.5802
     z: 15.2277
+  hemisphere: right
+  homologue: ctx_lh_g_and_s_subcentral
 - id: 98
   label: ctx_rh_g_and_s_transv_frontopol
   record: true
@@ -791,6 +983,8 @@ nodes:
     x: 16.8463
     y: 67.8866
     z: 1.6446
+  hemisphere: right
+  homologue: ctx_lh_g_and_s_transv_frontopol
 - id: 99
   label: ctx_rh_g_and_s_cingul-ant
   record: true
@@ -799,6 +993,8 @@ nodes:
     x: -1.0
     y: 27.0
     z: -17.0
+  hemisphere: right
+  homologue: ctx_lh_g_and_s_cingul-ant
 - id: 100
   label: ctx_rh_g_and_s_cingul-mid-ant
   record: true
@@ -807,6 +1003,8 @@ nodes:
     x: 7.0708
     y: 16.5535
     z: 36.486
+  hemisphere: right
+  homologue: ctx_lh_g_and_s_cingul-mid-ant
 - id: 101
   label: ctx_rh_g_and_s_cingul-mid-post
   record: true
@@ -815,6 +1013,8 @@ nodes:
     x: 7.3054
     y: -8.7592
     z: 43.9232
+  hemisphere: right
+  homologue: ctx_lh_g_and_s_cingul-mid-post
 - id: 102
   label: ctx_rh_g_cingul-post-dorsal
   record: true
@@ -823,6 +1023,8 @@ nodes:
     x: 3.6303
     y: -36.3968
     z: 33.9612
+  hemisphere: right
+  homologue: ctx_lh_g_cingul-post-dorsal
 - id: 103
   label: ctx_rh_g_cingul-post-ventral
   record: true
@@ -831,6 +1033,8 @@ nodes:
     x: 7.92
     y: -48.5479
     z: 8.5795
+  hemisphere: right
+  homologue: ctx_lh_g_cingul-post-ventral
 - id: 104
   label: ctx_rh_g_cuneus
   record: true
@@ -839,6 +1043,8 @@ nodes:
     x: 6.4586
     y: -78.9207
     z: 22.2696
+  hemisphere: right
+  homologue: ctx_lh_g_cuneus
 - id: 105
   label: ctx_rh_g_front_inf-opercular
   record: true
@@ -847,6 +1053,8 @@ nodes:
     x: 51.5669
     y: 13.9053
     z: 9.5014
+  hemisphere: right
+  homologue: ctx_lh_g_front_inf-opercular
 - id: 106
   label: ctx_rh_g_front_inf-orbital
   record: true
@@ -855,6 +1063,8 @@ nodes:
     x: 49.4969
     y: 35.0579
     z: -8.7516
+  hemisphere: right
+  homologue: ctx_lh_g_front_inf-orbital
 - id: 107
   label: ctx_rh_g_front_inf-triangul
   record: true
@@ -863,6 +1073,8 @@ nodes:
     x: 52.8144
     y: 33.1095
     z: 6.7407
+  hemisphere: right
+  homologue: ctx_lh_g_front_inf-triangul
 - id: 108
   label: ctx_rh_g_front_middle
   record: true
@@ -871,6 +1083,8 @@ nodes:
     x: 38.7159
     y: 34.5516
     z: 35.148
+  hemisphere: right
+  homologue: ctx_lh_g_front_middle
 - id: 109
   label: ctx_rh_g_front_sup
   record: true
@@ -879,6 +1093,8 @@ nodes:
     x: 9.7085
     y: 29.6224
     z: 47.3579
+  hemisphere: right
+  homologue: ctx_lh_g_front_sup
 - id: 110
   label: ctx_rh_g_ins_lg_and_s_cent_ins
   record: true
@@ -887,6 +1103,8 @@ nodes:
     x: 40.2448
     y: -2.6863
     z: -2.3974
+  hemisphere: right
+  homologue: ctx_lh_g_ins_lg_and_s_cent_ins
 - id: 111
   label: ctx_rh_g_insular_short
   record: true
@@ -895,6 +1113,8 @@ nodes:
     x: 38.1091
     y: 12.0044
     z: -4.2694
+  hemisphere: right
+  homologue: ctx_lh_g_insular_short
 - id: 112
   label: ctx_rh_g_occipital_middle
   record: true
@@ -903,6 +1123,8 @@ nodes:
     x: 44.4103
     y: -79.0762
     z: 16.2817
+  hemisphere: right
+  homologue: ctx_lh_g_occipital_middle
 - id: 113
   label: ctx_rh_g_occipital_sup
   record: true
@@ -911,6 +1133,8 @@ nodes:
     x: 21.0472
     y: -88.7719
     z: 33.7281
+  hemisphere: right
+  homologue: ctx_lh_g_occipital_sup
 - id: 114
   label: ctx_rh_g_oc-temp_lat-fusifor
   record: true
@@ -919,6 +1143,8 @@ nodes:
     x: 34.514
     y: -46.9914
     z: -20.5891
+  hemisphere: right
+  homologue: ctx_lh_g_oc-temp_lat-fusifor
 - id: 115
   label: ctx_rh_g_oc-temp_med-lingual
   record: true
@@ -927,6 +1153,8 @@ nodes:
     x: 10.6606
     y: -66.325
     z: -3.0172
+  hemisphere: right
+  homologue: ctx_lh_g_oc-temp_med-lingual
 - id: 116
   label: ctx_rh_g_oc-temp_med-parahip
   record: true
@@ -935,6 +1163,8 @@ nodes:
     x: 24.0181
     y: -13.5509
     z: -27.867
+  hemisphere: right
+  homologue: ctx_lh_g_oc-temp_med-parahip
 - id: 117
   label: ctx_rh_g_orbital
   record: true
@@ -943,6 +1173,8 @@ nodes:
     x: 29.2894
     y: 36.5417
     z: -18.3141
+  hemisphere: right
+  homologue: ctx_lh_g_orbital
 - id: 118
   label: ctx_rh_g_pariet_inf-angular
   record: true
@@ -951,6 +1183,8 @@ nodes:
     x: 48.1448
     y: -60.7703
     z: 43.0383
+  hemisphere: right
+  homologue: ctx_lh_g_pariet_inf-angular
 - id: 119
   label: ctx_rh_g_pariet_inf-supramar
   record: true
@@ -959,6 +1193,8 @@ nodes:
     x: 59.9047
     y: -29.7624
     z: 37.295
+  hemisphere: right
+  homologue: ctx_lh_g_pariet_inf-supramar
 - id: 120
   label: ctx_rh_g_parietal_sup
   record: true
@@ -967,6 +1203,8 @@ nodes:
     x: 25.6607
     y: -59.5495
     z: 62.988
+  hemisphere: right
+  homologue: ctx_lh_g_parietal_sup
 - id: 121
   label: ctx_rh_g_postcentral
   record: true
@@ -975,6 +1213,8 @@ nodes:
     x: 50.0604
     y: -19.9696
     z: 53.9498
+  hemisphere: right
+  homologue: ctx_lh_g_postcentral
 - id: 122
   label: ctx_rh_g_precentral
   record: true
@@ -983,6 +1223,8 @@ nodes:
     x: 47.2617
     y: -4.1329
     z: 49.8164
+  hemisphere: right
+  homologue: ctx_lh_g_precentral
 - id: 123
   label: ctx_rh_g_precuneus
   record: true
@@ -991,6 +1233,8 @@ nodes:
     x: 5.3165
     y: -59.5503
     z: 46.5569
+  hemisphere: right
+  homologue: ctx_lh_g_precuneus
 - id: 124
   label: ctx_rh_g_rectus
   record: true
@@ -999,6 +1243,8 @@ nodes:
     x: 3.5741
     y: 39.4113
     z: -23.4651
+  hemisphere: right
+  homologue: ctx_lh_g_rectus
 - id: 125
   label: ctx_rh_g_subcallosal
   record: true
@@ -1007,6 +1253,8 @@ nodes:
     x: 4.4077
     y: 13.1095
     z: -11.5686
+  hemisphere: right
+  homologue: ctx_lh_g_subcallosal
 - id: 126
   label: ctx_rh_g_temp_sup-g_t_transv
   record: true
@@ -1015,6 +1263,8 @@ nodes:
     x: 49.262
     y: -12.6511
     z: 6.6042
+  hemisphere: right
+  homologue: ctx_lh_g_temp_sup-g_t_transv
 - id: 127
   label: ctx_rh_g_temp_sup-lateral
   record: true
@@ -1023,6 +1273,8 @@ nodes:
     x: 59.1945
     y: -4.5715
     z: -6.2145
+  hemisphere: right
+  homologue: ctx_lh_g_temp_sup-lateral
 - id: 128
   label: ctx_rh_g_temp_sup-plan_polar
   record: true
@@ -1031,6 +1283,8 @@ nodes:
     x: 39.3637
     y: 10.4394
     z: -19.4632
+  hemisphere: right
+  homologue: ctx_lh_g_temp_sup-plan_polar
 - id: 129
   label: ctx_rh_g_temp_sup-plan_tempo
   record: true
@@ -1039,6 +1293,8 @@ nodes:
     x: 60.8687
     y: -28.0353
     z: 19.5365
+  hemisphere: right
+  homologue: ctx_lh_g_temp_sup-plan_tempo
 - id: 130
   label: ctx_rh_g_temporal_inf
   record: true
@@ -1047,6 +1303,8 @@ nodes:
     x: 54.1066
     y: -30.3604
     z: -27.28
+  hemisphere: right
+  homologue: ctx_lh_g_temporal_inf
 - id: 131
   label: ctx_rh_g_temporal_middle
   record: true
@@ -1055,6 +1313,8 @@ nodes:
     x: 61.7879
     y: -23.5953
     z: -12.5268
+  hemisphere: right
+  homologue: ctx_lh_g_temporal_middle
 - id: 132
   label: ctx_rh_lat_fis-ant-horizont
   record: true
@@ -1063,6 +1323,8 @@ nodes:
     x: 42.0326
     y: 29.2974
     z: 0.0054
+  hemisphere: right
+  homologue: ctx_lh_lat_fis-ant-horizont
 - id: 133
   label: ctx_rh_lat_fis-ant-vertical
   record: true
@@ -1071,6 +1333,8 @@ nodes:
     x: 49.276
     y: 23.5427
     z: 10.1533
+  hemisphere: right
+  homologue: ctx_lh_lat_fis-ant-vertical
 - id: 134
   label: ctx_rh_lat_fis-post
   record: true
@@ -1079,6 +1343,8 @@ nodes:
     x: 41.0928
     y: -25.633
     z: 20.0004
+  hemisphere: right
+  homologue: ctx_lh_lat_fis-post
 - id: 135
   label: ctx_rh_pole_occipital
   record: true
@@ -1087,6 +1353,8 @@ nodes:
     x: 20.8655
     y: -95.6293
     z: -1.6295
+  hemisphere: right
+  homologue: ctx_lh_pole_occipital
 - id: 136
   label: ctx_rh_pole_temporal
   record: true
@@ -1095,6 +1363,8 @@ nodes:
     x: 31.8922
     y: 10.5642
     z: -41.3543
+  hemisphere: right
+  homologue: ctx_lh_pole_temporal
 - id: 137
   label: ctx_rh_s_calcarine
   record: true
@@ -1103,6 +1373,8 @@ nodes:
     x: 18.1099
     y: -63.0424
     z: 7.2867
+  hemisphere: right
+  homologue: ctx_lh_s_calcarine
 - id: 138
   label: ctx_rh_s_central
   record: true
@@ -1111,6 +1383,8 @@ nodes:
     x: 39.7119
     y: -15.6691
     z: 46.7884
+  hemisphere: right
+  homologue: ctx_lh_s_central
 - id: 139
   label: ctx_rh_s_cingul-marginalis
   record: true
@@ -1119,6 +1393,8 @@ nodes:
     x: 12.5432
     y: -36.8154
     z: 51.2974
+  hemisphere: right
+  homologue: ctx_lh_s_cingul-marginalis
 - id: 140
   label: ctx_rh_s_circular_insula_ant
   record: true
@@ -1127,6 +1403,8 @@ nodes:
     x: 31.3719
     y: 23.9157
     z: -8.5989
+  hemisphere: right
+  homologue: ctx_lh_s_circular_insula_ant
 - id: 141
   label: ctx_rh_s_circular_insula_inf
   record: true
@@ -1135,6 +1413,8 @@ nodes:
     x: 42.9132
     y: -7.3267
     z: -6.4154
+  hemisphere: right
+  homologue: ctx_lh_s_circular_insula_inf
 - id: 142
   label: ctx_rh_s_circular_insula_sup
   record: true
@@ -1143,6 +1423,8 @@ nodes:
     x: 37.0455
     y: 9.8494
     z: 9.8043
+  hemisphere: right
+  homologue: ctx_lh_s_circular_insula_sup
 - id: 143
   label: ctx_rh_s_collat_transv_ant
   record: true
@@ -1151,6 +1433,8 @@ nodes:
     x: 41.6575
     y: -17.6448
     z: -28.9297
+  hemisphere: right
+  homologue: ctx_lh_s_collat_transv_ant
 - id: 144
   label: ctx_rh_s_collat_transv_post
   record: true
@@ -1159,6 +1443,8 @@ nodes:
     x: 26.2846
     y: -78.1792
     z: -7.5346
+  hemisphere: right
+  homologue: ctx_lh_s_collat_transv_post
 - id: 145
   label: ctx_rh_s_front_inf
   record: true
@@ -1167,6 +1453,8 @@ nodes:
     x: 40.3424
     y: 27.3534
     z: 23.1634
+  hemisphere: right
+  homologue: ctx_lh_s_front_inf
 - id: 146
   label: ctx_rh_s_front_middle
   record: true
@@ -1175,6 +1463,8 @@ nodes:
     x: 30.3692
     y: 46.1326
     z: 20.7821
+  hemisphere: right
+  homologue: ctx_lh_s_front_middle
 - id: 147
   label: ctx_rh_s_front_sup
   record: true
@@ -1183,6 +1473,8 @@ nodes:
     x: 23.7666
     y: 24.5791
     z: 46.0738
+  hemisphere: right
+  homologue: ctx_lh_s_front_sup
 - id: 148
   label: ctx_rh_s_interm_prim-jensen
   record: true
@@ -1191,6 +1483,8 @@ nodes:
     x: 53.7937
     y: -41.9432
     z: 39.6779
+  hemisphere: right
+  homologue: ctx_lh_s_interm_prim-jensen
 - id: 149
   label: ctx_rh_s_intrapariet_and_p_trans
   record: true
@@ -1199,6 +1493,8 @@ nodes:
     x: 33.6163
     y: -50.9082
     z: 48.6832
+  hemisphere: right
+  homologue: ctx_lh_s_intrapariet_and_p_trans
 - id: 150
   label: ctx_rh_s_oc_middle_and_lunatus
   record: true
@@ -1207,6 +1503,8 @@ nodes:
     x: 36.9766
     y: -79.5268
     z: 8.9653
+  hemisphere: right
+  homologue: ctx_lh_s_oc_middle_and_lunatus
 - id: 151
   label: ctx_rh_s_oc_sup_and_transversal
   record: true
@@ -1215,6 +1513,8 @@ nodes:
     x: 30.6016
     y: -78.1289
     z: 24.247
+  hemisphere: right
+  homologue: ctx_lh_s_oc_sup_and_transversal
 - id: 152
   label: ctx_rh_s_occipital_ant
   record: true
@@ -1223,6 +1523,8 @@ nodes:
     x: 47.6465
     y: -63.6936
     z: 5.1335
+  hemisphere: right
+  homologue: ctx_lh_s_occipital_ant
 - id: 153
   label: ctx_rh_s_oc-temp_lat
   record: true
@@ -1231,6 +1533,8 @@ nodes:
     x: 45.5915
     y: -46.1461
     z: -15.3462
+  hemisphere: right
+  homologue: ctx_lh_s_oc-temp_lat
 - id: 154
   label: ctx_rh_s_oc-temp_med_and_lingual
   record: true
@@ -1239,6 +1543,8 @@ nodes:
     x: 28.5243
     y: -45.6739
     z: -11.7078
+  hemisphere: right
+  homologue: ctx_lh_s_oc-temp_med_and_lingual
 - id: 155
   label: ctx_rh_s_orbital_lateral
   record: true
@@ -1247,6 +1553,8 @@ nodes:
     x: 42.425
     y: 44.91
     z: -2.1147
+  hemisphere: right
+  homologue: ctx_lh_s_orbital_lateral
 - id: 156
   label: ctx_rh_s_orbital_med-olfact
   record: true
@@ -1255,6 +1563,8 @@ nodes:
     x: 11.9521
     y: 26.9754
     z: -19.2287
+  hemisphere: right
+  homologue: ctx_lh_s_orbital_med-olfact
 - id: 157
   label: ctx_rh_s_orbital-h_shaped
   record: true
@@ -1263,6 +1573,8 @@ nodes:
     x: 25.3021
     y: 40.7269
     z: -16.2795
+  hemisphere: right
+  homologue: ctx_lh_s_orbital-h_shaped
 - id: 158
   label: ctx_rh_s_parieto_occipital
   record: true
@@ -1271,6 +1583,8 @@ nodes:
     x: 17.9312
     y: -66.3152
     z: 28.4718
+  hemisphere: right
+  homologue: ctx_lh_s_parieto_occipital
 - id: 159
   label: ctx_rh_s_pericallosal
   record: true
@@ -1279,6 +1593,8 @@ nodes:
     x: 5.8165
     y: -2.6584
     z: 18.2367
+  hemisphere: right
+  homologue: ctx_lh_s_pericallosal
 - id: 160
   label: ctx_rh_s_postcentral
   record: true
@@ -1287,6 +1603,8 @@ nodes:
     x: 40.1527
     y: -29.5508
     z: 48.8675
+  hemisphere: right
+  homologue: ctx_lh_s_postcentral
 - id: 161
   label: ctx_rh_s_precentral-inf-part
   record: true
@@ -1295,6 +1613,8 @@ nodes:
     x: 44.843
     y: 7.2932
     z: 31.5875
+  hemisphere: right
+  homologue: ctx_lh_s_precentral-inf-part
 - id: 162
   label: ctx_rh_s_precentral-sup-part
   record: true
@@ -1303,6 +1623,8 @@ nodes:
     x: 29.9073
     y: -7.5881
     z: 57.3501
+  hemisphere: right
+  homologue: ctx_lh_s_precentral-sup-part
 - id: 163
   label: ctx_rh_s_suborbital
   record: true
@@ -1311,6 +1633,8 @@ nodes:
     x: 4.7283
     y: 41.9289
     z: -16.9112
+  hemisphere: right
+  homologue: ctx_lh_s_suborbital
 - id: 164
   label: ctx_rh_s_subparietal
   record: true
@@ -1319,6 +1643,8 @@ nodes:
     x: 9.8259
     y: -48.1836
     z: 38.7466
+  hemisphere: right
+  homologue: ctx_lh_s_subparietal
 - id: 165
   label: ctx_rh_s_temporal_inf
   record: true
@@ -1327,6 +1653,8 @@ nodes:
     x: 52.7454
     y: -13.5317
     z: -26.3953
+  hemisphere: right
+  homologue: ctx_lh_s_temporal_inf
 - id: 166
   label: ctx_rh_s_temporal_sup
   record: true
@@ -1335,6 +1663,8 @@ nodes:
     x: 53.2414
     y: -30.4284
     z: 4.9165
+  hemisphere: right
+  homologue: ctx_lh_s_temporal_sup
 - id: 167
   label: ctx_rh_s_temporal_transverse
   record: true
@@ -1343,6 +1673,8 @@ nodes:
     x: 53.2088
     y: -17.5966
     z: 7.2557
+  hemisphere: right
+  homologue: ctx_lh_s_temporal_transverse
 edges:
 - label: weight
   format: dense

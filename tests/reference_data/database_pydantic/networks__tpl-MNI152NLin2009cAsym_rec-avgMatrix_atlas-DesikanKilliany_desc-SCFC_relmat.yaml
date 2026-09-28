@@ -15,6 +15,8 @@ nodes:
     x: -53.3976
     y: -45.7942
     z: 8.5151
+  hemisphere: left
+  homologue: R.BSTS
 - id: 1
   label: L.CACG
   record: true
@@ -23,6 +25,8 @@ nodes:
     x: -4.9731
     y: 21.236
     z: 27.0319
+  hemisphere: left
+  homologue: R.CACG
 - id: 2
   label: L.CMFG
   record: true
@@ -31,6 +35,8 @@ nodes:
     x: -36.744
     y: 11.223
     z: 49.34
+  hemisphere: left
+  homologue: R.CMFG
 - id: 3
   label: L.CU
   record: true
@@ -39,6 +45,8 @@ nodes:
     x: -6.8467
     y: -78.2874
     z: 21.7138
+  hemisphere: left
+  homologue: R.CU
 - id: 4
   label: L.EC
   record: true
@@ -47,6 +55,8 @@ nodes:
     x: -24.2013
     y: -4.7792
     z: -32.8247
+  hemisphere: left
+  homologue: R.EC
 - id: 5
   label: L.FG
   record: true
@@ -55,6 +65,8 @@ nodes:
     x: -34.9055
     y: -44.1335
     z: -20.642
+  hemisphere: left
+  homologue: R.FG
 - id: 6
   label: L.IPG
   record: true
@@ -63,6 +75,8 @@ nodes:
     x: -40.6055
     y: -70.5623
     z: 33.0363
+  hemisphere: left
+  homologue: R.IPG
 - id: 7
   label: L.ITG
   record: true
@@ -71,6 +85,8 @@ nodes:
     x: -50.5649
     y: -31.5391
     z: -24.8692
+  hemisphere: left
+  homologue: R.ITG
 - id: 8
   label: L.ICG
   record: true
@@ -79,6 +95,8 @@ nodes:
     x: -6.5292
     y: -45.3841
     z: 19.7732
+  hemisphere: left
+  homologue: R.ICG
 - id: 9
   label: L.LOG
   record: true
@@ -87,6 +105,8 @@ nodes:
     x: -30.9615
     y: -88.6305
     z: 1.6724
+  hemisphere: left
+  homologue: R.LOG
 - id: 10
   label: L.LOFG
   record: true
@@ -95,6 +115,8 @@ nodes:
     x: -24.3595
     y: 31.9715
     z: -18.0296
+  hemisphere: left
+  homologue: R.LOFG
 - id: 11
   label: L.LG
   record: true
@@ -103,6 +125,8 @@ nodes:
     x: -14.1542
     y: -67.35
     z: -4.7485
+  hemisphere: left
+  homologue: R.LG
 - id: 12
   label: L.MOFG
   record: true
@@ -111,6 +135,8 @@ nodes:
     x: -5.9356
     y: 34.5393
     z: -17.1274
+  hemisphere: left
+  homologue: R.MOFG
 - id: 13
   label: L.MTG
   record: true
@@ -119,6 +145,8 @@ nodes:
     x: -57.9583
     y: -21.8374
     z: -14.9323
+  hemisphere: left
+  homologue: R.MTG
 - id: 14
   label: L.PHIG
   record: true
@@ -127,6 +155,8 @@ nodes:
     x: -23.9457
     y: -30.4017
     z: -18.6359
+  hemisphere: left
+  homologue: R.PHIG
 - id: 15
   label: L.PaCG
   record: true
@@ -135,6 +165,8 @@ nodes:
     x: -6.3653
     y: -28.3585
     z: 58.7593
+  hemisphere: left
+  homologue: R.PaCG
 - id: 16
   label: L.POP
   record: true
@@ -143,6 +175,8 @@ nodes:
     x: -47.7282
     y: 15.5084
     z: 14.4266
+  hemisphere: left
+  homologue: R.POP
 - id: 17
   label: L.POR
   record: true
@@ -151,6 +185,8 @@ nodes:
     x: -43.2052
     y: 41.3991
     z: -12.9799
+  hemisphere: left
+  homologue: R.POR
 - id: 18
   label: L.PTR
   record: true
@@ -159,6 +195,8 @@ nodes:
     x: -47.2455
     y: 31.7149
     z: 3.1207
+  hemisphere: left
+  homologue: R.PTR
 - id: 19
   label: L.PCAL
   record: true
@@ -167,6 +205,8 @@ nodes:
     x: -12.0913
     y: -80.1167
     z: 6.467
+  hemisphere: left
+  homologue: R.PCAL
 - id: 20
   label: L.PoCG
   record: true
@@ -175,6 +215,8 @@ nodes:
     x: -46.6283
     y: -22.267
     z: 44.2489
+  hemisphere: left
+  homologue: R.PoCG
 - id: 21
   label: L.PCG
   record: true
@@ -183,6 +225,8 @@ nodes:
     x: -5.3964
     y: -18.0922
     z: 39.0261
+  hemisphere: left
+  homologue: R.PCG
 - id: 22
   label: L.PrCG
   record: true
@@ -191,6 +235,8 @@ nodes:
     x: -43.054
     y: -6.9651
     z: 42.5493
+  hemisphere: left
+  homologue: R.PrCG
 - id: 23
   label: L.PCU
   record: true
@@ -199,6 +245,8 @@ nodes:
     x: -8.4673
     y: -59.0119
     z: 38.9913
+  hemisphere: left
+  homologue: R.PCU
 - id: 24
   label: L.RACG
   record: true
@@ -207,6 +255,8 @@ nodes:
     x: -4.6127
     y: 36.2858
     z: -0.7904
+  hemisphere: left
+  homologue: R.RACG
 - id: 25
   label: L.RMFG
   record: true
@@ -215,6 +265,8 @@ nodes:
     x: -33.5028
     y: 46.3926
     z: 17.8395
+  hemisphere: left
+  homologue: R.RMFG
 - id: 26
   label: L.SFG
   record: true
@@ -223,6 +275,8 @@ nodes:
     x: -11.2887
     y: 30.4652
     z: 43.9548
+  hemisphere: left
+  homologue: R.SFG
 - id: 27
   label: L.SPG
   record: true
@@ -231,6 +285,8 @@ nodes:
     x: -23.4716
     y: -64.1303
     z: 51.9987
+  hemisphere: left
+  homologue: R.SPG
 - id: 28
   label: L.STG
   record: true
@@ -239,6 +295,8 @@ nodes:
     x: -53.7298
     y: -11.5455
     z: -3.7002
+  hemisphere: left
+  homologue: R.STG
 - id: 29
   label: L.SMG
   record: true
@@ -247,6 +305,8 @@ nodes:
     x: -55.0221
     y: -39.3578
     z: 35.1147
+  hemisphere: left
+  homologue: R.SMG
 - id: 30
   label: L.FP
   record: true
@@ -255,6 +315,8 @@ nodes:
     x: -7.6003
     y: 67.4761
     z: -10.2032
+  hemisphere: left
+  homologue: R.FP
 - id: 31
   label: L.TP
   record: true
@@ -263,6 +325,8 @@ nodes:
     x: -28.4672
     y: 13.6612
     z: -37.0388
+  hemisphere: left
+  homologue: R.TP
 - id: 32
   label: L.TTG
   record: true
@@ -271,6 +335,8 @@ nodes:
     x: -44.8061
     y: -21.555
     z: 9.3891
+  hemisphere: left
+  homologue: R.TTG
 - id: 33
   label: L.IN
   record: true
@@ -279,6 +345,8 @@ nodes:
     x: -36.0443
     y: 0.8968
     z: -0.4175
+  hemisphere: left
+  homologue: R.IN
 - id: 34
   label: L.CER
   record: true
@@ -287,6 +355,8 @@ nodes:
     x: -24.4064
     y: -61.912
     z: -36.6256
+  hemisphere: left
+  homologue: R.CER
 - id: 35
   label: L.TH
   record: true
@@ -295,6 +365,8 @@ nodes:
     x: -11.5002
     y: -18.4582
     z: 7.1412
+  hemisphere: left
+  homologue: R.TH
 - id: 36
   label: L.CA
   record: true
@@ -303,6 +375,8 @@ nodes:
     x: -12.7352
     y: 10.402
     z: 9.8365
+  hemisphere: left
+  homologue: R.CA
 - id: 37
   label: L.PU
   record: true
@@ -311,6 +385,8 @@ nodes:
     x: -25.9604
     y: 1.3514
     z: 0.1749
+  hemisphere: left
+  homologue: R.PU
 - id: 38
   label: L.PA
   record: true
@@ -319,6 +395,8 @@ nodes:
     x: -20.4778
     y: -4.4579
     z: -0.8174
+  hemisphere: left
+  homologue: R.PA
 - id: 39
   label: L.HI
   record: true
@@ -327,6 +405,8 @@ nodes:
     x: -25.2057
     y: -21.8225
     z: -13.6436
+  hemisphere: left
+  homologue: R.HI
 - id: 40
   label: L.AM
   record: true
@@ -335,6 +415,8 @@ nodes:
     x: -22.8538
     y: -4.4597
     z: -19.2704
+  hemisphere: left
+  homologue: R.AM
 - id: 41
   label: L.AC
   record: true
@@ -343,6 +425,8 @@ nodes:
     x: -8.3393
     y: 11.4619
     z: -7.7683
+  hemisphere: left
+  homologue: R.AC
 - id: 42
   label: R.TH
   record: true
@@ -351,6 +435,8 @@ nodes:
     x: 11.6127
     y: -16.8757
     z: 7.1327
+  hemisphere: right
+  homologue: L.TH
 - id: 43
   label: R.CA
   record: true
@@ -359,6 +445,8 @@ nodes:
     x: 13.2866
     y: 11.8
     z: 9.6942
+  hemisphere: right
+  homologue: L.CA
 - id: 44
   label: R.PU
   record: true
@@ -367,6 +455,8 @@ nodes:
     x: 26.5674
     y: 3.1727
     z: -0.3935
+  hemisphere: right
+  homologue: L.PU
 - id: 45
   label: R.PA
   record: true
@@ -375,6 +465,8 @@ nodes:
     x: 21.2714
     y: -2.8005
     z: -0.9399
+  hemisphere: right
+  homologue: L.PA
 - id: 46
   label: R.HI
   record: true
@@ -383,6 +475,8 @@ nodes:
     x: 26.5336
     y: -20.7203
     z: -13.7921
+  hemisphere: right
+  homologue: L.HI
 - id: 47
   label: R.AM
   record: true
@@ -391,6 +485,8 @@ nodes:
     x: 23.2788
     y: -3.0473
     z: -19.6271
+  hemisphere: right
+  homologue: L.AM
 - id: 48
   label: R.AC
   record: true
@@ -399,6 +495,8 @@ nodes:
     x: 8.5218
     y: 12.6292
     z: -7.1511
+  hemisphere: right
+  homologue: L.AC
 - id: 49
   label: R.BSTS
   record: true
@@ -407,6 +505,8 @@ nodes:
     x: 54.3559
     y: -40.3169
     z: 9.9074
+  hemisphere: right
+  homologue: L.BSTS
 - id: 50
   label: R.CACG
   record: true
@@ -415,6 +515,8 @@ nodes:
     x: 5.1196
     y: 22.4728
     z: 27.4146
+  hemisphere: right
+  homologue: L.CACG
 - id: 51
   label: R.CMFG
   record: true
@@ -423,6 +525,8 @@ nodes:
     x: 36.8488
     y: 14.0197
     z: 49.3889
+  hemisphere: right
+  homologue: L.CMFG
 - id: 52
   label: R.CU
   record: true
@@ -431,6 +535,8 @@ nodes:
     x: 8.294
     y: -78.2692
     z: 22.7618
+  hemisphere: right
+  homologue: L.CU
 - id: 53
   label: R.EC
   record: true
@@ -439,6 +545,8 @@ nodes:
     x: 23.8225
     y: -4.8235
     z: -33.728
+  hemisphere: right
+  homologue: L.EC
 - id: 54
   label: R.FG
   record: true
@@ -447,6 +555,8 @@ nodes:
     x: 33.9921
     y: -37.6616
     z: -22.8656
+  hemisphere: right
+  homologue: L.FG
 - id: 55
   label: R.IPG
   record: true
@@ -455,6 +565,8 @@ nodes:
     x: 46.3382
     y: -63.0738
     z: 32.6917
+  hemisphere: right
+  homologue: L.IPG
 - id: 56
   label: R.ITG
   record: true
@@ -463,6 +575,8 @@ nodes:
     x: 50.5196
     y: -27.1179
     z: -27.1838
+  hemisphere: right
+  homologue: L.ITG
 - id: 57
   label: R.ICG
   record: true
@@ -471,6 +585,8 @@ nodes:
     x: 7.6885
     y: -43.6831
     z: 20.1113
+  hemisphere: right
+  homologue: L.ICG
 - id: 58
   label: R.LOG
   record: true
@@ -479,6 +595,8 @@ nodes:
     x: 35.0922
     y: -83.9116
     z: 0.8458
+  hemisphere: right
+  homologue: L.LOG
 - id: 59
   label: R.LOFG
   record: true
@@ -487,6 +605,8 @@ nodes:
     x: 23.5878
     y: 32.1558
     z: -18.2904
+  hemisphere: right
+  homologue: L.LOFG
 - id: 60
   label: R.LG
   record: true
@@ -495,6 +615,8 @@ nodes:
     x: 14.4806
     y: -65.4811
     z: -3.4636
+  hemisphere: right
+  homologue: L.LG
 - id: 61
   label: R.MOFG
   record: true
@@ -503,6 +625,8 @@ nodes:
     x: -1.0
     y: 27.0
     z: -17.0
+  hemisphere: right
+  homologue: L.MOFG
 - id: 62
   label: R.MTG
   record: true
@@ -511,6 +635,8 @@ nodes:
     x: 57.9961
     y: -19.825
     z: -15.6952
+  hemisphere: right
+  homologue: L.MTG
 - id: 63
   label: R.PHIG
   record: true
@@ -519,6 +645,8 @@ nodes:
     x: 25.0776
     y: -28.9856
     z: -18.8843
+  hemisphere: right
+  homologue: L.PHIG
 - id: 64
   label: R.PaCG
   record: true
@@ -527,6 +655,8 @@ nodes:
     x: 7.2402
     y: -26.0961
     z: 58.7403
+  hemisphere: right
+  homologue: L.PaCG
 - id: 65
   label: R.POP
   record: true
@@ -535,6 +665,8 @@ nodes:
     x: 48.4566
     y: 16.0601
     z: 13.3438
+  hemisphere: right
+  homologue: L.POP
 - id: 66
   label: R.POR
   record: true
@@ -543,6 +675,8 @@ nodes:
     x: 43.1135
     y: 42.5175
     z: -13.3768
+  hemisphere: right
+  homologue: L.POR
 - id: 67
   label: R.PTR
   record: true
@@ -551,6 +685,8 @@ nodes:
     x: 49.0725
     y: 32.3705
     z: 4.812
+  hemisphere: right
+  homologue: L.PTR
 - id: 68
   label: R.PCAL
   record: true
@@ -559,6 +695,8 @@ nodes:
     x: 13.2706
     y: -78.056
     z: 8.1234
+  hemisphere: right
+  homologue: L.PCAL
 - id: 69
   label: R.PoCG
   record: true
@@ -567,6 +705,8 @@ nodes:
     x: 47.4325
     y: -18.7825
     z: 43.8269
+  hemisphere: right
+  homologue: L.PoCG
 - id: 70
   label: R.PCG
   record: true
@@ -575,6 +715,8 @@ nodes:
     x: 5.8462
     y: -16.4543
     z: 39.1514
+  hemisphere: right
+  homologue: L.PCG
 - id: 71
   label: R.PrCG
   record: true
@@ -583,6 +725,8 @@ nodes:
     x: 44.2892
     y: -4.544
     z: 42.765
+  hemisphere: right
+  homologue: L.PrCG
 - id: 72
   label: R.PCU
   record: true
@@ -591,6 +735,8 @@ nodes:
     x: 10.295
     y: -57.7096
     z: 38.6811
+  hemisphere: right
+  homologue: L.PCU
 - id: 73
   label: R.RACG
   record: true
@@ -599,6 +745,8 @@ nodes:
     x: 4.9514
     y: 37.2003
     z: 1.941
+  hemisphere: right
+  homologue: L.RACG
 - id: 74
   label: R.RMFG
   record: true
@@ -607,6 +755,8 @@ nodes:
     x: 34.4679
     y: 47.876
     z: 16.5323
+  hemisphere: right
+  homologue: L.RMFG
 - id: 75
   label: R.SFG
   record: true
@@ -615,6 +765,8 @@ nodes:
     x: 11.91
     y: 31.7403
     z: 43.4741
+  hemisphere: right
+  homologue: L.SFG
 - id: 76
   label: R.SPG
   record: true
@@ -623,6 +775,8 @@ nodes:
     x: 25.1605
     y: -63.0393
     z: 53.2944
+  hemisphere: right
+  homologue: L.SPG
 - id: 77
   label: R.STG
   record: true
@@ -631,6 +785,8 @@ nodes:
     x: 54.6697
     y: -6.9466
     z: -5.237
+  hemisphere: right
+  homologue: L.STG
 - id: 78
   label: R.SMG
   record: true
@@ -639,6 +795,8 @@ nodes:
     x: 55.9183
     y: -30.9668
     z: 35.9768
+  hemisphere: right
+  homologue: L.SMG
 - id: 79
   label: R.FP
   record: true
@@ -647,6 +805,8 @@ nodes:
     x: 8.368
     y: 67.1573
     z: -13.1551
+  hemisphere: right
+  homologue: L.FP
 - id: 80
   label: R.TP
   record: true
@@ -655,6 +815,8 @@ nodes:
     x: 28.2896
     y: 15.05
     z: -35.0567
+  hemisphere: right
+  homologue: L.TP
 - id: 81
   label: R.TTG
   record: true
@@ -663,6 +825,8 @@ nodes:
     x: 45.6819
     y: -17.8535
     z: 8.7486
+  hemisphere: right
+  homologue: L.TTG
 - id: 82
   label: R.IN
   record: true
@@ -671,6 +835,8 @@ nodes:
     x: 34.8554
     y: 3.4149
     z: -2.5363
+  hemisphere: right
+  homologue: L.IN
 - id: 83
   label: R.CER
   record: true
@@ -679,6 +845,8 @@ nodes:
     x: 24.7927
     y: -61.5357
     z: -36.7036
+  hemisphere: right
+  homologue: L.CER
 edges:
 - label: weight
   description: Streamline count (normalised)
