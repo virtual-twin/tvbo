@@ -13,6 +13,7 @@ import shutil
 import sys
 import tempfile
 import uuid
+import warnings
 from typing import TYPE_CHECKING
 
 from tvbo.adapters.base import ContinuationAdapter
@@ -33,6 +34,53 @@ class PyRatesBifurcationAdapter(ContinuationAdapter):
     Like ``BifurcationKitAdapter``, it renders one ``(Dynamics, Continuation)`` pair at a time and takes that pair's resolution from [`ContinuationAdapter`](#tvbo.adapters.base.ContinuationAdapter).
     """
 
+    TIME_RUN = {
+        "c": "ivp",
+        "name": "time",
+        "DS": 1e-4,
+        "DSMIN": 1e-10,
+        "DSMAX": 1.0,
+        "EPSL": 1e-08,
+        "EPSU": 1e-08,
+        "EPSS": 1e-06,
+        "NMX": 50000,
+    }
+    """The AUTO-07p initial-value run of PyRates's constants file (``c.ivp``), which integrates the model from its compiled initial state, ``PAR(14)`` its time; the parameter run starts on it (`start_run`)."""
+
+    AUTO_STEP_CONSTANTS = {
+        "DS": ("ds", float, 1e-2),
+        "DSMIN": ("ds_min", float, 1e-8),
+        "DSMAX": ("ds_max", float, 0.1),
+        "NMX": ("max_steps", int, 2000),
+    }
+    """Each AUTO-07p constant a run takes from a continuation slot: the slot, its type, and the value where neither the continuation nor its parent declares it (AUTO-07p's own first step, DS = 1e-4, is too small)."""
+
+    @classmethod
+    def refuse_unrunnable(cls, model, continuation, name: str | None = None) -> None:
+        """`ContinuationAdapter.refuse_unrunnable`, and a settle that declares ``initial_state.solver``: PyRates settles by AUTO-07p's own initial-value run (`TIME_RUN`), which integrates by no solver a continuation can name.
+
+        Raises:
+            ValueError: If *continuation* integrates to its start and declares a solver.
+        """
+        super().refuse_unrunnable(model, continuation, name)
+        solver = getattr(cls.initial_state(continuation), "solver", None)
+        if continuation is not None and solver is not None and cls.integrates_to_start(continuation):
+            raise ValueError(
+                f"continuation {name or getattr(continuation, 'name', '?')!r} settles by initial_state.solver {str(getattr(solver, 'method', solver))!r}, and "
+                "pyrates-bifurcation settles by AUTO-07p's own initial-value run, which takes no solver. Drop the solver, or continue on "
+                "auto-07p (SciPy solvers) or bifurcationkit (DifferentialEquations.jl solvers)."
+            )
+
+    @classmethod
+    def start_run(cls, cont) -> tuple[dict, str]:
+        """The keywords of the initial-value run *cont* starts from, and the label of the solution on it that the parameter run starts at.
+
+        Where *cont* integrates to its start (`ContinuationAdapter.integrates_to_start`), the run stops at its first user point, ``PAR(14)`` equal to the ``initial_state`` duration (``UZ1``). Otherwise it takes one step, and the parameter run starts at its first point (``EP1``), the model's initial state as `ContinuationAdapter.start_dynamics` left it.
+        """
+        if cls.integrates_to_start(cont):
+            return {**cls.TIME_RUN, "UZR": {14: float(cls.initial_state(cont).duration)}, "STOP": {"UZ1"}}, "UZ1"
+        return {**cls.TIME_RUN, "NMX": 1}, "EP1"
+
     # ── Public API ───────────────────────────────────────────────────────
 
     def render_continuation(self, model, continuation, **kwargs) -> str:
@@ -41,13 +89,11 @@ class PyRatesBifurcationAdapter(ContinuationAdapter):
         fp_name = fp["name"]
         p_min, p_max = fp["p_min"], fp["p_max"]
         pyrates_fp_name = _pyrates_param_name(model, fp_name)
-        auto_kwargs = self._cont_to_auto_kwargs(continuation, pyrates_fp_name, p_min, p_max)
+        auto_kwargs = self._cont_to_auto_kwargs(
+            continuation, pyrates_fp_name, p_min, p_max, bothside=self.bothside(continuation)
+        )
 
-        iss_duration = 10000.0
-        if continuation and continuation.initial_state:
-            d = getattr(continuation.initial_state, "duration", None)
-            if d is not None:
-                iss_duration = float(d)
+        time_run, start_label = self.start_run(continuation)
 
         sv_names = list(model.state_variables.keys())
         yaml_literal = '"""' + self._pyrates_yaml(model).replace("\\", "\\\\").replace('"""', '\\"\\"\\"') + '"""'
@@ -92,19 +138,14 @@ with open("tvbo_bif.f90") as _f90:
 # Look up numeric ICP
 icp = param_idx["{pyrates_fp_name}"]
 
-# Time continuation to find equilibrium
+# Initial-value run the parameter continuation starts on
 t_sols, t_cont = ode.run(
-    c="ivp", name="time",
-    DS=1e-4, DSMIN=1e-10, DSMAX=1.0,
-    EPSL=1e-08, EPSU=1e-08, EPSS=1e-06,
-    NMX=50000,
-    UZR={{14: {iss_duration}}},
-    STOP={{"UZ1"}},
+    {self._format_auto_kwargs(time_run)}
 )
 
 # Parameter continuation: {fp_name} (mapped to {pyrates_fp_name})
 p_sols, p_cont = ode.run(
-    origin=t_cont, starting_point="UZ1", name="param",
+    origin=t_cont, starting_point="{start_label}", name="param",
     {self._format_auto_kwargs(auto_kwargs)}
 )
 
@@ -182,27 +223,14 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             # Numeric PAR index for the free parameter (for DataFrame extraction).
             icp = param_idx.get(pyrates_fp_name, pyrates_fp_name)
 
-            # Time continuation to find the equilibrium; PAR(14) is time in model units.
-            iss_duration = float(getattr(cont.initial_state, "duration", None) or 10000.0) if cont.initial_state else 10000.0
-            t_sols, t_cont = ode.run(
-                c="ivp",
-                name="time",
-                DS=1e-4,
-                DSMIN=1e-10,
-                DSMAX=1.0,
-                EPSL=1e-08,
-                EPSU=1e-08,
-                EPSS=1e-06,
-                NMX=50000,
-                UZR={14: iss_duration},
-                STOP={"UZ1"},
-            )
+            time_run, start_label = self.start_run(cont)
+            t_sols, t_cont = ode.run(**time_run)
 
-            # Parameter continuation from the equilibrium; PyCoBi maps the name via _var_map.
-            auto_kwargs = self._cont_to_auto_kwargs(cont, pyrates_fp_name, p_min, p_max)
+            # PyCoBi maps the parameter's name through _var_map.
+            auto_kwargs = self._cont_to_auto_kwargs(cont, pyrates_fp_name, p_min, p_max, bothside=self.bothside(cont))
             p_sols, p_cont = ode.run(
                 origin=t_cont,
-                starting_point="UZ1",
+                starting_point=start_label,
                 name="param",
                 **auto_kwargs,
             )
@@ -210,36 +238,35 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             # Step 3: Run branch continuations (periodic orbits / codim-2)
             po_results = []
             codim2_results = []
-            if cont.branches:
-                branches = list(cont.branches.values()) if isinstance(cont.branches, dict) else list(cont.branches)
-                for branch in branches:
-                    if self.is_codim2(branch, cont):
-                        c2_res = self._run_codim2_branch(
-                            ode,
-                            p_cont,
-                            branch,
-                            cont,
-                            pyrates_fp_name,
-                            p_min,
-                            p_max,
-                            names=names,
-                            state_var_names=state_var_names,
-                            icp=icp,
-                            fp_name=fp_name,
-                            param_idx=param_idx,
-                        )
-                        codim2_results.extend(c2_res)
-                    else:
-                        po_res = self._run_branch(
-                            ode,
-                            p_cont,
-                            branch,
-                            cont,
-                            pyrates_fp_name,
-                            p_min,
-                            p_max,
-                        )
-                        po_results.extend(po_res)
+            for branch in self.branches_of(cont).values():
+                if self.is_codim2(branch, cont):
+                    c2_res = self._run_codim2_branch(
+                        ode,
+                        p_cont,
+                        branch,
+                        cont,
+                        pyrates_fp_name,
+                        p_min,
+                        p_max,
+                        names=names,
+                        model=model,
+                        state_var_names=state_var_names,
+                        icp=icp,
+                        fp_name=fp_name,
+                        param_idx=param_idx,
+                    )
+                    codim2_results.extend(c2_res)
+                else:
+                    po_res = self._run_branch(
+                        ode,
+                        p_cont,
+                        branch,
+                        cont,
+                        pyrates_fp_name,
+                        p_min,
+                        p_max,
+                    )
+                    po_results.extend(po_res)
 
             # Build result (icp is the numeric index for DataFrame extraction)
             state_var_names = list(model.state_variables.keys())
@@ -273,8 +300,8 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         return result
 
     def _run_branch(self, ode, p_cont, branch, cont, icp_name, p_min, p_max):
-        """Run a periodic-orbit branch from the Hopf points its `source_point` selects, every one where it declares none."""
-        hopf_index = self.periodic_orbit_source(branch, "hopf:all")
+        """Run a periodic-orbit branch from the Hopf points its `source_point` selects (`ContinuationAdapter.periodic_orbit_source`), warning for each one it cannot continue from."""
+        hopf_index = self.periodic_orbit_source(branch)
         hopf_points = self.select_points(self._find_special_points(ode, "param", "HB"), hopf_index)
 
         bc = getattr(branch, "continuation", None)
@@ -282,15 +309,14 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
 
         for hp_label in hopf_points:
             try:
-                po_kwargs = self._cont_to_auto_kwargs(bc or cont, icp_name, p_min, p_max, is_po=True)
+                po_kwargs = self._cont_to_auto_kwargs(
+                    bc, icp_name, p_min, p_max, is_po=True, parent=cont, bothside=self.bothside(branch)
+                )
                 po_kwargs.setdefault("ISW", -1)  # Branch switching
                 po_kwargs.setdefault("ISP", 2)
                 po_kwargs.setdefault("IPS", 2)  # Periodic orbit
                 po_kwargs.setdefault("NTST", 400)
                 po_kwargs.setdefault("NCOL", 4)
-
-                if branch.bothside:
-                    po_kwargs["bidirectional"] = True
 
                 po_sols, po_cont = ode.run(
                     origin=p_cont if isinstance(p_cont, str) else "param",
@@ -299,9 +325,11 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
                     **po_kwargs,
                 )
                 po_results.append((f"po_from_{hp_label}", po_cont))
-            except Exception:
-                # PO continuation may fail for some Hopf points
-                pass
+            except Exception as e:
+                warnings.warn(
+                    f"Periodic-orbit continuation {getattr(branch, 'name', '?')!r} from {hp_label} failed: {type(e).__name__}: {e}",
+                    stacklevel=2,
+                )
 
         return po_results
 
@@ -316,6 +344,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         p_max,
         *,
         names,
+        model,
         state_var_names=None,
         icp=1,
         fp_name="param",
@@ -323,7 +352,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
     ):
         """Run a codim-2 continuation branch (fold or Hopf curve in 2-param space).
 
-        Uses AUTO-07p's ``ISW=2`` (branch switching) with two free parameters (``ICP=[p1, p2]``) to trace a fold or Hopf curve in the (p1, p2) plane: ``p1`` the primary *cont* frees, named *icp_name* in the compiled Fortran, and ``p2`` the second `ContinuationAdapter.codim2_parameter` finds on *branch*, named there by *names* (`pyrates_names`).
+        Uses AUTO-07p's ``ISW=2`` (branch switching) with two free parameters (``ICP=[p1, p2]``) to trace a fold or Hopf curve in the (p1, p2) plane: ``p1`` the primary *cont* frees, named *icp_name* in the compiled Fortran, and ``p2`` the second `ContinuationAdapter.codim2_parameter` finds on *branch*, named there by *names* (`pyrates_names`) and bounded on *model* (`ContinuationAdapter.parameter_bounds`). Each curve carries ``p1`` in ``param`` and ``p2`` in ``param2``, and a source point it cannot be continued from is warned about.
         """
         from tvbo.analysis.bifurcation import BifurcationResult
 
@@ -334,18 +363,18 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
 
         fp2_name = str(fp2.name)
         pyrates_fp2_name = names[fp2_name]
-        p2_min = float(fp2.domain.lo) if fp2.domain else -20.0
-        p2_max = float(fp2.domain.hi) if fp2.domain else 20.0
+        p2_min, p2_max = self.parameter_bounds(fp2, model, f"branch {getattr(branch, 'name', None)!r}")
+        icp2 = param_idx[pyrates_fp2_name]
 
         # AUTO labels a special point by its canonical code (LP, HB, BP).
-        kind, index = self.source_point(branch, "fold:all")
+        kind, index = self.codim2_source(branch)
         source_type = self.SOURCE_KINDS[kind]
         source_points = self.select_points(self._find_special_points(ode, "param", kind), index)
         if not source_points:
             return []
 
         # Build AUTO kwargs for codim-2
-        c2_kwargs = self._cont_to_auto_kwargs(bc or cont, icp_name, p_min, p_max)
+        c2_kwargs = self._cont_to_auto_kwargs(bc, icp_name, p_min, p_max, parent=cont, bothside=self.bothside(branch))
         # Override ICP to be [p1, p2] for codim-2
         c2_kwargs["ICP"] = [icp_name, pyrates_fp2_name]
         # ISW=2 for branch switching (codim-2 curve tracing)
@@ -356,42 +385,37 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         # AUTO bounds the principal parameter by RL0/RL1, so the second parameter's domain stops the curve.
         c2_kwargs["UZSTOP"] = {pyrates_fp2_name: [p2_min, p2_max]}
 
-        if branch.bothside:
-            c2_kwargs["bidirectional"] = True
-
         results = []
         for sp_label in source_points:
+            c2_name = f"codim2_{source_type}_{sp_label}"
             try:
-                c2_name = f"codim2_{source_type}_{sp_label}"
-                c2_sols, c2_cont = ode.run(
+                ode.run(
                     origin=p_cont if isinstance(p_cont, str) else "param",
                     starting_point=sp_label,
                     name=c2_name,
                     **c2_kwargs,
                 )
-                c2_res = BifurcationResult.from_pycobi(
-                    ode=ode,
-                    cont_name=c2_name,
-                    model=None,  # Not needed for codim-2 curves
-                    state_var_names=state_var_names,
-                    icp=icp,
-                    fp_name=fp_name,
+            except Exception as e:
+                warnings.warn(
+                    f"Codim-2 continuation {getattr(branch, 'name', '?')!r} from {sp_label} failed: {type(e).__name__}: {e}",
+                    stacklevel=2,
                 )
-                c2_res._is_codim2 = True
-                c2_res._fp2_name = fp2_name
-                c2_res._ics_name = fp_name  # Original param (e.g. 'I')
-                c2_res._source_type = source_type
-                c2_res._cont_name = c2_name
-
-                # Extract second parameter values
-                icp2 = (param_idx or {}).get(pyrates_fp2_name)
-                if icp2 is not None:
-                    c2_res._icp2 = icp2
-                    c2_res._fp2_pyrates = pyrates_fp2_name
-
-                results.append(c2_res)
-            except Exception:
-                pass
+                continue
+            c2_res = BifurcationResult.from_pycobi(
+                ode=ode,
+                cont_name=c2_name,
+                model=None,  # Not needed for codim-2 curves
+                state_var_names=state_var_names,
+                icp=icp,
+                icp2=icp2,
+                fp_name=fp_name,
+            )
+            c2_res._is_codim2 = True
+            c2_res._fp2_name = fp2_name
+            c2_res._ics_name = fp_name
+            c2_res._source_type = source_type
+            c2_res._cont_name = c2_name
+            results.append(c2_res)
 
         return results
 
@@ -418,16 +442,12 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
     # ── Helpers ──────────────────────────────────────────────────────────
 
     def _get_free_parameter(self, cont, model):
-        """The primary free parameter of *cont* and its bounds: its own domain, else the model parameter's, else ``[-20, 20]``; a bound either leaves out is its default alone, and a declared bound of ``0`` is a bound."""
-        fp_dict = cont.free_parameters if cont else None
-        if not fp_dict:
-            raise ValueError("Continuation has no free_parameters defined.")
-        fp_first = next(iter(fp_dict.values())) if isinstance(fp_dict, dict) else fp_dict[0]
-        name = str(fp_first.name)
-        dom = fp_first.domain or (model.parameters[name].domain if name in model.parameters else None)
-        lo = getattr(dom, "lo", None)
-        hi = getattr(dom, "hi", None)
-        return {"name": name, "p_min": -20.0 if lo is None else float(lo), "p_max": 20.0 if hi is None else float(hi)}
+        """The primary free parameter of *cont* and its bounds, as `ContinuationAdapter.parameter_bounds` resolves them."""
+        from tvbo.utils import as_list
+
+        fp_first = as_list(cont.free_parameters)[0]
+        p_min, p_max = self.parameter_bounds(fp_first, model, f"continuation {getattr(cont, 'name', None)!r}")
+        return {"name": str(fp_first.name), "p_min": p_min, "p_max": p_max}
 
     @staticmethod
     def _pyrates_yaml(model) -> str:
@@ -498,19 +518,25 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
 
         return param_idx
 
-    def _cont_to_auto_kwargs(self, cont, icp_name, p_min, p_max, is_po=False):
+    def _cont_to_auto_kwargs(self, cont, icp_name, p_min, p_max, is_po=False, parent=None, *, bothside):
         """Convert Continuation schema fields to AUTO-07p keyword arguments.
 
-        Parameters
-        ----------
-        icp_name : str
-            The PyRates-renamed parameter name. PyCoBi's ``_map_auto_kwargs`` resolves this to the correct numeric PAR index internally.
+        Each setting *cont* leaves unset is *parent*'s: the steps and tolerances of `AUTO_STEP_CONSTANTS`, and the Newton settings of `ContinuationAdapter.auto_newton_constants`.
+
+        Args:
+            cont: The continuation whose settings are converted.
+            icp_name: The PyRates-renamed parameter name. PyCoBi's ``_map_auto_kwargs`` resolves this to the correct numeric PAR index internally.
+            p_min: Lower bound of the continued parameter.
+            p_max: Upper bound of the continued parameter.
+            is_po: Whether the run continues periodic orbits, which leaves the equilibrium constants out.
+            parent: The continuation *cont* is a branch's nested continuation of, whose settings it takes where it leaves them unset (`ContinuationAdapter.setting`), or ``None``.
+            bothside: Whether to continue in both directions (`ContinuationAdapter.bothside`).
         """
         kw = {}
         kw["ICP"] = icp_name
         kw["RL0"] = p_min
         kw["RL1"] = p_max
-        kw["bidirectional"] = bool(getattr(cont, "bothside", False))
+        kw["bidirectional"] = bool(bothside)
 
         if not is_po:
             kw["IPS"] = 1  # Equilibrium continuation
@@ -518,40 +544,12 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             kw["ISP"] = 2  # Full automatic bifurcation detection
             kw["ISW"] = 1  # Normal continuation
 
-        # Step size — AUTO-07p default DS=1e-4 is often too small
-        ds = getattr(cont, "ds", None)
-        kw["DS"] = float(ds) if ds is not None else 1e-2
+        for key, (slot, cast, default) in self.AUTO_STEP_CONSTANTS.items():
+            value = self.setting(slot, cont, parent)
+            kw[key] = cast(default if value is None else value)
 
-        ds_min = getattr(cont, "ds_min", None)
-        kw["DSMIN"] = float(ds_min) if ds_min is not None else 1e-8
-
-        ds_max = getattr(cont, "ds_max", None)
-        if ds_max is not None:
-            kw["DSMAX"] = float(ds_max)
-        else:
-            kw["DSMAX"] = 0.1
-
-        # Max steps
-        max_steps = getattr(cont, "max_steps", None)
-        kw["NMX"] = int(max_steps) if max_steps is not None else 2000
-
-        # Tolerances — provide sane defaults; AUTO built-in defaults can be too strict and cause MX (Newton failure) on first step
-        tol = getattr(cont, "tol_stability", None)
-        kw["EPSS"] = float(tol) if tol is not None else 1e-6
-
-        newton_tol = getattr(cont, "newton_tol", None)
-        if newton_tol is not None:
-            kw["EPSL"] = float(newton_tol)
-            kw["EPSU"] = float(newton_tol)
-        else:
-            kw["EPSL"] = 1e-7
-            kw["EPSU"] = 1e-7
-
-        # AUTO-07p's default Newton constants; PyRates's time-integration values (ITMX=2, NWTN=2) lose folds.
-        kw.update(ITNW=5, ITMX=9, NWTN=3)
-        newton_max = getattr(cont, "newton_max_iterations", None)
-        if newton_max is not None:
-            kw["ITMX"] = kw["ITNW"] = int(newton_max)
+        # AUTO-07p's own Newton constants where undeclared; PyRates's time-integration values (ITMX=2, NWTN=2) lose folds.
+        kw.update(self.auto_newton_constants(cont, parent), NWTN=3)
 
         # Additional standard settings
         kw.setdefault("NTST", 400)
@@ -559,6 +557,8 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         kw.setdefault("IAD", 3)
         kw.setdefault("IADS", 1)
         kw.setdefault("NPR", 10)
+        # EPSS is how precisely AUTO locates a special point; ``tol_stability`` bounds an eigenvalue's real part instead.
+        kw.setdefault("EPSS", 1e-6)
 
         return kw
 

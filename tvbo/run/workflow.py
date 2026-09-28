@@ -6,11 +6,12 @@ Given a Study + Experiment + workflow spec + (resolved) backend, produce a :clas
 * which axes the workflow engine must fan out as wildcards / array tasks,
 * the resulting cell count, chunking, and per-cell command line.
 
-The planner is intentionally backend-aware. It consults :mod:`tvbo.cli._backends` (mirrored from ``ontology/tvb-o-axioms.ttl``) so the same ``study.yaml`` produces a *different* DAG when re-rendered against a different backend.
+The planner is backend-aware. It consults the capability table in :mod:`tvbo.run.backends`, so the same ``study.yaml`` produces a *different* DAG when re-rendered against a different backend. `tvbo workflow` emits the plan as a Slurm, Snakemake or Nextflow kit, and `tvbo run --shard` / `--limit` read its sweep axes to slice a run in process.
 """
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import shlex
@@ -20,7 +21,9 @@ from typing import Any
 
 import numpy as np
 
-from ._backends import BackendSpec, axis_kind_of, effective_backend, resolve_backend
+from tvbo.run.backends import BackendSpec, axis_kind_of, effective_backend, resolve_backend
+
+logger = logging.getLogger(__name__)
 
 # Canonical published tvbo image. CI (``.github/workflows/docker.yml``) pushes this on every ``main``/``dev`` commit, tagged ``:<branch>``, ``:<version>``, ``:<sha>`` and ``:latest`` (default branch), so a registry reference tracks the source rather than a local file that goes stale.
 DEFAULT_CONTAINER_IMAGE = "ghcr.io/virtual-twin/tvbo"
@@ -36,11 +39,15 @@ def _default_container_tag() -> str:
     return os.environ.get("TVBO_CONTAINER_TAG") or __version__
 
 
+def _tvbo_images() -> set[str]:
+    """The repositories that hold tvbo's own image: `DEFAULT_CONTAINER_IMAGE`, and the one ``TVBO_CONTAINER_IMAGE`` names when it is set."""
+    return {DEFAULT_CONTAINER_IMAGE, os.environ.get("TVBO_CONTAINER_IMAGE") or DEFAULT_CONTAINER_IMAGE}
+
+
 def default_container_ref() -> str:
     """The tvbo container reference used when a recipe asks for container-based execution without pinning a concrete image.
 
-    The tag matches the running CLI's version (see :func:`_default_container_tag`) so a kit runs against the image built from the same source it was emitted with.
-    Every part is overridable from the environment: ``TVBO_CONTAINER`` supplies a full reference verbatim, otherwise ``TVBO_CONTAINER_IMAGE`` sets the repository.
+    The tag matches the running CLI's version (see :func:`_default_container_tag`) so a kit runs against the image built from the same source it was emitted with. Every part is overridable from the environment: ``TVBO_CONTAINER`` supplies a full reference verbatim, otherwise ``TVBO_CONTAINER_IMAGE`` sets the repository.
     """
     full = os.environ.get("TVBO_CONTAINER")
     if full:
@@ -68,13 +75,14 @@ def _is_bare_registry_reference(val: str) -> bool:
 def resolve_container_ref(raw: Any) -> str | None:
     """Resolve a recipe's declared ``container`` into a reference ``singularity exec`` / ``apptainer exec`` can pull.
 
-    A local ``.sif``/``.simg`` path, or a reference that names its transport and already carries a ``:tag`` or ``@digest``, passes through unchanged: the author pinned it. A registry reference written without a transport (``ghcr.io/org/tvbo:0.7.0``, the spelling Docker takes) gains ``docker://``, since Singularity reads a bare name as a local file path. Anything that leaves the version open is filled in with :func:`default_container_ref` so an unpinned reference pulls the version-matched image rather than failing to resolve:
+    A local ``.sif``/``.simg`` path, or a reference that names its transport, passes through unchanged. A registry reference written without a transport (``ghcr.io/org/tvbo:0.7.0``, ``ubuntu``, the spellings Docker takes) gains ``docker://``, since Singularity reads a bare name as a local file path. Only tvbo's own image has its version filled in, so an unpinned request for it pulls the image built from the running CLI's source (:func:`default_container_ref`):
 
     - the symbolic requests ``tvbo`` / ``default``;
-    - a registry reference with no tag (``docker://…/tvbo`` or ``ghcr.io/…/tvbo``).
+    - tvbo's repository written without a tag or digest (``ghcr.io/virtual-twin/tvbo``, or the repository ``TVBO_CONTAINER_IMAGE`` names), with or without ``docker://``.
 
-    No container declared ⇒ ``None``: tasks run in the surrounding environment (bare, or the requirements venv ``setup.sh`` provisions — see :attr:`WorkflowPlan.needs_env_layer`).
-    ``requirements`` are provisioned by whichever substrate the ``container`` field selects; they do NOT force a container of their own.
+    Any other reference without a tag (``ubuntu``, ``docker://rocker/r-ver``) stays untagged, so the registry's default tag applies as it would for ``docker pull``: tvbo's version is not a tag a third-party image carries.
+
+    No container declared ⇒ ``None``: tasks run in the surrounding environment (bare, or the requirements venv ``setup.sh`` provisions — see :attr:`WorkflowPlan.needs_env_layer`). ``requirements`` are provisioned by whichever substrate the ``container`` field selects; they do NOT force a container of their own.
     """
     val = str(raw or "").strip()
     if not val:
@@ -83,11 +91,8 @@ def resolve_container_ref(raw: Any) -> str | None:
         return default_container_ref()
     if _is_bare_registry_reference(val):
         val = f"docker://{val}"
-    if val.startswith("docker://"):
-        # A tag or digest lives in the final path segment; its absence means the reference names an image stream without pinning a version.
-        last = val[len("docker://") :].rsplit("/", 1)[-1]
-        if ":" not in last and "@" not in last:
-            return f"{val}:{_default_container_tag()}"
+    if val.startswith("docker://") and val.removeprefix("docker://") in _tvbo_images():
+        return f"{val}:{_default_container_tag()}"
     return val
 
 
@@ -108,6 +113,7 @@ class SweepAxis:
 
     @property
     def n(self) -> int:
+        """Number of values the axis sweeps; 0 for a runtime-sized axis."""
         return len(self.values)
 
 
@@ -135,8 +141,7 @@ class WorkflowPlan:
         default_factory=list
     )  # canonical per-subject result filenames (build_result_path), one per cohort_subjects entry
 
-    chunk: int = 1  # workflow-fanned: cells per array task;
-    # fully-vectorized sweep: number of array shards
+    chunk: int = 1  # cells per array task when axes are fanned; the number of array shards when the sweep is fully vectorised
     engine_block: dict[str, Any] = field(default_factory=dict)
     overrides: list[dict[str, Any]] = field(default_factory=list)
     requirements: list[dict[str, Any]] = field(default_factory=list)  # normalized pip/conda deps
@@ -166,6 +171,7 @@ class WorkflowPlan:
 
     @property
     def n_workflow_cells(self) -> int:
+        """Cells the workflow engine fans out: the product of the workflow axes' sizes."""
         n = 1
         for ax in self.workflow_axes:
             n *= ax.n
@@ -173,6 +179,7 @@ class WorkflowPlan:
 
     @property
     def n_vectorize_cells(self) -> int:
+        """Cells the backend runs inside one invocation: the product of the statically sized vectorised axes."""
         n = 1
         for ax in self.vectorize_axes:
             # Runtime-sized (branch-restart) axes have an unknown cell count at plan time; they don't contribute a static factor to the vectorised total.
@@ -183,6 +190,7 @@ class WorkflowPlan:
 
     @property
     def n_array_tasks(self) -> int:
+        """Array tasks the kit submits: one per ``chunk`` fanned cells, else ``chunk`` shards of the vectorised sweep."""
         if self.workflow_axes:
             # Fanned axes → one array task per ``chunk`` workflow cells.
             return max(1, (self.n_workflow_cells + self.chunk - 1) // self.chunk)
@@ -238,6 +246,7 @@ class WorkflowPlan:
 
     @property
     def wildcards(self) -> list[str]:
+        """Workflow-axis names, in the order the engine's wildcards take them."""
         return [ax.name for ax in self.workflow_axes]
 
     def cell_iter(self) -> Iterable[dict[str, float]]:
@@ -274,6 +283,14 @@ def _axis_values(ax) -> tuple[float, ...]:
     return tuple(float(v) for v in np.linspace(lo, hi, n))
 
 
+def experiment_key(exp: Any) -> str:
+    """The canonical short key for an experiment.
+
+    An explicit ``key`` if set, else its ``id`` (the usual identifier, e.g. ``40``), else ``name``. Used for job names, result stems, and kit paths so they read ``…-40`` rather than a generic fallback — one source of truth shared by every emitter. :func:`tvbo.run.study.experiment_ids` is the wider *match* set ``--experiment`` selects by.
+    """
+    return str(getattr(exp, "key", None) or getattr(exp, "id", None) or getattr(exp, "name", None) or "experiment")
+
+
 def _short_name(parameter: str) -> str:
     """Pick a wildcard-friendly short name from a dotted parameter path."""
     return parameter.rsplit(".", 1)[-1] or parameter.replace(".", "_")
@@ -282,7 +299,7 @@ def _short_name(parameter: str) -> str:
 def extract_axes(experiment) -> list[SweepAxis]:
     """Collect every ExplorationAxis declared on *experiment*.
 
-    The axis kind is inferred from the parameter path (see :func:`tvbo.cli._backends.axis_kind_of`); placement defaults to ``"auto"`` and is resolved by :func:`plan`.
+    The axis kind is inferred from the parameter path (see :func:`tvbo.run.backends.axis_kind_of`); placement defaults to ``"auto"`` and is resolved by :func:`plan`.
     """
     from tvbo.utils import as_list
 
@@ -432,7 +449,7 @@ def _as_lines(raw) -> list[str]:
     return [str(raw)]
 
 
-# : Slurm's ``--mem`` suffixes, as multiples of a mebibyte. Slurm sizes are : binary (``--mem=8G`` reserves 8 GiB = 8192 MiB), and Snakemake's ``mem_mb`` : is handed back to it as a bare number in the same unit — so a decimal : conversion would reserve ~2.4% less than the recipe asked for and OOM-kill a : task sized to its own declared limit.
+#: Slurm's ``--mem`` suffixes as multiples of a mebibyte: Slurm sizes are binary (``--mem=8G`` reserves 8 GiB = 8192 MiB) and Snakemake's ``mem_mb`` is handed back to it as a bare number in the same unit, so a decimal conversion would reserve ~2.4% less than the recipe asked for and OOM-kill a task sized to its own declared limit.
 _MEM_UNIT_MIB = {"K": 1 / 1024, "M": 1, "G": 1024, "T": 1024**2, "P": 1024**3}
 
 
@@ -564,7 +581,7 @@ def plan(
 ) -> WorkflowPlan:
     """Compute a :class:`WorkflowPlan` from an Experiment + spec.
 
-    *workflow_spec* mirrors the Study-level ``workflow:`` block from ``study.yaml`` (§4.10.1). Missing keys use sensible defaults, and an unset *backend* is the experiment's own (see :func:`tvbo.cli._backends.effective_backend`).
+    *workflow_spec* mirrors the Study-level ``workflow:`` block from ``study.yaml`` (§4.10.1). Missing keys use sensible defaults, and an unset *backend* is the experiment's own (see :func:`tvbo.run.backends.effective_backend`).
     """
     from tvbo.utils import as_list
 
@@ -666,12 +683,10 @@ def plan(
     _req_raw = spec.get("requirements") or (getattr(_exp_env, "requirements", None) if _exp_env is not None else None) or []
     _reqs = [r for r in (_norm_requirement(x) for x in as_list(_req_raw)) if r.get("package") or r.get("source_url")]
 
-    from ._common import experiment_key as _experiment_key  # canonical (id-first) key
-
-    experiment_key = _experiment_key(experiment)
+    exp_key = experiment_key(experiment)
     # Results land in the kit's own ``derivatives/tvbo/`` by default — the same role the study's layout gives them, so a kit that travels comes back holding a derivative dataset rather than a bare ``results/``. An explicit out_dir (relative or absolute) overrides it; the {study}/{experiment} placeholders still resolve for custom templates.
     out_dir = str(spec.get("out_dir") or "derivatives/tvbo")
-    out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", experiment_key)
+    out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", exp_key)
 
     # A ``from_experiment`` initial state makes this experiment depend on another experiment's completed result (its operating point). Recorded as an ordering edge so DAG engines run the source first (Snakemake input; SLURM afterok).
     depends_on: list[str] = []
@@ -745,14 +760,12 @@ def plan(
     _container = resolve_container_ref(spec.get("container"))
     _run_venv = str(engine_block.get("venv") or "").strip()
     if _container and _run_venv:
-        from ._common import info as _info
-
-        _info(f"slurm.venv set ({_run_venv}) → running in the venv; ignoring the declared container ({_container})")
+        logger.info(f"slurm.venv set ({_run_venv}) → running in the venv; ignoring the declared container ({_container})")
         _container = None
 
     return WorkflowPlan(
         study_key=study_key,
-        experiment_key=experiment_key,
+        experiment_key=exp_key,
         backend=bk,
         engine=engine,
         out_dir=out_dir,

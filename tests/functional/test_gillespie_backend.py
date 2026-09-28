@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+import xarray as xr
 
 from tvbo.classes.experiment import SimulationExperiment
 
@@ -119,7 +120,7 @@ def test_requires_system_size(tmp_path):
 
 
 def test_the_settle_is_the_head_of_one_run(tmp_path):
-    """`transient_time` is simulated ahead of `duration` in the same realisation and cut from its head: on the measurement clock `.data` opens on the state at t = 0 and the settle stays on `.transient` at negative times, sample for sample the run a settle-free recipe of the same total length records."""
+    """`transient_time` is simulated ahead of `duration` in the same realisation and cut from its head: on the measurement clock the settle stays on `.transient` and ends at t = 0, `.data` opens one step later with `duration / step_size` samples, and the whole is sample for sample the run a settle-free recipe of the same total length records."""
     settled = _experiment(tmp_path)
     settled.integration.duration, settled.integration.transient_time = 20.0, 5.0
     whole = _experiment(tmp_path)
@@ -128,6 +129,57 @@ def test_the_settle_is_the_head_of_one_run(tmp_path):
     sim = settled.run(format="gillespie").integration
     reference = whole.run(format="gillespie").integration.data
 
-    assert sim.data.time.values[0] == 0.0 and sim.data.sizes["time"] == 401
-    assert sim.transient.data.sizes["time"] == 100 and sim.transient.data.time.values[0] == pytest.approx(-5.0)
+    assert sim.data.sizes["time"] == 400 and sim.data.time.values[0] == pytest.approx(0.05)
+    settle = sim.transient.data.time.values
+    assert settle.size == 100 and settle[0] == pytest.approx(-4.95) and settle[-1] == 0.0
     np.testing.assert_array_equal(sim.full.values, reference.values)
+
+
+DEATH_YAML = """
+label: "Single-unit pure death beside a clock (gillespie sampling test)"
+dynamics:
+  name: Death
+  parameters:
+    tau: {value: 1.0}
+  state_variables:
+    X: {equation: {lhs: "Derivative(X, t)", rhs: "-X/tau"}, initial_value: 1.0}
+    y: {equation: {lhs: "Derivative(y, t)", rhs: "1"}, initial_value: 0.0}
+  output: [X, y]
+integration:
+  method: Euler
+  duration: 3.0
+  step_size: 0.05
+  unit: s
+execution:
+  backend: gillespie
+  system_size: 1.0
+  random_seed: 0
+"""
+
+
+@pytest.fixture
+def death(tmp_path):
+    """One unit that dies at rate ``1/tau`` with no births, so the process sits at 1 until an exponential time and at 0 after it; ``y`` is a clock."""
+    path = tmp_path / "death.yaml"
+    path.write_text(DEATH_YAML)
+    return SimulationExperiment.from_file(str(path))
+
+
+def test_a_sample_before_the_event_sees_the_state_before_it(death):
+    """A sample reads the process at its own time, so across realisations the share still alive at ``t`` is the exponential survival ``exp(-t/tau)``, and a sample taken after the jump it precedes would make every realisation read 0 from the first sample."""
+    from tvbo.adapters.gillespie import GillespieAdapter
+
+    alive = []
+    for seed in range(400):
+        death.execution.random_seed = seed
+        alive.append(GillespieAdapter(death).run().integration.data.sel(variable="X"))
+    alive = xr.concat(alive, dim="seed").mean("seed")
+
+    np.testing.assert_allclose(alive.values, np.exp(-alive["time"].values), atol=0.1)
+
+
+def test_a_slow_variable_is_sampled_at_the_sample_time(death):
+    """``y' = 1`` from 0 is the clock itself, whatever the events: every sample reads its own time, not the time of the next event."""
+    y = death.run(format="gillespie").integration.data.sel(variable="y")
+
+    np.testing.assert_allclose(y.values, y["time"].values, rtol=0, atol=1e-12)

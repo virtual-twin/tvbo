@@ -122,12 +122,22 @@ class _Recorder(ContinuationAdapter):
         return model
 
 
+def _dynamics(name):
+    """A dynamics stand-in declaring the one parameter ``x`` a `_continuation` frees."""
+    return SimpleNamespace(name=name, parameters={"x": SimpleNamespace(domain=SimpleNamespace(lo=0.0, hi=1.0))})
+
+
+def _continuation(dynamics=None):
+    """A continuation stand-in freeing ``x`` on *dynamics*."""
+    return SimpleNamespace(dynamics=dynamics, free_parameters=[SimpleNamespace(name="x", domain=None)])
+
+
 def test_render_code_renders_the_dynamics_run_continues():
-    experiment_dynamics, named = SimpleNamespace(name="A"), SimpleNamespace(name="B")
+    experiment_dynamics, named = _dynamics("A"), _dynamics("B")
     experiment = SimpleNamespace(
         dynamics=experiment_dynamics,
         network=SimpleNamespace(dynamics={"B": named}),
-        continuations={"c": SimpleNamespace(dynamics="B")},
+        continuations={"c": _continuation("B")},
     )
     adapter = _Recorder(experiment)
     assert adapter.render_code() is named
@@ -135,10 +145,8 @@ def test_render_code_renders_the_dynamics_run_continues():
 
 
 def test_an_explicit_model_still_wins():
-    experiment = SimpleNamespace(
-        dynamics=SimpleNamespace(name="A"), network=None, continuations={"c": SimpleNamespace(dynamics=None)}
-    )
-    explicit = SimpleNamespace(name="X")
+    experiment = SimpleNamespace(dynamics=_dynamics("A"), network=None, continuations={"c": _continuation()})
+    explicit = _dynamics("X")
     assert _Recorder(experiment).render_code(model=explicit) is explicit
 
 
@@ -299,7 +307,7 @@ def test_auto_continues_both_spellings_in_the_primary_and_the_second(nested):
 
     experiment = _codim2_experiment(nested)
     cont = experiment.continuations["eq_in_I"]
-    assert numcont._po_branch(cont)[0] is cont.branches["po_from_hopf"]
+    assert numcont._po_branches(cont) == {"po_from_hopf": cont.branches["po_from_hopf"]}
 
     started = []
     auto = SimpleNamespace(run=lambda **kw: started.append(kw) or ["R"], sv=lambda *a: None, merge=lambda r: r)
@@ -307,6 +315,8 @@ def test_auto_continues_both_spellings_in_the_primary_and_the_second(nested):
     kwargs_eq = {
         "EPSL": 1e-7,
         "EPSU": 1e-7,
+        "ITNW": 5,
+        "ITMX": 9,
         "EPSS": 1e-5,
         "RL0": -10.0,
         "RL1": 20.0,
@@ -315,7 +325,7 @@ def test_auto_continues_both_spellings_in_the_primary_and_the_second(nested):
         "IADS": 1,
     }
     out = numcont.NumContAdapter(experiment)._run_codim2_branches(
-        auto=auto, R_eq=bundle, cont=cont, fp_name="I", kwargs_eq=kwargs_eq
+        auto=auto, R_eq=bundle, cont=cont, fp_name="I", kwargs_eq=kwargs_eq, model=experiment.dynamics
     )
     # AUTO bounds the principal parameter by RL0/RL1 and the second by UZSTOP; the branch's `bothside` runs both directions.
     assert [(kw["data"], kw["ICP"], kw["RL0"], kw["RL1"], kw["UZSTOP"], kw["DS"]) for kw in started] == [
@@ -331,7 +341,7 @@ def test_auto_leaves_a_branch_freeing_only_the_primary_to_the_periodic_orbits():
     cont = _codim2_experiment(["I"]).continuations["eq_in_I"]
     auto = SimpleNamespace(run=lambda **kw: pytest.fail("restarted a one-parameter branch as codim-2"))
     numcont.NumContAdapter(SimpleNamespace())._run_codim2_branches(
-        auto=auto, R_eq=_Bundle(), cont=cont, fp_name="I", kwargs_eq={}
+        auto=auto, R_eq=_Bundle(), cont=cont, fp_name="I", kwargs_eq={}, model=None
     )
 
 
@@ -351,7 +361,18 @@ def test_pyrates_continues_both_spellings_in_the_primary_and_the_second(nested):
     adapter._find_special_points = lambda ode, name, kind: [f"{kind}1"]
     ode = SimpleNamespace(run=lambda **kw: started.append(kw) or (None, None))
     names = pyrates_names(experiment.dynamics, fortran=True)
-    adapter._run_codim2_branch(ode, "param", branch, cont, names["I"], -10.0, 20.0, names=names)
+    adapter._run_codim2_branch(
+        ode,
+        "param",
+        branch,
+        cont,
+        names["I"],
+        -10.0,
+        20.0,
+        names=names,
+        model=experiment.dynamics,
+        param_idx={names["b"]: 3},
+    )
     assert [(kw["starting_point"], kw["ICP"], kw["RL0"], kw["RL1"], kw["UZSTOP"]) for kw in started] == [
         ("HB1", [names["I"], names["b"]], -10.0, 20.0, {names["b"]: [-20.0, 0.0]})
     ]

@@ -26,28 +26,11 @@ from tvbo.adapters.smallscale.lowering import (
     group_nodes_by_dynamics,
     nml_type,
     safe_id,
+    shift_onset,
 )
 from tvbo.codegen.code import render_expression
 from tvbo.utils import edge_param, noise_sigma, normalize_params
-from tvbo.utils.units import time_unit_factor, unit_multiplier
-
-
-def _shift_onto_integration_clock(quantity, transient_ms):
-    """A declared time, moved from the measurement clock onto the one Brian2 counts on.
-
-    Brian2's ``t`` opens at the start of integration, which is the start of the settle; a recipe declares its onsets against the measured window, which opens ``transient_ms`` later. The shift is applied in the quantity's OWN unit, so a delay declared in seconds and a settle counted in milliseconds compose exactly rather than through whichever of the two the caller happened to write.
-    """
-    value, unit = quantity
-    if not transient_ms:
-        return quantity
-    multiplier = unit_multiplier(unit)
-    if multiplier is None:
-        raise ValueError(
-            f"a declared onset in {unit!r} cannot be placed on the integration clock: the unit is "
-            "not curated, so the settle prepended to the measured window cannot be converted into it."
-        )
-    return (float(value) + transient_ms / 1000.0 / float(multiplier), unit)
-
+from tvbo.utils.units import time_unit_factor
 
 # ── Brian2 role vocabulary ────────────────────────────────────────────
 _PULSE_TYPES = frozenset({"pulseGenerator", "pulseGeneratorDL"})
@@ -777,7 +760,7 @@ class Brian2Adapter(BaseAdapter):
         delay = pp.get("delay", (0.0, "ms"))
         dur = pp.get("duration", (0.0, "ms"))
         pop["namespace"][f"amp_stim_{key}"] = amp
-        pop["namespace"][f"delay_stim_{key}"] = _shift_onto_integration_clock(delay, transient_ms)
+        pop["namespace"][f"delay_stim_{key}"] = shift_onset(delay, (transient_ms, "ms"))
         pop["namespace"][f"dur_stim_{key}"] = dur
         # Keyed by edge: independent draws, possibly different fractions.
         gate = ""

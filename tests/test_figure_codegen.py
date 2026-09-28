@@ -564,6 +564,16 @@ def test_render_code_annotation_text_kwargs():
     assert "'va': 'top'" in code and "'size': 6.5" in code
 
 
+def test_an_annotation_colour_names_a_palette_hue():
+    """An annotation's colour resolves against the palette like every other colour option, so a key can be set in the hue of what it names."""
+    from tvbo.plot import palette
+
+    fig = _cartesian_figure()
+    fig.panels["a"].annotations = [P.Annotation(text="speech network", x=0.5, y=0.0, color="palette.0")]
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert f"'color': '{palette.palette()[0]}'" in code
+
+
 def test_render_code_cell_axes_walks_insets():
     """A composite panel's inset axes must be reachable from ``_cell_axes``.
 
@@ -1599,12 +1609,31 @@ def test_the_legend_shorthands_and_the_object_are_one_slot():
     for declared, expected in (
         (P.Legend(loc="upper right"), "upper right"),
         (P.Legend(show=True), True),
-        (P.Legend(loc="lower left", columns=2, title="Route", frame=True), "lower left"),
+        (P.Legend(loc="lower left", columns=2, title="Route", frame=True, handle_length=0.6), "lower left"),
     ):
         figure.panels["a"].legend = declared
         axopts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
         assert axopts["legend"] == expected
     assert axopts["legend_columns"] == 2 and axopts["legend_title"] == "Route" and axopts["legend_frame"] is True
+    assert axopts["legend_handle_length"] == 0.6
+
+
+def test_a_declared_legend_handle_length_reaches_the_drawn_key():
+    """A panel's `handle_length` validated and was then dropped: the emitted axis code never passed it, so a scatter key sat a default handle's width from its label. It now reaches the drawn legend, and an unstated one leaves the theme's."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ns: dict = {}
+    exec(compile(bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png"), "<figure>", "exec"), ns)
+    fig, ax = plt.subplots()
+    ax.scatter([0.0], [0.0], label="FIC")
+    ns["_apply_axopts"](ax, {"legend": "center right", "legend_handle_length": 0.6})
+    assert ax.get_legend().handlelength == 0.6
+    ns["_apply_axopts"](ax, {"legend": "center right"})
+    assert ax.get_legend().handlelength == matplotlib.rcParams["legend.handlelength"]
+    plt.close(fig)
 
 
 def test_a_legend_switched_off_draws_none():

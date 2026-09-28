@@ -227,6 +227,11 @@ def _iri_local(iri: str) -> str:
     return iri.split(":", 1)[-1] if ":" in iri else iri
 
 
+def _step_grid(total: float, dt: float) -> np.ndarray:
+    """The times ``0, dt, …, total`` a Python run of *total* time units records, both ends included, so the window after the settle holds the ``duration / dt`` samples every other backend records."""
+    return dt * np.arange(int(round(total / dt)) + 1)
+
+
 def _backfill_name_from_iri(d):
     """If d is a dict with iri but no name, inject name from iri's local part."""
     if isinstance(d, dict) and d.get("iri") and not d.get("name"):
@@ -881,7 +886,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         return Noise()
 
     def __str__(self):
-        return self.label if self.label else f"SimulationExperiment{self.id}"
+        """The label, else ``SimulationExperiment<id>``, as a plain `str`: the label is LinkML's `extended_str`, which pytest-xdist cannot serialize when a failure report shows this experiment as an argument."""
+        return str(self.label) if self.label else f"SimulationExperiment{self.id}"
 
     def __repr__(self):
         return self.__str__()
@@ -1030,7 +1036,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def collect_state(self, initial_conditions: TimeSeries | None = None):
         """Assemble a `SimulationState` pytree for the JAX-style backends.
 
-        Gathers the parameter collection (expanding coupling parameters with shape annotations and wrapping array-valued parameters as ndarrays so the JAX backend receives real arrays), the network, integration step/step-count, and the noise wrapper into a single state object.
+        Gathers the parameter collection (expanding coupling parameters with shape annotations, wrapping array-valued parameters as ndarrays so the JAX backend receives real arrays, and giving a parameter the declared nodes set a per-node column), the network with the weight and length matrices its kernel reads resident, integration step/step-count, and the noise wrapper into a single state object.
 
         Args:
             initial_conditions: History to seed the state with. When omitted, initial conditions are collected from the experiment via `collect_initial_conditions`.
@@ -1049,10 +1055,15 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         self._expand_coupling_parameter_shapes(parameters)
         # Wrap array-valued (per-mode) parameters as ndarrays so the JAX backend receives jnp arrays. Bare Python lists would survive convert_dtype's tree_map (which descends into the list and only converts the scalar elements, leaving a list[Array]) and then break `scalar * param` arithmetic in the generated dfun. Mirrors render_jax_default (tvboptim).
         self._arrayify_parameter_values(parameters)
+        for name, values in self._node_parameter_arrays().items():
+            parameters.dynamics[name] = values[:, None]  # a column over (node, mode), the state rows' layout
 
+        network = self.network
+        if network is not None:
+            network = network.materialize(*(name for name in ("weight", "length") if network.carries(name)))
         state = SimulationState(
             initial_conditions=(initial_conditions if initial_conditions is not None else self.collect_initial_conditions()),
-            network=self.network,
+            network=network,
             dt=self.integration.step_size,
             nt=int(np.ceil(self.integration.duration / self.integration.step_size)),
             noise=self.run_noise,
@@ -1066,6 +1077,12 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         except Exception:
             pass
         return state
+
+    def _node_parameter_arrays(self) -> dict[str, np.ndarray]:
+        """`tvbo.adapters.base.node_parameter_arrays` for this experiment's network and dynamics."""
+        from tvbo.adapters.base import node_parameter_arrays
+
+        return node_parameter_arrays(self.network, self.dynamics)
 
     def _expand_coupling_parameter_shapes(self, parameters: Bunch) -> None:
         """Expand coupling parameters that have shape annotations like (N, N) or (N,)."""
@@ -1147,6 +1164,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             code = rendered_code if rendered_code is not None else self.render_code(format=format)
             namespace = templater.exec_globals
             exec(code, namespace)
+            kwargs.setdefault("model_kwargs", self._node_parameter_arrays())
             sim = namespace["define_simulation"](connectivity=self.network.execute("tvb"), **kwargs)
             sim.initial_conditions = self.collect_initial_conditions().data
             sim.configure()
@@ -1318,8 +1336,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
         A parameter (dynamics **or** coupling) obtains its value from a sibling run in one of two spellings, both resolved through the one shared ``DataRef`` path (:mod:`tvbo.data.dataref`):
 
-        * ``used: {experiment, output, sel, reconcile}`` — the explicit cross-container
-          reference: any experiment's recorded observation, a tuned free parameter it persisted as ``estimate__<name>`` (warm-start / prior location, e.g. ``wLRE``), optionally one swept point (``sel``) and label ``reconcile``. Self-contained, so it resolves with or without ``initial_state.from_experiment``.
+        * ``used: {experiment, output, sel, reconcile}`` — the explicit cross-container reference: any experiment's recorded observation, a tuned free parameter it persisted as ``estimate__<name>`` (warm-start / prior location, e.g. ``wLRE``), optionally one swept point (``sel``) and label ``reconcile``. Self-contained, so it resolves with or without ``initial_state.from_experiment``.
         * ``measure: <name>`` in a ``method=from_experiment`` experiment — the no-``sel`` shorthand whose WHERE is the enclosing ``source_experiment`` and whose value is the settled operating point (``source_point``).
 
         Per-node **vectors and per-edge matrices** are both handled; a source array with node-label coordinates is reconciled to THIS experiment's network **by label** (alias-aware, on every node axis). An unlabelled source array is taken in model order. Returns ``{param_name: ndarray}``, or ``None`` when nothing sources a value.
@@ -1661,8 +1678,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             # Mode defaults to 'all' - run complete workflow
             mode = kwargs.pop("mode", "all")
 
-            # Build node labels from network.nodes (used as xarray 'node' coord)
-            node_labels = [n.label for n in self.network.nodes] if self.network.nodes else None
+            node_labels = self.network.node_labels or None  # the xarray 'node' coord
 
             # One delayed coupling is enough to need the matrix, however many there are.
             any_delayed = any(getattr(coup, "delayed", False) for coup in network_couplings(self.network).values())
@@ -1765,22 +1781,26 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             return ExperimentResult(integration=cuda_result, source=self, name=self.label)
 
         elif format.lower() == "python":
-            duration = kwargs.get("duration", self.integration.duration)
-            from tvbo.adapters.base import declared_node_count
+            from tvbo.adapters.base import BaseAdapter, declared_node_count, on_the_measurement_clock
 
+            dt = self.integration.step_size
+            settle = float(BaseAdapter.declared_integration(self.integration, "transient_time") or 0.0)
+            total = settle + kwargs.get("duration", self.integration.duration)
             net = self.network
             # A single explicit node still declares a network, so the graph runner takes it; the count alone decides for every other form.
             declared = net is not None and (declared_node_count(net) > 1 or bool(getattr(net, "nodes", None)))
             if not declared:
-                ts = self.dynamics.run(format="python", duration=duration, dt=self.integration.step_size)
-                return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
-            # normalize_weights=False: weight transforms are declared in the spec; the runner must not mutate the experiment's network in place.
-            bnm = _Network(net, normalize_weights=False)
-            bnm.add_local_model(self.dynamics)
-            bnm.add_coupling(self.coupling)
-
-            ts = bnm.run(duration=duration, dt=self.integration.step_size)
-            return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
+                ts = self.dynamics.run(format="python", t=_step_grid(total, dt), integration=self.integration)
+            else:
+                # normalize_weights=False: weight transforms are declared in the spec; the runner must not mutate the experiment's network in place.
+                bnm = _Network(net, normalize_weights=False)
+                bnm.add_local_model(self.dynamics)
+                bnm.add_coupling(self.coupling)
+                ts = bnm.run(duration=total, dt=dt, integration=self.integration)
+            recorded = ExperimentResult.from_timeseries(ts, source=self, name=self.label).integration
+            data, n_settle = on_the_measurement_clock(recorded.data, settle, dt)
+            measured = SimulationResult(data=data, n_transient=n_settle, observations=dict(recorded.observations or {}))
+            return ExperimentResult(integration=measured, source=self, name=self.label)
 
         elif format.lower() in ["pde", "pde-fem", "pde-python"]:
             ns = self.execute(format="pde", rendered_code=rendered_code)
@@ -2040,8 +2060,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         from itertools import product
 
         results = {}
+        from tvbo.adapters.base import BaseAdapter
+
         duration = kwargs.get("duration", getattr(self.integration, "duration", 1200))
         dt = kwargs.get("dt", getattr(self.integration, "step_size", 0.1))
+        settle = float(BaseAdapter.declared_integration(self.integration, "transient_time") or 0.0)
 
         for name, exploration in explorations.items():
             axes = as_list(getattr(exploration, "space", None))
@@ -2085,8 +2108,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                     parameter = str(axis.parameter)
                     parameter_name = parameter.split(".")[-1]
                     dyn.parameters[parameter_name].value = float(value)
-                ts = dyn.run(format="python", duration=duration, dt=dt)
-                data.append(ts.data[:, output_indices, 0, 0])
+                ts = dyn.run(format="python", t=_step_grid(settle + duration, dt), integration=self.integration)
+                measured = np.asarray(ts.time) > settle + dt / 2  # the measured window, as every backend records it
+                data.append(ts.data[measured][:, output_indices, 0, 0])
 
             results[str(name)] = ExplorationResult(
                 name=str(name),
@@ -2815,7 +2839,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def collect_initial_conditions(self):
         """Build the initial-history `TimeSeries` for the simulation.
 
-        Constructs a history buffer of shape `(horizon, n_state_vars, n_nodes, n_modes)` spanning the delay window `[-max_delay, 0]`. A state variable that declares a `distribution` is sampled per node; every other one is seeded from its scalar `initial_value`.
+        Constructs a history buffer of shape `(horizon, n_state_vars, n_nodes, n_modes)` spanning the delay window `[-max_delay, 0]`. A state variable that declares a `distribution` is sampled per node; every other one is seeded from its scalar `initial_value`. A node's own declared state (``nodes: [{state: {theta: {value: 0.8}}}]``) overrides either, through the reader the tvboptim backend uses.
 
         Returns:
             A `TimeSeries` whose time axis is the history window and whose data is the seeded initial state.
@@ -2833,6 +2857,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                 history.append(np.repeat(initial_value(sv), n_nodes).astype(float))
 
         history = np.vstack(history)
+        from tvbo.adapters.base import node_initial_states
+
+        history = node_initial_states(self.network, self.dynamics, history)
         history = np.repeat(history[:, :, None], repeats=n_modes, axis=2)
         # Compute horizon from max delay and dt
         H = self.horizon

@@ -97,7 +97,7 @@ tvbo run experiment:JR_MEG --backend jax \
     --container ghcr.io/the-virtual-brain/tvbo:0.7.0 -o ./out
 ```
 
-`IMAGE` is resolved the way a workflow kit resolves its `container`: `tvbo` (or `default`) names the image matching the running CLI, a registry reference written without a transport (`ghcr.io/…:tag`) is pulled as `docker://ghcr.io/…:tag`, and a local `.sif` path or a reference that names its transport (`docker://`, `oras://`, `library://`) is used as written. If `singularity` is on `PATH` (or `SINGULARITY_BIND` is set), the command re-execs as:
+`IMAGE` is resolved the way a workflow kit resolves its `container`: `tvbo` (or `default`) names the image matching the running CLI, a registry reference written without a transport (`ghcr.io/…:tag`) is pulled as `docker://ghcr.io/…:tag`, and a local `.sif` path or a reference that names its transport (`docker://`, `oras://`, `library://`) is used as written. Only tvbo's own image gets a missing tag filled in: `ghcr.io/virtual-twin/tvbo` with no tag becomes `ghcr.io/virtual-twin/tvbo:<tvbo version>`. Any other reference without a tag (`ubuntu`, `docker://rocker/r-ver`) stays untagged, so the registry's default tag applies, as it would for `docker pull`. If `singularity` is on `PATH` (or `SINGULARITY_BIND` is set), the command re-execs as:
 
 ```bash
 singularity exec --env TVBO_IN_CONTAINER=1 --bind $PWD:$PWD docker://<image> tvbo <original argv>

@@ -30,7 +30,7 @@ from tvbo.codegen import render_expression
 # Extract stimulus events from experiment context
 assert 'experiment' in context.keys(), "experiment required for stimulus template"
 
-from tvbo.templates.tvboptim.utils import active_stimulus_events
+from tvbo.templates.tvboptim.utils import active_stimulus_events, _shape_ndim
 stimulus_events = active_stimulus_events(experiment)
 
 # State index lookup for continuous-event conditions (map a state name to its
@@ -57,6 +57,12 @@ _inv_dt = 1.0 / _dt
 _duration = float(experiment.integration.duration) if experiment.integration.duration else 0.0
 _transient = float(experiment.integration.transient_time) if experiment.integration.transient_time else 0.0
 _n_steps_total = int(round((_transient + _duration) / _dt)) + 2  # +2 for rounding safety
+
+def param_default(pobj, fallback=0.0):
+    """An event parameter's default as code: its value, repeated once per node where its declared shape is per node, so a sweep, a fit or a gradient can write each node's value."""
+    value = fallback if pobj is None or pobj.value is None else float(pobj.value)
+    shape = str(getattr(pobj, 'shape', None) or '')
+    return f"jnp.full(({n_nodes},), {value})" if _shape_ndim(shape) == 1 and 'n_nodes' in shape else f"{value}"
 
 def stim_jaxcode(expr, param_names=None):
     """Render event equation to JAX code via SymPy parsing."""
@@ -185,7 +191,7 @@ def _time_axis_distribution(event):
                 f"`amplitude` (its gain); a parameter the signal depends on belongs in an "
                 f"`equation:` stimulus instead."
             )
-        amplitude = float(ev_params['amplitude'].value) if ('amplitude' in ev_params and ev_params['amplitude'].value is not None) else 1.0
+        amplitude = param_default(ev_params.get('amplitude'), 1.0)
     elif is_sourced:
         sampling_rate = float(getattr(event, 'sampling_rate', None) or 1.0)
         interp_kind = str(getattr(event, 'interpolation', None) or 'linear')
@@ -195,7 +201,7 @@ def _time_axis_distribution(event):
                 f"a sourced stimulus interpolates linearly between recorded samples, and no other kind is implemented for it."
             )
         onset = float(ev_params['onset'].value) if ('onset' in ev_params and ev_params['onset'].value is not None) else 0.0
-        amplitude = float(ev_params['amplitude'].value) if ('amplitude' in ev_params and ev_params['amplitude'].value is not None) else 1.0
+        amplitude = param_default(ev_params.get('amplitude'), 1.0)
         # `channel` maps each node to the recorded column it plays (per node, so it can be swept); `trial` picks the recorded trial and is written by the random-seed axis, not declared.
         unsupported = sorted(k for k in ev_params if k not in ('data', 'onset', 'amplitude', 'channel'))
         if unsupported:
@@ -239,7 +245,7 @@ class ${class_name}(AbstractExternalInput):
     N_OUTPUT_DIMS = 1
     DEFAULT_PARAMS = Bunch(
         % for pname, pobj in wave_params.items():
-        ${pname}=${float(pobj.value) if pobj.value is not None else 0.0},
+        ${pname}=${param_default(pobj)},
         % endfor
     )
     WINDOW_LO = ${_wlo}
@@ -428,7 +434,7 @@ class ${class_name}(AbstractExternalInput):
     N_OUTPUT_DIMS = 1
     DEFAULT_PARAMS = Bunch(
         % for pname, pobj in det_params.items():
-        ${pname}=${float(pobj.value) if pobj.value is not None else 0.0},
+        ${pname}=${param_default(pobj)},
         % endfor
         % if is_subset:
         trial=0.0,

@@ -713,7 +713,7 @@ def get_node_state_overrides(
 ) -> dict[str, list[float]]:
     """Scan network.nodes for per-node initial state overrides.
 
-    When nodes define ``state: {theta: {value: 0.8}}`` in the YAML, build per-node arrays for state variables that differ across nodes.
+    When nodes define ``state: {theta: {value: 0.8}}`` in the YAML, build per-node arrays for state variables that differ across nodes. Entry ``k`` is the ``k``-th declared node's, the connectome matrices' row order (`Network.node_index_map`), whatever ``id`` the node carries.
 
     Args:
         network: Network object with .nodes list
@@ -736,12 +736,12 @@ def get_node_state_overrides(
         default = default_initial_state[i]
         arr = [default] * n_nodes
         has_override = False
-        for node in nodes:
+        for row, node in enumerate(nodes):
             node_state = getattr(node, "state", None)
             if node_state and sv_name in node_state:
                 sv_obj = node_state[sv_name]
                 val = float(sv_obj.value) if hasattr(sv_obj, "value") else float(sv_obj)
-                arr[int(node.id)] = val
+                arr[row] = val
                 has_override = True
         if has_override:
             overrides[sv_name] = arr
@@ -752,7 +752,7 @@ def get_node_state_overrides(
 def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dict[str, float]) -> dict[str, list[float]]:
     """Scan network.nodes for per-node parameter overrides.
 
-    When nodes define parameters that differ from the dynamics defaults, build per-node arrays. Only parameters that differ on at least one node are returned.
+    When nodes define parameters that differ from the dynamics defaults, build per-node arrays. Only parameters that differ on at least one node are returned. Entry ``k`` is the ``k``-th declared node's, the connectome matrices' row order (`Network.node_index_map`), whatever ``id`` the node carries.
 
     Args:
         network: Network object with .nodes list
@@ -770,9 +770,8 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dic
         return {}
 
     # Collect per-node values for all parameters defined on any node
-    node_params = {}  # param_name -> {node_id: value}
-    for node in nodes:
-        node_id = int(node.id)
+    node_params = {}  # param_name -> {row: value}
+    for row, node in enumerate(nodes):
         if not getattr(node, "parameters", None):
             continue
         params = node.parameters
@@ -782,16 +781,15 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dic
             pname = str(p.name)
             val = float(p.value) if p.value is not None else None
             if val is not None:
-                node_params.setdefault(pname, {})[node_id] = val
+                node_params.setdefault(pname, {})[row] = val
 
     # Build per-node arrays using dynamics defaults as base
     overrides = {}
     for pname, node_vals in node_params.items():
         base = dyn_param_defaults.get(pname, 1.0)
         arr = [base] * n_nodes
-        for node_id, val in node_vals.items():
-            if 0 <= node_id < n_nodes:
-                arr[node_id] = val
+        for row, val in node_vals.items():
+            arr[row] = val
         # Only include if at least one node differs from default
         if any(v != base for v in arr):
             overrides[pname] = arr
@@ -2364,16 +2362,13 @@ def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False)
     return ", ".join(kwargs)
 
 
-def _analysis_solver_kwargs(solver_kwargs: str) -> str:
+def _analysis_solver_kwargs(solver_kwargs: str, keep_checkpoints: bool = False) -> str:
     """Drop the differentiation-truncation kwargs from a solver-kwargs string.
 
-    ``grad_horizon`` / ``block_size`` are truncated-BPTT knobs for the optimization forward/backward pass; they are not part of an analysis diagnostic and break a tangent-space (JVP) Lyapunov spectrum — the truncation ``stop_gradient``s the early segment, so the initial-state perturbation never reaches the segment end and the leading exponent collapses to ``log(0) = -inf``. The reference analysis solves build a plain solver for the same reason. Coupling-evaluation config (``recompute_coupling_per_stage``) is kept so the diagnostic characterises the same trajectory as the main sim.
+    ``grad_horizon`` / ``block_size`` are truncated-BPTT knobs for the optimization forward/backward pass; they are not part of an analysis diagnostic and break a tangent-space (JVP) Lyapunov spectrum — the truncation ``stop_gradient``s the early segment, so the initial-state perturbation never reaches the segment end and the leading exponent collapses to ``log(0) = -inf``. The reference analysis solves build a plain solver for the same reason. Coupling-evaluation config (``recompute_coupling_per_stage``) is kept so the diagnostic characterises the same trajectory as the main sim. ``keep_checkpoints`` keeps ``block_size`` for a reverse-mode gradient: on its own it only rematerialises each block's tape on the backward pass, so the gradient is unchanged and its memory stays bounded on a long rollout.
     """
-    kept = [
-        tok
-        for tok in (t.strip() for t in solver_kwargs.split(","))
-        if tok and not tok.startswith(("grad_horizon=", "block_size="))
-    ]
+    dropped = ("grad_horizon=",) if keep_checkpoints else ("grad_horizon=", "block_size=")
+    kept = [tok for tok in (t.strip() for t in solver_kwargs.split(",")) if tok and not tok.startswith(dropped)]
     return ", ".join(kept)
 
 
@@ -2413,6 +2408,9 @@ _ANALYSIS_SETTINGS: dict[str, dict[str, tuple[Any, Any, str | None]]] = {
 }
 """Each analysis type's settings as ``name: (cast, default, short alias)``; ``_REQUIRED`` marks a setting that has no meaningful default and must be declared."""
 
+GRADIENT_TRANSFORMS = {"reverse": "jax.grad", "forward": "jax.jacfwd"}
+"""The JAX transform each gradient analysis ``mode`` differentiates its observation by: reverse mode, one backward pass for every parameter, or forward mode, one pass per parameter entry."""
+
 
 def analysis_settings(analysis: Any, name: str) -> dict[str, Any]:
     """An analysis's declared ``parameters`` resolved to the settings its type reads, for every renderer that emits it.
@@ -2438,9 +2436,9 @@ def analysis_settings(analysis: Any, name: str) -> dict[str, Any]:
     return settings
 
 
-def _analysis_wrt_access(wrt: list[str], coupling_keys: set[str]) -> str | None:
-    """Resolve an analysis ``wrt`` reference to a config path (coupling/dynamics)."""
-    return resolve_config_access(wrt[0], coupling_keys) if wrt else None
+def _analysis_wrt_access(wrt: list[str], coupling_keys: set[str], external_keys: set[str] = frozenset()) -> str | None:
+    """Resolve an analysis ``wrt`` reference to a config path: a coupling's, an external input's, or the dynamics'."""
+    return resolve_config_access(wrt[0], coupling_keys, external_keys) if wrt else None
 
 
 def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
@@ -2543,6 +2541,7 @@ def render_analysis_observations(
     time_si_factor: float = 1.0e-3,
     events: dict[str, Any] | None = None,
     op_constraint: dict[str, Any] | None = None,
+    external_keys: set[str] = frozenset(),
 ) -> str:
     """Render the body of the generated ``compute_analysis_observations()`` function.
 
@@ -2551,8 +2550,10 @@ def render_analysis_observations(
     """
     # The same window the run measures. The settle is its own scan and reaches this network through `update_history`, so an analysis opens at t=0 on a settled network — and a gradient diagnostic differentiates the measured window alone, which is what the fit it diagnoses does.
     window = f"t0=0.0, t1={t1_default}, dt={dt}"
+    gradient_kwargs = _analysis_solver_kwargs(solver_kwargs, keep_checkpoints=True)
     solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
-    lines: list[str] = []
+    # A pipeline observation arrives wrapped with its time axis; what a gradient differentiates is its value, as a scalar.
+    lines: list[str] = ["_observed_value = lambda _v: jnp.squeeze(getattr(_v, 'data', _v))"]
 
     # Linear-response analysis (covariance / psd / fisher): all share ONE deterministic operating point, so the whole block — vector field, Jacobian, operating point (a noise-off settle, or a constraint solve for a Deco-FIC-style tuned parameter), and each observable's linear algebra — is emitted by ONE Mako orchestrator (``lr_analysis_block``): the template owns the structure AND its orchestration (partial choice, ordering, per-observable loop). Python only RESOLVES the spec (``_lr_analysis_spec``) — no Python string-emit of code bodies.
     _LR_TYPES = {"covariance", "psd", "fisher", "stability"}
@@ -2573,7 +2574,7 @@ def render_analysis_observations(
         wrt = [str(w) for w in (getattr(an, "wrt", None) or [])]
         return (
             str(getattr(an, "target", None) or "loss"),
-            _analysis_wrt_access(wrt, coupling_keys),
+            _analysis_wrt_access(wrt, coupling_keys, external_keys),
             p["delta"],
             p["seeds"],
             p["seed_base"],
@@ -2593,7 +2594,7 @@ def render_analysis_observations(
         params = analysis_settings(an, name)
         target = str(getattr(an, "target", None) or "loss")
         wrt = [str(w) for w in (getattr(an, "wrt", None) or [])]
-        access = _analysis_wrt_access(wrt, coupling_keys)
+        access = _analysis_wrt_access(wrt, coupling_keys, external_keys)
         if atype == "lyapunov":
             seg, n, k = params["segment_time"], params["n_steps"], params["n_exponents"]
             lines += [
@@ -2611,13 +2612,17 @@ def render_analysis_observations(
             )
         elif atype == "gradient":
             mode = params["mode"]
+            if mode not in GRADIENT_TRANSFORMS:
+                raise ValueError(
+                    f"gradient analysis {name!r} declares mode {mode!r}; the modes are {', '.join(map(repr, GRADIENT_TRANSFORMS))}."
+                )
             lines += [
                 f"# {name}: full (untruncated) {mode}-mode gradient of '{target}' wrt {wrt[0]}",
-                f"_asolve_{name}, _ = prepare(network, {solver_class}({solver_kwargs}), {window})",
+                f"_asolve_{name}, _ = prepare(network, {solver_class}({gradient_kwargs}), {window})",
                 f"def _grad_of_{name}(_p):",
                 f"    _gs = eqx.tree_at(lambda _s: _s.{access}, state, _p)",
-                f"    return compute_all_observations(_asolve_{name}(_gs), _gs, settle=settle).{target}",
-                f"_, obs.{name} = jax.value_and_grad(_grad_of_{name})(state.{access})",
+                f"    return _observed_value(compute_all_observations(_asolve_{name}(_gs), _gs, settle=settle).{target})",
+                f"obs.{name} = {GRADIENT_TRANSFORMS[mode]}(_grad_of_{name})(state.{access})",
             ]
         elif atype == "finite_difference":
             delta, seeds, seed_base = params["delta"], params["seeds"], params["seed_base"]
@@ -2635,7 +2640,7 @@ def render_analysis_observations(
                     f"_g0_{gid} = state.{access}",
                     f"def _fd_{gid}(_key):",
                     "    _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)",
-                    f"    _loss_at = lambda _g: compute_all_observations(_asolve_{gid}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, settle=settle).{target}",
+                    f"    _loss_at = lambda _g: _observed_value(compute_all_observations(_asolve_{gid}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, settle=settle).{target})",
                     f"    return (_loss_at(_g0_{gid} + _delta_{gid}) - _loss_at(_g0_{gid} - _delta_{gid})) / (2.0 * _delta_{gid})",
                     f"{arr} = jax.lax.map(_fd_{gid}, _keys_{gid})",
                 ]

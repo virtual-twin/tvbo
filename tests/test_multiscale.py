@@ -97,8 +97,7 @@ def test_n_override_shrinks_reservoir(patched_engine):
 def test_the_legacy_size_parameter_is_rejected_not_silently_defaulted(patched_engine):
     """`n` was the size parameter until it was replaced by `n_nodes`.
 
-    Ignoring it would leave the size to fall through to the hardcoded 100-unit default:
-    a spec asking for 500 units would build 100, run to completion, and produce a plausible reservoir with no indication the size was wrong.
+    Ignoring it would leave the size to fall through to the hardcoded 100-unit default: a spec asking for 500 units would build 100, run to completion, and produce a plausible reservoir with no indication the size was wrong.
     """
     spec = _minimal_experiment()
     params = spec["network"]["node_template"]["subnetwork"]["graph_generator"]["parameters"]
@@ -222,3 +221,27 @@ def test_the_unit_noise_amplitude_reads_nsig(patched_engine):
     spec["dynamics"]["state_variables"]["x"]["noise"] = {"parameters": {"nsig": {"value": 0.5}}}
 
     assert multiscale.flatten_reservoir(spec).noise_sigma == pytest.approx(1.0)
+
+
+class TestSubnetworkNodeTemplate:
+    """A subnetwork is a Network, so its own ``node_template`` is a partial Node its units take, at any depth the recipe nests it."""
+
+    _UNIT = {"subnetwork": {"number_of_nodes": 3, "node_template": {"dynamics": "Unit"}}}
+
+    def test_a_templated_subnetwork_applies_its_own_template(self):
+        from tvbo.classes.network import Network
+
+        net = Network(number_of_nodes=2, node_template=self._UNIT)
+
+        assert [[unit.dynamics for unit in node.subnetwork.nodes] for node in net.nodes] == [["Unit"] * 3] * 2
+
+    def test_a_listed_node_builds_its_subnetwork_from_the_record(self):
+        """The datamodel builds a listed node's subnetwork first; rebuilding it from that record keeps its enums and its template."""
+        from tvbo.classes.network import Network
+
+        net = Network(nodes=[{"id": 0, "label": "a", **self._UNIT}])
+
+        (sub,) = [node.subnetwork for node in net.nodes]
+        assert isinstance(sub, Network)
+        assert [unit.dynamics for unit in sub.nodes] == ["Unit"] * 3
+        assert str(sub.graph_representation) == "auto"

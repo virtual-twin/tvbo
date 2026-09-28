@@ -32,7 +32,7 @@ _figure_outputs = context.get('figure_outputs') or []
 
 import shlex
 
-from tvbo.cli._workflow import (mem_mb as _mem_mb, runtime_minutes as _runtime_min,
+from tvbo.run.workflow import (mem_mb as _mem_mb, runtime_minutes as _runtime_min,
                                 cell_out_relpath as _cell_out, fan_expand_kwargs as _expand_kwargs,
                                 cohort_out_relpaths as _cohort_out)
 

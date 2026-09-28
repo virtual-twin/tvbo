@@ -539,6 +539,8 @@ def _apply_axopts(ax, o):
             _leg["ncols"] = int(o["legend_columns"])
         if o.get("legend_title"):
             _leg["title"] = o["legend_title"]
+        if o.get("legend_handle_length") is not None:
+            _leg["handlelength"] = float(o["legend_handle_length"])   # unset leaves legend.handlelength to the theme
         ax.legend(**_leg)
 
 

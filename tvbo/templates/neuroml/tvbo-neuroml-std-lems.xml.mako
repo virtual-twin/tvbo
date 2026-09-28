@@ -28,9 +28,9 @@ All template variables are injected by ``build_std_lems_context()``.
     <population id="${pop_id}" component="${dyn_id}" size="1"/>
   </network>
 
-  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net1">
+  <Simulation id="${sim_id}" length="${length}${time_scale}" step="${dt}${time_scale}" target="net1">
 
-    <Display id="d1" title="${dyn_name}" timeScale="1${time_scale}" xmin="0" xmax="${int(duration)}" ymin="-2.5" ymax="2.5">
+    <Display id="d1" title="${dyn_name}" timeScale="1${time_scale}" xmin="0" xmax="${int(length)}" ymin="-2.5" ymax="2.5">
 % for i, sv_name in enumerate(sv_names):
       <Line id="${sv_name}" quantity="${pop_id}[0]/${sv_name}" scale="1" color="${colors[i % len(colors)]}" timeScale="1${time_scale}"/>
 % endfor
@@ -120,7 +120,7 @@ ${inp_ref}
     </network>
 % endif
 
-    <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="${sim_target}">
+    <Simulation id="${sim_id}" length="${length}${time_scale}" step="${dt}${time_scale}" target="${sim_target}">
         <OutputFile id="of0" fileName="results/${dyn_id}.dat">
             <OutputColumn id="v" quantity="${quantity_prefix}pop[0]/v"/>
         </OutputFile>

@@ -194,14 +194,12 @@ class ${class_name}(${base_class}):
         % endif
         % endfor
 <%
-        # Alias resolution for coupling expressions.
-        # Supports three naming conventions:
-        #   1. x_i / x_j          — generic placeholders (database coupling functions)
-        #   2. theta_i / theta_j   — state-subscript notation (mathematical)
-        #   3. incoming_states / local_states — literal parameter names
+        # pre() names states as x_i/x_j placeholders, theta_i/theta_j state subscripts, or the literal incoming_states/local_states.
         _pre_rhs = str(pre_expr.rhs) if pre_expr else ''
         _need_xj = 'x_j' in _pre_rhs and 'x_j' not in incoming_states
         _need_xi = 'x_i' in _pre_rhs and 'x_i' not in local_states
+        _all_xj = mode_coupling or 'x_j[' in _pre_rhs
+        _all_xi = 'x_i[' in _pre_rhs
         _need_incoming = 'incoming_states' in _pre_rhs
         _need_local = 'local_states' in _pre_rhs
 %>
@@ -213,16 +211,11 @@ class ${class_name}(${base_class}):
         ${alias_name} = local_states[${idx}]
         % endfor
         % if _need_xj and incoming_states:
-        % if mode_coupling:
-        ## Mode fold: keep all n_modes gathered slots (leading axis) so each mode
-        ## is reduced with the connectome independently → per-mode coupling output.
-        x_j = incoming_states
-        % else:
-        x_j = incoming_states[0]
-        % endif
+## x_j keeps every incoming state when pre() indexes it (`x_j[0] - x_j[1]`) or a mode fold reduces each mode with the connectome independently.
+        x_j = incoming_states${'' if _all_xj else '[0]'}
         % endif
         % if _need_xi and local_states:
-        x_i = local_states[0]
+        x_i = local_states${'' if _all_xi else '[0]'}
         % endif
         % if _need_local and local_states:
         local_states = local_states[0]
@@ -231,11 +224,7 @@ class ${class_name}(${base_class}):
         incoming_states = incoming_states[0]
         % endif
 <%
-        # A list pre_expression declares n_pre separate reductions (e.g. the
-        # angle-addition decomposition [sin(θⱼ), cos(θⱼ)]). Each term is per-edge
-        # [N_target, N_source]; stacking yields 3D [n_pre, N_target, N_source] so
-        # the base class W-reduces every term in one weighted sum. n_pre is the
-        # reduction count, independent of n_output (the model's input dimension).
+        # A list pre_expression stacks n_pre per-edge terms into [n_pre, N_target, N_source], one weighted reduction each, independent of n_output.
         if pre_is_list:
             rendered = [jaxcode(e) for e in pre_terms]
             pre_code = 'jnp.stack([' + ', '.join(rendered) + '], axis=0)'

@@ -12,7 +12,10 @@ from __future__ import annotations
 
 import re
 import warnings
+from fractions import Fraction
 from typing import TypedDict
+
+from tvbo.utils.units import unit_multiplier
 
 # ── Identifiers ───────────────────────────────────────────────────────
 
@@ -151,6 +154,65 @@ EVENT_SOURCE_TYPES = frozenset(
     }
 )
 """NeuroML spike sources: populations of their own that carry no membrane, connected to their targets by a projection."""
+
+ONSET_PARAMETERS = {
+    "pulseGenerator": "delay",
+    "pulseGeneratorDL": "delay",
+    "sineGenerator": "delay",
+    "sineGeneratorDL": "delay",
+    "rampGenerator": "delay",
+    "rampGeneratorDL": "delay",
+    "voltageClamp": "delay",
+    "voltageClampTriple": "delay",
+    "transientPoissonFiringSynapse": "delay",
+    "SpikeSourcePoisson": "start",
+}
+"""The parameter that places each timed NeuroML input on the clock. Moving it later by a settle moves the whole input with it: every other time the input reads (its duration, a sine's phase, a ramp's slope) is relative to it."""
+
+TIMED_BY_CHILDREN = frozenset({"compoundInput", "compoundPulseGenerator", "spikeArray", "timedSynapticInput"})
+"""NeuroML inputs whose timing lives on their children: the generators a compound input sums, and the spike times a ``spikeArray`` or ``timedSynapticInput`` lists."""
+
+STATIONARY_SOURCES = frozenset({"poissonFiringSynapse", "spikeGeneratorPoisson"})
+"""Memoryless spike sources that run from the start of the run with no onset: a measured window sees the same process whether a settle precedes it or not."""
+
+
+def settle_refusal(nml_type):
+    """Why a NeuroML input of *nml_type* cannot be run behind a settle, or ``None`` when it can.
+
+    An input can when a settle has nothing to move (a stationary source), or when the time it declares can be moved later by the settle: an onset parameter (`ONSET_PARAMETERS`) or children that carry their own times (`TIMED_BY_CHILDREN`). The rest are timed from the start of the run with no onset to move, so a settle would change what the measured window sees: a ``spikeGenerator`` fires on a period counted from the run start, and a ``spikeGeneratorRandom`` or ``spikeGeneratorRefPoisson`` starts its renewal process there. A type outside the input vocabulary is not an input, and is not refused here.
+    """
+    if nml_type not in CURRENT_INPUT_TYPES | EVENT_SOURCE_TYPES:
+        return None
+    if nml_type in ONSET_PARAMETERS or nml_type in TIMED_BY_CHILDREN or nml_type in STATIONARY_SOURCES:
+        return None
+    return f"a {nml_type} is timed from the start of the run and declares no onset to move past the settle"
+
+
+def shift_onset(quantity, settle):
+    """A declared time, moved from the measurement clock onto the run's.
+
+    A run's clock opens at the start of integration, which is the start of the settle; a recipe declares its onsets against the measured window, which opens a settle later. The shift is exact and in the quantity's OWN unit, so a delay declared in seconds and a settle counted in milliseconds compose rather than meeting in whichever of the two the caller happened to write.
+
+    Args:
+        quantity: The declared time, as ``(value, unit)``.
+        settle: The settle, as ``(value, unit)``.
+
+    Returns:
+        ``(value, unit)`` with the value moved later by the settle; the quantity unchanged when the settle is zero.
+
+    Raises:
+        ValueError: If either unit is not curated, so the two cannot be converted into one another.
+    """
+    value, unit = quantity
+    if not settle[0]:
+        return quantity
+    scales = [unit_multiplier(str(u)) if u else None for u in (unit, settle[1])]
+    if None in scales:
+        raise ValueError(
+            f"a declared onset in {unit!r} cannot be placed on the run clock: {unit!r} or the settle's {settle[1]!r} is "
+            "not a curated unit, so the settle prepended to the measured window cannot be converted into it."
+        )
+    return (float(Fraction(value) + Fraction(settle[0]) * scales[1] / scales[0]), unit)
 
 
 def nml_type(dynamics, default=None):

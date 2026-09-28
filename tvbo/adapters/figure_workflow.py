@@ -15,8 +15,8 @@ import shlex
 from pathlib import Path
 
 from tvbo.adapters import bsplot
-from tvbo.cli import _workflow as _wf
 from tvbo.data.dataref import experiment_id as _experiment_id
+from tvbo.run import workflow as _wf
 from tvbo.templates import lookup
 from tvbo.utils import as_list, deep_merge, sanitize_name
 
@@ -202,19 +202,12 @@ def emit_figure_rules(
             ``workflow_overrides`` merges over it for that figure's resources.
         kit_dir: Directory the companion :func:`write_figure_kit` writes to (kept for
             API symmetry; rule paths are kit-relative and independent of it).
-        include_all: When True, prepend an aggregate ``all_figures`` target rule so
-            the snippet is runnable standalone (``snakemake -s figures.smk``).
-        exp_plans: The emitter's per-experiment dicts; a figure ``used`` edge to one of
-            them becomes an ``expand()`` over that experiment's fanned cells (the whole
-            grid), so the render waits for the sweep. Without them, inputs fall back to
-            the author's own result containers.
-        bundled_code: Whether the kit carries a ``code/`` dir the figure's custom-panel
-            modules were bundled into (put on the rule's ``PYTHONPATH``).
+        include_all: When True, prepend an aggregate ``all_figures`` target rule so the snippet is runnable standalone (``snakemake -s figures.smk``).
+        exp_plans: The emitter's per-experiment dicts; a figure ``used`` edge to one of them becomes an ``expand()`` over that experiment's fanned cells (the whole grid), so the render waits for the sweep. Without them, inputs fall back to the author's own result containers.
+        bundled_code: Whether the kit carries a ``code/`` dir the figure's custom-panel modules were bundled into (put on the rule's ``PYTHONPATH``).
 
     Returns:
-        The Snakemake rule text. Each rule's ``input:`` is the figure's ``used``
-        dependencies and its ``resources:`` reflect ``workflow_overrides`` over
-        *workflow*; the rule runs the figure's frozen ``plot.py``.
+        The Snakemake rule text. Each rule's ``input:`` is the figure's ``used`` dependencies and its ``resources:`` reflect ``workflow_overrides`` over *workflow*; the rule runs the figure's frozen ``plot.py``.
     """
     fig_ctxs = figure_contexts(figures, base_dir, workflow, exp_plans, bundled_code)
     now = _dt.datetime.now().isoformat(timespec="seconds")

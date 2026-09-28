@@ -49,8 +49,7 @@ print(model.render_code('julia'))
 | `'autodiff'` / `'jax'` | JAX dfun kernel |
 | `'julia'` | DifferentialEquations.jl |
 | `'bifurcation-julia'` | BifurcationKit.jl |
-| `'bifurcation-numcont'` | MatCont-style |
-| `'bifurcation-auto7p'` | AUTO-07p |
+| `'bifurcation-numcont'` / `'bifurcation-auto7p'` | AUTO-07p model (Fortran) |
 | `'pde-fem'` | scikit-fem PDE solver |
 
 ### From `SimulationExperiment.render_code(format)`

@@ -2992,7 +2992,7 @@ class ExperimentResult:
 
         ld = ts.labels_dimensions if isinstance(ts.labels_dimensions, dict) else {}
         state_names = ld.get("State Variable", [])
-        region_labels = ld.get("Region", [])
+        region_labels = list(ts.space_labels) if hasattr(ts, "space_labels") else ld.get("Region", [])
 
         dims = ["time", "variable", "node", "mode"][: data_np.ndim]
         coords = {}

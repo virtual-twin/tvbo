@@ -53,7 +53,7 @@ Each backend declares what it can do, and the declaration is what the workflow p
 ```{python}
 #| label: backends
 #| echo: false
-from tvbo.cli._backends import BACKENDS
+from tvbo.run.backends import BACKENDS
 import pandas as pd
 
 rows = [

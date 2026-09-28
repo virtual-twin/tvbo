@@ -1,16 +1,13 @@
 """Graph-based simulation of a connectome as a network of coupled local models.
 
-This module provides [`GraphRunner`](/api/run/graph.qmd#GraphRunner), which turns a connectome into a `networkx` graph, attaches a local dynamics model to each node and a coupling to each edge, and integrates the resulting network in time using the helpers in [`tvbo.run.compgraph`](/api/run/compgraph.qmd).
+This module provides [`GraphRunner`](/api/run/graph.qmd#GraphRunner), which turns a connectome into a `networkx` graph, attaches a local dynamics model to each node, with the states and parameters a node declares for itself, and the coupling every node's afferent input goes through, and integrates the resulting network in time using the helpers in [`tvbo.run.compgraph`](/api/run/compgraph.qmd).
 """
-
-import copy
 
 import networkx as nx
 import numpy as np
 
 from tvbo.classes import dynamics as localdynamics
 from tvbo.classes.coupling import Coupling
-from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.run import compgraph
 from tvbo.utils import initial_value
 
@@ -18,17 +15,13 @@ from tvbo.utils import initial_value
 class GraphRunner:
     """Assemble and integrate a connectome as a network of coupled local models.
 
-    A `GraphRunner` holds a `networkx` graph snapshot built from a connectome.
-    Node attributes carry the local dynamics model, its integrated state and optional stimulus; edge attributes carry the coupling. After the local models, couplings and stimuli have been attached, [`run`](/api/run/graph.qmd#GraphRunner.run) compiles per-node and per-edge functions and integrates the network in time.
+    A `GraphRunner` holds a `networkx` graph snapshot built from a connectome. Node attributes carry the local dynamics model, its integrated state, the parameters it declares for itself, its compiled coupling and optional stimulus; edge attributes carry the weight and delay. After the local models, the coupling and stimuli have been attached, [`run`](/api/run/graph.qmd#GraphRunner.run) compiles the per-node functions and integrates the network in time. The graph lists the nodes in the connectome's declaration order, which is the order the per-node declarations and labels are read in.
 
     The integrator reads one edge per node pair: a multigraph snapshot is flattened to a simple digraph at construction, and true parallel edges (typed projections between the same pair) are rejected with a `ValueError`.
 
     Args:
-        connectome: Connectome whose weights and node/edge structure define the
-            network. Its `create_graph` method supplies the graph snapshot.
-        normalize_weights: When `True`, normalize the connectome weights via the
-            connectome's schema-safe `normalize_weights` method before building
-            the graph. Failures during normalization are ignored.
+        connectome: Connectome whose weights and node/edge structure define the network. Its `create_graph` method supplies the graph snapshot, and its declared nodes the per-node states, parameters and labels.
+        normalize_weights: When `True`, normalize the connectome weights via the connectome's schema-safe `normalize_weights` method before building the graph. Failures during normalization are ignored.
     """
 
     def __init__(self, connectome, normalize_weights=True):
@@ -38,6 +31,8 @@ class GraphRunner:
                 connectome.normalize_weights()
             except Exception:
                 pass
+        self.connectome = connectome
+        self.coupling = None
         graph = connectome.create_graph()
         if isinstance(graph, (nx.MultiDiGraph, nx.MultiGraph)):
             if any(key > 0 for _, _, key in graph.edges(keys=True)):
@@ -49,8 +44,7 @@ class GraphRunner:
         """Attach a local dynamics model to the graph nodes.
 
         Args:
-            model: A single `Model`/`Dynamics` instance applied to every node,
-                or a dict mapping node identifiers to per-node model instances.
+            model: A single `Model`/`Dynamics` instance applied to every node, or a dict mapping node identifiers to per-node model instances.
         """
         if isinstance(model, localdynamics.Dynamics):
             for node in self.graph.nodes:
@@ -61,29 +55,17 @@ class GraphRunner:
                 self.graph.nodes[node]["model"] = model[node]
 
     def add_coupling(self, coupling):
-        """Attach a coupling function to the graph edges.
-
-        The snapshot is a simple digraph (see `__init__`), so edges are keyed by `(source, target)`.
+        """Attach the coupling every node's afferent input goes through.
 
         Args:
-            coupling: A [`Coupling`](../classes/coupling.qmd#Coupling) instance, a
-                deep copy of which is assigned to every edge; a bare
-                datamodel `Coupling`, which is wrapped in a `Coupling` and then
-                copied to every edge; or a dict mapping `(source, target)` pairs
-                to per-edge couplings.
+            coupling: A [`Coupling`](../classes/coupling.qmd#Coupling), which every node's input goes through, a node without afferents included; or ``None``, which leaves every node uncoupled.
+
+        Raises:
+            TypeError: *coupling* is neither.
         """
-        if isinstance(coupling, Coupling):
-            for src, tgt in self.graph.edges:
-                self.graph[src][tgt]["coupling"] = copy.deepcopy(coupling)
-
-        elif isinstance(coupling, tvbo_datamodel.Coupling):
-            wrapped = Coupling(metadata=coupling)
-            for src, tgt in self.graph.edges:
-                self.graph[src][tgt]["coupling"] = copy.deepcopy(wrapped)
-
-        elif isinstance(coupling, dict):
-            for src, tgt in self.graph.edges:
-                self.graph[src][tgt]["coupling"] = coupling[src, tgt]
+        if coupling is not None and not isinstance(coupling, Coupling):
+            raise TypeError(f"GraphRunner integrates one Coupling through every node's input, not a {type(coupling).__name__}")
+        self.coupling = coupling
 
     def to_yaml(self, format: str = "tvbo", filepath: str | None = None) -> str:
         """Export Network to YAML format.
@@ -115,12 +97,8 @@ class GraphRunner:
         Args:
             node: Identifier of the node to stimulate.
             stimulus: Stimulus to apply at that node.
-            stvar: State variable name, or list of names, to mark as
-                stimulation targets on the node's model. Ignored when
-                `as_derived_variable` is `True`.
-            as_derived_variable: When `True`, add the stimulus to the node's
-                model as a derived variable instead of storing it on the node
-                and flagging state variables.
+            stvar: State variable name, or list of names, to mark as stimulation targets on the node's model. Ignored when `as_derived_variable` is `True`.
+            as_derived_variable: When `True`, add the stimulus to the node's model as a derived variable instead of storing it on the node and flagging state variables.
         """
         if as_derived_variable:
             self.graph.nodes[node]["model"].add_stimulus(stimulus, as_derived_variable=True)
@@ -141,31 +119,34 @@ class GraphRunner:
             self.graph.nodes[node]["dfun"] = self.graph.nodes[node]["model"].execute("python-network")
 
     def setup_cfuns(self):
-        """Compile each edge's coupling into callable coupling functions.
-
-        For every edge, stores the compiled `python` coupling function under `"cfun"`, `"prefun"` and `"postfun"` lambdas obtained by substituting the coupling's parameter values into its pre- and post-summation expressions, and `"post_src"`, the substituted post expression the integrator compares to reject mixed post-transforms on one node.
-        """
-        from sympy import Symbol, lambdify
-
-        for src, tgt in self.graph.edges:
-            coup = self.graph[src][tgt]["coupling"]
-            subs = {k: p.value for k, p in coup.parameters.items()}
-            post_expr = coup.post.subs(subs)
-            self.graph[src][tgt]["cfun"] = coup.execute("python")
-            self.graph[src][tgt]["prefun"] = lambdify([Symbol("x_j")], coup.pre.subs(subs))
-            self.graph[src][tgt]["postfun"] = lambdify([Symbol("gx")], post_expr)
-            self.graph[src][tgt]["post_src"] = str(post_expr)
+        """Compile the coupling for each node's model (`compgraph.coupling_transforms`) and store it under the node's `"coupling"`; without a coupling every node's is ``None``."""
+        compiled = {}
+        for node in self.graph.nodes:
+            model = self.graph.nodes[node]["model"]
+            if self.coupling is not None and id(model) not in compiled:
+                compiled[id(model)] = compgraph.coupling_transforms(model, self.coupling)
+            self.graph.nodes[node]["coupling"] = compiled.get(id(model))
 
     def setup_initial_conditions(self):
-        """Initialize each node's state from its model's initial values.
+        """Initialize each node's state and dynamics parameters from what it declares for itself.
 
-        Stores, under each node's `"state"` attribute, an array of the initial values of the model's state variables.
+        A node's `"state"` holds its model's initial values, with each state the node declares in its place (`node_initial_states`), and its `"parameters"` the model's parameters it sets (`node_parameter_arrays`), both read at the node's position in the graph, its declaration order.
         """
-        for node in self.graph.nodes:
-            self.graph.nodes[node]["state"] = np.array(
-                [initial_value(sv) for sv in self.graph.nodes[node]["model"].state_variables.values()]
-            )
-            # self.graph.nodes[node]["state"] = np.random.uniform(-1, 1, size=2)
+        from tvbo.adapters.base import node_initial_states, node_parameter_arrays
+
+        declared = {}
+        for position, node in enumerate(self.graph.nodes):
+            model = self.graph.nodes[node]["model"]
+            if id(model) not in declared:
+                defaults = np.array([initial_value(sv) for sv in model.state_variables.values()])
+                states = np.repeat(defaults[:, None], self.graph.number_of_nodes(), axis=1)
+                declared[id(model)] = (
+                    node_initial_states(self.connectome, model, states),
+                    node_parameter_arrays(self.connectome, model),
+                )
+            states, parameters = declared[id(model)]
+            self.graph.nodes[node]["state"] = states[:, position]
+            self.graph.nodes[node]["parameters"] = {name: float(values[position]) for name, values in parameters.items()}
 
     def setup_stimulation(self, sampling_rate=500, duration=2000):
         """Compile stimulus functions for every stimulated node.
@@ -173,8 +154,7 @@ class GraphRunner:
         For each node that carries a non-`None` `"stimulus"`, compiles the stimulus to a `python` callable sampled at `sampling_rate` over the stimulus's own duration and stores it under the node's `"stimfun"` attribute.
 
         Args:
-            sampling_rate: Sampling rate, in Hz, at which each stimulus is
-                evaluated.
+            sampling_rate: Sampling rate, in Hz, at which each stimulus is evaluated.
             duration: Unused; each stimulus is sampled over its own duration.
         """
         for node in self.graph.nodes:
@@ -186,15 +166,16 @@ class GraphRunner:
                     sampling_rate=sampling_rate,
                 )
 
-    def run(self, duration=1000, dt=1, format="graph"):
+    def run(self, duration=1000, dt=1, format="graph", integration=None):
         """Integrate the network in time and return the simulated time series.
 
-        Sets up initial conditions, stimulation, node derivative functions and edge coupling functions, initializes the delay history buffer, then integrates the network dynamics with delays and collects the resulting time series.
+        Sets up initial conditions and per-node parameters, stimulation, node derivative functions and each node's coupling, starts each node's trace at its initial state, then integrates the network with delays by the declared method, every node synchronously (`compgraph.simulate_graph_dynamics_with_delay`), and collects the states recorded at dt to `duration`, the nodes labelled by the connectome's `node_labels`.
 
         Args:
             duration: Total simulation time, in the model's time units.
             dt: Integration time step.
             format: Reserved output-format selector; currently unused.
+            integration: The experiment's `Integrator`, whose ``method`` steps every node and whose ``coupling_evaluation`` must be the per-step one this runner integrates; ``None`` integrates by the schema's default method.
 
         Returns:
             The collected per-node time series over the simulated interval.
@@ -204,9 +185,7 @@ class GraphRunner:
         self.setup_dfuns()
         self.setup_cfuns()
 
-        compgraph.initialize_graph_states_with_history(self.graph, delay_buffer=1000)
-        time_points = compgraph.simulate_graph_dynamics_with_delay(self.graph, T=duration, dt=dt)
+        compgraph.initialize_graph_states_with_history(self.graph)
+        time_points = compgraph.simulate_graph_dynamics_with_delay(self.graph, T=duration, dt=dt, integration=integration)
 
-        ts = compgraph.collect_time_series(self.graph, time_points)
-
-        return ts
+        return compgraph.collect_time_series(self.graph, time_points, labels=getattr(self.connectome, "node_labels", None))

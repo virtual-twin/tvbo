@@ -24,7 +24,8 @@ function ${model.name}_vf!(du, x, p)
     return du
 end
 
-# Find a steady state via time integration (more robust than raw Newton on x0)
+% if integrate_to_start:
+# The continuation starts from the state the model settles to from x0.
 function _find_steady_state(f!, x0, p; T=${iss_duration})
     function ode_f!(du, u, _p, t)
         f!(du, u, p, t)
@@ -47,6 +48,10 @@ function _find_steady_state(f!, x0, p; T=${iss_duration})
 end
 
 x0_eq = _find_steady_state(${model.name}!, x0, p)
+% else:
+# The continuation starts from the model's initial state, which BifurcationKit's first Newton step corrects onto the branch.
+x0_eq = x0
+% endif
 
 ################################################################################
 
@@ -101,10 +106,7 @@ bifurcation_result = br
 ########################################################################################################################
 
 % if branches:
-<%
-br0 = branches[0]
-%>
-## Branches (periodic orbits, codim-2, etc.)
+## Periodic-orbit branches
 
 # Record PO envelope (max/min per state variable)
 args_po = (	record_from_solution = (x, p; k...) -> begin
@@ -124,29 +126,25 @@ args_po = (	record_from_solution = (x, p; k...) -> begin
 		end,
 	normC = norminf)
 
-## PO ContinuationPar
+hopf_indices = Int[]
+for (i, sp) in enumerate(br.specialpoint)
+    sp.type == :hopf && push!(hopf_indices, i)
+end
+po_branches = Any[]
+% for br0 in branches:
+
+# Periodic-orbit branch: ${br0['name']}
 % if br0['po_cp_args_str']:
 opts_po_cont = ContinuationPar(opts_br, ${br0['po_cp_args_str']})
 % else:
 opts_po_cont = opts_br
 % endif
-
-## Source point selection
-hopf_indices = Int[]
-for (i, sp) in enumerate(br.specialpoint)
-    sp.type == :hopf && push!(hopf_indices, i)
-end
 % if br0['hopf_idx_jl'] is None:
-# Using all Hopf points
+_po_sources = hopf_indices
 % else:
-if !isempty(hopf_indices)
-    hopf_indices = [hopf_indices[${br0['hopf_idx_jl']}]]
-end
+_po_sources = isempty(hopf_indices) ? Int[] : [hopf_indices[${br0['hopf_idx_jl']}]]
 % endif
-
-## PO continuation
-po_branches = Any[]
-for hopf_idx in hopf_indices
+for hopf_idx in _po_sources
     try
 % if br0['method'] == 'collocation':
 <%
@@ -212,6 +210,7 @@ for hopf_idx in hopf_indices
         @warn "PO continuation from Hopf $hopf_idx failed" exception=(e, catch_backtrace())
     end
 end
+% endfor
 
 # BifurcationKit records only amplitude and period, so phase-resample each orbit to NPROF points to keep the waveform recoverable.
 NPROF = 400

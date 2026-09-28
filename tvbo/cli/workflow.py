@@ -14,10 +14,10 @@ from typing import Annotated, Any
 import typer
 
 from tvbo.run import study as _study_run
+from tvbo.run import workflow as _wf
+from tvbo.run.backends import list_backends
 
 from . import _common
-from . import _workflow as _wf
-from ._backends import list_backends
 
 app = typer.Typer(name="workflow", no_args_is_help=True)
 
@@ -88,7 +88,7 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
     if not records:
         _common.die(f"Study {spec!r} has no experiments.")
     if len(records) > 1:
-        ids = ", ".join(sorted(_common.experiment_key(e) for e in records))
+        ids = ", ".join(sorted(_wf.experiment_key(e) for e in records))
         _common.die(
             f"Study {spec!r} has {len(records)} experiments ({ids}); a single-kit engine will not silently pick the first.\nEmit the WHOLE study as one Snakemake DAG with `tvbo workflow snakemake <spec>` (no --experiment), or pass `--experiment <id>` to emit exactly one."
         )
@@ -785,7 +785,7 @@ def _emit_snakemake_study(
     # Every experiment identifier (id / key / name) -> its sanitized workflow key, so a from_experiment dependency (recorded by id in plan.depends_on) resolves to the source experiment's rule and output dir even when that experiment carries an explicit ``key`` that differs from its id.
     _key_of = {}
     for _e in experiments:
-        _k = _san(_common.experiment_key(_e))
+        _k = _san(_wf.experiment_key(_e))
         for _ref in (getattr(_e, "id", None), getattr(_e, "key", None), getattr(_e, "name", None)):
             if _ref is not None:
                 _key_of[str(_ref)] = _k
@@ -793,7 +793,7 @@ def _emit_snakemake_study(
     exp_plans, block, plans, bundled_code = [], {}, [], False
     study_rule = _rule_key(study_key)
     for exp in experiments:
-        key = _san(_common.experiment_key(exp))
+        key = _san(_wf.experiment_key(exp))
         plan = _plan_for(study, exp, parsed, spec=spec, study_key=study_key, backend=backend, engine="snakemake", selector=key)
         # Study-level block for the shipped profile: the cluster identity (partition/account) is a property of the run, not of one experiment, so take the first experiment that declares one — matching how the Snakefile's global `container:` keys off exp_plans[0]. Per-rule resources come from each plan's own block (see exp_plans below).
         block = block or (plan.engine_block or {})

@@ -193,7 +193,7 @@ ${syn_xml}
 ## ══════════════════════════════════════════════════════════════════════
 ## Simulation block
 ## ══════════════════════════════════════════════════════════════════════
-    <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net1"${seed_attr}>
+    <Simulation id="${sim_id}" length="${length}${time_scale}" step="${dt}${time_scale}" target="net1"${seed_attr}>
 <%  of_idx = 0 %>\
 % for pop_id_out, pop_size, sv_var in output_pops:
 <%

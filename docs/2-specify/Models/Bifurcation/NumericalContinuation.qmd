@@ -84,6 +84,8 @@ branches:
 * `"bp:<index>"`: switch at a specific branch point (e.g. for the pitchfork).
 * `"lp:<index>"`: restart from a fold.
 
+Left unset, a periodic-orbit branch starts from every Hopf point (`"hopf:all"`) on every backend. A two-parameter branch has to declare it, because its kind decides whether a fold curve or a Hopf curve is continued; one that does not is refused by name.
+
 ## Backend landscape
 
 | Backend | Language | Strengths | Caveats |

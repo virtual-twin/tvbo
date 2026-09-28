@@ -5,7 +5,7 @@ Supported companion formats:
   .zarr/        — Zarr (cloud-native, S3-compatible)
   .csv          — CSV legacy (one file = one matrix = first template edge)
 
-YAML sidecars are loaded via linkml_runtime.loaders.yaml_loader — the same loader used by Dynamics, Coupling, and SimulationExperiment. This ensures schema validation and proper nested object construction. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
+Sidecars are parsed and built by tvbo's own loader (:func:`tvbo.utils.yaml_loader.load_as_dict` + :func:`~tvbo.utils.yaml_loader.construct`), the one SimulationExperiment and SimulationStudy load through, so a sidecar may use ``!include``, ``<<:`` merge keys and anchors, and construction goes through the schema's constructor classes. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
 
 See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
@@ -480,14 +480,12 @@ def write_embedded_metadata(companion_path, meta: dict) -> None:
 def load_network(path):
     """Load a tvbo Network from a sidecar, or from a self-describing companion.
 
-    Uses linkml yaml_loader or json_loader to construct a schema-validated Network instance directly — same pattern as Dynamics.from_file().
+    Parsed and built by the loader ``SimulationExperiment.from_file`` and ``SimulationStudy.from_file`` use: :func:`tvbo.utils.yaml_loader.load_as_dict` expands ``!include``, ``<<:`` merge keys and anchors and normalises the document once, and :func:`~tvbo.utils.yaml_loader.construct` builds the Network from that mapping without dumping and reparsing it. The load runs inside ``loading_from(path)``, so relative paths anywhere in the sidecar resolve against its own directory, as a recipe's do.
 
     Two layouts are accepted:
 
-    - **sidecar + companion** — a ``.yaml``/``.json`` metadata file whose ``data_file``
-      names the binary beside it;
-    - **single self-describing file** — a ``.h5``/``.zarr`` carrying its own sidecar in
-      the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is its own array store, so one path is the whole Network.
+    - **sidecar + companion** — a ``.yaml``/``.json`` metadata file whose ``data_file`` names the binary beside it;
+    - **single self-describing file** — a ``.h5``/``.zarr`` carrying its own sidecar in the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is its own array store, so one path is the whole Network.
 
     Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.matrix("weight")).
 
@@ -502,49 +500,47 @@ def load_network(path):
         Fully constructed tvbo.Network with lazy array references.
     """
     from tvbo.classes.network import Network
+    from tvbo.utils.source import loading_from
 
     path = Path(path)
 
     embedded = read_embedded_metadata(path)
     if embedded is not None:
-        meta_dict = embedded
+        meta_dict = tvbo_yaml_loader.load_as_dict(embedded)
         meta_dict.pop("data_file", None)
         data_file = path.name
     else:
-        # Load as dict first so data_file can be handled here. It IS a schema slot, but `Network._resolve_from_data_file` treats it as an indirect reference to ANOTHER network's sidecar, so leaving it on the constructor kwargs would recurse.
-        meta_dict = yaml_loader.load_as_dict(str(path))
+        # `data_file` IS a schema slot, but `Network._resolve_from_data_file` treats it as an indirect reference to ANOTHER network's sidecar, so leaving it on the constructor kwargs would recurse.
+        meta_dict = tvbo_yaml_loader.load_as_dict(path)
         data_file = meta_dict.pop("data_file", None)
     # Extract non-schema fields that are YAML-only metadata
     bids_meta = meta_dict.pop("bids", None)
     descriptor = meta_dict.pop("descriptor", None)
     meta_dict = tvbo_yaml_loader.strip_envelope(meta_dict)
 
-    # Reconstruct clean YAML without non-schema fields for LinkML loader
-    import yaml as _yaml
+    with loading_from(path):
+        # This loader attaches connectivity itself, so the constructor must not resolve it: `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `_resolve` runs below, once `_store` is in place.
+        net = tvbo_yaml_loader.construct({**meta_dict, "_defer_connectivity": True}, Network)
 
-    # This loader attaches connectivity itself, so the constructor must not resolve it: `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `_resolve` runs below, once `_store` is in place.
-    clean_yaml = _yaml.dump({**meta_dict, "_defer_connectivity": True}, Dumper=_yaml.SafeDumper)
-    net = yaml_loader.loads(clean_yaml, Network)
+        # Attach non-schema metadata as attributes (used by bids_filename)
+        if bids_meta:
+            net.bids = bids_meta
+        if descriptor:
+            net.descriptor = descriptor
 
-    # Attach non-schema metadata as attributes (used by bids_filename)
-    if bids_meta:
-        net.bids = bids_meta
-    if descriptor:
-        net.descriptor = descriptor
+        # Attach lazy array store (no arrays loaded yet).
+        if data_file:
+            data_path = path.parent / data_file
+            net._store = LazyArrayStore(data_path, meta_dict)
+            net.data_file = data_file
 
-    # Attach lazy array store (no arrays loaded yet).
-    if data_file:
-        data_path = path.parent / data_file
-        net._store = LazyArrayStore(data_path, meta_dict)
-        net.data_file = data_file
+            # Restore mesh data from companion if present
+            _load_mesh(net, data_path)
+        else:
+            net._store = None
 
-        # Restore mesh data from companion if present
-        _load_mesh(net, data_path)
-    else:
-        net._store = None
-
-    # `_store` now makes the network materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; a sidecar carrying only a `parcellation:` still resolves its normative connectome here as before.
-    net._resolve(source_dir=str(path.parent))
+        # `_store` now makes the network materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; a sidecar carrying only a `parcellation:` still resolves its normative connectome here as before.
+        net._resolve(source_dir=str(path.parent))
 
     return net
 

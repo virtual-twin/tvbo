@@ -36,7 +36,7 @@ dynamics:
 network:
     label: "20-node Barabási-Albert network"
     description: >
-        Undirected Barabási-Albert scale-free random graph with 20 nodes and average degree 4.  Matches the original tutorial.
+        Undirected Barabási-Albert scale-free random graph with 20 nodes, each new node attaching with k = 4 edges, the tutorial's generator and parameters. tvbo draws it with networkx, seed 0, so it is not the tutorial's Graphs.jl draw.
     number_of_nodes: 20
     graph_generator:
         name: barabasi_albert
@@ -58,6 +58,7 @@ network:
 integration:
     description: "Explicit Runge-Kutta (Tsit5) with dt=0.01 over t in [0, 2]"
     method: Tsit5
+    coupling_evaluation: per_stage
     step_size: 0.01
     duration: 2.0
     time_scale: "a.u."

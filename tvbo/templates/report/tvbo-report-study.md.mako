@@ -70,7 +70,7 @@ ${report.captioned(report.event_table(report.slot(family.base.model, 'events'), 
 % endif
 
 ${report.captioned(report.symbol_table(family.base.model, report.study_sweeps(family.experiments),
-                                       report.coupling_of(family.experiments)),
+                                       report.coupling_of(family.experiments), report.node_parameters(family.experiments)),
                    f"Symbols of the {family.label}, including those its coupling introduces.",
                    f"model-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
 % for variant in family.variants:

@@ -91,27 +91,34 @@ def _julia_ordinal(index):
     return str(index) if index > 0 else "end" if index == -1 else f"end{index + 1}"
 
 
-def _cont_kwargs(c):
-    """Build list of 'jl_key = value' strings from a Continuation object."""
-    args = []
-    if c is None:
-        return args
-    for schema_attr, jl_key in _CONT_FIELDS:
-        v = getattr(c, schema_attr, None)
-        if v is not None:
-            args.append(f"{jl_key} = {v}")
-    return args
+def _cont_fields(continuation, parent=None) -> dict:
+    """The `ContinuationPar` fields of *continuation*, keyed by their Julia keyword, each one it leaves unset taken from *parent* (`ContinuationAdapter.setting`); a field neither declares is left out, to BifurcationKit's default."""
+    fields = {}
+    for slot, keyword in _CONT_FIELDS:
+        value = ContinuationAdapter.setting(slot, continuation, parent)
+        if value is not None:
+            fields[keyword] = value
+    return fields
 
 
-def _newton_kwargs(c):
-    """Build NewtonPar kwargs from a Continuation object."""
+def _cont_kwargs(continuation, parent=None):
+    """`_cont_fields` as ``keyword = value`` strings."""
+    return [f"{keyword} = {value}" for keyword, value in _cont_fields(continuation, parent).items()]
+
+
+def _branch_alg(branch_continuation):
+    """The ``alg`` keyword of a branch run whose nested continuation declares a ``tangent`` option, else ``None``: BifurcationKit continues a branch by its parent's algorithm unless it is given one."""
+    tangent = _str(_get_option(branch_continuation, "tangent"))
+    return f"alg = PALC(tangent = {tangent}())" if tangent else None
+
+
+def _newton_kwargs(continuation, parent=None):
+    """The `NewtonPar` keywords of *continuation*, each Newton setting it leaves unset taken from *parent* (`ContinuationAdapter.setting`): ``newton_tol`` as the residual tolerance ``tol``, ``newton_max_iterations`` as ``max_iterations``."""
     args = []
-    if c is None:
-        return args
-    if getattr(c, "newton_tol", None) is not None:
-        args.append(f"tol = {c.newton_tol}")
-    if getattr(c, "newton_max_iterations", None) is not None:
-        args.append(f"max_iterations = {c.newton_max_iterations}")
+    for slot, keyword in (("newton_tol", "tol"), ("newton_max_iterations", "max_iterations")):
+        value = ContinuationAdapter.setting(slot, continuation, parent)
+        if value is not None:
+            args.append(f"{keyword} = {value}")
     return args
 
 
@@ -147,14 +154,9 @@ class BifurcationKitAdapter(ContinuationAdapter):
         if fp_dict:
             fp_first = next(iter(fp_dict.values())) if isinstance(fp_dict, dict) else fp_dict[0]
             ICS = str(fp_first.name)
-            if fp_first.domain:
-                p_min = float(fp_first.domain.lo)
-                p_max = float(fp_first.domain.hi)
-            elif model.parameters[ICS].domain:
-                p_min = float(model.parameters[ICS].domain.lo)
-                p_max = float(model.parameters[ICS].domain.hi)
-            else:
-                p_min, p_max = None, None
+            p_min, p_max = BifurcationKitAdapter.parameter_bounds(
+                fp_first, model, f"continuation {getattr(cont, 'name', None)!r}"
+            )
         else:
             ICS = kwargs.get("ICS")
             dom = model.parameters[ICS].domain if ICS else None
@@ -178,10 +180,9 @@ class BifurcationKitAdapter(ContinuationAdapter):
                 f"{name}_max = _{name}_max, {name}_mean = _{name}_sum / N" for name in mc["record_obs"]
             )
 
-        # -- Initial state (use schema defaults when unspecified) --
-        from tvbo.datamodel.schema import InitialState
-
-        iss = (cont.initial_state if cont else None) or InitialState()
+        # -- Initial state: integrated to, or the model's own (`ContinuationAdapter.integrates_to_start`) --
+        iss = BifurcationKitAdapter.initial_state(cont)
+        ctx["integrate_to_start"] = BifurcationKitAdapter.integrates_to_start(cont)
         ctx["iss_duration"] = _get(iss, "duration")
         ctx["iss_solver"] = _julia_solver(_get(iss, "solver.method"))
         ctx["iss_atol"] = _get(iss, "abs_tol")
@@ -202,7 +203,7 @@ class BifurcationKitAdapter(ContinuationAdapter):
 
         # -- continuation() kwargs string --
         cont_kw = ["normC = norminf"]
-        if cont and cont.bothside:
+        if BifurcationKitAdapter.bothside(cont):
             cont_kw.append("bothside = true")
         ctx["cont_call_kwargs_str"] = ", ".join(cont_kw)
 
@@ -210,18 +211,13 @@ class BifurcationKitAdapter(ContinuationAdapter):
         ctx["quiet"] = kwargs.get("quiet", True)
 
         # -- Branches --
-        branches_raw = []
-        if cont and cont.branches:
-            br_raw = cont.branches
-            branches_raw = list(br_raw.values()) if isinstance(br_raw, dict) else list(br_raw)
-
         po_branches = []
         codim2_branches = []
-        for b in branches_raw:
+        for b in BifurcationKitAdapter.branches_of(cont).values():
             if BifurcationKitAdapter.is_codim2(b, cont):
-                codim2_branches.append(BifurcationKitAdapter._prepare_codim2_branch(b, cont))
+                codim2_branches.append(BifurcationKitAdapter._prepare_codim2_branch(b, cont, model, (p_min, p_max)))
             else:
-                po_branches.append(BifurcationKitAdapter._prepare_branch(b))
+                po_branches.append(BifurcationKitAdapter._prepare_branch(b, cont))
         ctx["branches"] = po_branches
         ctx["codim2_branches"] = codim2_branches
         # BifurcationKit continues a parameter as a Float64, so each one a branch continues in starts as one, whatever literal the model declares.
@@ -231,21 +227,20 @@ class BifurcationKitAdapter(ContinuationAdapter):
         return ctx
 
     @staticmethod
-    def _prepare_branch(br):
-        """Pre-compute all values for one branch (periodic orbit)."""
+    def _prepare_branch(br, parent=None):
+        """Pre-compute all values for one periodic-orbit branch of the continuation *parent*, whose Newton settings it inherits where it leaves them unset."""
         bc = br.continuation  # sub-Continuation or None
 
-        # PO ContinuationPar override args
-        po_cp = _cont_kwargs(bc)
-        po_n = _newton_kwargs(bc)
+        # The branch's ContinuationPar: the parent's (`opts_br`), with every field the branch or its parent declares.
+        po_cp = _cont_kwargs(bc, parent)
+        po_n = _newton_kwargs(bc, parent)
         if po_n:
             po_cp.append(f"newton_options = NewtonPar({', '.join(po_n)})")
         # Defaults to 0, which leaves `br.sol` empty and every orbit profile `nothing`.
         po_cp.append("save_sol_every_step = 1")
         po_cp_str = ", ".join(po_cp)
 
-        # A branch declaring no source point continues from the last Hopf point.
-        hopf_idx = BifurcationKitAdapter.periodic_orbit_source(br, "hopf:-1")
+        hopf_idx = BifurcationKitAdapter.periodic_orbit_source(br)
 
         # Discretization (use schema defaults when unspecified)
         from tvbo.datamodel.schema import Discretization
@@ -276,13 +271,13 @@ class BifurcationKitAdapter(ContinuationAdapter):
         po_kw = ["plot = false", "args_po..."]
         if br.delta_p is not None:
             po_kw.append(f"\u03b4p = {br.delta_p}")
-        po_tangent = _str(_get_option(bc, "tangent"))
-        if po_tangent:
-            po_kw.append(f"alg = PALC(tangent = {po_tangent}())")
+        po_alg = _branch_alg(bc)
+        if po_alg:
+            po_kw.append(po_alg)
         if linear_solver:
             po_kw.append(f"linear_algo = {linear_solver}()")
         po_kw.append("verbosity = 0")
-        if br.bothside:
+        if BifurcationKitAdapter.bothside(br):
             po_kw.append("bothside = true")
         max_norm = _get_param(br, "max_norm_bound")
         if max_norm is not None:
@@ -290,6 +285,7 @@ class BifurcationKitAdapter(ContinuationAdapter):
         po_kwargs_str = ",\n            ".join(po_kw)
 
         return dict(
+            name=str(getattr(br, "name", None) or "?"),
             po_cp_args_str=po_cp_str,
             hopf_idx_jl=_julia_ordinal(hopf_idx),
             method=method,
@@ -381,8 +377,10 @@ class BifurcationKitAdapter(ContinuationAdapter):
 
         ICS = self._get_ics(cont)
         bif_res = BifurcationResult(br=extract_bifurcation_result(), model=model, ICS=ICS, **kwargs)
-        if getattr(cont, "branches", None):
+        branches = self.branches_of(cont).values()
+        if any(not self.is_codim2(branch, cont) for branch in branches):
             bif_res.periodic_orbits = self._extract_periodic_orbits(model, ICS=ICS, **kwargs)
+        if any(self.is_codim2(branch, cont) for branch in branches):
             bif_res.codim2_curves = self._extract_codim2_results(model, ICS=ICS, **kwargs)
         return bif_res
 
@@ -398,83 +396,60 @@ class BifurcationKitAdapter(ContinuationAdapter):
         from tvbo.adapters.julia import eval_with_auto_install
         from tvbo.analysis import BifurcationResult
 
+        po = eval_with_auto_install("po_results")
         try:
-            po = eval_with_auto_install("po_results")
-            try:
-                prof_list = list(getattr(po, "profiles", None) or [])
-            except Exception:
-                prof_list = []
-            out = []
-            for i, p in enumerate(po.branches):
-                res = BifurcationResult(br=p, model=model, **kwargs)
-                if i < len(prof_list) and prof_list[i] is not None:
-                    try:
-                        res.orbit_profiles = np.asarray(prof_list[i], dtype=float)
-                    except Exception:
-                        pass
-                out.append(res)
-            return out
+            prof_list = list(getattr(po, "profiles", None) or [])
         except Exception:
-            return []
+            prof_list = []
+        out = []
+        for i, p in enumerate(po.branches):
+            res = BifurcationResult(br=p, model=model, **kwargs)
+            if i < len(prof_list) and prof_list[i] is not None:
+                try:
+                    res.orbit_profiles = np.asarray(prof_list[i], dtype=float)
+                except Exception:
+                    pass
+            out.append(res)
+        return out
 
-    def _extract_codim2_results(self, model, **kwargs) -> list:
-        """Extract codim-2 continuation curves from Julia Main."""
-        from tvbo.adapters.julia import eval_with_auto_install
-        from tvbo.analysis import BifurcationResult
+    def _extract_codim2_results(self, model, ICS, **kwargs) -> list:
+        """Every codim-2 curve the Julia run left in ``codim2_results``, each carrying the primary *ICS* in ``param`` and the second parameter in ``param2``, as every continuation backend does.
 
-        try:
-            c2 = eval_with_auto_install("codim2_results")
-            results = []
-            for entry in c2:
-                br_obj = entry
-                res = BifurcationResult(br=br_obj, model=model, **kwargs)
-                res._is_codim2 = True
-
-                # Infer source type from continuation kind
-                from tvbo.analysis.bifurcation import continuation_kind
-
-                kind = continuation_kind(br_obj)
-                if kind == "HopfCont":
-                    res._source_type = "hopf"
-                elif kind == "FoldCont":
-                    res._source_type = "fold"
-                else:
-                    res._source_type = "fold"
-
-                # BifurcationKit codim-2 branches store both parameters as named columns plus the 'param' column (= continuation parameter). Identify both by matching model parameters.
-                if not res.df.empty and model:
-                    import numpy as np
-
-                    model_params = set(model.parameters.keys()) if hasattr(model, "parameters") else set()
-                    param_cols = [c for c in res.df.columns if c in model_params]
-                    # The column whose values match 'param' is the codim-2 continuation parameter; the other is the co-parameter (param2).
-                    res._ics_name = None
-                    res._fp2_name = None
-                    for col in param_cols:
-                        if np.allclose(res.df[col].values, res.df["param"].values, equal_nan=True, rtol=1e-10):
-                            res._ics_name = col
-                        else:
-                            res._fp2_name = col
-                            res.df["param2"] = res.df[col]
-                    # Fallback: if we couldn't match, use first param col
-                    if res._fp2_name is None and len(param_cols) >= 2:
-                        for col in param_cols:
-                            if col != (res._ics_name or ""):
-                                res._fp2_name = col
-                                res.df["param2"] = res.df[col]
-                                break
-
-                results.append(res)
-            return results
-        except Exception:
-            return []
-
-    @staticmethod
-    def _prepare_codim2_branch(br, parent_cont):
-        """Pre-compute context for a codim-2 branch of *parent_cont*, continued in the parent's primary parameter and the second `ContinuationAdapter.codim2_parameter` names.
+        BifurcationKit continues a codim-2 curve in the second parameter, so its own ``param`` column holds that one; both parameters are also recorded under their names, which is where the two columns are read from.
 
         Raises:
-            ValueError: If *br* is not a two-parameter continuation (`ContinuationAdapter.is_codim2`).
+            KeyError: If a curve records the primary or no second parameter under its name.
+        """
+        from tvbo.adapters.julia import eval_with_auto_install
+        from tvbo.analysis import BifurcationResult
+        from tvbo.analysis.bifurcation import continuation_kind
+
+        kinds = {"HopfCont": "hopf", "FoldCont": "fold"}
+        results = []
+        for br_obj in eval_with_auto_install("codim2_results"):
+            res = BifurcationResult(br=br_obj, model=model, ICS=ICS, **kwargs)
+            res._is_codim2 = True
+            res._source_type = kinds.get(continuation_kind(br_obj), "fold")
+            if not res.df.empty:
+                second = [c for c in res.df.columns if c in model.parameters and c != ICS]
+                if ICS not in res.df.columns or len(second) != 1:
+                    raise KeyError(
+                        f"a BifurcationKit codim-2 curve records the parameters {[c for c in res.df.columns if c in model.parameters]}, "
+                        f"where the primary {ICS!r} and one second parameter were expected."
+                    )
+                res.df["param"], res.df["param2"] = res.df[ICS], res.df[second[0]]
+                res._ics_name, res._fp2_name = ICS, second[0]
+            results.append(res)
+        return results
+
+    @staticmethod
+    def _prepare_codim2_branch(br, parent_cont, model, primary_bounds):
+        """Pre-compute context for a codim-2 branch of *parent_cont* on *model*, continued in the parent's primary parameter and the second `ContinuationAdapter.codim2_parameter` names.
+
+        BifurcationKit continues the curve in the second parameter, bounded as `ContinuationAdapter.parameter_bounds` resolves it, and carries the primary among its unknowns, so the primary's *primary_bounds* stop the curve through a finaliser, as AUTO-07p's ``RL0``/``RL1`` do.
+
+        Raises:
+            ValueError: If *br* is not a two-parameter continuation (`ContinuationAdapter.is_codim2`), or declares no source point (`ContinuationAdapter.codim2_source`).
         """
         bc = br.continuation
         fp2 = BifurcationKitAdapter.codim2_parameter(br, parent_cont)
@@ -485,26 +460,17 @@ class BifurcationKitAdapter(ContinuationAdapter):
             )
 
         ICS2 = str(fp2.name)
-        p2_min = float(fp2.domain.lo) if fp2.domain else -20
-        p2_max = float(fp2.domain.hi) if fp2.domain else 20
+        p2_min, p2_max = BifurcationKitAdapter.parameter_bounds(fp2, model, f"branch {getattr(br, 'name', None)!r}")
 
-        kind, index = BifurcationKitAdapter.source_point(br, "hopf:all")
+        kind, index = BifurcationKitAdapter.codim2_source(br)
 
         # Codim-2 ContinuationPar args
-        cp_args = [f"p_min = {p2_min}", f"p_max = {p2_max}"]
-        cp_args.extend(_cont_kwargs(bc))
-        # The eigenvalue count and the Newton options follow the model's dimension and scale, so a branch declaring none takes the parent's.
-        if getattr(bc, "nev", None) is None and getattr(parent_cont, "nev", None) is not None:
-            cp_args.append(f"nev = {parent_cont.nev}")
-        newton = _newton_kwargs(bc) or _newton_kwargs(parent_cont)
+        fields = {"p_min": p2_min, "p_max": p2_max, "ds": 0.01, "dsmax": 0.1, "max_steps": 300}
+        fields.update(_cont_fields(bc, parent_cont))
+        cp_args = [f"{keyword} = {value}" for keyword, value in fields.items()]
+        newton = _newton_kwargs(bc, parent_cont)
         if newton:
             cp_args.append(f"newton_options = NewtonPar({', '.join(newton)})")
-        if not any("ds =" in a for a in cp_args):
-            cp_args.append("ds = 0.01")
-        if not any("dsmax" in a.lower() for a in cp_args):
-            cp_args.append("dsmax = 0.1")
-        if not any("max_steps" in a for a in cp_args):
-            cp_args.append("max_steps = 300")
         codim2_cp_str = ", ".join(cp_args)
 
         # Codim-2 continuation kwargs
@@ -514,8 +480,12 @@ class BifurcationKitAdapter(ContinuationAdapter):
             "update_minaug_every_step = 1",
             "start_with_eigen = true",
             "verbosity = 0",
+            f"finalise_solution = (z, tau, step, contResult; prob, k...) -> {float(primary_bounds[0])} <= first(BifurcationKit.getp(z.u, prob)) <= {float(primary_bounds[1])}",
         ]
-        if br.bothside:
+        codim2_alg = _branch_alg(bc)
+        if codim2_alg:
+            codim2_kw.append(codim2_alg)
+        if BifurcationKitAdapter.bothside(br):
             codim2_kw.append("bothside = true")
         codim2_kwargs_str = ",\n            ".join(codim2_kw)
 

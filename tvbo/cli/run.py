@@ -388,9 +388,9 @@ def _dispatch_to_engine(
 def _reexec_in_container(image: str, argv: list[str]) -> None:
     """Re-exec ``tvbo`` inside *image* via Singularity (preferred) or Docker.
 
-    *image* is resolved the way a workflow kit resolves its ``container`` (:func:`tvbo.cli._workflow.resolve_container_ref`), so ``tvbo`` and a bare ``ghcr.io/…:tag`` name the same image on both paths. Docker takes the reference without its ``docker://`` transport and cannot run a local ``.sif`` or a non-Docker transport at all, which is refused by name. Both paths set ``TVBO_IN_CONTAINER=1`` so the inner run does not re-exec again.
+    *image* is resolved the way a workflow kit resolves its ``container`` (:func:`tvbo.run.workflow.resolve_container_ref`), so ``tvbo`` and a bare ``ghcr.io/…:tag`` name the same image on both paths. Docker takes the reference without its ``docker://`` transport and cannot run a local ``.sif`` or a non-Docker transport at all, which is refused by name. Both paths set ``TVBO_IN_CONTAINER=1`` so the inner run does not re-exec again.
     """
-    from ._workflow import resolve_container_ref
+    from tvbo.run.workflow import resolve_container_ref
 
     ref = resolve_container_ref(image)
     use_singularity = bool(os.environ.get("SINGULARITY_BIND")) or shutil.which("singularity")

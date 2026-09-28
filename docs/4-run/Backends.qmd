@@ -49,7 +49,7 @@ tvbo run Deco2014 --backend jax --duration 10000 -o out/
 
 ## Simulation backends
 
-These integrate the model forward. Capabilities for the first block are the authoritative workflow-planner set (`tvbo.cli._backends.BACKENDS`, mirrored from `ontology/tvb-o-axioms.ttl §4.1`).
+These integrate the model forward. Capabilities for the first block are the workflow planner's set (`tvbo.run.backends.BACKENDS`, named after the individuals of `ontology/tvb-o-axioms.ttl §4.1`).
 
 | `format=` (aliases) | Engine | Best for | Key capabilities |
 |---|---|---|---|
@@ -142,7 +142,7 @@ See [`tvbo workflow plan`](../CLI/workflow.qmd) to preview placement, and [Repro
 
 ## Source of truth
 
-The capability matrix lives in **code** (`tvbo.cli._backends.BACKENDS`, a fast `dict[str, BackendSpec]` with no RDFLib import) and in the **ontology** (`ontology/tvb-o-axioms.ttl §4.1`, the machine-readable contract for reasoners and the platform UI). A round-trip test (`tests/test_cli_backends_match_ontology.py`) keeps them in sync. Run `tvbo workflow backends` for the live table.
+The capability matrix the workflow planner reads lives in **code** (`tvbo.run.backends.BACKENDS`, a fast `dict[str, BackendSpec]` with no RDFLib import); the **ontology** (`ontology/tvb-o-axioms.ttl §4.1`) declares the same vocabulary for reasoners and the platform UI. The table is written by hand, not read from the ontology, and no test compares the two, so they can disagree: the vectorisable axes exist only in code. Run `tvbo workflow backends` for the live table.
 
 ## See also
 

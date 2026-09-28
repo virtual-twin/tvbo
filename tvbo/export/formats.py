@@ -73,14 +73,29 @@ def _codegen_context(exp, **kw) -> dict:
     return kw
 
 
+def _coupling_evaluation(exp) -> str | None:
+    """*exp*'s ``coupling_evaluation`` where it changes the system integrated (`coupling_evaluation_in_effect`), else ``None``."""
+    from tvbo.adapters.base import coupling_evaluation_in_effect, declared_node_count
+
+    return coupling_evaluation_in_effect(getattr(exp, "integration", None), declared_node_count(getattr(exp, "network", None)))
+
+
 def _render_tvb(exp, **kw):
+    """TVB's simulator computes the coupling once per step and hands it to every stage of its integrator's scheme, so a declared ``coupling_evaluation: per_stage`` is refused wherever it would integrate another system (`_coupling_evaluation`)."""
     from tvbo.classes.experiment import templates
 
+    if _coupling_evaluation(exp) == "per_stage":
+        raise NotImplementedError(
+            f"integration.coupling_evaluation: per_stage re-evaluates the coupling at every stage of {exp.integration.method}, and TVB's simulator "
+            "computes it once per step and holds it across the stages. Run the network on tvboptim, jax or networkdynamics, which honour "
+            "per_stage, or declare per_step."
+        )
     template = templates.lookup.get_template("tvbo-tvb-SimulationExperiment.py.mako")
     return template.render(experiment=exp, **_codegen_context(exp, **kw))
 
 
 def _render_jax(exp, **kw):
+    """The jax template re-evaluates the coupling at each stage's state under ``coupling_evaluation: per_stage`` (``per_stage_coupling``) and holds the step's under ``per_step``. A delayed coupling reads its sources off the history buffer at the step's delay, which no stage time can shift, so ``per_stage`` over a delayed coupling is refused."""
     from tvbo.adapters.observation_sampling import resolve_observation_sampling
     from tvbo.classes.experiment import templates
     from tvbo.utils import keyed_items
@@ -95,7 +110,18 @@ def _render_jax(exp, **kw):
             for name, obs in keyed_items(getattr(exp, "observations", None), "observations")
         },
     )
-    return template.render(experiment=exp, **_codegen_context(exp, **kw))
+    context = _codegen_context(exp, **kw)
+    per_stage = _coupling_evaluation(exp) == "per_stage"
+    coupling = context["coupling"]
+    if per_stage and coupling is not None and coupling.delayed and exp.horizon > 1:
+        raise NotImplementedError(
+            f"integration.coupling_evaluation: per_stage re-evaluates the coupling at every stage of {exp.integration.method}, and the jax "
+            f"backend reads the delayed coupling {coupling.name} off its history buffer at the step's delays, which it cannot shift to a stage's time. "
+            "Run the network on tvboptim, which honours per_stage over a delayed coupling, or declare per_step."
+        )
+    context.setdefault("per_stage_coupling", per_stage)
+    context.setdefault("node_labels", [str(label) for label in exp.network.node_labels] if exp.network is not None else [])
+    return template.render(experiment=exp, **context)
 
 
 def _render_tvboptim(exp, **kw):
@@ -125,10 +151,9 @@ def _render_pde(exp, **kw):
 
 
 def _render_julia(exp, **kw):
-    from tvbo.classes.experiment import templates
+    from tvbo.adapters.diffeq import DiffEqAdapter
 
-    template = templates.lookup.get_template("tvbo-julia-DifferentialEquations.jl.mako")
-    return template.render(experiment=exp, model=exp.dynamics, **kw)
+    return DiffEqAdapter(exp).render_code(**kw)
 
 
 def _render_networkdynamics(exp, **kw):

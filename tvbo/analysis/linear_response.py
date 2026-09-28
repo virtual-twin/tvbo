@@ -54,10 +54,10 @@ def _unfolded(model, expressions):
     return {name: expr.subs(zero_local) for name, expr in out.items()}
 
 
-def _dfun_symbols(model):
+def _dfun_symbols(model, inline_functions=False):
     """Return (state_vars, state_syms, net_coupling_names, source_var, per-node f expressions).
 
-    ``f`` are the state-variable RHS through :func:`_unfolded` — so each ``f_k`` is expressed in state variables, network-coupling inputs, and parameters only.
+    ``f`` are the state-variable RHS through :func:`_unfolded` — so each ``f_k`` is expressed in state variables, network-coupling inputs, and parameters only, and, with *inline_functions*, with every call to a model function replaced by its body.
     """
     svs = list(model.state_variables)
     net_cpls, _ = _coupling_split(model)
@@ -67,15 +67,21 @@ def _dfun_symbols(model):
     )
     rhs = _parsed(model, "state-equations")
     f = _unfolded(model, {v: rhs[v] for v in svs})
+    if inline_functions:
+        from tvbo.codegen.code import inline_functions as inline
+        from tvbo.parse.expression import function_bodies
+
+        bodies = function_bodies(model)
+        f = {v: inline(expr, bodies) for v, expr in f.items()} if bodies else f
     return svs, [sp.Symbol(v) for v in svs], net_cpls, source_var, [f[v] for v in svs]
 
 
-def jacobian_terms(model):
+def jacobian_terms(model, inline_functions=False):
     """Symbolic per-node Jacobian terms of the metadata dfun.
 
-    Returns a dict with the symbolic ``Jloc`` (∂f/∂state, ``n_sv × n_sv``) and ``Jcpl`` (∂f/∂net-coupling, ``n_sv × n_cpl``) sympy matrices plus the symbol ordering needed to lower them (state vars, network coupling names, the coupling source variable). Backend-independent — a printer turns these into code.
+    Returns a dict with the symbolic ``Jloc`` (∂f/∂state, ``n_sv × n_sv``) and ``Jcpl`` (∂f/∂net-coupling, ``n_sv × n_cpl``) sympy matrices plus the symbol ordering needed to lower them (state vars, network coupling names, the coupling source variable). Backend-independent — a printer turns these into code. A model function stays a call, whose derivative SymPy leaves unevaluated, unless *inline_functions* differentiates its body instead.
     """
-    svs, state_syms, net_cpls, source_var, f = _dfun_symbols(model)
+    svs, state_syms, net_cpls, source_var, f = _dfun_symbols(model, inline_functions)
     cpl_syms = [sp.Symbol(c) for c in net_cpls]
     fmat = sp.Matrix(f)
     return {
@@ -173,8 +179,7 @@ def network_jacobian(model, weights: Any, state: Any, params: dict) -> np.ndarra
     weights : array (n_nodes, n_nodes)
         connectome ``W`` (``c_i = Σ_j W_ij s_j`` for the coupling source ``s``).
     state : array (n_sv, n_nodes)
-        The operating point (e.g. the deterministic fixed point), per state
-        variable and node.
+        The operating point (e.g. the deterministic fixed point), per state variable and node.
     params : dict
         Scalar parameter values by name.
 

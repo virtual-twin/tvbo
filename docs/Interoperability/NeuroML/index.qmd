@@ -37,7 +37,7 @@ Every TVBO `Dynamics` becomes a self-contained LEMS `ComponentType`. The full ma
 | `Event.affect` | `<StateAssignment variable="..." value="..."/>` | Support `var1=expr1; var2=expr2` |
 | `Coupling` | LEMS `<ComponentType name="Coupling">` | Pre/post expressions as `<DerivedVariable>` |
 | `Network` | `<Component type="network">` + `<population>` | Size from `number_of_nodes` |
-| `Integrator` | `<Simulation length="..." step="...">` | Duration + step in ms |
+| `Integrator` | `<Simulation length="..." step="...">` | `length` is `transient_time + duration`, in the integration's time unit (`s`, `ms` or `us`). A settle is the head of the run: every input onset and every `t` in the equations moves a settle later, and `run()` reports `.data` on the measurement clock with the settle on `.transient` |
 | Observations | `<OutputFile>` + `<OutputColumn>` | One file per state variable |
 
 ### Expression Syntax

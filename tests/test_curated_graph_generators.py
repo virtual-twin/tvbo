@@ -215,3 +215,52 @@ def test_the_declared_preserve_default_reaches_the_callable(bound_source):
         np.asarray(net.weights),
         weight_shuffle("irrelevant://source", preserve="binary_mask", seed=1)["weights"],
     )
+
+
+@pytest.mark.parametrize(
+    "generator, n_edges",
+    [
+        ({"name": "ring", "type": "Cycle"}, 12),
+        ({"name": "all", "type": "Complete"}, 30),
+        ({"name": "ws", "type": "WattsStrogatz", "parameters": {"k": {"value": 2}, "p": {"value": 0.3}}, "seed": 3}, 12),
+    ],
+)
+def test_a_library_generator_builds_the_graph_every_backend_integrates(generator, n_edges):
+    """A generator whose curated entry binds a library constructor is resolved, not left as an unconnected network, and builds exactly the graph `library_weights` does."""
+    from tvbo.graph_generators.catalog import library_weights
+
+    net = Network(number_of_nodes=6, graph_generator=generator)
+    weights = np.asarray(net.matrix("weight", format="dense"))
+
+    assert int((weights != 0).sum()) == n_edges
+    np.testing.assert_array_equal(weights, library_weights(net.graph_generator, 6))
+
+
+def _erdos_renyi(n, **parameters):
+    return Network(
+        number_of_nodes=n,
+        graph_generator={
+            "name": "er",
+            "type": "ErdosRenyi",
+            "seed": 4,
+            "parameters": {k: {"name": k, "value": v} for k, v in parameters.items()},
+        },
+    )
+
+
+def test_density_from_draws_the_random_graph_at_the_source_networks_density(bound_source):
+    """ErdosRenyi's ``density_from`` sets ``p`` to the fraction of the source's off-diagonal entries that are nonzero, 4 of 6 for `SOURCE`."""
+    import networkx as nx
+
+    from tvbo.graph_generators.catalog import connection_density
+
+    assert connection_density(SOURCE) == pytest.approx(4 / 6)
+    weights = np.asarray(_erdos_renyi(40, density_from="irrelevant://source").matrix("weight", format="dense"))
+    expected = nx.to_numpy_array(nx.erdos_renyi_graph(40, 4 / 6, seed=4), nodelist=range(40), weight=None).T
+
+    np.testing.assert_array_equal(weights, expected)
+
+
+def test_density_from_and_an_explicit_p_are_refused_together(bound_source):
+    with pytest.raises(ValueError, match="gives both p and density_from"):
+        _erdos_renyi(10, p=0.2, density_from="irrelevant://source")

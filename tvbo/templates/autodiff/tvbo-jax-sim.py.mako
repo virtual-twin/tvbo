@@ -175,10 +175,10 @@ def kernel(state):
     %endif
 
     ics = (history, current_state)
-    weights = state.network.weights_matrix
+    weights = state.network.matrix("weight", format="dense")
 
     dn = jnp.arange(int(n_nodes)) * jnp.ones((int(n_nodes), int(n_nodes))).astype(jnp.int32)
-    idelays = jnp.round(state.network.lengths_matrix / state.network.conduction_speed.value / state.dt).astype(jnp.int32) if state.network.conduction_speed.value > 0 else jnp.zeros((int(n_nodes), int(n_nodes)), dtype=jnp.int32)
+    idelays = jnp.round(state.network.lengths_matrix / state.network.conduction_speed.value / state.dt).astype(jnp.int32) if state.network.lengths_matrix is not None and state.network.conduction_speed.value > 0 else jnp.zeros((int(n_nodes), int(n_nodes)), dtype=jnp.int32)
     di = -1 * idelays - 1
     delay_indices = (di, dn)
 
@@ -333,7 +333,7 @@ def kernel(state):
     labels_dimensions = {
         "Time": None,
         "State Variable": ${output_labels},
-        "Space": ${list(experiment.network.parcellation.region_labels) if getattr(experiment.network.parcellation, 'region_labels', None) else [str(i) for i in range(getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions)]},
+        "Space": ${node_labels},
         "Mode": ${[f"m{i}" for i in range(experiment.dynamics.number_of_modes)]},
     }
     return TimeSeries(time=(time_steps + t_offset) * dt, data=trace, title = "Raw", sample_period=dt, labels_dimensions=labels_dimensions)
@@ -360,7 +360,7 @@ def run_experiment(state):
         ts.data,
         raw_time=ts.time,
         state_names=ld.get("State Variable"),
-        nodes=ld.get("Region"),
+        nodes=list(ts.space_labels),
     )
 
     # ── Observations ───────────────────────────────────────────────────────
@@ -373,7 +373,7 @@ def run_experiment(state):
         _obs_ts.data,
         raw_time=_obs_ts.time,
         state_names=_obs_ld.get("State Variable"),
-        nodes=_obs_ld.get("Region"),
+        nodes=list(_obs_ts.space_labels),
     ))
 % endfor
 % endif

@@ -89,7 +89,7 @@ def test_dispatch_to_engine_carries_the_container_and_the_results_root_into_the_
 
     Both flags reach the plan as the assignments ``tvbo workflow --set`` parses, so each must be spelled as a bare key: written flag-style (``--set=container=…``) the key parses as ``set`` and the kit runs bare, writing into its own ``derivatives/tvbo/``. ``-o`` is relative to where the command runs, as it is for a local run, even though the tasks run from the kit directory.
     """
-    from tvbo.cli import _workflow
+    from tvbo.run import workflow as _workflow
 
     monkeypatch.setattr(
         "tvbo.cli.workflow.subprocess.run", lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
@@ -153,6 +153,17 @@ def test_container_reexec_hands_docker_the_reference_without_its_transport(monke
         "ghcr.io/the-virtual-brain/tvbo:0.7.0" in cmd and not any(c.startswith("docker://") for c in cmd) for cmd in launched
     )
     assert all(cmd[:2] == ["docker", "run"] and "TVBO_IN_CONTAINER=1" in cmd for cmd in launched)
+
+
+@pytest.mark.parametrize("singularity, want", [(True, "docker://rocker/r-ver"), (False, "rocker/r-ver")])
+def test_container_reexec_runs_a_third_party_image_at_its_registry_default_tag(monkeypatch, singularity, want):
+    """An untagged image that is not tvbo's own is launched untagged on either runtime, never at tvbo's version, which is not a tag it carries."""
+    monkeypatch.setenv("TVBO_CONTAINER_TAG", "9.9.9")
+    launched = _captured_reexec(monkeypatch, singularity=singularity)
+    with pytest.raises(SystemExit):
+        run_cli._reexec_in_container("rocker/r-ver", ["run", "x.yaml"])
+    (cmd,) = launched
+    assert want in cmd and not any("9.9.9" in c for c in cmd)
 
 
 def test_container_reexec_refuses_a_local_image_docker_cannot_run(monkeypatch):

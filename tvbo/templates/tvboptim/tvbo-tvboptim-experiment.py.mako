@@ -1869,7 +1869,7 @@ def _stimulus_samples(name):
         )
     return jnp.asarray(_STIMULUS_DATA[name])
 <%
-    _seed_coupling_home = coupling_param_keys(all_couplings)
+    _seed_coupling_home = coupling_param_keys(all_couplings, _to_ci_key)
 %>\
 % if _seed_coupling_home:
 
@@ -2099,9 +2099,8 @@ def run_simulation(
     % endif
 
     model_fn, state = prepare(network, solver, t0=t0, t1=t0 + t1, dt=dt)
-    # A settle already opened the window and `update_history` carried its endpoint over, so the IC is reconstructed here only when this scan is the opening one.
-    if not _settled:
-        state = _open_window(state)
+    # A settle already opened the window and `update_history` carried its endpoint over, so the IC is reconstructed only when this scan is the opening one; a parameter sourced from another run is the model's own and holds in every scan.
+    state = _apply_seed_params(state) if _settled else _open_window(state)
     % if stochastic_param_info:
     _inject_stochastic_trajectories(state, t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
     % endif
@@ -2646,7 +2645,7 @@ def compute_analysis_observations(state, network, settle=None):
             }
             break
 %>
-${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor, events=(dict(experiment.events) if experiment.events else {}), op_constraint=_op_constraint)}
+${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor, events=(dict(experiment.events) if experiment.events else {}), op_constraint=_op_constraint, external_keys=external_input_keys)}
     return obs
 % endif
 

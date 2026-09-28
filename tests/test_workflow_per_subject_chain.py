@@ -6,8 +6,8 @@ Three gaps kept a chain of per-subject experiments (fit -> forward run -> driven
 from __future__ import annotations
 
 from tvbo.classes.experiment import SimulationExperiment
-from tvbo.cli import _workflow
 from tvbo.cli.workflow import _render_template
+from tvbo.run import workflow as _workflow
 
 _EVENT_SOURCED = """
 id: 61

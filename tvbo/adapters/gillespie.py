@@ -1,11 +1,6 @@
 """Gillespie SSA backend — a finite-size stochastic realization of a mean-field rate model.
 
-Runs a relaxation-type rate model as a finite birth-death process (Gillespie 1977). The model must have one *activity* state variable ``X`` obeying a relaxation equation ``tau*X' = -X + F(state)`` (a leak ``-X`` toward a gain ``F``); any remaining state variables are treated as slow internal variables that evolve deterministically between events. The activity becomes a discrete count ``n ≈ Omega*X`` where ``Omega`` is the van Kampen system size (``execution.system_size``): the number of discrete units per unit of ``X``. The rate equation is read as
-
-    birth propensity  a+ = Omega * F / tau        (the gain term)
-    death propensity  a- = n / tau                (the leak term, since a- = Omega*X/tau)
-
-and the slow variables integrate deterministically over each inter-event interval. Finite ``Omega`` is the sole source of noise; the deterministic mean field is recovered as ``Omega -> infinity``. Applicable to any single-activity Wilson-Cowan / Tsodyks-Markram type rate model — the birth/death split and the between-event ODEs are derived from the model's own equations, so nothing here is model-specific.
+Runs a relaxation-type rate model as a finite birth-death process (Gillespie 1977). The model must have one *activity* state variable ``X`` obeying a relaxation equation ``tau*X' = -X + F(state)`` (a leak ``-X`` toward a gain ``F``); any remaining state variables are treated as slow internal variables that evolve deterministically between events. The activity becomes a discrete count ``n ≈ Omega*X`` where ``Omega`` is the van Kampen system size (``execution.system_size``): the number of discrete units per unit of ``X``. The rate equation is read as a birth propensity ``a+ = Omega * F / tau`` (the gain term) and a death propensity ``a- = n / tau`` (the leak term, since ``a- = Omega*X/tau``), and the slow variables integrate deterministically over each inter-event interval. Finite ``Omega`` is the sole source of noise; the deterministic mean field is recovered as ``Omega -> infinity``. Applicable to any single-activity Wilson-Cowan / Tsodyks-Markram type rate model — the birth/death split and the between-event ODEs are derived from the model's own equations, so nothing here is model-specific.
 
 Reference: Cortes et al. (2013) PNAS 110(41):16610, SI §2 (Eq. S10/S11) and Fig 5.
 """
@@ -23,7 +18,7 @@ from tvbo.utils import initial_value
 class GillespieAdapter(BaseAdapter):
     """Run a mean-field rate `SimulationExperiment` as a finite-N birth-death process.
 
-    The window is `BaseAdapter.get_integration_info`'s: ``step_size`` is the output sampling cadence (events are drawn in continuous time), ``transient_time`` is simulated ahead of the measured ``duration``, and the recorded grid is on the measurement clock, so the settle carries negative timestamps and ``.data`` opens on the state at ``t = 0``.
+    The window is `BaseAdapter.get_integration_info`'s: ``step_size`` is the output sampling cadence (events are drawn in continuous time), ``transient_time`` is simulated ahead of the measured ``duration`` in the same realisation, and the recorded grid is on the measurement clock. The initial state is not recorded, as on every other backend: the settle's ``transient_time / step_size`` samples end at ``t = 0`` on ``.transient``, and ``.data`` opens one step later with ``duration / step_size`` samples.
     """
 
     # -- symbolic model → numpy callables (birth flux + slow-variable RHS) -------------
@@ -102,10 +97,16 @@ class GillespieAdapter(BaseAdapter):
         n_count = int(round(omega * state[activity]))
         rng = np.random.default_rng(seed)
 
-        nrec = n_settle + window["n_measured"] + 1
+        nrec = n_settle + window["n_measured"]
         rec = np.full((nrec, len(sv_names)), np.nan)
-        ri, t_rec, t = 0, 0.0, 0.0
+        ri, t_rec, t = 0, rec_dt, 0.0
         idx_activity = sv_names.index(activity)
+
+        def bounded(n, value):
+            """*value* of slow variable *n* clamped into its declared domain."""
+            lo, hi = bounds[n]
+            value = value if lo is None else max(value, float(lo))
+            return value if hi is None else min(value, float(hi))
 
         while ri < nrec:  # until the recorded grid, settle and measured window, is full
             state[activity] = n_count / omega
@@ -114,25 +115,21 @@ class GillespieAdapter(BaseAdapter):
             a_minus = n_count / tau
             a0 = a_plus + a_minus
             dt = -np.log(rng.random()) / a0 if a0 > 0 else rec_dt
-            # slow variables evolve deterministically over the inter-event interval
+            rates = {n: float(slow_fns[n](*args)) for n in slow}
+            # A grid time before the event sees the count the interval holds and the slow variables on their Euler line.
+            while t_rec < t + dt and ri < nrec:
+                for j, n in enumerate(sv_names):
+                    rec[ri, j] = n_count / omega if j == idx_activity else bounded(n, state[n] + rates[n] * (t_rec - t))
+                ri += 1
+                t_rec += rec_dt
             for n in slow:
-                state[n] += float(slow_fns[n](*args)) * dt
-                lo, hi = bounds[n]
-                if lo is not None:
-                    state[n] = max(state[n], float(lo))
-                if hi is not None:
-                    state[n] = min(state[n], float(hi))
+                state[n] = bounded(n, state[n] + rates[n] * dt)
             if a0 > 0:
                 n_count += 1 if rng.random() < a_plus / a0 else -1
                 n_count = max(n_count, 0)
             t += dt
-            while t_rec <= t and ri < nrec:
-                for j, n in enumerate(sv_names):
-                    rec[ri, j] = n_count / omega if j == idx_activity else state[n]
-                ri += 1
-                t_rec += rec_dt
 
-        time = (np.arange(ri) - n_settle) * rec_dt
+        time = (np.arange(1, ri + 1) - n_settle) * rec_dt
         da = xr.DataArray(
             rec[:ri],
             dims=["time", "variable"],

@@ -64,14 +64,15 @@ The noise term's intensity, distribution, and per-state-variable targeting live 
 
 ## Coupling across integrator stages
 
-A multi-stage method (Heun, RK4) can re-evaluate the network coupling **at every stage** (`per_stage`, standard ODE accuracy) or compute it **once per step** and hold it across stages (`per_step`, a TVB-style efficiency shortcut). Single-stage `euler` ignores it.
+A multi-stage method (Heun, RK4) can re-evaluate the network coupling **at every stage** (`per_stage`, standard ODE accuracy) or compute it **once per step** and hold it across stages (`per_step`, the TVB scheme and the default). Single-stage `euler` integrates the same system under both.
 
 ```yaml
 integration:
   method: Heun
-  coupling_evaluation: per_stage   # match reference integrators on stiff /
-                                   # chaotic / multistable systems
+  coupling_evaluation: per_stage   # match a reference integrator
 ```
+
+Backends differ in which values they honour. tvboptim's native solvers, NetworkDynamics.jl and the jax backend honour both. NetworkDynamics.jl re-evaluates the coupling at every stage natively, and under `per_step` holds each node's summed input on parameters a callback sets at the start of every step, adaptive methods included. The jax backend re-evaluates an undelayed coupling at each stage's state, and refuses `per_stage` over a delayed coupling, whose history read it cannot shift to a stage's time. TVB and the Python graph runner compute the coupling once per step, so they refuse `per_stage` on a multi-stage method over more than one node. tvboptim's diffrax solvers and PyRates always integrate `per_stage`, whatever is declared.
 
 `per_stage` matters when the frozen-coupling error could select a different trajectory or attractor. Use it when reproducing a reference result, and `per_step` for speed. See [Cross-backend numerical parity](CrossBackendParity.qmd).
 

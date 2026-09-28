@@ -69,8 +69,7 @@ def test_every_directory_of_metadata_has_a_class():
 def test_an_iri_identifies_one_record():
     """Two records claiming one ``iri`` disagree about which of them is that entity.
 
-    ``iri`` is identity, and `enrich()` reads it as the entity to fill from — so a second record claiming it is filled from the first, silently. `ReducedWongWangFunc` states the sigmoid as a `function` H and once claimed `tvbo:ReducedWongWang`; enriching it added a
-    *derived variable* H from the canonical record beside its own function of that name.
+    ``iri`` is identity, and `enrich()` reads it as the entity to fill from — so a second record claiming it is filled from the first, silently. `ReducedWongWangFunc` states the sigmoid as a `function` H and once claimed `tvbo:ReducedWongWang`; enriching it added a *derived variable* H from the canonical record beside its own function of that name.
     A variant states `derived_from_model:` instead, which relates without asserting.
     """
     claims = {}
@@ -87,3 +86,26 @@ def test_an_iri_identifies_one_record():
     assert not collisions, "one iri, several records:\n" + "\n".join(
         f"  {iri}: " + ", ".join(held) for iri, held in sorted(collisions.items())
     )
+
+
+MODEL_NAMESPACES = ("state_variables", "parameters", "derived_parameters", "derived_variables", "coupling_inputs", "functions")
+"""The groups of a model that each bind a name in its one equation namespace."""
+
+
+def test_a_model_binds_each_name_once():
+    """A name declared in two groups of one model is two quantities with one symbol.
+
+    Python-like backends let the later assignment shadow the earlier, so one of them silently goes unread; Fortran refuses the second declaration. `ZerlautAdaptationFirstOrder` declared its normalised membrane-potential fluctuation as a derived variable ``S_i``, the name of TVB's remote-input scaling parameter, and its AUTO-07p source did not compile.
+    """
+    clashes = []
+    for path, target in CASES:
+        data = yaml.safe_load(path.read_text())
+        if target != "Dynamics" or not isinstance(data, dict):
+            continue
+        seen = {}
+        for group in MODEL_NAMESPACES:
+            for name in data.get(group) or {}:
+                if name in seen:
+                    clashes.append(f"{path.relative_to(REPO)}: {name} in {seen[name]} and {group}")
+                seen.setdefault(name, group)
+    assert not clashes, "one name, two declarations:\n  " + "\n  ".join(clashes)

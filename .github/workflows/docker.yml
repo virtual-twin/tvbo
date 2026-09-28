@@ -156,31 +156,26 @@ jobs:
               tests/test_citation_formatting.py
               tests/test_numerical_golden_corpus.py
               tests/test_codegen_golden_corpus.py
-            needs_julia_refdata: false
           - shard: tvboptim
             paths: >-
               tests/test_numerical_golden_corpus.py
               tests/test_tvboptim_experiments.py
               tests/functional/test_simulation_backends_tvboptim.py
-            needs_julia_refdata: false
           - shard: tvb
             paths: >-
               tests/test_tvb_comparison.py
               tests/test_tvb_interop.py
               tests/functional/test_simulation_backends_tvb.py
-            needs_julia_refdata: false
           - shard: pyrates-neuroml
             paths: >-
               tests/functional/test_pyrates_integration.py
               tests/functional/test_simulation_backends_pyrates.py
               tests/functional/test_simulation_backends_neuroml.py
               tests/test_full_workflow_comparison.py
-            needs_julia_refdata: false
           - shard: julia
             paths: >-
               tests/functional/test_simulation_backends_julia.py
               tests/test_networkdynamics_comparison.py
-            needs_julia_refdata: true
     steps:
       - uses: actions/checkout@v6
       - name: Configure git for private repos
@@ -202,9 +197,6 @@ jobs:
           fi
           "${UV_BIN}" pip install --system -e . --no-deps
           "${UV_BIN}" pip install --system pytest-xdist pytest-timeout
-      - name: Generate Julia reference data
-        if: matrix.needs_julia_refdata
-        run: python -c "from juliacall import Main; Main.seval('include(\"tests/reference_data/generate_nd_references.jl\")')"
       - name: Run shard "${{ matrix.shard }}"
         run: |
           pytest -x -v --tb=short \

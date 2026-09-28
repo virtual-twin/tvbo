@@ -383,7 +383,10 @@ def _extract_equilibrium_df(br):
 
 
 def _extract_special_points(br):
-    """Extract special points from a BifurcationKit branch result."""
+    """Extract special points from a BifurcationKit branch result, each where BifurcationKit located it.
+
+    ``param`` is the located parameter value, not the branch step's: with bisection on (``detect_bifurcation = 3``) BifurcationKit narrows each eigenvalue crossing to ``interval``, ``precision`` wide, and ``status`` says whether that converged (``converged``) or stopped at the step's value (``guess``). ``record`` holds what ``record_from_solution`` recorded at that point, the state at the located parameter.
+    """
     from juliacall import Main
 
     Main._br_sp = br
@@ -393,17 +396,23 @@ def _extract_special_points(br):
 
     points = []
     for i in range(1, n_sp + 1):
-        Main.seval(f"_br_sp.specialpoint[{i}]")
+        sp = f"_br_sp.specialpoint[{i}]"
         point = {
-            "type": str(Main.seval(f"string(_br_sp.specialpoint[{i}].type)")),
-            "step": int(Main.seval(f"_br_sp.specialpoint[{i}].step")),
-            "param": float(Main.seval(f"_br_sp.specialpoint[{i}].param")),
-            "idx": int(Main.seval(f"_br_sp.specialpoint[{i}].idx")),
+            "type": str(Main.seval(f"string({sp}.type)")),
+            "step": int(Main.seval(f"{sp}.step")),
+            "param": float(Main.seval(f"{sp}.param")),
+            "idx": int(Main.seval(f"{sp}.idx")),
+            "status": str(Main.seval(f"string({sp}.status)")),
+            "precision": float(Main.seval(f"Float64({sp}.precision)")),
         }
         try:
-            point["norm"] = float(Main.seval(f"_br_sp.specialpoint[{i}].norm"))
+            point["norm"] = float(Main.seval(f"{sp}.norm"))
         except Exception:
             point["norm"] = np.nan
+        record = Main.seval(
+            f"{sp}.printsol isa NamedTuple ? [(string(k), Float64(v)) for (k, v) in pairs({sp}.printsol) if v isa Real] : Tuple{{String, Float64}}[]"
+        )
+        point["record"] = {str(k): float(v) for k, v in record}
         points.append(point)
 
     return points
@@ -475,6 +484,8 @@ class BifurcationResult:
 
         On an equilibrium branch, BifurcationKit labels both genuine branch points and saddle-node folds `:bp`. The ontology separates them by branch geometry, a fold being where the continuation parameter turns around, so those are relabelled `fold` and `canonical_ty` then resolves them to `LP`.
 
+        BifurcationKit labels the branch step past each crossing, whose parameter is not where the point is. The point it located rides on that row instead: `sp_param` is the located parameter, `sp_status` whether bisection converged there, `sp_precision` the width it converged to, and `sp_<name>` each value `record_from_solution` recorded at it.
+
         Args:
             br: A raw juliacall `ContResult`, or None.
             df: A pre-extracted branch DataFrame, or None.
@@ -515,10 +526,18 @@ class BifurcationResult:
         if sp_list:
             if "specialpoint" not in self.df.columns:
                 self.df["specialpoint"] = None
-            if "sp_norm" not in self.df.columns:
-                self.df["sp_norm"] = np.nan
-            if "sp_idx" not in self.df.columns:
-                self.df["sp_idx"] = np.nan
+            if "sp_status" not in self.df.columns:
+                self.df["sp_status"] = None
+            located = [
+                "sp_norm",
+                "sp_idx",
+                "sp_param",
+                "sp_precision",
+                *sorted({f"sp_{k}" for p in sp_list for k in p.get("record", {})}),
+            ]
+            for col in located:
+                if col not in self.df.columns:
+                    self.df[col] = np.nan
             for point in sp_list:
                 step = point.get("step", point.get("idx", -1))
                 typ = point.get("type", "")
@@ -537,6 +556,11 @@ class BifurcationResult:
                         self.df.at[rix, "specialpoint"] = f"{existing},{typ}"
                     self.df.at[rix, "sp_norm"] = norm
                     self.df.at[rix, "sp_idx"] = idx_val
+                    self.df.at[rix, "sp_param"] = point.get("param", np.nan)
+                    self.df.at[rix, "sp_precision"] = point.get("precision", np.nan)
+                    self.df.at[rix, "sp_status"] = point.get("status")
+                    for key, value in point.get("record", {}).items():
+                        self.df.at[rix, f"sp_{key}"] = value
 
         if sp_list and kind == "EquilibriumCont":
             self._reclassify_folds()
@@ -544,15 +568,28 @@ class BifurcationResult:
         self._finalize()
 
     def _reclassify_folds(self):
-        """Relabel a ``:bp`` as a fold when it sits at a parameter turning point.
+        """Relabel a ``:bp`` as a fold when the continuation parameter turns around at its row or at a row next to it.
 
-        Operationalises the ontology's ``LimitPointGeometry`` discriminator (``ontology/tvb-o-bifurcation.ttl``): on an equilibrium branch, a branch-point label whose continuation parameter is a local extremum is a saddle-node fold, not a transversal branch crossing.
+        Operationalises the ontology's ``LimitPointGeometry`` discriminator (``ontology/tvb-o-bifurcation.ttl``): on an equilibrium branch, a branch-point label at a local extremum of the continuation parameter is a saddle-node fold, not a transversal branch crossing. Without bisection BifurcationKit labels the step past the eigenvalue crossing, which on a ``bothside`` branch's reversed half is the row before it, so the extremum a fold's label belongs to is its own row or either neighbour.
         """
         df = self.df
         if df is None or df.empty or "specialpoint" not in df.columns or "param" not in df.columns:
             return
         p = df["param"].to_numpy(dtype=float)
         n = len(p)
+
+        def turns(row):
+            """Whether the parameter reverses direction at *row*, against its nearest neighbours of a different value."""
+            if not 0 <= row < n:
+                return False
+            lo = row - 1
+            while lo >= 0 and p[lo] == p[row]:
+                lo -= 1
+            hi = row + 1
+            while hi < n and p[hi] == p[row]:
+                hi += 1
+            return lo >= 0 and hi < n and (p[row] - p[lo]) * (p[hi] - p[row]) < 0
+
         bp_tokens = ("bp", "branchpoint", "branch-point")
         sp_col = df.columns.get_loc("specialpoint")
         for pos in range(n):
@@ -560,19 +597,7 @@ class BifurcationResult:
             if val is None:
                 continue
             toks = [t.strip() for t in str(val).split(",")]
-            if not any(t.lower() in bp_tokens for t in toks):
-                continue
-            # nearest neighbours with a distinct parameter value on each side
-            lo = pos - 1
-            while lo >= 0 and p[lo] == p[pos]:
-                lo -= 1
-            hi = pos + 1
-            while hi < n and p[hi] == p[pos]:
-                hi += 1
-            if lo < 0 or hi >= n:
-                continue
-            # parameter reverses direction across the point ⇒ turning point ⇒ fold
-            if (p[pos] - p[lo]) * (p[hi] - p[pos]) < 0:
+            if any(t.lower() in bp_tokens for t in toks) and any(turns(row) for row in (pos - 1, pos, pos + 1)):
                 df.iat[pos, sp_col] = ",".join("fold" if t.lower() in bp_tokens else t for t in toks)
 
     # ── Shared post-extraction bookkeeping ──────────────────────────────
@@ -616,9 +641,12 @@ class BifurcationResult:
             if col in ("param", "step") or (col == pname and pname in coords):
                 continue
             arr = df[col].to_numpy()
-            if col == "specialpoint":
-                # Keep the special-point labels (fold/hopf/…) as strings, "" for none.
-                data_vars[col] = ("step", np.array(["" if v is None else str(v) for v in arr]))
+            if col in ("specialpoint", "sp_status"):
+                # Keep the special-point labels (fold/hopf/…) and their bisection status as strings, "" for none.
+                data_vars[col] = (
+                    "step",
+                    np.array(["" if v is None or (isinstance(v, float) and np.isnan(v)) else str(v) for v in arr]),
+                )
             elif arr.dtype == bool or np.issubdtype(arr.dtype, np.number):
                 data_vars[col] = ("step", arr)
         return xr.Dataset(
@@ -642,6 +670,7 @@ class BifurcationResult:
         model=None,
         state_var_names=None,
         icp=1,
+        icp2=None,
         fp_name="param",
         periodic_orbit_results=None,
         codim2_results=None,
@@ -649,10 +678,10 @@ class BifurcationResult:
     ):
         """Wrap a PyRates / PyCoBi continuation by name.
 
-        All visualisation/export logic lives on this class -- the adapter just hands the extracted DataFrame straight to ``__init__``.
+        All visualisation/export logic lives on this class -- the adapter just hands the extracted DataFrame straight to ``__init__``. A codim-2 continuation names the ``PAR`` index of its second parameter as *icp2*, which it carries in ``param2``.
         """
         sv_names = list(state_var_names or [])
-        df = _extract_pycobi_df(ode, cont_name, sv_names, icp)
+        df = _extract_pycobi_df(ode, cont_name, sv_names, icp, icp2=icp2)
 
         # Recursively wrap nested PO continuations
         periodic_orbits = []
@@ -668,20 +697,8 @@ class BifurcationResult:
                 )
             )
 
-        # Codim-2 curves: existing BifurcationResult instances; just augment with their second-parameter trajectory.
-        codim2_curves = []
+        codim2_curves = list(codim2_results or [])
         ICS2 = None
-        for c2_res in codim2_results or []:
-            icp2 = getattr(c2_res, "_icp2", None)
-            if icp2 is not None and not c2_res.df.empty:
-                c2_res.df = _add_pycobi_param2(
-                    ode,
-                    c2_res.df,
-                    getattr(c2_res, "_cont_name", None) or cont_name,
-                    sv_names,
-                    icp2,
-                )
-            codim2_curves.append(c2_res)
         if codim2_results:
             ICS2 = getattr(codim2_results[0], "_fp2_name", "param2")
 
@@ -758,6 +775,7 @@ class BifurcationResult:
             )
             # Metadata consumed by _plot_codim2
             c2_result._source_type = c2_source_type
+            c2_result._ics_name = c2_fp1
             c2_result._fp2_name = c2_fp2
             c2_result._ICS2 = c2_fp2
             codim2_curves.append(c2_result)
@@ -962,7 +980,7 @@ class BifurcationResult:
             "segment",
         }
         for c in self.df.columns:
-            if c not in meta:
+            if c not in meta and not str(c).startswith("sp_"):
                 return c
         return self.df.columns[0]
 
@@ -1142,9 +1160,7 @@ class BifurcationResult:
     def _plot_codim2(self, ax=None, ICS=None, ICS2=None, save=None, **kwargs):
         """Plot codim-2 bifurcation curves in (param1, param2) space.
 
-        Axis convention:
-            x = primary free parameter (codim-1, e.g. I)  = param2 in c2 data
-            y = secondary parameter (codim-2, e.g. b)     = param in c2 data
+        Every backend carries a codim-2 curve's primary free parameter (the codim-1 one, e.g. ``I``) in ``param`` and its second parameter (e.g. ``b``) in ``param2``, plotted on x and y.
         """
         c2_list = getattr(self, "codim2_curves", None)
         if not c2_list:
@@ -1196,8 +1212,8 @@ class BifurcationResult:
 
             current_labels = ax.get_legend_handles_labels()[1]
             ax.plot(
-                c2.df[param2_col],
                 c2.df["param"],
+                c2.df[param2_col],
                 "-",
                 color=color,
                 linewidth=1.5,
@@ -1216,8 +1232,8 @@ class BifurcationResult:
                         sp_label = sp.upper()
                         current_labels = ax.get_legend_handles_labels()[1]
                         ax.scatter(
-                            r[param2_col],
                             r["param"],
+                            r[param2_col],
                             s=45,
                             zorder=5,
                             marker=sp_marker,
@@ -1227,10 +1243,7 @@ class BifurcationResult:
                             label=(sp_label if sp_label not in current_labels else None),
                         )
 
-        c2_ics = None
-        if c2_list:
-            c2_ics = getattr(c2_list[0], "_ics_name", None)
-        ics2_label = ICS2 or c2_ics or "param2"
+        ics2_label = ICS2 or getattr(c2_list[0], "_fp2_name", None) or "param2"
 
         ax.set_xlabel(ics_label)
         ax.set_ylabel(ics2_label)
@@ -1277,23 +1290,21 @@ class BifurcationResult:
 
         _format_3d_axes(ax)
 
-        # Resolve codim-2 parameter names
-        c2_ics = None
-        if c2_list:
-            c2_ics = getattr(c2_list[0], "_ics_name", None)
+        # The codim-2 curves' second parameter, the y axis
+        c2_second = getattr(c2_list[0], "_fp2_name", None) if c2_list else None
 
         # Default value of codim-2 parameter (backbone position)
         c2_default = None
-        if c2_ics and hasattr(self, "model") and self.model:
+        if c2_second and hasattr(self, "model") and self.model:
             params = getattr(self.model, "parameters", {})
-            if c2_ics in params:
-                p = params[c2_ics]
+            if c2_second in params:
+                p = params[c2_second]
                 c2_default = float(getattr(p, "value", None) or 0)
         if c2_default is None:
             all_y = []
             for c2 in c2_list:
-                if "param" in c2.df.columns:
-                    all_y.extend(c2.df["param"].values)
+                if "param2" in c2.df.columns:
+                    all_y.extend(c2.df["param2"].values)
             c2_default = np.median(all_y) if all_y else 0
 
         # ── 1. Codim-1 backbone ──
@@ -1387,8 +1398,8 @@ class BifurcationResult:
             if c2_list:
                 y_vals = []
                 for c2 in c2_list:
-                    if "param" in c2.df.columns:
-                        y_vals.extend(c2.df["param"].values)
+                    if "param2" in c2.df.columns:
+                        y_vals.extend(c2.df["param2"].values)
                 if y_vals:
                     y_range = max(y_vals) - min(y_vals)
             if y_range == 0:
@@ -1518,8 +1529,8 @@ class BifurcationResult:
             label = f"{src_type.capitalize()} curve"
             clabels = ax.get_legend_handles_labels()[1]
             ax.plot(
-                c2.df[param2_col],
                 c2.df["param"],
+                c2.df[param2_col],
                 voi_vals,
                 "-",
                 color=color,
@@ -1549,8 +1560,8 @@ class BifurcationResult:
                         mk, clr, lbl = _sp_map[sp]
                         clabels = ax.get_legend_handles_labels()[1]
                         ax.scatter(
-                            [r[param2_col]],
                             [r["param"]],
+                            [r[param2_col]],
                             [z],
                             s=45,
                             zorder=12,
@@ -1561,7 +1572,7 @@ class BifurcationResult:
                             label=lbl if lbl not in clabels else None,
                         )
 
-        ics2_label = ICS2 or c2_ics or sv2 or "param2"
+        ics2_label = ICS2 or c2_second or sv2 or "param2"
         ax.set_xlabel(ics_label, fontsize=8, labelpad=6)
         ax.set_ylabel(ics2_label, fontsize=8, labelpad=6)
         ax.set_zlabel(VOI, fontsize=8, labelpad=6)
@@ -1899,48 +1910,13 @@ _AUTO_LABEL_MAP = {
 # ── PyRates / PyCoBi extractor ──────────────────────────────────────────
 
 
-def _add_pycobi_param2(ode, df, cont_name, state_var_names, icp2):
-    """Append a ``param2`` column to a codim-2 DataFrame.
-
-    Pulls the second free-parameter trajectory from PyCoBi's raw AUTO branch (or, on failure, its summary).
-    """
-    par2_col = f"PAR({icp2})"
-    try:
-        cont_key = ode._results_map[cont_name]
-        sol = ode.auto_solutions[cont_key]
-        branch = sol.data[0]
-        branch_data = branch.todict()
-        if par2_col in branch_data:
-            p2_vals = [float(v) for v in branch_data[par2_col]]
-            if len(p2_vals) >= len(df):
-                df["param2"] = p2_vals[: len(df)]
-            else:
-                df["param2"] = np.interp(
-                    np.linspace(0, 1, len(df)),
-                    np.linspace(0, 1, len(p2_vals)),
-                    p2_vals,
-                )
-    except (KeyError, IndexError, AttributeError):
-        try:
-            summary = ode.get_summary(cont_name)
-            if summary is not None and len(summary) > 0:
-                cols = summary.columns
-                translated = ode._var_map_inv.get(par2_col, ode._var_map_inv.get(icp2, None))
-                for cand in [translated, par2_col]:
-                    if cand and (cand, "") in cols:
-                        p2_vals = [float(summary.iloc[i][(cand, "")]) for i in range(len(summary))]
-                        if len(p2_vals) >= len(df):
-                            df["param2"] = p2_vals[: len(df)]
-                        break
-        except Exception:
-            pass
-    return df
-
-
-def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
+def _extract_pycobi_df(ode, cont_name, state_var_names, icp, icp2=None):
     """Convert a PyCoBi continuation result into the unified DataFrame.
 
-    Uses the full raw AUTO branch for equilibria (every continuation step) and falls back to ``get_summary`` -- which provides min/max envelopes -- for periodic-orbit branches.
+    Uses the full raw AUTO branch for equilibria (every continuation step) and falls back to ``get_summary`` -- which provides min/max envelopes -- for periodic-orbit branches. A codim-2 curve's second parameter, ``PAR(icp2)``, is read from the same raw branch into ``param2``.
+
+    Raises:
+        KeyError: If *icp2* is given and the branch records no column for it.
     """
     auto_to_bif = {k: v for k, v in _AUTO_LABEL_MAP.items() if k in {"LP", "HB", "BP", "PD", "TR", "BT", "CP", "GH", "ZH"}}
 
@@ -2064,9 +2040,20 @@ def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
     if branch_data is None or n_steps == 0:
         return _empty_df()
 
-    # PyRates keys columns by variable name; hand-written fortran by U(i)/PAR(i).
-    par_name = ode._var_map_inv.get(par_col)
-    par_key = next((k for k in (par_name, par_col) if k and k in branch_data), None)
+    def _par_key(index):
+        """The raw-branch column of ``PAR(index)``: PyRates keys columns by variable name, hand-written Fortran by ``PAR(i)``."""
+        column = f"PAR({index})"
+        return next((k for k in (ode._var_map_inv.get(column), column) if k and k in branch_data), None)
+
+    par_key = _par_key(icp)
+    par2_key = None
+    if icp2 is not None:
+        par2_key = _par_key(icp2)
+        if par2_key is None:
+            raise KeyError(
+                f"continuation {cont_name!r} records no column for its second parameter PAR({icp2}) "
+                f"({ode._var_map_inv.get(f'PAR({icp2})')!r}); its columns are {sorted(branch_data)}."
+            )
     sv_keys = {}
     if state_var_names:
         for i, sv_name in enumerate(state_var_names):
@@ -2079,6 +2066,8 @@ def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
             if key is not None:
                 row[sv_name] = float(branch_data[key][step])
         row["param"] = float(branch_data[par_key][step]) if par_key else np.nan
+        if par2_key is not None:
+            row["param2"] = float(branch_data[par2_key][step])
         row["stable"] = True
         row["step"] = step
         row["specialpoint"] = None

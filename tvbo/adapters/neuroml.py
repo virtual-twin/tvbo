@@ -18,12 +18,14 @@ import json
 import os
 import re
 import warnings
-from typing import TYPE_CHECKING
+from fractions import Fraction
+from typing import TYPE_CHECKING, NamedTuple
 
 from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.smallscale.lowering import (
     CURRENT_INPUT_TYPES,
     EVENT_SOURCE_TYPES,
+    ONSET_PARAMETERS,
     assign_cell_population,
     classify_node_role,
     expand_edge_connections,
@@ -32,6 +34,8 @@ from tvbo.adapters.smallscale.lowering import (
     merge_params,
     nml_type,
     safe_id,
+    settle_refusal,
+    shift_onset,
 )
 from tvbo.adapters.smallscale.lowering import (
     unique_component_id as _unique_component_id,
@@ -39,6 +43,7 @@ from tvbo.adapters.smallscale.lowering import (
 from tvbo.codegen.code import inline_functions
 from tvbo.parse.expression import function_bodies, states_an_expression
 from tvbo.utils import initial_value, normalize_params
+from tvbo.utils.units import unit_multiplier
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult
@@ -230,24 +235,106 @@ def _dynamics_has_physical_units(params, svs, td_param_names=None):
     return False
 
 
-def _lems_time_unit(*scopes):
-    """The LEMS spelling of *integration*'s time unit.
+_LEMS_TIME_UNITS = ("s", "ms", "us")
+"""The time units LEMS's core dimensions name."""
 
-    LEMS names only `s`, `ms` and `us`, so a scope declaring anything else falls back to `ms` here — a backend limitation, stated once. The unit itself comes from `time_unit_of`, which is the only reader of the declaration: six call sites in this adapter each used to re-derive it, and their fallbacks had drifted apart, one emitter defaulting to `s` where the rest defaulted to `ms`.
+
+def _lems_time_unit(experiment):
+    """The LEMS spelling of *experiment*'s time unit, the one every time-valued number of the run is emitted in.
+
+    The declaration is read by `time_unit_of` over the network, the integration and the experiment, innermost first, and normalised through the unit aliases, so ``second`` and ``s`` are one unit.
+
+    Raises:
+        ValueError: If the unit is not one LEMS names (`s`, `ms`, `us`): emitting the clock in another unit would rescale every time of the run.
     """
-    from tvbo.utils.units import time_unit_of
+    from tvbo.utils.units import normalize_unit, time_unit_of
 
-    unit = time_unit_of(*scopes)
-    return unit if unit in ("s", "ms", "us") else "ms"
+    declared = str(time_unit_of(getattr(experiment, "network", None), getattr(experiment, "integration", None), experiment))
+    unit = normalize_unit(declared) or declared
+    if unit not in _LEMS_TIME_UNITS:
+        raise ValueError(
+            f"the NeuroML backend cannot emit a clock in {declared!r}: LEMS names only {', '.join(_LEMS_TIME_UNITS)}. "
+            "Declare the integration in one of them."
+        )
+    return unit
+
+
+class LemsClock(NamedTuple):
+    """The clock a LEMS run is emitted on, every value in `unit`.
+
+    LEMS counts time from the start of the run and has no settle of its own, so a declared settle is integrated as the head of the run: `length` spans the settle and the measured window, and every input onset and every reading of ``t`` is moved `settle` later (`_on_the_run_clock`, `_on_the_measurement_clock`). The run is then reported on the measurement clock (`NeuroMLAdapter.run`).
+
+    Attributes:
+        step: The integration step.
+        length: The LEMS ``<Simulation>`` length, the settle and the measured window together.
+        settle: The declared ``transient_time``.
+        unit: The LEMS spelling of the time unit (`_lems_time_unit`).
+    """
+
+    step: float
+    length: float
+    settle: float
+    unit: str
+
+    @property
+    def settle_constant(self):
+        """The ``SETTLE`` constant a ComponentType reads ``t - SETTLE`` from, as a LEMS quantity, or ``None`` without a settle."""
+        return f"{self.settle}{self.unit}" if self.settle else None
 
 
 def _lems_clock(experiment):
-    """The LEMS ``<Simulation>`` clock, ``(step, length)``, read through `BaseAdapter.get_integration_info` like every other backend's window.
-
-    ``length`` is the measured ``duration``: a declared settle is refused by `NeuroMLAdapter.refuse_unrenderable`, which every render passes first.
-    """
+    """The clock *experiment* is emitted on, its window read through `BaseAdapter.get_integration_info` like every other backend's."""
     window = BaseAdapter(experiment).get_integration_info()
-    return window["dt"], window["duration"]
+    return LemsClock(window["dt"], window["total_duration"], window["transient_time"], _lems_time_unit(experiment))
+
+
+_CLOCK_READING = re.compile(r"\bt\b")
+"""A reading of the LEMS clock ``t`` in an emitted expression; LEMS spells its operators with dots (``.gt.``), so no operator contains it."""
+
+
+def _on_the_measurement_clock(expression, clock):
+    """*expression*, emitted LEMS, with every reading of ``t`` moved onto the measurement clock.
+
+    A model's own equations read ``t`` on the measurement clock, as they do on every other backend, where the scan opens at ``-transient_time``. LEMS's ``t`` opens at the start of the settle, so it is read as ``t - SETTLE``, the constant `LemsClock.settle_constant` declares in the same ComponentType.
+    """
+    return _CLOCK_READING.sub("(t - SETTLE)", expression) if clock.settle and expression else expression
+
+
+def _shifted(param, clock):
+    """*param*, a declared onset, moved later by *clock*'s settle in its own unit (`shift_onset`); *param* itself without a settle."""
+    if not clock.settle:
+        return param
+    unit = getattr(param, "unit", None) if not isinstance(param, dict) else param.get("unit")
+    value = getattr(param, "value", None) if not isinstance(param, dict) else param.get("value")
+    shifted, _ = shift_onset((value, str(unit) if unit else None), (clock.settle, clock.unit))
+    if isinstance(param, dict):
+        return {**param, "value": shifted}
+    param = copy.copy(param)
+    param.value = shifted
+    return param
+
+
+def _cut_the_settle(data, clock):
+    """*data*, a LEMS output on the run clock, moved onto the measurement clock, and how many of its samples are the settle.
+
+    LEMS writes its time column in SI seconds from the start of the run, the initial state included. The settle is every sample up to ``t = settle``, which is ``t = 0`` on the measurement clock, where the settle ends on every backend; the measured window opens one step later. Without a settle that leaves the initial state alone at ``t = 0``, so the measured window never records it, as on every other backend.
+    """
+    from tvbo.adapters.base import on_the_measurement_clock
+
+    seconds = unit_multiplier(clock.unit)
+    return on_the_measurement_clock(data, float(Fraction(clock.settle or 0) * seconds), float(Fraction(clock.step) * seconds))
+
+
+def _on_the_run_clock(type_name, params, clock):
+    """*params* of a NeuroML component of *type_name*, with its onset (`ONSET_PARAMETERS`) moved from the measurement clock onto the run's.
+
+    A recipe declares an input's onset against the measured window; LEMS times it from the start of the run, a settle earlier. A component with no onset, or a run without a settle, comes back as it went in.
+    """
+    onset = ONSET_PARAMETERS.get(type_name)
+    if not clock.settle or onset is None:
+        return params
+    params = normalize_params(params)
+    return {**params, onset: _shifted(params[onset], clock)} if onset in params else params
 
 
 def _dynamics_has_time_units(params, svs, dvs):
@@ -719,7 +806,7 @@ def _param_dimension(p_name, p_val):
     return _CONST_NAME_DIMENSION.get(p_name, "none")
 
 
-def _render_custom_component_type(dynamics, role_slot=None):
+def _render_custom_component_type(dynamics, role_slot=None, *, clock):
     """Generate a LEMS ``<ComponentType>`` definition from a Dynamics with derived_variables.
 
     Parameters
@@ -729,6 +816,9 @@ def _render_custom_component_type(dynamics, role_slot=None):
     role_slot : str or None
         The role slot this type fills (forwardRate, timeCourse, etc.).
         Determines the base type and exposure attributes.
+
+    clock : LemsClock
+        The run's clock; its settle is subtracted from every reading of ``t`` (`_on_the_measurement_clock`).
 
     Unit handling: Constants honour the parameter's own ``unit``.
     TIME_SCALE / VOLT_SCALE are only auto-added when not present in params.
@@ -760,6 +850,8 @@ def _render_custom_component_type(dynamics, role_slot=None):
         lines.append('        <Constant name="VOLT_SCALE" dimension="voltage" value="1 mV"/>')
     if "caConc" in reqs and "CONC_SCALE" not in params:
         lines.append('        <Constant name="CONC_SCALE" dimension="concentration" value="1 mol_per_m3"/>')
+    if clock.settle_constant:
+        lines.append(f'        <Constant name="SETTLE" dimension="time" value="{clock.settle_constant}"/>')
 
     # Render explicit parameters as Constants with proper dimension and unit
     for p_name, p_val in params.items():
@@ -787,12 +879,14 @@ def _render_custom_component_type(dynamics, role_slot=None):
             exp_attr = f' exposure="{exposure_name}"' if is_exposure else ""
             lines.append(f'            <ConditionalDerivedVariable name="{dv_name}"{exp_attr} dimension="{dim}">')
             for val, cond in cases:
+                val = _on_the_measurement_clock(val, clock)
                 if cond is not None:
-                    lines.append(f'                <Case condition="{cond}" value="{val}"/>')
+                    lines.append(f'                <Case condition="{_on_the_measurement_clock(cond, clock)}" value="{val}"/>')
                 else:
                     lines.append(f'                <Case value="{val}"/>')
             lines.append("            </ConditionalDerivedVariable>")
         else:
+            rhs = _on_the_measurement_clock(rhs, clock)
             if is_exposure:
                 lines.append(
                     f'            <DerivedVariable name="{dv_name}" '
@@ -807,7 +901,7 @@ def _render_custom_component_type(dynamics, role_slot=None):
     return "\n".join(lines)
 
 
-def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude_params=None):
+def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude_params=None, *, clock):
     """Recursively render a Dynamics node as NeuroML XML.
 
     Two rendering patterns determined by the ``key_name``:
@@ -825,20 +919,22 @@ def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude
         The dynamics node to render.
     key_name : str
         Name of this node (parent's components dict key). indent : int Current indentation (spaces). custom_types : dict or None Collector for custom ComponentType definitions {type_name: xml_str}. exclude_params : set or None Parameter names to skip (e.g. channelPopulation attrs).
+    clock : LemsClock
+        The run's clock: a timed input's onset is moved onto it (`_on_the_run_clock`), and a custom type's reading of ``t`` off it (`_on_the_measurement_clock`).
     """
     type_name = nml_type(dynamics)
     if not type_name:
         return []
 
     pad = " " * indent
-    params = dynamics.parameters
+    params = _on_the_run_clock(type_name, dynamics.parameters, clock)
     children = dynamics.components
     is_role = key_name in _NML_ROLE_SLOTS
     is_custom = _is_custom_nml_type(dynamics)
 
     # Collect custom ComponentType if needed
     if is_custom and custom_types is not None and type_name not in custom_types:
-        custom_types[type_name] = _render_custom_component_type(dynamics, role_slot=key_name if is_role else None)
+        custom_types[type_name] = _render_custom_component_type(dynamics, role_slot=key_name if is_role else None, clock=clock)
 
     # Build XML attributes — standard types use all params; custom types use none
     attrs = []
@@ -853,7 +949,7 @@ def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude
     # Recurse into children
     child_lines = []
     for child_key, child_dyn in children.items():
-        child_lines.extend(_render_nml_subtree(child_dyn, child_key, indent + 4, custom_types))
+        child_lines.extend(_render_nml_subtree(child_dyn, child_key, indent + 4, custom_types, clock=clock))
 
     # Assemble element
     if is_role:
@@ -872,8 +968,8 @@ def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude
         return [f"{pad}<{type_name} {attr_str}/>"]
 
 
-def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
-    """Render a single NeuroML cell (channels + cell definition) from a Dynamics.
+def _render_cell_xml(dyn, dyn_id=None, custom_types=None, *, clock):
+    """Render a single NeuroML cell (channels + cell definition) from a Dynamics, its inputs timed on *clock* (`_on_the_run_clock`).
 
     Returns a dict with keys:
     - ``channel_xmls``: list of channel XML strings
@@ -972,6 +1068,7 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
             indent=4,
             custom_types=custom_types,
             exclude_params=_CHANNEL_LINKING_PARAMS,
+            clock=clock,
         )
         channel_xmls.append("\n".join(ch_lines))
 
@@ -1010,6 +1107,7 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
             inp_name,
             indent=4,
             custom_types=custom_types,
+            clock=clock,
         )
         input_xmls.append("\n".join(inp_lines))
         input_refs.append(f'        <explicitInput target="pop[0]" input="{safe_id(inp_name)}" destination="synapses"/>')
@@ -1026,7 +1124,7 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None):
                 pid = f"pulseGen{pulse_idx}"
                 input_xmls.append(
                     f'    <pulseGenerator id="{pid}" '
-                    f'delay="{_nml_attr(params[d_key])}" '
+                    f'delay="{_nml_attr(_shifted(params[d_key], clock))}" '
                     f'duration="{_nml_attr(params[dur_key])}" '
                     f'amplitude="{_nml_attr(params[amp_key])}"/>'
                 )
@@ -1198,10 +1296,10 @@ _NEUROML_ROLE_VOCAB = {
 }
 
 
-def _render_compound_input_children(dyn_obj, indent=8):
+def _render_compound_input_children(dyn_obj, clock, indent=8):
     """Render child input components of a compoundInput from Dynamics.components.
 
-    Each child component (pulseGenerator, sineGenerator, etc.) is rendered as a self-closing XML element with its parameters as attributes.
+    Each child component (pulseGenerator, sineGenerator, etc.) is rendered as a self-closing XML element with its parameters as attributes, its onset moved onto the run's *clock* (`_on_the_run_clock`).
     """
     components = dyn_obj.components
     if not components:
@@ -1212,17 +1310,17 @@ def _render_compound_input_children(dyn_obj, indent=8):
         comp_type = nml_type(comp_obj, str(comp_name))
         comp_id = safe_id(str(comp_name))
         attr_parts = [f'id="{comp_id}"']
-        params = getattr(comp_obj, "parameters", None) or {}
+        params = _on_the_run_clock(comp_type, getattr(comp_obj, "parameters", None) or {}, clock)
         for pn, pv in params.items():
             attr_parts.append(f'{pn}="{_nml_attr(pv)}"')
         lines.append(f"{pad}<{comp_type} {' '.join(attr_parts)}/>")
     return "\n".join(lines)
 
 
-def _render_event_children(dyn_obj, time_scale="ms", indent=8):
+def _render_event_children(dyn_obj, clock, indent=8):
     """Render preset_time events from a Dynamics as NeuroML child XML elements.
 
-    For ``spikeArray``, each trigger time becomes ``<spike id="N" time="T unit"/>``.
+    For ``spikeArray``, each trigger time becomes ``<spike id="N" time="T unit"/>``: declared in *clock*'s unit on the measurement clock, and emitted on the run's, a settle later (`shift_onset`).
     Returns the child XML string (multiple lines), or empty string if none.
     """
     if dyn_obj is None:
@@ -1231,7 +1329,6 @@ def _render_event_children(dyn_obj, time_scale="ms", indent=8):
     if not events:
         return ""
     pad = " " * indent
-    nml_unit = str(time_scale)
     children = []
     spike_idx = 0
     for ev in events.values():
@@ -1239,7 +1336,8 @@ def _render_event_children(dyn_obj, time_scale="ms", indent=8):
             continue
         times = getattr(ev, "trigger_times", None) or []
         for t in times:
-            children.append(f'{pad}<spike id="{spike_idx}" time="{t} {nml_unit}"/>')
+            t, unit = shift_onset((t, clock.unit), (clock.settle, clock.unit))
+            children.append(f'{pad}<spike id="{spike_idx}" time="{t} {unit}"/>')
             spike_idx += 1
     return "\n".join(children)
 
@@ -1417,10 +1515,10 @@ def _hier_parse_select_label(label_str):
     return result if result["select"] else None
 
 
-def _hier_build_dynamics(dyn, extends, all_params):
+def _hier_build_dynamics(dyn, extends, all_params, clock):
     """Build the ``dynamics`` sub-dict for a custom ComponentType.
 
-    Reads state_variables, derived_variables, and events from the Dynamics object and converts them to LEMS template data.
+    Reads state_variables, derived_variables, and events from the Dynamics object and converts them to LEMS template data, every expression reading ``t`` on the measurement clock (`_on_the_measurement_clock`).
     """
     meta = _base_type_meta(extends)
     exposures = meta.get("exposures", {})
@@ -1480,8 +1578,8 @@ def _hier_build_dynamics(dyn, extends, all_params):
                     cond_str = None
                 # Convert Python conditions to LEMS
                 elif cond_str:
-                    cond_str = _python_cond_to_lems(cond_str, all_names)
-                val_str = sympy_to_lems(val_str, parameters=all_names)
+                    cond_str = _on_the_measurement_clock(_python_cond_to_lems(cond_str, all_names), clock)
+                val_str = _on_the_measurement_clock(sympy_to_lems(val_str, parameters=all_names), clock)
                 cases.append(
                     {
                         "condition": cond_str,
@@ -1500,7 +1598,7 @@ def _hier_build_dynamics(dyn, extends, all_params):
 
         # Regular derived variable
         rhs = dv.equation.rhs if dv.equation else "0"
-        value = sympy_to_lems(rhs, parameters=all_names)
+        value = _on_the_measurement_clock(sympy_to_lems(rhs, parameters=all_names), clock)
         dynamics["derived_variables"].append(
             {
                 "name": dv_key,
@@ -1527,7 +1625,7 @@ def _hier_build_dynamics(dyn, extends, all_params):
 
         # Time derivative
         rhs = sv.equation.rhs if sv.equation else "0"
-        td_value = sympy_to_lems(rhs, parameters=all_names)
+        td_value = _on_the_measurement_clock(sympy_to_lems(rhs, parameters=all_names), clock)
         dynamics["time_derivatives"].append(
             {
                 "variable": sv_key,
@@ -1551,7 +1649,7 @@ def _hier_build_dynamics(dyn, extends, all_params):
     for ev_key, ev in (dyn.events).items():
         cond = getattr(getattr(ev, "condition", None), "rhs", None)
         if cond:
-            cond_lems = _python_cond_to_lems(str(cond), all_names)
+            cond_lems = _on_the_measurement_clock(_python_cond_to_lems(str(cond), all_names), clock)
             dynamics["on_condition"].append(
                 {
                     "test": cond_lems,
@@ -1589,11 +1687,7 @@ def _build_hier_custom_context(experiment):
     from collections import OrderedDict
 
     dyn = experiment.dynamics
-    integration = getattr(experiment, "integration", None)
-
-    # ── Integration settings ──
-    dt, duration = _lems_clock(experiment)
-    time_unit = _lems_time_unit(integration)
+    clock = _lems_clock(experiment)
 
     label = getattr(experiment, "label", None)
     dyn_id = safe_id(dyn.name or "dynamics")
@@ -1663,7 +1757,7 @@ def _build_hier_custom_context(experiment):
                         "child_slots": [],
                         "children_slots": [],
                         "attachments": [],
-                        "dynamics": _hier_build_dynamics(r_dyn, r_extends, r_params),
+                        "dynamics": _hier_build_dynamics(r_dyn, r_extends, r_params, clock),
                     }
                     type_order.append(r_type_name)
 
@@ -1687,7 +1781,7 @@ def _build_hier_custom_context(experiment):
                     "child_slots": child_slots,
                     "children_slots": [],
                     "attachments": [],
-                    "dynamics": _hier_build_dynamics(g_dyn, g_extends, g_params),
+                    "dynamics": _hier_build_dynamics(g_dyn, g_extends, g_params, clock),
                 }
                 type_order.append(g_type_name)
 
@@ -1717,7 +1811,7 @@ def _build_hier_custom_context(experiment):
                 "child_slots": [],
                 "children_slots": ch_children_slots,
                 "attachments": [],
-                "dynamics": _hier_build_dynamics(ch_dyn, ch_extends, ch_params),
+                "dynamics": _hier_build_dynamics(ch_dyn, ch_extends, ch_params, clock),
             }
             type_order.append(ch_type_name)
 
@@ -1760,7 +1854,7 @@ def _build_hier_custom_context(experiment):
         "child_slots": [],
         "children_slots": cell_children_slots,
         "attachments": cell_attachments,
-        "dynamics": _hier_build_dynamics(dyn, root_extends, cell_params),
+        "dynamics": _hier_build_dynamics(dyn, root_extends, cell_params, clock),
     }
     type_order.append(root_type_name)
 
@@ -1775,7 +1869,7 @@ def _build_hier_custom_context(experiment):
             {
                 "type": "pulseGenerator",
                 "id": "pulseGen1",
-                "delay": _hier_format_attr_value(ip["pulse_delay"]),
+                "delay": _hier_format_attr_value(_shifted(ip["pulse_delay"], clock)),
                 "duration": _hier_format_attr_value(ip["pulse_duration"]),
                 "amplitude": _hier_format_attr_value(ip["I_amp"]),
             }
@@ -1804,8 +1898,9 @@ def _build_hier_custom_context(experiment):
         "network_id": "net1",
         "population_id": pop_id,
         "sim_id": sim_id,
-        "sim_length": f"{duration}{time_unit}",
-        "sim_step": f"{dt}{time_unit}",
+        "sim_length": f"{clock.length}{clock.unit}",
+        "sim_step": f"{clock.step}{clock.unit}",
+        "settle_constant": clock.settle_constant,
         "output_var": output_var,
         "dyn_id": dyn_id,
         "is_network": False,
@@ -1867,10 +1962,7 @@ def _build_std_fhn_context(experiment, cell_type):
     dyn = experiment.dynamics
     params = dyn.parameters or {}
     svs = dyn.state_variables or {}
-
-    integration = getattr(experiment, "integration", None)
-    dt, duration = _lems_clock(experiment)
-    time_scale = _lems_time_unit(integration)
+    clock = _lems_clock(experiment)
 
     dyn_id = safe_id(dyn.name or "fhn")
     label = getattr(experiment, "label", None)
@@ -1901,9 +1993,9 @@ def _build_std_fhn_context(experiment, cell_type):
         "dyn_name": dyn.name or "FitzHugh-Nagumo",
         "sim_id": sim_id,
         "pop_id": pop_id,
-        "dt": dt,
-        "duration": duration,
-        "time_scale": time_scale,
+        "dt": clock.step,
+        "length": clock.length,
+        "time_scale": clock.unit,
         "sv_names": sv_names,
         "colors": colors,
     }
@@ -1912,8 +2004,9 @@ def _build_std_fhn_context(experiment, cell_type):
 def _build_std_cell_context(experiment):
     """Build context for a single standard NeuroML cell template."""
     dyn = experiment.dynamics
+    clock = _lems_clock(experiment)
 
-    cell_result = _render_cell_xml(dyn)
+    cell_result = _render_cell_xml(dyn, clock=clock)
     if cell_result is None:
         return None
 
@@ -1921,17 +2014,13 @@ def _build_std_cell_context(experiment):
     dyn_id = cell_result["dyn_id"]
     params = dyn.parameters or {}
 
-    integration = getattr(experiment, "integration", None)
-    dt, duration = _lems_clock(experiment)
-    time_scale = _lems_time_unit(integration)
-
     label = getattr(experiment, "label", None)
     sim_id = "sim_" + (safe_id(label) if label else dyn_id)
 
     # Temperature handling
     tissue_start = params.get("tissue_startTemperature")
     tissue_end = params.get("tissue_endTemperature")
-    tissue_change = params.get("tissue_changeTime")
+    tissue_change = _shifted(params["tissue_changeTime"], clock) if params.get("tissue_changeTime") else None
     use_tissue = bool(tissue_start and tissue_end and tissue_change)
     net_temp = params.get("network_temperature")
 
@@ -1947,9 +2036,9 @@ def _build_std_cell_context(experiment):
         "is_fhn": False,
         "dyn_id": dyn_id,
         "sim_id": sim_id,
-        "dt": dt,
-        "duration": duration,
-        "time_scale": time_scale,
+        "dt": clock.step,
+        "length": clock.length,
+        "time_scale": clock.unit,
         "has_inputs": bool(cell_result.get("input_xmls")),
         "custom_type_xmls": list(custom_types.values()),
         "conc_xmls": cell_result["conc_xmls"],
@@ -1984,8 +2073,7 @@ def _build_std_network_context(experiment):
 
     # Integration parameters
     integration = getattr(experiment, "integration", None)
-    dt, duration = _lems_clock(experiment)
-    time_scale = _lems_time_unit(integration)
+    clock = _lems_clock(experiment)
 
     label = getattr(experiment, "label", None)
     dyn_id = safe_id((experiment.dynamics.name if experiment.dynamics else None) or "network")
@@ -2021,7 +2109,7 @@ def _build_std_network_context(experiment):
                 nid = getattr(node, "id", 0)
                 node_params = normalize_params(getattr(node, "parameters", None))
                 param_strs = {}
-                for pn, pv in merge_params(dyn_params, node_params).items():
+                for pn, pv in _on_the_run_clock(_nml_type, merge_params(dyn_params, node_params), clock).items():
                     val = getattr(pv, "value", pv)
                     unit = getattr(pv, "unit", None) or ""
                     if val is None:
@@ -2044,10 +2132,10 @@ def _build_std_network_context(experiment):
                         attr_parts.append(f'{pk}="{pv_str}"')
 
                     if _nml_type == "compoundInput":
-                        children_xml = _render_compound_input_children(_dyn_lib_obj, indent=8)
+                        children_xml = _render_compound_input_children(_dyn_lib_obj, clock, indent=8)
                         input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}>\n{children_xml}\n    </{_nml_type}>")
                     elif _nml_type == "timedSynapticInput":
-                        spike_xml = _render_event_children(_dyn_lib_obj, time_scale)
+                        spike_xml = _render_event_children(_dyn_lib_obj, clock)
                         if spike_xml:
                             input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}>\n{spike_xml}\n    </{_nml_type}>")
                         else:
@@ -2067,9 +2155,8 @@ def _build_std_network_context(experiment):
                 nid = getattr(node, "id", sub_idx)
                 dyn_params = normalize_params(getattr(_dyn_lib_obj, "parameters", None))
                 node_params = normalize_params(getattr(node, "parameters", None))
-                merged_params = {**dyn_params, **node_params}
                 param_strs = {}
-                for pn, pv in merged_params.items():
+                for pn, pv in _on_the_run_clock(_nml_type, {**dyn_params, **node_params}, clock).items():
                     val = getattr(pv, "value", pv)
                     unit = getattr(pv, "unit", None) or ""
                     if val is not None:
@@ -2094,7 +2181,7 @@ def _build_std_network_context(experiment):
                     }
                 )
 
-                spike_children_xml = _render_event_children(dyn_obj, time_scale)
+                spike_children_xml = _render_event_children(dyn_obj, clock)
 
                 attr_parts = [f'id="{comp_id}"']
                 for pk, pv_str in param_strs.items():
@@ -2116,7 +2203,7 @@ def _build_std_network_context(experiment):
 
         cell_id = safe_id(dyn_name)
 
-        cell_result = _render_cell_xml(dyn_obj, dyn_id=cell_id, custom_types=custom_types)
+        cell_result = _render_cell_xml(dyn_obj, dyn_id=cell_id, custom_types=custom_types, clock=clock)
         if cell_result is not None:
             for ch in cell_result["channel_xmls"]:
                 cell_xmls_all.append(ch)
@@ -2284,7 +2371,7 @@ def _build_std_network_context(experiment):
             synapse_set[syn_key] = syn_id
 
             if resolved_syn_dyn:
-                syn_lines = _render_nml_subtree(resolved_syn_dyn, str(edge_coupling), indent=4, custom_types=None)
+                syn_lines = _render_nml_subtree(resolved_syn_dyn, str(edge_coupling), indent=4, custom_types=None, clock=clock)
                 if syn_lines:
                     synapse_xmls.append("\n".join(syn_lines))
             else:
@@ -2370,7 +2457,7 @@ def _build_std_network_context(experiment):
         if dlib_type and dlib_type in _SYNAPSE_TYPES:
             sid = safe_id(dlib_name)
             if sid not in rendered_syn_ids:
-                syn_lines = _render_nml_subtree(dlib_obj, dlib_name, indent=4, custom_types=None)
+                syn_lines = _render_nml_subtree(dlib_obj, dlib_name, indent=4, custom_types=None, clock=clock)
                 if syn_lines:
                     synapse_xmls.append("\n".join(syn_lines))
                     rendered_syn_ids.add(sid)
@@ -2446,9 +2533,9 @@ def _build_std_network_context(experiment):
         "is_fhn": False,
         "sim_id": sim_id,
         "dyn_id": dyn_id,
-        "dt": dt,
-        "duration": duration,
-        "time_scale": time_scale,
+        "dt": clock.step,
+        "length": clock.length,
+        "time_scale": clock.unit,
         "seed_attr": seed_attr,
         # Pre-rendered XML fragments
         "custom_type_xmls": list(custom_types.values()),
@@ -2507,6 +2594,7 @@ def _build_network_context(experiment):
 
     default_dyn = experiment.dynamics
     dynamics_lib = getattr(network, "dynamics", None) or {}
+    clock = _lems_clock(experiment)
 
     cell_types = {}  # dyn_name -> Dynamics object
     populations = []  # list of {id, component, size, node_ids}
@@ -2533,7 +2621,7 @@ def _build_network_context(experiment):
                 nid = getattr(node, "id", 0)
                 node_params = normalize_params(getattr(node, "parameters", None))
                 param_strs = {}
-                for pn, pv in {**dyn_params, **node_params}.items():
+                for pn, pv in _on_the_run_clock(_nml_type, {**dyn_params, **node_params}, clock).items():
                     val = getattr(pv, "value", pv)
                     if val is None:
                         continue
@@ -2554,14 +2642,12 @@ def _build_network_context(experiment):
 
         if is_event_source:
             dyn_obj = dynamics_lib.get(dyn_name)
-            integration = getattr(experiment, "integration", None)
-            ts = _lems_time_unit(integration)
             for sub_idx, node in enumerate(group_nodes):
                 nid = getattr(node, "id", sub_idx)
                 dyn_params = normalize_params(getattr(dyn_obj, "parameters", None))
                 node_params = normalize_params(getattr(node, "parameters", None))
                 param_strs = {}
-                for pn, pv in {**dyn_params, **node_params}.items():
+                for pn, pv in _on_the_run_clock(_nml_type, {**dyn_params, **node_params}, clock).items():
                     val = getattr(pv, "value", pv)
                     if val is not None:
                         unit = getattr(pv, "unit", None) or ""
@@ -2571,7 +2657,7 @@ def _build_network_context(experiment):
                 pop_id = f"{safe_id(dyn_name)}_pop"
                 node_pop_map[nid] = (pop_id, 0)
                 node_size_map[nid] = 1
-                spike_children = _render_event_children(dyn_obj, ts)
+                spike_children = _render_event_children(dyn_obj, clock)
                 populations.append(
                     {
                         "id": pop_id,
@@ -2837,7 +2923,7 @@ def build_lems_context(experiment):
         experiment: The experiment to render.
 
     Returns:
-        The context dict, keyed `dyn`, `dyn_id`, `params`, `svs`, `dvs`, `events`, `coupling_inputs`, `coupling_meta`, `coupling_params`, `coupling_pre_rhs`, `coupling_post_rhs`, `coupling_global`, `sv_names_set`, `n_nodes`, `dt`, `duration`, and the callables `lems_expr`, `_parse_piecewise`, `lems_dim` and `safe_id`.
+        The context dict, keyed `dyn`, `dyn_id`, `params`, `svs`, `dvs`, `events`, `coupling_inputs`, `coupling_meta`, `coupling_params`, `coupling_pre_rhs`, `coupling_post_rhs`, `coupling_global`, `sv_names_set`, `n_nodes`, the clock's `dt`, `length` (the settle and the measured window together) and `settle_constant` (`LemsClock`), and the callables `lems_expr`, `_parse_piecewise`, `lems_dim` and `safe_id`, whose expressions read ``t`` on the measurement clock.
     """
     from sympy import Eq as sympy_Eq
     from sympy import Piecewise
@@ -2900,16 +2986,10 @@ def build_lems_context(experiment):
     if coupling_post_rhs is None:
         coupling_post_rhs = "global_coupling * pre"
 
-    integration = getattr(experiment, "integration", None)
     network = getattr(experiment, "network", None)
     n_nodes = int(network.number_of_nodes) if network and hasattr(network, "number_of_nodes") else 1
-    dt, duration = _lems_clock(experiment)
-    from tvbo.utils.units import normalize_unit, time_unit_of
-
-    raw_ts = time_unit_of(getattr(experiment, "network", None), integration, experiment)
-    ts_enum = normalize_unit(str(raw_ts)) or str(raw_ts)
-    # With abbreviation-based enum, ts_enum is already "s", "ms", "us" etc.
-    time_scale = ts_enum if ts_enum in ("s", "ms", "us") else "ms"
+    clock = _lems_clock(experiment)
+    time_scale = clock.unit
 
     from tvbo.utils.units import unit_to_lems_dimension, unit_to_lems_symbol
 
@@ -2976,7 +3056,7 @@ def build_lems_context(experiment):
         e = inline_functions(e, _bodies)
         if _lems_subs:
             e = e.subs(_lems_subs)
-        return sympy_to_lems(e, parameters=all_names)
+        return _on_the_measurement_clock(sympy_to_lems(e, parameters=all_names), clock)
 
     def _parse_piecewise(equation):
         """Return [(condition_str, value_str)] if the equation is a Piecewise, else None.
@@ -3050,8 +3130,9 @@ def build_lems_context(experiment):
         coupling_global=coupling_global,
         sv_names_set=sv_names_set,
         n_nodes=n_nodes,
-        dt=dt,
-        duration=duration,
+        dt=clock.step,
+        length=clock.length,
+        settle_constant=clock.settle_constant,
         lems_expr=lems_expr,
         states_an_expression=states_an_expression,
         _parse_piecewise=_parse_piecewise,
@@ -3095,10 +3176,10 @@ def build_lems_context(experiment):
             """
             text = e if isinstance(e, str) else getattr(e, "rhs", None)
             if isinstance(text, str) and _LEMS_CMP_RE.search(text):
-                return text
+                return _on_the_measurement_clock(text, clock)
             e = parse_eq(e, parameters=ct_all_names, functions=ct_fn_names)
             e = inline_functions(e, ct_bodies)
-            return sympy_to_lems(e, parameters=ct_all_names)
+            return _on_the_measurement_clock(sympy_to_lems(e, parameters=ct_all_names), clock)
 
         def ct_parse_pw(equation):
             try:
@@ -3268,21 +3349,32 @@ class NeuroMLAdapter(BaseAdapter):
         super().__init__(source)
 
     def refuse_unrenderable(self) -> None:
-        """`BaseAdapter.refuse_unrenderable`, and a declared settle.
+        """`BaseAdapter.refuse_unrenderable`, and an input a declared settle cannot be run ahead of.
 
-        LEMS times every input from the start of the run and reports the whole of it, so a positive ``transient_time`` would put each declared onset inside the settle and hand the settle back as measurement.
+        A settle is integrated as the head of the LEMS run (`LemsClock`), with every declared onset moved a settle later. An input timed from the start of the run with no onset to move (`settle_refusal`) would instead fire differently in the measured window than without the settle, so it is refused by name.
 
         Raises:
             ValueError: Where the network lacks an edge attribute this backend reads.
-            NotImplementedError: If the experiment declares a positive ``transient_time``.
+            NotImplementedError: If the experiment declares a positive ``transient_time`` and an input `settle_refusal` names.
         """
         super().refuse_unrenderable()
         settle = self.get_integration_info()["transient_time"]
-        if settle > 0:
-            raise NotImplementedError(
-                f"the NeuroML backend has no settle: integration.transient_time is {settle:g}, and LEMS times every input "
-                "from the start of the run and reports the whole of it. Declare transient_time: 0, or run a backend that cuts the settle."
-            )
+        if not settle:
+            return
+        network = getattr(self.experiment, "network", None)
+        pending = [self.experiment.dynamics, *(getattr(network, "dynamics", None) or {}).values()]
+        while pending:
+            dynamics = pending.pop()
+            if dynamics is None:
+                continue
+            reason = settle_refusal(nml_type(dynamics))
+            if reason:
+                raise NotImplementedError(
+                    f"the NeuroML backend cannot run {getattr(dynamics, 'name', None) or nml_type(dynamics)!r} behind "
+                    f"integration.transient_time {settle:g}: {reason}. Declare transient_time: 0, or drive the network "
+                    "with an input that declares its onset."
+                )
+            pending.extend((getattr(dynamics, "components", None) or {}).values())
 
     def _ctx(self, **extra):
         """``build_lems_context()`` merged with any caller-supplied extras, once `refuse_unrenderable` has passed the declaration."""
@@ -3488,6 +3580,8 @@ class NeuroMLAdapter(BaseAdapter):
 
         Exports a self-contained monolithic LEMS file and executes it with one of the pyNeuroML runners.
 
+        A declared settle is the head of the same run (`LemsClock`). The result is reported on the measurement clock, in the SI seconds LEMS writes: the settle, from the initial state to ``t = 0``, stays on ``.transient`` and ``.data`` opens one step later; without a settle ``.data`` is the whole run, from the initial state at ``t = 0``.
+
         Where the output lands depends on the backend: jNeuroML and NEURON respect the path the LEMS file asks for (`results/*.dat`), while Brian2 and EDEN write to the working directory, so both are searched. A multi-population or multi-compartment run writes one file per population, each with its own columns; those are loaded in stem order — deterministic, and matching the order the `OutputFile` elements were emitted in — and their value columns concatenated. Column names come from the rendered LEMS `OutputColumn` quantities rather than being reconstructed, since those are what actually got written.
 
         Args:
@@ -3671,7 +3765,8 @@ class NeuroMLAdapter(BaseAdapter):
                 },
             )
 
-        sim = SimulationResult(data=da)
+        da, n_settle = _cut_the_settle(da, _lems_clock(self.experiment))
+        sim = SimulationResult(data=da, n_transient=n_settle)
         return ExperimentResult(
             integration=sim,
             source=self.experiment,

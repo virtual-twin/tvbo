@@ -227,3 +227,14 @@ def test_an_edge_matrix_file_that_is_not_one_finite_square_matrix_is_refused(tmp
         paths.append(str(path))
     with pytest.raises(ValueError, match=message):
         Network(edge_matrix_files=paths)
+
+
+def test_a_transform_keeps_a_float64_matrix_at_float64():
+    """JAX computes in 32 bits by default; a declared transform of a float64 connectome still comes back at float64."""
+    weights = np.random.default_rng(0).random((5, 5)) * 3.7
+    net = Network.from_matrix(weights, transforms=[{"name": "weight", "equation": {"rhs": "weight / max(weight)"}}])
+
+    transformed = np.asarray(net.matrix("weight", format="dense"))
+
+    assert transformed.dtype == np.float64
+    np.testing.assert_allclose(transformed, weights / weights.max(), rtol=0, atol=1e-15)

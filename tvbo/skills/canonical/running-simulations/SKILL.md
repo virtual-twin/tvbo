@@ -132,7 +132,7 @@ code = exp.render_code("jax")  # render code WITHOUT executing (export)
 | `numpy` | in core | Reference / debugging |
 | `neuroml` | `pip install tvbo[neuroml]` | Multi-compartment models via NEURON/LEMS |
 
-Discover installed backends with `from tvbo.cli._backends import list_backends`.
+Discover installed backends with `from tvbo.run.backends import list_backends`.
 
 ## Zero-Python: the `tvbo` CLI
 

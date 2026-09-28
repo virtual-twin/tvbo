@@ -366,6 +366,55 @@ class TestLazyArrayStore:
         assert store._loaded
         path.unlink()
 
+    def test_a_zarr_companion_is_read_one_array_at_a_time(self, tmp_path, monkeypatch):
+        """A ``.zarr`` directory answers what an HDF5 companion does: names and headers with no value read, one edge and its parameters on access in their stored format, per-node datasets by path, and one handle held across a ``with`` block."""
+        zarr = pytest.importorskip("zarr")
+        from tvbo.data import matrix_io
+        from tvbo.data.matrix_io import LazyArrayStore
+        from tvbo.data.network_io import _write_edges
+
+        weights = sparse.random(4, 4, density=0.5, format="csr", random_state=0)
+        lengths = np.arange(16.0).reshape(4, 4)
+        coordinates = np.arange(12.0).reshape(4, 3)
+        meta = {"edges": [{"label": "weight", "format": "csr", "parameters": {"tractLength": {"format": "dense"}}}]}
+        path = tmp_path / "net.zarr"
+        root = zarr.open(str(path), mode="w")
+        _write_edges(root, meta, {"weight": weights}, {"weight": {"tractLength": lengths}})
+        root.create_group("nodes").create_array("coordinates", data=coordinates)
+
+        reads, opens = [], []
+        read_values, open_handle = matrix_io._read_values, LazyArrayStore._open_handle
+        monkeypatch.setattr(matrix_io, "_read_values", lambda dataset: reads.append(dataset) or read_values(dataset))
+        monkeypatch.setattr(LazyArrayStore, "_open_handle", lambda self: opens.append(1) or open_handle(self))
+
+        store = LazyArrayStore(path, meta)
+        assert "weight" in store and store.names == ["weight"]
+        assert LazyArrayStore(path, {}).names == ["weight"], "without a declaration the names are the edges group listing"
+        info = store.info("weight")
+        assert (info.path, info.shape, info.format) == ("edges/weight", (4, 4), "csr")
+        assert store.info("nodes/coordinates").shape == (4, 3)
+        assert reads == [], "names and headers read no value"
+
+        weight = store["weight"]
+        assert sparse.issparse(weight) and weight.format == "csr"
+        np.testing.assert_allclose(weight.toarray(), weights.toarray())
+        tract = store.edge_params_of("weight")["tractLength"]
+        assert isinstance(tract, np.ndarray), "an edge parameter keeps its own declared format"
+        np.testing.assert_allclose(tract, lengths)
+        assert store["weight"] is weight, "a matrix is read once and kept"
+
+        assert store.dataset_keys("nodes") == ["nodes/coordinates"]
+        np.testing.assert_allclose(store.read_dataset("nodes/coordinates"), coordinates)
+        with pytest.raises(KeyError):
+            store.read_dataset("nodes/labels")
+
+        opens.clear()
+        with store:
+            store.info("weight")
+            store.read_dataset("nodes/coordinates")
+            store.dataset_keys("nodes")
+        assert len(opens) == 1, "a with block holds one handle across its reads"
+
 
 # ── Zarr roundtrip tests ─────────────────────────────────────────────
 

@@ -1037,6 +1037,9 @@ classes:
       color:
         range: string
         description: "Draw the mesh itself in one flat colour instead of painting a map on it. With no layer, that is the bare geometry."
+      missing_color:
+        range: string
+        description: "The colour of the atlas regions the layer carries no value for, so a region a map leaves out on purpose, such as the target the mapped quantity is measured in, reads apart from the medial wall and the rest of the mesh no region covers, which stay the base grey. Only with `atlas:`; unset, both are grey."
       edge_color:
         range: string
         description: "Draw the triangulation in this colour, for a panel whose subject is the mesh the model is solved on."
@@ -1210,6 +1213,10 @@ classes:
         range: string
         multivalued: true
         description: "One marker per entry of a standalone legend, for a key whose entries are scatter marks."
+      handles:
+        range: string
+        multivalued: true
+        description: "What each entry of a standalone legend is drawn as: `line`, `marker`, or `patch`, a filled swatch for a key to coloured areas such as regions on a brain map. Unset, an entry is a line, carrying its marker where one is given."
       handle_length:
         range: float
         description: "Length of each entry's sample line."

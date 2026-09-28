@@ -340,9 +340,23 @@ def _fold_dynamics(data: dict) -> None:
     _reject_unknown_output(data)
 
 
+UNASSIGNED_NODE_ID = -1
+"""The ``id`` a node carries until a network assigns it one: a ``node_template``, or a node declared by ``label`` alone."""
+
+
+def _fold_label_keyed_node(data: dict) -> None:
+    """Give a node declared by ``label`` alone the unassigned id, so it constructs.
+
+    Such a node attaches values to the node of that label in a network whose data materialises its nodes, and only that data knows the index. :meth:`tvbo.classes.network.Network._apply_declared_nodes` replaces the sentinel with it, and raises when no node carries the label.
+    """
+    if data.get("id") is None and data.get("label"):
+        data["id"] = UNASSIGNED_NODE_ID
+
+
 SEMANTIC_FOLDS = {
     "StateVariable": _fold_state_variable_domain,
     "Dynamics": _fold_dynamics,
+    "Node": _fold_label_keyed_node,
 }
 """Per-class dialect a table of renames cannot express, keyed like the other tables.
 

@@ -1458,7 +1458,7 @@ class DynamicsRuntime(Catalogued, Copyable):
     ) -> data_types.TimeSeries | analysis.BifurcationResult:
         """Generate, execute, and integrate the model, returning its output.
 
-        Supports Julia (ODE and bifurcation), Python (SciPy `odeint`, or an iterated map for discrete systems), and compiled C backends.
+        Supports Julia (ODE and bifurcation), Python (the declared integration method stepped on a fixed grid, `tvbo.run.compgraph.integration_step`, or an iterated map for discrete systems), and compiled C backends.
 
         Args:
             format: Backend to run, e.g. `"python"`, `"julia"`,
@@ -1468,16 +1468,17 @@ class DynamicsRuntime(Catalogued, Copyable):
             run_kwargs: Extra arguments forwarded to the integrated dfun
                 (e.g. `stimulus`).
             **kwargs: Simulation settings such as `duration`, `dt`, `t`, and
-                `u_0`.
+                `u_0`; for `"python"`, `integration`, the `Integrator` whose method the run steps by (the schema's default where none is given) on `t`, or on `0, dt, …` short of `duration`, from `u_0` at the first time.
 
         Returns:
             A [`TimeSeries`](#tvbo.data.types.TimeSeries) for time-domain
             runs, or a `BifurcationResult` for bifurcation formats.
 
         Raises:
-            ValueError: If `format` is not supported.
+            ValueError: If `format` is not supported, or a `"python"` run's method has no update expression to step by, or its `t` is not evenly spaced.
         """
         run_kwargs = dict(run_kwargs or {})
+        integration = kwargs.pop("integration", None)
         if save:
             kwargs.update({"filename": self.get_run_filename(format=format, **kwargs)})
 
@@ -1531,8 +1532,6 @@ class DynamicsRuntime(Catalogued, Copyable):
                 return bif_res
 
         elif "python" == format:
-            from scipy.integrate import odeint
-
             # Discrete-time systems: iterate map instead of integrating ODEs
             if getattr(self, "system_type", "continuous") == "discrete":
                 # Initial conditions
@@ -1603,12 +1602,21 @@ class DynamicsRuntime(Catalogued, Copyable):
                 duration = kwargs.pop("duration", 8000)
                 t = np.arange(0, duration, dt)
             else:
-                t = kwargs.pop("t")
-            # Run the simulation with the updated parameters
-            solution_slider = odeint(lambda u, t: model_dfun(u, t, **run_kwargs), u_0, t)
+                t = np.asarray(kwargs.pop("t"), dtype=float)
+                spacing = np.diff(t)
+                if spacing.size and not np.allclose(spacing, spacing[0]):
+                    raise ValueError("a python run steps by a fixed-step method, so its `t` must be evenly spaced.")
+                dt = float(spacing[0]) if spacing.size else dt
+            from tvbo.run.compgraph import integration_step
+
+            step = integration_step(integration)
+            states = [np.asarray(u_0, dtype=float).ravel()]
+            for time in t[:-1]:
+                states.append(step(lambda u, time=time: model_dfun(u, time, **run_kwargs), states[-1], dt))
+            solution = np.stack(states)
 
             return data_types.TimeSeries(
-                data=solution_slider.reshape(*solution_slider.shape, 1, 1),
+                data=solution.reshape(*solution.shape, 1, 1),
                 time=t,
                 labels_dimensions={"State Variable": list(self.state_variables)},
                 sample_period=dt,

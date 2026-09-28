@@ -19,7 +19,7 @@ Supports:
   - Multi-dimensional coupling: outdim > 1 for broadcasting edge functions
   - Static vertices: dynamics with no state_variables
 
-Every graph is a SimpleDiGraph with the Directed edge model, and every edge carries the connection weight, so node i receives post(sum_j w_ij * pre(x_i, x_j)), the coupling every other backend integrates.
+Every graph is a SimpleDiGraph with the Directed edge model, the graph the Python Network holds, and every edge carries the connection weight, so node i receives post(sum_j w_ij * pre(x_i, x_j)), the coupling every other backend integrates. Where the coupling is held per step, a callback copies each vertex's summed input onto its held parameters at the start of every step.
 
 Context: Pre-computed dict from NetworkDynamicsAdapter.prepare_context()
 </%doc>
@@ -27,13 +27,14 @@ Context: Pre-computed dict from NetworkDynamicsAdapter.prepare_context()
 <%page args="experiment, model, network, integration, \
 dynamics_dict, node_dynamics_map, all_couplings, coupling, \
 coupling_vars, outdim, outsym_names, \
-n_nodes, nodes, graph_gen, weight_matrix, \
+n_nodes, nodes, weight_matrix, \
 coupling_splits, edge_split, graph_form, graph_edges, edge_weights, edge_parameters, event_edges, edge_event_names, line_partners, node_rows, dealias, \
+vertex_layouts, node_states, node_overrides, hold_coupling, hold_rows, held_inputs, \
 sv_names, n_sv, is_heterogeneous, is_stochastic, \
 dt, duration, solver_method, solve_kwargs, needs_stiff, \
 dist_info, needs_random, dist_seed, \
 all_events, has_events, coupling_observed, find_fixpoint, \
-is_static, parse_node_parameters, get_noise_sigmas, graph_generator_call"/>
+is_static, parse_node_parameters, get_noise_sigmas"/>
 <%!
 from tvbo.adapters.julia_model import (
     equation_rhs_text, julia_ode_package, needs_nanmath, needs_special_functions,
@@ -78,8 +79,8 @@ ${edge.post_function(coupling_splits[c_name])}\
 ## Static vertex: no dynamics, outputs parameter values
 <%
     static_params = list((dyn.parameters or {}).keys())
-    # A static vertex outputs the coupling variables of the default model, the symbols the edges expect.
-    static_outsyms = coupling_vars if coupling_vars else ['out']
+    # A static vertex sends what the default model's vertices send, the outputs the edges read.
+    static_outsyms = vertex_layouts[model.name]['outputs'] if model.name in vertex_layouts else ['out']
     n_static_out = len(static_outsyms)
 %>
 function ${dyn.name}_g!(out, x, p, t)
@@ -97,21 +98,19 @@ vertex_${dyn.name} = VertexModel(;
 )
 
 % else:
-<%include file="/tvbo-nd-vertex.jl.mako" args="model=dyn, all_couplings=all_couplings, outdim=outdim, split=edge_split" />
+<%include file="/tvbo-nd-vertex.jl.mako" args="model=dyn, outdim=outdim, layout=vertex_layouts[dyn_name], split=edge_split" />
 
 % endif
 % endfor
 
 ## ── Edge models (coupling) ──────────────────────────────────────────────────
 % for c_name, c in all_couplings.items():
-<%include file="/tvbo-nd-edge.jl.mako" args="coupling=c, split=coupling_splits[c_name], outdim=outdim, outsym_names=outsym_names" />
+<%include file="/tvbo-nd-edge.jl.mako" args="coupling=c, split=coupling_splits[c_name]" />
 
 % endfor
 
 ## ── Graph ───────────────────────────────────────────────────────────────────
-% if graph_form == "generator":
-g = SimpleDiGraph(${graph_generator_call(graph_gen, n_nodes, 'julia')})
-% elif graph_form == "matrix":
+% if graph_form == "matrix":
 using SimpleWeightedGraphs
 W = [${'; '.join(' '.join(f'{weight_matrix[i, j]:.6g}' for j in range(n_nodes)) for i in range(n_nodes))}]
 g = SimpleDiGraph(SimpleWeightedDiGraph(W))
@@ -142,8 +141,6 @@ edge_zero = EdgeModel(;
     outsym = [${", ".join(f':{s}' for s in _zero_outsym)}],
     name = :zero_coupling,
 )
-% else:
-g = complete_digraph(${n_nodes})
 % endif
 
 ## ── Network ─────────────────────────────────────────────────────────────────
@@ -202,28 +199,13 @@ rng = MersenneTwister(${dist_seed})
     dyn_name = node_dynamics_map.get(node.id, model.name)
     dyn = dynamics_dict[dyn_name]
     node_idx = node_rows[node.id] + 1
-    node_state = getattr(node, 'state', None) or []
-    state_items = node_state.values() if isinstance(node_state, dict) else node_state
-    state_map = {}
-    for state_entry in state_items:
-        if isinstance(state_entry, dict):
-            state_name = state_entry.get('name')
-            state_value = state_entry.get('value')
-        else:
-            state_name = getattr(state_entry, 'name', None)
-            state_value = getattr(state_entry, 'value', None)
-        if state_name is not None and state_value is not None:
-            state_map[str(state_name)] = state_value
-    node_init = [state_map.get(sv_name, None) for sv_name in (dyn.state_variables or {}).keys()]
-    if not any(v is not None for v in node_init):
-        node_init = getattr(node, 'initial_state', None) or []
     node_params = parse_node_parameters(node)
 %>
-% for i, sv in enumerate((dyn.state_variables or {}).values()):
+% for sv in (dyn.state_variables or {}).values():
 <%
     d = getattr(sv, 'distribution', None)
     has_dist = d and getattr(d, 'domain', None)
-    init_val = node_init[i] if i < len(node_init) else None
+    init_val = node_states[node.id].get(sv.name)
 %>
 % if init_val is not None:
 s.v[${node_idx}, :${sv.name}] = ${init_val}
@@ -269,6 +251,13 @@ for node in 1:nv(g)
     s.p.v[node, :${p_name}] = ${sample_expression(d, 'julia')}
 end
 % endfor
+## Each node's declared initial values and parameters, over the model's defaults and samples
+% for row, name, value in node_overrides['states']:
+s.v[${row}, :${name}] = ${value}
+% endfor
+% for row, name, value in node_overrides['parameters']:
+s.p.v[${row}, :${name}] = ${value}
+% endfor
 % endif
 <%def name="on_line(ev)">\
 ## The line-partner copy an edge event's affect ends with, where the graph carries undirected lines
@@ -278,7 +267,7 @@ end
 </%def>
 <%def name="edge_values(fixpoint)">\
 ## Each edge's weight, on the coupling's weight parameter, and declared parameters, at the position edges(g) visits it in: network defaults for a fixpoint search, the state's parameters otherwise.
-% if edge_weights is not None and edge_split is not None:
+% if edge_weights and edge_split is not None:
 % if fixpoint:
 for (k, w) in enumerate(edge_weights)
     set_default!(nw, EIndex(k, :${edge_split['weight']}), w)
@@ -295,7 +284,7 @@ s.p.e[${k}, :${p_name}] = ${p_val}
 % endif
 % endfor
 </%def>
-% if not find_fixpoint and (edge_weights is not None or edge_parameters):
+% if not find_fixpoint and (edge_weights or edge_parameters):
 ${edge_values(fixpoint=False)}\
 % endif
 
@@ -384,6 +373,15 @@ end
 % endif
 % endfor
 % endif
+% if hold_coupling:
+
+## ── Coupling held per step: each vertex's summed input, copied at every step's start onto the held_* parameters its f! reads ──
+import SymbolicIndexingInterface as SII
+coupling_inputs = SII.getu(nw, [VIndex(i, sym) for i in ${hold_rows} for sym in (${"".join(f":{name}, " for name, _ in held_inputs)})])
+held_coupling = SII.setp(nw, [VIndex(i, sym) for i in ${hold_rows} for sym in (${"".join(f":{held}, " for _, held in held_inputs)})])
+hold_coupling!(integrator) = held_coupling(integrator, coupling_inputs(integrator))
+hold_cb = DiscreteCallback((u, t, integrator) -> true, hold_coupling!; initialize=(c, u, t, integrator) -> hold_coupling!(integrator), save_positions=(false, false))
+% endif
 
 ## ── Problem + solve ─────────────────────────────────────────────────────────
 tspan = (0.0, ${duration})
@@ -402,13 +400,21 @@ function nw_noise!(du, u, p, t)
     nothing
 end
 
+<% sde_callbacks = (['get_callbacks(nw)'] if has_events else []) + (['hold_cb'] if hold_coupling else []) %>\
+% if sde_callbacks:
+## An SDEProblem is not built from the network, so the component callbacks are passed to it explicitly
+prob = SDEProblem(nw, nw_noise!, uflat(s), tspan, pflat(s); callback=CallbackSet(${", ".join(sde_callbacks)}))
+% else:
 prob = SDEProblem(nw, nw_noise!, uflat(s), tspan, pflat(s))
-sol = solve(prob, EulerHeun(); dt=${dt}, saveat=${dt})
+% endif
+sol = solve(prob, ${solver_method}(); dt=${dt}, saveat=${dt})
 % else:
 % if find_fixpoint:
 ## ODEProblem from NWState: auto-extracts initial state, parameters, and callbacks
 u0 = NWState(nw)
 prob = ODEProblem(nw, u0, tspan)
+% elif hold_coupling:
+prob = ODEProblem(nw, uflat(s), tspan, pflat(s); add_nw_cb=hold_cb)
 % else:
 prob = ODEProblem(nw, uflat(s), tspan, pflat(s))
 % endif

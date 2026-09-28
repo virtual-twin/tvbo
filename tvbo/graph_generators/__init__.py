@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from .catalog import load_matrix, run_generator
+from .catalog import library_weights, load_matrix, run_generator
 
 
 def random_reservoir(
@@ -64,4 +64,4 @@ def weight_shuffle(source: str, preserve: str = "binary_mask", seed: int | None 
     return {"weights": shuffled}
 
 
-__all__ = ["random_reservoir", "weight_shuffle", "load_matrix", "run_generator"]
+__all__ = ["random_reservoir", "weight_shuffle", "library_weights", "load_matrix", "run_generator"]

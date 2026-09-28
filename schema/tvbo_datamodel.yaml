@@ -202,10 +202,10 @@ enums:
         permissible_values:
             per_stage:
                 description: >-
-                    Re-evaluate the coupling at every integrator stage — the coupling is a full part of the vector field (standard ODE integration). Accurate; required to reproduce reference integrators for stiff / chaotic / multistable systems. (tvboptim maps this to recompute_coupling_per_stage=True; diffrax already recomputes the whole RHS per stage.)
+                    Re-evaluate the coupling at every integrator stage, as part of the vector field: standard ODE integration, and what a reference integrator of a stiff, chaotic or multistable network computes. tvboptim's native solvers honour it as recompute_coupling_per_stage=True, NetworkDynamics.jl integrates this way natively, and the jax backend re-evaluates an undelayed coupling at each stage's state and refuses it over a delayed one, whose history read it cannot shift to a stage's time. TVB and the Python graph runner compute the coupling once per step, so they refuse it wherever it changes the system integrated: a multi-stage method over more than one node. tvboptim's diffrax solvers and PyRates integrate this way whatever is declared.
             per_step:
                 description: >-
-                    Evaluate the coupling once per integration step and hold it constant across the stages — a TVB-style efficiency shortcut (the coupling reduction runs once per step). Faster but lower- order in the coupling; can change the trajectory for sensitive systems. (tvboptim: recompute_coupling_per_stage=False, the current backend default.)
+                    Evaluate the coupling once per integration step and hold it across the step's stages, the TVB scheme: the coupling reduction runs once per step, at the cost of an order of accuracy in the coupling, which can move a sensitive system onto another trajectory. TVB and the Python graph runner always integrate this way, and the jax backend and tvboptim's native solvers do as their default (recompute_coupling_per_stage=False on tvboptim). NetworkDynamics.jl holds each vertex's summed input on parameters that a callback sets at the start of every step, for every multi-stage method, adaptive ones included, and refuses it together with execution.find_fixpoint. tvboptim's diffrax solvers and PyRates re-evaluate the coupling at every stage whatever is declared.
                     
     WorkflowDistributeBy:
         description: >-
@@ -497,13 +497,17 @@ enums:
             Strategy for obtaining the starting equilibrium or periodic orbit.
         permissible_values:
             time_integration:
-                description: "Integrate the ODE forward until convergence (robust, default)."
+                description: >-
+                    Integrate the model from its declared initial values for InitialState.duration and start from the state it reaches. The default of a continuation, on every continuation backend.
             newton:
-                description: "Use Newton's method to find the nearest fixed point."
+                description: >-
+                    Start from the equilibrium Newton's method converges to from the model's declared initial values: SciPy's root by MINPACK's hybr, to a relative step of InitialState.abs_tol, refused where it does not converge. Resolved once, before any backend runs, so every continuation backend starts from the same state; on a network every node starts from it.
             given:
-                description: "Use the model's default initial values directly."
+                description: >-
+                    Start from the model's declared initial values as they are. A continuation takes them as its starting equilibrium on every continuation backend, and refuses a state whose right-hand side exceeds InitialState.abs_tol in any component, since AUTO-07p would start its branch at a state that is not an equilibrium and BifurcationKit would correct it first; newton finds the equilibrium near such a state.
             from_branch:
-                description: "Start from a point on a previously computed branch."
+                description: >-
+                    Start from a point on a previously computed branch. No continuation backend implements it: a continuation declaring it is refused by name before anything renders or runs. A continuation from a special point of another is declared as a branch of that continuation instead (Continuation.branches, with its BranchSwitch.source_point).
             from_working_point:
                 description: >-
                     Ramp a parameter quasi-statically (warm-start / from_previous) to a target value (see InitialState.ramp) and start from the endpoint state — reach a working point on the solution branch before the run.
@@ -551,10 +555,10 @@ enums:
         permissible_values:
             independent:
                 description: >-
-                    Points are order-independent and may be evaluated in parallel (see parallel_mode). Default. Independent of each OTHER, which is not the same as each cold-starting: where the experiment declares a transient, the settle is integrated once and every point opens from the state it reached, so what is shared between points is a settled state rather than a running trajectory. That is sound while the swept parameter does not change the approach, and unsound wherever the sweep crosses a bifurcation, since a point then inherits an attractor it would not have reached on its own. A settle per point would make the name literal and is not what the emitter does today; read this as the guarantee it gives rather than the one the word suggests.
+                    Points are order-independent and may be evaluated in parallel (see parallel_mode). Default. Independent of each OTHER, which is not the same as each cold-starting: where the experiment declares a transient, the settle is integrated once and every point opens from the state it reached, so what is shared between points is a settled state rather than a running trajectory. That is sound while the swept parameter does not change the approach, and unsound wherever the sweep crosses a bifurcation, since a point then inherits an attractor it would not have reached on its own. The emitter integrates one settle, not one per point, so the name promises independence between points, not a cold start at each.
             from_previous:
                 description: >-
-                    Each point is seeded from the final state of the preceding point, so the trajectory follows the solution branch as the swept parameter changes quasi-statically. Forces sequential, order-dependent execution (emitted as a scan, not a vmap). Used to reach a working point by slowly ramping a parameter (e.g. global coupling) and, with sweep_direction, to expose hysteresis / multistability. Sweep-granularity analogue of InitialStateMethod.from_branch.
+                    Each point is seeded from the final state of the preceding point, so the trajectory follows the solution branch as the swept parameter changes quasi-statically. Forces sequential, order-dependent execution (emitted as a scan, not a vmap). Used to reach a working point by slowly ramping a parameter (e.g. global coupling) and, with sweep_direction, to expose hysteresis / multistability. The sweep-granularity form of InitialStateMethod.from_working_point, which ramps a parameter to one working point.
 
     SweepDirection:
         description: >-
@@ -3329,7 +3333,7 @@ classes:
     InitialState:
         class_uri: tvbo:InitialState
         description: >-
-            How to obtain the starting equilibrium or periodic orbit for continuation. Most robust: time-integrate to steady state.
+            How a run obtains its starting state. A continuation starts by time_integration, given or newton, the same on every continuation backend, and refuses any other method by name.
         attributes:
             method:
                 range: InitialStateMethod
@@ -3338,11 +3342,12 @@ classes:
             duration:
                 range: float
                 ifabsent: float(2000.0)
-                description: "Integration duration for time_integration method."
+                description: "Integration duration for time_integration method, the same on every continuation backend."
             abs_tol:
                 range: float
                 ifabsent: float(1e-10)
-                description: "Absolute tolerance for ODE integration."
+                description: >-
+                    Absolute tolerance: of the integration for time_integration, of the relative step at which newton has converged, and of the right-hand side a given state may leave in any component.
             rel_tol:
                 range: float
                 ifabsent: float(1e-10)
@@ -3351,11 +3356,11 @@ classes:
                 range: Solver
                 inlined: true
                 description: >-
-                    ODE solver for time_integration method. Specify method (e.g., Tsit5, Heun, RK4) and tolerances.
+                    ODE solver of the time_integration settle, by method and step or tolerances. A continuation backend integrates by it or refuses it by name: bifurcationkit takes any DifferentialEquations.jl solver (Tsit5, Rodas5), auto-07p a SciPy one (Dopri5, LSODA, BDF) or a fixed-step method at a step_size, and pyrates-bifurcation none, since it settles by AUTO-07p's own initial-value run. Undeclared, each settles by its own default.
             source_branch:
                 range: string
                 description: >-
-                    Name of a previously computed branch (for from_branch method).
+                    Name of a previously computed branch, for the from_branch method, which no continuation backend implements (InitialStateMethod.from_branch).
             source_point:
                 range: string
                 description: >-
@@ -3373,7 +3378,7 @@ classes:
     BranchSwitch:
         class_uri: tvbo:BranchSwitch
         description: >-
-            Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says: "from which special point on the parent branch, continue what kind of object, with what settings." Override parent solver settings via the inline continuation field — only explicitly set attributes take effect; everything else is inherited from the parent Continuation.
+            Specification for switching from a detected bifurcation point to a new branch (periodic orbits from Hopf, fold continuation, etc.). Each BranchSwitch says: "from which special point on the parent branch, continue what kind of object, with what settings." Override parent solver settings via the inline continuation field: every setting it leaves unset is the parent Continuation's, on every continuation backend.
         slots:
             - name
             - description
@@ -3383,7 +3388,7 @@ classes:
             source_point:
                 range: string
                 description: >-
-                    The special points of the parent continuation the branch starts from, written '<kind>:<n>' for one point and '<kind>:all', or the bare '<kind>', for every point of that kind. <kind> is hopf, fold or bp; <n> is a nonzero integer counting from 1 for the first point, and negative counting back from -1 for the last. Anything else is refused. A periodic-orbit branch starts from Hopf points only.
+                    The special points of the parent continuation the branch starts from, written '<kind>:<n>' for one point and '<kind>:all', or the bare '<kind>', for every point of that kind. <kind> is hopf, fold or bp; <n> is a nonzero integer counting from 1 for the first point, and negative counting back from -1 for the last. Anything else is refused. A periodic-orbit branch starts from Hopf points only, and unset starts from every one ('hopf:all'). A two-parameter branch must declare it: its kind decides whether a fold curve or a Hopf curve is continued, so an unset one is refused by name.
 
             # --- Branching perturbation ---
             delta_p:
@@ -3396,7 +3401,7 @@ classes:
                 range: Continuation
                 inlined: true
                 description: >-
-                    Override solver settings for this branch. Uses the same Continuation type — only explicitly set attributes override the parent's values.
+                    Solver settings for this branch, of the same Continuation type. Every setting it leaves unset is the parent's (ds, ds_min, ds_max, max_steps, the tolerances, and the detection and Newton settings), on every continuation backend; one neither declares is the backend's own default for that kind of branch.
 
             # --- Discretization (for periodic orbits, connecting orbits, etc.) ---
             discretization:
@@ -3408,7 +3413,8 @@ classes:
             # --- Direction ---
             bothside:
                 range: boolean
-                description: "Continue branch in both directions."
+                description: >-
+                    Continue the branch in both directions from each point it starts from. Unset, the nested continuation's bothside applies, and false where that is unset too; a branch never takes its parent's, which is the direction of the parent's own start. Declaring it here and on the nested continuation with different values is refused.
 
             # --- Toolkit-specific options ---
             options:
@@ -3441,7 +3447,7 @@ classes:
                 inlined: true
                 inlined_as_list: true
                 description: >-
-                    The parameters the continuation varies, each a parameter of its dynamics with a domain (lo, hi) bounding it and an optional value it starts from, the dynamics' own value where none is given. A continuation an experiment declares frees one parameter. A two-parameter (codim-2) continuation is a branch of it: the branch's nested continuation frees the second parameter, listed alone or after the primary it inherits (for primary p and second C, [C] or [p, C]), and is continued from the special points the branch's source_point selects.
+                    The parameters the continuation varies, each a parameter of its dynamics with a domain (lo, hi) bounding it and an optional value it starts from, the dynamics' own value where none is given. A bound the domain leaves out is the dynamics parameter's own; one neither declares is refused by name, since the range decides which part of the diagram is computed. A continuation an experiment declares frees one parameter, and is refused when it frees none. A two-parameter (codim-2) continuation is a branch of it: the branch's nested continuation frees the second parameter, listed alone or after the primary it inherits (for primary p and second C, [C] or [p, C]), and is continued from the special points the branch's source_point selects. Its result carries the primary in param and the second in param2 on every backend.
 
             # --- Step size control ---
             ds:
@@ -3460,10 +3466,12 @@ classes:
             # --- Newton corrector ---
             newton_tol:
                 range: float
-                description: "Absolute tolerance for Newton corrector convergence."
+                description: >-
+                    Absolute tolerance on the residual at which the Newton corrector has converged: the norm of the right-hand side f(x, p) at the corrected point must fall below it, in the units of f. BifurcationKit.jl applies it as that bound (NewtonPar tol). AUTO-07p tests the size of each Newton correction instead, relative to the size of the solution, so the AUTO-07p backends (auto-07p and pyrates-bifurcation) set both of its relative criteria to it, EPSL on the parameter and EPSU on the state, and only approximate the residual bound: a correction and the residual it removes differ by the conditioning of the Jacobian. Unset, each backend keeps its own default, BifurcationKit.jl 1e-12 on the residual and AUTO-07p 1e-7 on the correction. A branch's nested continuation that leaves it unset takes its parent's.
             newton_max_iterations:
                 range: integer
-                description: "Maximum Newton corrector iterations per step."
+                description: >-
+                    Maximum Newton corrector iterations per step: NewtonPar max_iterations on BifurcationKit.jl, and both ITNW and ITMX on the AUTO-07p backends. Unset, each backend keeps its own default, BifurcationKit.jl 25 and AUTO-07p ITNW 5 and ITMX 9. A branch's nested continuation that leaves it unset takes its parent's.
 
             # --- Eigenvalue / stability ---
             nev:
@@ -3514,7 +3522,8 @@ classes:
             # --- Bidirectional ---
             bothside:
                 range: boolean
-                description: "Continue in both directions from the starting point."
+                description: >-
+                    Continue in both directions from the starting point; unset, false. On a branch's nested continuation it applies only where the branch declares no bothside of its own (BranchSwitch.bothside).
 
             # --- Execution / backend ---
             execution:
@@ -3632,7 +3641,7 @@ classes:
                 range: CouplingStageEvaluation
                 ifabsent: string(per_step)
                 description: >-
-                    Backend-neutral numerical treatment of the network coupling term across the stages of a multi-stage integrator (Heun, RK4, ...): re-evaluated at every stage (per_stage — standard ODE accuracy) or computed once per step and held constant across stages (per_step — a TVB-style efficiency shortcut). Single- stage methods (Euler) and always-recompute solvers (diffrax) ignore it. per_stage is required to match reference integrators for stiff / chaotic / multistable systems, where the frozen- coupling error can select a different trajectory or attractor. See CouplingStageEvaluation.
+                    Backend-neutral numerical treatment of the network coupling term across the stages of a multi-stage integrator (Heun, RK4, ...): re-evaluated at every stage (per_stage, standard ODE accuracy) or computed once per step and held across the stages (per_step, the TVB scheme). A single-stage method (Euler) and a single node integrate the same system under both. tvboptim's native solvers, NetworkDynamics.jl and the jax backend honour both values, the jax backend per_stage over an undelayed coupling only; TVB and the Python graph runner integrate per_step and refuse per_stage, and tvboptim's diffrax solvers and PyRates always integrate per_stage, whatever is declared (CouplingStageEvaluation states each value's behaviour). per_stage is required to match reference integrators for stiff, chaotic or multistable systems, where the frozen-coupling error can select a different trajectory or attractor.
 
     Differentiation:
         class_uri: tvbo:Differentiation
@@ -3976,7 +3985,7 @@ classes:
             container:
                 range: string
                 description: >-
-                    Container image wrapping each task; tasks run as ``<runtime> exec <image> …``. A concrete image passes through as given — either a registry reference the engine resolves and materialises itself (``docker://…:tag``) or a path to an image file already built on the target, which pins the exact image and needs no pull. A reference that leaves the version open is resolved to the tvbo image matching the running CLI: the symbolic value ``tvbo``, or a tvbo registry reference with no ``:tag``. Left unset while ``requirements`` are declared, the base still defaults to that tvbo image (the deps layer onto it); unset with no requirements, tasks run bare.
+                    Container image wrapping each task; tasks run as ``<runtime> exec <image> …``. A concrete image passes through as given — either a registry reference the engine resolves and materialises itself (``docker://…:tag``) or a path to an image file already built on the target, which pins the exact image and needs no pull; a registry reference written without a transport gains ``docker://``. Only tvbo's own image has an open version filled in, with the version of the running tvbo: the symbolic value ``tvbo``, or tvbo's repository (``ghcr.io/virtual-twin/tvbo``) with no ``:tag``. Any other reference without a tag keeps the registry's default tag. Unset, tasks run in the surrounding environment, and declared ``requirements`` are provisioned into it rather than forcing a container.
             container_binds:
                 multivalued: true
                 range: string

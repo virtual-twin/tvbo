@@ -5,6 +5,9 @@ coupling_zero = context['coupling_zero']
 
 # Fortran has no closures, so model functions such as Sigm are inlined into every right-hand side.
 render_eq = lambda obj: model.render_equation(obj, format='fortran', inline_functions=True, replace=replace, remove=coupling_zero)
+jacobian = context['jacobian']
+from tvbo.codegen.code import render_equation
+render_entry = lambda expr: render_equation(expr, format='fortran', replace=replace)
 %>
 SUBROUTINE FUNC(NDIM, U, ICP, PAR, IJAC, F, DFDU, DFDP)
 
@@ -44,6 +47,15 @@ SUBROUTINE FUNC(NDIM, U, ICP, PAR, IJAC, F, DFDU, DFDP)
     % for i, sv in enumerate(model.state_variables.values()):
     F(${i+1}) = ${render_eq(sv)}
     % endfor
+% if jacobian:
+
+    IF (IJAC == 0) RETURN
+
+    DFDU(1:NDIM*NDIM) = 0.0d0
+    % for (i, j), entry in jacobian.items():
+    DFDU(${i+1} + ${j}*NDIM) = ${render_entry(entry)}
+    % endfor
+% endif
 
 END SUBROUTINE FUNC
 

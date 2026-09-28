@@ -339,12 +339,14 @@ def surface_panel(fig, ax, ctx):
             )
         # A region the surface atlas does not carry is skipped rather than refused, because a cortical mesh legitimately has no parcel for a subcortical one; what is refused is a layer none of whose regions land, which is a mismatched atlas rather than a whole-brain map drawn on cortex.
         values = _np.full(len(verts), _np.nan)
-        placed = 0
+        placed = set()
         for nm, value in zip(labels, region_values, strict=True):
             index = parcel_of.get(nm)
             if index is not None:
                 values[vertex_parcels == index] = value
-                placed += 1
+                placed.add(index)
+        if opts.get("missing_color"):
+            grey = _np.isin(vertex_parcels, sorted(set(parcel_of.values()) - placed))
         if not placed:
             raise ValueError(
                 f"surface panel: none of the layer's {len(labels)} region labels are parcels of "
@@ -376,6 +378,7 @@ def surface_panel(fig, ax, ctx):
         overlay=values,
         ax=ax,
         mask=grey,
+        mask_colour=_rgba(opts["missing_color"]) if opts.get("missing_color") else None,
         # A merged bilateral mesh is already whole, and the backend reads `hemi` as an instruction to go find one hemisphere's geometry — which it then cannot resolve.
         hemi="lh" if str(opts.get("hemi", "lh")) == "both" else str(opts.get("hemi", "lh")),
         view=str(opts.get("view", "lateral")),
@@ -843,11 +846,12 @@ def legend_panel(fig, ax, ctx):
 
     A convention shared by several panels belongs to none of them; drawing it inside one both shrinks that panel and implies the convention is local to it. Papers put it in the grid's spare cell, which is what this kind is.
 
-    The entries are parallel declared lists rather than one encoded string per entry, so each is a typed value the spec can validate: ``labels`` names them and ``colors`` / ``linestyles`` / ``markers`` style them, each falling back to a sensible default when shorter than ``labels``.
+    The entries are parallel declared lists rather than one encoded string per entry, so each is a typed value the spec can validate: ``labels`` names them and ``colors`` / ``linestyles`` / ``markers`` / ``handles`` style them, each falling back to a sensible default when shorter than ``labels``. A colour may be a palette role or hue, resolved as every other colour is; a ``patch`` handle is a filled swatch, the sample a coloured area is keyed by.
 
     A spec declares all of this as ``legend:`` — the same slot every other panel uses for its own key, because this panel IS one. The `Legend` class names and documents every attribute; here the entry lists are what it is for.
     """
     from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
 
     opts = ctx.get("opts", {})
     labels = [str(t) for t in (opts.get("labels") or [])]
@@ -860,13 +864,22 @@ def legend_panel(fig, ax, ctx):
 
     handles = []
     for i in range(len(labels)):
-        marker = _at("markers", i, None)
+        color = resolve_color(str(_at("colors", i, "k")))
+        handle = str(_at("handles", i, "line"))
+        if handle == "patch":
+            handles.append(Patch(facecolor=color, edgecolor="none"))
+            continue
+        if handle not in ("line", "marker"):
+            raise ValueError(
+                f"legend panel: entry {labels[i]!r} asks for a {handle!r} handle; a handle is `line`, `marker` or `patch`."
+            )
+        marker = _at("markers", i, "o" if handle == "marker" else None)
         handles.append(
             Line2D(
                 [],
                 [],
-                color=str(_at("colors", i, "k")),
-                linestyle=str(_at("linestyles", i, "-")),
+                color=color,
+                linestyle="none" if handle == "marker" else str(_at("linestyles", i, "-")),
                 **({"marker": str(marker)} if marker else {}),
             )
         )
@@ -939,6 +952,7 @@ _SHIPPED_THEME = "tvbo:theme/default"
 COLOR_OPTS = frozenset(
     {
         "color",
+        "missing_color",
         "axhline_color",
         "axvline_color",
         "axline_color",
@@ -963,6 +977,14 @@ def resolve_color(value):
     from tvbo.plot import palette
 
     return palette.as_color(value)
+
+
+def _rgba(value):
+    """A declared colour, palette roles included, as the RGBA row a mesh's face colours are written with."""
+    import numpy as _np
+    from matplotlib.colors import to_rgba
+
+    return _np.asarray(to_rgba(resolve_color(value)))
 
 
 def resolve_colormap(value, default: str = "sequential"):
@@ -1209,7 +1231,7 @@ _RULE_DECOR = ("color", "width", "dash", "label")
 _REGION_DECOR = ("color", "fill", "opacity")
 _RULE_DIRECTIVES = tuple(f"{k}{s}" for k in ("axhline", "axvline", "axline") for s in ("", *(f"_{d}" for d in _RULE_DECOR)))
 _REGION_DIRECTIVES = ("region", *(f"region_{d}" for d in _REGION_DECOR))
-_LEGEND_DIRECTIVES = ("legend", "legend_frame", "legend_columns", "legend_title")
+_LEGEND_DIRECTIVES = ("legend", "legend_frame", "legend_columns", "legend_title", "legend_handle_length")
 _CAMERA_DIRECTIVES = ("elev", "azim", "zoom")
 
 # The flat directives a grammar panel's axes are drawn from — the backend-independent set the template applies uniformly. Every one now has a declared slot behind it; the names survive as the renderer's own vocabulary, which is where the spec's words stop and matplotlib's begin.
@@ -1280,6 +1302,7 @@ _KIND_ATTRS = {
         "mask",
         "geometry",
         "color",
+        "missing_color",
         "edge_color",
         "edge_width",
     ),
@@ -1330,7 +1353,19 @@ _KIND_ATTRS = {
         "location",
         "width",
     ),
-    "legend": ("show", "loc", "frame", "columns", "title", "labels", "colors", "linestyles", "markers", "handle_length"),
+    "legend": (
+        "show",
+        "loc",
+        "frame",
+        "columns",
+        "title",
+        "labels",
+        "colors",
+        "linestyles",
+        "markers",
+        "handles",
+        "handle_length",
+    ),
 }
 """Every attribute of the object each built-in kind's loose options became, in the schema's own words. The one list per kind: what a panel may declare, what the drawing code is handed, and what the retired spelling was are all read off it below."""
 
@@ -1532,7 +1567,12 @@ def _declared_legend(panel) -> dict:
             if k != "show"
         }
     out: dict = {"legend": _enum_value(spec["loc"]) if spec.get("loc") is not None else True}
-    for slot, key in (("frame", "legend_frame"), ("columns", "legend_columns"), ("title", "legend_title")):
+    for slot, key in (
+        ("frame", "legend_frame"),
+        ("columns", "legend_columns"),
+        ("title", "legend_title"),
+        ("handle_length", "legend_handle_length"),
+    ):
         if spec.get(slot) is not None:
             out[key] = _plain(spec[slot])
     return out
@@ -1665,7 +1705,9 @@ def _annotations(panel, base_dir=Path(".")) -> list:
         tail = None
         if tail_used is not None and getattr(a, "tail_x", None) is not None:
             tail = {"x": float(a.tail_x), "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir)}
-        text_kwargs = {k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None}
+        text_kwargs = _resolve_colors(
+            {k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None}
+        )
         text_kwargs.setdefault("ha", "center")
         text_kwargs.setdefault("va", "center")
         out.append({"text": a.text, "x": x, "y": y, "layer": layer, "arrow": arrow, "tail": tail, "kwargs": text_kwargs})
@@ -2062,7 +2104,8 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
         "fill_cell": bool(opts.get("fill_cell")),
         "aspect": opts.get("aspect"),
         "drawer": kind in _DRAWER_KINDS,
-        "title": getattr(panel, "label", None),
+        # The declared heading; `label` is the older spelling a spec may still carry.
+        "title": getattr(panel, "title", None) or getattr(panel, "label", None),
         "path": path,
         "render": render,
         "placeholder": placeholder,

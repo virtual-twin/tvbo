@@ -11,8 +11,9 @@ from functools import lru_cache
 import sympy.printing.fortran as spf
 import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
-from sympy import S, Symbol, latex
+from sympy import Float, Function, N, S, Symbol, latex
 from sympy.printing import StrPrinter
+from sympy.printing.codeprinter import CodePrinter
 from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
 
 from tvbo.datamodel.schema import Equation
@@ -775,7 +776,7 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
     def _print_Indexed(self, expr):
         """Print indexed expression with automatic broadcasting.
 
-        When index context is set:
+        A concrete component index (`x_j[1]`) prints as written, with or without an index context. When index context is set:
         - a[i,j] in a 2D context -> a (no change needed)
         - rmse[i] in a 2D context -> rmse[:, None] (broadcast over missing j dimension)
 
@@ -787,7 +788,8 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
         base_name = str(expr.base)
         indices = expr.indices
 
-        # If no index context, just return the base name (default behavior)
+        if all(getattr(index, "is_Integer", False) for index in indices):
+            return f"{base_name}[{', '.join(str(int(index)) for index in indices)}]"
         if self._index_context is None:
             return base_name
 
@@ -1199,6 +1201,31 @@ class FortranPrinter(spf.FCodePrinter):
         SymPy's `FCodePrinter` inlines them by emitting a `parameter (pi = ...)` declaration, which is not valid inside an expression: `F(1) = parameter (pi=...) pi*r`.
         """
         return self._settings.get("precision_str", "%.17g") % float(expr) + "d0"
+
+    @staticmethod
+    def _real(value):
+        """*value* as a double literal where it is an integer one, which Fortran types INTEGER."""
+        return Float(value) if value.is_Integer else value
+
+    def _print_Piecewise(self, expr):
+        """Render *expr* with every integer branch as a double literal.
+
+        SymPy's `FCodePrinter` emits an expression-context Piecewise as nested ``merge(tsource, fsource, mask)`` calls, and ``merge`` requires both sources of one type and kind, so an integer branch beside a real one (``merge(0, aa*x, x < 0)``) does not compile.
+        """
+        branches = ((self._real(value), condition) for value, condition in expr.args)
+        return super()._print_Piecewise(expr.func(*branches, evaluate=False))
+
+    def _print_Function(self, expr):
+        """Render a call with every integer argument as a double literal: the intrinsics a model calls take REAL arguments, so ``atan2(0, x)`` does not compile.
+
+        SymPy's `FCodePrinter` evaluates constant arguments numerically first, which leaves an exact zero an integer.
+        """
+        call = expr.func(*(self._real(N(arg, self._settings["precision"])) for arg in expr.args))
+        return CodePrinter._print_Function(self, call) if isinstance(call, Function) else self._print(call)
+
+    def _print_MinMaxBase(self, expr):
+        """Render ``max`` and ``min`` with every integer argument as a double literal: Fortran requires all their arguments of one type, so ``max(0, x)`` does not compile."""
+        return CodePrinter._print_Function(self, expr.func(*(self._real(arg) for arg in expr.args)))
 
     _print_Catalan = _print_NumberSymbol
     _print_EulerGamma = _print_NumberSymbol

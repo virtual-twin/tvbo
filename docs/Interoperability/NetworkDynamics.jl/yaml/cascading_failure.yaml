@@ -168,6 +168,7 @@ execution:
 integration:
     description: "Explicit Runge-Kutta (Tsit5) with dt=0.01 over t in [0, 6]"
     method: Tsit5
+    coupling_evaluation: per_stage
     step_size: 0.01
     duration: 6.0
     time_scale: "s"

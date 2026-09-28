@@ -22,16 +22,15 @@ from tvbo.templates.base.utils import (
     collect_param_distributions,
     collect_sv_distributions,
     get_distribution_seed,
-    graph_generator_call,
     has_distributions,
 )
-from tvbo.utils import network_couplings, noise_sigma
+from tvbo.utils import initial_value, network_couplings, noise_sigma
 
 
 def dense_matrix(network, name: str, dtype=float) -> np.ndarray | None:
     """*network*'s edge matrix ``name`` as a dense array of ``dtype``, or ``None`` when it carries none.
 
-    `Network.matrix` returns a matrix in its stored format, which may be sparse. A backend that integrates a dense connectome — TVB, CUDA, a Julia literal, a plot — says so through this one call rather than converting on its own, so "dense, this dtype, or None" is spelled once. A backend that can take the stored form reads `matrix` directly.
+    `Network.matrix` returns a matrix in its stored format, which may be sparse. A backend that integrates a dense connectome — TVB, CUDA, a Julia literal, a plot — says so through this one call rather than converting on its own, so "dense, this dtype, or None" is spelled once. A backend that can take the stored form reads `matrix` directly. A declared transform keeps the stored matrix's precision (`Network._apply_transform`).
     """
     matrix = getattr(network, "matrix", None)
     if not callable(matrix):
@@ -61,6 +60,42 @@ def declared_node_count(network) -> int:
     return max(count, 1)
 
 
+def node_parameter_arrays(network, dynamics) -> dict[str, np.ndarray]:
+    """``{parameter: (n_nodes,) values}`` for each of *dynamics*' own parameters a declared node of *network* sets, one row per node in declaration order, the connectome matrices' order (`Network.node_index_map`); every other node keeps the dynamics' value. The values are the tvboptim backend's reader's (`get_node_param_overrides`), one per row."""
+    from tvbo.templates.tvboptim.utils import get_node_param_overrides
+
+    n_nodes = getattr(network, "number_of_nodes", None) or 0
+    defaults = {name: float(p.value) for name, p in dynamics.parameters.items() if np.isscalar(p.value)}
+    overrides = get_node_param_overrides(network, n_nodes, defaults) if n_nodes else {}
+    return {name: np.asarray(values, dtype=float) for name, values in overrides.items() if name in defaults}
+
+
+def node_initial_states(network, dynamics, states) -> np.ndarray:
+    """*states*, an ``(n_state_variables, n_nodes)`` initial state of *dynamics* with one column per node of *network* in declaration order (`Network.node_index_map`), with each state a declared node sets for itself (``nodes: [{state: {x: {value: 2.0}}}]``) in that node's column. The values are the tvboptim backend's reader's (`get_node_state_overrides`), one per row; every entry no node declares is kept, so a sampled initial state survives."""
+    from tvbo.templates.tvboptim.utils import get_node_state_overrides
+
+    states = np.array(states, dtype=float)
+    names = list(dynamics.state_variables)
+    defaults = [initial_value(sv) for sv in dynamics.state_variables.values()]
+    nodes = list(getattr(network, "nodes", None) or [])
+    for name, values in get_node_state_overrides(network, states.shape[1], names, defaults).items():
+        declared = [name in (getattr(node, "state", None) or {}) for node in nodes]
+        row = names.index(name)
+        states[row] = np.where(declared, np.asarray(values, dtype=float), states[row])
+    return states
+
+
+def coupling_evaluation_in_effect(integration, n_nodes: int) -> str | None:
+    """The ``coupling_evaluation`` *integration* declares where the two values integrate different systems, else ``None``.
+
+    ``per_stage`` and ``per_step`` differ only for a method of several stages over a network of more than one node: a single-stage method (`BaseAdapter.SINGLE_STAGE_METHODS`) evaluates the coupling once per step either way, and a single node has no coupling to hold. A backend that integrates one way only refuses the other where this names it, and a backend that honours both switches on it.
+    """
+    method = BaseAdapter.canonical_integration_method(BaseAdapter.declared_integration(integration, "method"))
+    if method in BaseAdapter.SINGLE_STAGE_METHODS or n_nodes < 2:
+        return None
+    return str(BaseAdapter.declared_integration(integration, "coupling_evaluation"))
+
+
 def refuse_network(experiment, backend: str, reach: str) -> None:
     """Raise where *backend* would accept a declared network and integrate one node of it.
 
@@ -72,6 +107,15 @@ def refuse_network(experiment, backend: str, reach: str) -> None:
             f"the {backend} backend integrates {reach}, so the {n}-node network this experiment declares would be accepted and ignored. "
             "Run it on a backend that lowers a connectome (tvb, tvboptim, jax, python, pyrates)."
         )
+
+
+def on_the_measurement_clock(data, settle: float, step: float):
+    """*data*, recorded on a run that opens at the start of its settle, moved onto the measurement clock, and how many of its samples are the settle.
+
+    The settle, and an initial state the run recorded, end at ``t = 0``, where the settle ends on every backend; the measured window opens one step later. Half a step of tolerance absorbs a time column's rounding.
+    """
+    shifted = data.assign_coords(time=data.time - settle)
+    return shifted, int((shifted.time <= step / 2).sum())
 
 
 def edge_needs(
@@ -320,7 +364,7 @@ class BaseAdapter:
     def get_network_info(self) -> dict:
         """Extract network metadata: n_nodes, graph generator, edges, etc.
 
-        ``has_graph_generator`` is the question a template actually asks, resolved once here: can this generator be lowered to a constructor call in the generated code? Only a generator naming a curated ``type`` can, because the lowering reads that entry's ``bindings:`` block. A generator declared by a Python ``builder:`` has already run and left its result in the weight and length matrices, so a template that treats the bare presence of a generator as "emit a constructor call" raises on it instead of emitting the matrices it was handed.
+        ``has_graph_generator`` is the question a backend actually asks, resolved once here: does this generator name a curated ``type``, whose entry's ``bindings:`` block builds the graph? A generator declared by a Python ``builder:`` has already run and left its result in the weight and length matrices, so a backend that treats the bare presence of a generator as "build the graph from its entry" raises on it instead of integrating the matrices it was handed.
         """
         network = self.experiment.network
         n_nodes = getattr(network, "number_of_nodes", None) or getattr(
@@ -363,6 +407,9 @@ class BaseAdapter:
 
     FIXED_STEP_METHODS = frozenset({"Euler", "Heun", "RungeKutta4thOrder", "Identity"})
     """The canonical methods (`tvbo.utils.INTEGRATION_METHODS`) that advance by the step the recipe declares rather than choosing their own. A backend whose solver interface adapts by default (DifferentialEquations.jl) has to be told the step and told not to adapt it, so every template that emits a solve call needs the distinction."""
+
+    SINGLE_STAGE_METHODS = frozenset({"Euler", "Identity"})
+    """The canonical methods that evaluate the vector field once per step, so the coupling they see is the step's start whatever ``coupling_evaluation`` declares (`coupling_evaluation_in_effect`)."""
 
     @classmethod
     def is_fixed_step(cls, method) -> bool:
@@ -659,7 +706,6 @@ class BaseAdapter:
             "is_static": self.is_static,
             "parse_node_parameters": self.parse_node_parameters,
             "get_noise_sigmas": self.get_noise_sigmas,
-            "graph_generator_call": graph_generator_call,
         }
 
 
@@ -711,15 +757,20 @@ class ContinuationAdapter(BaseAdapter):
         self.refuse_unrunnable(model, continuation, name)
         return self.start_dynamics(model, continuation)
 
-    @staticmethod
-    def refuse_unrunnable(model, continuation, name: str | None = None) -> None:
-        """Refuse a *continuation* of *model* that no continuation backend runs, naming it by *name*, else by its own.
+    @classmethod
+    def refuse_unrunnable(cls, model, continuation, name: str | None = None) -> None:
+        """Refuse a *continuation* of *model* that no continuation backend runs, or runs only by guessing what it asks for, naming it by *name*, else by its own.
 
         Raises:
-            ValueError: If the continuation, or the nested continuation of one of its branches, frees a parameter *model* does not declare; if it starts from ``initial_state.method: from_branch``, which no backend implements; or if it frees more than one parameter itself, since a two-parameter continuation is a branch of a one-parameter one (`is_codim2`).
+            ValueError: If the continuation, or the nested continuation of one of its branches, frees a parameter *model* does not declare; if it starts by an ``initial_state.method`` other than the `START_METHODS`, ``from_branch`` among them; if it frees no parameter, or more than one, since a two-parameter continuation is a branch of a one-parameter one (`is_codim2`); if a parameter it or a branch continues in has a bound neither it nor *model* declares (`parameter_bounds`); if a branch starts from no point a backend can read (`source_point`); if a branch and its nested continuation disagree on `bothside`; or if *model* has more than one mode, an axis no continuation backend lowers into the continued system.
         """
         from tvbo.utils import as_list
 
+        modes = int(getattr(model, "number_of_modes", None) or 1)
+        if modes > 1:
+            raise ValueError(
+                f"dynamics {getattr(model, 'name', '?')!r} has {modes} modes, and no continuation backend lowers the mode axis into the continued system; continue a single-mode model"
+            )
         if continuation is None:
             return
         label = name or getattr(continuation, "name", None) or "?"
@@ -736,13 +787,23 @@ class ContinuationAdapter(BaseAdapter):
                 f"continuation {label!r} frees {', '.join(map(repr, unknown))}, which the dynamics "
                 f"{getattr(model, 'name', None)!r} does not declare; its parameters are {', '.join(declared) or 'none'}."
             )
-        method = getattr(getattr(continuation, "initial_state", None), "method", None)
-        if method is not None and str(method) == "from_branch":
+        method = str(cls.initial_state(continuation).method)
+        if method == "from_branch":
             raise ValueError(
                 f"continuation {label!r} declares initial_state.method 'from_branch', which no continuation backend "
                 "implements. A continuation from a special point of another is a branch of that continuation: declare it "
                 "under its `branches`, with the `source_point` it starts from ('fold:1', 'hopf:all') and a nested "
                 "`continuation` freeing the second parameter."
+            )
+        if method not in cls.START_METHODS:
+            raise ValueError(
+                f"continuation {label!r} declares initial_state.method {method!r}, which seeds a simulation, and a "
+                f"continuation starts by one of {', '.join(cls.START_METHODS)}."
+            )
+        if not freed:
+            raise ValueError(
+                f"continuation {label!r} frees no parameter, and a continuation follows its solutions as one parameter "
+                "varies: declare it in `free_parameters`, with the domain (lo, hi) it is continued within."
             )
         if len(freed) > 1:
             raise ValueError(
@@ -751,12 +812,119 @@ class ContinuationAdapter(BaseAdapter):
                 "points: declare the second parameter in the `free_parameters` of a branch's nested `continuation`, with "
                 "the `source_point` it starts from."
             )
+        cls.parameter_bounds(freed[0], model, f"continuation {label!r}")
+        for branch_name, branch in cls.branches_of(continuation).items():
+            try:
+                cls.source_point(branch, continuation)
+                cls.bothside(branch)
+                second = cls.codim2_parameter(branch, continuation)
+                if second is not None:
+                    cls.parameter_bounds(second, model, f"branch {branch_name!r}")
+            except ValueError as error:
+                raise ValueError(f"continuation {label!r}: {error}") from error
 
     @staticmethod
-    def start_dynamics(model, continuation):
-        """*model* with each parameter *continuation* frees set to the ``value`` it declares there, which is where the continuation starts; *model* itself where it declares none.
+    def branches_of(continuation) -> dict:
+        """*continuation*'s branches keyed by name, however the declaration holds them; empty where it declares none."""
+        branches = getattr(continuation, "branches", None) or {}
+        if isinstance(branches, dict):
+            return dict(branches)
+        return {getattr(branch, "name", None) or f"branch_{i}": branch for i, branch in enumerate(branches)}
 
-        The declared values replace the model's in a copy, so every backend integrates to its starting equilibrium and starts continuing from them, and the experiment's own dynamics is left as it was.
+    @staticmethod
+    def setting(slot: str, continuation, parent=None, read=None):
+        """*slot* of *continuation*, or of *parent* where *continuation* leaves it unset: how a branch's nested continuation inherits every setting it leaves unset from its parent on every backend (`BranchSwitch.continuation`).
+
+        *read* reads a slot off one continuation, `getattr` by default; an AUTO-07p backend passes its constant reader, which reads an AUTO constant through the slot it corresponds to. ``None`` where neither declares it, so the caller names its backend's default for the run.
+        """
+        read = read or (lambda declaring, name: getattr(declaring, name, None))
+        value = read(continuation, slot) if continuation is not None else None
+        return read(parent, slot) if value is None and parent is not None else value
+
+    AUTO_NEWTON_CONSTANTS = {
+        "EPSL": ("newton_tol", float, 1e-7),
+        "EPSU": ("newton_tol", float, 1e-7),
+        "ITNW": ("newton_max_iterations", int, 5),
+        "ITMX": ("newton_max_iterations", int, 9),
+    }
+    """The AUTO-07p constants the Newton settings set on both AUTO-07p backends, each with the slot it is read from, its type and AUTO-07p's own default. AUTO tests the Newton correction rather than the residual, so ``newton_tol`` sets both of its relative criteria, EPSL on the parameter and EPSU on the state."""
+
+    @classmethod
+    def auto_newton_constants(cls, continuation, parent=None) -> dict:
+        """The `AUTO_NEWTON_CONSTANTS` of *continuation*, each slot it leaves unset taken from *parent* (`setting`), else AUTO-07p's default."""
+        constants = {}
+        for key, (slot, cast, default) in cls.AUTO_NEWTON_CONSTANTS.items():
+            value = cls.setting(slot, continuation, parent)
+            constants[key] = cast(default if value is None else value)
+        return constants
+
+    @staticmethod
+    def parameter_bounds(free_parameter, model, owner: str) -> tuple[float, float]:
+        """The ``(lo, hi)`` *free_parameter* is continued within, *owner* naming the continuation or branch that frees it, as ``"continuation 'eq'"``.
+
+        Each bound is the free parameter's own domain's, else the domain of the parameter of that name *model* declares. There is no numeric default: the range decides which part of the diagram is computed, and no fixed interval fits parameters whose scales span orders of magnitude.
+
+        Raises:
+            ValueError: If neither declares a bound, naming the parameter and which bound is missing.
+        """
+        name = str(free_parameter.name)
+        declared = getattr(free_parameter, "domain", None)
+        parameters = getattr(model, "parameters", None) or {}
+        own = getattr(parameters.get(name), "domain", None) if hasattr(parameters, "get") else None
+        bounds = {}
+        for side in ("lo", "hi"):
+            value = getattr(declared, side, None)
+            bounds[side] = getattr(own, side, None) if value is None else value
+        missing = [side for side, value in bounds.items() if value is None]
+        if missing:
+            raise ValueError(
+                f"{owner} continues {name!r} with no {' or '.join(missing)} bound: neither its domain nor the "
+                f"dynamics' parameter {name!r} declares one. Declare the range it is continued within as its "
+                f"`domain: {{lo: ..., hi: ...}}`."
+            )
+        return float(bounds["lo"]), float(bounds["hi"])
+
+    @staticmethod
+    def bothside(declaring) -> bool:
+        """Whether *declaring*, a continuation or a branch of one, continues in both directions from where it starts.
+
+        Its own ``bothside``, else, for a branch, its nested continuation's, else ``False``. A branch never takes its parent's, which is the direction of the parent's own start.
+
+        Raises:
+            ValueError: If a branch and its nested continuation both declare ``bothside`` and disagree.
+        """
+        own = getattr(declaring, "bothside", None)
+        nested = getattr(getattr(declaring, "continuation", None), "bothside", None)
+        if own is not None and nested is not None and bool(own) != bool(nested):
+            raise ValueError(
+                f"branch {getattr(declaring, 'name', '?')!r} declares bothside {bool(own)} and its continuation "
+                f"bothside {bool(nested)}; declare it once, on the branch."
+            )
+        return bool(nested if own is None else own)
+
+    START_METHODS = ("time_integration", "given", "newton")
+    """The ``initial_state.method`` values every continuation backend starts by: integrating the model from its declared initial state (``time_integration``), starting at that state (``given``), or starting at the equilibrium Newton's method finds from it (``newton``, `newton_equilibrium`)."""
+
+    @staticmethod
+    def initial_state(continuation):
+        """The `InitialState` *continuation* declares, else the schema's default one, which integrates for its default duration."""
+        from tvbo.datamodel.schema import InitialState
+
+        return getattr(continuation, "initial_state", None) or InitialState()
+
+    @classmethod
+    def integrates_to_start(cls, continuation) -> bool:
+        """Whether *continuation* starts from the state its model reaches by time integration, rather than from the model's initial state as `start_dynamics` leaves it (``given``, ``newton``)."""
+        return str(cls.initial_state(continuation).method) == "time_integration"
+
+    @classmethod
+    def start_dynamics(cls, model, continuation):
+        """*model* as *continuation* starts on it: each parameter it frees set to the ``value`` it declares there, and, where it starts by ``newton``, each state variable's initial value set to the equilibrium `newton_equilibrium` finds; *model* itself where neither applies.
+
+        The changes go to a copy, so every backend integrates to its starting equilibrium, or starts at it, from the same state and parameters, and the experiment's own dynamics is left as it was.
+
+        Raises:
+            ValueError: If *continuation* starts by ``given`` from a state that is not an equilibrium (`refuse_nonequilibrium`).
         """
         from tvbo.utils import as_list
 
@@ -765,12 +933,77 @@ class ContinuationAdapter(BaseAdapter):
             for fp in as_list(getattr(continuation, "free_parameters", None))
             if getattr(fp, "value", None) is not None
         }
-        if not start:
-            return model
-        model = model.copy()
+        method = str(cls.initial_state(continuation).method)
+        if start or method == "newton":
+            model = model.copy()
         for name, value in start.items():
             model.parameters[name].value = value
+        if method == "newton":
+            equilibrium = cls.newton_equilibrium(model, continuation)
+            for state, value in zip(model.state_variables.values(), equilibrium, strict=True):
+                state.initial_value = value
+        if method == "given":
+            cls.refuse_nonequilibrium(model, continuation)
         return model
+
+    @staticmethod
+    def declared_state(model):
+        """*model*'s declared initial state, each state variable's `tvbo.utils.initial_value`, as every continuation backend reads it."""
+        import numpy as np
+
+        from tvbo.utils import initial_value
+
+        return np.array([initial_value(variable) for variable in model.state_variables.values()], dtype=float)
+
+    @staticmethod
+    def vector_field(model):
+        """*model*'s right-hand side as a function of its state at time 0."""
+        import numpy as np
+
+        dfun = model.execute(format="python")
+        return lambda u: np.asarray(dfun(u, 0.0), dtype=float)
+
+    @classmethod
+    def newton_equilibrium(cls, model, continuation) -> list[float]:
+        """The equilibrium of *model* that Newton's method converges to from its declared initial state (`declared_state`), to a relative step of *continuation*'s ``initial_state.abs_tol``: SciPy's `root` by MINPACK's ``hybr``, a Newton iteration a trust region safeguards. On a network every node starts from it.
+
+        Raises:
+            RuntimeError: If the iteration does not converge, naming the model.
+        """
+        from scipy.optimize import root
+
+        solution = root(
+            cls.vector_field(model),
+            cls.declared_state(model),
+            method="hybr",
+            tol=float(cls.initial_state(continuation).abs_tol),
+        )
+        if not solution.success:
+            raise RuntimeError(
+                f"initial_state.method 'newton' found no equilibrium of {getattr(model, 'name', '?')!r} from its initial state: {solution.message}"
+            )
+        return [float(value) for value in solution.x]
+
+    @classmethod
+    def refuse_nonequilibrium(cls, model, continuation) -> None:
+        """Refuse a ``given`` start whose right-hand side exceeds *continuation*'s ``initial_state.abs_tol`` in any component.
+
+        ``given`` declares the state an equilibrium. AUTO-07p takes it as the first point of the branch as it is, and BifurcationKit corrects it by Newton's method first, so a state that is not one would give the backends different branches.
+
+        Raises:
+            ValueError: If the declared initial state is not an equilibrium, naming the largest component of its right-hand side.
+        """
+        import numpy as np
+
+        state = cls.declared_state(model)
+        residual = float(np.max(np.abs(cls.vector_field(model)(state)))) if state.size else 0.0
+        tolerance = float(cls.initial_state(continuation).abs_tol)
+        if residual > tolerance:
+            raise ValueError(
+                f"continuation {getattr(continuation, 'name', None) or '?'!r} starts by initial_state.method 'given' from a state of "
+                f"{getattr(model, 'name', '?')!r} that is not an equilibrium: its right-hand side reaches {residual:.3g}, above "
+                f"abs_tol {tolerance:.3g}. Declare the equilibrium as the initial state, or start by 'newton', which finds the one near it."
+            )
 
     @staticmethod
     def fortran_names(names, reserved=()) -> dict[str, str]:
@@ -808,9 +1041,35 @@ class ContinuationAdapter(BaseAdapter):
     SOURCE_KINDS = {"HB": "hopf", "LP": "fold", "BP": "bp"}
     """The special points a branch starts from, by canonical code (`tvbo.analysis.bifurcation.canonical_ty`), each with the name a result records its source by."""
 
+    PERIODIC_ORBIT_SOURCE = "hopf:all"
+    """Where a periodic-orbit branch declaring no `source_point` starts: every Hopf point, the one kind of point a periodic orbit is continued from, so the default decides nothing the branch kind has not."""
+
     @classmethod
-    def source_point(cls, branch, default: str) -> tuple[str, int | None]:
-        """Where *branch* starts — its `source_point`, or *default* where it declares none — as ``(kind, index)``.
+    def source_point(cls, branch, parent) -> tuple[str, int | None]:
+        """Where *branch* of the continuation *parent* starts, as ``(kind, index)``: `codim2_source` for a two-parameter branch (`is_codim2`), else ``("HB", periodic_orbit_source)``."""
+        if cls.is_codim2(branch, parent):
+            return cls.codim2_source(branch)
+        return "HB", cls.periodic_orbit_source(branch)
+
+    @classmethod
+    def codim2_source(cls, branch) -> tuple[str, int | None]:
+        """The special points a two-parameter *branch* continues, as `parse_source_point` reads its `source_point`.
+
+        Raises:
+            ValueError: If the branch declares none. Its kind decides what is computed, a fold curve from fold points or a Hopf curve from Hopf points, so there is no default to guess.
+        """
+        declared = getattr(branch, "source_point", None)
+        if declared in (None, ""):
+            raise ValueError(
+                f"two-parameter branch {getattr(branch, 'name', '?')!r} declares no source_point, and its kind decides "
+                "what is continued: from fold points a fold curve, from Hopf points a Hopf curve. Declare it, as "
+                "'fold:<n>', 'hopf:<n>' or 'bp:<n>', or '<kind>:all' for every point of the kind."
+            )
+        return cls.parse_source_point(branch, declared)
+
+    @classmethod
+    def parse_source_point(cls, branch, text) -> tuple[str, int | None]:
+        """*text*, the `source_point` of *branch*, as ``(kind, index)``.
 
         The one reading of ``'<kind>:<index>'`` every continuation backend applies. ``kind`` is the canonical code of a `SOURCE_KINDS` special point, so ``hopf`` and ``HB`` name one kind. ``index`` is ``None`` for every point of that kind, written ``<kind>:all`` or a bare ``<kind>``, and otherwise the 1-based ordinal of one point, negative counting back from the last (`select_points`).
 
@@ -819,8 +1078,7 @@ class ContinuationAdapter(BaseAdapter):
         """
         from tvbo.analysis.bifurcation import canonical_ty
 
-        declared = getattr(branch, "source_point", None)
-        text = str(default if declared in (None, "") else declared)
+        text = str(text)
         kind_text, _, index_text = text.partition(":")
         kind = canonical_ty(kind_text)
         index_text = index_text.strip()
@@ -835,21 +1093,22 @@ class ContinuationAdapter(BaseAdapter):
         return kind, index
 
     @classmethod
-    def periodic_orbit_source(cls, branch, default: str) -> int | None:
-        """The Hopf point a periodic-orbit *branch* starts from, as `source_point`'s index.
+    def periodic_orbit_source(cls, branch) -> int | None:
+        """The Hopf points a periodic-orbit *branch* starts from, as `parse_source_point`'s index: its `source_point`, else `PERIODIC_ORBIT_SOURCE`.
 
         A periodic orbit is continued from a Hopf point, so a periodic-orbit branch naming any other kind is refused rather than emitted as a Hopf switch that finds nothing and reports nothing.
 
         Raises:
             ValueError: If the branch starts from a special point other than a Hopf point.
         """
-        kind, index = cls.source_point(branch, default)
+        declared = getattr(branch, "source_point", None)
+        kind, index = cls.parse_source_point(branch, cls.PERIODIC_ORBIT_SOURCE if declared in (None, "") else declared)
         if kind != "HB":
             raise ValueError(
-                f"periodic-orbit branch {getattr(branch, 'name', '?')!r} declares source_point {getattr(branch, 'source_point', None)!r}, and a "
-                "periodic orbit is continued from a Hopf point. Equilibrium branch switching at a branch point "
-                "or a fold is not emitted by this backend; declare `hopf:<n>` or `hopf:all`, or continue the "
-                "other equilibrium directly by seeding it (`initial_state: {method: given}`)."
+                f"periodic-orbit branch {getattr(branch, 'name', '?')!r} declares source_point {declared!r}, and a "
+                "periodic orbit is continued from a Hopf point. No continuation backend emits equilibrium branch "
+                "switching at a branch point or a fold; declare `hopf:<n>` or `hopf:all`, or continue the other "
+                "equilibrium directly by starting at it (`initial_state: {method: given}`) or near it (`{method: newton}`)."
             )
         return index
 

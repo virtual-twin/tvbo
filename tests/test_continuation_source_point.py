@@ -62,13 +62,42 @@ def test_the_refusal_names_the_branch_and_what_to_declare_instead():
 def test_every_spelling_reads_as_one_kind_and_index(declared, parsed):
     from tvbo.adapters.base import ContinuationAdapter
 
-    assert ContinuationAdapter.source_point(_branch(declared), "fold:all") == parsed
+    assert ContinuationAdapter.codim2_source(_branch(declared)) == parsed
 
 
-def test_an_undeclared_source_is_the_default():
+def _parent_and_codim2(source_point):
+    """A continuation freeing ``p``, and a branch of it continued in ``C`` from *source_point*."""
+    parent = SimpleNamespace(free_parameters=[SimpleNamespace(name="p")])
+    branch = _branch(source_point, name="c2")
+    branch.continuation = SimpleNamespace(free_parameters=[SimpleNamespace(name="C")])
+    return parent, branch
+
+
+def test_an_undeclared_periodic_orbit_source_is_every_hopf_point():
     from tvbo.adapters.base import ContinuationAdapter
 
-    assert ContinuationAdapter.source_point(_branch(None), "fold:all") == ("LP", None)
+    parent = SimpleNamespace(free_parameters=[SimpleNamespace(name="p")])
+    assert ContinuationAdapter.PERIODIC_ORBIT_SOURCE == "hopf:all"
+    assert ContinuationAdapter.periodic_orbit_source(_branch(None)) is None
+    assert ContinuationAdapter.source_point(_branch(None), parent) == ("HB", None)
+
+
+@pytest.mark.parametrize("undeclared", [None, ""])
+def test_an_undeclared_codim2_source_is_refused_by_name(undeclared):
+    """A fold curve or a Hopf curve: which one to continue is the declaration's to make, not a backend's."""
+    from tvbo.adapters.base import ContinuationAdapter
+
+    parent, branch = _parent_and_codim2(undeclared)
+    for read in (lambda: ContinuationAdapter.source_point(branch, parent), lambda: ContinuationAdapter.codim2_source(branch)):
+        with pytest.raises(ValueError, match="two-parameter branch 'c2' declares no source_point"):
+            read()
+
+
+def test_a_codim2_source_may_be_any_kind():
+    from tvbo.adapters.base import ContinuationAdapter
+
+    parent, branch = _parent_and_codim2("bp:2")
+    assert ContinuationAdapter.source_point(branch, parent) == ("BP", 2)
 
 
 @pytest.mark.parametrize("declared", ["hopf:x", "hopf:0", "hopf:1.5", "hopf:*", "pd:1", "hopfish:1", "3"])
@@ -77,7 +106,7 @@ def test_anything_else_is_refused_by_naming_the_accepted_forms(declared):
     from tvbo.adapters.base import ContinuationAdapter
 
     with pytest.raises(ValueError, match=r"'<kind>:<n>'"):
-        ContinuationAdapter.source_point(_branch(declared), "hopf:all")
+        ContinuationAdapter.codim2_source(_branch(declared))
 
 
 @pytest.mark.parametrize(("index", "selected"), [(None, ["a", "b", "c"]), (1, ["a"]), (3, ["c"]), (-1, ["c"]), (-3, ["a"])])
@@ -97,18 +126,16 @@ def test_an_index_past_the_points_found_is_refused_and_none_found_selects_none()
 
 @pytest.mark.parametrize(
     ("source", "julia"),
-    [("hopf:all", None), ("hopf", None), ("hopf:2", "2"), ("hopf:-1", "end"), ("hopf:-2", "end-1"), (None, "end")],
+    [("hopf:all", None), ("hopf", None), ("hopf:2", "2"), ("hopf:-1", "end"), ("hopf:-2", "end-1"), (None, None)],
 )
 def test_bifurcationkit_emits_the_parsed_hopf_point(source, julia):
-    """A bare kind is every point of it; an undeclared source is the last Hopf point."""
+    """A bare kind is every point of it, and so is an undeclared source."""
     assert BifurcationKitAdapter._prepare_branch(_branch(source))["hopf_idx_jl"] == julia
 
 
-@pytest.mark.parametrize(
-    ("source", "kind", "julia"), [("fold:2", "fold", "2"), ("bp", "bp", None), ("HB:-1", "hopf", "end"), (None, "hopf", None)]
-)
+@pytest.mark.parametrize(("source", "kind", "julia"), [("fold:2", "fold", "2"), ("bp", "bp", None), ("HB:-1", "hopf", "end")])
 def test_bifurcationkit_codim2_emits_the_parsed_source(source, kind, julia):
-    fp = SimpleNamespace(name="C", domain=None)
+    fp = SimpleNamespace(name="C", domain=SimpleNamespace(lo=0.0, hi=1.0))
     branch = _branch(source, name="c2")
     branch.continuation = SimpleNamespace(
         free_parameters=[fp],
@@ -127,7 +154,7 @@ def test_bifurcationkit_codim2_emits_the_parsed_source(source, kind, julia):
             )
         },
     )
-    context = BifurcationKitAdapter._prepare_codim2_branch(branch, None)
+    context = BifurcationKitAdapter._prepare_codim2_branch(branch, None, SimpleNamespace(parameters={}), (0.0, 1.0))
     assert (context["source_type"], context["source_idx_jl"], context["is_fold"]) == (kind, julia, kind in ("fold", "bp"))
 
 
@@ -165,10 +192,12 @@ def test_auto_restarts_codim2_from_the_parsed_points():
     bundle = Bundle([SimpleNamespace(labels=SimpleNamespace(by_label={"LP": {5: None, 9: None}, "HB": {7: None}}))])
     restarted = []
     auto = SimpleNamespace(run=lambda **kw: restarted.append(kw["data"]) or "R", sv=lambda *a: None, merge=lambda r: r)
-    fps = [SimpleNamespace(name=n, domain=None) for n in ("p", "C")]
+    fps = [SimpleNamespace(name=n, domain=SimpleNamespace(lo=0.0, hi=1.0)) for n in ("p", "C")]
     kwargs_eq = {
         "EPSL": 1e-7,
         "EPSU": 1e-7,
+        "ITNW": 5,
+        "ITMX": 9,
         "EPSS": 1e-5,
         "RL0": 0.0,
         "RL1": 1.0,
@@ -176,29 +205,33 @@ def test_auto_restarts_codim2_from_the_parsed_points():
         "DSMIN": 1e-6,
         "IADS": 1,
     }
+    model = SimpleNamespace(parameters={})
     for source, expected in (("fold:all", ["LP1", "LP2"]), ("fold:-1", ["LP2"]), ("hopf:1", ["HB1"])):
         restarted.clear()
         branch = _branch(source, name="c2")
         branch.continuation = SimpleNamespace(free_parameters=fps, parameters=None, bothside=False)
         cont = SimpleNamespace(branches={"c2": branch}, free_parameters=fps[:1])
         numcont.NumContAdapter(SimpleNamespace())._run_codim2_branches(
-            auto=auto, R_eq=bundle, cont=cont, fp_name="p", kwargs_eq=kwargs_eq
+            auto=auto, R_eq=bundle, cont=cont, fp_name="p", kwargs_eq=kwargs_eq, model=model
         )
         assert restarted == expected, source
     with pytest.raises(ValueError, match="out of range"):
         branch.source_point = "fold:3"
         numcont.NumContAdapter(SimpleNamespace())._run_codim2_branches(
-            auto=auto, R_eq=bundle, cont=cont, fp_name="p", kwargs_eq=kwargs_eq
+            auto=auto, R_eq=bundle, cont=cont, fp_name="p", kwargs_eq=kwargs_eq, model=model
         )
 
 
-def test_auto_continues_periodic_orbits_from_the_hopf_points_the_branch_selects():
+def test_auto_continues_periodic_orbits_from_every_periodic_orbit_branch_it_declares():
+    """AUTO-07p continued periodic orbits from every Hopf point whether or not a branch asked for them, and from the first periodic-orbit branch only."""
     from tvbo.adapters import numcont
 
-    po = _branch("hopf:2", name="po")
+    po, undeclared = _branch("hopf:2", name="po"), _branch(None, name="po_all")
     codim2 = _branch("hopf:1", name="c2")
     codim2.continuation = SimpleNamespace(free_parameters=[SimpleNamespace(name="C")])
-    parent = SimpleNamespace(branches={"c2": codim2, "po": po}, free_parameters=[SimpleNamespace(name="p")])
-    branch, index = numcont._po_branch(parent)
-    assert (branch, index) == (po, 2)
-    assert numcont._po_branch(SimpleNamespace(branches={})) == (None, None)
+    parent = SimpleNamespace(
+        branches={"c2": codim2, "po": po, "po_all": undeclared}, free_parameters=[SimpleNamespace(name="p")]
+    )
+    assert numcont._po_branches(parent) == {"po": po, "po_all": undeclared}
+    assert [numcont.NumContAdapter.periodic_orbit_source(b) for b in (po, undeclared)] == [2, None]
+    assert numcont._po_branches(SimpleNamespace(branches={})) == {}

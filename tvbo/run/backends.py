@@ -1,17 +1,8 @@
-"""Backend capability registry for the workflow planner.
+"""What each backend can do, as the workflow planner reads it.
 
-This module is the **single source of truth in code** for what each TVB-O backend can do. The values here mirror the OWL axioms in ``ontology/tvb-o-axioms.ttl`` (§4.1). The mapping is intentionally typed as a plain Python table so the CLI does not pull in ``rdflib``/``owlready2`` at import time. A round-trip test (``tests/test_cli_backends_match_ontology.py``) keeps the two in sync when the ontology changes.
+`BACKENDS` is the table `tvbo.run.workflow.plan` consults: `BackendSpec.vectorize_axes` decides which sweep axes stay inside one backend invocation (vmap, EnsembleProblem, batched solve) and which a workflow engine fans out as separate tasks, and `tvbo run --shard` slices only the axes a backend vectorises. It is a plain Python table, so importing it pulls in neither ``rdflib`` nor ``owlready2``.
 
-Ontology vocabulary used here
------------------------------
-* ``tvbo:Backend``                — JAX, TVB, PyRates, tvboptim,
-  NetworkDynamics, BifurcationKit, NumPy.
-* ``tvbo:SimulationTask``         — ODE/DDE/SDE/SDDE/RDEIntegration,
-  EventDrivenIntegration, NumericalContinuation, BifurcationAnalysis, ParameterExploration, GradientBasedOptimization.
-* ``tvbo:BackendCapability``      — Autodiff, JITCompilation, GPUSupport,
-  VectorizedRNG, NumPyExecution, BuiltinModelLibrary, CodeGeneration, NetworkXTopology, JuliaJIT, DiffEqIntegrators, ContinuationSolver, DelayHistoryBuffer, StochasticSolver, StiffSolver.
-
-The workflow planner (``tvbo.cli._workflow``) consults ``BACKENDS[name].vectorize_axes`` to decide which sweep axes can stay inside a single backend invocation (vmap / EnsembleProblem / batched solve) and which must be fanned out as workflow tasks.
+Task and capability names are the ``tvbo:SimulationTask`` and ``tvbo:BackendCapability`` individuals of ``ontology/tvb-o-axioms.ttl`` (section 4.1). The table is written by hand rather than read from that file, and the ontology declares no vectorisable axes, so the ontology is the vocabulary here and not the source of the values.
 """
 
 from __future__ import annotations
@@ -39,13 +30,15 @@ class BackendSpec:
     aliases: tuple[str, ...] = ()
 
     def can_vectorize(self, axis_kind: str) -> bool:
+        """Whether a sweep axis of *axis_kind* (one of `AXIS_KINDS`) can stay inside one invocation of this backend."""
         return axis_kind in self.vectorize_axes
 
     def supports_task(self, task: str) -> bool:
+        """Whether this backend performs *task*, a ``tvbo:SimulationTask`` name."""
         return task in self.tasks
 
 
-# Mirrors the backend declarations in ontology/tvb-o-axioms.ttl §4.1, vectorize-axis sets included.
+# Task and capability names are ontology/tvb-o-axioms.ttl §4.1 individuals; vectorize_axes are the planner's own.
 BACKENDS: dict[str, BackendSpec] = {
     "jax": BackendSpec(
         name="jax",
@@ -128,6 +121,7 @@ def effective_backend(experiment, requested: str | None = None) -> str:
 
 
 def list_backends() -> list[BackendSpec]:
+    """Every registered backend, in registration order."""
     return list(BACKENDS.values())
 
 
@@ -135,15 +129,14 @@ def axis_kind_of(parameter_path: str) -> str:
     """Classify an exploration axis by its dotted parameter path.
 
     Examples:
-    --------
-    >>> axis_kind_of("ReducedWongWang.G")
-    'parameters'
-    >>> axis_kind_of("integrator.noise_seed")
-    'noise_seed'
-    >>> axis_kind_of("initial_conditions.x")
-    'initial_conditions'
-    >>> axis_kind_of("sample.subject_id")
-    'subjects'
+        >>> axis_kind_of("ReducedWongWang.G")
+        'parameters'
+        >>> axis_kind_of("integrator.noise_seed")
+        'noise_seed'
+        >>> axis_kind_of("initial_conditions.x")
+        'initial_conditions'
+        >>> axis_kind_of("sample.subject_id")
+        'subjects'
     """
     p = parameter_path.lower()
     if "noise_seed" in p or p.endswith(".seed"):

@@ -190,5 +190,6 @@ network:
 integration:
     description: "Explicit Runge-Kutta (Tsit5) with dt=0.05 over t in [0, 10]"
     method: Tsit5
+    coupling_evaluation: per_stage
     step_size: 0.05
     duration: 10.0

@@ -234,48 +234,48 @@ network:
           target: 5
           parameters:
               - name: L
-                value: 1.562050
+                value: 1.5620499351813308
         - source: 1
           target: 6
           parameters:
               - name: L
-                value: 1.562050
+                value: 1.562049935181331
         - source: 2
           target: 7
           parameters:
               - name: L
-                value: 1.562050
+                value: 1.562049935181331
         - source: 3
           target: 8
           parameters:
               - name: L
-                value: 1.562050
+                value: 1.562049935181331
         - source: 4
           target: 9
           parameters:
               - name: L
-                value: 1.562050
+                value: 1.562049935181331
         # Cross braces: bottom i+1 ↔ top i (i=1..4)
         - source: 1
           target: 5
           parameters:
               - name: L
-                value: 1.019804
+                value: 1.019803902718557
         - source: 2
           target: 6
           parameters:
               - name: L
-                value: 1.019804
+                value: 1.019803902718557
         - source: 3
           target: 7
           parameters:
               - name: L
-                value: 1.019804
+                value: 1.019803902718557
         - source: 4
           target: 8
           parameters:
               - name: L
-                value: 1.019804
+                value: 1.019803902718557
         # Bottom horizontals: bottom i ↔ bottom i+1 (i=1..4)
         - source: 0
           target: 1
@@ -302,7 +302,7 @@ network:
           target: 6
           parameters:
               - name: L
-                value: 1.0
+                value: 1.0000000000000002
         - source: 6
           target: 7
           parameters:
@@ -323,7 +323,7 @@ network:
           target: 10
           parameters:
               - name: L
-                value: 2.154066
+                value: 2.1540659228538015
 
     coupling:
         BeamForce:
@@ -370,6 +370,7 @@ network:
 integration:
     description: "Explicit Runge-Kutta (Tsit5) with dt=0.01 over t in [0, 12]"
     method: Tsit5
+    coupling_evaluation: per_stage
     step_size: 0.01
     duration: 12.0
     time_scale: "s"

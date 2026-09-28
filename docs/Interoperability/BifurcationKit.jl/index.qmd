@@ -9,7 +9,7 @@ The **BifurcationKit.jl** backend generates Julia code for bifurcation analysis 
 From a YAML experiment specification, `render_code("bifurcation-julia")` produces a self-contained Julia script that:
 
 - Defines the model's vector field from YAML equations (including derived variables)
-- Finds a steady-state equilibrium via time integration
+- Starts from the equilibrium `initial_state.method` names: the state time integration settles to (the default), the declared initial state (`given`), or the equilibrium Newton's method finds from it (`newton`)
 - Sets up a `BifurcationProblem` with the chosen free parameter
 - Runs equilibrium continuation with `ContinuationPar` settings from YAML
 - Detects fold, Hopf, and branch-point bifurcations

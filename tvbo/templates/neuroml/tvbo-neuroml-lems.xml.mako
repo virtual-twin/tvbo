@@ -24,7 +24,7 @@ into the Mako namespace.
 
 Variables available: dyn, dyn_id, params, svs, dvs, events,
   coupling_inputs, coupling_params, coupling_pre_rhs, coupling_post_rhs,
-  coupling_global, sv_names_set, n_nodes, dt, duration,
+  coupling_global, sv_names_set, n_nodes, dt, length, settle_constant,
   lems_expr (callable), _parse_piecewise (callable), lems_dim (callable),
   max_output_nodes (int), sim_id, time_scale, safe_id
 </%doc>
@@ -104,6 +104,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % endfor
 % if ct_needs_sec:
     <Constant name="SEC" dimension="time" value="1${time_scale}"/>
+% endif
+% if settle_constant:
+    <Constant name="SETTLE" dimension="time" value="${settle_constant}"/>
 % endif
 % for sv_name, sv in ct_svs.items():
 % if ct_v_from_base and sv_name == 'v':
@@ -406,6 +409,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % if ct_needs_sec:
     <Constant name="SEC" dimension="time" value="1${time_scale}"/>
 % endif
+% if settle_constant:
+    <Constant name="SETTLE" dimension="time" value="${settle_constant}"/>
+% endif
 % if ct_has_v:
     <InstanceRequirement name="v" type="voltage"/>
 % endif
@@ -599,7 +605,7 @@ ${spike_children_xml}
   <!-- ════════════════════════════════════════════════════════════════
        Simulation — target the network
        ════════════════════════════════════════════════════════════════ -->
-  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net1">
+  <Simulation id="${sim_id}" length="${length}${time_scale}" step="${dt}${time_scale}" target="net1">
 <%
   ## Collect output columns: all state variables from non-synapse, non-input populations.
   out_cols = []
@@ -638,7 +644,7 @@ ${spike_children_xml}
   <!-- ════════════════════════════════════════════════════════════════
        Simulation — target the network (all-backend compatible)
        ════════════════════════════════════════════════════════════════ -->
-  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net">
+  <Simulation id="${sim_id}" length="${length}${time_scale}" step="${dt}${time_scale}" target="net">
 
     <OutputFile id="of1" fileName="results/${dyn_id}.dat">
 % for sv_name in svs:

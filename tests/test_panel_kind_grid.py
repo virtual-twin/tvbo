@@ -25,7 +25,7 @@ class _Cell:
         self.opts = {k: _Opt(v) for k, v in (opts or {}).items()}
         self.layers = list(layers or [])
         self.render = render
-        self.path = self.label = self.annotations = self.legend = None
+        self.path = self.label = self.title = self.annotations = self.legend = None
         self.bounds = self.cell = self.cells = None
         self.surface = self.volume = self.network = self.grid = self.colorbar = None
         for name, value in declared.items():  # the kind objects a panel declares, as the schema holds them
@@ -123,6 +123,12 @@ def test_layers_fill_the_grid_one_cell_each_through_the_shared_template():
     assert all(c["kind"] == "surface" for c in got["insets"])
     assert all(c["ctx"]["opts"]["view"] == "lateral" for c in got["insets"])
     assert [c["layers"][0]["output"] for c in got["insets"]] == ["a", "b"]
+
+
+def test_a_declared_title_heads_the_grid():
+    """A grid turns its own axes off to frame the cells, and the heading it declares is still drawn above them."""
+    panel = _Panel(cell=_surface_cell(), layers=[_Layer("a")], title="Fitted drive")
+    assert _resolve_drawable(panel, "m", Path("."))["title"] == "Fitted drive"
 
 
 def test_a_grid_draws_nothing_itself_so_its_layers_are_not_drawn_twice():
@@ -232,6 +238,45 @@ def test_a_legend_names_its_entries_in_parallel_typed_lists():
     assert drawn["labels"] == ["long", "short"] and drawn["axis"] == "off"
     assert [h.get_linestyle() for h in drawn["handles"]] == ["-", "--"]
     assert drawn["handles"][1].get_color() == "k"  # shorter than labels -> default
+
+
+def _drawn_legend(opts):
+    from tvbo.adapters.bsplot import legend_panel
+
+    drawn = {}
+
+    class _Ax:
+        def axis(self, v):
+            drawn["axis"] = v
+
+        def legend(self, handles, labels, **kw):
+            drawn["handles"], drawn["labels"] = handles, labels
+
+    legend_panel(None, _Ax(), {"opts": opts})
+    return drawn["handles"]
+
+
+def test_a_legend_keys_a_coloured_area_with_a_filled_swatch_in_a_palette_hue():
+    """A region painted on a map is keyed by a patch of its colour, not by a line or by text, and the colour may name a palette hue."""
+    from matplotlib.colors import to_rgba
+    from matplotlib.patches import Patch
+
+    from tvbo.plot import palette
+
+    handles = _drawn_legend({"labels": ["speech network", "trace"], "colors": ["palette.0"], "handles": ["patch"]})
+    assert isinstance(handles[0], Patch)
+    assert handles[0].get_facecolor() == to_rgba(palette.palette()[0])
+    assert handles[1].get_linestyle() == "-"  # shorter than labels -> a line
+
+
+def test_a_legend_marker_handle_draws_the_mark_alone():
+    (handle,) = _drawn_legend({"labels": ["site"], "handles": ["marker"]})
+    assert handle.get_linestyle() == "None" and handle.get_marker() == "o"
+
+
+def test_a_legend_refuses_a_handle_it_cannot_draw():
+    with pytest.raises(ValueError, match="`line`, `marker` or `patch`"):
+        _drawn_legend({"labels": ["x"], "handles": ["swatch"]})
 
 
 def test_a_legend_with_no_labels_says_what_is_missing():

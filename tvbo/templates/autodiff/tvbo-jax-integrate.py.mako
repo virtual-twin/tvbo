@@ -143,7 +143,12 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
     % endif
 
     # Calculate derivative ${k}
+    % if per_stage_coupling:
+    c${k} = jax.vmap(cfun, in_axes=(None, -1, -1, None, None, None), out_axes=-1)(weights, history, ${k}, params_cfun, delay_indices, t)
+    d${k} = dfun(${k}, t, c${k}, params_dfun)
+    % else:
     d${k} = dfun(${k}, t, cX, params_dfun)
+    % endif
     % endfor
     # Calculate the state change dX
     dX = ${integration.update_expression.equation.rhs}

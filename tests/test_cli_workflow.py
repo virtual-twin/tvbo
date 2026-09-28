@@ -11,7 +11,7 @@ import pytest
 from typer.testing import CliRunner
 
 from tvbo.cli import app
-from tvbo.cli._backends import (
+from tvbo.run.backends import (
     BACKENDS,
     axis_kind_of,
     list_backends,
@@ -181,7 +181,7 @@ def test_used_dataref_dependency_ignores_curated_entities():
     A curated / dataset iri that merely contains digits must not register a phantom dependency on a non-existent experiment: the old heuristic stripped non-digits, so ``tvbo:dataset/HCP1200`` became a dep on experiment '1200' (and an atlas iri on experiment '1'), deadlocking the DAG on a rule that is never emitted. A real ``…/exp-7`` still registers its edge.
     """
     from tvbo.classes.experiment import SimulationExperiment
-    from tvbo.cli import _workflow
+    from tvbo.run import workflow as _workflow
 
     def deps(iri):
         exp = SimulationExperiment.from_string(_USED_DEP_RECIPE.format(iri=iri))
@@ -281,7 +281,7 @@ def test_runtime_minutes_accepts_every_sbatch_walltime_spelling(walltime, minute
 
     The day-prefixed spellings are the ones that matter: when ``3-00:00:00`` parsed to None the resource was omitted entirely and every job silently inherited the partition's default limit instead of the 3 days the study asked for.
     """
-    from tvbo.cli._workflow import runtime_minutes
+    from tvbo.run.workflow import runtime_minutes
 
     assert runtime_minutes(walltime) == minutes
 
@@ -520,7 +520,7 @@ def test_scalar_set_override_lands_as_one_bind(tmp_path: Path):
 
 def _container_plan(image="docker://ghcr.io/virtual-twin/tvbo:dev", binds=("/data/cephfs-1",), args=None):
     """Minimal stand-in for the container fields the profile writer reads."""
-    from tvbo.cli._workflow import WorkflowPlan
+    from tvbo.run.workflow import WorkflowPlan
 
     return SimpleNamespace(
         container=image,
@@ -534,7 +534,7 @@ def _container_plan(image="docker://ghcr.io/virtual-twin/tvbo:dev", binds=("/dat
 
 def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=("/data/cephfs-1",), venv=None):
     """A plan-like stand-in exposing exactly what the layer templates read."""
-    from tvbo.cli._workflow import WorkflowPlan
+    from tvbo.run.workflow import WorkflowPlan
 
     p = SimpleNamespace(
         study_key="S",
@@ -587,7 +587,7 @@ def test_env_layer_provisions_requirements_container_or_not():
 
 def test_concrete_container_reference_passes_through_unchanged():
     """A pinned image — local .sif path or a tagged/digested registry ref — is the author's exact choice and must survive resolution verbatim."""
-    from tvbo.cli._workflow import resolve_container_ref
+    from tvbo.run.workflow import resolve_container_ref
 
     for ref in (
         "~/work/tvbo-dev.sif",
@@ -605,7 +605,7 @@ def test_concrete_container_reference_passes_through_unchanged():
 
 def test_a_registry_reference_without_a_transport_is_pulled_as_a_docker_image(monkeypatch, tmp_path):
     """`ghcr.io/org/tvbo:0.7.0` is how Docker spells an image, but Singularity reads a name with no transport as a local file path, so the kit gets `docker://` in front; a local image file with no recognised suffix still passes through."""
-    from tvbo.cli._workflow import resolve_container_ref
+    from tvbo.run.workflow import resolve_container_ref
 
     monkeypatch.setenv("TVBO_CONTAINER_TAG", "9.9.9")
     assert resolve_container_ref("ghcr.io/the-virtual-brain/tvbo:0.7.0") == "docker://ghcr.io/the-virtual-brain/tvbo:0.7.0"
@@ -618,8 +618,8 @@ def test_a_registry_reference_without_a_transport_is_pulled_as_a_docker_image(mo
 
 
 def test_unpinned_reference_resolves_to_version_matched_image(monkeypatch):
-    """A reference that leaves the version open — the symbolic `tvbo`, or a tvbo registry ref with no tag — pulls the image matching the running CLI, so the kit runs the tvbo it was emitted with instead of failing to resolve."""
-    from tvbo.cli import _workflow
+    """A reference that leaves the version open — the symbolic `tvbo`, or tvbo's own repository with no tag — pulls the image matching the running CLI, so the kit runs the tvbo it was emitted with instead of failing to resolve."""
+    from tvbo.run import workflow as _workflow
 
     monkeypatch.delenv("TVBO_CONTAINER", raising=False)
     monkeypatch.delenv("TVBO_CONTAINER_IMAGE", raising=False)
@@ -630,9 +630,38 @@ def test_unpinned_reference_resolves_to_version_matched_image(monkeypatch):
     assert _workflow.resolve_container_ref("docker://ghcr.io/virtual-twin/tvbo") == want
 
 
+@pytest.mark.parametrize(
+    "ref, want",
+    [
+        ("ubuntu", "docker://ubuntu"),
+        ("docker://rocker/r-ver", "docker://rocker/r-ver"),
+        ("ghcr.io/some-lab/tvbo", "docker://ghcr.io/some-lab/tvbo"),
+        ("ghcr.io/virtual-twin/tvbo-sif", "docker://ghcr.io/virtual-twin/tvbo-sif"),
+    ],
+)
+def test_a_third_party_reference_without_a_tag_keeps_the_registry_default(monkeypatch, ref, want):
+    """The tvbo version is a tag only tvbo's own image carries, so any other untagged reference, a repository that merely ends in `tvbo` included, is pulled at the registry's default tag rather than at a tag that does not exist."""
+    from tvbo.run.workflow import resolve_container_ref
+
+    monkeypatch.delenv("TVBO_CONTAINER_IMAGE", raising=False)
+    monkeypatch.setenv("TVBO_CONTAINER_TAG", "9.9.9")
+    assert resolve_container_ref(ref) == want
+
+
+def test_a_configured_tvbo_repository_is_tvbos_own_image(monkeypatch):
+    """`TVBO_CONTAINER_IMAGE` names where tvbo's image lives, so an untagged reference to it gets the version tag, and the canonical repository keeps getting it too."""
+    from tvbo.run.workflow import resolve_container_ref
+
+    monkeypatch.setenv("TVBO_CONTAINER_IMAGE", "mirror.local/tvbo")
+    monkeypatch.setenv("TVBO_CONTAINER_TAG", "9.9.9")
+    assert resolve_container_ref("mirror.local/tvbo") == "docker://mirror.local/tvbo:9.9.9"
+    assert resolve_container_ref("ghcr.io/virtual-twin/tvbo") == "docker://ghcr.io/virtual-twin/tvbo:9.9.9"
+    assert resolve_container_ref("ubuntu") == "docker://ubuntu"
+
+
 def test_no_container_means_none_even_with_requirements():
     """Requirements do NOT force a container: an undeclared container stays None (the deps are provisioned into a native venv by setup.sh), and no container + no requirements is a bare run. The `container` field alone chooses the substrate."""
-    from tvbo.cli import _workflow
+    from tvbo.run import workflow as _workflow
 
     assert _workflow.resolve_container_ref(None) is None
     assert _workflow.resolve_container_ref("") is None
@@ -640,7 +669,7 @@ def test_no_container_means_none_even_with_requirements():
 
 def test_full_container_env_override_wins_verbatim(monkeypatch):
     """TVBO_CONTAINER supplies a complete reference — a site mirror, a pinned digest — that overrides both the default repository and tag."""
-    from tvbo.cli import _workflow
+    from tvbo.run import workflow as _workflow
 
     monkeypatch.setenv("TVBO_CONTAINER", "docker://mirror.local/tvbo:pinned")
     assert _workflow.resolve_container_ref("tvbo") == "docker://mirror.local/tvbo:pinned"
@@ -648,7 +677,7 @@ def test_full_container_env_override_wins_verbatim(monkeypatch):
 
 def test_fan_input_expr_expands_over_every_fanned_cell():
     """A figure (or cross-experiment dep) that reads a FANNED experiment must depend on ALL its cells, so it waits for the whole sweep — the input is the `expand()` over the fan's value lists. A group run (no axes) is its single result path."""
-    from tvbo.cli._workflow import fan_input_expr
+    from tvbo.run.workflow import fan_input_expr
 
     fanned = {
         "key": "41",
@@ -967,7 +996,7 @@ def test_mem_mb_uses_binary_units_and_every_sbatch_suffix(mem, mib):
 
     Two failure modes this pins: a decimal conversion under-reserves against a binary ``--mem`` and OOM-kills a task sized to its own limit, and an unrecognised suffix returning None drops the resource entirely so the job silently inherits the partition default.
     """
-    from tvbo.cli._workflow import mem_mb
+    from tvbo.run.workflow import mem_mb
 
     assert mem_mb(mem) == mib
 
@@ -977,7 +1006,7 @@ def test_bind_paths_survive_spaces_and_commas():
 
     A comma cannot be escaped inside one ``--bind``, and the Slurm emitters splice these flags straight into a command line — so comma-joining or leaving a space unquoted turns one bind into two bogus arguments.
     """
-    from tvbo.cli._workflow import WorkflowPlan
+    from tvbo.run.workflow import WorkflowPlan
 
     flags = WorkflowPlan.container_exec_flags.fget(
         SimpleNamespace(container_binds=["/data/cephfs-1", "/my scratch"], container_args=None)
@@ -1118,7 +1147,7 @@ def test_experiment_override_does_not_clear_inherited_list():
     """
     from types import SimpleNamespace as NS
 
-    from tvbo.cli._workflow import merge_workflow_spec
+    from tvbo.run.workflow import merge_workflow_spec
 
     study = NS(workflow=NS(container="img", container_binds=["/data/cephfs-1"], container_args=None, requirements=[]))
     exp = NS(workflow=NS(container=None, container_binds=[], container_args=None, requirements=[], slurm=NS(time="48:00:00")))
@@ -1266,7 +1295,7 @@ def test_env_set_merges_by_name_not_replace():
 
     Guards the GPU footgun: a YAML env: [{name,value}] list and a --set mapping must merge by name, else overriding one XLA flag silently drops the others (e.g. losing XLA_PYTHON_CLIENT_PREALLOCATE=false grabs all VRAM on GPU).
     """
-    from tvbo.cli._workflow import _canonicalize_engine_maps, _normalize_env
+    from tvbo.run.workflow import _canonicalize_engine_maps, _normalize_env
     from tvbo.utils import deep_merge
 
     yaml_side = _canonicalize_engine_maps(
@@ -2014,7 +2043,7 @@ def test_the_jobs_cap_is_declarable_and_survives_the_frozen_spec():
     Without one a recipe cannot spell `workflow: {snakemake: {jobs: 250}}` at all, and the `--set` route reaches the emitter through the raw merged dict but is dropped when the frozen spec is rebuilt — so the kit re-emits at 100 and the spec no longer re-emits identically without the flags, which is the whole promise of freezing it.
     """
     from tvbo import datamodel as dm
-    from tvbo.cli._workflow import _engine_config_from_dict
+    from tvbo.run.workflow import _engine_config_from_dict
 
     assert dm.WorkflowEngineConfig(jobs=250).jobs == 250
     assert _engine_config_from_dict({"jobs": 250, "partition": "gpu"}).jobs == 250

@@ -125,3 +125,18 @@ def test_a_name_cannot_sanitise_into_the_path_separator(tmp_path):
         names = [str(v) for v in ds.data_vars]
     assert not [n for n in names if n.count("__") > 1], names
     assert "integration__peak_freq_Hz_" in names
+
+
+def test_every_section_restores_to_a_slot_the_recipe_declares():
+    """Each plural `RESULT_SECTIONS` (and the `observation` segment) re-spells a container path to is a `SimulationExperiment` field.
+
+    The tree re-spells the writer's singular segments into the recipe's plurals from this table rather than from the schema, so a slot renamed in the schema would otherwise leave every container reading back under a path no recipe declares.
+    """
+    import dataclasses
+
+    from tvbo.data.experiment_result_io import _SEGMENT_SLOTS, RESULT_SECTIONS
+    from tvbo.datamodel import schema as dm
+
+    slots = {field.name for field in dataclasses.fields(dm.SimulationExperiment)}
+    assert set(RESULT_SECTIONS.values()) <= slots, set(RESULT_SECTIONS.values()) - slots
+    assert set(_SEGMENT_SLOTS.values()) <= slots, set(_SEGMENT_SLOTS.values()) - slots

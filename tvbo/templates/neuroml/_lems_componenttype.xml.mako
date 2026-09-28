@@ -57,6 +57,9 @@ All template variables are injected by the calling template's render context
     <Constant name="SEC" dimension="time" value="1s"/>
 % endif
 % endif
+% if settle_constant:
+    <Constant name="SETTLE" dimension="time" value="${settle_constant}"/>
+% endif
 
     <!-- Exposures (one per state variable) -->
 % for sv_name, sv in svs.items():

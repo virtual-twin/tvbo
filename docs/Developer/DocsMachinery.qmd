@@ -153,4 +153,4 @@ make docs-render     # full build with it
 
 ## Generated, not typed
 
-Three claims that used to rot are now read from the software at render time: the [CLI command tree](../CLI/index.qmd) from the Typer app, the [model count](../2-specify/Models/index.qmd) from `Dynamics.list_db()`, and the [backend capability table](../3-generate/CodegenPhilosophy.qmd) from `tvbo.cli._backends.BACKENDS`. Prefer that pattern over a hand-kept list whenever the software already knows the answer.
+Three claims that used to rot are now read from the software at render time: the [CLI command tree](../CLI/index.qmd) from the Typer app, the [model count](../2-specify/Models/index.qmd) from `Dynamics.list_db()`, and the [backend capability table](../3-generate/CodegenPhilosophy.qmd) from `tvbo.run.backends.BACKENDS`. Prefer that pattern over a hand-kept list whenever the software already knows the answer.

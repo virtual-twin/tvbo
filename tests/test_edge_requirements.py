@@ -111,7 +111,10 @@ class TestEdgeNeeds:
         )
 
     def test_a_generated_graph_and_a_single_node_need_nothing(self):
-        generated = Network(number_of_nodes=8, graph_generator=model.GraphGenerator(name="ring", type="WattsStrogatz"))
+        ring = model.GraphGenerator(
+            name="ring", type="WattsStrogatz", parameters={"k": {"name": "k", "value": 2}, "p": {"name": "p", "value": 0.0}}
+        )
+        generated = Network(number_of_nodes=8, graph_generator=ring)
         assert edge_needs(generated, delayed=["c_lin"]) == []
         assert edge_needs(Network(number_of_nodes=1), delayed=["c_lin"]) == []
         assert edge_needs(None) == []

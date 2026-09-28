@@ -94,15 +94,9 @@ network:
             name: ElectricalCoupling
             label: "Weighted electrical gap-junction coupling"
             description: >
-                Directed coupling: each edge computes w * sigma * (u_src - u_dst), where w is the per-edge structural weight and sigma is a global coupling strength parameter.
+                Directed coupling: the edge j -> i sends w_ij * sigma * (u_j - u_i), where w_ij is the connectome's structural weight (per edge, from DTI) and sigma is a global coupling strength parameter.
             delayed: false
             parameters:
-                w:
-                    label: "Edge weight"
-                    symbol: "w"
-                    value: 1.0
-                    unit: "1"
-                    description: "Structural connectivity weight (per-edge, from DTI)"
                 sigma:
                     label: "Global coupling strength"
                     symbol: "sigma"
@@ -110,14 +104,15 @@ network:
                     unit: "1"
                     description: "Global scaling of electrical gap-junction coupling"
             pre_expression:
-                rhs: "w * sigma * (x_j - x_i)"
-                description: "Directed weighted diffusive coupling"
+                rhs: "sigma * (x_j - x_i)"
+                description: "Diffusive coupling, weighted by the connectome on every edge"
 
 # -- Integration ---------------------------------------------------------------
 integration:
     description: >
         Automatic stiffness-detecting solver: Tsit5 with fallback to TRBDF2. dt=0.1 over t in [0, 200].
     method: AutoTsit5
+    coupling_evaluation: per_stage
     step_size: 0.1
     duration: 200.0
     time_scale: "ms"

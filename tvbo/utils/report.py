@@ -1167,6 +1167,31 @@ def coupling_of(experiments):
     return out
 
 
+def node_parameters(experiments):
+    """``{parameter name: range text}`` for every parameter these experiments' networks set on their nodes.
+
+    A parameter set region by region replaces the model's declared value in each region that sets it, and a region that sets none keeps the model's value; the span over every region is what ran. A value that is not a number (a per-mode list, a placeholder a sourced value replaces) is left out of the span.
+    """
+    values = {}
+    for exp in experiments:
+        nodes = as_list(slot(slot(exp, "network"), "nodes", None))
+        model = dict(name_items(slot(slot(exp, "dynamics"), "parameters", None)))
+        declared = {}
+        for node in nodes:
+            for name, p in name_items(slot(node, "parameters", None)):
+                declared.setdefault(name, []).append(slot(p, "value", None))
+        for name, node_values in declared.items():
+            if len(node_values) < len(nodes) and name in model:
+                node_values.append(slot(model[name], "value", None))
+            for value in node_values:
+                try:
+                    number = float(value)
+                except (TypeError, ValueError):
+                    continue
+                values.setdefault(name, []).append(number)
+    return {name: f"per region, {format_number(min(v))} to {format_number(max(v))}" for name, v in values.items()}
+
+
 def coupling_prose(experiments, equations=None):
     """Each distinct coupling a family uses, rendered by the coupling's own report.
 
@@ -1286,7 +1311,7 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None, 
     rows = [
         [
             _name(name, p),
-            format_number(slot(p, "value", "")),
+            _sourced_text(p) or format_number(slot(p, "value", "")),
             format_number(slot(p, "default", "")),
             unit_text(slot(p, "unit")) or derived_unit_text(derived, name),
             metadata_text(p),
@@ -1408,7 +1433,7 @@ def _scalar(value):
 def _param_signature(p):
     """Everything that makes a parameter's *setting* distinct, for delta and merge tests.
 
-    Value and defining expression alone are not enough: a re-tuned ``distribution``, ``domain`` or per-node ``heterogeneous`` flag changes what runs while leaving both unchanged. Koller2024's per-node inherent-frequency dispersion differs from its baseline in nothing else, and a value-only comparison reports the two models as identical — so the variant vanishes from the report rather than being described.
+    Value and defining expression alone are not enough: a re-tuned ``distribution``, ``domain``, per-node ``heterogeneous`` flag or ``used`` source changes what runs while leaving both unchanged. Koller2024's per-node inherent-frequency dispersion differs from its baseline in nothing else, and a value-only comparison reports the two models as identical — so the variant vanishes from the report rather than being described.
     """
     return (
         _scalar(slot(p, "value", "")),
@@ -1416,6 +1441,7 @@ def _param_signature(p):
         str(slot(p, "distribution", "")),
         str(slot(p, "domain", "")),
         bool(slot(p, "heterogeneous", False)),
+        _sourced_text(p),
     )
 
 
@@ -1622,10 +1648,24 @@ def _initial_text(sv):
     return str(format_number(initial_value(sv)))
 
 
+def _sourced_text(p):
+    """Where a parameter read from another run's result takes its value, or '' for one the recipe sets itself.
+
+    A sourced parameter's declared `value` is a placeholder the run replaces, so printing it would state a number that never ran.
+    """
+    used = slot(p, "used")
+    if not present(used):
+        return ""
+    experiment = slot(used, "experiment")
+    return f"from exp {experiment}" if present(experiment) else f"from {slot(used, 'analysis', None) or 'another run'}"
+
+
 def _value_text(p, swept=None):
-    """A parameter's setting: its swept range where a sweep replaces it, else its value."""
+    """A parameter's setting: its swept range where a sweep replaces it, where it is read from if another run supplies it, else its value."""
     if swept:
         return swept
+    if _sourced_text(p):
+        return _sourced_text(p)
     value = format_number(slot(p, "value", ""))
     dist = distribution_text(slot(p, "distribution")) if present(slot(p, "distribution")) else ""
     if dist and value in ("", None):
@@ -1641,7 +1681,7 @@ def _meaning(obj, name=""):
     return str(slot(obj, "description", "") or slot(obj, "definition", "") or slot(obj, "label", "") or "")
 
 
-def symbol_table(model, swept=None, couplings=()):
+def symbol_table(model, swept=None, couplings=(), per_node=None):
     """One dense glossary of every symbol in a model: state, parameters, derived, coupling.
 
     ``Symbol | Kind | Meaning | Value | Unit``, where every row fills every cell — a state variable contributes the value it starts at, a parameter its value (or the range a sweep gives it), a derived parameter its defining expression. Replaces the three separate tables (state variables, parameters, derived parameters), whose column sets do not overlap and which therefore cannot be merged without leaving most of the grid empty. Derived *variables* are deliberately absent: they are equations and appear as equations, so listing them here would print each one twice.
@@ -1650,11 +1690,12 @@ def symbol_table(model, swept=None, couplings=()):
 
     Args:
         model: The ``Dynamics`` to describe.
-        swept: Optional ``{parameter name: range text}``, so a parameter an experiment
-            sweeps shows the range it takes rather than a single value it never holds.
+        swept: Optional ``{parameter name: range text}``, so a parameter an experiment sweeps shows the range it takes rather than a single value it never holds.
         couplings: Couplings whose parameters belong to the same system.
+        per_node: Optional ``{parameter name: range text}`` from :func:`node_parameters`, so a parameter the network sets region by region shows that span rather than the model's value.
     """
     swept = swept or {}
+    per_node = per_node or {}
     rows = []
     for name, sv in name_items(slot(model, "state_variables", {})):
         flags = flag_text(sv, _STATE_VAR_FLAGS)
@@ -1669,13 +1710,20 @@ def symbol_table(model, swept=None, couplings=()):
         )
     for name, p in name_items(slot(model, "parameters", {})):
         flags = flag_text(p, _PARAM_FLAGS)
-        kind = "parameter (swept)" if name in swept else (f"parameter ({flags})" if flags else "parameter")
+        regional = name not in swept and not _sourced_text(p) and name in per_node
+        kind = (
+            "parameter (swept)"
+            if name in swept
+            else "parameter (per region)"
+            if regional
+            else (f"parameter ({flags})" if flags else "parameter")
+        )
         rows.append(
             [
                 f"${display_symbol(p, name)}$",
                 kind,
                 _meaning(p, name),
-                _value_text(p, swept.get(name)),
+                _value_text(p, per_node[name] if regional else swept.get(name)),
                 unit_text(slot(p, "unit")),
             ]
         )

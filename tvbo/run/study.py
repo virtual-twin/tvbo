@@ -13,6 +13,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from tvbo.run.backends import effective_backend, resolve_backend
+from tvbo.run.workflow import extract_axes
+
 logger = logging.getLogger(__name__)
 
 
@@ -467,8 +470,6 @@ def run_experiment(
     Raises:
         StudyRunError: An override or pin names nothing on the experiment, or a shard asks a backend to slice a sweep it does not vectorise.
     """
-    from tvbo.cli._backends import effective_backend
-
     options = options or RunOptions()
     apply_overrides(experiment, options.overrides)
     apply_axis_pins(experiment, options.pins)
@@ -483,8 +484,6 @@ def _run_one(experiment, backend: str, out_dir: Path, options: RunOptions, prov_
 
     shard = options.shard
     if options.limit is not None and shard is None:
-        from tvbo.cli._workflow import extract_axes
-
         n_cells = math.prod(len(ax.values) for ax in extract_axes(experiment))
         if n_cells > options.limit:
             shard = (0, math.ceil(n_cells / options.limit))
@@ -495,9 +494,6 @@ def _run_one(experiment, backend: str, out_dir: Path, options: RunOptions, prov_
     if shard is None:
         _exec_one(experiment, backend, out_dir, options, prov_ctx)
         return
-
-    from tvbo.cli._backends import resolve_backend
-    from tvbo.cli._workflow import extract_axes
 
     chunk_i, chunk_n = shard
     axes = extract_axes(experiment)

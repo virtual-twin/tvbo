@@ -49,6 +49,32 @@ JULIA_SOLVER_PACKAGES = {
 """DifferentialEquations.jl solver → the minimal OrdinaryDiffEq sub-package that exports it; the umbrella package is the fallback. Loading a sub-package rather than the umbrella keeps Julia precompilation cheap."""
 
 
+JULIA_SDE_SOLVERS = {
+    "Euler": "EM",
+    "Heun": "EulerHeun",
+}
+"""The canonical integration methods with a StochasticDiffEq.jl counterpart → that solver. Under additive noise ``EM`` (Euler–Maruyama) is the Euler step with the noise increment added, and ``EulerHeun`` is Heun's predictor-corrector with the increment added to both stages, TVB's ``EulerStochastic`` and ``HeunStochastic``."""
+
+
+def julia_sde_solver(method) -> str:
+    """The StochasticDiffEq.jl solver that integrates a stochastic network by *method*: `JULIA_SDE_SOLVERS`'s for a canonical method, else *method* itself, a solver the recipe names for this backend (``SOSRA``, ``SRIW1``) and handed to ``solve`` unchanged.
+
+    Raises:
+        ValueError: *method* is a canonical method with no stochastic counterpart in StochasticDiffEq.jl.
+    """
+    from tvbo.utils import integration_method
+
+    canonical = integration_method(method, strict=False)
+    if canonical is None:
+        return str(method)
+    if canonical not in JULIA_SDE_SOLVERS:
+        raise ValueError(
+            f"integration method {method!r} ({canonical}) has no stochastic counterpart in StochasticDiffEq.jl, and the network declares noise. "
+            f"Declare {' or '.join(f'{m} ({s})' for m, s in JULIA_SDE_SOLVERS.items())}, or name a StochasticDiffEq.jl solver."
+        )
+    return JULIA_SDE_SOLVERS[canonical]
+
+
 def julia_solver(method) -> str:
     """The DifferentialEquations.jl solver that integrates by *method*: `JULIA_SOLVERS`'s for a canonical method, else *method* itself.
 
@@ -75,6 +101,31 @@ JULIA_SPECIAL_FUNCTIONS = (
     "besseli",
     "gamma",
 )
+
+
+def julia_solve(model, integration=None, dt=0.01) -> dict:
+    """How the DifferentialEquations.jl script solves *model* under *integration* at step *dt*.
+
+    ``stochastic`` is whether a state variable has a positive noise amplitude (read through `noise_sigma`); ``solver`` is the integration's method (`julia_sde_solver` or `julia_solver`; the schema's default where the integration declares none), or ``EulerHeun`` / ``Tsit5`` for a bare model with no integration; ``package`` exports it; ``kwargs`` are the `solve` keywords, where a fixed-step solver is handed the declared step and told not to adapt it.
+    """
+    from tvbo.adapters.base import BaseAdapter
+    from tvbo.utils import noise_sigma
+
+    method = BaseAdapter.declared_integration(integration, "method") if integration is not None else None
+    stochastic = any(
+        (noise_sigma(getattr(sv, "noise", None)) or 0.0) > 0 for sv in getattr(model, "state_variables", {}).values()
+    )
+    if stochastic:
+        solver = julia_sde_solver(method) if method else "EulerHeun"
+        return {"stochastic": True, "solver": solver, "package": "StochasticDiffEq", "kwargs": f"dt={dt}, saveat={dt}"}
+    solver = julia_solver(method) if method else "Tsit5"
+    fixed = method is not None and BaseAdapter.is_fixed_step(method)
+    return {
+        "stochastic": False,
+        "solver": solver,
+        "package": julia_ode_package(solver),
+        "kwargs": f"dt={dt}, adaptive=false, saveat={dt}" if fixed else f"saveat={dt}",
+    }
 
 
 def julia_ode_package(solver_method) -> str:
