@@ -37,7 +37,6 @@ def dfun(current_state, t, cX, _p):
     P9_i = _p.P9_i
     Q_e = _p.Q_e
     Q_i = _p.Q_i
-    S_i = _p.S_i
     T = _p.T
     TvN0 = _p.TvN0
     a_e = _p.a_e
@@ -125,33 +124,33 @@ def dfun(current_state, t, cX, _p):
         fe_i * U_e_i**2 * tau_e**2 / (2.0 * T_m_i + 2.0 * tau_e)
         + fi_i * U_i_i**2 * tau_i**2 / (2.0 * T_m_i + 2.0 * tau_i)
     )
-    S_e = (sigma_V_e - sV0) / DsV0
-    S_i = (sigma_V_i - sV0) / DsV0
+    S_norm_e = (sigma_V_e - sV0) / DsV0
+    S_norm_i = (sigma_V_i - sV0) / DsV0
     T_e = (-TvN0 + T_V_e * g_L / C_m) / DTvN0
     T_i = (-TvN0 + T_V_i * g_L / C_m) / DTvN0
     V_thre_e = (
         1000.0 * P0_e
         + 1000.0 * P1_e * V_e
-        + 1000.0 * P2_e * S_e
+        + 1000.0 * P2_e * S_norm_e
         + 1000.0 * P3_e * T_e
         + 1000.0 * P4_e * V_e**2
-        + 1000.0 * P5_e * S_e**2
+        + 1000.0 * P5_e * S_norm_e**2
         + 1000.0 * P6_e * T_e**2
-        + 1000.0 * P7_e * S_e * V_e
+        + 1000.0 * P7_e * S_norm_e * V_e
         + 1000.0 * P8_e * T_e * V_e
-        + 1000.0 * P9_e * S_e * T_e
+        + 1000.0 * P9_e * S_norm_e * T_e
     )
     V_thre_i = (
         1000.0 * P0_i
         + 1000.0 * P1_i * V_i
-        + 1000.0 * P2_i * S_i
+        + 1000.0 * P2_i * S_norm_i
         + 1000.0 * P3_i * T_i
         + 1000.0 * P4_i * V_i**2
-        + 1000.0 * P5_i * S_i**2
+        + 1000.0 * P5_i * S_norm_i**2
         + 1000.0 * P6_i * T_i**2
-        + 1000.0 * P7_i * S_i * V_i
+        + 1000.0 * P7_i * S_norm_i * V_i
         + 1000.0 * P8_i * T_i * V_i
-        + 1000.0 * P9_i * S_i * T_i
+        + 1000.0 * P9_i * S_norm_i * T_i
     )
     f_out_e = (
         (1 / 2)

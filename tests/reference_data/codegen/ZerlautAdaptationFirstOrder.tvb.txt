@@ -485,7 +485,6 @@ class ZerlautAdaptationFirstOrder(Model):
         P9_i = self.P9_i
         Q_e = self.Q_e
         Q_i = self.Q_i
-        S_i = self.S_i
         T = self.T
         TvN0 = self.TvN0
         a_e = self.a_e
@@ -573,33 +572,33 @@ class ZerlautAdaptationFirstOrder(Model):
             fe_i * U_e_i**2 * tau_e**2 / (2.0 * T_m_i + 2.0 * tau_e)
             + fi_i * U_i_i**2 * tau_i**2 / (2.0 * T_m_i + 2.0 * tau_i)
         )
-        self.S_e = S_e = (sigma_V_e - sV0) / DsV0
-        self.S_i = S_i = (sigma_V_i - sV0) / DsV0
+        self.S_norm_e = S_norm_e = (sigma_V_e - sV0) / DsV0
+        self.S_norm_i = S_norm_i = (sigma_V_i - sV0) / DsV0
         self.T_e = T_e = (-TvN0 + T_V_e * g_L / C_m) / DTvN0
         self.T_i = T_i = (-TvN0 + T_V_i * g_L / C_m) / DTvN0
         self.V_thre_e = V_thre_e = (
             1000.0 * P0_e
             + 1000.0 * P1_e * V_e
-            + 1000.0 * P2_e * S_e
+            + 1000.0 * P2_e * S_norm_e
             + 1000.0 * P3_e * T_e
             + 1000.0 * P4_e * V_e**2
-            + 1000.0 * P5_e * S_e**2
+            + 1000.0 * P5_e * S_norm_e**2
             + 1000.0 * P6_e * T_e**2
-            + 1000.0 * P7_e * S_e * V_e
+            + 1000.0 * P7_e * S_norm_e * V_e
             + 1000.0 * P8_e * T_e * V_e
-            + 1000.0 * P9_e * S_e * T_e
+            + 1000.0 * P9_e * S_norm_e * T_e
         )
         self.V_thre_i = V_thre_i = (
             1000.0 * P0_i
             + 1000.0 * P1_i * V_i
-            + 1000.0 * P2_i * S_i
+            + 1000.0 * P2_i * S_norm_i
             + 1000.0 * P3_i * T_i
             + 1000.0 * P4_i * V_i**2
-            + 1000.0 * P5_i * S_i**2
+            + 1000.0 * P5_i * S_norm_i**2
             + 1000.0 * P6_i * T_i**2
-            + 1000.0 * P7_i * S_i * V_i
+            + 1000.0 * P7_i * S_norm_i * V_i
             + 1000.0 * P8_i * T_i * V_i
-            + 1000.0 * P9_i * S_i * T_i
+            + 1000.0 * P9_i * S_norm_i * T_i
         )
         self.f_out_e = f_out_e = (
             (1 / 2)

@@ -36,12 +36,9 @@ initial_state:
 branches:
   po_from_hopf:
     name: po_from_hopf
-    description: 'Continue periodic orbits emanating from all detected Hopf bifurcation
+    description: Continue periodic orbits emanating from all detected Hopf bifurcation
       points. Uses orthogonal collocation on a mesh of 20 intervals with degree-4
       polynomials.
-
-      # Which special point(s) to branch from: #   "hopf:-1"   → last Hopf only (default)
-      #   "hopf:all"  → every detected Hopf #   "hopf:1"    → first Hopf'
     parameters:
       max_norm_bound:
         name: max_norm_bound

@@ -35,12 +35,12 @@ function ZerlautAdaptationFirstOrder!(dx, x, p, t = 0)
     T_V_i = (fe_i .* U_e_i .^ 2 .* tau_e .^ 2 .+ fi_i .* U_i_i .^ 2 .* tau_i .^ 2) ./ (fe_i .* U_e_i .^ 2 .* tau_e .^ 2 ./ (T_m_i .+ tau_e) .+ fi_i .* U_i_i .^ 2 .* tau_i .^ 2 ./ (T_m_i .+ tau_i))
     sigma_V_e = sqrt(fe_e .* U_e_e .^ 2 .* tau_e .^ 2 ./ (2.0 * T_m_e .+ 2.0 * tau_e) .+ fi_e .* U_i_e .^ 2 .* tau_i .^ 2 ./ (2.0 * T_m_e .+ 2.0 * tau_i))
     sigma_V_i = sqrt(fe_i .* U_e_i .^ 2 .* tau_e .^ 2 ./ (2.0 * T_m_i .+ 2.0 * tau_e) .+ fi_i .* U_i_i .^ 2 .* tau_i .^ 2 ./ (2.0 * T_m_i .+ 2.0 * tau_i))
-    S_e = (sigma_V_e .- sV0) ./ DsV0
-    S_i = (sigma_V_i .- sV0) ./ DsV0
+    S_norm_e = (sigma_V_e .- sV0) ./ DsV0
+    S_norm_i = (sigma_V_i .- sV0) ./ DsV0
     T_e = (-TvN0 .+ T_V_e .* g_L ./ C_m) ./ DTvN0
     T_i = (-TvN0 .+ T_V_i .* g_L ./ C_m) ./ DTvN0
-    V_thre_e = 1000.0 * P0_e .+ 1000.0 * P1_e .* V_e .+ 1000.0 * P2_e .* S_e .+ 1000.0 * P3_e .* T_e .+ 1000.0 * P4_e .* V_e .^ 2 .+ 1000.0 * P5_e .* S_e .^ 2 .+ 1000.0 * P6_e .* T_e .^ 2 .+ 1000.0 * P7_e .* S_e .* V_e .+ 1000.0 * P8_e .* T_e .* V_e .+ 1000.0 * P9_e .* S_e .* T_e
-    V_thre_i = 1000.0 * P0_i .+ 1000.0 * P1_i .* V_i .+ 1000.0 * P2_i .* S_i .+ 1000.0 * P3_i .* T_i .+ 1000.0 * P4_i .* V_i .^ 2 .+ 1000.0 * P5_i .* S_i .^ 2 .+ 1000.0 * P6_i .* T_i .^ 2 .+ 1000.0 * P7_i .* S_i .* V_i .+ 1000.0 * P8_i .* T_i .* V_i .+ 1000.0 * P9_i .* S_i .* T_i
+    V_thre_e = 1000.0 * P0_e .+ 1000.0 * P1_e .* V_e .+ 1000.0 * P2_e .* S_norm_e .+ 1000.0 * P3_e .* T_e .+ 1000.0 * P4_e .* V_e .^ 2 .+ 1000.0 * P5_e .* S_norm_e .^ 2 .+ 1000.0 * P6_e .* T_e .^ 2 .+ 1000.0 * P7_e .* S_norm_e .* V_e .+ 1000.0 * P8_e .* T_e .* V_e .+ 1000.0 * P9_e .* S_norm_e .* T_e
+    V_thre_i = 1000.0 * P0_i .+ 1000.0 * P1_i .* V_i .+ 1000.0 * P2_i .* S_norm_i .+ 1000.0 * P3_i .* T_i .+ 1000.0 * P4_i .* V_i .^ 2 .+ 1000.0 * P5_i .* S_norm_i .^ 2 .+ 1000.0 * P6_i .* T_i .^ 2 .+ 1000.0 * P7_i .* S_norm_i .* V_i .+ 1000.0 * P8_i .* T_i .* V_i .+ 1000.0 * P9_i .* S_norm_i .* T_i
     f_out_e = erfc(sqrt(2) * (V_thre_e .- mu_V_e) ./ (2 * sigma_V_e)) ./ (2 * T_V_e)
     f_out_i = erfc(sqrt(2) * (V_thre_i .- mu_V_i) ./ (2 * sigma_V_i)) ./ (2 * T_V_i)
 

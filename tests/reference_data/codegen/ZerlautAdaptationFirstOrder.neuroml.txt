@@ -179,12 +179,12 @@
       <DerivedVariable name="T_V_i" dimension="none" value="(fe_i*U_e_i^2*tau_e^2 + fi_i*U_i_i^2*tau_i^2)/(fe_i*U_e_i^2*tau_e^2/(T_m_i + tau_e) + fi_i*U_i_i^2*tau_i^2/(T_m_i + tau_i))"/>
       <DerivedVariable name="sigma_V_e" dimension="none" value="sqrt(fe_e*U_e_e^2*tau_e^2/(2.0*T_m_e + 2.0*tau_e) + fi_e*U_i_e^2*tau_i^2/(2.0*T_m_e + 2.0*tau_i))"/>
       <DerivedVariable name="sigma_V_i" dimension="none" value="sqrt(fe_i*U_e_i^2*tau_e^2/(2.0*T_m_i + 2.0*tau_e) + fi_i*U_i_i^2*tau_i^2/(2.0*T_m_i + 2.0*tau_i))"/>
-      <DerivedVariable name="S_e" dimension="none" value="(sigma_V_e - sV0)/DsV0"/>
-      <DerivedVariable name="S_i" dimension="none" value="(sigma_V_i - sV0)/DsV0"/>
+      <DerivedVariable name="S_norm_e" dimension="none" value="(sigma_V_e - sV0)/DsV0"/>
+      <DerivedVariable name="S_norm_i" dimension="none" value="(sigma_V_i - sV0)/DsV0"/>
       <DerivedVariable name="T_e" dimension="none" value="(-TvN0 + T_V_e*g_L/C_m)/DTvN0"/>
       <DerivedVariable name="T_i" dimension="none" value="(-TvN0 + T_V_i*g_L/C_m)/DTvN0"/>
-      <DerivedVariable name="V_thre_e" dimension="none" value="1000.0*P0_e + 1000.0*P1_e*V_e + 1000.0*P2_e*S_e + 1000.0*P3_e*T_e + 1000.0*P4_e*V_e^2 + 1000.0*P5_e*S_e^2 + 1000.0*P6_e*T_e^2 + 1000.0*P7_e*S_e*V_e + 1000.0*P8_e*T_e*V_e + 1000.0*P9_e*S_e*T_e"/>
-      <DerivedVariable name="V_thre_i" dimension="none" value="1000.0*P0_i + 1000.0*P1_i*V_i + 1000.0*P2_i*S_i + 1000.0*P3_i*T_i + 1000.0*P4_i*V_i^2 + 1000.0*P5_i*S_i^2 + 1000.0*P6_i*T_i^2 + 1000.0*P7_i*S_i*V_i + 1000.0*P8_i*T_i*V_i + 1000.0*P9_i*S_i*T_i"/>
+      <DerivedVariable name="V_thre_e" dimension="none" value="1000.0*P0_e + 1000.0*P1_e*V_e + 1000.0*P2_e*S_norm_e + 1000.0*P3_e*T_e + 1000.0*P4_e*V_e^2 + 1000.0*P5_e*S_norm_e^2 + 1000.0*P6_e*T_e^2 + 1000.0*P7_e*S_norm_e*V_e + 1000.0*P8_e*T_e*V_e + 1000.0*P9_e*S_norm_e*T_e"/>
+      <DerivedVariable name="V_thre_i" dimension="none" value="1000.0*P0_i + 1000.0*P1_i*V_i + 1000.0*P2_i*S_norm_i + 1000.0*P3_i*T_i + 1000.0*P4_i*V_i^2 + 1000.0*P5_i*S_norm_i^2 + 1000.0*P6_i*T_i^2 + 1000.0*P7_i*S_norm_i*V_i + 1000.0*P8_i*T_i*V_i + 1000.0*P9_i*S_norm_i*T_i"/>
       <DerivedVariable name="f_out_e" dimension="none" value="erfc(sqrt(2)*(V_thre_e - mu_V_e)/(2*sigma_V_e))/(2*T_V_e)"/>
       <DerivedVariable name="f_out_i" dimension="none" value="erfc(sqrt(2)*(V_thre_i - mu_V_i)/(2*sigma_V_i))/(2*T_V_i)"/>
 

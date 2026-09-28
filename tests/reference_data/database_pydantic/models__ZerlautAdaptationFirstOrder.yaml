@@ -723,19 +723,17 @@ derived_variables:
         + 2.0*tau_i))
       latex: false
     record: false
-  S_e:
-    name: S_e
+  S_norm_e:
+    name: S_norm_e
     equation:
-      lhs: S_e
+      lhs: S_norm_e
       rhs: (-sV0 + sigma_V_e)/DsV0
       latex: false
     record: false
-  S_i:
-    name: S_i
-    description: "Scaling of the remote input for the inhibitory population with\n\
-      \        respect to the excitatory population."
+  S_norm_i:
+    name: S_norm_i
     equation:
-      lhs: S_i
+      lhs: S_norm_i
       rhs: (-sV0 + sigma_V_i)/DsV0
       latex: false
     record: false
@@ -757,18 +755,18 @@ derived_variables:
     name: V_thre_e
     equation:
       lhs: V_thre_e
-      rhs: 1000.0*P0_e + 1000.0*P1_e*V_e + 1000.0*P2_e*S_e + 1000.0*P3_e*T_e + 1000.0*P4_e*V_e**2
-        + 1000.0*P5_e*S_e**2 + 1000.0*P6_e*T_e**2 + 1000.0*P7_e*S_e*V_e + 1000.0*P8_e*T_e*V_e
-        + 1000.0*P9_e*S_e*T_e
+      rhs: 1000.0*P0_e + 1000.0*P1_e*V_e + 1000.0*P2_e*S_norm_e + 1000.0*P3_e*T_e
+        + 1000.0*P4_e*V_e**2 + 1000.0*P5_e*S_norm_e**2 + 1000.0*P6_e*T_e**2 + 1000.0*P7_e*S_norm_e*V_e
+        + 1000.0*P8_e*T_e*V_e + 1000.0*P9_e*S_norm_e*T_e
       latex: false
     record: false
   V_thre_i:
     name: V_thre_i
     equation:
       lhs: V_thre_i
-      rhs: 1000.0*P0_i + 1000.0*P1_i*V_i + 1000.0*P2_i*S_i + 1000.0*P3_i*T_i + 1000.0*P4_i*V_i**2
-        + 1000.0*P5_i*S_i**2 + 1000.0*P6_i*T_i**2 + 1000.0*P7_i*S_i*V_i + 1000.0*P8_i*T_i*V_i
-        + 1000.0*P9_i*S_i*T_i
+      rhs: 1000.0*P0_i + 1000.0*P1_i*V_i + 1000.0*P2_i*S_norm_i + 1000.0*P3_i*T_i
+        + 1000.0*P4_i*V_i**2 + 1000.0*P5_i*S_norm_i**2 + 1000.0*P6_i*T_i**2 + 1000.0*P7_i*S_norm_i*V_i
+        + 1000.0*P8_i*T_i*V_i + 1000.0*P9_i*S_norm_i*T_i
       latex: false
     record: false
   f_out_e:

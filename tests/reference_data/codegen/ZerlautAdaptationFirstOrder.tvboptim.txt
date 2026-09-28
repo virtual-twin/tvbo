@@ -41,8 +41,8 @@ class ZerlautAdaptationFirstOrder(AbstractDynamics):
         "T_V_i",
         "sigma_V_e",
         "sigma_V_i",
-        "S_e",
-        "S_i",
+        "S_norm_e",
+        "S_norm_i",
         "T_e",
         "T_i",
         "V_thre_e",
@@ -158,7 +158,6 @@ class ZerlautAdaptationFirstOrder(AbstractDynamics):
         P9_i = params.P9_i
         Q_e = params.Q_e
         Q_i = params.Q_i
-        S_i = params.S_i
         T = params.T
         TvN0 = params.TvN0
         a_e = params.a_e
@@ -249,33 +248,33 @@ class ZerlautAdaptationFirstOrder(AbstractDynamics):
             U_e_i**2 * fe_i * tau_e**2 / (2.0 * T_m_i + 2.0 * tau_e)
             + U_i_i**2 * fi_i * tau_i**2 / (2.0 * T_m_i + 2.0 * tau_i)
         )
-        S_e = (-sV0 + sigma_V_e) / DsV0
-        S_i = (-sV0 + sigma_V_i) / DsV0
+        S_norm_e = (-sV0 + sigma_V_e) / DsV0
+        S_norm_i = (-sV0 + sigma_V_i) / DsV0
         T_e = (-TvN0 + T_V_e * g_L / C_m) / DTvN0
         T_i = (-TvN0 + T_V_i * g_L / C_m) / DTvN0
         V_thre_e = (
             1000.0 * P0_e
             + 1000.0 * P1_e * V_e
-            + 1000.0 * P2_e * S_e
+            + 1000.0 * P2_e * S_norm_e
             + 1000.0 * P3_e * T_e
             + 1000.0 * P4_e * V_e**2
-            + 1000.0 * P5_e * S_e**2
+            + 1000.0 * P5_e * S_norm_e**2
             + 1000.0 * P6_e * T_e**2
-            + 1000.0 * P7_e * S_e * V_e
+            + 1000.0 * P7_e * S_norm_e * V_e
             + 1000.0 * P8_e * T_e * V_e
-            + 1000.0 * P9_e * S_e * T_e
+            + 1000.0 * P9_e * S_norm_e * T_e
         )
         V_thre_i = (
             1000.0 * P0_i
             + 1000.0 * P1_i * V_i
-            + 1000.0 * P2_i * S_i
+            + 1000.0 * P2_i * S_norm_i
             + 1000.0 * P3_i * T_i
             + 1000.0 * P4_i * V_i**2
-            + 1000.0 * P5_i * S_i**2
+            + 1000.0 * P5_i * S_norm_i**2
             + 1000.0 * P6_i * T_i**2
-            + 1000.0 * P7_i * S_i * V_i
+            + 1000.0 * P7_i * S_norm_i * V_i
             + 1000.0 * P8_i * T_i * V_i
-            + 1000.0 * P9_i * S_i * T_i
+            + 1000.0 * P9_i * S_norm_i * T_i
         )
         f_out_e = jsp.special.erfc(
             jnp.sqrt(2) * (V_thre_e - mu_V_e) / ((2 * sigma_V_e))
@@ -336,8 +335,8 @@ class ZerlautAdaptationFirstOrder(AbstractDynamics):
                 jnp.broadcast_to(jnp.atleast_1d(T_V_i), _per_node_shape),
                 jnp.broadcast_to(jnp.atleast_1d(sigma_V_e), _per_node_shape),
                 jnp.broadcast_to(jnp.atleast_1d(sigma_V_i), _per_node_shape),
-                jnp.broadcast_to(jnp.atleast_1d(S_e), _per_node_shape),
-                jnp.broadcast_to(jnp.atleast_1d(S_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(S_norm_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(S_norm_i), _per_node_shape),
                 jnp.broadcast_to(jnp.atleast_1d(T_e), _per_node_shape),
                 jnp.broadcast_to(jnp.atleast_1d(T_i), _per_node_shape),
                 jnp.broadcast_to(jnp.atleast_1d(V_thre_e), _per_node_shape),
