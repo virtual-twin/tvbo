@@ -41,6 +41,7 @@ classes:
       - author
       - isVersionOf
       - versionIdentifier
+      - provenance
 
     class_uri: atom:atlas/Atlas
 
