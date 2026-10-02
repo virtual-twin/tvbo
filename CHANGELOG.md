@@ -6,6 +6,7 @@
 - `SECURITY.md`, issue templates and a PR template.
 - Schema-declared `aliases:` now resolve at load time, so `dt` (for `Integrator.step_size`), `number_of_regions`, `righthandside`/`lefthandside` and `components` are accepted where the schema says they are. Resolution happens per class, so a free-form key — a model parameter named `dt`, a `components:` list under an unrelated block — is never rewritten.
 - Experiment YAMLs support `!include` and merge keys (`<<: *anchor`), which networks and studies already had.
+- `BrainAtlas` carries the shared `provenance` slot, as `Network` does, so an atlas sidecar records the inputs, activity and checksum of its label image in the same file as its label table.
 
 ### Changed
 - **`PDESolver` is a `Solver`.** It inherits `method`, `abs_tol`, `rel_tol` and `step_size`; the duplicate `time_integrator` and the untyped string `tolerances` are gone. Migrate `time_integrator:` to `method:` and `tolerances:` to `abs_tol:`/`rel_tol:`; `dt:` still works as the alias of `step_size`.
