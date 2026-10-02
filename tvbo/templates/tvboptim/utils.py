@@ -1125,7 +1125,8 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
             f"Observation {name!r} declares reduce: streaming but has no pipeline; "
             "streaming is currently supported for the HRF-Volterra BOLD pipeline only."
         )
-    _func = functions_by_name(experiment).get
+    _fns = functions_by_name(experiment)
+    _func = _fns.get
 
     def _fname_of(step):
         fn = get_attr(step, "function")
@@ -1190,6 +1191,15 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
     else:
         ds_steps = int(to_numeric(_step_or_func_arg("subsample", "step", 1) or 1))
     red["ds_steps"] = max(1, ds_steps)
+    if _dsp is None or not _dt:
+        _ds_origin = "its subsample step"
+    elif abs(red["ds_steps"] * _dt - _dsp) <= 1e-9 * _dsp:
+        _ds_origin = "its downsample_period"
+    else:
+        _ds_origin = f"its downsample_period of {_dsp:g} ms rounded to {red['ds_steps']} integration steps of {_dt:g} ms; a step_size that divides it keeps the two grids one"
+    _assert_kernel_on_decimated_grid(
+        name, kernel_fname, get_attr(kernel_step, "arguments"), _fns, red["ds_steps"], _dt, _ds_origin
+    )
 
     if _period is not None and _dt:
         red["tr_stride"] = int(round(_period / (red["ds_steps"] * _dt)))
@@ -1224,9 +1234,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
     red["V_0"] = float(to_numeric(parameter_value(_vpar, "V_0", 0.02)))
     # Resolved here rather than from the emitted kernel array, so the reducer can state its warm-up as a literal a caller reads before any kernel is built. Without a `dt` the span cannot be counted in steps, and the caller is told there is no bound rather than a wrong one.
     red["warmup_steps"] = (
-        kernel_support_steps(_fname_of(kernel_step), get_attr(kernel_step, "arguments"), functions_by_name(experiment), _dt)
-        if _dt
-        else 0
+        kernel_support_steps(_fname_of(kernel_step), get_attr(kernel_step, "arguments"), _fns, _dt) if _dt else 0
     )
     return red
 
@@ -1236,31 +1244,87 @@ def functions_by_name(experiment: Any) -> dict[str, Any]:
     return {str(k): v for k, v in keyed_items(get_attr(experiment, "functions"), "functions")}
 
 
-def kernel_support_steps(step_name: str, step_arguments: Any, fns: dict[str, Any], dt: float) -> int:
-    """Integration steps the kernel's own support spans — what a 'valid' convolution eats off the front.
+def kernel_time_range(
+    step_name: str, step_arguments: Any, fns: dict[str, Any]
+) -> tuple[float, float | None, float | None, str] | None:
+    """``(lo, hi, spacing, form)`` of a kernel generator's ``time_range``, or ``None`` for a step that is not a kernel generator.
 
-    Read from the generator's ``time_range`` in time, not in samples, so it is right whatever grid the kernel is sampled on: a kernel decimated to n points over the same span consumes the same span of signal. A bound naming an argument is resolved against the call's own arguments first, then the function's defaults. Returns 0 for a step that is not a kernel generator.
+    The spacing follows the three ways the generator samples itself (``function-def.mako``): ``n`` samples ``linspace(lo, hi, n)``, spaced ``(hi - lo) / (n - 1)``; ``step`` samples ``arange(lo, hi, step)``, spaced ``step``; with neither, it steps by its own ``dt`` argument. Each quantity may be a literal, an argument's name or an expression over the arguments, resolved against the call's own arguments first, then the function's defaults; one that does not resolve is ``None``, and ``form`` names the declaration the spacing rests on so a caller can say which one, ``time_range.hi`` where an ``n`` spacing fails on its bound. Every declared argument is a symbol of its own, so one without a value stays unresolved even where its name is also a sympy constant (``E``, ``I``, ``N``).
     """
+    import sympy
+
     fn_def = fns.get(str(step_name))
     time_range = get_attr(fn_def, "time_range") if fn_def is not None else None
     if not time_range:
+        return None
+    symbols, known = {}, {}
+    for source in (get_attr(fn_def, "arguments"), step_arguments):
+        for key, entry in keyed_items(source or {}, "arguments"):
+            symbols[str(key)] = sympy.Symbol(str(key))
+            value = to_numeric(get_attr(entry, "value", entry))
+            if isinstance(value, (int, float)):
+                known[str(key)] = float(value)
+
+    def _resolved(expr, default=None):
+        if expr is None:
+            return default
+        value = to_numeric(expr)
+        if isinstance(value, (int, float)):
+            return float(value)
+        try:
+            out = sympy.sympify(str(expr), locals=symbols).subs({symbols[k]: v for k, v in known.items()})
+            return float(out) if getattr(out, "is_number", False) else default
+        except (sympy.SympifyError, TypeError, ValueError, AttributeError):
+            return default
+
+    lo, hi = _resolved(get_attr(time_range, "lo"), 0.0), _resolved(get_attr(time_range, "hi"))
+    n, step = get_attr(time_range, "n", None), get_attr(time_range, "step", None)
+    if n:
+        count = _resolved(n)
+        spacing = (hi - lo) / (count - 1) if hi is not None and count is not None and count > 1 else None
+        return lo, hi, spacing, f"time_range.n = {n}" if hi is not None else f"time_range.hi = {get_attr(time_range, 'hi')}"
+    if step:
+        return lo, hi, _resolved(step), f"time_range.step = {step}"
+    return lo, hi, _resolved("dt"), "its dt argument (time_range declares neither n nor step)"
+
+
+def _assert_kernel_on_decimated_grid(
+    name: str, step_name: str, step_arguments: Any, fns: dict[str, Any], ds_steps: int, dt: float | None, origin: str
+) -> None:
+    """Require a streamed BOLD's decimated signal and its HRF kernel to be sampled on one grid.
+
+    The reducer convolves the signal decimated to every ``ds_steps * dt`` with the kernel sample by sample, so a kernel sampled on any other spacing is the response stretched or compressed in time, with nothing raised. It happens when an experiment's own function shadows the helper of the same name an ``iri``-referenced observation model brings, since the model's ``downsample_period`` still sets the decimation: a study's 1 ms ``hrf_kernel`` under ``tvbo:BOLD_HRF_strided``'s 4 ms grid stretched the response fourfold. Compared to 1%, so a ``linspace`` kernel whose ``n`` counts both ends of its support (20000 ms over 5000 samples is 4.0008 ms) still matches its intended grid.
+    """
+    span = kernel_time_range(step_name, step_arguments, fns)
+    if span is None or not dt:
+        return
+    _lo, _hi, kernel_ms, form = span
+    if kernel_ms is None or kernel_ms <= 0:
+        raise ValueError(
+            f"Observation {name!r}: reduce: streaming convolves the decimated signal with the HRF kernel {step_name!r} "
+            f"sample by sample, but the kernel's grid, {form}, does not resolve to a positive spacing, so the two grids "
+            "cannot be checked against each other. Give it a literal, or an argument with a value."
+        )
+    signal_ms = ds_steps * dt
+    if abs(kernel_ms - signal_ms) > 0.01 * signal_ms:
+        raise ValueError(
+            f"Observation {name!r}: reduce: streaming decimates the signal to every {signal_ms:g} ms ({origin}), "
+            f"but the HRF kernel {step_name!r} it convolves with is sampled every {kernel_ms:g} ms ({form}), "
+            f"which stretches the response in time by a factor of {signal_ms / kernel_ms:.3g}. An experiment function named "
+            f"{step_name!r} replaces the helper of that name an iri-referenced observation model brings. Declare "
+            f"downsample_period: {kernel_ms:.4g} on the observation, or sample the kernel every {signal_ms:g} ms."
+        )
+
+
+def kernel_support_steps(step_name: str, step_arguments: Any, fns: dict[str, Any], dt: float) -> int:
+    """Integration steps the kernel's own support spans — what a 'valid' convolution eats off the front.
+
+    Read from the generator's ``time_range`` in time, not in samples, so it is right whatever grid the kernel is sampled on: a kernel decimated to n points over the same span consumes the same span of signal. Returns 0 for a step that is not a kernel generator.
+    """
+    span = kernel_time_range(step_name, step_arguments, fns)
+    if span is None:
         return 0
-    step_args = step_arguments or {}
-    fn_args = get_attr(fn_def, "arguments") or {}
-
-    def _bound(expr, default=None):
-        val = to_numeric(expr) if expr is not None else None
-        if isinstance(val, (int, float)):
-            return float(val)
-        for source in (step_args, fn_args):
-            entry = source.get(str(expr)) if hasattr(source, "get") else None
-            bound = get_attr(entry, "value", entry) if entry is not None else None
-            if bound is not None and not isinstance(bound, str):
-                return float(to_numeric(bound))
-        return default
-
-    lo = _bound(get_attr(time_range, "lo"), 0.0)
-    hi = _bound(get_attr(time_range, "hi"), None)
+    lo, hi, _spacing, _form = span
     if hi is None:
         raise ValueError(
             f"kernel generator {step_name!r}: time_range.hi does not resolve to a number, so the "
@@ -3630,6 +3694,26 @@ def jax_platform(accelerator: Any) -> str | None:
     return None if accel == "auto" else {"gpu": "cuda"}.get(accel, accel)
 
 
+def parse_observable_args(arguments: Any) -> list[dict[str, Any]]:
+    """A scoring function call's arguments, each as ``{name, literal}`` or ``{name, obs, key}``.
+
+    A numeric value is a literal passed to the function as written. Any other value names an observation, ``obs.key`` selecting one of its outputs and a bare name its ``data``. An argument without a value is a runtime input the caller passes by name (``obs`` and ``key`` None).
+    """
+    parsed = []
+    for name, arg in keyed_items(arguments, "arguments"):
+        name = str(name or get_attr(arg, "name"))
+        value = get_attr(arg, "value", None)
+        if value is None or str(value) == "":
+            parsed.append({"name": name, "obs": None, "key": None})
+            continue
+        try:
+            parsed.append({"name": name, "literal": value if isinstance(value, (int, float)) else float(str(value))})
+        except ValueError:
+            obs, _, key = str(value).partition(".")
+            parsed.append({"name": name, "obs": obs, "key": key or "data"})
+    return parsed
+
+
 def parse_exploration(expl: Any, all_couplings: dict, get_pipeline_output_key_fn=None) -> dict:
     """Parse exploration specification from YAML.
 
@@ -3684,26 +3768,12 @@ def parse_exploration(expl: Any, all_couplings: dict, get_pipeline_output_key_fn
     if observable:
         func = getattr(observable, "function", None)
         func_name = getattr(func, "name", None) if hasattr(func, "name") else str(func) if func else None
-        # FunctionCall arguments are keyed by name (dict); tolerate a legacy list too.
         args = getattr(observable, "arguments", None) or {}
 
         if args:
             exp_info["observable_type"] = "function_call"
             exp_info["observable_func"] = func_name
-            exp_info["observable_args"] = []
-            arg_items = args.items() if hasattr(args, "items") else [(getattr(a, "name", None), a) for a in args]
-            for arg_name, arg in arg_items:
-                arg_name = arg_name or getattr(arg, "name", None) or str(arg)
-                arg_value = getattr(arg, "value", None)
-                if arg_value:
-                    val_str = str(arg_value)
-                    if "." in val_str:
-                        obs_ref, output_key = val_str.split(".", 1)
-                        exp_info["observable_args"].append({"name": arg_name, "obs": obs_ref, "key": output_key})
-                    else:
-                        exp_info["observable_args"].append({"name": arg_name, "obs": val_str, "key": "data"})
-                else:
-                    exp_info["observable_args"].append({"name": arg_name, "obs": None, "key": None})
+            exp_info["observable_args"] = parse_observable_args(args)
         else:
             exp_info["observable_type"] = "observation"
             exp_info["observable"] = func_name

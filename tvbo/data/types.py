@@ -192,16 +192,22 @@ def _node_array_dims(shape, node_count=None):
     return dims if n and all(s == n for s in shape) else None
 
 
-def _inner_dims(post_trial_shape, ts_arr, declared=None):
+def _inner_dims(post_trial_shape, ts_arr, declared=None, name=None):
     """Axis names for one exploration cell's payload, and the coords they carry.
 
-    A DECLARED shape wins outright. An observation's axes come from the reduction it declares — a stride keeps ``(time, node)``, a co-moment gives ``(node, node_j)``, a recurrence gives ``(node,)`` — and are known at codegen. Falling back to matching lengths against a positional ``(time, variable, node, mode)`` template is how a 1,338-frame time axis ends up named ``node``: silently, with every downstream selection then keyed on the wrong axis.
+    A DECLARED shape wins outright, and a payload whose rank contradicts it raises, as :func:`_observation_dataarray` does for an unswept one. An observation's axes come from the reduction it declares — a stride keeps ``(time, node)``, a co-moment gives ``(node, node_j)``, a recurrence gives ``(node,)`` — and are known at codegen. Falling back to matching lengths against a positional ``(time, variable, node, mode)`` template is how a 1,338-frame time axis ends up named ``node``: silently, with every downstream selection then keyed on the wrong axis. A payload with no axes at all is not a contradiction: the reduction collapsed them.
 
     The template remains the fallback for payloads that declare nothing (a raw swept trajectory, an observable a backend returns unlabelled).
     """
     n = len(post_trial_shape)
     coords = {}
-    if declared is not None and len(declared) == n:
+    if declared and n and len(declared) != n:
+        raise ValueError(
+            f"observation {name or '<unnamed>'!r} declares {len(declared)} axis/axes {tuple(declared)} but one swept "
+            f"cell's value has {n} with shape {tuple(post_trial_shape)}. Correct the observation's `dims:` to the shape "
+            "its pipeline actually returns, or remove it and let the container fall back to positional names."
+        )
+    if declared and len(declared) == n:
         dims = [str(d) for d in declared]
         if ts_arr is not None and "time" in dims and ts_arr.size == post_trial_shape[dims.index("time")]:
             coords["time"] = ts_arr
@@ -389,7 +395,7 @@ def _stacked_to_dataarray(
             vv = np.asarray(v)
             if vv.ndim == 1 and vv.shape[0] == n_points:
                 coords[k] = ("point", vv)
-        arr, payload_dims, payload_coords = _payload_layout(arr, arr.shape[1:], n_trials, intrinsic_ts, dims, nodes)
+        arr, payload_dims, payload_coords = _payload_layout(arr, arr.shape[1:], n_trials, intrinsic_ts, dims, nodes, name)
         da = xr.DataArray(data=arr, dims=["point", *payload_dims], coords={**coords, **payload_coords}, name=name)
         if not _to_grid:
             return da
@@ -423,11 +429,11 @@ def _stacked_to_dataarray(
         arr = arr[0]
         inner_shape = inner_shape[1:]
 
-    arr, payload_dims, payload_coords = _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes)
+    arr, payload_dims, payload_coords = _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes, name)
     return xr.DataArray(data=arr, dims=[*grid_dims, *payload_dims], coords={**grid_coords, **payload_coords}, name=name)
 
 
-def _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes):
+def _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes, name=None):
     """``(arr, dims, coords)`` for the per-cell payload trailing a stacked exploration array, whatever leads it.
 
     *inner_shape* is the shape after the leading ``point`` or grid axes. A leading axis of length *n_trials* becomes ``trial``; the rest are named by :func:`_inner_dims` against the time vector *intrinsic_ts* carries (its first row when it is stacked per cell) and the DECLARED *dims*. Trailing singleton inner axes are dropped, so an axis that carries no information (a mode or node of size 1) is not fabricated — but never a declared axis: a single-node observation still has a node axis, because it said so. Node labels ride on whichever inner axis is a node axis (:func:`_node_coords`). Returns *arr* with the dropped axes squeezed out.
@@ -443,7 +449,7 @@ def _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes):
         ts_arr = np.asarray(intrinsic_ts)
         while ts_arr.ndim > 1:
             ts_arr = ts_arr[0]
-    inner_dims, inner_coords = _inner_dims(inner_shape, ts_arr, dims)
+    inner_dims, inner_coords = _inner_dims(inner_shape, ts_arr, dims, name)
     coords.update(inner_coords)
     while inner_dims and arr.shape[-1] == 1 and inner_dims != list(dims or []):
         arr = arr[..., 0]

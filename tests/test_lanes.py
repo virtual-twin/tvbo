@@ -153,3 +153,22 @@ def test_a_node_axis_out_of_model_order_is_refused(tmp_path):
     shuffled = xr.Dataset({"x.amplitude": (("programme", "node"), GAINS)}, coords={"node": ["r2", "r0", "r1"]})
     with pytest.raises(ValueError, match="model order"):
         lanes.lane_parameters(_experiment(tmp_path), shuffled)
+
+
+def test_a_lane_value_is_named_by_what_its_observation_declares():
+    """The dims come from the module's `_OBSERVATION_DIMS` (a reduction's as much as an explicit `dims:`), not from the value's shape."""
+    assert lanes._observation_dims({"fc": ("node", "node_j")}, "fc", (3, 3), 3) == ("node", "node_j")
+    assert lanes._observation_dims({"rate": ("region",)}, "rate", (3,), 3) == ("node",)
+
+
+def test_a_lane_value_that_contradicts_its_declaration_raises():
+    with pytest.raises(ValueError, match="declares dims"):
+        lanes._observation_dims({"fc": ("node", "node_j")}, "fc", (3,), 3)
+    with pytest.raises(ValueError, match="node axis of length 4 on a network of 3"):
+        lanes._observation_dims({"rate": ("node",)}, "rate", (4,), 3)
+
+
+def test_two_node_axis_spellings_in_one_declaration_raise():
+    """`(region, node)` would fold into a duplicate `node` axis; the declaration is named, not xarray's duplicate-dimension error."""
+    with pytest.raises(ValueError, match=r"\['region', 'node'\] all name the node axis"):
+        lanes._observation_dims({"fc": ("region", "node")}, "fc", (3, 3), 3)

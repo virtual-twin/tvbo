@@ -597,10 +597,10 @@ def _kwargs_of(analysis, results_root) -> dict:
     return out
 
 
-def _as_dataset(name: str, produced):
+def _as_dataset(name: str, produced, dims=None):
     """The callable's return as an xarray ``Dataset`` of ``observation__<key>`` variables.
 
-    A mapping contributes one variable per key; a ``Dataset`` keeps its own variable names; a ``DataFrame`` contributes one variable per COLUMN, all sharing a single row dimension, so a table survives the round trip as a table rather than as an unlabelled block; anything else is a single array keyed by the analysis name. A labelled ``DataArray`` passes through with its dims and coordinates intact — that fidelity is the point, since a figure's ``encoding`` names them.
+    A mapping contributes one variable per key; a ``Dataset`` keeps its own variable names; a ``DataFrame`` contributes one variable per COLUMN, all sharing a single row dimension, so a table survives the round trip as a table rather than as an unlabelled block; anything else is a single array keyed by the analysis name. A labelled ``DataArray`` passes through with its dims and coordinates intact — that fidelity is the point, since a figure's ``encoding`` names them. An unlabelled array that is the analysis's only output takes the analysis's declared *dims*, and raises when its rank contradicts them; one that declares nothing is named ``<key>_d<i>``.
     """
     import numpy as np
     import xarray as xr
@@ -623,6 +623,7 @@ def _as_dataset(name: str, produced):
     else:
         items = [(name, produced)]
 
+    dims = [str(d) for d in dims or ()] if len(items) == 1 else []
     data_vars = {}
     for key, value in items:
         key = str(key)
@@ -636,6 +637,13 @@ def _as_dataset(name: str, produced):
                 da = xr.DataArray(arr)
             elif row_dim is not None and arr.ndim == 1:
                 da = xr.DataArray(arr, dims=[row_dim])
+            elif dims:
+                if arr.ndim != len(dims):
+                    raise ValueError(
+                        f"analysis {name!r} declares dims {dims} but its output {key!r} has rank {arr.ndim} "
+                        f"with shape {arr.shape}. Correct the analysis's `dims:` to the shape its callable returns."
+                    )
+                da = xr.DataArray(arr, dims=dims)
             else:
                 da = xr.DataArray(arr, dims=[f"{key}_d{i}" for i in range(arr.ndim)])
         data_vars[f"observation__{key}"] = da.rename(f"observation__{key}")
@@ -725,7 +733,7 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
 
     name = analysis_name(analysis)
     produced = _render(analysis, _kwargs_of(analysis, results_root))
-    ds = _as_dataset(name, produced)
+    ds = _as_dataset(name, produced, _slot(analysis, "dims"))
 
     path = container_path(name, results_root)
     path.parent.mkdir(parents=True, exist_ok=True)

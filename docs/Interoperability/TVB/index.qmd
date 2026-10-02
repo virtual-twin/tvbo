@@ -146,8 +146,7 @@ A `SimulationExperiment` can also be defined from a YAML string — useful for s
 exp2 = SimulationExperiment.from_string("""
 label: Quick JansenRit demo
 
-model:
-  name: JansenRit
+model: JansenRit
 
 network:
   coupling:

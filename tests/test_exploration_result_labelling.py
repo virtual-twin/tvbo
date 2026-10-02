@@ -160,10 +160,16 @@ def test_declared_dims_apply_on_the_sharded_point_path():
     assert list(da.coords["model.c"].values) == [0.1, 0.3]
 
 
-def test_a_declared_shape_that_does_not_fit_falls_back_rather_than_raising():
-    """A rank mismatch means the declaration is not about this payload; never mislabel."""
-    da = _stacked((len(C_VALS), 50, 2), dims=("time",), ts=np.arange(50.0))
-    assert da.dims == ("model.c", "time", "variable")
+def test_a_declared_shape_that_does_not_fit_raises():
+    """A rank that contradicts the declaration is refused by name, as an unswept observation's is: the positional fallback would name its axes from its shape."""
+    with pytest.raises(ValueError, match=r"'obs' declares 1 axis/axes \('time',\)"):
+        _stacked((len(C_VALS), 50, 2), dims=("time",), ts=np.arange(50.0))
+
+
+def test_a_payload_with_no_axes_is_not_a_contradiction():
+    """A reduction that collapsed every axis leaves nothing to name."""
+    da = _stacked((len(C_VALS),), dims=("node",))
+    assert da.dims == ("model.c",)
 
 
 def test_a_declared_singleton_axis_is_not_squeezed_away():

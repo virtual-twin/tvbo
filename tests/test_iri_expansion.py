@@ -2,7 +2,7 @@
 
 A recipe may point at a curated entity instead of spelling it out. That expansion has to happen while the *authored* keys are still distinguishable from schema defaults, because after construction every slot carrying a default reads as though it had been written — and "the recipe did not say this" is exactly the question the merge has to answer.
 
-Two properties follow, and both are pinned here: the recipe always wins over the entry, and a record that states its own ``name`` is a definition rather than a reference, so its ``iri`` is grounding and expands nothing.
+Two properties follow, and both are pinned here: an ``iri`` always points at the curated entry, and whatever else the record states, its ``name`` included, overrides that entry leaf by leaf.
 """
 
 from __future__ import annotations
@@ -53,15 +53,13 @@ def test_the_recipe_wins_over_the_entry(model):
 
 @pytest.mark.backend_core
 @GENERATED_FORMS
-def test_a_definition_is_not_expanded(model):
-    """A record stating its own ``name`` is a definition; its ``iri`` only grounds it.
-
-    Fifty curated files are written that way. Expanding them would re-derive a definition from a name lookup — and ``ReducedWongWangFunc.yaml`` grounds on ``tvbo:ReducedWongWang`` while stating its own name, so it would be overwritten by the different, canonical ``ReducedWongWang.yaml``.
-    """
+def test_a_stated_name_overrides_and_still_expands(model):
+    """A ``name`` beside the ``iri`` is one more override, never a reason to skip the entry."""
     coupling = model.Coupling(iri="tvbo:FastLinearCoupling", name="MyOwnCoupling")
 
     assert coupling.name == "MyOwnCoupling"
-    assert coupling.delayed is True, "a definition adopted the entry it merely grounds on"
+    assert coupling.delayed is False, "the entry the iri points at was not applied"
+    assert "G" in coupling.parameters
 
 
 @pytest.mark.backend_core
@@ -73,14 +71,36 @@ def test_an_iri_naming_nothing_is_left_alone(model):
     """
     coupling = model.Coupling(iri="tvbo:NoSuchCouplingAnywhere")
     assert coupling.iri == "tvbo:NoSuchCouplingAnywhere"
+    assert coupling.name == "NoSuchCouplingAnywhere", "the record takes the iri's local name"
 
 
 @pytest.mark.backend_core
 def test_the_curated_record_still_loads_as_itself():
-    """The regression the definition guard exists for, on the file that exposed it."""
+    """A curated record loads as itself, its functions intact."""
     from tvbo.classes.dynamics import Dynamics
 
     dynamics = Dynamics.from_db("ReducedWongWangFunc")
 
     assert "H" in dynamics.functions
     assert list(dynamics.functions["H"].arguments) == ["x"]
+
+
+@pytest.mark.backend_core
+@GENERATED_FORMS
+def test_a_scoped_iri_expands_and_names_the_record_it_addresses(model):
+    """``tvbo:observation/bold_tvb`` addresses ``bold_tvb`` among the observations, not a record called ``observation/bold_tvb``."""
+    scoped, unscoped = (model.Observation(iri=iri, source=["S_e"]) for iri in ("tvbo:observation/bold_tvb", "tvbo:BOLD_TVB"))
+
+    assert scoped.name == unscoped.name == "BOLD_TVB"
+    assert len(scoped.pipeline) == len(unscoped.pipeline) > 0
+
+
+@pytest.mark.backend_core
+def test_an_iri_addresses_a_record_by_its_scope():
+    from tvbo.data.registry import curated_key
+
+    assert curated_key("tvbo:observation/bold_tvb", "Observation") == "bold_tvb"
+    assert curated_key("tvbo:BOLD_TVB", "Observation") == "BOLD_TVB"
+    assert curated_key("ReducedWongWang", "Dynamics") == "ReducedWongWang"
+    assert curated_key("tvbo:coupling/Linear", "Observation") is None, "a scope of another class addresses no observation"
+    assert curated_key("tvbo:result/exp-1", "Observation") is None, "a run's output is not a curated record"

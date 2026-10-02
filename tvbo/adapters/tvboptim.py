@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from tvbo.adapters.base import BaseAdapter, dense_matrix, edge_needs, require_edge_attributes
+from tvbo.adapters.base import BaseAdapter, dense_matrix, edge_needs, refuse_observations, require_edge_attributes
 from tvbo.adapters.smallscale.lowering import node_dynamics_name
 from tvbo.utils import keyed_items, network_couplings, noise_sigma, normalize_params
 
@@ -622,6 +622,7 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
 
     from tvbo.data.types import ExperimentResult, SimulationResult
 
+    refuse_observations(experiment, "heterogeneous tvboptim")
     adapter = TvboptimAdapter(experiment)
     network = experiment.network
     lib = dynamics_lib if dynamics_lib is not None else adapter.build_dynamics_dict()

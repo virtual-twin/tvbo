@@ -589,7 +589,7 @@ graph TD
 
 #### Network Definition
 
-The entire multi-scale setup lives in a single YAML file. YAML anchors (`&`) and aliases (`*`) eliminate redundancy, so dynamics and coupling are defined once and referenced everywhere:
+The entire multi-scale setup lives in a single YAML file. Each dynamics and each coupling is defined once under its name, and every node and edge refers to it by that name:
 
 - Node 0 is a regular mean-field region (ReducedWongWang)
 - Node 1 is a **proxy**: during co-simulation its mean-field state is replaced by the aggregate output of the child subnetwork (10 Izhikevich spiking neurons)
@@ -720,7 +720,7 @@ The transformer converts spike trains to instantaneous firing rates (via kernel 
 | Variable routing | `source_var`, `target_var` | Connect specific state variables across scales |
 | Per-edge coupling | `edges[].coupling` | Different coupling per connection |
 | Per-node state | `nodes[].state` | Initial conditions per neuron |
-| YAML anchors | `&rww`, `*rww`, `&izh`, `*izh` | Define once, reuse everywhere |
+| Name references | `dynamics: Izhikevich`, `coupling: linear` | Define once, reuse everywhere |
 
 #### Framework Interoperability
 

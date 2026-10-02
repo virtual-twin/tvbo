@@ -82,6 +82,19 @@ def iri_target(iri: str) -> tuple[str, str] | None:
     return (cls_name, m.group("name")) if cls_name else None
 
 
+def curated_key(iri: str, cls_name: str) -> str | None:
+    """The name of the curated *cls_name* record *iri* addresses, or ``None`` when it addresses none.
+
+    A scoped IRI (``tvbo:observation/bold_tvb``) addresses a record of its scope's class, so it names a *cls_name* record only when that class is filed in the same database category; an unscoped one (``tvbo:BOLD_TVB``, or a bare ``BOLD_TVB``) names one by its local name. A ``result/`` reference or an unknown scope addresses no curated record.
+    """
+    if not _IRI_RE.match(str(iri).strip()):
+        return local_name(iri)
+    target = iri_target(iri)
+    if target is None or _CATEGORIES.get(target[0]) != _CATEGORIES.get(cls_name):
+        return None
+    return target[1]
+
+
 def resolve_iri(iri: str) -> Path:
     """Resolve a curated-entity IRI to its database YAML path.
 

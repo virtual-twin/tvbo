@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed release print-version gen-linkml gen-openminds gen-owl gen-shacl gen-studies gen-abox gen-merged gen-neuroml gen-all all check-runtime-onto
+.PHONY: help build save run docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed release print-version print-tag check-tag gen-linkml gen-openminds gen-owl gen-shacl gen-studies gen-abox gen-merged gen-neuroml gen-all all check-runtime-onto
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -39,8 +39,10 @@ help: ## Show this help
 	@echo "  make docs-test-to-debug Test and move fixed notebooks from to_debug/"
 	@echo ""
 	@echo "Release:"
-	@echo "  make release [BUMP=patch|minor|major | VERSION=x.y.z] [DRYRUN=1]"
-	@echo "                          Preview, confirm + publish a GitHub release (auto version bump)"
+	@echo "  make release [BUMP=patch|minor|major | VERSION=x.y.z[a|b|rcN]] [DRYRUN=1]"
+	@echo "                          Preview, confirm + publish a GitHub release; with neither, the version in tvbo/__init__.py"
+	@echo "                          A pre-release (1.0.0rc1) is tagged v1.0.0-rc.1 and published as a GitHub pre-release"
+	@echo "  make print-tag          The release tag of tvbo/__init__.py's version"
 	@echo ""
 	@echo "Shortcuts:"
 	@echo "  make all                Build + save Docker image"
@@ -88,6 +90,8 @@ WIDOCO_OUT = docs/1-explore/ontology/spec
 ROBOT ?= robot
 # The release the merged ontology belongs to, so its version IRI names a package anyone can install rather than the day someone ran make; `cut -s` so a line that is not `__version__ = "..."` yields nothing and gen-merged's guard fires instead of stamping the raw line into the IRI.
 PKG_VERSION := $(shell grep -m1 '^__version__' tvbo/__init__.py | cut -s -d'"' -f2)
+# The release tag spells `PKG_VERSION` in semver (`1.0.0rc1` → `v1.0.0-rc.1`): docker's semver tag and the docs image read the tag, PyPI normalises it back to `PKG_VERSION`, and a `-` marks a pre-release everywhere.
+PKG_TAG := v$(shell echo '$(PKG_VERSION)' | sed -E 's/(a|b|rc)([0-9]+)$$/-\1.\2/')
 WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.25
 
 gen-owl:
@@ -354,17 +358,18 @@ docs-test-to-debug:
 	echo "========================================"
 
 
-# Cut a release. Delegates to scripts/release.sh, which previews what is
-# shipping, verifies a forward version bump over the latest published release,
-# and asks for confirmation before committing/pushing/tagging. Examples:
-#   make release BUMP=patch          # auto next patch (x.y.Z+1)
-#   make release BUMP=minor          # auto next minor (x.Y+1.0)
-#   make release VERSION=0.6.0       # explicit version
-#   make release DRYRUN=1            # preview only, change nothing
-#   make release                     # release version currently in tvbo/__init__.py
 # The one reader of `__version__`, so the wheel, the ontology IRI and the release tag cannot disagree about what is shipping.
 print-version:
 	@echo "$(PKG_VERSION)"
+
+print-tag:
+	@echo "$(PKG_TAG)"
+
+# Every tag-triggered publish runs this first, so a tag spelled any other way publishes nothing.
+check-tag:
+	@test "$(TAG)" = "$(PKG_TAG)" || { echo "release tag '$(TAG)' is not '$(PKG_TAG)', the tag of tvbo/__init__.py's version $(PKG_VERSION)"; exit 1; }
+
+# Cut a release through scripts/release.sh, which previews what ships, refuses a non-forward version and asks before committing, pushing and tagging; `make help` lists the forms.
 
 release:
 	@VERSION="$(VERSION)" BUMP="$(BUMP)" CONFIRM="$(CONFIRM)" DRYRUN="$(DRYRUN)" bash scripts/release.sh

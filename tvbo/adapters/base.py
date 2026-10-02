@@ -24,7 +24,7 @@ from tvbo.templates.base.utils import (
     get_distribution_seed,
     has_distributions,
 )
-from tvbo.utils import initial_value, network_couplings, noise_sigma
+from tvbo.utils import initial_value, keyed_items, network_couplings, noise_sigma
 
 
 def dense_matrix(network, name: str, dtype=float) -> np.ndarray | None:
@@ -107,6 +107,29 @@ def refuse_network(experiment, backend: str, reach: str) -> None:
             f"the {backend} backend integrates {reach}, so the {n}-node network this experiment declares would be accepted and ignored. "
             "Run it on a backend that lowers a connectome (tvb, tvboptim, jax, python, pyrates)."
         )
+
+
+def refuse_observations(experiment, backend: str) -> None:
+    """Raise where *backend* would accept declared observations and return the raw trajectory alone.
+
+    A backend that emits no observation drops every one the experiment declares and still reports success, which no caller can tell from support; refusing is the contract `refuse_network` states for a network.
+    """
+    observations = sorted(str(name) for name, _ in keyed_items(getattr(experiment, "observations", None), "observations"))
+    if observations:
+        raise NotImplementedError(
+            f"the {backend} backend emits no observation, so {', '.join(observations)} would be dropped and the run would return the raw trajectory alone. "
+            "Run the monitors on a backend that lowers them (tvb, tvboptim, jax), or drop them from the experiment."
+        )
+
+
+def require_observations(experiment, result, backend: str) -> None:
+    """Raise where the experiment declares observations and *backend* returned a trajectory carrying no observation at all.
+
+    The dispatcher's check on every backend's result, so a backend that never reads ``observations`` is refused whether or not its own runner calls :func:`refuse_observations` first. It does not match names: a backend that emits observations under other names (brian2's `firing_rate_<pop>`) passes. A result without a trajectory (a continuation) is not checked.
+    """
+    integration = getattr(result, "integration", None)
+    if integration is not None and not getattr(integration, "observations", None):
+        refuse_observations(experiment, backend)
 
 
 def on_the_measurement_clock(data, settle: float, step: float):

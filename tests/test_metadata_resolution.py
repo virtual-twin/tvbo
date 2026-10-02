@@ -93,6 +93,30 @@ def test_experiment_network_dynamics_keyed_override():
     assert len(g2d.parameters) == 12
 
 
+def _overridden_a(build):
+    """Parameter ``a`` of Generic2dOscillator after *build* overrides it with the scalar shortcut ``a: 2.0``."""
+    from tvbo import Dynamics
+
+    if build == "dynamics":
+        return Dynamics(iri="tvbo:Generic2dOscillator", parameters={"a": 2.0}).parameters["a"]
+    if build == "experiment":
+        return _exp(dynamics={"iri": "tvbo:Generic2dOscillator", "parameters": {"a": 2.0}}).dynamics.parameters["a"]
+    if build == "named":
+        named = {"name": "Generic2dOscillator", "iri": "tvbo:Generic2dOscillator", "parameters": {"a": 2.0}}
+        return _exp(dynamics=named).dynamics.parameters["a"]
+    net = {"number_of_nodes": 2, "dynamics": {"g2d": {"iri": "tvbo:Generic2dOscillator", "parameters": {"a": 2.0}}}}
+    return _exp(network=net).network.dynamics["g2d"].parameters["a"]
+
+
+@pytest.mark.parametrize("build", ["dynamics", "experiment", "named", "network"])
+def test_a_scalar_override_keeps_the_curated_parameter_metadata(build):
+    """``a: 2.0`` abbreviates ``a: {value: 2.0}``, so it overrides the value alone and the curated definition and domain survive; an experiment's ``dynamics`` stating its ``name`` beside the ``iri`` still references it."""
+    a = _overridden_a(build)
+    assert a.value == 2.0
+    assert a.description == "Vertical shift of the configurable nullcline"
+    assert (a.domain.lo, a.domain.hi) == (-5.0, 5.0)
+
+
 # Coupling
 @pytest.mark.parametrize(
     "curie,expected",
@@ -112,19 +136,16 @@ def test_coupling_iri_resolves_by_local_name(curie, expected):
 
 
 def test_coupling_explicit_name_preserved():
-    """A named coupling keeps its name and is filled from the function its ``iri`` names.
-
-    Naming it makes the record a definition, so construction expands nothing — that stays the cheap, local step. ``enrich()`` is where it draws on the function it says it is an instance of, and a ``network.coupling`` entry gets that at experiment load.
-    """
+    """A named coupling keeps its name and is filled from the function its ``iri`` names at construction; ``enrich()`` keeps both."""
     from tvbo.classes.coupling import Coupling
 
     c = Coupling(name="MyCustom", iri="tvbo:Sigmoidal")
     assert c.name == "MyCustom"
-    assert not c.parameters
+    assert len(c.parameters) == 5
 
     c.enrich()
-    assert c.name == "MyCustom"  # explicit name still wins
-    assert len(c.parameters) == 5  # params now from Sigmoidal
+    assert c.name == "MyCustom"
+    assert len(c.parameters) == 5
 
 
 def test_a_coupling_assigned_as_a_mapping_is_still_read():

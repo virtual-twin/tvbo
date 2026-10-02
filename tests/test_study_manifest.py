@@ -323,7 +323,7 @@ def sibling_figure(tmp_path):
         "title: Sibling test\ncitekey: sibtest\n"
         "figures:\n"
         "  - name: fig-s\n"
-        "    layout: [[f1, f2]]\n"
+        "    layout: f1 f2\n"
         "    panels:\n"
         "      f1:\n"
         "        panel_key: f1\n"

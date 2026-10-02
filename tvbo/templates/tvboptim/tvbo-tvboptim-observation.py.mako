@@ -1744,8 +1744,16 @@ def _stream_axes(values, dt=${repr(float(dt))}):
 _STREAMING_WARMUP_STEPS = max([${", ".join("_warmup_%s" % _n for _n in _warmed_streams) or "0"}])
 """Raw integration steps of settle any streaming reducer here consumes as warm-up.
 
-Trim a settle scan's trajectory to this before handing it to the reducers: warming the ring costs the longest kernel's support, never the whole settle, and a caller that trims to it cannot starve one reducer to fit another. Zero when nothing streamed carries a kernel.
+`_settle_rows` trims every settle to this before it reaches the reducers: warming the ring costs the longest kernel's support, never the whole settle, and one tail serves every reducer without starving any. Zero when nothing streamed carries a kernel.
 """
+
+
+def _settle_rows(sol):
+    """The tail of a settle's raw, undecimated rows ``[S, n_states, n]`` a streaming reducer can reach, or None when no streamed reducer carries a kernel.
+
+    A reducer carries its own stride and its own source column, so it decimates its own tail rather than being handed a pre-decimated one; ``_warmed`` by contrast takes the solution itself. The tail is `_STREAMING_WARMUP_STEPS` long, the longest support any streamed kernel warms, because every row handed over is captured as a constant of the compiled fold: a 60 s settle at 0.1 ms on 379 nodes is 3.6 GB baked into each exploration's observable to warm a 20 s support.
+    """
+    return None if sol is None or not _STREAMING_WARMUP_STEPS else sol.ys[-_STREAMING_WARMUP_STEPS:]
 
 
 def _compose_reducers(*reducers):

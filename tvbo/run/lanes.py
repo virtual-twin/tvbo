@@ -139,15 +139,28 @@ def settle(experiment, namespace, network):
     return sim.model_fn, state
 
 
-def _observation_dims(experiment, name: str, shape: tuple[int, ...], n_nodes: int) -> tuple[str, ...]:
-    """The declared `dims` of observation `name` for one lane's value of `shape`, `node` where the observation names the node axis, positional names where it declares none."""
-    obs = dict(keyed_items(getattr(experiment, "observations", None), "observations"))[name]
-    dims = tuple(str(d) for d in (getattr(obs, "dims", None) or []))
-    if dims and len(dims) != len(shape):
-        raise ValueError(f"observation {name!r} declares dims {dims} but one lane's value has shape {shape}")
+def _observation_dims(declared: dict, name: str, shape: tuple[int, ...], n_nodes: int) -> tuple[str, ...]:
+    """The dims observation `name` declares, checked against one lane's value of `shape`, with any node-axis spelling as `node`.
+
+    *declared* is the generated module's `_OBSERVATION_DIMS`, the table the base run's container binds: an observation's own `dims:`, else the axes its reduction declares. A value whose rank contradicts it, a declaration with more than one node-axis spelling, or a node axis that is not the network's length raises. An observation that declares nothing keeps the positional fallback, `node` for a value of the network's length.
+    """
+    dims = tuple(str(d) for d in (declared.get(name) or ()))
     if not dims:
-        dims = ("node",) if shape == (n_nodes,) else tuple(f"{name}_dim{k}" for k in range(len(shape)))
-    return tuple("node" if d.lower() in NODE_DIMS and shape[k] == n_nodes else d for k, d in enumerate(dims))
+        return ("node",) if shape == (n_nodes,) else tuple(f"{name}_dim{k}" for k in range(len(shape)))
+    if len(dims) != len(shape):
+        raise ValueError(f"observation {name!r} declares dims {dims} but one lane's value has shape {shape}")
+    spelled = [d for d in dims if d.lower() in NODE_DIMS]
+    if len(spelled) > 1:
+        raise ValueError(
+            f"observation {name!r} declares dims {dims}, where {spelled} all name the node axis; "
+            "name the second axis of a node-by-node value apart, as `node_j`"
+        )
+    named = tuple("node" if d.lower() in NODE_DIMS else d for d in dims)
+    if "node" in named and shape[named.index("node")] != n_nodes:
+        raise ValueError(
+            f"observation {name!r} declares a node axis of length {shape[named.index('node')]} on a network of {n_nodes} nodes"
+        )
+    return named
 
 
 def run_lanes(
@@ -203,7 +216,7 @@ def run_lanes(
     lane_coords = {c: v for c, v in params[0].values.coords.items() if v.dims == (lane_dim,)}
     variables: dict[str, Any] = {}
     for name, values in zip(names, driven, strict=True):
-        dims = _observation_dims(experiment, name, values.shape[1:], len(labels))
+        dims = _observation_dims(ns._OBSERVATION_DIMS, name, values.shape[1:], len(labels))
         variables[name] = xr.DataArray(values, dims=(lane_dim, *dims))
     if baseline:
         for name, values in zip(names, sweep({p.key: np.zeros((1, len(labels))) for p in params}), strict=True):

@@ -1,12 +1,10 @@
 # multiscale_cortex.yaml — hybrid mean-field / spiking network
 label: Multi-Scale Cortex
 
-# ── Dynamics (defined once, referenced by anchor) ───────────
+# ── Dynamics (defined once, referenced by name) ─────────────
 dynamics:
-  ReducedWongWang: &rww
-    name: ReducedWongWang
-  Izhikevich: &izh
-    name: Izhikevich
+  ReducedWongWang: {}
+  Izhikevich:
     state_variables:
       v:
         equation:
@@ -20,38 +18,32 @@ dynamics:
       c: {value: -65}
       d: {value: 8}
 
-# ── Coupling (defined once, referenced by anchor) ──────────
+# ── Coupling (defined once, referenced by name) ────────────
 coupling:
-  linear: &linear
-    name: linear
-  excitatory: &exc
-    name: excitatory
-  inhibitory: &inh
-    name: inhibitory
+  linear: {}
+  excitatory: {}
+  inhibitory: {}
 
 # ── Macroscale nodes ────────────────────────────────────────
 nodes:
   # Mean-field regions
-  - {id: 0, label: V1, dynamics: *rww}
-  - {id: 1, label: V2 (proxy), dynamics: *rww}
+  - {id: 0, label: V1, dynamics: ReducedWongWang}
+  - {id: 1, label: V2 (proxy), dynamics: ReducedWongWang}
   # Spiking subnetwork (children of node 1)
-  - {id: 2,  label: E1, dynamics: *izh}
-  - {id: 3,  label: E2, dynamics: *izh}
-  - {id: 4,  label: E3, dynamics: *izh}
-  - {id: 5,  label: E4, dynamics: *izh}
-  - {id: 6,  label: E5, dynamics: *izh}
-  - {id: 7,  label: E6, dynamics: *izh}
-  - {id: 8,  label: E7, dynamics: *izh}
-  - {id: 9,  label: E8, dynamics: *izh}
-  - {id: 10, label: I1, dynamics: *izh,
+  - {id: 2,  label: E1, dynamics: Izhikevich}
+  - {id: 3,  label: E2, dynamics: Izhikevich}
+  - {id: 4,  label: E3, dynamics: Izhikevich}
+  - {id: 5,  label: E4, dynamics: Izhikevich}
+  - {id: 6,  label: E5, dynamics: Izhikevich}
+  - {id: 7,  label: E6, dynamics: Izhikevich}
+  - {id: 8,  label: E7, dynamics: Izhikevich}
+  - {id: 9,  label: E8, dynamics: Izhikevich}
+  - {id: 10, label: I1, dynamics: Izhikevich,
      state: [{name: v, value: -65}, {name: u, value: -14}]}
-  - {id: 11, label: I2, dynamics: *izh,
+  - {id: 11, label: I2, dynamics: Izhikevich,
      state: [{name: v, value: -65}, {name: u, value: -14}]}
 
-# ── Node mapping: spiking neuron → parent proxy node ───────
-# int32 array of length 12: [–1, –1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-#   –1 = top-level node (no parent)
-#    1 = child of node 1 (the proxy)
+# ── Node mapping: each node's parent, –1 for a top-level node; the ten spiking neurons are children of node 1 (the proxy) ──
 node_mapping: /nodes/parent_index
 
 # ── Edges ───────────────────────────────────────────────────
@@ -64,7 +56,7 @@ edges:
     target_var: c_pop        # population coupling input
     parameters:
       weight: {value: 0.5}
-    coupling: *linear
+    coupling: linear
   - source: 1
     target: 0
     directed: true
@@ -72,7 +64,7 @@ edges:
     target_var: c_pop
     parameters:
       weight: {value: 0.3}
-    coupling: *linear
+    coupling: linear
 
   # ── Subnetwork template edge (10×10 local connectivity) ──
   - label: weights
@@ -84,9 +76,9 @@ edges:
 
   # ── Explicit E↔I edges within subnetwork ──
   - {source: 2, target: 10, directed: true,
-     parameters: {weight: {value: 0.5}}, coupling: *exc}
+     parameters: {weight: {value: 0.5}}, coupling: excitatory}
   - {source: 10, target: 2, directed: true,
-     parameters: {weight: {value: -0.3}}, coupling: *inh}
+     parameters: {weight: {value: -0.3}}, coupling: inhibitory}
 
   # ── Interface edges (proxy ↔ subnetwork) ──
   - source: 1                 # proxy node (mean-field)
@@ -97,4 +89,4 @@ edges:
     parameters:
       weight: {value: 1.0}
       gain: {value: 0.1}      # transformer scaling: I = gain · S · N_E
-    coupling: *linear
+    coupling: linear

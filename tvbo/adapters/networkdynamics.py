@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from tvbo.adapters.base import BaseAdapter, dense_matrix
+from tvbo.adapters.base import BaseAdapter, dense_matrix, refuse_observations
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult, SimulationResult
@@ -690,15 +690,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
                 "Run the delayed network on a backend that carries a history buffer "
                 "(tvb, tvboptim, jax), or declare the coupling undelayed."
             )
-        from tvbo.utils import keyed_items
-
-        observations = sorted(name for name, _ in keyed_items(getattr(self.experiment, "observations", None), "observations"))
-        if observations:
-            raise NotImplementedError(
-                "the NetworkDynamics.jl templates emit no observation, so "
-                f"{', '.join(observations)} would be dropped and the run would return the raw trajectory alone. "
-                "Run the monitors on a backend that lowers them (tvb, tvboptim, jax), or drop them from the experiment."
-            )
+        refuse_observations(self.experiment, "NetworkDynamics.jl")
         if self.get_execution_info()["find_fixpoint"] and self.holds_coupling():
             raise NotImplementedError(
                 "execution.find_fixpoint searches the steady state of the network's vector field, and under integration.coupling_evaluation: per_step "

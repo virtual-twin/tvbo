@@ -39,6 +39,7 @@ __all__ = [
     "is_literal",
     "key_members",
     "lift_scalar",
+    "lift_shortcuts",
     "normalize",
     "install_on_dataclasses",
     "peer_module",
@@ -94,6 +95,14 @@ def lift_scalar(value, target, multivalued, keyed=False):
     return value
 
 
+def lift_shortcuts(cls_name: str, data: dict) -> dict:
+    """Lift *cls_name*'s scalar shortcuts in *data* to the mappings they abbreviate, in place (see :func:`lift_scalar`)."""
+    for slot, (target, multivalued, keyed) in SCALAR_SHORTCUTS.get(cls_name, {}).items():
+        if data.get(slot) is not None:
+            data[slot] = lift_scalar(data[slot], target, multivalued, keyed)
+    return data
+
+
 def fold_aliases(cls_name: str, data: dict) -> dict:
     """Rename *cls_name*'s declared aliases to their canonical slots, in place.
 
@@ -118,7 +127,7 @@ def fold_aliases(cls_name: str, data: dict) -> dict:
 
 @cache
 def curated_entry(cls_name: str, name: str) -> dict | None:
-    """The curated *cls_name* record called *name*, alias-folded and ready to merge.
+    """The curated *cls_name* record called *name*, alias-folded, shortcut-lifted and ready to merge.
 
     ``None`` when the database holds no such record — including when *cls_name* is not a
     category it keeps at all.
@@ -146,63 +155,44 @@ def curated_entry(cls_name: str, name: str) -> dict | None:
     entry.pop("iri", None)
     for envelope_key in ENVELOPE_KEYS:
         entry.pop(envelope_key, None)
-    return fold_aliases(cls_name, entry)
+    return lift_shortcuts(cls_name, fold_aliases(cls_name, entry))
 
 
 def expand_iri(cls_name: str, data: dict) -> dict:
-    """Fill *data* from the curated record its ``iri`` names, letting the recipe win.
+    """Fill *data* in place from the curated record its ``iri`` names, the recipe winning at the leaf.
 
-    Naming an entity by ``iri`` instead of spelling it out is the same kind of dialect as
-    an alias or a bare scalar: a spelling the schema does not describe. It is resolved here,
-    before validation, because this is the only point that still knows which keys the recipe
-    actually wrote — after construction every slot carrying a schema default reads as though
-    it had been authored, and "the recipe did not say" becomes unanswerable. That is why a
-    curated ``delayed:`` was never applied, and why an explicit value equal to a default
-    could be overwritten by the entry.
+    An ``iri`` points at the curated database, and whatever else the record states overrides that entry field by field, ``name`` included: ``parameters: {a: 2.0}`` replaces only ``a``'s value and keeps the curated definition and domain. Both sides are alias-folded and shortcut-lifted before the merge so they meet at the same depth. No ``name`` is needed beside an ``iri``: the entry supplies it.
 
-    Only the curated database is consulted. It is a local file read and its content is
-    ordered, whereas the ontology answers with an unordered set — a different parameter
-    order per process, which no frozen record can be written against. Reaching it is
-    :meth:`tvbo.behaviour._enrich.IriEnrichable.enrich`, which the caller asks for.
+    Naming an entity by ``iri`` instead of spelling it out is the same kind of dialect as an alias or a bare scalar: a spelling the schema does not describe. It is resolved here, before validation, because this is the only point that still knows which keys the recipe actually wrote — after construction every slot carrying a schema default reads as though it had been authored, and "the recipe did not say" becomes unanswerable. That is why a curated ``delayed:`` was never applied, and why an explicit value equal to a default could be overwritten by the entry.
 
-    Only a *reference* expands. A record that also states its own ``name`` is a definition,
-    and its ``iri`` is grounding — "this model is a ReducedWongWang in the ontology" — not
-    an instruction to inherit. Fifty curated files are written that way, and expanding them
-    would re-derive a definition from a name lookup: ``ReducedWongWangFunc.yaml`` states its
-    own name and grounds on ``tvbo:ReducedWongWang``, so expanding it would replace a
-    distinct record with the canonical ``ReducedWongWang.yaml`` it merely relates to.
+    Only the curated database is consulted. It is a local file read and its content is ordered, whereas the ontology answers with an unordered set — a different parameter order per process, which no frozen record can be written against. Reaching it is :meth:`tvbo.behaviour._enrich.IriEnrichable.enrich`, which the caller asks for.
 
-    An ``iri`` naming nothing is left alone: it may point at an entity that exists only in
-    the ontology, and this pass cannot tell that from a typo. ``tvbo validate`` is where a
-    name that resolves nowhere is reported.
+    The record the ``iri`` addresses is :func:`tvbo.data.registry.curated_key`'s answer: a scoped ``tvbo:observation/bold_tvb`` names ``bold_tvb`` among observations, an unscoped ``tvbo:BOLD_TVB`` its local name. An ``iri`` naming no curated record merges nothing: it may point at an entity that exists only in the ontology, and this pass cannot tell that from a typo. The record then takes that name as its ``name`` when it states none, and ``tvbo validate`` is where a name that resolves nowhere is reported. A scope of another class, or a ``result/`` reference, is left exactly as written.
 
-    Once a reference has expanded, the ``iri`` survives only for a class that keeps one as a
-    slot, where it is grounding worth recording. ``Network`` does not: its curated record is
-    reached through ``iri`` but its own connectivity is the ``data_file`` the expansion just
-    merged in, so keeping the key would hand ``Network.__init__`` a keyword it has no slot
-    for. That is what stopped a study from naming a curated connectome by ``iri`` at all.
+    Once an ``iri`` has expanded, it survives only for a class that keeps one as a slot, where it is grounding worth recording. ``Network`` does not: its curated record is reached through ``iri`` but its own connectivity is the ``data_file`` the expansion just merged in, so keeping the key would hand ``Network.__init__`` a keyword it has no slot for.
     """
-    from tvbo.data.registry import local_name
-
-    iri = data.get("iri")
-    if not isinstance(iri, str) or data.get("name") is not None:
-        return data
-    entry = curated_entry(cls_name, local_name(iri))
-    if entry is None:
-        return data
-
+    from tvbo.data.registry import curated_key
     from tvbo.utils import deep_merge
 
-    merged = deep_merge(entry, data)
-    if not _keeps_iri_slot(cls_name):
+    iri = data.get("iri")
+    key = curated_key(iri, cls_name) if isinstance(iri, str) else None
+    if key is None:
+        return data
+    entry = curated_entry(cls_name, key)
+    if entry is None:
+        if data.get("name") is None and _has_slot(cls_name, "name"):
+            data["name"] = key
+        return data
+    merged = deep_merge(entry, lift_shortcuts(cls_name, fold_aliases(cls_name, data)))
+    if not _has_slot(cls_name, "iri"):
         merged.pop("iri", None)
     data.clear()
     data.update(merged)
     return data
 
 
-def _keeps_iri_slot(cls_name: str) -> bool:
-    """Whether the generated *cls_name* declares ``iri`` as a slot of its own.
+def _has_slot(cls_name: str, slot: str) -> bool:
+    """Whether the generated *cls_name* declares *slot* as a slot of its own.
 
     Unknown classes answer True, so a name this module cannot resolve is left exactly as the recipe wrote it.
     """
@@ -213,7 +203,7 @@ def _keeps_iri_slot(cls_name: str) -> bool:
     cls = getattr(schema, cls_name, None)
     if cls is None or not dataclasses.is_dataclass(cls):
         return True
-    return any(field.name == "iri" for field in dataclasses.fields(cls))
+    return any(field.name == slot for field in dataclasses.fields(cls))
 
 
 @cache
@@ -368,7 +358,7 @@ own class will, whichever spelling the record was written in.
 def normalize(cls_name: str, data: dict) -> dict:
     """Fold *cls_name*'s dialect into *data*, in place: aliases, ``iri``, defaults, shortcuts, keys.
 
-    Aliases fold first, so the recipe and the curated record are keyed alike before they are merged and the shortcut pass can see every value under the name it looks for. Lifting first left ``BoundaryCondition(value="0")`` — the older spelling of ``equation`` — a bare string where the generated ``__post_init__`` wanted a mapping, and it raised. Keying comes last, once every member is a mapping that can carry a name.
+    Aliases fold and scalar shortcuts lift first, on the recipe here and on the curated record in :func:`curated_entry`, so the two meet at the same depth when merged: a recipe's ``parameters: {a: 2.0}`` overrides the curated ``a``'s value and keeps its definition and domain, where merging the bare scalar replaced the whole parameter. Folding precedes lifting so the shortcut pass sees every value under the name it looks for. Lifting first left ``BoundaryCondition(value="0")`` — the older spelling of ``equation`` — a bare string where the generated ``__post_init__`` wanted a mapping, and it raised. Keying comes last, once every member is a mapping that can carry a name.
 
     Schema-declared defaults (``SLOT_DEFAULTS``, for slots whose class range ``ifabsent`` cannot serve) fill after the ``iri`` expansion, so a curated record's own value is never overridden by the default, and before construction, so both generated forms record the default the schema states.
 
@@ -382,14 +372,12 @@ def normalize(cls_name: str, data: dict) -> dict:
         data.pop(envelope_key, None)
 
     fold_aliases(cls_name, data)
+    lift_shortcuts(cls_name, data)
     expand_iri(cls_name, data)
     for slot, default in SLOT_DEFAULTS.get(cls_name, {}).items():
         if data.get(slot) is None:
             data[slot] = default
 
-    for slot, (target, multivalued, keyed) in SCALAR_SHORTCUTS.get(cls_name, {}).items():
-        if data.get(slot) is not None:
-            data[slot] = lift_scalar(data[slot], target, multivalued, keyed)
     key_members(cls_name, data)
 
     semantic = SEMANTIC_FOLDS.get(cls_name)

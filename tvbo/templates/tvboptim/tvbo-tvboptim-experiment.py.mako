@@ -1018,23 +1018,11 @@ for expl in exploration_list:
         args = observable.arguments or {}
 
         if args:
-            # FunctionCall with arguments (e.g., rmse(fc.data, target)). arguments is a
-            # dict keyed by name; the key IS the argument name.
+            from tvbo.templates.tvboptim.utils import parse_observable_args
+
             exp_info['observable_type'] = 'function_call'
             exp_info['observable_func'] = func_name
-            exp_info['observable_args'] = []
-            for arg_name, arg in args.items():
-                arg_value = arg.value if hasattr(arg, 'value') else None
-                if arg_value:
-                    # Value references observation.output (e.g., "fc.data")
-                    if '.' in str(arg_value):
-                        obs_ref, output_key = str(arg_value).split('.', 1)
-                        exp_info['observable_args'].append({'name': arg_name, 'obs': obs_ref, 'key': output_key})
-                    else:
-                        exp_info['observable_args'].append({'name': arg_name, 'obs': str(arg_value), 'key': 'data'})
-                else:
-                    # No value = runtime input (target_data)
-                    exp_info['observable_args'].append({'name': arg_name, 'obs': None, 'key': None})
+            exp_info['observable_args'] = parse_observable_args(args)
         else:
             # Simple observation reference (function: obs_name, no arguments)
             exp_info['observable_type'] = 'observation'
@@ -1945,9 +1933,10 @@ def _realign_state_auxiliaries(sol, params):
     _base_stream_names = _base_plan['names']
     _raw_obs = [n for n in observation_names
                 if n not in network_observation_names and n not in derived_observation_names]
-    # `reduce` rides the native block scan, so the solver family is part of the gate rather than an assumption.
+    # `reduce` rides the native block scan, so the solver family is part of every stream gate rather than an assumption.
+    _native_scan = str(solver_class) in ('Euler', 'Heun', 'RungeKutta4')
     _base_stream = (bool(_base_stream_names)
-                    and str(solver_class) in ('Euler', 'Heun', 'RungeKutta4')
+                    and _native_scan
                     and set(_raw_obs) == set(_base_stream_names)
                     and set(derived_observation_names) <= set(_base_plan['deliverables']))
     _base_bs = _base_plan['period_in_steps'] or streaming_block_size([])
@@ -1984,16 +1973,6 @@ def _run_compiled(fn, state):
     loss function is traced by the optimizer.
     """
     return jax.jit(fn)(state)
-
-
-def _settle_rows(sol):
-    """A settle's raw, undecimated rows ``[S, n_states, n]``, which is what a streaming reducer takes.
-
-    A reducer carries its own stride and its own source column, so it decimates its own tail rather
-    than being handed a pre-decimated one; ``_warmed`` by contrast takes the solution itself. Keeping
-    the two spellings apart is the point of this helper.
-    """
-    return None if sol is None else sol.ys
 
 
 def _history_window(sol, network, dt):
@@ -2116,13 +2095,10 @@ def run_simulation(
             state.noise.key = _noise_key
         % endif
 % if _base_stream:
-        # Only the tail a streamed kernel can reach: `_STREAMING_WARMUP_STEPS` is the raw-step bound over every streamed reducer that carries one, so a 300 s settle is not held whole to warm a 20 s support.
-        _settle_for_streams = (None if result_transient is None or not _STREAMING_WARMUP_STEPS
-                               else _settle_rows(result_transient)[-_STREAMING_WARMUP_STEPS:])
         _stream_fn, _ = prepare(   # folds in-carry over ${_base_bs}-step blocks; no trajectory
             network, get_solver(block_size=${_base_bs}),
             t0=t0, t1=t0 + t1, dt=dt,
-            reduce=_stream_reduction(${repr(_base_stream_names)}, dt, settle=_settle_for_streams),
+            reduce=_stream_reduction(${repr(_base_stream_names)}, dt, settle=_settle_rows(result_transient)),
         )
         _stream_vals = dict(zip(${repr(_base_stream_names)}, _run_compiled(_stream_fn, state)))
         observations = Bunch(**_stream_vals)
@@ -2828,7 +2804,55 @@ def run_optimization(
 % endif
 
 
+<%def name="folded_cells(names, block_size, t0, t1, dt)">\
+        _folded_model_fn, _ = prepare(
+            _network, get_solver(block_size=${block_size}),
+            t0=${t0}, t1=${t1}, dt=${dt},
+            reduce=_stream_reduction(${repr(names)}, ${dt}, settle=_settle_rows(settle)),
+        )
+
+        def _folded(s):
+            """The cell's streamed observations by name, folded in-carry over the measured window from the settled network, so no cell holds its trajectory."""
+            return dict(zip(${repr(names)}, _folded_model_fn(s)))
+
+</%def>
 % if has_explorations:
+<%
+    def _observation_closure(roots):
+        """*roots* and every observation they reach through a `source` or a pipeline argument, so an observable traces only what it reads."""
+        _all_obs_names = set(_all_observations.keys())
+
+        def _obs_deps(_o):
+            _deps = set()
+            for _s in (getattr(_o, 'source', None) or []):
+                _sn = str(_s) if not hasattr(_s, 'name') else str(_s.name)
+                if _sn in _all_obs_names:
+                    _deps.add(_sn)
+            for _st in (getattr(_o, 'pipeline', None) or []):
+                for _an, _arg in ((getattr(_st, 'arguments', None) or {}).items()):
+                    _av = getattr(_arg, 'value', None)
+                    if _av is None:
+                        continue
+                    _avs = str(_av)
+                    _base = _avs.split('.', 1)[0]   # bare name or dotted named-output ref
+                    if _avs in _all_obs_names:
+                        _deps.add(_avs)
+                    elif _base in _all_obs_names:
+                        _deps.add(_base)
+            return _deps
+
+        _need = set()
+        _stack = list(roots)
+        while _stack:
+            _n = _stack.pop()
+            if _n in _need:
+                continue
+            _need.add(_n)
+            _od = _all_observations.get(_n)
+            if _od is not None:
+                _stack.extend(_sn for _sn in _obs_deps(_od) if _sn not in _need)
+        return _need
+%>
 
 % for expl in explorations:
 <%
@@ -2861,32 +2885,21 @@ def run_optimization(
     )
     _element_axes_present = any(ax.get('element_idx') is not None for ax in expl['axes'])
     _seed_axis_present = any(ax.get('is_seed') for ax in expl['axes'])
-    _use_stream = (
-        bundles_observations
-        and _all_recorded_streaming
+    _cells_can_stream = (
+        _native_scan
         and not stochastic_param_info
         and not _element_axes_present
         and not _seed_axis_present
         and not expl.get('algorithms')
     )
+    _use_stream = bundles_observations and _all_recorded_streaming and _cells_can_stream
     _stream_names = _rec_stream
     _stream_bs = streaming_block_size([_reductions.get(r) for r in _rec_stream], declared=expl.get('block_size'))
-    # The scan is the measured window now that the settle is its own, so a reducer folds every sample it sees.
-    _stream_skip = 0
-    # An exploration bundling every declared observation streams only when all of them are trajectory-free; one that needs the raw trajectory keeps the whole set on the materialise path.
-    _bundle_plan = _base_plan if bundles_observations else {'names': [], 'deliverables': [], 'period_in_steps': None}
-    _bundle_stream_names = _bundle_plan['names']
-    _bundled_all = set(observation_names) | set(derived_observation_names)
-    _bundle_covered = set(_bundle_stream_names) | set(_bundle_plan['deliverables']) | set(network_observation_names)
-    _bundle_fully_stream = (
-        bundles_observations
-        and bool(_bundle_stream_names)
-        and not stochastic_param_info
-        and not _element_axes_present
-        and not analysis_observation_names
-        and _bundled_all <= _bundle_covered
-    )
-    _bundle_bs = _bundle_plan['period_in_steps'] or streaming_block_size([])
+    # A sweep bundling every declared observation, or scoring a function of them, streams the base run's set whenever the base run does, so each cell's values are the ones the base run reports.
+    _bundle_fully_stream = bundles_observations and _base_stream and not stochastic_param_info and not _element_axes_present and not analysis_observation_names
+    # A streamed observation folds to its bare value, so a function reading another of its outputs keeps the materialise path, where the monitor result carries it.
+    _call_stream = (obs_type == 'function_call' and _base_stream and _cells_can_stream
+                    and not any(a.get('obs') in _base_stream_names and a.get('key') not in (None, 'data') for a in obs_args))
     # prepare() sizes the delay buffer once from the base graph, so every axis that can lengthen a delay is read here, outside jit. A swept weight feeds no delay.
     _speed_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'speed']
     _length_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'lengths']
@@ -3124,16 +3137,10 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 % if _use_stream:
     # Every recorded observable folds into the integrator carry, so peak memory is O(batch·block·n_node) and the whole grid vmaps on one device; a passed-in model_fn falls back to the post-scan path.
     if _network is not None:
-        # Streams the measured window from the settled network, so every folded sample is a measured one.
-        _stream_model_fn, _ = prepare(
-            _network, get_solver(block_size=${_stream_bs}),
-            t0=${scan_t0}, t1=${t1_default}, dt=${dt},
-            reduce=_stream_reduction(${repr(_stream_names)}, ${dt}, skip=${_stream_skip}, settle=_settle_rows(settle)),
-        )
+${folded_cells(_stream_names, _stream_bs, scan_t0, t1_default, dt)}
         @jax.jit
         def observable_fn(s):
-            _vals = _stream_model_fn(s)
-            return Bunch(**{_n: _v for _n, _v in zip(${repr(_stream_names)}, _vals)})
+            return Bunch(**_folded(s))
     else:
         @jax.jit
         def observable_fn(s):
@@ -3141,39 +3148,8 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
             return compute_all_observations(result, s, only=${set_literal(_stream_names)})
 % elif expl.get('record'):
 <%
-    # The recorded observations and everything they transitively depend on through `source` or a pipeline argument; anything else is skipped so it never traces inside the observable.
-    _all_obs_names = set(_all_observations.keys())
-    def _obs_deps(_o):
-        _deps = set()
-        for _s in (getattr(_o, 'source', None) or []):
-            _sn = str(_s) if not hasattr(_s, 'name') else str(_s.name)
-            if _sn in _all_obs_names:
-                _deps.add(_sn)
-        for _st in (getattr(_o, 'pipeline', None) or []):
-            for _an, _arg in ((getattr(_st, 'arguments', None) or {}).items()):
-                _av = getattr(_arg, 'value', None)
-                if _av is None:
-                    continue
-                _avs = str(_av)
-                _base = _avs.split('.', 1)[0]   # bare name or dotted named-output ref
-                if _avs in _all_obs_names:
-                    _deps.add(_avs)
-                elif _base in _all_obs_names:
-                    _deps.add(_base)
-        return _deps
-    _need = set()
-    _stack = [r for r in expl['record'] if r not in analysis_observation_names]
-    while _stack:
-        _n = _stack.pop()
-        if _n in _need:
-            continue
-        _need.add(_n)
-        _od = _all_observations.get(_n)
-        if _od is not None:
-            for _sn in _obs_deps(_od):
-                if _sn not in _need:
-                    _stack.append(_sn)
-    _only_list = sorted(_need)
+    # The recorded observations and everything they depend on; anything else is skipped so it never traces inside the observable.
+    _only_list = sorted(_observation_closure(r for r in expl['record'] if r not in analysis_observation_names))
     # Jit the whole observable only when no recorded observation reaches a host callable.
     _rec_host = any(
         pipeline_stage_is_host(_st)
@@ -3205,6 +3181,10 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # Runtime inputs: not defined as observations at all (passed via kwargs)
     runtime_obs = [o for o in obs_used if o not in observation_names and o not in derived_observation_names]
     needs_all_obs = len(derived_obs) > 0
+    # The derived observations the function reads and the derived ones they source: a streamed cell computes these and no others.
+    _call_only = sorted(_observation_closure(derived_obs) & set(derived_observation_names))
+    # The streamed observations those reads reach, which is all a streamed cell folds; the whole base set only when the function reads none.
+    _call_folded = [n for n in _base_stream_names if n in _observation_closure(obs_used)] or _base_stream_names
 %>
 % for obs in sorted(simulated_obs):
 <%
@@ -3224,27 +3204,39 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         _all_obs = compute_all_observations(result, s, settle=settle)
 % endif
 <%
-    # Build args list by observation type
-    args_list = []
-    for a in obs_args:
-        if a.get('obs'):
-            obs_name = a['obs']
-            if obs_name in derived_observation_names:
-                # Derived observation: from compute_all_observations
-                args_list.append(f"getattr(_all_obs, '{obs_name}').data if hasattr(getattr(_all_obs, '{obs_name}', None), 'data') else getattr(_all_obs, '{obs_name}')")
+    def _call_args(streamed):
+        """The function's arguments as emitted expressions: a numeric literal as written, an observation's declared output (``.data`` unless the argument names another), a streamed simulated observation read from the folded set as a derived one always is."""
+        def _output(value, key):
+            return f"_obs_data({value})" if key in (None, 'data') else f"{value}.{key}"
+        args_list = []
+        for a in obs_args:
+            obs_name = a.get('obs')
+            if 'literal' in a:
+                args_list.append(repr(a['literal']))
+            elif not obs_name:
+                args_list.append(f"kwargs['{a['name']}']")
+            elif obs_name in derived_observation_names:
+                args_list.append(_output(f"_all_obs.{obs_name}", a.get('key')))
             elif obs_name in network_observation_names:
                 # Network observation: kwargs override, else module-level constant (from BIDS)
                 args_list.append(f"kwargs.get('{obs_name}', {obs_name})")
             elif obs_name in observation_names:
-                # Simulated observation: from monitor
-                args_list.append(f"_{obs_name}.data")
+                args_list.append(_output(f"_all_obs.{obs_name}" if streamed else f"_{obs_name}", a.get('key')))
             else:
                 # Runtime input not defined as observation (must be in kwargs)
                 args_list.append(f"kwargs['{obs_name}']")
-        else:
-            args_list.append(f"kwargs['{a['name']}']")
+        return ', '.join(args_list)
 %>
-        return ${obs_func}(${', '.join(args_list)})
+        return ${obs_func}(${_call_args(False)})
+% if _call_stream:
+    if _network is not None:
+        # Rebinds observable_fn to read the function's inputs from the values folded in-carry; the definition above serves a passed-in model_fn.
+${folded_cells(_call_folded, _base_bs, scan_t0, t1_default, dt)}
+        @jax.jit
+        def observable_fn(s):
+            _all_obs = compute_all_observations(None, s, only=${repr(_call_only)}, precomputed=_folded(s))
+            return ${obs_func}(${_call_args(True)})
+% endif
 % else:
 <%
     # Check if this is a derived observation (no class exists - computed from other obs)
@@ -3255,38 +3247,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 <%doc>
     A sweep naming its outputs takes the `record:` branch above, where render_recorded_observable already evaluates the `analysis` diagnostics per cell; reaching here means `record:` is empty, so no analysis list is threaded.
 </%doc>
-% if bundles_observations and _bundle_fully_stream:
-    # Every bundled observation is trajectory-free, so the streamable ones fold into the carry and the deliverables come from the streamed values; a passed-in model_fn falls back to the materialise path.
-    if _network is not None:
-        _bundle_model_fn, _ = prepare(
-            _network, get_solver(block_size=${_bundle_bs}),
-            t0=${scan_t0}, t1=${t1_default}, dt=${dt},
-            reduce=_stream_reduction(${repr(_bundle_stream_names)}, ${dt}, skip=${_stream_skip}, settle=_settle_rows(settle)),
-        )
-        @jax.jit
-        def observable_fn(s):
-            _vals = _bundle_model_fn(s)
-            _pre = {_n: _v for _n, _v in zip(${repr(_bundle_stream_names)}, _vals)}
-            return keep_recorded(compute_all_observations(None, s, precomputed=_pre))
-    else:
-% if has_host_pipeline_obs or _rec_host:
-        # Host pipeline callables cannot trace under jit: jit only the solve.
-        _expl_model_fn_jit = jax.jit(_expl_model_fn)
-        def observable_fn(s):
-            result = _expl_model_fn_jit(s)
-            return keep_recorded(compute_all_observations(result, s, settle=settle))
-% else:
-        @jax.jit
-        def observable_fn(s):
-            result = _expl_model_fn(s)
-            return keep_recorded(compute_all_observations(result, s, settle=settle))
-% endif
-% elif bundles_observations:
-    # Observations declared: observable_fn returns only the reduced
-    # observation values per grid point (no trajectory). Output size is
-    # the sum of declared observation shapes — typically per-node or
-    # per-pair statistics — rather than (T, n_states, n_nodes), so trial
-    # vmaps and grid axes stay tractable.
+% if bundles_observations:
+    # Each grid point returns only its declared observations' values, never its trajectory, so trial vmaps and grid axes stay tractable.
 % if has_host_pipeline_obs or _rec_host:
     # Host pipeline callables cannot trace under jit: jit only the solve.
     _expl_model_fn_jit = jax.jit(_expl_model_fn)
@@ -3298,6 +3260,14 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     def observable_fn(s):
         result = _expl_model_fn(s)
         return keep_recorded(compute_all_observations(result, s, settle=settle))
+% endif
+% if _bundle_fully_stream:
+    if _network is not None:
+        # Rebinds observable_fn so the deliverables come from the values folded in-carry; the definition above serves a passed-in model_fn.
+${folded_cells(_base_stream_names, _base_bs, scan_t0, t1_default, dt)}
+        @jax.jit
+        def observable_fn(s):
+            return keep_recorded(compute_all_observations(None, s, precomputed=_folded(s)))
 % endif
 % elif has_model_output and model_output_indices:
     # ``model_output_channel_index`` is a scalar for one output, dropping the variable dim, or a slice for several.

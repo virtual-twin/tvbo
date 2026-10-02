@@ -178,6 +178,16 @@ def _pipeline_str(pipeline):
         fn = _p(step, 'function', None) or _p(_p(step, 'callable', None), 'name', None) or _p(_p(step, 'class_call', None), 'name', None)
         names.append(str(fn) if fn else '?')
     return ' → '.join(names)
+
+def _transform_text(t):
+    """A network transform as `Network._apply_transform` runs it: its callable applied to the matrix with the declared arguments, else its equation, else None for a transform that leaves the matrix as it is."""
+    if _p(t, 'callable', None):
+        args = _p(t, 'arguments', None) or {}
+        pairs = args.items() if hasattr(args, 'items') else [(_p(a, 'name', None), a) for a in args]
+        kwargs = ''.join(", %s=%r" % (k, _p(a, 'value', None)) for k, a in pairs)
+        return f"`{_callable_text(t)}(M{kwargs})`"
+    rhs = _p(_p(t, 'equation', None), 'rhs', None)
+    return f"$M_{{\\text{{out}}}} = {safe_latex(str(rhs), ['weight', 'length', 'max', 'min', 'mean', 'sum'])}$" if rhs else None
 %>
 **${exp.label or 'Simulation Experiment'}**
 
@@ -361,7 +371,7 @@ s = sec()
 n_regions = _p(net, 'number_of_nodes', None) or _p(net, 'number_of_regions', None)
 cond_speed = _p(net, 'conduction_speed', None)
 gcs = _p(net, 'global_coupling_strength', None)
-transforms = _p(net, 'transforms', None) or []
+transform_rows = [(t.name, text) for t in (_p(net, 'transforms', None) or []) if (text := _transform_text(t))]
 net_label = _p(net, 'label', '')
 net_desc = _p(net, 'description', '')
 parcellation = _p(net, 'parcellation', None)
@@ -441,11 +451,9 @@ parc_atlas = _p(parcellation, 'atlas', '')
 % if bids_dir:
 | BIDS directory | ${bids_dir} |
 % endif
-% if transforms:
-% for t in transforms:
-| Transform (${t.name}) | $M_{\text{out}} = ${safe_latex(str(t.equation.rhs), ['weight', 'length', 'max', 'min', 'mean', 'sum'])}$ |
+% for name, text in transform_rows:
+| Transform (${name}) | ${text} |
 % endfor
-% endif
 % if structural:
 | Structural measures | ${', '.join(structural) if isinstance(structural, list) else structural} |
 % endif

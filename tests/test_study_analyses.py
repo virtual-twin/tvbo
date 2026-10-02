@@ -32,6 +32,9 @@ def calls(monkeypatch):
     def bare(n=3):
         return np.ones(n)
 
+    def square(n=2):
+        return np.eye(n)
+
     class Scaled:
         def __init__(self, factor=1.0):
             self.factor = factor
@@ -39,7 +42,7 @@ def calls(monkeypatch):
         def __call__(self, power=None):
             return {"scaled": np.asarray(power) * self.factor}
 
-    mod.spectrum, mod.total, mod.bare, mod.Scaled = spectrum, total, bare, Scaled
+    mod.spectrum, mod.total, mod.bare, mod.square, mod.Scaled = spectrum, total, bare, square, Scaled
     monkeypatch.setitem(sys.modules, "_test_analysis_calls", mod)
     return mod
 
@@ -86,6 +89,22 @@ def test_a_bare_array_return_is_keyed_by_the_analysis_name(tmp_path, calls):
         assert list(ds.data_vars) == ["observation__ones"]
     finally:
         ds.close()
+
+
+def test_a_bare_array_takes_the_dims_its_analysis_declares(tmp_path, calls):
+    """The in-process renderer binds a declared ``dims:`` as the tvboptim one does, rather than naming the axes ``<key>_d<i>``."""
+    analysis_io.run_analysis(_analysis("eye", "square", {"n": {"value": 2}}, dims=["node", "node_j"]), tmp_path)
+
+    ds = xr.open_dataset(tmp_path / "ana-eye_result.h5", engine="h5netcdf")
+    try:
+        assert ds["observation__eye"].dims == ("node", "node_j")
+    finally:
+        ds.close()
+
+
+def test_a_bare_array_that_contradicts_its_declared_dims_raises(tmp_path, calls):
+    with pytest.raises(ValueError, match=r"declares dims \['node'\] but its output 'eye' has rank 2"):
+        analysis_io.run_analysis(_analysis("eye", "square", {"n": {"value": 2}}, dims=["node"]), tmp_path)
 
 
 def test_the_sidecar_records_what_was_invoked_and_what_it_used(tmp_path, calls):

@@ -6,8 +6,7 @@ It also copies the instance documents authored beside the schema (``schema/study
 
 This single file is used two ways so from-source and build-time codegen are byte-identical:
   * as a **hatchling build hook** (wheel / sdist / editable builds), and
-  * as a **plain script** (``python hatch_build.py``) — the ``gen-linkml`` Makefile
-    target, i.e. the entry point for a from-source checkout without an install.
+  * as a **plain script** (``python hatch_build.py``) — the ``gen-linkml`` Makefile target, i.e. the entry point for a from-source checkout without an install.
 
 Determinism: the Python generator emits a ``# Generation date:`` header line — we strip it so the generated modules are byte-reproducible across builds.
 """
@@ -25,9 +24,7 @@ def generate_datamodel(root: str | Path) -> None:
 
     * ``tvbo/datamodel/schema.py``                  — LinkML Python dataclasses,
     * ``tvbo/datamodel/pydantic.py``                — Pydantic models,
-    * ``tvbo/datamodel/tvbo_datamodel.schema.json`` — JSON Schema for the
-      ``tvbo validate`` CLI (checked with the lightweight ``jsonschema`` lib, so
-      validation needs no runtime ``linkml``).
+    * ``tvbo/datamodel/tvbo_datamodel.schema.json`` — JSON Schema for the ``tvbo validate`` CLI (checked with the lightweight ``jsonschema`` lib, so validation needs no runtime ``linkml``).
     """
     # Imported lazily so this module is importable without `linkml` (the heavy, build-time-only generator) — e.g. when hatchling merely inspects the hook.
     import json
@@ -51,7 +48,7 @@ def generate_datamodel(root: str | Path) -> None:
     _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed, defaults))
     _write(
         out_dir / "schema.py",
-        _with_behaviour(PythonGenerator(str(schema)).serialize(), mixins) + _INSTALL_DIALECT,
+        _with_strict_text(_with_behaviour(PythonGenerator(str(schema)).serialize(), mixins)) + _INSTALL_DIALECT,
     )
     _write(
         out_dir / "pydantic.py",
@@ -303,6 +300,36 @@ def _with_behaviour(code: str, mixins: dict[str, list[str]]) -> str:
     return _inject_bases(code, _mixin_bases(mixins))
 
 
+def _text_types(code: str) -> set[str]:
+    """``str`` and every generated identifier type descended from ``extended_str``, whose coercions ``str()`` their value."""
+    bases = dict(re.findall(r"^class (\w+)\((\w+)\):", code, flags=re.M))
+    found = {"str", "extended_str"}
+    while more := {name for name, base in bases.items() if base in found} - found:
+        found |= more
+    return found - {"extended_str"}
+
+
+def _with_strict_text(code: str) -> str:
+    """Route every generated text coercion through :func:`tvbo.datamodel.text_slots.text_value`.
+
+    LinkML writes ``self.X = T(self.X)`` for a single-valued text slot and ``self.X = [v if isinstance(v, T) else T(v) for v in self.X]`` for a multivalued one, with ``T`` either ``str`` or an identifier type descended from ``extended_str``. Each becomes ``T(_text_value(self, "X", ...))``, so a structured value raises instead of being stored as its ``str()``. An output in which either form matches nothing, or in which a coercion survives unrouted, is refused: a LinkML upgrade that re-spells them would otherwise ship a datamodel without the check.
+    """
+    types = "|".join(sorted(_text_types(code), key=len, reverse=True))
+    scalar = re.compile(rf"^([ \t]+self\.(\w+) = )({types})\(self\.\2\)$", re.M)
+    items = re.compile(rf"^([ \t]+self\.(\w+) = \[v if isinstance\(v, ({types})\) else )\3\(v\)( for v in self\.\2\])$", re.M)
+    code, n_scalar = scalar.subn(lambda m: f'{m[1]}{m[3]}(_text_value(self, "{m[2]}", self.{m[2]}))', code)
+    code, n_items = items.subn(lambda m: f'{m[1]}{m[3]}(_text_value(self, "{m[2]}", v)){m[4]}', code)
+    unrouted = re.findall(rf"^.*\b(?:{types})\((?:self\.\w+|v)\).*$", code, flags=re.M)
+    anchor = '\nmetamodel_version = "'
+    if not n_scalar or not n_items or unrouted or anchor not in code:
+        raise RuntimeError(
+            f"Routed {n_scalar} single-valued and {n_items} multivalued text coercions through text_value, left "
+            f"{len(unrouted)} unrouted (first: {unrouted[:1]}), and found the import anchor: {anchor in code}. LinkML's "
+            "Python generator has changed its output; update hatch_build._with_strict_text so a mapping in a text slot still raises."
+        )
+    return code.replace(anchor, "\nfrom tvbo.datamodel.text_slots import text_value as _text_value\n" + anchor, 1)
+
+
 def _with_dialect_and_behaviour(code: str, mixins: dict[str, list[str]]) -> str:
     """Give the generated models the dialect, and each annotated class its mixins.
 
@@ -333,8 +360,7 @@ def _relax_additional_properties(node) -> None:
 def _drop_redundant_anyof_type(node) -> None:
     """Strip the redundant sibling ``type`` LinkML stamps beside ``anyOf``.
 
-    ``JsonSchemaGenerator`` emits a slot's base range as a sibling ``type`` even when the slot declares ``any_of``. In JSON Schema a sibling ``type`` conjoins with ``anyOf``, so the base range silently *narrows* the union: ``n_parallel`` (``any_of: [integer, string]``, base range ``string`` from ``default_range``) rejects ``1`` with "1 is not of type 'string'". Only a *scalar* base-range stamp (``string``/``integer``/``number``/``boolean``) is this redundant, wrong sibling;
-    a structural ``type: object``/``array`` beside ``anyOf`` (a class-level rule) is a real constraint, so it is left intact.
+    ``JsonSchemaGenerator`` emits a slot's base range as a sibling ``type`` even when the slot declares ``any_of``. In JSON Schema a sibling ``type`` conjoins with ``anyOf``, so the base range silently *narrows* the union: ``n_parallel`` (``any_of: [integer, string]``, base range ``string`` from ``default_range``) rejects ``1`` with "1 is not of type 'string'". Only a *scalar* base-range stamp (``string``/``integer``/``number``/``boolean``) is this redundant, wrong sibling; a structural ``type: object``/``array`` beside ``anyOf`` (a class-level rule) is a real constraint, so it is left intact.
     """
     _SCALAR_STAMP = {"string", "integer", "number", "boolean"}
     if isinstance(node, dict):
@@ -372,11 +398,11 @@ def _copy_records(root: Path) -> None:
 
 
 def _schema_digest(root: Path) -> str:
-    """Content hash of every schema source the datamodel is generated from."""
+    """Content hash of every schema source the datamodel is generated from, and of this generator, which rewrites what LinkML emits."""
     import hashlib
 
     digest = hashlib.sha256()
-    for path in sorted((root / "schema").rglob("*.yaml")):
+    for path in [*sorted((root / "schema").rglob("*.yaml")), root / "hatch_build.py"]:
         digest.update(path.relative_to(root).as_posix().encode())
         digest.update(path.read_bytes())
     return digest.hexdigest()

@@ -77,7 +77,7 @@ class DiffEqAdapter:
         ExperimentResult
             Simulation results with named dimensions and coordinates.
         """
-        from tvbo.adapters.base import refuse_network
+        from tvbo.adapters.base import refuse_network, refuse_observations
         from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
             ensure_packages,
@@ -89,6 +89,7 @@ class DiffEqAdapter:
         exp = self.experiment
         model = exp.dynamics
         refuse_network(exp, "julia", "the dynamics alone")
+        refuse_observations(exp, "julia")
 
         # 1. Ensure required Julia packages, the declared method's solver among them
         from tvbo.adapters.julia_model import julia_solve

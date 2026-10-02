@@ -16,8 +16,7 @@ dynamics:
   name: Generic2dOscillator
   iri: tvbo:Generic2dOscillator
   label: "Generic 2D Oscillator (quiescent regime)"
-  # Reference DYNAMICS_PARAMS = {a:-1.5, b:-15, c:0, d:0.015, e:3, f:1, tau:4}, I=0.1
-  # (g/alpha/beta/gamma left at TVB defaults). Override replaces the set, so all listed.
+  # The reference's DYNAMICS_PARAMS and I=0.1; g, alpha, beta and gamma are TVB's defaults.
   parameters:
     a: {value: -1.5}
     alpha: {value: 1.0}

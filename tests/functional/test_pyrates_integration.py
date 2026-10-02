@@ -12,7 +12,7 @@ import tempfile
 import numpy as np
 import pytest
 
-from tvbo import Coupling, Dynamics, Network
+from tvbo import Dynamics, Network
 from tvbo.codegen.pyrates import (
     to_pyrates_model_yaml,
     to_pyrates_network_yaml,
@@ -98,13 +98,13 @@ class TestNetworkExport:
                 source=0,
                 target=1,
                 parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.5)},
-                coupling=Coupling(name="Linear"),
+                coupling="Linear",
             ),
             tvbo_datamodel.Edge(
                 source=1,
                 target=0,
                 parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.3)},
-                coupling=Coupling(name="Linear"),
+                coupling="Linear",
             ),
         ]
 
@@ -141,7 +141,7 @@ class TestNetworkExport:
             tvbo_datamodel.Node(id=1, label="B", dynamics=osc.name),
         ]
         network.edges = [
-            tvbo_datamodel.Edge(source=0, target=1, coupling=Coupling(name="Linear"), **edge_kwargs),
+            tvbo_datamodel.Edge(source=0, target=1, coupling="Linear", **edge_kwargs),
         ]
 
         yaml_output = to_pyrates_yaml_string(dynamics=osc, network=network)
@@ -160,21 +160,21 @@ class TestNetworkExport:
                 source=0,
                 target=1,
                 parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.5)},
-                coupling=Coupling(name="Linear"),
+                coupling="Linear",
                 directed=True,
             ),
             tvbo_datamodel.Edge(
                 source=1,
                 target=2,
                 parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.8)},
-                coupling=Coupling(name="Linear"),
+                coupling="Linear",
                 directed=True,
             ),
             tvbo_datamodel.Edge(
                 source=2,
                 target=0,
                 parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=0.2)},
-                coupling=Coupling(name="Linear"),
+                coupling="Linear",
                 directed=True,
             ),
         ]
@@ -199,7 +199,7 @@ class TestNetworkExport:
                 source=0,
                 target=1,
                 parameters={"weight": tvbo_datamodel.Parameter(name="weight", value=1.0)},
-                coupling=Coupling(name="Linear"),
+                coupling="Linear",
             ),
         ]
 

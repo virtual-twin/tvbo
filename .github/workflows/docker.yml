@@ -1,6 +1,4 @@
-# Build and push TVBO container, then run tests inside the fresh image.
-#
-# Pipeline: build → test-container + test-docs (parallel) → release-ready (main only)
+# Build and push the TVBO image and test inside it (build → test-container + test-docs → release-ready on main); a release tag also publishes the image and the docs.
 name: Build & Test Container
 
 on:
@@ -40,6 +38,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+
+      - name: The tag is the release tag of the package version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          TAG: ${{ github.ref_name }}
+        run: make -s check-tag TAG="$TAG"
 
       - uses: docker/setup-buildx-action@v4
 

@@ -20,6 +20,12 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v6
 
+      - name: The tag is the release tag of the package version
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: make -s check-tag TAG="$TAG"
+
       - uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: ${{ matrix.python-version }}

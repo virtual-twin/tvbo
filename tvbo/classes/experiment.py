@@ -41,6 +41,7 @@ from tvbo.classes.noise import Integrator
 from tvbo.codegen import templater
 from tvbo.data.types import ExperimentResult, ExplorationResult, SimulationResult, SimulationState, TimeSeries
 from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo.datamodel.dialect import expand_iri
 from tvbo.log import ensure_configured
 from tvbo.parse.symbols import assumptions_of, symbol_in
 from tvbo.run.graph import GraphRunner as _Network
@@ -238,30 +239,6 @@ def _backfill_name_from_iri(d):
         d["name"] = _iri_local(d["iri"])
 
 
-def _merge_from_registry(d, category: str):
-    """Enrich an ``iri``-referenced spec from the registry, inline values winning.
-
-    If ``d`` is a dict carrying an ``iri`` CURIE, load the registry entry it points to and deep-merge the inline dict on top: inline values supervene at the *leaf* (e.g. ``parameters: {a: {value: 1}}`` overrides only ``a.value`` and keeps every other parameter from the registry entry), while the entry fills everything ``d`` did not specify. Mutates ``d`` in place. Falls back to a name-only backfill if the ``iri`` does not resolve to a DB entry.
-    """
-    if not isinstance(d, dict) or not d.get("iri"):
-        return
-    local = _iri_local(d["iri"])
-    try:
-        from tvbo.data.registry import resolve
-        from tvbo.utils import deep_merge, yaml_loader
-
-        # The entry is merged into constructor kwargs, so its file envelope has to go: `load_as_dict` keeps it for callers that dispatch on it.
-        loaded = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str(resolve(category, local))))
-        if isinstance(loaded, dict):
-            merged = deep_merge(loaded, d)  # registry = base, inline `d` overrides
-            d.clear()
-            d.update(merged)
-            return
-    except (FileNotFoundError, RuntimeError, ValueError):
-        pass
-    d.setdefault("name", local)
-
-
 class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     """The central runnable object in TVBO: a complete brain-network simulation spec.
 
@@ -333,13 +310,13 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                     if isinstance(_dv, dict):
                         _resolve_dynamics_aliases(_dv)
                         if _dv.get("iri"):
-                            _merge_from_registry(_dv, "Dynamics")
+                            expand_iri("Dynamics", _dv)
                             # Keyed collection: the population key is the identifier, so it stays the `name` (model identity is carried on `iri`).
                             _dv["name"] = _key
 
-        # Resolve iri-only refs by loading from the registry (full population for dynamics/coupling) or backfilling name (for parcellation/tractogram).
-        _merge_from_registry(kwargs.get("dynamics"), "Dynamics")
-        _merge_from_registry(kwargs.get("coupling"), "Coupling")
+        # Expand an iri-referenced dynamics from the curated database before the parent constructor reads it; a parcellation or tractogram only takes its name from the iri.
+        if isinstance(kwargs.get("dynamics"), dict):
+            expand_iri("Dynamics", kwargs["dynamics"])
         net_kw = kwargs.get("network")
         if isinstance(net_kw, dict):
             parc = net_kw.get("parcellation")
@@ -1561,6 +1538,18 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         Everything the backend needs but the spec does not carry inline is resolved just before the call: network-sourced observations such as an empirical FC target, this subject's dataset-sourced targets reconciled to the model's node labels, parameters sourced from another experiment's operating point (injected as `seed_params`), and exploration-builder arguments sourced from another experiment (injected as `builder_data`). Each is set only when present, so an experiment declaring none is unaffected.
 
         """
+        from tvbo.adapters.base import require_observations
+
+        result = self._run_backend(format, initial_conditions, results_root, rendered_code, **kwargs)
+        require_observations(self, result, self._backend(format))
+        return result
+
+    def _backend(self, format=None) -> str:
+        """The backend a run uses: *format*, else the experiment's declared ``execution.backend``, else tvboptim."""
+        return format or getattr(getattr(self, "execution", None), "backend", None) or "tvboptim"
+
+    def _run_backend(self, format, initial_conditions, results_root, rendered_code, **kwargs):
+        """The run on backend *format* that :meth:`run` documents, before its result is checked against the declared observations."""
         # The switch the CLI uses, so ``exp.run(...)`` and ``tvbo run`` log identically; a no-op once the embedding application has configured logging itself.
         ensure_configured()
 
@@ -1576,9 +1565,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         self.configure()
         Bunch()
 
-        # Resolve the backend declaratively when the caller passed none: the experiment's own ``execution.backend`` selects the engine (a spiking network declares ``brian2``), defaulting to ``tvboptim``.
-        if format is None:
-            format = getattr(getattr(self, "execution", None), "backend", None) or "tvboptim"
+        # The experiment's own ``execution.backend`` selects the engine when the caller passed none (a spiking network declares ``brian2``).
+        format = self._backend(format)
 
         if format.lower() == "tvb":
             initial_conditions = self.collect_initial_conditions()
@@ -1781,8 +1769,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             return ExperimentResult(integration=cuda_result, source=self, name=self.label)
 
         elif format.lower() == "python":
-            from tvbo.adapters.base import BaseAdapter, declared_node_count, on_the_measurement_clock
+            from tvbo.adapters.base import BaseAdapter, declared_node_count, on_the_measurement_clock, refuse_observations
 
+            refuse_observations(self, "python")
             dt = self.integration.step_size
             settle = float(BaseAdapter.declared_integration(self.integration, "transient_time") or 0.0)
             total = settle + kwargs.get("duration", self.integration.duration)
