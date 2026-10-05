@@ -31,6 +31,7 @@ from tvbo.codegen import render_expression
 assert 'experiment' in context.keys(), "experiment required for stimulus template"
 
 from tvbo.templates.tvboptim.utils import active_stimulus_events, _shape_ndim
+from tvbo.templates.base.utils import docstring_text
 stimulus_events = active_stimulus_events(experiment)
 
 # State index lookup for continuous-event conditions (map a state name to its
@@ -230,7 +231,7 @@ def _time_axis_distribution(event):
 class ${class_name}(AbstractExternalInput):
     """Closed-loop (state-triggered) external input: ${ev_name}.
 
-    ${event.description or event.label or 'Condition-triggered input.'}
+    ${docstring_text(event.description or event.label or 'Condition-triggered input.')}
 
     Arms when the condition ``${cond_rhs}`` crosses zero (${'upward' if _cdir >= 0 else 'downward'})
     within the window [${_wlo}, ${_whi}] s, then emits the affect waveform as a
@@ -305,7 +306,7 @@ class ${class_name}(AbstractExternalInput):
 class ${class_name}(AbstractExternalInput):
     """Data-driven external input played from another run's recording: ${ev_name}(t).
 
-    ${event.description or event.label or 'Sourced data-driven stimulus.'}
+    ${docstring_text(event.description or event.label or 'Sourced data-driven stimulus.')}
 
     The samples are the run-time resolution of the `data` parameter's DataRef (sampling_rate=${sampling_rate}/ms, onset=${onset} ms, linear), injected by the caller rather than inlined, laid out (trial, sample, channel). Node k plays column `channel[k]` of trial `trial`; a random-seed axis writes `trial` per cell, so each seed of an ensemble plays its own recorded trial. `data`, `trial`, `channel` and `amplitude` are live config leaves. Outside the sampled span the stimulus is silent.
     """
@@ -368,9 +369,9 @@ class ${class_name}(AbstractExternalInput):
 class ${class_name}(DataInput):
     """Data-driven external input: ${ev_name}(t), interpolated from a file.
 
-    ${event.description or event.label or 'Data-driven stimulus.'}
+    ${docstring_text(event.description or event.label or 'Data-driven stimulus.')}
 
-    Source: ${data_location}  (sampling_rate=${sampling_rate}/ms, onset=${onset} ms, ${interp_kind})
+    Source: ${docstring_text(data_location)}  (sampling_rate=${sampling_rate}/ms, onset=${onset} ms, ${interp_kind})
 
     The samples go to tvboptim's DataInput, which interpolates them with diffrax inside the scan, so the declared interpolation is the one the solver runs. Outside the sampled span the stimulus is silent. `amplitude` (${amplitude}) scales it as a live config leaf, so a sweep or a gradient fit can write the drive's gain.
 
@@ -426,7 +427,7 @@ class ${class_name}(DataInput):
 class ${class_name}(AbstractExternalInput):
     """External input: ${ev_name}(t).
 
-    ${event.description or event.label or 'Time-dependent external input.'}
+    ${docstring_text(event.description or event.label or 'Time-dependent external input.')}
 
     Equation: ${eq_rhs}
     """

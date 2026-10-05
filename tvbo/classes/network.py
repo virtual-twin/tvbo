@@ -108,28 +108,71 @@ def _resident_form(data):
     return data if sparse.issparse(data) else np.asarray(data)
 
 
-def _mark_node_templates(spec: dict) -> dict:
-    """A copy of the network *spec* in which every ``node_template``, its subnetworks' included, carries the placeholder ``id`` the datamodel's ``Node`` requires.
+def _prepare_for_datamodel(spec: dict, at: tuple = ()) -> tuple[dict, dict[tuple, dict]]:
+    """A copy of the network *spec* the datamodel can build, and the inline edge couplings taken out of it, keyed by the path of their edge.
 
-    A template is a partial Node, but the datamodel constructor builds it as a whole one, and builds a node's ``subnetwork`` with that subnetwork's own template the same way, before the tvbo ``Network`` of either level sees it. The placeholder is ``-1``; each level stashes its template without it. Only the mappings on the way to a template are copied, so the caller's spec is never changed.
+    The datamodel builds every ``node_template`` as a whole ``Node``, and a node's ``subnetwork`` with that subnetwork's own template and edges, before the tvbo ``Network`` of any level sees them. So each template, at every depth, gets the placeholder ``id`` -1 (each level stashes its template without it), and each inline coupling definition (a mapping on an edge's ``coupling``, which the datamodel holds only as a reference by name) is taken off its edge and returned under a path such as ``("node_template", "subnetwork", "edges", 0)``, for :func:`_reattach_inline_couplings` to put back once the datamodel has built the network. *at* is the path of *spec* itself. Only the mappings on the way are copied, so the caller's spec is never changed.
     """
+    spec, detached = dict(spec), {}
 
-    def marked_node(node):
+    def without_coupling(edge, path):
+        if not isinstance(edge, dict) or not isinstance(edge.get("coupling"), dict):
+            return edge
+        detached[path] = edge["coupling"]
+        return {k: v for k, v in edge.items() if k != "coupling"}
+
+    def prepared_node(node, path):
         if not isinstance(node, dict) or not isinstance(node.get("subnetwork"), dict):
             return node
-        return {**node, "subnetwork": _mark_node_templates(node["subnetwork"])}
+        subnetwork, inner = _prepare_for_datamodel(node["subnetwork"], (*path, "subnetwork"))
+        detached.update(inner)
+        return {**node, "subnetwork": subnetwork}
 
-    spec = dict(spec)
+    if isinstance(spec.get("edges"), list):
+        spec["edges"] = [without_coupling(edge, (*at, "edges", i)) for i, edge in enumerate(spec["edges"])]
+    if isinstance(spec.get("edge_template"), dict):
+        spec["edge_template"] = without_coupling(spec["edge_template"], (*at, "edge_template"))
     template = spec.get("node_template")
     if isinstance(template, dict):
-        template = marked_node(template)
+        template = prepared_node(template, (*at, "node_template"))
         spec["node_template"] = {**template, "id": -1} if template.get("id") is None else template
     nodes = spec.get("nodes")
     if isinstance(nodes, dict):
-        spec["nodes"] = {key: marked_node(node) for key, node in nodes.items()}
+        spec["nodes"] = {key: prepared_node(node, (*at, "nodes", i)) for i, (key, node) in enumerate(nodes.items())}
     elif isinstance(nodes, list):
-        spec["nodes"] = [marked_node(node) for node in nodes]
-    return spec
+        spec["nodes"] = [prepared_node(node, (*at, "nodes", i)) for i, node in enumerate(nodes)]
+    return spec, detached
+
+
+def _reattach_inline_couplings(network, detached: dict[tuple, dict]) -> None:
+    """Put each coupling :func:`_prepare_for_datamodel` took off back, as a ``Coupling``, on the edge its path names in the built *network*."""
+    for path, coupling in detached.items():
+        edge = network
+        for step in path:
+            edge = edge[step] if isinstance(step, int) else getattr(edge, step)
+        edge.coupling = tvbo_datamodel.Coupling(**coupling)
+
+
+def _is_unset(value) -> bool:
+    """True for None or an empty container, the only values a node holds when nothing set the field; checked by type, since an array field cannot be compared with ``[]``."""
+    return value is None or (isinstance(value, (list, tuple, dict)) and len(value) == 0)
+
+
+def _merge_partial_node(node, spec: dict, *, override: bool) -> None:
+    """Merge the partial node *spec* into the materialised *node*.
+
+    The spec is constructed as a ``Node`` first, so every value is the typed object the datamodel builds, never its raw mapping, and each call builds its own, so no two nodes share one. A ``subnetwork`` is the exception: it stays a copy of its mapping, which :meth:`Network._resolve_subnetworks` builds into a tvbo ``Network``. Keyed collections (``parameters``, ``state``, ``events``) merge key by key and other fields as a whole. Where the node already holds a value, *override* decides: a node declared by label replaces it, a template yields to it.
+    """
+    import copy
+
+    partial = tvbo_datamodel.Node(**{k: v for k, v in spec.items() if k not in ("id", "subnetwork")}, id=node.id)
+    for field in (k for k in spec if k not in ("id", "label")):
+        current = getattr(node, field, None)
+        value = spec[field] if field == "subnetwork" else getattr(partial, field)
+        if field != "subnetwork" and isinstance(value, dict) and isinstance(current, dict):
+            current.update(value if override else {k: v for k, v in value.items() if k not in current})
+        elif override or _is_unset(current):
+            setattr(node, field, copy.deepcopy(value) if field == "subnetwork" else value)
 
 
 def _edge_name(key: str) -> str | None:
@@ -559,7 +602,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         # A loader that will attach connectivity itself sets this, then calls `_resolve` once the arrays are in place. Without it the constructor-time `_resolve` would run against a half-built object: `data_file` is an INDIRECT reference (see `_resolve_from_data_file`, which reads the companion's own sidecar and would recurse into the very load in progress), so loaders must strip it — and a sidecar that also declares `parcellation:` would then fall through to the normative-database branch and cache an atlas connectome that shadows the companion's real matrices. Deferring resolves that ordering rather than special-casing the branch.
         _defer_connectivity = bool(kwargs.pop("_defer_connectivity", False))
 
-        # `node_template` is a partial Node applied to every materialized node (see _expand_node_template). The parent constructor builds it as a real `Node`, which requires `id`; inject a sentinel so construction succeeds. We also stash the raw spec dict (sans sentinel) so template expansion works from plain dicts rather than re-serialising objects.
+        # The raw template specs are stashed for _expand_node_template, inline couplings included; the copy the datamodel builds comes from _prepare_for_datamodel.
         import copy as _copy
 
         _nt = kwargs.get("node_template")
@@ -567,9 +610,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if isinstance(_nt, dict):
             _nt_spec = _copy.deepcopy(_nt)
             _nt_spec.pop("id", None)
-        kwargs = _mark_node_templates(kwargs)
         _et = kwargs.get("edge_template")
         _et_spec = _copy.deepcopy(_et) if isinstance(_et, dict) else None
+        kwargs, _inline_couplings = _prepare_for_datamodel(kwargs)
 
         # Apply the dict-level Dynamics conveniences to network dynamics so the LinkML loader can construct Dynamics objects correctly.
         _net_dynamics = kwargs.get("dynamics")
@@ -580,12 +623,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 if isinstance(_dv, dict):
                     _resolve_dynamics_aliases(_dv)
 
-        # `Edge.coupling` is a name-reference slot at the datamodel level (its range is the identified `Coupling` class, `inlined: false`), so the base constructor would stringify an *inline* coupling definition into a bare `CouplingName`, discarding its coupling_function / parameters. Detach inline (dict) definitions here so the base constructor doesn't see them, then reattach as real `Coupling` objects below. Bare-string references are left untouched and resolve by name as before.
-        _detached_couplings = self._detach_inline_edge_couplings(kwargs.get("edges"))
-
         super().__init__(**kwargs)
 
-        self._reattach_inline_edge_couplings(_detached_couplings)
+        _reattach_inline_couplings(self, _inline_couplings)
 
         if _edge_file_weights is not None:
             self.set_matrix("weight", _edge_file_weights)
@@ -713,28 +753,6 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if self._db_procedure_for(gg) is not None:
             return True
         return self._db_python_binding_for(gg) is not None or self._db_networkx_binding_for(gg) is not None
-
-    @staticmethod
-    def _detach_inline_edge_couplings(edges: Any) -> dict[int, dict]:
-        """Pop inline (dict) coupling definitions off edge specs before construction.
-
-        Returns ``{edge_index: coupling_dict}`` for every edge spec whose ``coupling`` is a mapping (an inline definition such as a per-edge readout or input projection). Mutates the edge dicts in place, removing the ``coupling`` key so the base ``Edge`` constructor doesn't coerce it into a bare ``CouplingName`` (which would drop coupling_function / parameters). Edge specs whose ``coupling`` is a string (a reference by name) are left untouched.
-        """
-        detached: dict[int, dict] = {}
-        if not edges:
-            return detached
-        for i, e in enumerate(edges):
-            if isinstance(e, dict) and isinstance(e.get("coupling"), dict):
-                detached[i] = e.pop("coupling")
-        return detached
-
-    def _reattach_inline_edge_couplings(self, detached: dict[int, dict]) -> None:
-        """Reattach detached inline coupling dicts as real ``Coupling`` objects."""
-        if not detached or not self.edges:
-            return
-        for i, coupling_dict in detached.items():
-            if 0 <= i < len(self.edges):
-                self.edges[i].coupling = tvbo_datamodel.Coupling(**coupling_dict)
 
     @staticmethod
     def _resolve_network_iri(iri: str) -> str | None:
@@ -1198,41 +1216,18 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 f"it carries {len(by_label)} node(s): {carried or 'none'}."
             )
         for spec in specs:
-            node = by_label[spec["label"]]
-            fields = [k for k in spec if k not in ("id", "label")]
-            declared = tvbo_datamodel.Node(**{**spec, "id": node.id})
-            for field in fields:
-                value = getattr(declared, field)
-                if isinstance(value, dict):
-                    getattr(node, field).update(value)
-                else:
-                    setattr(node, field, value)
+            _merge_partial_node(by_label[spec["label"]], spec, override=True)
 
     def _expand_node_template(self) -> None:
         """Apply ``node_template`` to every materialized node.
 
-        The template is a partial ``Node`` whose fields (``subnetwork``, ``dynamics``, ``edges``, ``parameters`` …) are copied onto each node that does not already set them — explicit per-node fields always win, so heterogeneous variants can override individual regions. A no-op when no template was authored. Each node receives its own deep copy of the spec so per-node resolution (seeds, overrides) stays independent.
+        The template is a partial ``Node``, merged into each node by :func:`_merge_partial_node` with the node's own values winning: a keyed collection (``parameters``, ``state``, ``events``) receives each template key the node does not declare, and any other field (``subnetwork``, ``dynamics`` …) is filled only where the node leaves it unset, so heterogeneous variants can override individual regions. A no-op when no template was authored.
         """
-        import copy
-
         spec = getattr(self, "_node_template_spec", None)
         if not spec or not self.nodes:
             return
-
-        def _is_unset(v: Any) -> bool:
-            # Treat only None or an empty container as "not set on this node". Use type/len checks (not `v in (None, [], {}, ())`), which would raise on array-valued fields and mis-handle scalars like 0/False.
-            if v is None:
-                return True
-            if isinstance(v, (list, tuple, dict)) and len(v) == 0:
-                return True
-            return False
-
         for node in self.nodes:
-            for field, value in spec.items():
-                if field in ("id", "label"):
-                    continue
-                if _is_unset(getattr(node, field, None)):
-                    setattr(node, field, copy.deepcopy(value))
+            _merge_partial_node(node, spec, override=False)
 
     def _resolve_subnetworks(self, source_dir: str | Path | None) -> None:
         """Materialize each node's ``subnetwork`` into a resolved ``Network``.

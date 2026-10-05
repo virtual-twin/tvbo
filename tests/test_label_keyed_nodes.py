@@ -12,6 +12,8 @@ import pytest
 import yaml
 
 from tvbo.classes.network import Network
+from tvbo.data.param_io import resolve_network_node
+from tvbo.datamodel.schema import Parameter
 from tvbo.templates.tvboptim.utils import get_node_param_overrides
 
 LABELS = ["L.A1", "R.A1", "L.V1"]
@@ -29,13 +31,14 @@ def bids_dir(tmp_path):
     return tmp_path
 
 
-def _load(tmp_path, bids_dir, nodes):
+def _load(tmp_path, bids_dir, nodes, node_template=None):
     spec = {
         "tvbo_class": "tvbo:Network",
         "label": "probe",
         "bids_dir": str(bids_dir),
         "structural_measures": ["streamlineCount", "tractLength"],
         "nodes": nodes,
+        **({"node_template": node_template} if node_template else {}),
     }
     path = tmp_path / "net.yaml"
     path.write_text(yaml.safe_dump(spec))
@@ -54,6 +57,14 @@ def test_a_value_declared_by_label_lands_on_that_region(tmp_path, bids_dir):
     assert float(by_label["L.A1"].parameters["a"].value) == -0.1
     assert float(by_label["L.V1"].parameters["a"].value) == -0.3
     assert not by_label["R.A1"].parameters
+
+
+def test_a_node_declaring_its_id_unassigned_is_still_matched_by_label(tmp_path, bids_dir):
+    """``id: null`` says the same as no ``id``, so the data's id stands and the declared value lands."""
+    net = _load(tmp_path, bids_dir, [{"id": None, "label": "R.A1", "parameters": {"a": {"value": 0.4}}}])
+    by_label = {n.label: n for n in net.nodes}
+    assert by_label["R.A1"].id == LABELS.index("R.A1")
+    assert float(by_label["R.A1"].parameters["a"].value) == 0.4
 
 
 def test_the_backend_receives_the_values_in_the_datas_node_order(tmp_path, bids_dir):
@@ -130,3 +141,42 @@ def test_a_study_carries_label_keyed_nodes_to_its_experiment(tmp_path, bids_dir)
     by_label = {n.label: n for n in exp.network.nodes}
     assert int(by_label["R.A1"].id) == 1
     assert float(by_label["R.A1"].parameters["a"].value) == -0.2
+
+
+IN_SET = {"parameters": {"in_set": {"value": 0.0}}}
+
+
+def test_a_template_default_reaches_nodes_that_declare_other_keys(tmp_path, bids_dir):
+    """A template key is merged into a node's parameters, beside the keys that node already declares, rather than skipped because the node declares any."""
+    net = _load(tmp_path, bids_dir, [{"label": "L.A1", "parameters": {"a": {"value": -0.1}}}], IN_SET)
+    node = {n.label: n for n in net.nodes}["L.A1"]
+    assert float(node.parameters["a"].value) == -0.1
+    assert [float(n.parameters["in_set"].value) for n in net.nodes] == [0.0, 0.0, 0.0]
+
+
+def test_template_values_are_typed(tmp_path, bids_dir):
+    """Every node receives the datamodel's Parameter, its own instance, never the template's raw mapping."""
+    net = _load(tmp_path, bids_dir, [{"label": "L.A1", "parameters": {"a": {"value": -0.1}}}], IN_SET)
+    received = [n.parameters["in_set"] for n in net.nodes]
+    assert all(type(p) is Parameter for p in received)
+    assert len({id(p) for p in received}) == len(received)
+
+
+def test_an_explicit_key_wins_over_the_template(tmp_path, bids_dir):
+    """A key a node declares keeps its value; the template fills only the nodes that leave it out."""
+    net = _load(tmp_path, bids_dir, [{"label": "R.A1", "parameters": {"in_set": {"value": 1.0}}}], IN_SET)
+    assert [float(n.parameters["in_set"].value) for n in net.nodes] == [0.0, 1.0, 0.0]
+
+
+def test_a_node_set_is_a_template_default_plus_labelled_members(tmp_path, bids_dir):
+    """A 0/1 membership declared once as a default and once per member reads as one per-node vector in the data's order, whichever of the two is applied last."""
+    members = [{"label": lab, "parameters": {"in_set": {"value": 1.0}}} for lab in ("L.V1", "L.A1")]
+    net = _load(tmp_path, bids_dir, members, IN_SET)
+    np.testing.assert_array_equal(resolve_network_node(net, "in_set"), [1.0, 0.0, 1.0])
+    for order in (
+        (net._expand_node_template, net._apply_declared_nodes),
+        (net._apply_declared_nodes, net._expand_node_template),
+    ):
+        for apply in order:
+            apply()
+        np.testing.assert_array_equal(resolve_network_node(net, "in_set"), [1.0, 0.0, 1.0])

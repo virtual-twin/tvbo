@@ -1,7 +1,7 @@
 <%!
     import numpy as np
     from tvbo.codegen import render_expression
-    from tvbo.templates.base.utils import referenced
+    from tvbo.templates.base.utils import docstring_text, referenced
 
     # Generic pycode - pass parameters on each call. Use the 'numpy' format: TVB coupling
     # pre/post operate on ARRAYS (history states), so functions must be numpy (np.sin), not
@@ -46,7 +46,7 @@ class ${coupling.name}(${base_class}):
         domain=Range(lo=${getattr(param.domain, 'lo', '0.0')},
                      hi=${getattr(param.domain, 'hi', '1.0')},
                      step=${getattr(param.domain, 'step', '0.01')}),
-        doc="${getattr(param, 'description', '')}"
+        doc="${docstring_text(getattr(param, 'description', ''))}"
     )
     % endfor
 

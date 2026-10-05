@@ -12,6 +12,7 @@ else:
     stimulus = context['stimulus']
 
 from sympy import Symbol
+from tvbo.templates.base.utils import docstring_text
 from tvbo.codegen.code import get_printer
 
 stimulus_ident = stimulus.identifier
@@ -30,7 +31,7 @@ from numpy import where
 class ${stimulus_ident + 'Equation'}(TemporalApplicableEquation):
     """
     This is a custom Equation class generated from a template.
-    ${stimulus.description}
+    ${docstring_text(stimulus.description or '')}
     """
     equation=Final(
         label="${stimulus_label}",

@@ -1402,6 +1402,8 @@ def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
 
     ``last`` carries a memory state rather than an accumulator: it overwrites instead of reading itself, so the carry holds the newest folded sample and the readout is that sample. In ``first_passage``, ``_fp_hit`` latches at the first crossing while ``_fp_idx`` counts the samples before it and then stops, landing on the crossing index and saturating at the sample count when the source never crosses. The latch is inlined into the counter rather than read from the state because both update from the previous carry, and a crossing on the very first sample has to yield 0.
 
+    A declared trailing window (``tail_samples`` / ``tail_duration``) gates every accumulator to the last samples of the run; it is applied where the reducer is rendered, because its length in steps needs the step size.
+
     ``skip_inclusive`` marks the reduction a pure accumulator with no per-sample memory dependency, so the emitter folds the sample AT ``skip`` (``_gstep >= skip``) rather than the step after it — a running mean must not silently drop its first sample, unlike a phase-difference observer whose first step has no predecessor. Every RHS is parsed to a sympy ``Expr`` against {source, the accumulators, ``count``, ``dt``}, exactly as the recurrence path resolves its updates. Takes no ``experiment`` — the full dict resolves unconditionally, so the bare ``resolve_reduction(obs)`` streaming predicate stays truthy.
     """
     import sympy as sp
@@ -1710,10 +1712,34 @@ def _derived_dims(obs: Any, src_dims: tuple) -> tuple | None:
     return dims
 
 
+_COLLAPSING_AGGREGATIONS = frozenset({"mean", "variance", "std", "first_passage", "last", "first"})
+
+
+def _aggregation_dims(obs: Any, obs_by_name: dict[str, Any]) -> tuple:
+    """The axes a post-scan aggregation over a model variable leaves: a length-one variable axis, one column per node.
+
+    The materialised path reads the trajectory as ``data[:, voi:voi + 1, :]``, the source's own column kept as an axis, and collapses time, so the value is ``(variable, node)``; its ``reduce: streaming`` twin drops the variable axis and is named by :func:`reduction_dims` instead. A pipeline, an observer, an external ``class_reference`` monitor (which returns its own series and ignores ``aggregation``), a streamed observation and a source that is itself an observation or a network constant each have a shape of their own and are not named here.
+    """
+    agg = get_attr(obs, "aggregation", None)
+    agg = str(getattr(agg, "value", agg) or "").lower()
+    if (
+        agg not in _COLLAPSING_AGGREGATIONS
+        or is_streaming(obs)
+        or as_list(get_attr(obs, "pipeline"))
+        or get_attr(obs, "dynamics") is not None
+        or get_attr(obs, "class_reference") is not None
+    ):
+        return ()
+    sources = [str(get_attr(s, "name", s)) for s in as_list(get_attr(obs, "source"))]
+    if not sources or any(s in obs_by_name or "." in s for s in sources):
+        return ()
+    return ("variable", "node")
+
+
 def observation_dims(experiment: Any, reductions: dict[str, Any] | None = None) -> dict[str, tuple]:
     """Every observation's declared axis names, keyed by observation name.
 
-    An observation's own ``dims:`` wins wherever it is declared: a ``pipeline`` of user functions has an output shape only its author knows, and nothing here may infer one from a length. Otherwise :func:`reduction_dims` names the axes of ONE reduction, asked of every observation an experiment declares, so the result container labels all of them and not only the ``reduce: streaming`` subset. An observation that neither declares its axes nor reduces into known ones is absent, and the container falls back to its positional template for that one alone.
+    An observation's own ``dims:`` wins wherever it is declared: a ``pipeline`` of user functions has an output shape only its author knows, and nothing here may infer one from a length. Otherwise :func:`reduction_dims` names the axes of ONE reduction, asked of every observation an experiment declares, so the result container labels all of them and not only the ``reduce: streaming`` subset; a bare aggregation reduced after the scan is named by :func:`_aggregation_dims`. An observation that neither declares its axes nor reduces into known ones is absent, and the container falls back to its positional template for that one alone.
 
     Derived observations are then given the axes their pipeline leaves on the observations they source (:data:`_PIPELINE_STEP_KINDS`): elementwise through an ``equation`` step, re-declared by a named step that reshapes. Sources that disagree, sources that are themselves unlabelled, and pipelines whose steps are not all recognised leave the derived observation unlabelled rather than guessed. Iterating to a fixed point handles a chain of derived-of-derived in any declaration order.
 
@@ -1726,7 +1752,9 @@ def observation_dims(experiment: Any, reductions: dict[str, Any] | None = None) 
         if declared:
             d = tuple(str(x) for x in declared)
         else:
-            d = reduction_dims(reductions.get(n) if reductions is not None else resolve_reduction(o, experiment))
+            d = reduction_dims(
+                reductions.get(n) if reductions is not None else resolve_reduction(o, experiment)
+            ) or _aggregation_dims(o, obs_by_name)
         if d:
             dims[str(n)] = d
     changed = True

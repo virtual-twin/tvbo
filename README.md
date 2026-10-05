@@ -185,7 +185,7 @@ pip install tvbo[api]        # REST client for the platform
 pip install tvbo[all]        # every backend and optional feature
 ```
 
-On Intel Macs (x86_64), the `[tvb]` and `[audio]` extras pin `numba<0.60` and `llvmlite<0.44`, and JAX is pinned to `0.4.28` (the last Intel-Mac release), because newer `llvmlite` has no `macosx_x86_64` wheels for Python 3.12+. Apple Silicon gets the latest compatible JAX automatically.
+On Intel Macs (x86_64), the `[tvb]` and `[audio]` extras pin `numba<0.60` and `llvmlite<0.44`, because newer `llvmlite` has no `macosx_x86_64` wheels for Python 3.12+, and JAX is capped below `0.5`, since `jaxlib` 0.4.38 is the last release with a `macosx_x86_64` wheel. Apple Silicon gets the latest compatible JAX automatically.
 
 The `knowledge` extra needs a manual install:
 

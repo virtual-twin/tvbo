@@ -499,6 +499,20 @@ def test_render_code_band_mark():
     assert "_da.shape[0] != 2" in code
 
 
+def test_render_code_errorbar_mark():
+    """``mark: errorbar`` draws one vertical segment per x between the two edges a band would fill.
+
+    A grouped-mean panel prints a bar at each group; a band filled between the groups implies values in between that were never measured.
+    """
+    fig = _cartesian_figure()
+    fig.panels["a"].layers[0].mark = "errorbar"
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "_b = _bounds(_da, _x," in code
+    assert "ax.vlines(_x, _b[0], _b[1]," in code
+    assert "ax.fill_between(_x, _b[0], _b[1]," not in code
+    assert "ax.plot(_x," not in code
+
+
 def test_render_code_rule_mark_takes_its_orientation_from_the_encoding():
     """``mark: rule`` draws a reference line at a value the CONTAINER holds.
 
@@ -517,8 +531,8 @@ def test_render_code_rule_mark_takes_its_orientation_from_the_encoding():
 
 
 def test_band_and_rule_with_a_colour_encoding_keep_their_colour_and_label():
-    """Band / rule draw a SINGLE artist above the colour fan-out, so an ``encoding.color`` must not strip their style colour or drop their legend label (only a bare line fans by colour)."""
-    for mark in ("band", "rule"):
+    """Band / errorbar / rule draw a SINGLE artist above the colour fan-out, so an ``encoding.color`` must not strip their style colour or drop their legend label (only a bare line fans by colour)."""
+    for mark in ("band", "errorbar", "rule"):
         layer = P.Layer(
             used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
             encoding=P.Encoding(x="KuramotoInertia.K", color="seed"),

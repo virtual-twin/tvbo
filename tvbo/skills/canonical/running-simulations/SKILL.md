@@ -226,6 +226,6 @@ The same discipline covers any other resolution knob. For a modal or field model
 
 - **Backend selection is `format=`, not `backend=`.** There is no `backend=` constructor argument on `SimulationExperiment`.
 - **`run()` defaults to `tvboptim`.** For a plain forward simulation pass `run("jax")` explicitly unless you installed the `tvboptim` extra.
-- **Intel Mac**: TVBO pins `numba<0.60` / `llvmlite<0.44` on `darwin/x86_64`, and JAX to `0.4.28` (last Intel-Mac release). Check `pyproject.toml`'s platform conditionals if installation complains.
+- **Intel Mac**: TVBO pins `numba<0.60` / `llvmlite<0.44` on `darwin/x86_64`, and caps JAX below `0.5` (`jaxlib` 0.4.38 is the last Intel-Mac release). Check `pyproject.toml`'s platform conditionals if installation complains.
 - **Julia extra**: requires a working Julia runtime; `juliacall` downloads one on first import if absent.
 - `--run-slow` is a *pytest* flag, not a TVBO option — it controls which tests run, not which simulations.

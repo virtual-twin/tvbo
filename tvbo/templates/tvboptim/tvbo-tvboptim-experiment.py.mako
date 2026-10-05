@@ -7,6 +7,7 @@
 <%namespace name="lyap" file="tvbo-tvboptim-lyapunov.py.mako"/>\
 <%
 from tvbo.codegen import render_expression
+from tvbo.templates.base.utils import docstring_text
 from tvbo.templates.tvboptim.utils import (
     safe_name, iter_parameter_values, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
@@ -2924,7 +2925,7 @@ def run_optimization(
     _rec_host = False
 %>
 def ${expl['name']}(state, model_fn, settle=None, **kwargs):
-    """${expl['label']} - ${grid_desc}."""
+    """${docstring_text(expl['label'])} - ${docstring_text(grid_desc)}."""
     _network = kwargs.get('network')
 % if any(ax.get('builder_expr') for ax in expl['axes']):
     # The observations the main run computed before this exploration, defined ahead of the graph rebuild that sizes the delay buffer from a builder-produced length axis.

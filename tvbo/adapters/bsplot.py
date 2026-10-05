@@ -1849,7 +1849,7 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None):
     label = getattr(layer, "label", None)
     # A `color` ENCODING means one of two things, and the mark decides which. On a `scatter` it is a THIRD QUANTITY per point — the paper's convention of shading a cloud by the variable it is not plotted against — drawn as one artist with `c=`. On a line it fans one artist per entry along the named dim, each labelled with its own coordinate value. Every other mark draws a single artist that keeps its own colour and label.
     _shades_points = bool(color) and mark == "scatter"
-    _fans_by_color = bool(color) and mark not in ("scatter", "bar", "area", "heatmap", "band", "rule")
+    _fans_by_color = bool(color) and mark not in ("scatter", "bar", "area", "heatmap", "band", "errorbar", "rule")
     if label and mark != "heatmap" and not _fans_by_color:
         kwargs["label"] = str(label)  # matplotlib reads the legend entry off the artist
     if _fans_by_color or _shades_points:

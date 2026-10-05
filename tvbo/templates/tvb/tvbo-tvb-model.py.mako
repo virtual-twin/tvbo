@@ -4,7 +4,7 @@
 <%
 import numpy as np
 from tvbo.codegen.templater import time_dependent_equations
-from tvbo.templates.base.utils import get_func_name, is_local_coupling, referenced_parameters
+from tvbo.templates.base.utils import docstring_text, get_func_name, is_local_coupling, referenced_parameters
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics
     standalone = False
@@ -55,9 +55,9 @@ class ${get_func_name(model)}(Model):
         domain=Range(lo=${p.domain.lo}, hi=${p.domain.hi}, step=${p.domain.step if p.domain.step is not None else 1.0}),
         % endif
         % if p.description:
-        doc="""${p.description}"""
+        doc="""${docstring_text(p.description)}"""
         % elif p.definition:
-        doc="""${p.definition[:200].replace('\n', '')}"""
+        doc="""${docstring_text(p.definition[:200].replace('\n', ''))}"""
         % endif
     )
     % endif

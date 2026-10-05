@@ -15,7 +15,7 @@ Output:
 - TVB-compatible Model class with Numba-accelerated dfun
 </%doc>
 <%
-from tvbo.templates.base.utils import get_coupling_terms, get_func_name
+from tvbo.templates.base.utils import docstring_text, get_coupling_terms, get_func_name
 from tvbo.templates.rateml.utils import (
     python_code, has_boundaries,
     get_domain_str, get_boundary_str, get_range_str
@@ -56,7 +56,7 @@ class ${model_name}(ModelNumbaDfun):
     """
     ${model.name} model generated from TVBO specification.
 
-    ${model.description or ''}
+    ${docstring_text(model.description or '')}
     """
 
     % for p_name, param in params:
@@ -66,7 +66,7 @@ class ${model_name}(ModelNumbaDfun):
         % if get_range_str(param):
         domain=Range(${get_range_str(param)}),
         % endif
-        doc="""${(param.description or param.definition or '')[:100]}"""
+        doc="""${docstring_text((param.description or param.definition or '')[:100])}"""
     )
     % endfor
 

@@ -13,7 +13,7 @@ For standalone mathematical functions, use base/function-def.mako directly.
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%!
 from tvbo.codegen import render_expression
-from tvbo.templates.base.utils import get_source_code, retime, time_series_inputs
+from tvbo.templates.base.utils import docstring_text, get_source_code, retime, time_series_inputs
 %>
 <%def name="generate_function(func, func_name, supplied=())" filter="trim">
 <%
@@ -70,7 +70,7 @@ from tvbo.templates.base.utils import get_source_code, retime, time_series_input
 %>
 def ${func_name}(${func_signature}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
 % if callable_ts_args:
     # Secondary inputs (e.g., kernels) - extract 1D data
@@ -117,7 +117,7 @@ def ${func_name}(${func_signature}):
 %>
 def ${func_name}(ts, ${signature_args}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
 % if expected_time_unit:
     # Auto-convert time units if necessary
@@ -143,7 +143,7 @@ def ${func_name}(ts, ${signature_args}):
 %>
 def ${func_name}(ts, ${param_args}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
 % for name in inputs:
     ${name} = ts.data

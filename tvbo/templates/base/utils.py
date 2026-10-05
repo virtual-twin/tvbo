@@ -38,6 +38,14 @@ def safe_name(name: str, fallback: str = "item") -> str:
     return cleaned
 
 
+def docstring_text(text) -> str:
+    r"""``text`` written so that, between the triple double quotes of a generated Python string, the string's value is ``text`` itself.
+
+    Recipe prose carries LaTeX, and Python reads its backslashes as escape sequences: ``\sin`` is an invalid one that warns on every parse, while ``\tau``, ``\rho``, ``\nabla``, ``\bar`` and ``\frac`` are valid ones that silently become a tab, a carriage return, a newline, a backspace and a form feed. Doubling each backslash keeps the text as written, and escaping each double quote keeps one inside the text, or at its end, from closing the string.
+    """
+    return str(text).replace("\\", "\\\\").replace('"', '\\"')
+
+
 def is_local_coupling(name, coupling_input=None):
     """Whether a coupling input is driven by the node's own neighbourhood.
 
@@ -151,8 +159,7 @@ def model_reads(model, within=None):
 
     All four groups come in one pass, which the caller needs: a parameter can reach the derivatives through a derived parameter (``C1 = C``), a derived variable, or a function body — ``Sigm`` reads ``e0``, ``r`` and ``v0`` and nothing else does — and a conditional equation holds its branches in ``conditionals`` with an empty ``rhs``, so a scan of the stored right-hand sides sees nothing at all.
 
-    *within* narrows the scan to the named quantities' own equations — what a backend asks
-    when it emits one collection on its own, as the derived-parameter unpack does.
+    *within* narrows the scan to the named quantities' own equations — what a backend asks when it emits one collection on its own, as the derived-parameter unpack does.
     """
     equations = model.get_equations() or {}
     if within is not None:
@@ -165,11 +172,9 @@ def referenced_parameters(model, names=None, within=None):
 
     Emitting an unpack for the rest leaves dead bindings; emitting one for too few leaves the body naming something nothing binds. `tent_map` reads `mu` twice from inside a conditional branch, so it is exactly the case a scan of the stored ``rhs`` gets wrong.
 
-    *names* defaults to the model's own parameters. A caller that has already put them in
-    the order it emits — the tvboptim dfun sorts trained parameters ahead of the rest — passes that order in and gets the same order back, minus what nothing reads.
+    *names* defaults to the model's own parameters. A caller that has already put them in the order it emits — the tvboptim dfun sorts trained parameters ahead of the rest — passes that order in and gets the same order back, minus what nothing reads.
 
-    *within* scopes the question to one collection: a backend emitting only the
-    derived-parameter block unpacks what those expressions read and nothing more — ``ReducedSetHindmarshRose`` derives twelve of them from ``a``, ``b``, ``sigma`` and friends, so dropping the unpack breaks the model and widening it leaves dead bindings.
+    *within* scopes the question to one collection: a backend emitting only the derived-parameter block unpacks what those expressions read and nothing more — ``ReducedSetHindmarshRose`` derives twelve of them from ``a``, ``b``, ``sigma`` and friends, so dropping the unpack breaks the model and widening it leaves dead bindings.
     """
     reading = model_reads(model, within)
     return [name for name in (model.parameters if names is None else names) if str(name) in reading]
@@ -454,8 +459,7 @@ def graph_generator_call(gen, n_nodes, backend="julia"):
     Args:
         gen: GraphGenerator with .type, .parameters, .seed, .directed
         n_nodes: number of nodes (from Network.number_of_nodes)
-        backend: 'julia', 'networkx', 'python', or any other key declared
-                 in the generator's `bindings:` block in the database.
+        backend: 'julia', 'networkx', 'python', or any other key declared in the generator's `bindings:` block in the database.
 
     Returns:
         str: constructor call, e.g. 'barabasi_albert(20, 4)'

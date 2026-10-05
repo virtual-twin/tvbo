@@ -23,6 +23,7 @@ Standalone usage (no model context):
 </%doc>
 <%!
 from tvbo.codegen import render_expression, parse_eq
+from tvbo.templates.base.utils import docstring_text
 
 # =============================================================================
 # Helper Functions (Python code block - available to all defs)
@@ -171,6 +172,7 @@ def ${func.name}(${signature}):\
 
     # Build docstring
     doc = docstring or (func.description if hasattr(func, 'description') and func.description else None)
+    doc = docstring_text(doc) if doc else None
 
     args = get_func_args(func)
     params = get_func_params_with_defaults(func)
@@ -329,7 +331,7 @@ def ${func.name}(${signature}):
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
 % if use_linspace:
     t = ${np_module}.linspace(${lo}, ${hi}, ${n_samples})
@@ -381,7 +383,7 @@ def ${func.name}(${signature}):
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
 % if ts_args:
     # Secondary inputs (e.g., kernels) - extract 1D data
@@ -505,7 +507,7 @@ def ${func.name}(${signature}):
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
 % if has_indexed_agg:
     ## Expression already contains Sum/Mean with indices - printer handles it
@@ -558,7 +560,7 @@ def ${func.name}(${signature}):
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
     return ${body}
 </%def>

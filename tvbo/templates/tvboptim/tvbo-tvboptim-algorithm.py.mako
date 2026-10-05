@@ -187,6 +187,7 @@ from tvbo.utils import network_couplings
 coupling_param_to_key = coupling_param_keys(network_couplings(experiment.network))
 
 import re as _re_sym
+import math
 model_param_names = list(model.parameters.keys()) if model and getattr(model, 'parameters', None) else []
 
 def rule_state_params(rule_rhs, target_name, observations, rule_params_dict):
@@ -213,6 +214,54 @@ def obs_tail_start(obs_def):
     """
     _n = _resolve_tail(obs_def, _algo_step) if obs_def is not None else None
     return ('-%d' % int(_n)) if _n else ''
+
+def obs_tail_periods(obs_def, period):
+    """How many whole tuning periods an algorithm observation's trailing window spans, or None when it fits within one.
+
+    A `tail_duration` longer than the algorithm's `simulation_period` is the trailing span of simulated time across iterations, the mean of that many most recent per-period means, so it has to be a whole multiple of the period. A `tail_samples` longer than one period has no such reading and is refused rather than cut to the period.
+    """
+    if obs_def is None:
+        return None
+    _name = getattr(obs_def, 'name', '?')
+    _dur = getattr(obs_def, 'tail_duration', None)
+    if _dur is None:
+        _cnt = getattr(obs_def, 'tail_samples', None)
+        _per_period = int(round(float(period) / _algo_step))
+        if _cnt is not None and int(_cnt) > _per_period:
+            raise ValueError(f"Algorithm observation '{_name}' sets tail_samples {_cnt}, more than the {_per_period} samples of one {period} simulation period; state a window across iterations as a tail_duration.")
+        return None
+    _k = float(_dur) / float(period)
+    if _k <= 1.0 + 1e-9:
+        return None
+    if abs(_k - round(_k)) > 1e-9:
+        raise ValueError(f"Algorithm observation '{_name}' has tail_duration {_dur}, {_k:g} of the algorithm's {period} simulation periods; a window across iterations is built from whole periods, so declare a whole multiple of {period}.")
+    return int(round(_k))
+
+def obs_mean_lines(obs, obs_def, state_idx, periods):
+    """The tuning-step lines binding a mean-aggregated algorithm observation over its declared trailing window: the tail of this period, or the mean of the last *periods* periods, the count `tail_rings` holds for it."""
+    if periods is None:
+        return '%s = jnp.mean(result.data[%s:, %d], axis=0)  # Mean over the declared window, per node' % (obs, obs_tail_start(obs_def), state_idx)
+    return '\n        '.join([
+        '_%s_ring = jnp.roll(_%s_ring, -1, axis=0).at[-1].set(jnp.mean(result.data[:, %d], axis=0))' % (obs, obs, state_idx),
+        '_%s_nfill = jnp.minimum(_%s_nfill + 1, %d)' % (obs, obs, periods),
+        '%s = jnp.sum(_%s_ring, axis=0) / _%s_nfill  # Mean over the last %d periods, or all of them while fewer have run' % (obs, obs, obs, periods),
+    ])
+
+def update_gate(src_algo, period):
+    """The traced condition under which a rule's update applies this iteration, or None when it applies at every one.
+
+    Iteration `_i` of a stage ends at `(_i + 1) * period`, so `update_start` lets the first iteration ending at or after it apply; `apply_every` then keeps every Nth iteration, counted like the `update_every` hyperparameter.
+    """
+    _terms = []
+    _start = getattr(src_algo, 'update_start', None)
+    if _start is not None:
+        _first = max(0, int(math.ceil(float(_start) / float(period) - 1e-9)) - 1)
+        if _first > 0:
+            _terms.append('(_i >= %d)' % _first)
+    _every = int(getattr(src_algo, 'apply_every', None) or 1)
+    if _every > 1:
+        _terms.append('(((_i + 1) %% %d) == 0)' % _every)
+    return ' & '.join(_terms) or None
 %>
 % if has_algorithms:
 
@@ -362,6 +411,23 @@ def obs_tail_start(obs_def):
         getattr(_si['spec'], 'resync_masked', ()) for _si in streaming_map.values())
     use_maxwin = use_sliding_window and _varying_window and _all_specs_maskable
     _accept_maxwin = use_sliding_window and _varying_window  # accept the kwarg whenever the varying-window caller passes it; the M-ring is only emitted when also maskable (use_maxwin), else it is ignored and the contiguous path runs
+
+    tail_rings = {}  # obs -> the number of simulation periods its mean spans
+    for _obs in simulated_observations:
+        _od = observations_dict.get(_obs)
+        if _od is None or _obs in derived_observations_dict or getattr(_od, 'pipeline', None) or str(getattr(_od, 'aggregation', None)) != 'mean':
+            continue
+        _k = obs_tail_periods(_od, simulation_period)
+        _src = as_list(_od.source)
+        _src = _src[0] if _src else None
+        if _k is None or _src is None:
+            continue
+        _src = str(getattr(_src, 'name', _src))
+        if _src not in var_names:
+            raise ValueError(f"Algorithm observation '{_obs}' averages '{_src}' over {_k} simulation periods, but '{_src}' is not a recorded variable: {var_names}. Add it to model.output so the solver records it.")
+        tail_rings[_obs] = _k
+    if tail_rings and getattr(algo, 'stages', None):
+        raise ValueError(f"Algorithm '{algo.name}' runs in stages and its observations {sorted(tail_rings)} average over more than one simulation period; that window does not carry from one stage to the next.")
 %>
 def run_${algo_name}(
     state: Any,
@@ -1109,6 +1175,10 @@ def _${algo_name}_tuning_core_impl(
         _rec_${_tn}_buf = _ls['${_tn}__rec']
 % endfor
         _wptr = _ls['wptr']
+% for _tobs in tail_rings:
+        _${_tobs}_ring = _ls['${_tobs}__ring']
+        _${_tobs}_nfill = _ls['${_tobs}__nfill']
+% endfor
 % if use_maxwin:
         _ws = _ls['ws']  # traced window length (masked ring); unused on the contiguous (use_ring=False) path
 % endif
@@ -1274,7 +1344,7 @@ def _${algo_name}_tuning_core_impl(
         # Call: ${direct_call}(buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
         ${obs} = ${direct_call}(_${src_obs_for_this}_buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
 % elif obs_def and obs_source and state_idx is not None:
-        ${obs} = jnp.mean(result.data[${obs_tail_start(obs_def)}:, ${state_idx}], axis=0)  # Mean over the declared window, per node
+        ${obs_mean_lines(obs, obs_def, state_idx, tail_rings.get(obs))}
 % elif has_pipeline and obs not in source_observations_needed:
         # Use observation monitor for pipeline (squeeze to remove state dimension)
         _${obs}_result = _${obs}_monitor(result)
@@ -1323,7 +1393,7 @@ def _${algo_name}_tuning_core_impl(
     obs_class_name = monitor_class_name(obs)
 %>
 % if obs_def and obs_source and state_idx is not None:
-        ${obs} = jnp.mean(result.data[${obs_tail_start(obs_def)}:, ${state_idx}], axis=0)  # Mean over the declared window, per node
+        ${obs_mean_lines(obs, obs_def, state_idx, tail_rings.get(obs))}
 % elif has_pipeline:
         # Use observation monitor for pipeline (squeeze to remove state dimension)
         _${obs}_result = _${obs}_monitor(result)
@@ -1450,6 +1520,7 @@ def _${algo_name}_tuning_core_impl(
         return repr(pval) if (_inc and hyperparam_dict.get(pname, pval) != pval) else pname
 
     rule_state = rule_state_params(rule_rhs, target_name, observations, rule_params_dict)
+    rule_gate = update_gate(source_algo if source_algo is not None else algo, simulation_period)
 %>
         new_${target_name} = ${rule_name}(
 % if is_coupling_param:
@@ -1481,6 +1552,9 @@ def _${algo_name}_tuning_core_impl(
             state.dynamics.${target_name},
 % endif
         )
+% endif
+% if rule_gate:
+        new_${target_name} = jnp.where(${rule_gate}, new_${target_name}, ${state_param_accessor(target_name)})  # update_start / apply_every
 % endif
 % if is_coupling_param:
         state = eqx.tree_at(lambda s: s.coupling.${coupling_key}.${target_name}, state, new_${target_name})
@@ -1560,6 +1634,10 @@ def _${algo_name}_tuning_core_impl(
             '${_tn}__rec': _rec_${_tn}_buf,
 % endfor
             'wptr': _wptr,
+% for _tobs in tail_rings:
+            '${_tobs}__ring': _${_tobs}_ring,
+            '${_tobs}__nfill': _${_tobs}_nfill,
+% endfor
 % if use_maxwin:
             'ws': _ws,
 % endif
@@ -1569,6 +1647,9 @@ def _${algo_name}_tuning_core_impl(
         }
         return _ls_out, _ys
 
+% if tail_rings:
+    _tail_ring_row = jax.eval_shape(lambda _s: jnp.mean(model_fn(_s).data[:, 0], axis=0), state)  # one period's per-node mean, the same shape for every recorded variable
+% endif
     _ls_init = {
         'state': state, 'key': key,
 % for src_obs in source_observations_needed:
@@ -1590,6 +1671,10 @@ def _${algo_name}_tuning_core_impl(
         '${_tn}__rec': _rec_${_tn}_buf0,
 % endfor
         'wptr': jnp.asarray(0),
+% for _tobs, _tk in tail_rings.items():
+        '${_tobs}__ring': jnp.zeros((${_tk},) + _tail_ring_row.shape, _tail_ring_row.dtype),
+        '${_tobs}__nfill': jnp.asarray(0, jnp.int32),
+% endfor
 % if use_maxwin:
         'ws': ws0,
 % endif

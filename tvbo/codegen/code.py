@@ -67,6 +67,7 @@ _MODULE_ARRAY_FUNCTIONS = {
         "ones",
         "where",
         "clip",
+        "interp",
         "any",
         "all",
         "dot",
@@ -132,8 +133,7 @@ def inline_functions(expr, func_defs):
     expr : sympy.Expr
         The expression containing function calls to inline.
     func_defs : dict
-        Maps function name -> (arg_names, body_expr). *arg_names* are the formal
-        arguments, as strings or as Symbols; *body_expr* is the parsed body.
+        Maps function name -> (arg_names, body_expr). *arg_names* are the formal arguments, as strings or as Symbols; *body_expr* is the parsed body.
 
     Returns:
     -------
@@ -166,8 +166,7 @@ def inline_functions(expr, func_defs):
 def _replace_calls(expr, name, formals, body):
     """Substitute every call to *name* in *expr* with *body*.
 
-    The head is matched by name rather than by rebuilding `Function(name)`. An `UndefinedFunction` carrying assumptions is a *different class* from a bare one, so a reconstructed head silently matches nothing wherever the scope built its heads with `real=True`: the expression visibly contains `Sigm(...)` while `expr.has(Function("Sigm"))` is False. A model function is identified by its name;
-    its assumptions are not part of that identity.
+    The head is matched by name rather than by rebuilding `Function(name)`. An `UndefinedFunction` carrying assumptions is a *different class* from a bare one, so a reconstructed head silently matches nothing wherever the scope built its heads with `real=True`: the expression visibly contains `Sigm(...)` while `expr.has(Function("Sigm"))` is False. A model function is identified by its name; its assumptions are not part of that identity.
     """
     return expr.replace(
         lambda e: e.is_Function and getattr(e.func, "__name__", None) == name,
@@ -305,10 +304,10 @@ def _afp_arity(expr, n, signature):
     return expr.args
 
 
-def _literal_axis(axis, signature):
-    """*axis* as an ``int``, refusing anything but an integer literal, because an array axis is fixed when the code is compiled."""
+def _literal_axis(axis, signature, name="axis"):
+    """*axis* as an ``int``, refusing anything but an integer literal, because an array axis (or a diagonal offset, *name* ``k``) is fixed when the code is compiled."""
     if not getattr(axis, "is_Integer", False):
-        raise ValueError(f"{signature}: axis must be an integer literal, got {axis!r}.")
+        raise ValueError(f"{signature}: {name} must be an integer literal, got {axis!r}.")
     return int(axis)
 
 
@@ -330,6 +329,28 @@ def _afp_sum_axis(p, expr):
     """``sum_axis(x, axis)`` -> reduce a single axis (e.g. the numerator of an axis-1 masked mean). ``axis`` must be an integer literal (a compile-time array axis)."""
     axis = _literal_axis(expr.args[1], "sum_axis(x, axis)")
     return p._reduce_axis("sum", p._print(expr.args[0]), axis)
+
+
+def _afp_rankdata(p, expr):
+    """``rankdata(x, axis)`` -> average-tie ranks of ``x`` along ``axis``, an integer literal as for ``sum_axis``."""
+    args = _afp_arity(expr, 2, "rankdata(x, axis)")
+    return p._rankdata(p._print(args[0]), _literal_axis(args[1], "rankdata(x, axis)"))
+
+
+def _afp_upper_triangle(p, expr):
+    """``upper_triangle(M, k)`` -> the entries of ``M`` on and above its ``k``-th diagonal; ``k`` must be an integer literal, since it fixes which entries the compiled code gathers."""
+    signature = "upper_triangle(M, k)"
+    args = _afp_arity(expr, 2, signature)
+    return p._upper_triangle(p._print(args[0]), _literal_axis(args[1], signature, "k"))
+
+
+def _afp_welch(p, expr):
+    """``welch(x, window, fs, noverlap, nfft, detrend)`` -> Welch's density along the leading axis; ``detrend`` must be the literal 0 or 1, since it decides the code that is emitted."""
+    signature = "welch(x, window, fs, noverlap, nfft, detrend)"
+    args = _afp_arity(expr, 6, signature)
+    if not (getattr(args[5], "is_Integer", False) and int(args[5]) in (0, 1)):
+        raise ValueError(f"{signature}: detrend must be 0 (none) or 1 (remove each segment's mean), got {args[5]!r}.")
+    return p._welch(*map(p._print, args[:5]), detrend=bool(int(args[5])))
 
 
 def _afp_normalize(p, expr):
@@ -383,6 +404,7 @@ _ARRAY_FUNCTION_PRINTERS = {
     "take": _afp_forward("_gather", 2, "take(x, idx)"),
     "sum_axis": _afp_sum_axis,
     "pearson": _afp_forward("_pearson", 2, "pearson(x, y)"),
+    "upper_triangle": _afp_upper_triangle,
     # Graph-construction primitives (Procedural GraphGenerator DAG).
     "grid_positions": _afp_forward("_grid_positions", 4, "grid_positions(nx, ny, x_extent, y_extent)"),
     "pairwise_distance": _afp_forward("_pairwise_distance", 1, "pairwise_distance(pos)"),
@@ -391,6 +413,11 @@ _ARRAY_FUNCTION_PRINTERS = {
     "normalize": _afp_normalize,
     "minmax_rescale": _afp_forward("_minmax_rescale", 3, "minmax_rescale(x, lo, hi)"),
     "eigvals": _afp_forward("_eigvals", 1, "eigvals(M)"),
+    "pinv": _afp_forward("_pinv", 2, "pinv(M, rtol)"),
+    "rankdata": _afp_rankdata,
+    "hann": _afp_forward("_hann", 1, "hann(n)"),
+    "rfftfreq": _afp_forward("_rfftfreq", 2, "rfftfreq(n, d)"),
+    "welch": _afp_welch,
     "sample_normal": _afp_sample("normal", 2),
     "sample_uniform": _afp_sample("uniform", 2),
     "sample_lognormal": _afp_sample("lognormal", 2),
@@ -571,6 +598,53 @@ class _ArrayFunctionPrinterMixin:
         """``eigvals(M)``: the eigenvalues of ``M`` (spectral-radius rescaling of a reservoir substrate reads ``max(abs(eigvals(M)))``)."""
         return f"{self._linalg('eigvals')}({base})"
 
+    def _pinv(self, M, rtol):
+        """``pinv(M, rtol)``: the Moore-Penrose pseudo-inverse of ``M``, singular values at or below ``rtol`` times the largest treated as zero, as ``numpy.linalg.pinv(M, rtol=rtol)`` computes it.
+
+        ``rtol`` is an argument rather than a default because the defaults differ: numpy cuts at 1e-15 of the largest singular value, JAX at ten times ``max(M.shape)`` machine epsilons, so a near-singular design would get a different inverse on each backend.
+        """
+        return f"{self._linalg('pinv')}({M}, rtol={rtol})"
+
+    def _rankdata(self, x, axis):
+        """``rankdata(x, axis)``: the 1-based rank of each element of ``x`` among the elements that share its other indices, ties given their average rank, as ``scipy.stats.rankdata(x, method='average', axis=axis)`` computes it.
+
+        Written as counts rather than a sort, so it is one broadcast expression on every backend: an element's rank is the number of elements below it, plus half the number equal to it (itself included), plus one half. The comparison holds the square of the axis length in booleans. NaN compares unequal to everything, so ``x`` must hold none; scipy would return NaN ranks. ``x`` is bound once through a lambda, so a compound operand is evaluated once.
+        """
+        this, other = (axis + 1, axis) if axis >= 0 else (axis, axis - 1)
+        pairs = self._expand_dims("_x", other), self._expand_dims("_x", this)
+        below = self._reduce_axis("sum", f"({pairs[0]} < {pairs[1]})", this)
+        equal = self._reduce_axis("sum", f"({pairs[0]} == {pairs[1]})", this)
+        return f"(lambda _x: {below} + ({equal} + 1) / 2)({x})"
+
+    def _hann(self, n):
+        """``hann(n)``: the periodic Hann window of ``n`` samples, ``0.5 - 0.5 cos(2 pi k / n)``, which is ``scipy.signal.get_window('hann', n)`` and the window ``scipy.signal.welch`` uses by default; a one-sample window is ``[1]``, as scipy has it."""
+        return self._where3(
+            f"({n}) == 1",
+            "1.0",
+            f"(0.5 - 0.5 * {self._afn('cos')}(2 * {self._afn('pi')} * {self._afn('arange')}({n}) / ({n})))",
+        )
+
+    def _rfftfreq(self, n, d):
+        """``rfftfreq(n, d)``: the frequencies of a real FFT of length ``n`` at sample spacing ``d``, ``k / (n d)`` for ``k`` up to ``n // 2``, as ``numpy.fft.rfftfreq`` gives them; the frequency axis of ``welch`` with ``d = 1 / fs``."""
+        return f"{self._afn('fft.rfftfreq')}({n}, {d})"
+
+    def _welch(self, x, w, fs, noverlap, nfft, *, detrend):
+        """``welch(x, window, fs, noverlap, nfft, detrend)``: Welch's power spectral density of ``x`` along its leading (time) axis, one-sided and density-scaled, as ``scipy.signal.welch(x, fs, window, len(window), noverlap, nfft, detrend, axis=0)`` computes it.
+
+        ``x`` is cut into segments of ``len(window)`` samples, ``len(window) - noverlap`` apart, a trailing remainder dropped. With ``detrend`` each segment's mean is removed first (scipy's ``'constant'``). Each segment is multiplied by ``window`` and transformed by a real FFT of length ``nfft``; the squared magnitudes are averaged over segments and scaled by ``1 / (fs * sum(window**2))``, and every bin but DC and an even ``nfft``'s Nyquist bin is doubled for the one-sided spectrum. The result has ``nfft // 2 + 1`` rows, at ``rfftfreq(nfft, 1 / fs)``, and the trailing axes of ``x``. ``x`` and ``window`` are bound once through a lambda, so each is evaluated once however often the formula reads it.
+        """
+        af, X, W, n = self._afn, "_x", "_w", f"({nfft})"
+        length = f"{W}.shape[0]"
+        starts = f"{af('arange')}(0, {X}.shape[0] - {length} + 1, {length} - ({noverlap}))"
+        seg = f"{X}[{starts}[:, None] + {af('arange')}({length})[None, :]]"
+        if detrend:
+            seg = f"({seg} - {af('mean')}({seg}, axis=1, keepdims=True))"
+        trailing = f"(1,) * ({X}.ndim - 1)"
+        power = f"{af('abs')}({af('fft.rfft')}({seg} * {af('reshape')}({W}, (1, -1) + {trailing}), n={n}, axis=1)) ** 2"
+        k = f"{af('arange')}({n} // 2 + 1)"
+        onesided = f"{af('reshape')}({af('where')}(({k} == 0) | (2 * {k} == {n}), 1, 2), (-1,) + {trailing})"
+        return f"(lambda _x, _w: {af('mean')}({power}, axis=0) * {onesided} / (({fs}) * {af('sum')}({W} ** 2)))({x}, {w})"
+
     def _linalg(self, name):
         """Module path for a linear-algebra routine (``np.linalg.eigvals``)."""
         return self._afn(f"linalg.{name}")
@@ -595,6 +669,13 @@ class _ArrayFunctionPrinterMixin:
         num = f"{self._afn('sum')}({xc} * {yc})"
         den = f"{self._afn('sqrt')}({self._afn('sum')}({xc}**2) * {self._afn('sum')}({yc}**2))"
         return f"({num} / {den})"
+
+    def _upper_triangle(self, M, k):
+        """``upper_triangle(M, k)``: the entries of ``M`` on and above its ``k``-th diagonal as one flat vector, row by row, which is ``M[numpy.triu_indices(n, k, m)]``.
+
+        ``k = 1`` drops the diagonal, leaving the off-diagonal half of a symmetric matrix once: the entries a Pearson agreement between a simulated and an empirical FC is computed over, ``pearson(upper_triangle(fc, 1), upper_triangle(empirical_fc, 1))``, so neither the constant diagonal nor the mirrored half inflates it. ``M`` is bound once, so an expression passed as ``M`` is evaluated once.
+        """
+        return f"(lambda _m: _m[{self._afn('triu_indices')}(_m.shape[0], {k}, _m.shape[1])])({M})"
 
     def _window_mean(self, X, w):
         return f"{self._afn('mean')}({X}.reshape(-1, {w}, *{X}.shape[1:]), axis=1)"
@@ -919,8 +1000,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     Extends SymPy's `JuliaCodePrinter` with the `ARRAY_FUNCTION_MAPPINGS["julia"]` vocabulary and Julia-specific overrides of the mixin's array primitives, which use 1-based, `end`-relative indexing. Runs non-strict so unknown constructs print partially rather than raising, maps the legacy `atan2` name onto Julia's two-argument `atan`, and routes domain-restricted powers inside `Piecewise` branches through NaNMath.
 
     Args:
-        settings: Printer settings forwarded to the SymPy base printer; `strict`
-            defaults to `False`.
+        settings: Printer settings forwarded to the SymPy base printer; `strict` defaults to `False`.
     """
 
     # Julia array functions are bare names (resolved via known_functions), not module-qualified.
@@ -1254,11 +1334,7 @@ class LEMSPrinter(StrPrinter):
         Printer settings.  Recognised key:
 
         ``parameters`` : list of str
-            Model symbol names.  When a SymPy ``Function`` whose name matches
-            a parameter is encountered, it is printed as implicit multiplication
-            (``gamma*x``) instead of a function call (``gamma(x)``).  This
-            defends against symbols that were parsed without proper
-            ``parameters=`` overrides.
+            Model symbol names.  When a SymPy ``Function`` whose name matches a parameter is encountered, it is printed as implicit multiplication (``gamma*x``) instead of a function call (``gamma(x)``).  This defends against symbols that were parsed without proper ``parameters=`` overrides.
     """
 
     # SymPy function name → LEMS function name
@@ -1401,8 +1477,7 @@ class PythonCodePrinter(_PythonCodePrinter):
     Extends SymPy's `PythonCodePrinter` to run non-strict (partial printing of unknown constructs) and adds `ceil`, `sign`, and the `ARRAY_FUNCTION_MAPPINGS["python"]` vocabulary. `Piecewise` is rendered as nested conditional expressions and `sign(x)` as an inline comparison, so the output depends only on `math` and the standard library.
 
     Args:
-        settings: Printer settings forwarded to the SymPy base printer; `strict`
-            defaults to `False`.
+        settings: Printer settings forwarded to the SymPy base printer; `strict` defaults to `False`.
     """
 
     def __init__(self, settings=None):
@@ -1553,18 +1628,13 @@ def render_expression(
     format : str
         Target format ('jax', 'numpy', 'julia', 'python', etc.)
     user_functions : dict
-        Custom function name mappings for the printer. These are also passed
-        to parse_eq so they're recognized as functions (not implicit multiplication).
+        Custom function name mappings for the printer. These are also passed to parse_eq so they're recognized as functions (not implicit multiplication).
     parameters : list of str, optional
-        Parameter names to define as Symbols. These OVERRIDE SymPy built-in
-        functions (e.g., 'gamma' becomes Symbol('gamma'), not the gamma function).
+        Parameter names to define as Symbols. These OVERRIDE SymPy built-in functions (e.g., 'gamma' becomes Symbol('gamma'), not the gamma function).
     infer_broadcasting : bool
-        If True, analyze indexed expressions and automatically add broadcasting
-        dimensions (e.g., rmse[i] -> rmse[:, None] when used with a[i,j]).
-        This enables mathematically correct notation to generate correct array code.
+        If True, analyze indexed expressions and automatically add broadcasting dimensions (e.g., rmse[i] -> rmse[:, None] when used with a[i,j]). This enables mathematically correct notation to generate correct array code.
     preserve_order : bool
-        If True, keep the source term order (no SymPy Add/Mul canonicalization)
-        so generated code matches reference code operation-for-operation.
+        If True, keep the source term order (no SymPy Add/Mul canonicalization) so generated code matches reference code operation-for-operation.
     """
     if user_functions is None:
         user_functions = {}
@@ -1618,8 +1688,7 @@ def render_equation(
     remove : list
         Symbols to replace with zero.
     inline_funcs : dict, optional
-        Dictionary mapping function name -> (arg_names, body_expr) for inlining
-        custom functions. The body_expr should be a sympy expression.
+        Dictionary mapping function name -> (arg_names, body_expr) for inlining custom functions. The body_expr should be a sympy expression.
         Example: {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - v))))}
     preserve_order : bool
         If True, keep the source term order (no SymPy canonicalization).

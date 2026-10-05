@@ -72,8 +72,7 @@ class Mean(Function):
         SymPy calls this classmethod when a `Mean(...)` is constructed. Returning `None` signals that no closed-form evaluation should be performed, keeping the expression as an unevaluated `Mean` node that the code printers in [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's mean/reduction call.
 
         Args:
-            *args: The positional arguments the `Mean` was called with (the inner
-                expression and index limit tuple). Left unused.
+            *args: The positional arguments the `Mean` was called with (the inner expression and index limit tuple). Left unused.
 
         Returns:
             Always `None`, leaving the `Mean` application unevaluated.
@@ -120,7 +119,22 @@ ARRAY_FUNCTIONS = {
     "pearson": Function(
         "pearson"
     ),  # pearson(x, y) → Pearson r of two FLAT/1-D operands (reduces all elements; the per-step node-collapsing corr — NOT a columnwise 2-D corr, and distinct from the loss-helper `correlation`)
+    "upper_triangle": Function(
+        "upper_triangle"
+    ),  # upper_triangle(M, k) → entries on and above M's k-th diagonal, flat and row by row (M[triu_indices(n, k, m)]); k=1 is the off-diagonal half a Pearson FC agreement compares
     "clip": Function("clip"),  # clip(x, lo, hi) → bound x to [lo, hi] ({np,jnp}.clip); e.g. clip(cos_sim, -1, 1) before acos
+    "interp": Function(
+        "interp"
+    ),  # interp(x, xp, fp) → piecewise-linear interpolation of fp(xp) at x, ends held ({np,jnp}.interp)
+    "rankdata": Function(
+        "rankdata"
+    ),  # rankdata(x, axis) → 1-based ranks along axis, ties averaged (scipy.stats.rankdata, method='average')
+    "pinv": Function("pinv"),  # pinv(M, rtol) → Moore-Penrose pseudo-inverse, singular values ≤ rtol·max treated as zero
+    "hann": Function("hann"),  # hann(n) → periodic Hann window of n samples (scipy.signal.get_window('hann', n))
+    "rfftfreq": Function("rfftfreq"),  # rfftfreq(n, d) → frequencies of a length-n real FFT at sample spacing d
+    "welch": Function(
+        "welch"
+    ),  # welch(x, window, fs, noverlap, nfft, detrend) → one-sided Welch PSD along the leading axis (scipy.signal.welch)
     "any": Function("any"),  # any(x) → True if any element is truthy ({np,jnp}.any); e.g. any(p_div <= sig)
     "all": Function("all"),  # all(x) → True if every element is truthy ({np,jnp}.all)
     # Graph-construction primitives: the vocabulary a `Procedural` GraphGenerator's DAG lowers to.
@@ -221,27 +235,20 @@ def parse_eq(
     Parameters
     ----------
     equation : Equation | str
-        An Equation from tvbo's datamodel or a raw expression string. If an
-        `Equation` with `latex=True` is provided, LaTeX parsing is used.
+        An Equation from tvbo's datamodel or a raw expression string. If an `Equation` with `latex=True` is provided, LaTeX parsing is used.
     parameters : Iterable[str] | Mapping[str, object] | None
-        Names or a mapping of parameter names to SymPy objects or numbers. If an
-        iterable of strings is provided, they are created as SymPy Symbols and
-        injected into the parsing context. If a mapping is provided, the values
-        are injected as-is (Symbols, Functions, Expressions, numbers, etc.).
+        Names or a mapping of parameter names to SymPy objects or numbers. If an iterable of strings is provided, they are created as SymPy Symbols and injected into the parsing context. If a mapping is provided, the values are injected as-is (Symbols, Functions, Expressions, numbers, etc.).
 
     Keyword-only enhancements (optional)
     ------------------------------------
     local_dict : dict
         Additional local names to inject into the parser (merged on top of defaults).
     functions : Iterable[str] | Mapping[str, object]
-        Names or mapping for functions. String names are created as undefined
-        SymPy functions, e.g., Function('f'). Mapping values are used as-is.
+        Names or mapping for functions. String names are created as undefined SymPy functions, e.g., Function('f'). Mapping values are used as-is.
     symbols : Iterable[str] | Mapping[str, Symbol]
-        Extra symbol names or mapping for state variables, etc. String names are
-        created as SymPy Symbols. Mapping values are used as-is.
+        Extra symbol names or mapping for state variables, etc. String names are created as SymPy Symbols. Mapping values are used as-is.
     objects : Mapping[str, object]
-        Arbitrary additional objects (e.g., Heaviside, MatrixSymbol, IndexedBase,
-        Derivative alias, etc.) to inject into the local namespace.
+        Arbitrary additional objects (e.g., Heaviside, MatrixSymbol, IndexedBase, Derivative alias, etc.) to inject into the local namespace.
     extra_transformations : Iterable[callable]
         Extra SymPy parser transformations to augment the defaults.
     transformations : Iterable[callable]

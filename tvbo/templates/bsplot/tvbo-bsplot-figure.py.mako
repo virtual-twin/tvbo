@@ -365,17 +365,14 @@ def _coord(da, name, axis):
 
 
 def _bounds(da, x, output):
-    """The two edges of a ``band`` layer, as ``(lower, upper)`` over *x*.
+    """The two edges of a ``band`` or ``errorbar`` layer, as ``(lower, upper)`` over *x*.
 
-    A band spans two series, so its output carries a length-2 axis beside the swept one —
-    the analysis returns the pair in ONE labelled array rather than the figure binding two
-    outputs and trusting them to stay in step.
+    A band or a row of error bars spans two series, so its output carries a length-2 axis beside the swept one: the analysis returns the pair in ONE labelled array rather than the figure binding two outputs and trusting them to stay in step.
     """
     v = np.asarray(da.values)
     if v.ndim != 2 or 2 not in v.shape:
         raise ValueError(
-            f"band layer {output!r}: needs a (n, 2) output holding the two edges of the "
-            f"band, got shape {v.shape}."
+            f"band/errorbar layer {output!r}: needs a (n, 2) output holding the two edges, got shape {v.shape}."
         )
     v = v if v.shape[0] == len(x) else v.T
     return v[:, 0], v[:, 1]
@@ -600,9 +597,9 @@ def _apply_axopts3d(ax, o):
 def _panel_number(ax, label, kwargs):
     """Draw a panel's letter, including on a 3-D axes.
 
-    ``Axes3D.text`` takes (x, y, z, s), so the shared 2-D placement call raises there and a
-    line3d panel would silently lose its letter — or, as it did, take the whole figure down.
-    ``text2D`` is the 3-D axes' own flat-overlay call, which is what a panel letter is."""
+    ``Axes3D.text`` takes (x, y, z, s), so the shared 2-D placement call raises there and a line3d panel would silently lose its letter — or, as it did, take the whole figure down. ``text2D`` is the 3-D axes' own flat-overlay call, which is what a panel letter is.
+
+    bsplot's standard letter sits centred on the top of the left spine, the corner where matplotlib also prints a y axis's shared exponent (``×10⁻³``), so a letter there moves the exponent to its right rather than printing over it."""
     # A letter whose size the spec does not fix takes the style sheet's figure title size, resolved here rather than at generation time so the declared sheet is already in force. Without it the letter falls through to bsplot's own 16 pt default, which no style sheet can reach.
     kwargs = {"fontsize": plt.rcParams["figure.titlesize"], **kwargs}
     if hasattr(ax, "get_zlim"):   # defaults mirror add_panel_number, so 3-D letters match their 2-D siblings
@@ -611,6 +608,22 @@ def _panel_number(ax, label, kwargs):
                   fontsize=kwargs["fontsize"], fontweight="bold")
         return
     _bpanels.add_panel_number(ax, label, **kwargs)
+    _clear_offset_text(ax, ax.texts[-1])
+
+
+def _clear_offset_text(ax, letter):
+    """Move the y axis's exponent label right of a letter that covers the axes' top-left corner.
+
+    The letter's extent is measured from its font, which layout never rescales, so the shift is a fixed physical distance from the axes' left edge and survives the layout pass."""
+    import matplotlib.transforms as _mt
+    fig = ax.figure
+    box = letter.get_window_extent(renderer=fig.canvas.get_renderer())
+    left = ax.transAxes.transform((0.0, 1.0))
+    if not (box.x0 <= left[0] < box.x1 and box.y0 >= left[1] - 0.5 * box.height):
+        return
+    shift = (box.x1 - left[0]) / fig.dpi + 2.0 / 72.0   # the letter's right edge plus a 2 pt gap, in inches
+    ax.yaxis.offsetText.set_transform(_mt.blended_transform_factory(
+        ax.transAxes + _mt.ScaledTranslation(shift, 0.0, fig.dpi_scale_trans), _mt.IdentityTransform()))
 
 
 def _cell_axes(ax):
@@ -850,10 +863,14 @@ ${colorbar(p)}\
 % elif L['mark'] == 'area':
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     ax.fill_between(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
-% elif L['mark'] == 'band':
+% elif L['mark'] in ('band', 'errorbar'):
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0 if _da.shape[0] != 2 else 1)  # swept axis is the non-pair one
     _b = _bounds(_da, _x, ${repr(L['output'])})
+% if L['mark'] == 'band':
     ax.fill_between(_x, _b[0], _b[1], **${repr(L['style'])})
+% else:
+    ax.vlines(_x, _b[0], _b[1], **${repr(L['style'])})
+% endif
 % elif L['mark'] == 'rule':
     # The channel the value is ON decides the orientation: an `x:` rule is vertical.
     _line = ax.axvline if ${repr(bool(L['x']))} else ax.axhline

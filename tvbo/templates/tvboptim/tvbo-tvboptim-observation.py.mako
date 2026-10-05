@@ -132,6 +132,7 @@ functions_by_name = _functions_by_name(experiment)
 user_functions = {name: name for name in functions_by_name.keys()}
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
 from tvbo.codegen.templater import canonical_observation_ref as _canonical_observation_ref, is_derived as _is_derived
+from tvbo.templates.base.utils import docstring_text
 _obs_raw = get_attr(experiment, 'observations', {})
 if hasattr(_obs_raw, 'items'):
     _all_observations = dict(_obs_raw.items())
@@ -447,10 +448,16 @@ if network_obs_keys:
                     _bids_path = (Path.cwd() / _bids_dir_raw).resolve()
             bids_dir = str(_bids_path)
 %>\
-<%def name="render_reduction(red, name, s_idx, dt)">\
+<%def name="render_reduction(red, name, s_idx, dt, tail=None)">\
 <%doc>
-    Emit a tvboptim reducer (init, update, finalize) from a resolved Observation.dynamics observer (utils.resolve_reduction). The observer's per-step recurrence runs as an inner scan over each block — accumulators commit only after a global-step warmup (`_gstep > skip`), so the block trajectory is never held. `skip` skips leading samples from the reduction: `skip=0` reproduces the plain "no accumulate on the first step" behaviour (the first phase increment needs a previous sample); `skip=n_transient` streams a run whose transient has NOT been trimmed, folding only the post-transient window. Memory states (e.g. the previous phase) advance every step so the boundary increment is exact. Every expression is a sympy Expr rendered via render_expression — backend-independent.
+    Emit a tvboptim reducer (init, update, finalize) from a resolved Observation.dynamics observer (utils.resolve_reduction). The observer's per-step recurrence runs as an inner scan over each block — accumulators commit only after a global-step warmup (`_gstep > skip`), so the block trajectory is never held. `skip` skips leading samples from the reduction: `skip=0` reproduces the plain "no accumulate on the first step" behaviour (the first phase increment needs a previous sample); `skip=n_transient` streams a run whose transient has NOT been trimmed, folding only the post-transient window. Memory states (e.g. the previous phase) advance every step so the boundary increment is exact. Every expression is a sympy Expr rendered via render_expression — backend-independent. `tail` is the observation's trailing window in samples (`tail_samples`, or `tail_duration` converted); only the per-step accumulator honours it, so any other reducer declaring one is refused here rather than folding the whole run under a name that promises the tail.
 </%doc>\
+<%
+    if tail and (red.get('kind') not in ('recurrence', None) or red.get('period_steps') or red.get('statistic') == 'median'):
+        raise ValueError(
+            f"Observation {name!r} declares a trailing window ({tail} samples) on a streamed {red.get('kind')!r} reducer, which folds the whole run; drop `reduce: streaming` or the tail."
+        )
+%>\
 % if red.get('kind') == 'convolution':
 ${render_convolution_reduction(red, name, s_idx, dt)}\
 % elif red.get('kind') == 'stride':
@@ -460,7 +467,7 @@ ${render_comoment_reduction(red, name, s_idx, dt)}\
 % elif red.get('kind') == 'wave':
 ${render_wave_reduction(red, name, s_idx, dt)}\
 % else:
-${render_recurrence_reduction(red, name, s_idx, dt)}\
+${render_recurrence_reduction(red, name, s_idx, dt, tail)}\
 % endif
 </%def>\
 <%def name="render_comoment_reduction(red, name, s_idx, dt)">\
@@ -656,7 +663,7 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
 % endif
 % endfor
 </%def>\
-<%def name="render_recurrence_reduction(red, name, s_idx, dt)">\
+<%def name="render_recurrence_reduction(red, name, s_idx, dt, tail=None)">\
 <%
     from tvbo.codegen import render_expression
     _is_median = red.get('statistic', 'mean') == 'median'
@@ -681,6 +688,7 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
     _mem_new = "".join("_new_%s, " % _n for _n in _mnames)   # "_new_s_prev, "
     _mem_ini = "".join("jnp.full((n,), %r), " % s['init'] for s in _mem)
     _ind = ' ' * 12   # the scan-step body's indentation, shared by the emitted fragments
+    _from = ", _from" if tail else ""   # carried first step of the trailing window, known once init sees n_steps
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
     # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
@@ -777,12 +785,12 @@ ${render_observer_states(red['states'], _jc, _ind)}\
 % else:
     def _init(template, n_steps):
         n = template.shape[-1]
-        return (${", ".join("jnp.full((n,), %r)" % s['init'] for s in red['states'])}, jnp.array(0), jnp.array(0))
+        return (${", ".join("jnp.full((n,), %r)" % s['init'] for s in red['states'])}, jnp.array(0), jnp.array(0)${", jnp.maximum(jnp.array(n_steps) - %d, 0)" % tail if tail else ""})
     def _update(acc, block):
         def _step(carry, s_row):
-            ${", ".join(_snames)}, _count, _gstep = carry
+            ${", ".join(_snames)}, _count, _gstep${_from} = carry
             ${_src} = s_row[s_var]
-            _accumulate = _gstep ${_gate} skip
+            _accumulate = ${"(_gstep %s skip) & (_gstep >= _from)" % _gate if tail else "_gstep %s skip" % _gate}
 ${render_observer_dvs(_step_dvs, _jc, _ind)}\
 ${render_observer_states(red['states'], _jc, _ind)}\
 % for s in red['states']:
@@ -791,10 +799,10 @@ ${render_observer_states(red['states'], _jc, _ind)}\
 % endif
 % endfor
             _count = _count + jnp.where(_accumulate, 1, 0)
-            return (${", ".join("_new_%s" % _n for _n in _snames)}, _count, _gstep + 1), None
+            return (${", ".join("_new_%s" % _n for _n in _snames)}, _count, _gstep + 1${_from}), None
         return jax.lax.scan(_step, acc, block)[0]
     def _finalize(acc):
-        ${", ".join(_snames)}, count, _gstep = acc
+        ${", ".join(_snames)}, count, _gstep${_from} = acc
         return ${_jc(red['output'])}
     return (_init, _update, _finalize)
 % endif
@@ -1049,7 +1057,7 @@ from ${module} import ${class_name} as _Ext${class_name}
 %>
 % if obs['reduction'] is not None:
 ## The (init, update, finalize) triple serves both paths: the host run scans the whole trajectory as one block, the grid folds it in-carry with none held.
-${render_reduction(obs['reduction'], obs_name, state_idx, dt)}
+${render_reduction(obs['reduction'], obs_name, state_idx, dt, obs['tail_samples'])}
 % endif
 % if is_dataset_target:
 ## Bound at run_experiment time by _bind_network_observations, so no monitor is emitted here.
@@ -1104,9 +1112,9 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
 %>
 
 class ${class_name}(eqx.Module):
-    """${obs['label'] or obs_name} observation (external class wrapper).
+    """${docstring_text(obs['label'] or obs_name)} observation (external class wrapper).
 
-    ${obs['description'] or f'Wraps external class {ext_class_name} from {ext_module}.'}
+    ${docstring_text(obs['description'] or f'Wraps external class {ext_class_name} from {ext_module}.')}
 
     Uses: ${ext_module}.${ext_class_name}
     """
@@ -1170,7 +1178,7 @@ class ${class_name}(eqx.Module):
 % elif obs['reduction'] is not None:
 ## A host monitor backed by `_reduction_${obs_name}`: the observer is the definition, so the whole-trajectory fold equals the value the grid streams.
 class ${class_name}(AbstractMonitor):
-    """${obs['label'] or obs_name} observation (dynamics observer)."""
+    """${docstring_text(obs['label'] or obs_name)} observation (dynamics observer)."""
     dt: float = eqx.field(static=True, default=${dt})
 
 <%
@@ -1265,9 +1273,9 @@ class ${class_name}(AbstractMonitor):
 %>
 
 class ${class_name}(AbstractMonitor):
-    """${obs['label'] or obs_name} observation.
+    """${docstring_text(obs['label'] or obs_name)} observation.
 
-    ${obs['description'] or 'Auto-generated observation class.'}
+    ${docstring_text(obs['description'] or 'Auto-generated observation class.')}
 % if pipeline:
     Pipeline: ${' -> '.join([s['name'] for s in pipeline])}
 % endif
