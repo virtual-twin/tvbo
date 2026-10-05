@@ -140,6 +140,9 @@ class WorkflowPlan:
     cohort_result_files: list[str] = field(
         default_factory=list
     )  # canonical per-subject result filenames (build_result_path), one per cohort_subjects entry
+    subject_selection: dict[str, Any] = field(
+        default_factory=dict
+    )  # how the cohorts the network reads per subject narrowed the fan-out (SimulationExperiment.subject_selection); empty when none did
 
     chunk: int = 1  # cells per array task when axes are fanned; the number of array shards when the sweep is fully vectorised
     engine_block: dict[str, Any] = field(default_factory=dict)
@@ -168,6 +171,13 @@ class WorkflowPlan:
         return " ".join(parts)
 
     # ---- derived helpers --------------------------------------------------
+
+    @property
+    def subject_selection_text(self) -> str:
+        """The fan-out's cohort restriction as one line, or empty when no cohort narrowed it."""
+        from tvbo.data.cohort import describe_selection
+
+        return describe_selection(self.subject_selection) if self.subject_selection else ""
 
     @property
     def n_workflow_cells(self) -> int:
@@ -344,16 +354,24 @@ def extract_axes(experiment) -> list[SweepAxis]:
 def _dataset_subject_axis(experiment) -> SweepAxis | None:
     """A workflow-fanned ``subject`` axis when the experiment has a per-subject target.
 
-    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``); each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that subject's empirical target. Returns ``None`` when the experiment declares no dataset-sourced observation.
+    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``); each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that subject's empirical target. Returns ``None`` when the experiment declares no dataset-sourced observation. A network read per subject (:meth:`Network.per_subject_cohorts`) has nothing to be built from without its subject fan-out, so for one an enumeration that fails or finds no subject raises instead.
     """
     ids_fn = getattr(experiment, "dataset_subject_ids", None)
     if not callable(ids_fn):
         return None
+    cohorts = per_subject_cohorts(experiment)
     try:
         subjects = list(ids_fn())
     except Exception:
+        if cohorts:
+            raise
         return None
     if not subjects:
+        if cohorts:
+            raise ValueError(
+                f"experiment {getattr(experiment, 'id', None)!r}: its network reads cohort(s) {cohorts} per subject, but its dataset "
+                "yields no subject that is a member of each. Declare `dataset.subjects` or a dataset-sourced observation, or check the cohort's members."
+            )
         return None
     return SweepAxis(
         name="subject",
@@ -362,6 +380,18 @@ def _dataset_subject_axis(experiment) -> SweepAxis | None:
         kind="subjects",
         placement="workflow",
     )
+
+
+def per_subject_cohorts(experiment) -> list[str]:
+    """The cohorts *experiment*'s network reads one member of per run (:meth:`Network.per_subject_cohorts`); empty for an experiment with no network, or one that reads none."""
+    return getattr(getattr(experiment, "network", None), "per_subject_cohorts", list)()
+
+
+def _subject_selection(experiment) -> dict:
+    """How the cohorts the experiment's network reads per subject narrowed its fan-out, or ``{}`` when none did."""
+    select = getattr(experiment, "subject_selection", None)
+    selection = select() if callable(select) else {}
+    return selection if selection.get("cohorts") else {}
 
 
 # Planner
@@ -599,7 +629,14 @@ def plan(
     on_device = bool(getattr(experiment, "dataset_on_device", lambda: False)())
     cohort_subjects: list[str] = []
     cohort_result_files: list[str] = []
+    subject_axis = None
     if on_device:
+        per_subject = per_subject_cohorts(experiment)
+        if per_subject:
+            raise ValueError(
+                f"Experiment {getattr(experiment, 'id', None)!r} sets dataset.batch_mode: on_device, which runs the cohort as one job "
+                f"on one network, but its network reads cohort(s) {per_subject} one subject at a time. Use batch_mode: fan_out."
+            )
         cohort_subjects = [str(s) for s in experiment.dataset_subject_ids()]
         if not cohort_subjects:
             raise ValueError(
@@ -612,6 +649,7 @@ def plan(
         subject_axis = _dataset_subject_axis(experiment)
         if subject_axis is not None:
             axes = [subject_axis, *axes]
+    subject_selection = _subject_selection(experiment) if cohort_subjects or subject_axis is not None else {}
 
     vectorize: list[SweepAxis] = []
     workflow: list[SweepAxis] = []
@@ -755,6 +793,9 @@ def plan(
         for _axis in as_list(getattr(_expl, "space", None)):
             for _barg in as_list(getattr(getattr(_axis, "builder", None), "arguments", None)):
                 _dep_from_used(getattr(_barg, "used", None))
+    # Network layers and transform arguments read through `used:` (Edge.used, Argument.used).
+    for _ref in getattr(getattr(experiment, "network", None), "declared_references", list)():
+        _dep_from_used(_ref)
 
     # An explicit run venv wins over a declared container, with a notice.
     _container = resolve_container_ref(spec.get("container"))
@@ -778,6 +819,7 @@ def plan(
         workflow_axes=workflow,
         cohort_subjects=cohort_subjects,
         cohort_result_files=cohort_result_files,
+        subject_selection=subject_selection,
         chunk=max(1, chunk),
         engine_block=engine_block,
         overrides=list(overrides or []),

@@ -67,13 +67,15 @@ def _precision_of(M):
     """
     import contextlib
 
-    try:
-        from jax import enable_x64
-    except ImportError:  # jax < 0.5 spells it jax.experimental.enable_x64
-        from jax.experimental import enable_x64
+    from tvbo.utils.jax_precision import enable_x64
 
     concrete_64 = not isinstance(M, JaxArray) and getattr(getattr(M, "dtype", None), "itemsize", 0) == 8
     return enable_x64(True) if concrete_64 else contextlib.nullcontext()
+
+
+def _declares_its_matrix(edge) -> bool:
+    """Whether a template edge states where its whole matrix comes from: read through ``used:`` or computed by ``producer:``."""
+    return getattr(edge, "used", None) is not None or getattr(edge, "producer", None) is not None
 
 
 _WEIGHT_TARGETS = ("weight", "weights", "sc")
@@ -684,6 +686,13 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             return True
         return False
 
+    def _only_declares_layers(self) -> bool:
+        """Whether this network's connectivity so far is nothing but template edges: layers named, sourced or produced, with no explicit edge and no array behind them yet."""
+        if any(k.startswith("edges/") for k in self._resident()) or getattr(self, "_store", None) is not None:
+            return False
+        edges = list(getattr(self, "edges", None) or [])
+        return bool(edges) and all(getattr(e, "source", None) is None and getattr(e, "target", None) is None for e in edges)
+
     def _resolve(self, source_dir: str | Path | None = None) -> None:
         """Materialise this Network's connectivity from its declarative spec.
 
@@ -708,11 +717,12 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         """
         if getattr(self, "_resolved", False):
             return
-        # 1. Macro connectivity: skip when already materialised.
-        if not self._is_materialized():
-            if getattr(self, "data_file", None):
-                self._resolve_from_data_file(source_dir)
-            elif getattr(self, "bids_dir", None):
+        # 1. Macro connectivity: skip when already materialised. Layers that are only declared hold no connectivity, so a companion file named beside them is still opened.
+        materialized = self._is_materialized()
+        if getattr(self, "data_file", None) and (not materialized or self._only_declares_layers()):
+            self._resolve_from_data_file(source_dir)
+        elif not materialized:
+            if getattr(self, "bids_dir", None):
                 self._resolve_from_bids_dir(source_dir)
             elif self._has_graph_generator():
                 self._resolve_from_graph_generator(source_dir)
@@ -734,6 +744,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             object.__setattr__(self, attr, False)
         object.__setattr__(self, "_store", None)
         object.__setattr__(self, "_arrays", {})
+        object.__setattr__(self, "_sourced_array_keys", set())
 
     def _has_graph_generator(self) -> bool:
         """True if this Network has a resolvable GraphGenerator.
@@ -1021,11 +1032,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             sidecar = data_file
 
         loaded = load_network(sidecar)
+        declared = [e for e in (self.edges or []) if _declares_its_matrix(e)]
         # The sidecar is the authoritative source of connectivity. Replace connectivity-bearing fields unconditionally. Inline-authored coupling / transforms / parameters live in slots NOT listed here and are preserved on self.
         for attr in ("nodes", "edges", "number_of_nodes", "descriptor"):
             val = getattr(loaded, attr, None)
             if val is not None:
                 setattr(self, attr, val)
+        if declared:
+            # An authored layer that states where its matrix comes from (`used:` / `producer:`) replaces the companion's layer of that name rather than being dropped with the rest of the authored edges.
+            named = {str(getattr(e, "label", "") or "") for e in declared}
+            self.edges = [e for e in (self.edges or []) if str(getattr(e, "label", "") or "") not in named] + declared
         store = getattr(loaded, "_store", None)
         if store is not None:
             self._store = store
@@ -2634,6 +2650,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         Freezing a connectome writes its matrices to a companion file and replaces the network in the rendered spec with this reference, so what travels beside ``data_file`` has to be everything the reloaded network needs in order to behave identically: the inline coupling / transforms / parameters, the scalar identity, the measure declarations — ``Network.observations`` and the structural resolution gate on those, so a companion holding ``BoldCorrelation`` data is invisible unless the reference also declares ``observational_measures: [BoldCorrelation]`` — and the ``parcellation``, which names the atlas that a ``by_label`` node crosswalk resolves against. Carrying the parcellation cannot re-expand the node set, because ``data_file`` makes the loader defer connectivity to the companion store.
 
         Note that ``observations`` is deliberately NOT copied: it is a runtime view over the companion's measures, not a schema slot, and ``observational_measures`` is what reconstructs it.
+
+        A layer this network reads through ``used:`` and has not read under its current binding (:meth:`unread_sourced_layers`) has no values in the companion, so the reference keeps the declared edges and the reloaded network reads that layer per run again. One that was read is in the companion as the bound subject's array, as a result's provenance needs it.
         """
         from tvbo import datamodel as dm
 
@@ -2642,6 +2660,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             ref.coupling[key] = value
         if getattr(self, "transforms", None):
             ref.transforms = list(self.transforms)
+        unread = set(self.unread_sourced_layers())
+        if unread:
+            ref.edges = [
+                edge
+                for edge in self.edges
+                if getattr(edge, "producer", None) is None
+                and (getattr(edge, "used", None) is None or str(edge.label) in unread)
+            ]
         if getattr(self, "parameters", None):
             for key, value in dict(self.parameters).items():
                 ref.parameters[key] = value
@@ -4123,6 +4149,12 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
         for edge in self.edges or []:
             label = str(getattr(edge, "label", "") or "")
+            if label and getattr(edge, "used", None) is not None:
+                if getattr(edge, "producer", None) is not None:
+                    raise ValueError(
+                        f"network edge {label!r} declares both `used:` and `producer:`; a layer is read or computed, not both."
+                    )
+                continue
             if not label or _array_key(label) in arrays or getattr(edge, "producer", None) is None:
                 continue
             source_dir = getattr(self, "_source_dir", None)
@@ -4134,6 +4166,194 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                     "dict from which `output:` names one."
                 )
             arrays[_array_key(label)] = produced
+
+    def _read_sourced_layers(self, names) -> None:
+        """Make resident each layer among *names* that an edge declares with ``used:``, on the first read of that layer.
+
+        Per layer and on demand, so reading a layer the companion holds asks nothing of a layer that needs the run's subject, and reading the sourced one before a subject is bound raises there instead of returning a stand-in.
+        """
+        resident = self._resident()
+        wanted = {str(name).lower() for name in names}
+        for edge in self.edges or []:
+            label = str(getattr(edge, "label", "") or "")
+            key = _array_key(label) if label else None
+            if key is None or key in resident or getattr(edge, "used", None) is None or label.lower() not in wanted:
+                continue
+            resident[key] = self._sourced(edge.used, f"edge {label!r}")
+            self._sourced_keys().add(key)
+
+    def _sourced_keys(self) -> set:
+        """The resident keys a ``used:`` edge filled, which a new :meth:`bind_references` drops."""
+        try:
+            return object.__getattribute__(self, "_sourced_array_keys")
+        except AttributeError:
+            object.__setattr__(self, "_sourced_array_keys", set())
+            return object.__getattribute__(self, "_sourced_array_keys")
+
+    def bind_references(self, *, subject=None, datasets=None, results_root=None, source_dir=None) -> "Network":
+        """State what this network's ``used:`` references resolve against, and drop what an earlier binding read.
+
+        A layer or a transform argument declared with ``used:`` names a cohort, an analysis or an experiment, and none of those can be found from the network alone: *datasets* are the study's (where a ``cohort`` is declared), *subject* is the run's own (the cohort member whose file a layer reads), *results_root* is where analysis and experiment containers lie, and *source_dir* resolves a relative ``bids_root``. Unset, the results directory is the one the study layout gives the study this network was loaded from. Binding a different subject re-reads every sourced layer, and recomputes every ``producer:`` layer since a producer may read one, so one network spec serves a whole cohort. Returns ``self``.
+        """
+        object.__setattr__(
+            self,
+            "_reference_binding",
+            {"subject": subject, "datasets": datasets, "results_root": results_root, "source_dir": source_dir},
+        )
+        object.__setattr__(self, "_reference_cache", {})
+        resident = self._resident()
+        produced = {_array_key(str(e.label)) for e in self.edges or [] if getattr(e, "producer", None) is not None and e.label}
+        for key in self._sourced_keys() | produced:
+            resident.pop(key, None)
+        self._sourced_keys().clear()
+        object.__setattr__(self, "_producers_resolved", False)
+        return self
+
+    def _binding(self) -> dict:
+        """What :meth:`bind_references` last named, or nothing."""
+        try:
+            return object.__getattribute__(self, "_reference_binding")
+        except AttributeError:
+            return {}
+
+    def reference_results_root(self, source_dir=None):
+        """Where an ``analysis`` or ``experiment`` reference of this network finds its container: the bound results directory, else the one the study layout gives the study under *source_dir* (by default the bound one, else the one this network was loaded from), else ``None``."""
+        from tvbo.utils.study_layout import study_path, study_root
+
+        binding = self._binding()
+        if binding.get("results_root") is not None:
+            return binding["results_root"]
+        source_dir = source_dir or binding.get("source_dir") or getattr(self, "_source_dir", None)
+        if not source_dir:
+            return None
+        try:
+            return study_path("results", root=study_root(source_dir))
+        except (StopIteration, LookupError, OSError):
+            return None
+
+    def _sourced(self, ref, what: str):
+        """The array a ``used:`` reference names, on this network's own node order when it asks for ``reconcile: by_label``.
+
+        *what* names the declaring layer or argument in an error. A cohort reference with no bound subject is the whole cohort, which is not a network layer, so it raises rather than handing a stack of connectomes to something expecting one.
+        """
+        from tvbo.data import dataref
+
+        try:
+            cache = object.__getattribute__(self, "_reference_cache")
+        except AttributeError:
+            cache = {}
+            object.__setattr__(self, "_reference_cache", cache)
+        held = cache.get(id(ref))
+        if held is not None and held[0] is ref:  # an entry holds its reference, so a recycled id never answers for another
+            return held[1]
+        binding = self._binding()
+        whole_cohort = (
+            f"network {what} reads cohort {getattr(ref, 'cohort', None)!r} with no subject bound, which is every member's array at once. "
+            "A network holds one subject's: run it per subject, or call `bind_references(subject=...)`."
+        )
+        if (
+            getattr(ref, "cohort", None) is not None
+            and binding.get("subject") is None
+            and "subject" not in dataref.sel_dict(ref)
+        ):
+            from tvbo.data.cohort import find_cohort
+
+            find_cohort(binding.get("datasets"), ref.cohort)  # an undeclared cohort is the error to report first
+            raise ValueError(whole_cohort)  # before the read, which would open every member's file
+        source_dir = binding.get("source_dir") or getattr(self, "_source_dir", None)
+        by_label = dataref.reconcile_mode(ref) == "by_label"
+        da = dataref.resolve_dataref(
+            ref,
+            results_root=self.reference_results_root(),
+            subject=binding.get("subject"),
+            datasets=binding.get("datasets"),
+            source_dir=source_dir,
+            alias_map=self.region_alias_map() if by_label else None,
+            model_labels=self.node_labels if by_label else None,
+        )
+        if "subject" in getattr(da, "dims", ()):
+            raise ValueError(whole_cohort)
+        n = len(self.nodes or [])
+        shape = tuple(da.shape)
+        if n and any(size != n for size in shape):
+            raise ValueError(
+                f"network {what}: the referenced array has shape {shape} for a network of {n} nodes. "
+                "Declare `reconcile: by_label` on the reference to align it to this network's nodes by name."
+            )
+        cache[id(ref)] = (ref, np.asarray(da.values))
+        return cache[id(ref)][1]
+
+    @staticmethod
+    def _sourced_arguments(func) -> dict:
+        """The arguments of the transform *func* declared with ``used:``, as ``{argument name: Argument}``."""
+        return {
+            str(key): arg
+            for key, arg in keyed_items(getattr(func, "arguments", None), "arguments")
+            if getattr(arg, "used", None) is not None
+        }
+
+    def sources_layer(self, name: str) -> bool:
+        """Whether the layer *name* is read through a ``used:`` reference, so it has no values until :meth:`bind_references` names the run."""
+        names = _alias_group(name)
+        return any(
+            str(getattr(edge, "label", "") or "").lower() in names and getattr(edge, "used", None) is not None
+            for edge in self.edges or []
+        )
+
+    def declared_references(self) -> list:
+        """Every ``used:`` reference of this network: its layers' in edge order, then its transform arguments'."""
+        refs = [edge.used for edge in self.edges or [] if getattr(edge, "used", None) is not None]
+        return refs + [arg.used for t in self.transforms or [] for arg in self._sourced_arguments(t).values()]
+
+    def declares_references(self) -> bool:
+        """Whether a layer or a transform argument of this network is declared with ``used:``, so reading it needs :meth:`bind_references` first."""
+        return bool(self.declared_references())
+
+    def unread_sourced_layers(self) -> list[str]:
+        """The layers declared with ``used:`` that the current binding has not read: a companion saved now holds no values for them, so a copy of this network that points at it must keep their references."""
+        read = self._sourced_keys()
+        return [
+            str(edge.label)
+            for edge in self.edges or []
+            if getattr(edge, "used", None) is not None
+            and getattr(edge, "label", None)
+            and _array_key(str(edge.label)) not in read
+        ]
+
+    def _referenced(self, where: str) -> list[str]:
+        """The distinct names the ``used:`` references of this network give for *where* (``cohort``, ``analysis``), in declaration order."""
+        return list(dict.fromkeys(str(name) for ref in self.declared_references() if (name := getattr(ref, where, None))))
+
+    def per_subject_cohorts(self) -> list[str]:
+        """The cohorts a layer or a transform argument of this network reads one member of: a run needs a subject that belongs to each."""
+        return self._referenced("cohort")
+
+    def referenced_analyses(self) -> list[str]:
+        """The analyses whose containers a layer or a transform argument of this network reads, so a run needs them under :meth:`reference_results_root`."""
+        return self._referenced("analysis")
+
+    def sourced_transform_arguments(self, target: str) -> dict:
+        """The ``used:`` arguments of the transforms on *target*, as ``{argument name: reference}``.
+
+        Solver code generated for this network binds each by name from the arrays its run hands it, so within one target's chain a name means one reference; two transforms giving one name to different references raises.
+        """
+        refs: dict = {}
+        for t in self.transforms_for(target):
+            for name, arg in self._sourced_arguments(t).items():
+                if name in refs and refs[name] != arg.used:
+                    raise ValueError(
+                        f"the transforms on {target!r} declare the argument {name!r} twice with different `used:` references; "
+                        "give the second its own name."
+                    )
+                refs[name] = arg.used
+        return refs
+
+    def sourced_transform_data(self, target: str) -> dict:
+        """The array each ``used:`` argument of the transforms on *target* resolves to under the current binding, keyed by argument name."""
+        return {
+            name: self._sourced(ref, f"transform {target!r}, argument {name!r}")
+            for name, ref in self.sourced_transform_arguments(target).items()
+        }
 
     def _resident(self) -> dict:
         """The arrays held in memory, keyed by companion dataset path. Consulting it resolves nothing."""
@@ -4192,6 +4412,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format.
         """
         key = _array_key(path)
+        if (name := _edge_name(key)) is not None:
+            self._read_sourced_layers([name])
         resident = self._get_arrays()
         if key in resident:
             return resident[key]
@@ -4219,6 +4441,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
         out = _copy.copy(self)
         object.__setattr__(out, "_arrays", dict(self._resident()))
+        object.__setattr__(out, "_sourced_array_keys", set(self._sourced_keys()))  # what the copy reads is not read here
         for path in paths:
             if out.array(path) is not None:
                 continue
@@ -4401,9 +4624,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         from scipy import sparse
         from scipy.sparse import coo_matrix, csr_matrix, lil_matrix
 
+        candidates = self._matrix_names(name)
+        self._read_sourced_layers(candidates)
         arrays = self._get_arrays()
         store = getattr(self, "_store", None)
-        candidates = self._matrix_names(name)
 
         def _spelled(names):
             """The first candidate among ``names``, exact match before case-folded.
@@ -4639,13 +4863,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _transform_operand(self, func, M):
         """A resolver from a transform symbol to the live array it names.
 
-        The transform's own target binds to *M*, the value flowing through the chain, so a second transform in a chain sees the first one's output — and so a length-target transform does not re-enter itself by asking the network for the matrix it is busy producing. Every other edge attribute binds to the network's stored matrix through the same :func:`tvbo.utils.edge_label` the emitters use, and a declared per-node parameter binds as an ``(n, 1)`` column, so ``weight / roi_size`` divides each target row by that region's size and broadcasts across the source axis.
+        The transform's own target binds to *M*, the value flowing through the chain, so a second transform in a chain sees the first one's output — and so a length-target transform does not re-enter itself by asking the network for the matrix it is busy producing. An argument declared with ``used:`` binds to the array that reference names (:meth:`_sourced`), which is how a transform reads a cohort aggregate. Every other edge attribute binds to the network's stored matrix through the same :func:`tvbo.utils.edge_label` the emitters use, and a declared per-node parameter binds as an ``(n, 1)`` column, so ``weight / roi_size`` divides each target row by that region's size and broadcasts across the source axis.
         """
         from tvbo.utils import edge_label
 
         target = edge_label(transform_target(func)) or transform_target(func)
+        sourced = self._sourced_arguments(func)
 
         def resolve(name):
+            if str(name) in sourced:
+                return self._sourced(sourced[str(name)].used, f"transform {target!r}, argument {name!r}")
             label = edge_label(name) or name
             if label == target:
                 return M
@@ -4674,9 +4901,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             with _source_dir_on_path(getattr(self, "_source_dir", None)):
                 mod = importlib.import_module(c.module)
                 fn = getattr(mod, c.name)
-                kwargs = {}
-                for name, arg in func.arguments.items():  # arguments keyed by name
-                    kwargs[name] = getattr(arg, "value", None)
+                kwargs = {str(name): getattr(arg, "value", None) for name, arg in keyed_items(func.arguments, "arguments")}
+                for name, arg in self._sourced_arguments(func).items():
+                    kwargs[name] = self._sourced(arg.used, f"transform {transform_target(func)!r}, argument {name!r}")
                 sig = inspect.signature(fn)
                 accepts_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
                 if "network" in sig.parameters or accepts_var_kw:

@@ -108,6 +108,11 @@ def test_a_window_within_one_period_is_still_the_tail_of_that_period():
     _assert_matches(_spec(window=", tail_duration: 1.0"), window_samples=10)
 
 
+def test_a_recording_period_does_not_shorten_the_window_the_loop_reads():
+    """The tuning loop reads every integration step, so 1.0 of simulated time is ten 0.1 steps even when the observation records every 0.5."""
+    _assert_matches(_spec(window=", tail_duration: 1.0, period: 0.5"), window_samples=10)
+
+
 @pytest.mark.parametrize(
     "window, cadence",
     [

@@ -649,6 +649,8 @@ def _run_study_analyses(
             root,
             on_start=lambda n: logger.info(f"running analysis: {n}"),
             on_done=_done,
+            datasets=getattr(study, "datasets", None),
+            source_dir=spec_base(spec),
         )
     except Exception as e:
         if stage in ("before", "named"):
@@ -759,7 +761,7 @@ def render_figures(figures, base_dir: Path, out_dir: Path, origins: dict[str, Pa
         written.append(outfile)
         # Caption partial beside the image, for `{{< include >}}` in the prose.
         try:
-            cap = bsplot.write_caption(figure, out_dir, name=name) if bsplot.compose_caption(figure) else None
+            cap = bsplot.write_caption(figure, out_dir, name=name, base_dir=base) if bsplot.compose_caption(figure) else None
             if cap:
                 logger.info(f"wrote {cap}")
         except Exception as e:  # noqa: BLE001 — a caption must never lose a rendered figure

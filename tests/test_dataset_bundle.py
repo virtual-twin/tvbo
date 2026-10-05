@@ -33,6 +33,10 @@ def _stub(dataset, observations, source_file=None):
     for name in (
         "_dataset_bids_root",
         "dataset_subject_ids",
+        "subject_selection",
+        "_dataset_subjects",
+        "_reference_datasets",
+        "reference_cohort_files",
         "dataset_bundle_files",
         "_find_subject_file",
         "_find_subject_file_by_entities",

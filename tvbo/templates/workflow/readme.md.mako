@@ -56,8 +56,17 @@ nextflow run main.nf
 % for p in plans:
 | `${p.experiment_key}` | ${p.n_workflow_cells} | ${p.n_vectorize_cells} | ${", ".join(ax.name for ax in p.vectorize_axes) or "—"} | ${", ".join(ax.name for ax in p.workflow_axes) or "—"} |
 % endfor
+
+% for p in plans:
+% if p.subject_selection_text:
+- subjects (`${p.experiment_key}`): ${p.subject_selection_text}
+% endif
+% endfor
 % else:
 - workflow cells: ${head.n_workflow_cells} (chunk=${head.chunk}, array tasks=${head.n_array_tasks})
+% if head.subject_selection_text:
+- subjects      : ${head.subject_selection_text}
+% endif
 - vectorize_axes: ${[ax.name for ax in head.vectorize_axes]}
 - workflow_axes : ${[ax.name for ax in head.workflow_axes]}
 % endif

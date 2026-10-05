@@ -842,18 +842,10 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
         network: The `Network` whose transforms are being lowered.
 
     Returns:
-        A `(transforms, const_env, needs_lengths)` triple. `transforms` is a list of
-        `(jax_expr, chained_env)`; `chained_env` rebinds the transform's own target from
-        the current `weights`, so a chain composes. `const_env` binds everything bound
-        once — other edge matrices, per-node parameter vectors, imported callables.
-        `needs_lengths` reports whether `create_network` has to be handed real lengths.
+        A `(transforms, const_env, needs_lengths)` triple. `transforms` is a list of `(jax_expr, chained_env)`; `chained_env` rebinds the transform's own target from the current `weights`, so a chain composes. `const_env` binds everything bound once — other edge matrices, per-node parameter vectors, imported callables, and each argument declared with `used:`, which the script reads by name from the arrays its run hands it (`run_experiment(network_data=...)`) rather than embedding. `needs_lengths` reports whether `create_network` has to be handed real lengths.
 
     Raises:
-        ValueError: If a transform equation names a symbol that is neither an edge
-            attribute this kit holds, a declared per-node parameter, nor a substituted
-            argument. Failing here beats emitting an undefined name into a kit that only
-            dies once it reaches a cluster. Also if a callable transform takes the
-            `network` the runtime injects, which a kit has no object to supply.
+        ValueError: If a transform equation names a symbol that is neither an edge attribute this kit holds, a declared per-node parameter, nor a substituted argument. Failing here beats emitting an undefined name into a kit that only dies once it reaches a cluster. Also if a callable transform takes the `network` the runtime injects, which a kit has no object to supply.
     """
     import numpy as np
 
@@ -863,8 +855,14 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
 
     _source_dir = getattr(network, "_source_dir", None)
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
-    raw = network.matrix("weight", apply_transforms=False) if hasattr(network, "matrix") else None
-    n_nodes = None if raw is None else raw.shape[0]
+    if hasattr(network, "sourced_transform_arguments"):
+        network.sourced_transform_arguments("weight")  # raises on a name bound to two references across the chain
+    if hasattr(network, "sources_layer") and network.sources_layer("weight"):
+        # A sourced weight layer has no values until a run names its subject; the node list gives its size.
+        n_nodes = len(network.nodes or []) or None
+    else:
+        raw = network.matrix("weight", apply_transforms=False) if hasattr(network, "matrix") else None
+        n_nodes = None if raw is None else raw.shape[0]
     transforms: list[tuple[str, list[str]]] = []
     const_env: list[str] = []
     const_seen: set[str] = set()
@@ -875,8 +873,16 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
             const_env.append(line)
             const_seen.add(name)
 
+    def _sourced(t) -> dict:
+        """The transform *t*'s own ``used:`` arguments, as the runtime binds them (:meth:`Network._sourced_arguments`)."""
+        return network._sourced_arguments(t) if hasattr(network, "_sourced_arguments") else {}
+
     def _resolver(t):
+        sourced = _sourced(t)
+
         def resolve(name: str) -> str:
+            if name in sourced:
+                return f"_network_datum({name!r})"
             label = edge_label(name) or name
             source = _KIT_EDGE_ARRAYS.get(label)
             if source is not None:
@@ -911,7 +917,11 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
         if c is not None:
             alias = "_tf_" + re.sub(r"\W", "_", f"{c.module}.{c.name}")
             _add_const(alias, f"from {c.module} import {c.name} as {alias}")
-            args = "".join(f", {n}={getattr(a, 'value', None)!r}" for n, a in (getattr(t, "arguments", {}) or {}).items())
+            sourced = _sourced(t)
+            args = "".join(
+                f", {n}=_network_datum({str(n)!r})" if str(n) in sourced else f", {n}={getattr(a, 'value', None)!r}"
+                for n, a in keyed_items(getattr(t, "arguments", None), "arguments")
+            )
             if _callable_wants(c, "network", _source_dir):
                 raise ValueError(
                     f"weight transform callable {c.module}.{c.name} takes a `network` argument, "
@@ -3081,23 +3091,28 @@ def format_bounds_array(bounds: list, format: str = "jax") -> str:
 # Observation Helpers
 
 
-def resolve_tail_samples(obs: Any, step_size: float) -> int | None:
+def resolve_tail_samples(obs: Any, step_size: float, *, per_step: bool = False) -> int | None:
     """Trailing-window length of ``obs`` in samples, from ``tail_samples`` or ``tail_duration``.
 
-    ``tail_duration`` states the window as a length of simulated time and is divided here by the observation's own sample period — its ``period``/``downsample_period``, else the integration ``step_size`` — so the window covers the same duration at any step. ``tail_samples`` states the count directly and is returned unchanged.
+    ``tail_duration`` states the window as a length of simulated time and is divided here by the spacing of the samples it is cut from, so the window covers the same duration at any step. That spacing is the observation's own sample period (its ``period``/``downsample_period``, else the integration ``step_size``) for a recorded trajectory, and ``step_size`` with *per_step*, for a reducer that folds every integration step whatever period the observation records at. ``tail_samples`` states the count directly and is returned unchanged; with *per_step* and a recording period other than the step it counts samples the reducer never sees, so it is refused.
 
     Raises:
-        ValueError: if both slots are set (the two would disagree the moment the step changes), or if ``tail_duration`` is shorter than one sample.
+        ValueError: if both slots are set (the two would disagree the moment the step changes), if ``tail_duration`` is shorter than one sample, or if *per_step* meets a ``tail_samples`` of a recording period other than the step.
     """
     count = get_attr(obs, "tail_samples", None)
     duration = get_attr(obs, "tail_duration", None)
+    recorded = get_attr(obs, "period", None) or get_attr(obs, "downsample_period", None)
     if duration is None:
+        if per_step and count is not None and recorded and float(recorded) != float(step_size):
+            raise ValueError(
+                f"Observation '{get_attr(obs, 'name', '?')}' sets tail_samples {count} of its {recorded} period, but its trailing window is folded every {step_size} step; state the window as a tail_duration."
+            )
         return count
     if count is not None:
         raise ValueError(
             f"Observation '{get_attr(obs, 'name', '?')}' sets both tail_samples ({count}) and tail_duration ({duration}); declare one."
         )
-    period = get_attr(obs, "period", None) or get_attr(obs, "downsample_period", None) or step_size
+    period = step_size if per_step else (recorded or step_size)
     samples = int(round(float(duration) / float(period)))
     if samples < 1:
         raise ValueError(

@@ -212,7 +212,7 @@ def obs_tail_start(obs_def):
 
     The tuning loop reads the trajectory at the integration step, so a `tail_duration` converts against that step rather than a recording period. An objective measured on a settled mean states its own settling here: the published feedback-inhibition routine simulates ten seconds an iteration and averages the last nine.
     """
-    _n = _resolve_tail(obs_def, _algo_step) if obs_def is not None else None
+    _n = _resolve_tail(obs_def, _algo_step, per_step=True) if obs_def is not None else None
     return ('-%d' % int(_n)) if _n else ''
 
 def obs_tail_periods(obs_def, period):

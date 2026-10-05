@@ -86,20 +86,7 @@ classes:
     DataRef:
         class_uri: prov:Entity
         description: >-
-            A pointer to one labelled array in a result container, dataset, or
-            curated entity — the single cross-container reference primitive (a PROV
-            entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study
-            experiment id, resolved like ``initial_state.source_experiment``),
-            ``analysis`` (an in-study analysis name), or the full ``iri`` (a curated /
-            result / external pointer); at most one.
-            WHICH is ``output`` (a recorded variable, ``observation__<name>``,
-            ``estimate__<param>``, or external variable). SLICE is ``sel`` (label-keyed
-            ``.sel``, never positional). ``reconcile`` optionally aligns the sourced
-            array to the consuming network's node order by label. One model reused by
-            figure layers (``Layer.used``), sourced arguments (``Argument.used``) and
-            sourced parameters (``Parameter.used``), so data binding, cross-experiment
-            sourcing and PROV provenance are the same edge. A sourced array is resolved
-            lazily and never inlined into generated code.
+            A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container reference primitive (a PROV entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study experiment id, resolved like ``initial_state.source_experiment``), ``analysis`` (an in-study analysis name), ``cohort`` (a named subset of a study dataset, read from each member's own file chosen by ``query``), or the full ``iri`` (a curated / result / external pointer); at most one. WHICH is ``output`` (a recorded variable, ``observation__<name>``, ``estimate__<param>``, an external variable, or the measure a cohort member's file holds). SLICE is ``sel`` (label-keyed ``.sel``, never positional). ``reconcile`` optionally aligns the sourced array to the consuming network's node order by label. One model reused by figure layers (``Layer.used``), sourced arguments (``Argument.used``), sourced parameters (``Parameter.used``) and sourced network layers (``Edge.used``), so data binding, cross-experiment sourcing and PROV provenance are the same edge. A sourced array is resolved lazily and never inlined into generated code.
         slots:
             - iri
         attributes:
@@ -127,6 +114,15 @@ classes:
                     exclusive with ``experiment`` and ``iri``, and — like
                     ``experiment`` — it registers the run-order dependency, so the
                     analysis runs before whatever consumes it.
+            cohort:
+                range: string
+                description: >-
+                    WHERE (dataset form): the identifier of a cohort one of the study's datasets declares (``Dataset.cohorts``). The array is read from each member's own file under that dataset's ``bids_root``: ``query`` chooses the file and ``output`` the array in it. Read by a study analysis the reference is the whole cohort, stacked along a leading ``subject`` dimension in the cohort's member order; read inside a per-subject run it is that run's own subject, which must be a member. Mutually exclusive with ``experiment``, ``analysis`` and ``iri``.
+            query:
+                range: BidsEntities
+                inlined: true
+                description: >-
+                    With ``cohort``: the BIDS entity filter that selects one file per subject under the dataset's ``bids_root`` (``{atlas: HCPMMP1, desc: SCconn, suffix: relmat}``). The subject fills the ``sub-`` entity; a filter that matches none or several of a subject's files raises.
             output:
                 range: string
                 description: >-

@@ -1,6 +1,6 @@
 """Resolve a :class:`DataRef` to a labelled array — the one cross-container reference path.
 
-A ``DataRef`` (``schema/common.yaml``) points at one labelled array in another experiment's result, a dataset, or a curated entity: WHERE (``experiment`` id or ``iri``), WHICH (``output``), SLICE (``sel``), and an optional node ``reconcile``.
+A ``DataRef`` (``schema/common.yaml``) points at one labelled array in another experiment's result, a dataset, or a curated entity: WHERE (``experiment`` id, ``analysis`` name, ``cohort`` id or ``iri``), WHICH (``output``), SLICE (``sel``), and an optional node ``reconcile``.
 It is the single primitive behind four authoring surfaces — a figure ``Layer.used``, a sourced ``Argument.used``, a sourced ``Parameter.used``, and (via the same container + label semantics) the ``initial_state.from_experiment`` seed. This module is their shared resolver, so "find the source container, take the array, slice it, reconcile it by label" lives in exactly one place.
 
 The resolver is deliberately backend-independent and free of JAX: it returns a plain ``xarray.DataArray`` and takes its network context (label alias map + model node order) by injection, so both the run-time experiment resolvers and the figure codegen adapter can reuse the same primitives without dragging in each other's dependencies.
@@ -222,12 +222,12 @@ def locate_analysis_container(results_root, name) -> Path:
 
 
 def is_local_ref(ref) -> bool:
-    """A ``DataRef`` with no WHERE (neither ``experiment`` nor ``iri``).
+    """A ``DataRef`` with no WHERE (no ``experiment``, ``analysis``, ``cohort`` or ``iri``).
 
     Such a reference names one of *this* experiment's own outputs (the local end of the reference spectrum, subsuming an ``Argument.value: "observations.x"``); it is resolved by the in-run observation machinery, not by opening a sibling container.
     Consumers test this to route a local reference to the right resolver.
     """
-    return not any(getattr(ref, w, None) for w in ("experiment", "analysis", "iri"))
+    return not any(getattr(ref, w, None) for w in ("experiment", "analysis", "cohort", "iri"))
 
 
 def _where(ref, results_root=None, fallback_experiment=None) -> tuple:
@@ -474,6 +474,8 @@ def resolve_dataref(
     alias_map: Mapping[str, str] | None = None,
     model_labels: Sequence[str] | None = None,
     subject=None,
+    datasets=None,
+    source_dir=None,
 ):
     """Resolve a container-backed ``DataRef`` to a labelled :class:`xarray.DataArray`.
 
@@ -483,9 +485,25 @@ def resolve_dataref(
 
     A reference to a per-subject COHORT is read per subject. ``subject`` (the reading run's own, e.g. a per-subject experiment sourcing its fitted parameters) selects that subject's shard. Without one (a study analysis) the reference means the whole cohort: the selected array of every shard, stacked along a leading ``subject`` dimension whose coordinate is the ``sub-`` entity of each shard, so the reader never sees one subject posing as the cohort.
 
+    A reference to a dataset ``cohort`` follows the same rule one level down, on the members' own files instead of result shards (:func:`tvbo.data.cohort.read_cohort`): *datasets* are the study's, where the cohort is declared, and *source_dir* resolves a relative ``bids_root``.
+
     A *local* reference (no WHERE) raises, as it does in :func:`locate_container`; callers test :func:`is_local_ref` first and route those to the in-run resolver.
     """
     import xarray as xr
+
+    if getattr(ref, "cohort", None) is not None:
+        from tvbo.data.cohort import read_cohort
+
+        clashing = [w for w in ("experiment", "analysis", "iri") if getattr(ref, w, None) is not None]
+        if clashing:
+            raise ValueError(f"a reference names cohort {ref.cohort!r} and also `{clashing[0]}`; a reference has one WHERE.")
+        sel = sel_dict(ref)
+        pinned = sel.get("subject")
+        if pinned is not None:
+            # A `sel` naming members pins the reference to them, whichever subject the reading run is.
+            subject = None if isinstance(pinned, (list, tuple)) else sel.pop("subject")
+        da = select_labeled(read_cohort(ref, datasets, subject=subject, source_dir=source_dir), sel)
+        return _finish(da, ref, alias_map, model_labels)
 
     where = _where(ref, results_root, fallback_experiment)
     candidates = _exp_candidates(where[1], where[2]) if where[0] == "exp" else None

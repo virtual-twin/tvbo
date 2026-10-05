@@ -335,6 +335,8 @@ for obs_name, obs in observations.items():
         # A dynamics observer resolves to a streaming reducer; None means the pipeline path applies.
         'reduction': reductions[obs_name] if reductions is not None else resolve_reduction(obs, experiment),
     }
+    # A streamed reducer folds every integration step, so its trailing window is counted in steps whatever period the observation records at.
+    info['tail_steps'] = resolve_tail_samples(obs, dt, per_step=True) if info['reduction'] is not None else None
 
     # Check for class_reference first (takes precedence over pipeline)
     class_ref = get_attr(obs, 'class_reference')
@@ -1057,7 +1059,7 @@ from ${module} import ${class_name} as _Ext${class_name}
 %>
 % if obs['reduction'] is not None:
 ## The (init, update, finalize) triple serves both paths: the host run scans the whole trajectory as one block, the grid folds it in-carry with none held.
-${render_reduction(obs['reduction'], obs_name, state_idx, dt, obs['tail_samples'])}
+${render_reduction(obs['reduction'], obs_name, state_idx, dt, obs['tail_steps'])}
 % endif
 % if is_dataset_target:
 ## Bound at run_experiment time by _bind_network_observations, so no monitor is emitted here.

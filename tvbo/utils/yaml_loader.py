@@ -125,22 +125,28 @@ def _compose_include_merges(loader: yaml.Loader, node: yaml.MappingNode) -> None
     ``flatten_mapping`` works on the node tree and rejects anything that is not a mapping node, so an ``!include`` — a scalar node until its constructor runs — cannot be merged.
     Composing the referenced file into a node here, before the flatten, makes the two idioms compose without touching PyYAML's merge semantics: the spliced node is an ordinary mapping and precedence (explicit over merged, earlier merge over later) stays exactly as it was.
     """
+    _splice_merged_includes(node, getattr(loader, "_tvbo_base_dir", Path.cwd()))
+
+
+def _splice_merged_includes(node: yaml.MappingNode, base_dir: Path) -> None:
+    """Compose every ``!include`` under a merge key of *node* in place, its path read against *base_dir*."""
     for entry, (key_node, value_node) in enumerate(node.value):
         if key_node.tag != _MERGE_TAG:
             continue
         if isinstance(value_node, yaml.SequenceNode):
-            value_node.value = [_compose_included(loader, s) if s.tag == _INCLUDE_TAG else s for s in value_node.value]
+            value_node.value = [_compose_included(s, base_dir) if s.tag == _INCLUDE_TAG else s for s in value_node.value]
         elif value_node.tag == _INCLUDE_TAG:
-            node.value[entry] = (key_node, _compose_included(loader, value_node))
+            node.value[entry] = (key_node, _compose_included(value_node, base_dir))
 
 
-def _compose_included(loader: yaml.Loader, node: yaml.ScalarNode) -> yaml.Node:
+def _compose_included(node: yaml.ScalarNode, base_dir: Path) -> yaml.Node:
     """The ``!include`` target composed to a node tree rather than constructed to a dict.
 
-    Same file resolution and same anchor scoping as the ``!include`` constructor — the fragment is composed with its own loader class, so its anchors stay file-local. The file envelope (:data:`ENVELOPE_KEYS`) is dropped: it describes the fragment's file, not the object it is merged into, and would reach the parent class as an unknown slot.
+    Same file resolution and same anchor scoping as the ``!include`` constructor — the fragment is composed with its own loader class, so its anchors stay file-local. The file envelope (:data:`ENVELOPE_KEYS`) is dropped: it describes the fragment's file, not the object it is merged into, and would reach the parent class as an unknown slot. The fragment's own includes are settled against its directory before it is spliced (:func:`_settle_nested_includes`).
     """
-    base_dir = getattr(loader, "_tvbo_base_dir", Path.cwd())
-    path = _include_path(loader.construct_scalar(node), base_dir)
+    if not isinstance(node, yaml.ScalarNode):
+        raise yaml.constructor.ConstructorError(None, None, "!include expects a scalar (a file path)", node.start_mark)
+    path = _include_path(str(node.value), base_dir)
     with open(path) as fh:
         composed = yaml.compose(fh, _make_loader_class(path.parent))
     if not isinstance(composed, yaml.MappingNode):
@@ -151,7 +157,30 @@ def _compose_included(loader: yaml.Loader, node: yaml.ScalarNode) -> yaml.Node:
             node.start_mark,
         )
     composed.value = [(k, v) for k, v in composed.value if not (isinstance(k, yaml.ScalarNode) and k.value in ENVELOPE_KEYS)]
+    _settle_nested_includes(composed, path.parent, set())
     return composed
+
+
+def _settle_nested_includes(node: yaml.Node, base_dir: Path, seen: set) -> None:
+    """Resolve the ``!include`` directives inside a composed fragment against the fragment's own directory.
+
+    A composed fragment is spliced into its parent's node tree and constructed by the parent's loader, whose base directory is the parent's. So a fragment's merged includes are composed here, and its plain ones are rewritten to the absolute path they name: a path written in a fragment then means the same file whether the fragment is read alone, included, or merged. *seen* holds the nodes already walked, since an alias is the anchored node itself.
+    """
+    if id(node) in seen:
+        return
+    seen.add(id(node))
+    if isinstance(node, yaml.ScalarNode):
+        if node.tag == _INCLUDE_TAG:
+            node.value = str(_include_path(str(node.value), base_dir))
+        return
+    if isinstance(node, yaml.MappingNode):
+        _splice_merged_includes(node, base_dir)
+        for key_node, value_node in node.value:
+            _settle_nested_includes(key_node, base_dir, seen)
+            _settle_nested_includes(value_node, base_dir, seen)
+        return
+    for child in getattr(node, "value", None) or []:
+        _settle_nested_includes(child, base_dir, seen)
 
 
 class IncludedMapping(dict):

@@ -161,13 +161,15 @@ def caption(
     from tvbo.utils.study_layout import study_path
 
     figures = _select(figures, name, spec_path)
-    out_dir = out.expanduser().resolve() if out else study_path("figures", root=_study_run.spec_dir(spec))
+    base = _study_run.spec_dir(spec)
+    origins = figure_origins(spec_path)
+    out_dir = out.expanduser().resolve() if out else study_path("figures", root=base)
     for figure in figures:
         fig_name = getattr(figure, "name", None) or "figure"
         if not bsplot.compose_caption(figure):
             _common.info(f"{fig_name}: nothing to caption (no description or panel labels).")
             continue
-        _common.info(f"wrote {bsplot.write_caption(figure, out_dir)}")
+        _common.info(f"wrote {bsplot.write_caption(figure, out_dir, base_dir=origins.get(fig_name, base))}")
 
 
 @app.command("compare", help="Measure how a rendered figure's LAYOUT differs from a reference image.")

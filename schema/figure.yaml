@@ -53,6 +53,12 @@ enums:
       static: {description: "Draw the layer whole in every frame — the full trace a cursor sweeps across, or a fixed reference the moving quantity is read against."}
       cursor: {description: "Draw a rule at the current frame's coordinate value rather than at the data. What marks *now* on a panel that shows the whole time course, so a reader can see which instant the other panels are at."}
 
+  AnnotationPlacement:
+    description: "Where an annotation's text appears."
+    permissible_values:
+      panel:   {description: "Drawn on the panel at its position. The default."}
+      caption: {description: "Written into the figure's composed caption, as part of its panel's clause, and not drawn. A sample size or a test statistic the reader needs but the panel need not carry; with `used:` the number is read from the result when the caption is composed, as a drawn annotation's is when the figure renders."}
+
   TickPrune:
     description: "Which end ticks to drop where a corner tick would collide with its neighbour panel's."
     permissible_values:
@@ -825,6 +831,9 @@ classes:
       color:
         range: string
         description: "Text colour; defaults to the current text colour."
+      placement:
+        range: AnnotationPlacement
+        description: "Where the text appears: on the panel (absent, or `panel`) or in the figure's composed caption (`caption`), where the position and text style slots do not apply."
 
   Style:
     description: "Layer/panel styling, portable intent plus a namespaced backend passthrough. Reuses Argument for the passthrough (matplotlib implicit in the MVP)."

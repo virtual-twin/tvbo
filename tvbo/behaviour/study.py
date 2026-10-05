@@ -244,12 +244,16 @@ class SimulationStudyBehaviour(Catalogued):
         for fig in as_list(getattr(self, "figures", None)):
             name, image, script = figure_outputs(fig, fig_dir)
             if image.is_file():
+                try:
+                    caption = compose_caption(fig, base) or None
+                except Exception:  # noqa: BLE001 — a caption whose number cannot be read is dropped, never the figure it describes
+                    caption = None
                 drawn.append(
                     FigureImage(
                         name=name,
                         path=image,
                         script=script if script.is_file() else None,
-                        caption=compose_caption(fig) or None,
+                        caption=caption,
                     )
                 )
         return StudyResult(
@@ -343,6 +347,8 @@ class SimulationStudyBehaviour(Catalogued):
                         exp = experiment.SimulationExperiment.from_string(yaml_dumper.dumps(exp_dm))
                     if source_file:
                         exp._source_file = source_file
+                    # Where a `cohort` reference of the experiment's network is declared.
+                    exp._study_datasets = getattr(self, "datasets", None)
                 return exp
         available = [getattr(e, "id", None) for e in exps]
         raise KeyError(f"Experiment {experiment_id!r} not found. Available: {available}")

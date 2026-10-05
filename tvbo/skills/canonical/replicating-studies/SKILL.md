@@ -586,6 +586,8 @@ Everything in this section is generated from `schema/study_layout.yaml` and from
 | `_analysis` | one `Analysis` |
 | `_figure` | one `Figure` |
 | `_study` | one `SimulationStudy` |
+| `_dataset` | one `Dataset` |
+| `_dataref` | one `DataRef` |
 
 <!-- END SPEC SUFFIXES -->
 

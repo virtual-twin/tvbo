@@ -51,6 +51,14 @@ slots:
     description: >-
       Unique identifier for the dataset.
 
+  cohort_id:
+    identifier: true
+    range: string
+    required: true
+    slot_uri: dcterms:identifier
+    description: >-
+      Identifier of a cohort, unique within the study: the name a reference addresses it by (``used: {cohort: <id>}``). Corresponds to the BIDS ``cohort-`` entity.
+
   subjects:
     multivalued: true
     range: Subject
@@ -130,6 +138,27 @@ classes:
           Experimental condition label (e.g., 'rest', 'task-nback').
           Maps to BIDS 'task-' entity.
 
+  Cohort:
+    description: >-
+      A named subset of a dataset's subjects: the unit a group-level quantity is defined over, such as a mean connectome, a per-edge presence count or a normalisation constant. A dataset may hold several, and they may overlap: the sites of a multi-centre study, a patient and a control group, the subjects a processing pipeline has finished so far. Naming the subset is what pins an aggregate. A quantity computed over ``hcpy93`` states which subjects went into it, and moving to a larger cohort is a change to one identifier rather than to every consumer.
+    slots:
+      - cohort_id
+    attributes:
+      label:
+        range: string
+        slot_uri: rdfs:label
+        description: "Human-readable cohort name."
+      description:
+        range: string
+        slot_uri: dcterms:description
+        description: "What admits a subject to this cohort, in words: the selection rule, the site, the diagnostic group."
+      members:
+        multivalued: true
+        range: string
+        required: true
+        description: >-
+          The subject identifiers this cohort holds, without the ``sub-`` prefix, in the order a stacked read returns them. When the enclosing dataset lists its ``subjects``, every member must be one of them.
+
   Dataset:
     description: >-
       A collection of subjects for a multi-subject study. Provides the
@@ -139,6 +168,12 @@ classes:
       - dataset_id
       - subjects
     attributes:
+      cohorts:
+        multivalued: true
+        range: Cohort
+        inlined: true
+        description: >-
+          Named subsets of this dataset's subjects (``Cohort``). A reference reads a cohort by its identifier (``used: {cohort: <id>}``): each member's file is found under this dataset's ``bids_root``.
       label:
         range: string
         slot_uri: rdfs:label

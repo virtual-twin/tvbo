@@ -227,8 +227,8 @@ rule ${ep["rule_name"]}:
 % for _flag in _run_flags(ep):
         "${_flag} "
 % endfor
-% if ep.get("depends_on"):
-        ## The sources' results live beside this rule's under OUT_DIR, not under its own output directory, which is where `tvbo run` looks by default.
+% if ep.get("depends_on") or ep.get("staged_containers"):
+        ## The sources' results and the staged analysis containers live under OUT_DIR, not under this rule's own output directory, which is where `tvbo run` looks by default.
         f"--results-root {OUT_DIR} "
 % endif
 % if _cohort_out(ep):

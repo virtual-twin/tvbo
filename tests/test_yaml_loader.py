@@ -239,6 +239,38 @@ def test_merged_include_must_hold_a_mapping(tmp_path: Path) -> None:
         yaml_loader.load_as_dict(main)
 
 
+def test_a_merged_fragment_reads_its_own_includes_from_its_own_directory(tmp_path: Path) -> None:
+    """A fragment merged with `<<: !include` may itself include, merged or plain, and its paths mean what they mean in the fragment.
+
+    The fragment is spliced into the parent as nodes and built by the parent's loader, so unless its includes are settled first a merged one is refused and a plain one is read against the parent's directory. The decoy beside the parent is the file the plain include must not pick up.
+    """
+    spec = tmp_path / "spec"
+    (spec / "deep").mkdir(parents=True)
+    _write(spec / "deep" / "base.yaml", "number_of_nodes: 3\n")
+    _write(spec / "deep" / "ref.yaml", "cohort: inner\n")
+    _write(spec / "ref.yaml", "cohort: middle\n")
+    _write(tmp_path / "ref.yaml", "cohort: decoy\n")
+    _write(
+        spec / "network.yaml",
+        """
+        <<: !include deep/base.yaml
+        label: individual
+        plain: !include ref.yaml
+        merged: {<<: !include deep/ref.yaml, output: weight}
+        listed: [&shared {<<: !include ref.yaml, output: length}, *shared]
+    """,
+    )
+    root = _write(tmp_path / "root.yaml", "network:\n  <<: !include spec/network.yaml\n  descriptor: SC\n")
+
+    network = yaml_loader.load_as_dict(root)["network"]
+
+    assert network["number_of_nodes"] == 3 and network["label"] == "individual" and network["descriptor"] == "SC"
+    assert network["plain"] == {"cohort": "middle"}
+    assert network["merged"] == {"cohort": "inner", "output": "weight"}
+    assert network["listed"] == [{"cohort": "middle", "output": "length"}] * 2
+    assert network == {**yaml_loader.load_as_dict(spec / "network.yaml"), "descriptor": "SC"}
+
+
 def test_included_file_envelope_is_dropped_on_both_include_forms(tmp_path: Path) -> None:
     """`tvbo_class` / `schema_version` annotate the fragment's FILE, not the parent object.
 

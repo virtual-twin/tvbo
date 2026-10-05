@@ -433,6 +433,8 @@ enums:
                 description: "Batch dimension (for parallel processing)"
             frequency:
                 description: "Frequency dimension (spectral analysis)"
+            subject:
+                description: "Subject dimension: the members of a cohort, the leading axis of a whole-cohort read"
 
     ReductionType:
         description: "Operations for reducing/aggregating values across dimensions"
@@ -1633,6 +1635,12 @@ classes:
             - parameters
             - producer
         attributes:
+            used:
+                range: DataRef
+                inlined: true
+                slot_uri: prov:used
+                description: >-
+                    WHERE + WHICH + SLICE for a template edge whose whole matrix is read rather than stored or computed: another network's layer, an analysis result, or a cohort member's own connectome (``used: {cohort: <id>, query: {...}, output: weight, reconcile: by_label}``). Inside a per-subject run a cohort reference resolves to that run's subject, which is what binds a model network to each subject's own connectivity. ``reconcile: by_label`` aligns the read matrix to this network's node order through its atlas aliases. Resolved lazily and never inlined, and it wins over a same-named layer in the companion file. Mutually exclusive with ``producer:``.
             source:
                 range: integer
                 required: false
@@ -1830,7 +1838,7 @@ classes:
             tail_duration:
                 range: float
                 description: >-
-                    The trailing span of simulated time to aggregate over, in the same time unit as the integration step. Converted to a sample count against this observation's own sample period (its `period`/`downsample_period`, else the integration `step_size`), so the window stays the same length of simulated time at any step. On an algorithm's observation the span may cover several iterations: a duration longer than the algorithm's `simulation_period` must be a whole multiple of it, and the observation is then the mean over that many most recent periods, or over every period so far while fewer have run. Mutually exclusive with `tail_samples`.
+                    The trailing span of simulated time to aggregate over, in the same time unit as the integration step. Converted to a sample count against the spacing of the samples it is cut from, so the window stays the same length of simulated time at any step: this observation's own sample period (its `period`/`downsample_period`, else the integration `step_size`) for a recorded trajectory, and the integration `step_size` for a `reduce: streaming` reducer or a tuning loop, which fold every step. On an algorithm's observation the span may cover several iterations: a duration longer than the algorithm's `simulation_period` must be a whole multiple of it, and the observation is then the mean over that many most recent periods, or over every period so far while fewer have run. Mutually exclusive with `tail_samples`.
             aggregation:
                 range: AggregationType
                 description: "How to aggregate over time"
@@ -4208,6 +4216,12 @@ classes:
                 multivalued: true
                 inlined_as_list: true
                 range: SimulationExperiment
+            datasets:
+                multivalued: true
+                inlined_as_list: true
+                range: Dataset
+                description: >-
+                    The datasets this study reads per-subject files from, each with the cohorts defined over it (``Dataset.cohorts``). Declared here, at the study, a dataset is visible to every analysis and experiment, so a reference names a cohort by identifier alone (``used: {cohort: <id>}``).
             analyses:
                 multivalued: true
                 inlined_as_list: true

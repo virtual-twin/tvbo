@@ -1692,6 +1692,8 @@ def _annotations(panel, base_dir=Path(".")) -> list:
     """
     out = []
     for a in getattr(panel, "annotations", None) or []:
+        if _in_caption(a):
+            continue
         loc = getattr(a, "loc", None)
         if loc in _ANNOT_LOC:
             x, y = _ANNOT_LOC[loc]
@@ -1712,6 +1714,57 @@ def _annotations(panel, base_dir=Path(".")) -> list:
         text_kwargs.setdefault("va", "center")
         out.append({"text": a.text, "x": x, "y": y, "layer": layer, "arrow": arrow, "tail": tail, "kwargs": text_kwargs})
     return out
+
+
+def _in_caption(annotation) -> bool:
+    """Whether *annotation* is written into the caption (``placement: caption``) rather than drawn."""
+    return str(getattr(annotation, "placement", None) or "panel") == "caption"
+
+
+_ANY_VALUE = "\x00"
+"""What a bound caption annotation's number becomes in a caption composed for :func:`caption_matches`: a character no authored text contains."""
+
+_MAYBE = ("\x01", "\x02")
+"""The marks around a sentence a caption composed for :func:`caption_matches` may or may not hold: a bound caption annotation of a panel with a ``placeholder``, which a caption written while its container is absent leaves out."""
+
+
+class _AnyNumber:
+    """A value that formats as :data:`_ANY_VALUE` under any format spec, so the text around a bound number reads exactly as :meth:`str.format` writes it around a real one."""
+
+    def __format__(self, spec: str) -> str:
+        return _ANY_VALUE
+
+
+def _caption_annotations(panel, base_dir, any_value: bool = False) -> list[str]:
+    """The sentences a panel's ``placement: caption`` annotations, and those of its insets and grid cells, add to its caption clause, each ``text`` formatted with the value its ``used:`` binding reads under *base_dir*.
+
+    Without *base_dir* a bound text keeps its format field (``N={:.0f}``); with *any_value* the number becomes :data:`_ANY_VALUE`, and a sentence a placeholder may stand in for is wrapped in :data:`_MAYBE`. A binding whose container is absent contributes nothing when the panel declares a ``placeholder``, since the panel then draws that label instead of the data; without one it raises, as rendering the panel would.
+    """
+    import numpy as np
+
+    sentences = []
+    owners = [panel, *(inset for _, inset in _items(getattr(panel, "insets", None))), *(getattr(panel, "cells", None) or [])]
+    for owner, a in ((o, a) for o in owners for a in getattr(o, "annotations", None) or []):
+        if not _in_caption(a):
+            continue
+        used = getattr(a, "used", None)
+        if used is None or (base_dir is None and not any_value):
+            sentences.append(_sentence(str(a.text)))
+            continue
+        placeholder = getattr(owner, "placeholder", None) or getattr(panel, "placeholder", None)
+        if any_value:
+            sentence = _sentence(str(a.text).format(_AnyNumber()))
+            sentences.append(f"{_MAYBE[0]}{sentence}{_MAYBE[1]}" if placeholder else sentence)
+            continue
+        layer = _resolve_layer(_UsedOnly(used), "cartesian", Path(base_dir))
+        if not layer.get("container"):
+            if placeholder:
+                continue
+            raise FileNotFoundError(
+                f"caption annotation {a.text!r} of panel {getattr(panel, 'panel_key', '?')!r} reads a container that is not under {base_dir}, and the panel declares no placeholder."
+            )
+        sentences.append(_sentence(str(a.text).format(float(np.asarray(load_layer(layer).values).ravel()[0]))))
+    return sentences
 
 
 class _UsedOnly:
@@ -2448,10 +2501,10 @@ def _sentence(text: str) -> str:
     return text if text.endswith((".", "!", "?", ":")) else text + "."
 
 
-def compose_caption(figure) -> str:
+def compose_caption(figure, base_dir=None, *, any_value: bool = False) -> str:
     """Compose a figure's caption from its spec — the authored lead plus one clause per panel.
 
-    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling's authored prose is not dropped with its letter. A sibling that authors no prose and derives no descriptor contributes nothing at all: its drawn title is a label on the figure, not a sentence in the caption. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
+    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description> <caption annotations>`` in layout order, the caption annotations' numbers read from the containers under *base_dir* (:func:`_caption_annotations`), the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling's authored prose is not dropped with its letter. A sibling that authors no prose and derives no descriptor contributes nothing at all: its drawn title is a label on the figure, not a sentence in the caption. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes. With *any_value* each bound number is left as :data:`_ANY_VALUE` and each sentence a placeholder may stand in for is marked with :data:`_MAYBE`, for :func:`caption_matches`.
     """
     spec_by_key = {k: p for k, p in _items(figure.panels)}
     lead: list[str] = []
@@ -2473,6 +2526,7 @@ def compose_caption(figure) -> str:
             _sentence(getattr(panel, "label", None) or ""),
             _sentence(_panel_descriptor(panel)),
             _sentence(getattr(panel, "description", None) or ""),
+            *_caption_annotations(panel, base_dir, any_value),
         ]
         group = _group_letter(key)
         said = group_parts.setdefault(group, set())
@@ -2497,8 +2551,31 @@ def compose_caption(figure) -> str:
     return " ".join(s for s in (lead + clauses) if s).strip()
 
 
-def write_caption(figure, out_dir, *, name: str | None = None) -> Path:
-    """Write a figure's composed caption to ``<out_dir>/<name>.caption.qmd`` and return the path.
+def caption_matches(figure, text: str) -> bool:
+    """Whether *text* is the caption *figure* composes, any number its caption annotations read standing in for their format fields.
+
+    What lets a committed caption be checked against its spec where the containers its numbers come from are absent, as they are in a build. A sentence of a panel with a ``placeholder`` (:data:`_MAYBE`) may be missing along with one space that joins it to its neighbours, since a caption written while that panel's container was absent leaves it out.
+    """
+    composed = compose_caption(figure, any_value=True)
+    pattern, at = [], 0
+    for match in re.finditer(f"( ?){_MAYBE[0]}(.*?){_MAYBE[1]}( ?)", composed):
+        lead, body, trail = match.groups()
+        pattern.append(_caption_pattern(composed[at : match.start()]))
+        pattern.append(
+            f"(?: {_caption_pattern(body)})?{re.escape(trail)}" if lead else f"(?:{_caption_pattern(body + trail)})?"
+        )
+        at = match.end()
+    pattern.append(_caption_pattern(composed[at:]))
+    return re.fullmatch("".join(pattern), text.rstrip("\n")) is not None
+
+
+def _caption_pattern(composed: str) -> str:
+    """*composed* caption text as a regular expression matching it literally, with any number standing at each :data:`_ANY_VALUE`."""
+    return ".+?".join(re.escape(part) for part in composed.split(_ANY_VALUE))
+
+
+def write_caption(figure, out_dir, *, name: str | None = None, base_dir=None) -> Path:
+    """Write a figure's composed caption to ``<out_dir>/<name>.caption.qmd`` and return the path, its caption annotations' numbers read under *base_dir*.
 
     A Quarto partial the manuscript pulls in with ``{{< include <name>.caption.qmd >}}``, so the caption is generated from the figure spec and regenerates whenever a panel moves or a layer is rebound — never hand-maintained beside the figure it describes.
     """
@@ -2506,5 +2583,5 @@ def write_caption(figure, out_dir, *, name: str | None = None) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = name or getattr(figure, "name", None) or "figure"
     path = out_dir / f"{stem}.caption.qmd"
-    path.write_text(compose_caption(figure) + "\n", encoding="utf-8")
+    path.write_text(compose_caption(figure, base_dir) + "\n", encoding="utf-8")
     return path

@@ -168,6 +168,7 @@ def _plan_payload(plan) -> dict:
         "workflow_axes": [
             {"name": ax.name, "parameter": ax.parameter, "kind": ax.kind, "n": ax.n} for ax in plan.workflow_axes
         ],
+        "subject_selection": plan.subject_selection,
         "n_workflow_cells": plan.n_workflow_cells,
         "n_array_tasks": plan.n_array_tasks,
         "chunk": plan.chunk,
@@ -193,6 +194,8 @@ def _print_plan_block(plan, *, show_study: bool = True) -> None:
     typer.echo("workflow-fanned axes (engine spawns 1 task per cell):")
     for ax in plan.workflow_axes:
         typer.echo(f"  - {ax.name:<12} {ax.parameter}  kind={ax.kind}  n={ax.n}")
+    if plan.subject_selection_text:
+        typer.echo(f"  subjects: {plan.subject_selection_text}")
     typer.echo("")
     typer.echo(f"total workflow cells : {plan.n_workflow_cells}")
     typer.echo(f"chunk                : {plan.chunk}  →  {plan.n_array_tasks} array task(s)")
@@ -300,6 +303,7 @@ def _freeze_spec_yaml(
     ``dataset`` once the per-subject data is bundled under ``spec/dataset``), so the spec points at the bundled tree instead of the author's machine-specific path.
     """
     from tvbo.classes.network import Network
+    from tvbo.utils import keyed_items
 
     net = getattr(experiment, "network", None)
     has_net = _network_has_matrices(net)
@@ -308,8 +312,15 @@ def _freeze_spec_yaml(
     original_wf = getattr(experiment, "workflow", None)
     ds = getattr(experiment, "dataset", None)
     original_ds_root = getattr(ds, "bids_root", None) if ds is not None else None
-    if dataset_bids_root is not None and ds is not None:
+    original_cohorts = getattr(ds, "cohorts", None) if ds is not None else None
+    rebundle = dataset_bids_root is not None and ds is not None
+    # Read while the dataset still names its own root, and before anything below needs restoring.
+    bundled = experiment.bundled_cohorts() if rebundle and hasattr(experiment, "bundled_cohorts") else []
+    if rebundle:
         ds.bids_root = dataset_bids_root
+        if bundled:
+            ids = {str(c.cohort_id) for c in bundled}
+            ds.cohorts = [c for _, c in keyed_items(original_cohorts, "cohorts") if str(c.cohort_id) not in ids] + bundled
     if workflow_spec:
         effective = _wf.workflow_config_from_spec(workflow_spec)
         if effective is not None:
@@ -339,8 +350,9 @@ def _freeze_spec_yaml(
             _ds.path = _orig
         if workflow_spec:
             experiment.workflow = original_wf
-        if dataset_bids_root is not None and ds is not None:
+        if rebundle:
             ds.bids_root = original_ds_root
+            ds.cohorts = original_cohorts
 
 
 def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
@@ -454,11 +466,17 @@ def _bundle_dataset(experiment, dest_dir: Path, cli_select: dict | None) -> str 
 
     ds = getattr(experiment, "dataset", None)
     if cli_select is None and not (ds is not None and getattr(ds, "bundle", None)):
+        cohorts = _wf.per_subject_cohorts(experiment)
+        if cohorts:
+            _common.die(
+                f"experiment {getattr(experiment, 'id', None)!r}: its network reads cohort(s) {cohorts} per subject, and a kit "
+                "carries their members' files only in its dataset bundle. Pass --bundle-dataset or declare `dataset.bundle: true`."
+            )
         return None
     entity_overrides = cli_select or {}
     try:
         manifest = experiment.dataset_bundle_files(entity_overrides)
-    except (FileNotFoundError, ValueError) as exc:
+    except (FileNotFoundError, LookupError, ValueError) as exc:
         _common.die(f"--bundle-dataset: {exc}")
     if not manifest:
         _common.warn("--bundle-dataset: experiment has no dataset-sourced target to bundle.")
@@ -478,6 +496,44 @@ def _bundle_dataset(experiment, dest_dir: Path, cli_select: dict | None) -> str 
         f"(dataset.bids_root rewritten to relative '{dest_dir.name}')"
     )
     return dest_dir.name
+
+
+def _stage_reference_containers(experiment, results_dir: Path) -> list[str]:
+    """Copy the analysis containers the experiment's network reads into the kit's *results_dir*; return their names.
+
+    A kit runs experiments, not the study's analyses, so a container a transform argument reads (a cohort aggregate) has no rule to make it on the target host. It travels instead, from the authoring study's results, and a missing one is fatal, as an unresolvable bundle is. Each is found as a run finds it (:func:`~tvbo.data.dataref.locate_analysis_container`) and staged under the name an analysis writes, so the kit's run reads it whichever layout the study holds it in.
+    """
+    import shutil
+
+    from tvbo.data.dataref import analysis_container_path, locate_analysis_container, sidecar_path
+
+    net = getattr(experiment, "network", None)
+    names = net.referenced_analyses() if hasattr(net, "referenced_analyses") else []
+    if not names:
+        return []
+    source = getattr(experiment, "_source_file", None)
+    source_root = net.reference_results_root(source_dir=Path(source).parent if source else None)
+    if source_root is None:
+        _common.die(
+            f"experiment {getattr(experiment, 'id', None)!r} reads analyses {names}, and it was not loaded from a study, so their containers cannot be found."
+        )
+    for name in names:
+        try:
+            container = locate_analysis_container(source_root, name)
+        except FileNotFoundError:
+            container = analysis_container_path(source_root, name)
+        missing = [f.name for f in (container, sidecar_path(container)) if not f.is_file()]
+        if missing:
+            _common.die(
+                f"experiment {getattr(experiment, 'id', None)!r} reads analysis {name!r}, whose container is not under "
+                f"{source_root} ({', '.join(missing)} missing). Run it (`tvbo run <study> --analysis {name}`) before freezing the kit."
+            )
+        staged = analysis_container_path(results_dir, name)
+        staged.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(container, staged)
+        shutil.copy2(sidecar_path(container), sidecar_path(staged))
+    _common.info(f"staged {len(names)} analysis container(s) into {results_dir}: {', '.join(names)}")
+    return names
 
 
 def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: dict | None = None) -> Path:
@@ -528,6 +584,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
         raise  # a deliberate abort (an unresolvable data_source network) is fatal, not a skipped snapshot
     except Exception as exc:
         _common.info(f"(could not snapshot YAML spec: {exc})")
+    _stage_reference_containers(experiment, out_dir / plan.out_dir)
 
     script_relpath = _freeze_backend_script(experiment, out_dir, plan.backend.name, plan.experiment_key)
 
@@ -801,6 +858,7 @@ def _emit_snakemake_study(
         # A fanned `parameters` sweep can't be frozen (see the docstring's fan-out note).
         _fanned_parameter = any(ax.kind == "parameters" for ax in plan.workflow_axes)
         scripts_relpath = None
+        staged: list[str] = []
         if stdout:
             spec_relpath, select = spec, key
         else:
@@ -815,6 +873,7 @@ def _emit_snakemake_study(
                 or bundled_code
             )
             spec_relpath, select = f"spec/{key}/experiment.yaml", None
+            staged = _stage_reference_containers(exp, out_dir / plan.out_dir)
             # Freeze the pre-rendered backend script ALONGSIDE the spec, so the SAME kit runs either way: `--code-source frozen` runs `scripts/<key>.<ext>` with no codegen on the node. A render failure is non-fatal — the spec path still works; the rule falls back to it when the script is absent.
             if not _fanned_parameter:
                 scripts_relpath = _freeze_backend_script(exp, out_dir, plan.backend.name, key)
@@ -856,6 +915,8 @@ def _emit_snakemake_study(
                 "cohort_subjects": list(plan.cohort_subjects),
                 "cohort_result_files": list(plan.cohort_result_files),
                 "depends_on": [_key_of.get(str(d), _san(str(d))) for d in plan.depends_on],
+                # Analysis containers staged under OUT_DIR for this rule's network to read, which, like a source experiment's result, are not under its own output directory.
+                "staged_containers": staged,
             }
         )
 

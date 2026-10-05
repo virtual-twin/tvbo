@@ -1229,6 +1229,7 @@ def test_study_readme_covers_every_experiment():
             vectorize_axes=[],
             workflow_axes=[NS(name="K")],
             overrides=[],
+            subject_selection_text="",
         )
 
     # Exp 40/48 vectorize their whole 4x39x10 grid into one job; exp 52 is a single run.

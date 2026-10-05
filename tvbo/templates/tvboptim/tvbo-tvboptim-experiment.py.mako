@@ -217,6 +217,7 @@ from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_tr
 weight_transform_jax, weight_transform_const_env, weight_transform_needs_lengths = _weight_transform_codegen(network)
 has_weight_transforms = bool(weight_transform_jax)
 weight_transform_distances_arg = "distances=distances, " if weight_transform_needs_lengths else ""
+weight_transform_reads_run_data = bool(network.sourced_transform_arguments("weight")) if hasattr(network, "sourced_transform_arguments") else False
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
@@ -1857,6 +1858,23 @@ def _stimulus_samples(name):
             f"event's `data` DataRef and passes it as run_experiment(stimulus_data={{{name!r}: array}})."
         )
     return jnp.asarray(_STIMULUS_DATA[name])
+
+% if weight_transform_reads_run_data:
+
+
+# The arrays the network's weight transforms read through `used:` arguments, keyed by argument name; injected by the caller, never inlined.
+_NETWORK_DATA = None
+
+
+def _network_datum(name):
+    """The array the weight-transform argument ``name`` refers to, as handed to run_experiment(network_data=...)."""
+    if _NETWORK_DATA is None or name not in _NETWORK_DATA:
+        raise ValueError(
+            f"the network's weight transform reads {name!r} through a `used:` reference, which was not supplied. Experiment.run "
+            f"resolves it and passes it as run_experiment(network_data={{{name!r}: array}})."
+        )
+    return jnp.asarray(_NETWORK_DATA[name])
+% endif
 <%
     _seed_coupling_home = coupling_param_keys(all_couplings, _to_ci_key)
 %>\
@@ -3886,6 +3904,10 @@ def run_experiment(
     """
     global _SEED_DYNAMICS, _SEED_PARAMS, _BRANCH_SEED, _STIMULUS_DATA
     _STIMULUS_DATA = kwargs.pop("stimulus_data", None)
+% if weight_transform_reads_run_data:
+    global _NETWORK_DATA
+    _NETWORK_DATA = kwargs.pop("network_data", None)
+% endif
     _SEED_DYNAMICS = seed_dynamics
     _BRANCH_SEED = branch_seed
     _SEED_PARAMS = seed_params

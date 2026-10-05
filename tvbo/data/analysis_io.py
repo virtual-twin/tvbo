@@ -37,6 +37,7 @@ __all__ = [
     "run_analysis",
     "schedule",
     "study_analyses",
+    "used_cohorts",
 ]
 
 
@@ -108,6 +109,23 @@ def dependencies(analysis) -> dict:
             if eid is not None:
                 exps.add(str(eid))
     return {"experiments": exps, "analyses": anas}
+
+
+def used_cohorts(analysis, datasets) -> dict:
+    """The cohorts this analysis reads, each as its dataset and its members in declared order.
+
+    Membership is part of what the analysis computes: a cohort mean over 93 subjects and over 1065 are different numbers under one declaration. This is what a container's staleness digest and its provenance record take the cohort from, so editing a cohort's members marks every analysis over it as needing a re-run.
+    """
+    from tvbo.data.cohort import cohort_members, find_cohort
+
+    out: dict = {}
+    for _, arg in _arg_items(_slot(analysis, "arguments")):
+        cohort_id = _slot(_slot(arg, "used"), "cohort")
+        if cohort_id is None or str(cohort_id) in out:
+            continue
+        dataset, cohort = find_cohort(datasets, cohort_id)
+        out[str(cohort_id)] = {"dataset": str(_slot(dataset, "dataset_id")), "members": cohort_members(dataset, cohort)}
+    return out
 
 
 def dependents_of(analyses, *, experiments=(), changed_analyses=()) -> list[str]:
@@ -379,6 +397,25 @@ def _pin_accelerator(execution) -> None:
         )
 
 
+def _declared_precision(execution):
+    """``(dtype, context)`` for the declared ``execution.precision``: the floating type the arguments are cast to and a context in which JAX computes at it.
+
+    JAX computes in 32 bits unless told otherwise and keeps a 32-bit input 32-bit even then, so honouring the declaration takes both. An ``execution`` block that names no precision takes the schema's default, ``float64``; only an analysis with no ``execution`` block at all keeps its arguments' stored type and JAX's process setting.
+    """
+    import contextlib
+
+    import numpy as np
+
+    declared = _slot(execution, "precision")
+    declared = str(getattr(declared, "text", declared) or "").strip().lower()
+    if not declared:
+        return None, contextlib.nullcontext()
+    from tvbo.utils.jax_precision import enable_x64
+
+    dtype = np.dtype(declared)
+    return dtype, enable_x64(dtype.itemsize == 8)
+
+
 def _device_plan(analysis, n_items, per_lane_bytes):
     """``(n_pmap, n_vmap)`` for the mapped axis — how many shards, how wide each batch.
 
@@ -506,6 +543,7 @@ def render_tvboptim(analysis, kwargs):
             f"expression does not produce (it produces {list(dims)})."
         )
 
+    precision, at_precision = _declared_precision(_slot(analysis, "execution"))
     in_axes, args = [], []
     for key in names:
         arg_dims, array = _labelled(kwargs[key])
@@ -514,10 +552,13 @@ def render_tvboptim(analysis, kwargs):
             args.append(array)
             continue
         arr, is_mapped = _aligned(kwargs[key], arg_dims, dims, mapped)
+        if precision is not None and arr.dtype.kind == "f":
+            arr = arr.astype(precision, copy=False)
         in_axes.append(0 if is_mapped else None)
         args.append(arr)
 
-    produced = _map_over(analysis, fn, names, args, in_axes, mapped)
+    with at_precision:
+        produced = _map_over(analysis, fn, names, args, in_axes, mapped)
 
     if over:
         how = str(_slot(agg, "type", "mean")).split(".")[-1]
@@ -572,10 +613,10 @@ def _render(analysis, kwargs):
     return renderer(analysis, kwargs)
 
 
-def _kwargs_of(analysis, results_root) -> dict:
+def _kwargs_of(analysis, results_root, datasets=None, source_dir=None) -> dict:
     """The analysis's arguments as kwargs — literals as written, ``used:`` refs resolved.
 
-    A sourced argument arrives as a labelled ``xarray.DataArray`` (sliced and reconciled by :func:`tvbo.data.dataref.resolve_dataref`), never a bare positional array, so the callable selects by name.
+    A sourced argument arrives as a labelled ``xarray.DataArray`` (sliced and reconciled by :func:`tvbo.data.dataref.resolve_dataref`), never a bare positional array, so the callable selects by name. *datasets* are the study's, where a ``cohort`` reference finds its members, and *source_dir* resolves a relative ``bids_root``.
     """
     name = analysis_name(analysis)
     out: dict = {}
@@ -591,7 +632,7 @@ def _kwargs_of(analysis, results_root) -> dict:
             out[key] = value
             continue
         try:
-            out[key] = _dref.resolve_dataref(used, results_root=results_root)
+            out[key] = _dref.resolve_dataref(used, results_root=results_root, datasets=datasets, source_dir=source_dir)
         except (FileNotFoundError, _dref.AmbiguousContainerError) as e:
             raise type(e)(f"analysis {name!r}, argument {key!r}: {e}") from e
     return out
@@ -697,8 +738,27 @@ def _plain(value):
     return value
 
 
-def _provenance(analysis, produced_keys: Iterable[str]) -> dict:
-    """The sidecar record: what was called, with what, producing which arrays."""
+def _invocation_record(analysis, call, cls_ref, invoked) -> dict:
+    """What the analysis invoked, as its sidecar states it: the ``equation`` with its mapped and aggregated axes for the declarative form, else the ``callable`` or ``class_call`` by module and name."""
+    equation = _slot(analysis, "equation")
+    if call is None and cls_ref is None and equation is not None:
+        aggregate = _slot(analysis, "aggregate")
+        mapped = _slot(analysis, "apply_on_dimension")
+        return {
+            "equation": {"rhs": str(_slot(equation, "rhs"))},
+            **({"apply_on_dimension": str(mapped)} if mapped else {}),
+            **(
+                {"aggregate": {"over": str(_slot(aggregate, "over")), "type": str(_slot(aggregate, "type", "mean"))}}
+                if aggregate is not None
+                else {}
+            ),
+        }
+    key = "class_call" if call is None and cls_ref is not None else "callable"
+    return {key: {"module": _slot(invoked, "module"), "name": _slot(invoked, "name")}}
+
+
+def _provenance(analysis, produced_keys: Iterable[str], cohorts: Mapping | None = None) -> dict:
+    """The sidecar record: what was called, with what, producing which arrays, over which *cohorts* (:func:`used_cohorts`)."""
     call = _slot(analysis, "callable")
     args = {}
     for key, arg in _arg_items(_slot(analysis, "arguments")):
@@ -706,7 +766,13 @@ def _provenance(analysis, produced_keys: Iterable[str]) -> dict:
         if used is None:
             args[key] = {"value": _plain(_slot(arg, "value"))}
             continue
-        ref = {k: _slot(used, k) for k in ("experiment", "analysis", "iri", "output", "transform")}
+        ref = {k: _slot(used, k) for k in ("experiment", "analysis", "cohort", "iri", "output", "transform")}
+        query = _slot(used, "query")
+        if query is not None:
+            from tvbo.data.cohort import query_entities
+
+            ents, suffix = query_entities(query)
+            ref["query"] = {**ents, **({"suffix": suffix} if suffix else {})}
         args[key] = {"used": {k: v for k, v in ref.items() if v is not None}}
     cls_ref = _slot(analysis, "class_call")
     invoked = call if call is not None else cls_ref
@@ -715,40 +781,50 @@ def _provenance(analysis, produced_keys: Iterable[str]) -> dict:
         "name": analysis_name(analysis),
         "label": _slot(analysis, "label"),
         "description": _slot(analysis, "description"),
-        ("class_call" if call is None and cls_ref is not None else "callable"): {
-            "module": _slot(invoked, "module"),
-            "name": _slot(invoked, "name"),
-        },
+        **_invocation_record(analysis, call, cls_ref, invoked),
         "backend": str(backend),
         "arguments": args,
         "outputs": sorted(str(k) for k in produced_keys),
+        **(
+            {"cohorts": {cid: {"dataset": c["dataset"], "n_members": len(c["members"])} for cid, c in cohorts.items()}}
+            if cohorts
+            else {}
+        ),
     }
 
 
-def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
-    """Execute one declared analysis and persist its result. Returns the container path."""
+def run_analysis(analysis, results_root=None, *, compress: bool = True, datasets=None, source_dir=None) -> Path:
+    """Execute one declared analysis and persist its result. Returns the container path.
+
+    *datasets* are the study's (``SimulationStudy.datasets``), needed by an analysis that reads a ``cohort``; *source_dir* is the study root a relative ``bids_root`` resolves against.
+    """
     import yaml
 
     from tvbo.data.experiment_result_io import write_container
 
     name = analysis_name(analysis)
-    produced = _render(analysis, _kwargs_of(analysis, results_root))
+    cohorts = used_cohorts(analysis, datasets)
+    produced = _render(analysis, _kwargs_of(analysis, results_root, datasets, source_dir))
     ds = _as_dataset(name, produced, _slot(analysis, "dims"))
 
     path = container_path(name, results_root)
     path.parent.mkdir(parents=True, exist_ok=True)
     write_container(ds, path, compress)
-    record = _provenance(analysis, (str(v)[len("observation__") :] for v in ds.data_vars))
+    record = _provenance(analysis, (str(v)[len("observation__") :] for v in ds.data_vars), cohorts)
     # The declaration's own digest travels in the sidecar, so staleness is per analysis rather than "the spec file was touched" (see study_manifest._stale_or_missing_analyses) and the container has one companion rather than three.
     from tvbo.data.study_manifest import _analysis_fingerprint
 
-    record["declaration_digest"] = _analysis_fingerprint(analysis)
+    record["declaration_digest"] = _analysis_fingerprint(analysis, cohorts)
     _dref.sidecar_path(path).write_text(yaml.safe_dump(record, sort_keys=False))
     return path
 
 
-def run_analyses(analyses, results_root=None, *, compress: bool = True, on_start=None, on_done=None) -> list[Path]:
+def run_analyses(
+    analyses, results_root=None, *, compress: bool = True, on_start=None, on_done=None, datasets=None, source_dir=None
+) -> list[Path]:
     """Execute ``analyses`` in the given order, returning the containers written.
+
+    *datasets* and *source_dir* are handed to each :func:`run_analysis`.
 
     ``on_start(name)`` / ``on_done(name, path)`` report progress to a caller's logger without this module choosing an output style.
 
@@ -761,7 +837,7 @@ def run_analyses(analyses, results_root=None, *, compress: bool = True, on_start
         name = analysis_name(analysis)
         if on_start:
             on_start(name)
-        path = run_analysis(analysis, results_root, compress=compress)
+        path = run_analysis(analysis, results_root, compress=compress, datasets=datasets, source_dir=source_dir)
         written.append(path)
         if on_done:
             on_done(name, path)

@@ -624,7 +624,11 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
             if l_name and l_name != "length":
                 arrays[l_name] = arrays.pop("length")
 
-    if not arrays and carried.get("mesh/vertices") is None:
+    unread = network.unread_sourced_layers() if hasattr(network, "unread_sourced_layers") else []
+    for name in unread:
+        arrays.pop(name, None)  # a stored matrix under a layer read per run would stand in for it on reload
+
+    if not arrays and carried.get("mesh/vertices") is None and not unread:
         _write_v07_sidecar(network, sidecar_path, sidecar_format)
         return
 
