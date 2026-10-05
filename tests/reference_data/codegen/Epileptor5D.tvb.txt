@@ -76,7 +76,7 @@ class Epileptor5D(Model):
         label=r":math:`r`",
         default=np.array([0.00035]),
         domain=Range(lo=0.0, hi=0.001, step=5e-05),
-        doc="""Temporal scaling in the third state variable,         called :math:`1/\tau_{0}` in Jirsa paper""",
+        doc="""Temporal scaling in the third state variable,         called :math:`1/\\tau_{0}` in Jirsa paper""",
     )
     s = NArray(
         label=r":math:`s`",

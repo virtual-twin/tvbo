@@ -54,7 +54,7 @@ class Epileptor2D(Model):
         label=r":math:`r`",
         default=np.array([0.00035]),
         domain=Range(lo=0.0, hi=0.001, step=5e-05),
-        doc="""Temporal scaling in the slow state-variable, \         called :math:`1\tau_{0}` in Jirsa paper (see class Epileptor)""",
+        doc="""Temporal scaling in the slow state-variable, \\         called :math:`1\\tau_{0}` in Jirsa paper (see class Epileptor)""",
     )
     slope = NArray(
         label=r":math:`slope`",
