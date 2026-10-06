@@ -43,6 +43,7 @@ def _ep(key, axes, depends_on=()):
         "select": None,
         "backend": "tvboptim",
         "out_dir": "results",
+        "reference_root": "results",
         "result_stem": f"exp-{key}_result",
         "container": None,
         "block": {},
@@ -65,7 +66,7 @@ def test_a_subject_waits_for_its_own_source_and_searches_the_shared_root():
     inputs = rule[rule.index("input:") : rule.index("output:")]
     assert 'f"{OUT_DIR}/60/sub-{{subject}}_exp-60_result.h5"' in inputs
     assert "expand(" not in inputs
-    assert 'f"--results-root {OUT_DIR} "' in rule
+    assert '"--results-root results "' in rule
 
 
 def test_a_source_outside_the_kit_leaves_no_empty_input_block():
@@ -75,7 +76,7 @@ def test_a_source_outside_the_kit_leaves_no_empty_input_block():
     )
     rule = smk[smk.index("rule exp_30:") :]
     assert "input:" not in rule
-    assert 'f"--results-root {OUT_DIR} "' in rule
+    assert '"--results-root results "' in rule
 
 
 def test_a_grid_source_is_still_awaited_whole():

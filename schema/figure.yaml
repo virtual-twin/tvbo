@@ -272,7 +272,7 @@ classes:
       theme:
         range: Theme
         inlined: true
-        description: "The look this figure declares where it differs from its study's `theme`: its colours, the geometry a style sheet used to own, and its axis rule. Whatever it states beats the study's theme and every layer in `style`, always — declared beats layered, so a figure's look can be read off its own spec instead of reconstructed from the sheets underneath it. Start from the curated one with `theme: {iri: tvbo:theme/default}` and state only the differences."
+        description: "The look this figure declares where it differs from its study's `theme`: its colours, the geometry a style sheet used to own, and its axis rule. Whatever it states beats the study's theme and every layer in `style`, always — declared beats layered, so a figure's look can be read off its own spec instead of reconstructed from the sheets underneath it. An `iri` named here draws this figure in that curated theme in place of the study's, and the fields stated beside it override that theme in turn."
       style:
         range: string
         multivalued: true

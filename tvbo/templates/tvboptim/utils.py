@@ -21,6 +21,7 @@ Usage in templates:
 
 import ast
 import re
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -1702,24 +1703,80 @@ _PIPELINE_STEP_KINDS = {
 
 Keyed to a KIND rather than to axis names, so a step and the streaming reducer that replaces it (``compute_fc`` / ``windowed_fc``, which declares ``comoment``) cannot end up naming the same node-by-node matrix's axes differently. :data:`_REDUCTION_DIMS` stays the one place a kind's axes are spelled.
 
-A step carrying only an ``equation`` is elementwise and keeps its source's axes. A named step (``callable``/``function``, or a bare ``name``) is an opaque operation of the same rank or another: ``compute_fc`` turns a ``(time, node)`` trajectory into a node-by-node matrix, so propagating the source's axes through it would hang the node labels on the column axis and call the row axis ``time``. A named step absent from this table leaves the derived observation unlabelled rather than guessed.
+A step carrying only an ``equation`` has the axes :func:`equation_dims` follows by name through its expression. A named step (``callable``/``function``, or a bare ``name``) is an opaque operation of the same rank or another: ``compute_fc`` turns a ``(time, node)`` trajectory into a node-by-node matrix, so propagating the source's axes through it would hang the node labels on the column axis and call the row axis ``time``. A named step absent from this table leaves the derived observation unlabelled rather than guessed.
 """
+
+
+TRAJECTORY_DIMS = ("time", "variable", "node")
+"""The axes of the trajectory window a monitor reads, ``data[:, voi, :]``: a mode-coupled model's modes are folded into the variable axis, so the rank is three whatever the model."""
+
+
+def reads_trajectory(obs: Any, obs_by_name: Mapping[str, Any]) -> bool:
+    """True when *obs*'s pipeline (or its bare monitor) reads the model trajectory itself: its sources are model variables only (no other observation, no dotted reference) and nothing but its pipeline transforms them — no ``aggregation``, ``reduce``, ``dynamics`` or ``class_reference``, and no ``dims:`` of its own."""
+    if (
+        get_attr(obs, "aggregation") is not None
+        or get_attr(obs, "reduce") is not None
+        or get_attr(obs, "dynamics") is not None
+        or get_attr(obs, "class_reference") is not None
+        or as_list(get_attr(obs, "dims"))
+    ):
+        return False
+    sources = [str(get_attr(s, "name", s)) for s in as_list(get_attr(obs, "source"))]
+    return bool(sources) and not any(s in obs_by_name or "." in s for s in sources)
+
+
+def trajectory_dims(obs: Any, obs_by_name: Mapping[str, Any]) -> tuple:
+    """:data:`TRAJECTORY_DIMS` for a plain materialised observation, one that :func:`reads_trajectory` and has no pipeline, else ``()``.
+
+    These axes are what a derived observation's equation reads, so they are followed by name from here; the plain observation itself stays undeclared and the container names it positionally, as it always did.
+    """
+    if as_list(get_attr(obs, "pipeline")) or not reads_trajectory(obs, obs_by_name):
+        return ()
+    return TRAJECTORY_DIMS
 
 
 def _derived_dims(obs: Any, src_dims: tuple) -> tuple | None:
     """Axes *obs*'s pipeline leaves on a source carrying *src_dims*, or None when unknown.
 
-    A step is elementwise only when it carries its OWN ``equation``; every other step is a named operation whose reduction kind is looked up in :data:`_PIPELINE_STEP_KINDS` and whose axes then come from :func:`reduction_dims`. Testing for the equation positively is what keeps this honest: a step may name its operation through ``name`` alone (:func:`_step_reducer_name` accepts that), so inferring "elementwise" from the ABSENCE of ``callable``/``function`` would propagate the source's axes straight through an operation that reshapes.
+    A step carrying its OWN ``equation`` has the axes :func:`equation_dims` follows through the expression by name; every other step is a named operation whose reduction kind is looked up in :data:`_PIPELINE_STEP_KINDS` and whose axes then come from :func:`reduction_dims`. A step neither can name makes the whole derived observation unknown, and its author declares ``dims:``.
     """
     dims: tuple | None = src_dims
+    sources = [str(get_attr(s, "name", s)) for s in as_list(get_attr(obs, "source"))]
     for step in as_list(get_attr(obs, "pipeline")):
-        if get_attr(step, "equation") is not None:
+        equation = get_attr(step, "equation")
+        if equation is not None:
+            try:
+                dims = equation_dims(get_attr(equation, "rhs"), dims, sources)
+            except ValueError as error:
+                raise ValueError(
+                    f"Observation {get_attr(obs, 'name', '?')!r} step {_step_reducer_name(step)!r}: {error}"
+                ) from None
+            if dims is None:
+                return None
             continue
         kind = _PIPELINE_STEP_KINDS.get(_step_reducer_name(step).lower())
         dims = reduction_dims({"kind": kind}) if kind else None
         if not dims:
             return None
     return dims
+
+
+def equation_dims(rhs, src_dims: tuple | None, sources: Iterable[str] = ()) -> tuple | None:
+    """The axes an ``equation`` step leaves on an input carrying *src_dims*, followed by name through the expression (:func:`tvbo.codegen.dims.expression_dims`).
+
+    The input is read under a generic source name (:data:`SOURCE_ARG_NAMES`) or under one of its *sources*' own names, and carries *src_dims* under each; every other free symbol is a scalar constant, and a name standing in an axis position is an axis, not a variable. ``None`` when the source's axes are unknown or the expression leaves them unknowable.
+    """
+    from tvbo.codegen.dims import axis_symbols, expression_dims
+    from tvbo.parse.expression import parse_eq
+
+    if src_dims is None:
+        return None
+    carriers = list(SOURCE_ARG_NAMES) + [str(s) for s in sources]
+    expr = parse_eq(str(rhs), parameters=carriers)
+    axes = axis_symbols(expr)
+    env: dict = {str(s): () for s in expr.free_symbols if str(s) not in axes}
+    env.update({n: tuple(src_dims) for n in carriers})
+    return expression_dims(expr, env)
 
 
 _COLLAPSING_AGGREGATIONS = frozenset({"mean", "variance", "std", "first_passage", "last", "first"})
@@ -1749,9 +1806,9 @@ def _aggregation_dims(obs: Any, obs_by_name: dict[str, Any]) -> tuple:
 def observation_dims(experiment: Any, reductions: dict[str, Any] | None = None) -> dict[str, tuple]:
     """Every observation's declared axis names, keyed by observation name.
 
-    An observation's own ``dims:`` wins wherever it is declared: a ``pipeline`` of user functions has an output shape only its author knows, and nothing here may infer one from a length. Otherwise :func:`reduction_dims` names the axes of ONE reduction, asked of every observation an experiment declares, so the result container labels all of them and not only the ``reduce: streaming`` subset; a bare aggregation reduced after the scan is named by :func:`_aggregation_dims`. An observation that neither declares its axes nor reduces into known ones is absent, and the container falls back to its positional template for that one alone.
+    An observation's own ``dims:`` wins wherever it is declared: a ``pipeline`` of user functions has an output shape only its author knows, and nothing here may infer one from a length. Otherwise :func:`reduction_dims` names the axes of ONE reduction, asked of the observation's own, and :func:`_aggregation_dims` those of a post-scan aggregation. A monitor pipeline over the model trajectory (:func:`reads_trajectory`) is then followed step by step from :data:`TRAJECTORY_DIMS` exactly as a derived observation's is (:func:`_derived_dims`), so a reshaping equation step declares the axes it leaves.
 
-    Derived observations are then given the axes their pipeline leaves on the observations they source (:data:`_PIPELINE_STEP_KINDS`): elementwise through an ``equation`` step, re-declared by a named step that reshapes. Sources that disagree, sources that are themselves unlabelled, and pipelines whose steps are not all recognised leave the derived observation unlabelled rather than guessed. Iterating to a fixed point handles a chain of derived-of-derived in any declaration order.
+    Derived observations are then given the axes their pipeline leaves on the observations they source (:func:`_derived_dims`): followed by name through an ``equation`` step, re-declared by a named step that reshapes (:data:`_PIPELINE_STEP_KINDS`). A plain materialised source lends its trajectory axes (:func:`trajectory_dims`) to that derivation without being declared itself. Sources that disagree, sources that are not observations, and steps nothing here can name leave the derived observation absent, for its author to declare.
 
     *reductions* is :func:`resolve_reductions` of the same experiment, for a caller that already holds it; without it each undeclared observation's reduction is resolved here.
     """
@@ -1765,6 +1822,8 @@ def observation_dims(experiment: Any, reductions: dict[str, Any] | None = None) 
             d = reduction_dims(
                 reductions.get(n) if reductions is not None else resolve_reduction(o, experiment)
             ) or _aggregation_dims(o, obs_by_name)
+            if not d and as_list(get_attr(o, "pipeline")) and reads_trajectory(o, obs_by_name):
+                d = _derived_dims(o, TRAJECTORY_DIMS)
         if d:
             dims[str(n)] = d
     changed = True
@@ -1778,7 +1837,7 @@ def observation_dims(experiment: Any, reductions: dict[str, Any] | None = None) 
             obs_srcs = [s for s in srcs if s in obs_by_name]
             if not obs_srcs or len(obs_srcs) != len(srcs):
                 continue
-            src_dims = {dims.get(s) for s in obs_srcs}
+            src_dims = {dims.get(s) or trajectory_dims(obs_by_name[s], obs_by_name) or None for s in obs_srcs}
             if len(src_dims) == 1 and None not in src_dims:
                 d = _derived_dims(o, src_dims.pop())
                 if d:
@@ -3201,6 +3260,7 @@ def resolve_step_expression(rhs, input_var, literals=None, derived=None, scope=N
     import sympy as sp
 
     from tvbo.adapters.observation_sampling import tvb_iround
+    from tvbo.codegen.dims import axis_symbols
     from tvbo.parse.expression import parse_eq
 
     class _IRound(sp.Function):
@@ -3236,7 +3296,7 @@ def resolve_step_expression(rhs, input_var, literals=None, derived=None, scope=N
     expr = parse_eq(str(rhs), parameters=known, functions={"iround": _IRound}).subs(subs)
     expr = expr.subs({sp.Symbol(n): sp.Symbol(str(input_var)) for n in SOURCE_ARG_NAMES})
 
-    unresolved = {str(s) for s in expr.free_symbols} - {str(input_var)}
+    unresolved = {str(s) for s in expr.free_symbols} - {str(input_var)} - axis_symbols(expr)
     if unresolved:
         raise ValueError(
             f"{where}: {sorted(unresolved)} left unresolved in {str(rhs)!r}. Give each a `value`, or an "

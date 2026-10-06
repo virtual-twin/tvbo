@@ -61,6 +61,21 @@ def test_without_a_subject_the_cohort_is_stacked(cohort):
     np.testing.assert_array_equal(da.sel(subject="02").values, 2.0)
 
 
+@pytest.mark.parametrize("n_nodes", [4, 6])
+def test_reconciling_a_stacked_cohort_leaves_subjects_named_like_nodes_in_place(tmp_path, n_nodes):
+    """Subject identifiers that are also node labels stay subjects: only the node axis is laid out on the model's order."""
+    subjects = ["1", "2", "3", "4"]
+    nodes = [str(k + 1) for k in range(n_nodes)]
+    for sid in subjects:
+        ds = xr.Dataset({"estimate__J_i": (("node",), 10.0 * int(sid) + np.arange(n_nodes))}, coords={"node": nodes})
+        ds.to_netcdf(tmp_path / f"sub-{sid}_exp-30_desc-Model_result.h5", engine="h5netcdf")
+    ref = _ref(experiment=30, output="J_i", reconcile="by_label")
+    da = dr.resolve_dataref(ref, results_root=tmp_path, alias_map={}, model_labels=nodes[::-1])
+    assert da.dims == ("subject", "node")
+    assert list(da.subject.values) == subjects and list(da.node.values) == nodes[::-1]
+    np.testing.assert_array_equal(da.sel(subject="2").values, 20.0 + np.arange(n_nodes)[::-1])
+
+
 def test_a_single_run_is_not_stacked(tmp_path):
     xr.Dataset({"g": (("node",), np.arange(3.0))}).to_netcdf(tmp_path / "exp-5_desc-M_result.h5", engine="h5netcdf")
     da = dr.resolve_dataref(_ref(experiment=5, output="g"), results_root=tmp_path)

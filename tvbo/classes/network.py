@@ -78,6 +78,11 @@ def _declares_its_matrix(edge) -> bool:
     return getattr(edge, "used", None) is not None or getattr(edge, "producer", None) is not None
 
 
+def _is_template_edge(edge) -> bool:
+    """Whether *edge* has no endpoints, so it names a matrix layer of the network and connects no two nodes."""
+    return getattr(edge, "source", None) is None and getattr(edge, "target", None) is None
+
+
 _WEIGHT_TARGETS = ("weight", "weights", "sc")
 _LENGTH_TARGETS = ("length", "lengths")
 
@@ -202,6 +207,14 @@ def _alias_group(name) -> tuple:
     if _is_length_name(name):
         return _LENGTH_TARGETS + tuple(sorted(_LENGTH_MEASURES.difference(_LENGTH_TARGETS)))
     return (str(name).lower(),)
+
+
+def _declares_layer(edges, name) -> bool:
+    """Whether one of *edges* states where the layer *name* comes from (``used:`` / ``producer:``) under any spelling of it, so a source's own layer of that name yields to it."""
+    if not name:
+        return False
+    names = _alias_group(name)
+    return any(_declares_its_matrix(e) and str(getattr(e, "label", "") or "").lower() in names for e in edges or [])
 
 
 def _warn_superseded_accessor(old: str, new: str) -> None:
@@ -672,7 +685,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _is_materialized(self) -> bool:
         """Return True when this Network already carries connectivity data.
 
-        A Network is "materialized" if it has cached weight matrices, a lazy array store (h5 companion), or an explicit edges list. Used by ``_resolve`` to short-circuit when no further loading is required.
+        A Network is "materialized" if it has cached weight matrices, a lazy array store (h5 companion), or an explicit edge between two nodes. A template edge only names, sources or produces a layer, so a network whose edges are all templates holds no connectivity and its source still loads. Used by ``_resolve`` to short-circuit when no further loading is required.
         """
         if any(k.startswith("edges/") for k in self._resident()):
             return True
@@ -681,17 +694,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         # A pending graph_generator owns this network's internal connectivity (e.g. a reservoir's recurrent matrix). Any `edges` present alongside it are cross-layer / coupling edges, not internal weights — so don't let them short-circuit generator resolution.
         if self._has_graph_generator():
             return False
-        edges = getattr(self, "edges", None)
-        if edges:
-            return True
-        return False
-
-    def _only_declares_layers(self) -> bool:
-        """Whether this network's connectivity so far is nothing but template edges: layers named, sourced or produced, with no explicit edge and no array behind them yet."""
-        if any(k.startswith("edges/") for k in self._resident()) or getattr(self, "_store", None) is not None:
-            return False
-        edges = list(getattr(self, "edges", None) or [])
-        return bool(edges) and all(getattr(e, "source", None) is None and getattr(e, "target", None) is None for e in edges)
+        return any(not _is_template_edge(e) for e in getattr(self, "edges", None) or [])
 
     def _resolve(self, source_dir: str | Path | None = None) -> None:
         """Materialise this Network's connectivity from its declarative spec.
@@ -710,6 +713,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
            ``get_normative_connectome_data``.
         6. None of the above: no-op (Network must have been constructed via explicit ``nodes``/``edges`` or ``Network.from_matrix``).
 
+        Whichever source loads, a template edge that states where its matrix comes from (``used:`` / ``producer:``) replaces the source's layer of that name under any spelling, and the source fills the nodes and every other layer (:meth:`_keep_declared_layers`).
+
         Parameters
         ----------
         source_dir
@@ -717,23 +722,43 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         """
         if getattr(self, "_resolved", False):
             return
-        # 1. Macro connectivity: skip when already materialised. Layers that are only declared hold no connectivity, so a companion file named beside them is still opened.
-        materialized = self._is_materialized()
-        if getattr(self, "data_file", None) and (not materialized or self._only_declares_layers()):
-            self._resolve_from_data_file(source_dir)
-        elif not materialized:
-            if getattr(self, "bids_dir", None):
+        # 1. Macro connectivity: skip when already materialised.
+        if not self._is_materialized():
+            declared = [e for e in self.edges or [] if _declares_its_matrix(e)]
+            if getattr(self, "data_file", None):
+                self._resolve_from_data_file(source_dir)
+            elif getattr(self, "bids_dir", None):
                 self._resolve_from_bids_dir(source_dir)
             elif self._has_graph_generator():
                 self._resolve_from_graph_generator(source_dir)
             elif getattr(self, "parcellation", None):
                 self._resolve_from_parcellation()
+            self._keep_declared_layers(declared)
         # 2. Multi-scale resolution (idempotent no-ops when unused). Runs whether or not macro connectivity was already materialised so a DB-loaded network still gets its node_template / subnetworks / sourced parameters expanded.
         self._apply_declared_nodes()
         self._expand_node_template()
         self._resolve_subnetworks(source_dir)
         self._resolve_parameter_sources(source_dir)
         self._resolved = True
+
+    def _keep_declared_layers(self, declared: list) -> None:
+        """Put the layers this network *declared* back over what its source loaded.
+
+        A template edge that states where its matrix comes from (``used:`` / ``producer:``) is the network's layer of that name under every spelling (:func:`_declares_layer`), so the source's template edge of it is dropped, and so is the array the source made resident for it, which every lookup would otherwise serve first. The source keeps every other layer. A declared edge keeps its place in ``edges``, or follows the source's edges where the source replaced the list.
+        """
+        if not declared:
+            return
+        mine = {id(edge) for edge in declared}
+        edges = [
+            edge
+            for edge in self.edges or []
+            if id(edge) in mine or not (_is_template_edge(edge) and _declares_layer(declared, edge.label))
+        ]
+        held = {id(edge) for edge in edges}
+        self.edges = edges + [edge for edge in declared if id(edge) not in held]
+        resident = self._resident()
+        for key in [k for k in resident if _declares_layer(declared, _edge_name(k))]:
+            del resident[key]
 
     def invalidate_resolution(self) -> None:
         """Drop everything ``_resolve`` materialised, so the next access rebuilds it.
@@ -1032,16 +1057,11 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             sidecar = data_file
 
         loaded = load_network(sidecar)
-        declared = [e for e in (self.edges or []) if _declares_its_matrix(e)]
         # The sidecar is the authoritative source of connectivity. Replace connectivity-bearing fields unconditionally. Inline-authored coupling / transforms / parameters live in slots NOT listed here and are preserved on self.
         for attr in ("nodes", "edges", "number_of_nodes", "descriptor"):
             val = getattr(loaded, attr, None)
             if val is not None:
                 setattr(self, attr, val)
-        if declared:
-            # An authored layer that states where its matrix comes from (`used:` / `producer:`) replaces the companion's layer of that name rather than being dropped with the rest of the authored edges.
-            named = {str(getattr(e, "label", "") or "") for e in declared}
-            self.edges = [e for e in (self.edges or []) if str(getattr(e, "label", "") or "") not in named] + declared
         store = getattr(loaded, "_store", None)
         if store is not None:
             self._store = store
@@ -1051,7 +1071,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         self._resident().update(loaded._resident())
 
     def _resolve_from_bids_dir(self, source_dir: str | Path | None) -> None:
-        """Populate self from a BEP017 BIDS directory at ``self.bids_dir``."""
+        """Populate self from a BEP017 BIDS directory at ``self.bids_dir``: its nodes and its matrices. The directory declares no edges, so the ones this network authored stay."""
         bids_dir = Path(self.bids_dir)
         if not bids_dir.is_absolute():
             base = Path(source_dir) if source_dir else Path.cwd()
@@ -1068,7 +1088,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             structural_measures=list(self.structural_measures) if self.structural_measures else None,
             observational_measures=list(self.observational_measures) if self.observational_measures else None,
         )
-        for attr in ("nodes", "edges", "number_of_nodes"):
+        for attr in ("nodes", "number_of_nodes"):
             val = getattr(loaded, attr, None)
             if val is not None:
                 setattr(self, attr, val)
@@ -1189,11 +1209,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         """Take a ``nodes`` list keyed by ``label`` out of *kwargs*, returning its specs.
 
         A node list is keyed either by ``id``, when the list *is* the graph, or by ``label``, when it attaches values to the nodes the network's data materialises (a ``bids_dir``, ``data_file``, ``iri``, parcellation or graph generator). A label-keyed list names no index, so a per-region value cannot land on another region when the data's node order changes. A label-keyed node carries no ``id``, or the unassigned sentinel the dialect gives it so the datamodel can construct it; either way the list is held back here and applied by :meth:`_apply_declared_nodes`. Returns None for an id-keyed list, which is left in place. Mixing the two keys, a node with neither, and a label named twice are errors.
+
+        A ``nodes`` mapping keyed by label is the same declaration, and is read as its list first (:func:`tvbo.datamodel.dialect.fold_node_mapping`).
         """
         import copy
 
-        from tvbo.datamodel.dialect import UNASSIGNED_NODE_ID
+        from tvbo.datamodel.dialect import UNASSIGNED_NODE_ID, fold_node_mapping
 
+        fold_node_mapping(kwargs)
         nodes = kwargs.get("nodes")
         if not isinstance(nodes, list) or not nodes:
             return None
@@ -2651,7 +2674,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
         Note that ``observations`` is deliberately NOT copied: it is a runtime view over the companion's measures, not a schema slot, and ``observational_measures`` is what reconstructs it.
 
-        A layer this network reads through ``used:`` and has not read under its current binding (:meth:`unread_sourced_layers`) has no values in the companion, so the reference keeps the declared edges and the reloaded network reads that layer per run again. One that was read is in the companion as the bound subject's array, as a result's provenance needs it.
+        A layer this network reads through ``used:`` and has not read under its current binding (:meth:`unread_sourced_layers`) has no values in the companion, so the reference keeps the declared template edges and the reloaded network reads that layer per run again. One that was read is in the companion as the bound subject's array, as a result's provenance needs it. An explicit edge between two nodes is never copied: it comes back from the companion's sidecar, and beside ``data_file`` it would read as connectivity already in hand, so the companion would not be opened.
         """
         from tvbo import datamodel as dm
 
@@ -2665,7 +2688,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             ref.edges = [
                 edge
                 for edge in self.edges
-                if getattr(edge, "producer", None) is None
+                if _is_template_edge(edge)
+                and getattr(edge, "producer", None) is None
                 and (getattr(edge, "used", None) is None or str(edge.label) in unread)
             ]
         if getattr(self, "parameters", None):
@@ -4217,19 +4241,13 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             return {}
 
     def reference_results_root(self, source_dir=None):
-        """Where an ``analysis`` or ``experiment`` reference of this network finds its container: the bound results directory, else the one the study layout gives the study under *source_dir* (by default the bound one, else the one this network was loaded from), else ``None``."""
-        from tvbo.utils.study_layout import study_path, study_root
+        """Where an ``analysis`` or ``experiment`` reference of this network finds its container (:func:`tvbo.data.dataref.reference_results_root`): the bound results directory, else that of the study under *source_dir*, by default the bound one, else the one this network was loaded from."""
+        from tvbo.data.dataref import reference_results_root
 
         binding = self._binding()
-        if binding.get("results_root") is not None:
-            return binding["results_root"]
-        source_dir = source_dir or binding.get("source_dir") or getattr(self, "_source_dir", None)
-        if not source_dir:
-            return None
-        try:
-            return study_path("results", root=study_root(source_dir))
-        except (StopIteration, LookupError, OSError):
-            return None
+        return reference_results_root(
+            binding.get("results_root"), source_dir or binding.get("source_dir") or getattr(self, "_source_dir", None)
+        )
 
     def _sourced(self, ref, what: str):
         """The array a ``used:`` reference names, on this network's own node order when it asks for ``reconcile: by_label``.
@@ -4409,7 +4427,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def array(self, path: str):
         """The array at ``path``, resident or read from the companion on first use; ``None`` when there is neither.
 
-        A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format.
+        A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format. A companion matrix of a layer an edge declares with ``used:`` or ``producer:``, under any spelling of its name (:func:`_declares_layer`), is not this network's and is not read from the companion.
         """
         key = _array_key(path)
         if (name := _edge_name(key)) is not None:
@@ -4418,7 +4436,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if key in resident:
             return resident[key]
         store = getattr(self, "_store", None)
-        if store is None:
+        if store is None or _declares_layer(self.edges, name):
             return None
         try:
             if key.startswith("edges/") and key.count("/") == 1:

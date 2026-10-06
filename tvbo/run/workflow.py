@@ -142,7 +142,7 @@ class WorkflowPlan:
     )  # canonical per-subject result filenames (build_result_path), one per cohort_subjects entry
     subject_selection: dict[str, Any] = field(
         default_factory=dict
-    )  # how the cohorts the network reads per subject narrowed the fan-out (SimulationExperiment.subject_selection); empty when none did
+    )  # how the cohorts the experiment reads narrowed the fan-out (SimulationExperiment.subject_selection); empty when none did
 
     chunk: int = 1  # cells per array task when axes are fanned; the number of array shards when the sweep is fully vectorised
     engine_block: dict[str, Any] = field(default_factory=dict)
@@ -156,6 +156,11 @@ class WorkflowPlan:
     depends_on: list[str] = field(
         default_factory=list
     )  # experiment keys whose result seeds this run (initial_state.from_experiment)
+    reference_root: str = ""  # where a launched run finds the containers it reads and does not write, passed by every launcher as `tvbo run --results-root`; `out_dir` unless the emitter states another
+
+    def __post_init__(self) -> None:
+        """A kit's runs read from its own results tree, where emission stages what they need; an emitter writing no kit states the study's results directory instead."""
+        self.reference_root = self.reference_root or self.out_dir
 
     @property
     def container_exec_flags(self) -> str:
@@ -354,12 +359,12 @@ def extract_axes(experiment) -> list[SweepAxis]:
 def _dataset_subject_axis(experiment) -> SweepAxis | None:
     """A workflow-fanned ``subject`` axis when the experiment has a per-subject target.
 
-    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``); each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that subject's empirical target. Returns ``None`` when the experiment declares no dataset-sourced observation. A network read per subject (:meth:`Network.per_subject_cohorts`) has nothing to be built from without its subject fan-out, so for one an enumeration that fails or finds no subject raises instead.
+    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``); each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that subject's empirical target. Returns ``None`` when the experiment declares no dataset-sourced observation. An experiment that reads a cohort raises instead where its fan-out would silently vanish: when the enumeration fails, when the cohorts leave none of the dataset's subjects (:func:`_subject_selection`), and when a network read per subject (:func:`per_subject_cohorts`), which has nothing to be built from without a subject, finds none.
     """
     ids_fn = getattr(experiment, "dataset_subject_ids", None)
     if not callable(ids_fn):
         return None
-    cohorts = per_subject_cohorts(experiment)
+    cohorts = getattr(experiment, "referenced_cohorts", list)()
     try:
         subjects = list(ids_fn())
     except Exception:
@@ -367,9 +372,9 @@ def _dataset_subject_axis(experiment) -> SweepAxis | None:
             raise
         return None
     if not subjects:
-        if cohorts:
+        if per_subject_cohorts(experiment) or _subject_selection(experiment):
             raise ValueError(
-                f"experiment {getattr(experiment, 'id', None)!r}: its network reads cohort(s) {cohorts} per subject, but its dataset "
+                f"experiment {getattr(experiment, 'id', None)!r}: it reads cohort(s) {cohorts} per subject, but its dataset "
                 "yields no subject that is a member of each. Declare `dataset.subjects` or a dataset-sourced observation, or check the cohort's members."
             )
         return None
@@ -388,7 +393,7 @@ def per_subject_cohorts(experiment) -> list[str]:
 
 
 def _subject_selection(experiment) -> dict:
-    """How the cohorts the experiment's network reads per subject narrowed its fan-out, or ``{}`` when none did."""
+    """How the cohorts the experiment's references name (:meth:`SimulationExperiment.referenced_cohorts`) narrowed its fan-out, or ``{}`` when none did."""
     select = getattr(experiment, "subject_selection", None)
     selection = select() if callable(select) else {}
     return selection if selection.get("cohorts") else {}
@@ -757,45 +762,15 @@ def plan(
         _record_source_deps(getattr(_dyn, "parameters", None))
     _record_source_deps(getattr(experiment, "parameters", None))
 
-    # A ``used:`` DataRef (Parameter.used or an exploration-builder Argument.used) that names an in-study experiment is the same result dependency: the PROV ``used`` edge is the ordering edge. Record the referenced experiment id so the DAG runs it first.
-    def _dep_from_used(ref):
-        if ref is None:
-            return
-        _exp = getattr(ref, "experiment", None)
-        if _exp is not None:
-            _id = str(getattr(_exp, "id", _exp))
-        else:
-            # Same WHERE-parsing rule as the runtime resolver (dataref.locate_container): only a last iri segment that *is* an experiment token (``exp-30`` / ``exp30`` / ``30``) names an in-study dependency. A curated / dataset iri that merely contains digits (``tvbo:dataset/HCP1200``, ``rec-avgMatrix_atlas-HCPMMP1``) yields None here, so it never registers a phantom edge on a non-existent experiment (which would deadlock the DAG on a rule that is never emitted).
-            from tvbo.data.dataref import experiment_id
+    # A ``used:`` reference that names an in-study experiment is the same result dependency: the PROV ``used`` edge is the ordering edge, wherever the experiment declares it (SimulationExperiment.declared_references).
+    from tvbo.data.dataref import experiment_id
 
-            _id = experiment_id(getattr(ref, "iri", None))
+    for _ref in getattr(experiment, "declared_references", list)():
+        _exp = getattr(_ref, "experiment", None)
+        # Only an iri whose last segment is an experiment token (``exp-30`` / ``exp30`` / ``30``) names a dependency, as in dataref.locate_container: a curated or dataset iri that merely contains digits registers no edge on an experiment that does not exist.
+        _id = str(getattr(_exp, "id", _exp)) if _exp is not None else experiment_id(getattr(_ref, "iri", None))
         if _id and _id != str(getattr(experiment, "id", "")) and _id not in depends_on:
             depends_on.append(_id)
-
-    def _record_used_param_deps(container):
-        _items = container.values() if hasattr(container, "values") else (container or [])
-        for _it in _items:
-            _dep_from_used(getattr(_it, "used", None))
-
-    if _dyn is not None:
-        _record_used_param_deps(getattr(_dyn, "parameters", None))
-    _record_used_param_deps(getattr(experiment, "parameters", None))
-    from tvbo.utils import network_couplings
-
-    for _cpl in network_couplings(getattr(experiment, "network", None)).values():
-        _record_used_param_deps(getattr(_cpl, "parameters", None))
-    # A sourced data-driven stimulus plays another run's recording (Event.parameters.data → Parameter.used).
-    _events = getattr(experiment, "events", None)
-    for _ev in as_list(_events):
-        _record_used_param_deps(getattr(_ev, "parameters", None))
-    # Exploration-builder arguments (ExplorationAxis.builder → Argument.used).
-    for _expl in as_list(getattr(experiment, "explorations", None)):
-        for _axis in as_list(getattr(_expl, "space", None)):
-            for _barg in as_list(getattr(getattr(_axis, "builder", None), "arguments", None)):
-                _dep_from_used(getattr(_barg, "used", None))
-    # Network layers and transform arguments read through `used:` (Edge.used, Argument.used).
-    for _ref in getattr(getattr(experiment, "network", None), "declared_references", list)():
-        _dep_from_used(_ref)
 
     # An explicit run venv wins over a declared container, with a notice.
     _container = resolve_container_ref(spec.get("container"))

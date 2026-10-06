@@ -36,6 +36,10 @@ def _stub(dataset, observations, source_file=None):
         "subject_selection",
         "_dataset_subjects",
         "_reference_datasets",
+        "_reference_context",
+        "declared_references",
+        "_referenced",
+        "referenced_cohorts",
         "reference_cohort_files",
         "dataset_bundle_files",
         "_find_subject_file",
@@ -91,6 +95,25 @@ def test_subject_subset_scopes_the_bundle(cohort: Path):
     """An explicit dataset.subjects list curates which subjects the bundle carries."""
     exp = _fc_experiment(cohort, subjects=["100206"])
     assert set(exp.dataset_bundle_files()) == {"100206"}
+
+
+def test_the_enumeration_follows_the_query_and_the_subject_list_it_is_asked_with(cohort: Path, monkeypatch):
+    """Subjects found under one query, or listed at one time, do not answer for another, and an unchanged question lists the tree once."""
+    from tvbo.data import cohort as cohort_io
+
+    listings = []
+    list_tree = cohort_io.subject_sidecars
+    monkeypatch.setattr(cohort_io, "subject_sidecars", lambda *args: listings.append(args) or list_tree(*args))
+    _write_subject(cohort, "100408", "Schaefer400")
+    exp = _fc_experiment(cohort)
+    assert exp.dataset_subject_ids() == ["100206", "100307"]
+    assert exp.subject_selection() is exp.subject_selection() and len(listings) == 1
+
+    exp.observations["empirical_fc"].query.atlas = "Schaefer400"
+    assert exp.dataset_subject_ids() == ["100206", "100307", "100408"]
+
+    exp.dataset.subjects = ["100408", "100206"]
+    assert exp.dataset_subject_ids() == ["100408", "100206"]
 
 
 def test_bundle_dataset_copies_and_returns_relative_root(cohort: Path, tmp_path: Path):
@@ -159,15 +182,44 @@ def test_bundle_dies_on_unresolved_selection(cohort: Path):
 
 
 def test_experiments_reading_one_dataset_share_its_tree_and_a_conflicting_file_is_refused(cohort: Path, tmp_path: Path):
-    """Two experiments of one kit that read the same dataset land in one ``data/<dataset_id>/`` tree, the second copying only what the first did not; a file at the same place with other content stops the freeze."""
-    kit = tmp_path / "kit"
-    assert _wf._bundle_dataset(_fc_experiment(cohort, subjects=["100206"]), kit, kit / "spec" / "a") == "../../data/dataset"
-    assert _wf._bundle_dataset(_fc_experiment(cohort), kit, kit / "spec" / "b") == "../../data/dataset"
+    """Two experiments of one emission that read the same dataset land in one ``data/<dataset_id>/`` tree, the second copying only what the first did not; a file the emission wrote, found with other content, stops the freeze."""
+    kit, written = tmp_path / "kit", set()
+    first = _fc_experiment(cohort, subjects=["100206"])
+    assert _wf._bundle_dataset(first, kit, kit / "spec" / "a", written=written) == "../../data/dataset"
+    assert _wf._bundle_dataset(_fc_experiment(cohort), kit, kit / "spec" / "b", written=written) == "../../data/dataset"
     assert sorted(p.name for p in (kit / "data" / "dataset").iterdir()) == ["sub-100206", "sub-100307"]
     payload = next((kit / "data" / "dataset" / "sub-100307").glob("*.h5"))
     payload.write_bytes(b"other content")
     with pytest.raises(typer.Exit):
-        _wf._bundle_dataset(_fc_experiment(cohort), kit, kit / "spec" / "c")
+        _wf._bundle_dataset(_fc_experiment(cohort), kit, kit / "spec" / "c", written=written)
+
+
+def test_a_file_an_earlier_emission_left_is_refreshed(cohort: Path, tmp_path: Path, monkeypatch):
+    """A kit emitted again after its data changed carries the new data: what the earlier emission left is stale, not a clash, and the emission says how much it replaced."""
+    kit = tmp_path / "kit"
+    assert _wf._bundle_dataset(_fc_experiment(cohort), kit, kit / "spec") == "../data/dataset"
+    source = next((cohort / "sub-100307").glob("*atlas-HCPMMP1*.h5"))
+    source.write_bytes(b"refitted")
+    said: list[str] = []
+    monkeypatch.setattr(_wf._common, "info", said.append)
+    assert _wf._bundle_dataset(_fc_experiment(cohort), kit, kit / "spec") == "../data/dataset"
+    assert (kit / "data" / "dataset" / "sub-100307" / source.name).read_bytes() == b"refitted"
+    assert "1 file(s) copied, 1 of them refreshing a stale file from an earlier emission" in said[-1]
+
+
+def test_a_freeze_that_fails_leaves_the_experiments_dataset_as_it_was(cohort: Path, tmp_path: Path, monkeypatch):
+    """The freeze points the dataset at the kit's tree and narrows its subjects while it renders; a failure on the way must not leave that in the experiment the caller still holds."""
+    experiment = _fc_experiment(cohort, subjects=["100206", "100307"])
+    listed = experiment.dataset.subjects
+
+    def refuse(_spec):
+        raise RuntimeError("no such workflow slot")
+
+    monkeypatch.setattr(_wf._wf, "workflow_config_from_spec", refuse)
+    with pytest.raises(RuntimeError, match="no such workflow slot"):
+        _wf._freeze_spec_yaml(experiment, tmp_path / "spec", workflow_spec={"chunk": 2}, dataset_bids_root="../data/dataset")
+    assert experiment.dataset.bids_root == str(cohort)
+    assert experiment.dataset.subjects is listed
 
 
 def test_the_frozen_dataset_lists_exactly_the_fan_out():

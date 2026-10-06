@@ -11,6 +11,7 @@ import pytest
 
 from tvbo.classes.network import Network
 from tvbo.templates.tvboptim.utils import weight_transform_codegen
+from tvbo.utils.jax_precision import enable_x64
 
 RHS = "log(weight + 1) / max(log(weight + 1))"
 
@@ -23,16 +24,21 @@ def _net_with_transform():
 
 
 def _apply_emitted(net, weights, distances=None):
-    """Run the emitted const_env + per-transform env exactly as `create_network` does."""
+    """Run the emitted const_env + per-transform env exactly as `create_network` does, in the 64-bit precision `run()` forces, so the comparison against `weights_matrix` does not depend on which test enabled x64 first."""
     transforms, const_env, _ = weight_transform_codegen(net)
-    scope = {"jnp": jnp, "weights": jnp.asarray(weights), "distances": None if distances is None else jnp.asarray(distances)}
-    for line in const_env:
-        exec(line, scope)
-    for expr, chained_env in transforms:
-        for line in chained_env:
+    with enable_x64():
+        scope = {
+            "jnp": jnp,
+            "weights": jnp.asarray(weights),
+            "distances": None if distances is None else jnp.asarray(distances),
+        }
+        for line in const_env:
             exec(line, scope)
-        scope["weights"] = eval(expr, scope)
-    return np.asarray(scope["weights"])
+        for expr, chained_env in transforms:
+            for line in chained_env:
+                exec(line, scope)
+            scope["weights"] = eval(expr, scope)
+        return np.asarray(scope["weights"])
 
 
 def test_raw_accessor_is_untouched_transformed_is_normalised():

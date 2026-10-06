@@ -75,6 +75,33 @@ def test_hann_is_scipys_periodic_window(fmt, n):
 
 
 @pytest.mark.parametrize("fmt", FORMATS)
+def test_an_integral_float_length_is_accepted_as_the_integer(fmt, signal):
+    """A length derived from a period and a step arrives as `512.0`; it is the same window, overlap and FFT length as `512`."""
+    np.testing.assert_array_equal(_run("hann(8.0)", fmt), _run("hann(8)", fmt))
+    np.testing.assert_array_equal(_run("rfftfreq(16.0, 0.1)", fmt), _run("rfftfreq(16, 0.1)", fmt))
+    np.testing.assert_array_equal(
+        _run("welch(x, hann(64.0), 100.0, 32.0, 128.0, 1)", fmt, x=signal),
+        _run("welch(x, hann(64), 100.0, 32, 128, 1)", fmt, x=signal),
+    )
+
+
+@pytest.mark.parametrize("fmt", FORMATS)
+@pytest.mark.parametrize(
+    "rhs,where",
+    [
+        ("hann(8.5)", r"hann\(n\): n must be an integral length"),
+        ("rfftfreq(7.2, 0.1)", r"rfftfreq\(n, d\): n must be"),
+        ("welch(x, hann(8), 1.0, 4.5, 8, 0)", "noverlap must be an integral length"),
+        ("welch(x, hann(8), 1.0, 4, 8.1, 0)", "nfft must be an integral length"),
+    ],
+)
+def test_a_non_integral_length_is_refused_naming_the_argument(fmt, rhs, where, signal):
+    """Never rounded in silence: the error names the primitive and the argument it cannot turn into a shape."""
+    with pytest.raises(ValueError, match=where):
+        _run(rhs, fmt, x=signal)
+
+
+@pytest.mark.parametrize("fmt", FORMATS)
 @pytest.mark.parametrize("n", [511, 1024])
 def test_rfftfreq_is_numpys_and_welchs_frequency_axis(fmt, n):
     got = _run(f"rfftfreq({n}, 1 / fs)", fmt, fs=100.0)

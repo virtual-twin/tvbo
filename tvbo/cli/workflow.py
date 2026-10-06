@@ -315,18 +315,18 @@ def _freeze_spec_yaml(
     # Read while the dataset still names its own root, and before anything below needs restoring.
     bundled = experiment.bundled_cohorts() if rebundle and hasattr(experiment, "bundled_cohorts") else []
     fan_out = [str(s) for s in experiment.dataset_subject_ids()] if rebundle else []
-    if rebundle:
-        ds.bids_root = dataset_bids_root
-        ds.subjects = _fan_out_subjects(original_subjects, fan_out)
-        if bundled:
-            ids = {str(c.cohort_id) for c in bundled}
-            ds.cohorts = [c for _, c in keyed_items(original_cohorts, "cohorts") if str(c.cohort_id) not in ids] + bundled
-    if workflow_spec:
-        effective = _wf.workflow_config_from_spec(workflow_spec)
-        if effective is not None:
-            experiment.workflow = effective
     restore_ds: list[tuple[object, str]] = []
     try:
+        if rebundle:
+            ds.bids_root = dataset_bids_root
+            ds.subjects = _fan_out_subjects(original_subjects, fan_out)
+            if bundled:
+                ids = {str(c.cohort_id) for c in bundled}
+                ds.cohorts = [c for _, c in keyed_items(original_cohorts, "cohorts") if str(c.cohort_id) not in ids] + bundled
+        if workflow_spec:
+            effective = _wf.workflow_config_from_spec(workflow_spec)
+            if effective is not None:
+                experiment.workflow = effective
         _freeze_referenced_networks(experiment, spec_dir, restore_ds)
         if not has_net:
             return experiment.render(format="yaml")
@@ -465,30 +465,46 @@ def _bundle_request(items: list[str]) -> dict[str, str]:
     return {k: v.strip() for k, v in pairs}
 
 
-def _copy_into_bundle(src: Path, dst: Path) -> tuple[int, int]:
-    """Copy *src* (a file or a directory) to *dst*, keeping what is already there when identical; return ``(files, bytes)`` newly copied.
+def _copy_into_bundle(src: Path, dst: Path, written: set[Path]) -> tuple[int, int, int]:
+    """Copy *src* (a file or a directory) to *dst*, keeping what is already there when identical; return ``(files, bytes, refreshed)``, the files copied, their size, and how many of them replaced a stale file.
 
-    The copy gets a current modification time rather than the source's, so a cluster's scratch cleaner, which deletes by age, does not treat a dataset frozen today as expired. A file already at *dst* with different content is a hard error: two experiments of one kit would otherwise read different data under one name.
+    *written* holds every file this emission has placed or found identical, and is added to. A file at *dst* whose content differs is told apart by it: one this emission wrote is a hard error, since two experiments of one kit would otherwise read different data under one name, and one an earlier emission left is stale and is overwritten.
+
+    The copy gets a current modification time rather than the source's, so a cluster's scratch cleaner, which deletes by age, does not treat a dataset frozen today as expired.
     """
     import filecmp
     import shutil
 
     pairs = [(f, dst / f.relative_to(src)) for f in sorted(src.rglob("*")) if f.is_file()] if src.is_dir() else [(src, dst)]
-    n_files = n_bytes = 0
+    n_files = n_bytes = n_refreshed = 0
     for source, target in pairs:
+        claimed = target.resolve()
         if target.exists():
-            if not filecmp.cmp(source, target, shallow=False):
-                _common.die(f"the kit already holds {target}, with content that differs from {source}.")
-            continue
+            if filecmp.cmp(source, target, shallow=False):
+                written.add(claimed)
+                continue
+            if claimed in written:
+                _common.die(f"this emission already wrote {target}, with content that differs from {source}.")
+            n_refreshed += 1
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(source, target)
+        written.add(claimed)
         n_files += 1
         n_bytes += target.stat().st_size
-    return n_files, n_bytes
+    return n_files, n_bytes, n_refreshed
 
 
-def _bundle_dataset(experiment, kit_dir: Path, spec_dir: Path, select: dict | None = None) -> str | None:
+def _refreshed_note(n_refreshed: int) -> str:
+    """How an emission reports the stale files it overwrote, empty when it overwrote none."""
+    return f", {n_refreshed} of them refreshing a stale file from an earlier emission" if n_refreshed else ""
+
+
+def _bundle_dataset(
+    experiment, kit_dir: Path, spec_dir: Path, select: dict | None = None, written: set[Path] | None = None
+) -> str | None:
     """Copy the dataset files *experiment* reads into the kit; return the root its frozen spec records, relative to *spec_dir*.
+
+    *written* is the emission's record of the files it has placed (:func:`_copy_into_bundle`), shared by every experiment frozen into one kit; a call given none is an emission of its own.
 
     A kit carries its data: each fan-out subject's empirical targets and the cohort layers its network reads per subject (:meth:`SimulationExperiment.dataset_bundle_files`, with *select* pinning the variant), so it runs on a host that has never seen the author's data tree. They land in ``<kit>/data/<dataset_id>/sub-<id>/``, one tree per dataset that every experiment of the kit reading that dataset shares, and the frozen spec's ``dataset.bids_root`` points there. Returns None for an experiment that reads no dataset file.
 
@@ -504,44 +520,55 @@ def _bundle_dataset(experiment, kit_dir: Path, spec_dir: Path, select: dict | No
         return None
     dataset_id = getattr(getattr(experiment, "dataset", None), "dataset_id", None) or "dataset"
     dest_dir = kit_dir / "data" / "".join(c if (c.isalnum() or c in ".-_") else "_" for c in str(dataset_id))
-    n_files = n_bytes = n_held = 0
+    written = set() if written is None else written
+    n_files = n_bytes = n_held = n_refreshed = 0
     for subject, files in manifest.items():
         for f in files:
-            copied, size = _copy_into_bundle(f, dest_dir / f"sub-{subject}" / f.name)
-            n_files, n_bytes, n_held = n_files + copied, n_bytes + size, n_held + (copied == 0)
+            copied, size, refreshed = _copy_into_bundle(f, dest_dir / f"sub-{subject}" / f.name, written)
+            n_files, n_bytes, n_held, n_refreshed = (
+                n_files + copied,
+                n_bytes + size,
+                n_held + (copied == 0),
+                n_refreshed + refreshed,
+            )
     root = Path(os.path.relpath(dest_dir, spec_dir)).as_posix()
-    shared = f", {n_held} already held by another experiment" if n_held else ""
+    shared = f", {n_held} already held" if n_held else ""
     _common.info(
-        f"bundled dataset {dataset_id}: {len(manifest)} subject(s), {n_files} file(s) copied, {n_bytes / 1e6:.1f} MB{shared} "
+        f"bundled dataset {dataset_id}: {len(manifest)} subject(s), {n_files} file(s) copied{_refreshed_note(n_refreshed)}, {n_bytes / 1e6:.1f} MB{shared} "
         f"→ {dest_dir.relative_to(kit_dir)}/ (dataset.bids_root frozen as '{root}')"
     )
     return root
 
 
-def _stage_reference_containers(experiment, results_dir: Path, depends_on=(), in_kit=()) -> list[str]:
+def _stage_reference_containers(
+    experiment, results_dir: Path, depends_on=(), in_kit=(), written: set[Path] | None = None
+) -> list[str]:
     """Copy the results *experiment* reads that the kit does not produce into the kit's *results_dir*; return what was staged.
 
-    A kit runs its own experiments, not the study's analyses nor the experiments it leaves out, so a container read from either has no rule to make it on the target host: the analysis containers the network's transforms read (a cohort aggregate), and the result of every experiment in *depends_on* that is not in *in_kit* (the group fit a per-subject fit warm-starts from). They travel instead, from the authoring study's results: an analysis container with its sidecar, found as a run finds it (:func:`~tvbo.data.dataref.locate_analysis_container`) and staged under the name an analysis writes, so the kit's run reads it whichever layout the study holds it in; a group run whole, a per-subject cohort as the shards of the subjects this experiment fans over, each result with its companions. A missing one is fatal, as an unresolvable bundle is.
+    *written* is the emission's record of the files it has placed (:func:`_copy_into_bundle`), shared by every experiment frozen into one kit; a call given none is an emission of its own.
+
+    A kit runs its own experiments, not the study's analyses nor the experiments it leaves out, so a container read from either has no rule to make it on the target host: the analysis containers its references read (:meth:`SimulationExperiment.referenced_analyses`: a cohort aggregate a network transform takes, a parameter sourced from an analysis), and the result of every experiment in *depends_on* that is not in *in_kit* (the group fit a per-subject fit warm-starts from). They travel instead, from the authoring study's results: an analysis container with its sidecar, found as a run finds it (:func:`~tvbo.data.dataref.locate_analysis_container`) and staged under the name an analysis writes, so the kit's run reads it whichever layout the study holds it in; a group run whole, a per-subject cohort as the shards of the subjects this experiment fans over, each result with its companions. A missing one is fatal, as an unresolvable bundle is.
     """
-    from tvbo.classes.network import Network
     from tvbo.data.dataref import (
         AmbiguousContainerError,
         analysis_container_path,
         locate_analysis_container,
         locate_exp_container,
+        reference_results_root,
         sidecar_path,
     )
 
     exp_id = getattr(experiment, "id", None)
     net = getattr(experiment, "network", None)
-    names = net.referenced_analyses() if hasattr(net, "referenced_analyses") else []
+    names = getattr(experiment, "referenced_analyses", list)()
     kit_ids = {str(k) for k in in_kit} | {str(exp_id)}
     sources = [str(s) for s in depends_on if str(s) not in kit_ids]
     if not names and not sources:
         return []
     source = getattr(experiment, "_source_file", None)
     source_dir = Path(source).parent if source else None
-    source_root = (net if hasattr(net, "reference_results_root") else Network()).reference_results_root(source_dir=source_dir)
+    bound = hasattr(net, "reference_results_root")
+    source_root = net.reference_results_root(source_dir=source_dir) if bound else reference_results_root(source_dir=source_dir)
     if source_root is None:
         _common.die(
             f"experiment {exp_id!r} reads {', '.join([*names, *(f'experiment {s}' for s in sources)])}, and it was not loaded from a study, so their containers cannot be found."
@@ -573,13 +600,19 @@ def _stage_reference_containers(experiment, results_dir: Path, depends_on=(), in
             stem = container.name.rsplit("_result", 1)[0] if "_result" in container.name else container.stem
             files += [(f, results_dir / f.name) for f in sorted(container.parent.glob(f"{stem}_*"))]
     results_dir.mkdir(parents=True, exist_ok=True)
-    copied = [_copy_into_bundle(src, dst) for src, dst in files]
-    n_files, n_bytes = sum(c[0] for c in copied), sum(c[1] for c in copied)
+    written = set() if written is None else written
+    copied = [_copy_into_bundle(src, dst, written) for src, dst in files]
+    n_files, n_bytes, n_refreshed = (sum(c[i] for c in copied) for i in range(3))
     staged = [*names, *(f"exp-{s}" for s in sources)]
     _common.info(
-        f"staged {', '.join(staged)} into {results_dir}: {n_files} of {len(files)} file(s) copied, {n_bytes / 1e6:.1f} MB, the rest already held"
+        f"staged {', '.join(staged)} into {results_dir}: {n_files} of {len(files)} file(s) copied{_refreshed_note(n_refreshed)}, {n_bytes / 1e6:.1f} MB, the rest already held"
     )
     return staged
+
+
+def _read_from_the_study(plan, spec: str) -> None:
+    """Point *plan*'s launched runs at the authoring study's results directory for what they read and do not write: an artefact printed to stdout has no kit whose results tree could hold it."""
+    plan.reference_root = str(_study_run.results_root(spec, None))
 
 
 def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: dict | None = None) -> Path:
@@ -619,7 +652,8 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
     spec_dir = out_dir / "spec"
     spec_path = spec_dir / f"{plan.experiment_key}.yaml"
     # Before the error-swallowing spec freeze, so a bundling failure is a hard error the user sees.
-    bundle_root = _bundle_dataset(experiment, out_dir, spec_dir, bundle_select)
+    written: set[Path] = set()
+    bundle_root = _bundle_dataset(experiment, out_dir, spec_dir, bundle_select, written)
     spec_relpath = None
     bundled_code = False
     try:
@@ -631,7 +665,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
         raise  # a deliberate abort (an unresolvable data_source network) is fatal, not a skipped snapshot
     except Exception as exc:
         _common.info(f"(could not snapshot YAML spec: {exc})")
-    _stage_reference_containers(experiment, out_dir / plan.out_dir, plan.depends_on)
+    _stage_reference_containers(experiment, out_dir / plan.out_dir, plan.depends_on, written=written)
 
     script_relpath = _freeze_backend_script(experiment, out_dir, plan.backend.name, plan.experiment_key)
 
@@ -895,6 +929,7 @@ def _emit_snakemake_study(
                 _key_of[str(_ref)] = _k
 
     exp_plans, block, plans, bundled_code = [], {}, [], False
+    written: set[Path] = set()
     study_rule = _rule_key(study_key)
     for exp in experiments:
         key = _san(_wf.experiment_key(exp))
@@ -902,16 +937,17 @@ def _emit_snakemake_study(
         # Study-level block for the shipped profile: the cluster identity (partition/account) is a property of the run, not of one experiment, so take the first experiment that declares one — matching how the Snakefile's global `container:` keys off exp_plans[0]. Per-rule resources come from each plan's own block (see exp_plans below).
         block = block or (plan.engine_block or {})
         plans.append(plan)
+        if stdout:
+            _read_from_the_study(plan, spec)
         # A fanned `parameters` sweep can't be frozen (see the docstring's fan-out note).
         _fanned_parameter = any(ax.kind == "parameters" for ax in plan.workflow_axes)
         scripts_relpath = None
-        staged: list[str] = []
         if stdout:
             spec_relpath, select = spec, key
         else:
             edir = out_dir / "spec" / key
             edir.mkdir(parents=True, exist_ok=True)  # non-connectome freeze doesn't create it
-            bundle_root = _bundle_dataset(exp, out_dir, edir, bundle_select)
+            bundle_root = _bundle_dataset(exp, out_dir, edir, bundle_select, written)
             # Custom callable/builder modules the recipe references travel with the kit (shared code/ dir), so `tvbo run` resolves them on the node.
             bundled_code = (
                 _freeze_experiment_spec(
@@ -920,7 +956,7 @@ def _emit_snakemake_study(
                 or bundled_code
             )
             spec_relpath, select = f"spec/{key}/experiment.yaml", None
-            staged = _stage_reference_containers(exp, out_dir / plan.out_dir, plan.depends_on, in_kit=_key_of)
+            _stage_reference_containers(exp, out_dir / plan.out_dir, plan.depends_on, in_kit=_key_of, written=written)
             # Freeze the pre-rendered backend script ALONGSIDE the spec, so the SAME kit runs either way: `--code-source frozen` runs `scripts/<key>.<ext>` with no codegen on the node. A render failure is non-fatal — the spec path still works; the rule falls back to it when the script is absent.
             if not _fanned_parameter:
                 scripts_relpath = _freeze_backend_script(exp, out_dir, plan.backend.name, key)
@@ -948,6 +984,7 @@ def _emit_snakemake_study(
                 # Snakemake's native `benchmark:` directive (a near-zero-overhead resource TSV per cell); on unless --no-benchmark / --set benchmark=false.
                 "benchmark": benchmark,
                 "out_dir": plan.out_dir,
+                "reference_root": plan.reference_root,
                 "result_stem": _result_stem(exp),
                 "container": plan.container,
                 # Whether this rule's `tvbo run` must prepend the requirements venv (setup.sh built it — native, or on the image) to PYTHONPATH — see needs_env_layer.
@@ -962,8 +999,6 @@ def _emit_snakemake_study(
                 "cohort_subjects": list(plan.cohort_subjects),
                 "cohort_result_files": list(plan.cohort_result_files),
                 "depends_on": [_key_of.get(str(d), _san(str(d))) for d in plan.depends_on],
-                # Containers staged under OUT_DIR for this rule to read (analysis aggregates, results of experiments outside the kit), which are not under its own output directory.
-                "staged_containers": staged,
             }
         )
 
@@ -1254,6 +1289,7 @@ def _emit(
         return _finalize_kit(out_dir, pack=pack, source_dir=_study_run.spec_dir(spec)) if out_dir is not None else None
     plan, exp = _build_plan(spec, engine=engine, backend=backend, experiment=experiment, overrides=override)
     if stdout:
+        _read_from_the_study(plan, spec)
         text = _render_template(_TEMPLATE_PATH[engine], plan=plan, block=plan.engine_block, script_relpath=None)
         typer.echo(text)
         return None

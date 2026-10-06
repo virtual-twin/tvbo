@@ -139,14 +139,14 @@ observations:
 
 An explicit `dataset.subjects` list **scopes** the fan-out — one entry for a single-subject kit, a handful for a pilot, omitted to sweep the whole cohort.
 
-The kit carries the per-subject data itself. Freezing it copies each fan-out subject's target (sidecar **+** its payload), and every layer its network reads per subject, into `data/<dataset_id>/`, and rewrites `dataset.bids_root` to a path relative to the frozen spec, so the kit needs no upload and no mount. The selection comes **from the spec itself**: the observation's own `query` (`{atlas: HCPMMP1, desc: FCavg, suffix: relmat}` above) already names the file, so no flag is needed:
+The kit carries the per-subject data itself. Freezing it copies each fan-out subject's target (sidecar **+** its payload), and every file a `used: {cohort: ...}` reference of the experiment reads for that subject (a network layer, a sourced parameter, a stimulus recording, a builder argument), into `data/<dataset_id>/`, and rewrites `dataset.bids_root` to a path relative to the frozen spec, so the kit needs no upload and no mount. The selection comes **from the spec itself**: the observation's own `query` (`{atlas: HCPMMP1, desc: FCavg, suffix: relmat}` above) already names the file, so no flag is needed:
 
 ```bash
 tvbo workflow slurm study.yaml --experiment 30 --pack -o cohort_kit
 # → cohort_kit.tar.gz carries data/<dataset_id>/sub-<id>/… for the fan-out subjects only
 ```
 
-Results the kit reads but does not produce travel the same way, into `derivatives/tvbo/`: the cohort aggregates a network's transforms read, and the result of an experiment left out of the kit that one inside it warm-starts from (a group run whole, a per-subject cohort as the fan-out subjects' shards).
+Results the kit reads but does not produce travel the same way, into `derivatives/tvbo/`: the analysis containers its references read (the cohort aggregates a network's transforms take, a parameter sourced from an analysis), and the result of an experiment left out of the kit that one inside it warm-starts from (a group run whole, a per-subject cohort as the fan-out subjects' shards). Every launcher passes that directory to each run as `--results-root`, so a task reads what the kit carries wherever it is unpacked; a `slurm` kit's `run.sbatch` reads `$TVBO_RESULTS_ROOT` in its place when it is set. Freezing over an existing kit overwrites the files whose source has changed and says how many.
 
 `--bundle-select KEY=VALUE` is only an override for when a subject directory holds **several** files matching the query. The freeze otherwise stops with a clear "ambiguous … add entities to disambiguate" error naming the candidates, so you add just the entity that separates them:
 

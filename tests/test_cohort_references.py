@@ -40,12 +40,12 @@ def _raw(subject: str):
     return w + w.T, length + length.T
 
 
-def _write_subject(root, subject: str, order=None, atlas: str = "Toy"):
-    """Save one subject's connectome under a BIDS datatype folder, optionally with its nodes stored in another order."""
+def _write_subject(root, subject: str, order=None, atlas: str = "Toy", labels=LABELS):
+    """Save one subject's connectome under a BIDS datatype folder, optionally with its nodes stored in another order or under other labels."""
     w, length = _raw(subject)
     order = list(range(4)) if order is None else order
     net = Network.from_matrix(
-        weights=w[np.ix_(order, order)], lengths=length[np.ix_(order, order)], labels=[LABELS[i] for i in order]
+        weights=w[np.ix_(order, order)], lengths=length[np.ix_(order, order)], labels=[labels[i] for i in order]
     )
     folder = root / f"sub-{subject}" / "dwi"
     folder.mkdir(parents=True, exist_ok=True)
@@ -88,6 +88,17 @@ def test_member_order_is_the_cohorts_not_the_directory_listing(root):
     da = dataref.resolve_dataref(DataRef(**_member("weight")), datasets=[_dataset(root, reverse)])
     assert list(da["subject"].values) == reverse
     np.testing.assert_array_equal(da.values, _stack(0)[::-1])
+
+
+def test_reconciling_a_cohort_read_leaves_members_named_like_nodes_in_declared_order(tmp_path):
+    """Member identifiers that are also node labels stay members: only the node axes are laid out on the model's order."""
+    data = tmp_path / "numbered_nodes"
+    for subject in MEMBERS:
+        _write_subject(data, subject, labels=MEMBERS)
+    ref = DataRef(**_member("weight", reconcile="by_label"))
+    da = dataref.resolve_dataref(ref, datasets=[_dataset(data)], alias_map={}, model_labels=MEMBERS[::-1])
+    assert list(da["subject"].values) == MEMBERS and list(da["node_i"].values) == MEMBERS[::-1]
+    np.testing.assert_array_equal(da.values, _stack(0)[:, ::-1, ::-1])
 
 
 def test_a_run_reads_its_own_member_and_refuses_a_subject_outside_the_cohort(root):
@@ -263,34 +274,84 @@ def test_a_sourced_layer_with_nothing_bound_raises_instead_of_reading_something_
         net.matrix("weight", format="dense")
 
 
-def test_an_authored_layer_survives_on_a_network_that_also_names_a_data_file(root, results, tmp_path):
-    w = np.arange(16, dtype=float).reshape(4, 4)
-    Network.from_matrix(weights=w, lengths=w + 100.0, labels=LABELS[::-1]).save(tmp_path / "group_relmat.yaml")
+GROUP = np.arange(16, dtype=float).reshape(4, 4)
+
+
+def _over_a_group_companion(tmp_path, *edges):
+    """A network spec naming a saved group connectome as its ``data_file`` (weights ``GROUP``, lengths ``GROUP + 100``, on the model's node order), with *edges* authored over it."""
+    Network.from_matrix(weights=GROUP, lengths=GROUP + 100.0, labels=LABELS[::-1]).save(tmp_path / "group_relmat.yaml")
     base = yaml.safe_load((tmp_path / "group_relmat.yaml").read_text())
-    spec = {
-        **base,
-        "data_file": str(tmp_path / base["data_file"]),
-        "edges": [_network_spec()["edges"][0], {"label": "length"}],
-    }
+    return {**base, "data_file": str(tmp_path / base["data_file"]), "edges": list(edges)}
+
+
+def test_an_authored_layer_survives_on_a_network_that_also_names_a_data_file(root, results, tmp_path):
+    spec = _over_a_group_companion(tmp_path, _network_spec()["edges"][0], {"label": "length"})
     net = Network(**spec).bind_references(subject="01", datasets=[_dataset(root)], results_root=results)
     np.testing.assert_array_equal(net.matrix("weight", format="dense"), _expected("01")[2])
-    np.testing.assert_array_equal(net.matrix("length", format="dense"), w + 100.0)
+    np.testing.assert_array_equal(net.matrix("length", format="dense"), GROUP + 100.0)
 
 
 def test_reading_a_companion_layer_asks_nothing_of_a_sourced_one(root, tmp_path):
-    w = np.arange(16, dtype=float).reshape(4, 4)
-    Network.from_matrix(weights=w, lengths=w + 100.0, labels=LABELS[::-1]).save(tmp_path / "group_relmat.yaml")
-    base = yaml.safe_load((tmp_path / "group_relmat.yaml").read_text())
-    spec = {
-        **base,
-        "data_file": str(tmp_path / base["data_file"]),
-        "edges": [_network_spec()["edges"][0], {"label": "length"}],
-    }
-    net = Network(**spec)
-    np.testing.assert_array_equal(net.matrix("length", format="dense"), w + 100.0)
+    net = Network(**_over_a_group_companion(tmp_path, _network_spec()["edges"][0], {"label": "length"}))
+    np.testing.assert_array_equal(net.matrix("length", format="dense"), GROUP + 100.0)
     assert net.sources_layer("weights") and not net.sources_layer("length") and net.declares_references()
     with pytest.raises(LookupError, match="not declared by any dataset"):
         net.matrix("weight", format="dense")
+
+
+def _sourced_as_weights(tmp_path, root, results):
+    """The group companion's network with its weight layer declared under the plural spelling, bound to subject 01."""
+    spec = _over_a_group_companion(tmp_path, {**_network_spec()["edges"][0], "label": "weights"})
+    return Network(**spec).bind_references(subject="01", datasets=[_dataset(root)], results_root=results)
+
+
+def test_a_sourced_layer_replaces_the_companions_under_another_spelling_of_its_name(root, results, tmp_path):
+    """``weights`` is the weight layer, so the companion's ``weight`` leaves the edges and its other layers stay."""
+    net = _sourced_as_weights(tmp_path, root, results)
+    assert sorted(str(edge.label) for edge in net.edges) == ["length", "weights"]
+    np.testing.assert_array_equal(net.matrix("length", format="dense"), GROUP + 100.0)
+
+
+def test_a_run_materialises_the_sourced_layer_and_not_the_companions_other_spelling_of_it(root, results, tmp_path):
+    net = _sourced_as_weights(tmp_path, root, results)
+    np.testing.assert_array_equal(net.materialize("weight").arrays["edges/weight"], _expected("01")[2])
+
+
+def test_a_frozen_companion_holds_the_sourced_layer_and_not_the_one_it_replaced(root, results, tmp_path):
+    net = _sourced_as_weights(tmp_path, root, results)
+    net.matrix("weight")
+    net.save(tmp_path / "frozen_network.yaml")
+    with h5py.File(tmp_path / "frozen_network.h5") as companion:
+        assert sorted(companion["edges"]) == ["length", "weights"]
+    back = Network.from_file(tmp_path / "frozen_network.yaml")
+    back.bind_references(subject="01", datasets=[_dataset(root)], results_root=results)
+    np.testing.assert_array_equal(back.materialize("weight").arrays["edges/weight"], _expected("01")[2])
+
+
+def test_a_sourced_layer_beats_the_one_a_graph_generator_builds(root, results):
+    spec = _network_spec()
+    net = Network(nodes=spec["nodes"], edges=[spec["edges"][0]], graph_generator={"name": "ring", "type": "Cycle"})
+    net.bind_references(subject="01", datasets=[_dataset(root)], results_root=results)
+    np.testing.assert_array_equal(net.matrix("weight", format="dense"), _expected("01")[2])
+
+
+def test_a_frozen_reference_reopens_its_companion_when_explicit_edges_sit_beside_an_unread_layer(root, results, tmp_path):
+    """The reference carries template edges only, so the reload reads the stored layer and the explicit edges from the companion and the unread layer per run."""
+    from tvbo.utils import to_dict
+
+    spec = _network_spec()
+    explicit = [{"source": 0, "target": 1, "weight": 0.5}, {"source": 2, "target": 3, "weight": 0.25}]
+    net = Network(nodes=spec["nodes"], edges=[*explicit, spec["edges"][1]])
+    net.set_matrix("gain", GROUP)
+    net.save(tmp_path / "network.yaml")
+
+    ref = net.as_data_file_reference(str(tmp_path / "network.h5"))
+    assert [str(edge.label) for edge in ref.edges] == ["length", "gain"]
+    back = Network(**to_dict(ref))
+    np.testing.assert_array_equal(back.matrix("gain", format="dense"), GROUP)
+    np.testing.assert_array_equal(back.matrix("weight", format="dense"), net.matrix("weight", format="dense"))
+    back.bind_references(subject="01", datasets=[_dataset(root)], results_root=results)
+    np.testing.assert_array_equal(back.matrix("length", format="dense"), _raw("01")[1][::-1, ::-1])
 
 
 def test_one_argument_name_means_one_reference_within_a_chain(root):
@@ -388,6 +449,35 @@ def test_a_run_with_no_subject_refuses_a_connectome_that_is_one_subjects(root, r
         experiment.run(format="tvboptim", active_subject=OUTSIDER, results_root=results)
 
 
+THREE_NODES = {
+    "nodes": [{"id": i, "label": lbl} for i, lbl in enumerate(LABELS[:3])],
+    "edges": [{"label": "length", "used": _member("length")}],
+    "transforms": [],
+}
+
+
+@pytest.mark.parametrize(
+    ("subject", "network_extra", "error", "message"),
+    [
+        pytest.param(OUTSIDER, {}, LookupError, "not a member of cohort 'four'", id="a-subject-outside-the-cohort"),
+        pytest.param("01", THREE_NODES, ValueError, r"shape \(4, 4\) for a network of 3 nodes", id="another-shape"),
+    ],
+)
+def test_configure_raises_what_a_bound_length_layer_cannot_read(
+    root, results, tmp_path, subject, network_extra, error, message
+):
+    """Declared delay flags stand while no run has bound the network; once one has, lengths that cannot be read are an error at configure instead of a skipped step."""
+    from tvbo import SimulationStudy
+
+    experiment = SimulationStudy.from_file(str(_study_file(root, tmp_path, **network_extra))).get_experiment(1)
+    experiment.configure()
+    assert experiment.integration.delayed
+    experiment._active_subject = subject
+    experiment._bind_network_references(results_root=results)
+    with pytest.raises(error, match=message):
+        experiment.configure()
+
+
 LISTED = ["04", OUTSIDER, "01", "07"]
 
 
@@ -422,6 +512,26 @@ def test_a_network_reading_no_cohort_fans_over_every_dataset_subject(root, tmp_p
     assert experiment.network.per_subject_cohorts() == []
     assert experiment.dataset_subject_ids() == LISTED
     assert experiment.subject_selection()["cohorts"] == {} and experiment.subject_selection()["excluded"] == []
+
+
+def test_the_fan_out_follows_a_change_of_the_dataset_subjects_or_of_the_cohort_members(root, tmp_path):
+    """A selection answers for the subjects and members it was reached from: a dataset narrowed afterwards, as a frozen kit's is, or a cohort redeclared, is selected again."""
+    from tvbo.cli.workflow import _fan_out_subjects
+
+    experiment = _fan_out_experiment(root, tmp_path)
+    assert experiment.subject_selection() is experiment.subject_selection()
+
+    experiment.dataset.subjects = _fan_out_subjects(experiment.dataset.subjects, ["01", OUTSIDER])
+    assert experiment.subject_selection() == {
+        "dataset": 2,
+        "cohorts": {"four": 4},
+        "subjects": ["01"],
+        "excluded": [OUTSIDER],
+    }
+
+    experiment._study_datasets = [_dataset(root, ["02", "03"])]
+    assert experiment.dataset_subject_ids() == []
+    assert experiment.subject_selection()["cohorts"] == {"four": 2}
 
 
 def test_the_workflow_plan_and_kit_readme_state_the_cohort_restriction(root, tmp_path):
@@ -553,3 +663,110 @@ def test_a_kit_carries_the_layer_a_network_reads_per_subject_without_any_dataset
         "sub-04_atlas-Toy_desc-SC_relmat.h5",
         "sub-04_atlas-Toy_desc-SC_relmat.yaml",
     ]
+
+
+def _on_a_dynamics_parameter(experiment, ref):
+    experiment["dynamics"]["parameters"] = {"gain": {"value": 1.0, "used": ref}}
+
+
+def _on_a_coupling_parameter(experiment, ref):
+    experiment["network"]["coupling"]["c"]["parameters"] = {"gx": {"value": 1.0, "used": ref}}
+
+
+def _on_a_stimulus_recording(experiment, ref):
+    experiment["events"] = {"drive": {"event_type": "stimulus", "parameters": {"data": {"used": ref}}}}
+
+
+def _on_a_builder_argument(experiment, ref):
+    builder = {"callable": {"name": "scaled", "module": "toy_builder"}, "arguments": {"reference": {"used": ref}}}
+    experiment["explorations"] = [{"name": "scan", "space": [{"parameter": "network.edges.weight", "builder": builder}]}]
+
+
+DECLARED = [_on_a_dynamics_parameter, _on_a_coupling_parameter, _on_a_stimulus_recording, _on_a_builder_argument]
+
+
+def _reading_outside_its_network(root, tmp_path, declare, ref=None, subjects=LISTED):
+    """The relaxation experiment on a network that reads no cohort, with one reference declared by *declare* (the member's weights unless *ref* is given) and its own dataset listing *subjects*."""
+    from tvbo import SimulationStudy
+
+    dataset = {"dataset_id": "toy_fc", "subjects": [{"subject_id": s} for s in subjects]} if subjects else None
+    path = _study_file(root, tmp_path, dataset=dataset, edges=[{"label": "weight"}], transforms=[])
+    spec = yaml.safe_load(path.read_text())
+    declare(spec["experiments"][0], ref or _member("weight"))
+    path.write_text(yaml.safe_dump(spec, sort_keys=False))
+    return SimulationStudy.from_file(str(path)).get_experiment(1)
+
+
+@pytest.mark.parametrize("declare", DECLARED)
+def test_a_cohort_read_anywhere_in_the_experiment_narrows_its_fan_out(root, tmp_path, declare):
+    """A subject outside the cohort has nothing to read there, whichever part of the experiment declares the reference, so it gets no job."""
+    from tvbo.run.workflow import plan
+
+    experiment = _reading_outside_its_network(root, tmp_path, declare)
+    assert experiment.network.per_subject_cohorts() == []
+    assert experiment.dataset_subject_ids() == ["04", "01"]
+    assert experiment.subject_selection() == {
+        "dataset": 4,
+        "cohorts": {"four": 4},
+        "subjects": ["04", "01"],
+        "excluded": [OUTSIDER, "07"],
+    }
+    assert experiment.referenced_cohorts() == ["four"]
+    built = plan(study_key="ToyCohort", experiment=experiment, backend="tvboptim", engine="slurm")
+    (axis,) = [ax for ax in built.workflow_axes if ax.name == "subject"]
+    assert axis.values == ("04", "01")
+    assert built.subject_selection_text == "2 of 4 dataset subjects, the members of four (4 members); 2 excluded"
+
+
+@pytest.mark.parametrize("declare", DECLARED)
+def test_a_kit_carries_the_cohort_and_each_members_file_a_reference_reads(root, tmp_path, declare):
+    """A frozen kit has no study to look the cohort up in, so it holds the cohort and the files its members are read from, and the frozen experiment reads its own subject's there."""
+    from tvbo import SimulationExperiment
+    from tvbo.cli import workflow as kit
+
+    experiment = _reading_outside_its_network(root, tmp_path, declare)
+    out = tmp_path / "kit"
+    spec_dir = out / "spec"
+    bundle = kit._bundle_dataset(experiment, out, spec_dir, {})
+    assert bundle == "../data/toy_fc"
+    (spec_dir / "experiment.yaml").write_text(kit._freeze_spec_yaml(experiment, spec_dir, dataset_bids_root=bundle))
+    assert sorted(p.name for p in (out / "data/toy_fc").iterdir()) == ["sub-01", "sub-04"]
+    frozen = yaml.safe_load((spec_dir / "experiment.yaml").read_text())
+    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"]] == [("four", ["04", "01"])]
+
+    rerun = SimulationExperiment.from_file(str(spec_dir / "experiment.yaml"))
+    rerun._active_subject = "01"
+    (ref,) = rerun.declared_references()
+    np.testing.assert_array_equal(dataref.resolve_dataref(ref, **rerun._reference_context()).values, _raw("01")[0])
+
+
+def test_a_dataset_whose_subjects_are_all_outside_a_cohort_read_per_subject_is_refused(root, tmp_path):
+    """A fan-out narrowed to nobody would otherwise plan as one group run, which reads every member at once."""
+    from tvbo.run.workflow import plan
+
+    experiment = _reading_outside_its_network(root, tmp_path, _on_a_dynamics_parameter, subjects=[OUTSIDER, "07"])
+    with pytest.raises(ValueError, match=r"reads cohort\(s\) \['four'\] per subject, but its dataset yields no subject"):
+        plan(study_key="ToyCohort", experiment=experiment, backend="tvboptim", engine="slurm")
+
+
+def test_a_group_run_reading_a_whole_cohort_outside_its_network_plans_without_a_fan_out(root, tmp_path):
+    from tvbo.run.workflow import plan
+
+    experiment = _reading_outside_its_network(root, tmp_path, _on_a_dynamics_parameter, subjects=None)
+    built = plan(study_key="ToyCohort", experiment=experiment, backend="tvboptim", engine="slurm")
+    assert [ax.name for ax in built.workflow_axes] == [] and built.subject_selection == {}
+
+
+def test_a_kit_stages_an_analysis_a_parameter_reads(root, tmp_path):
+    """A parameter sourced from an analysis reads a container the kit has no rule to make, as a network transform's argument does."""
+    from tvbo.cli import workflow as kit
+    from tvbo.utils.study_layout import study_path
+
+    (tmp_path / "dataset_description.json").write_text('{"Name": "ToyCohort", "BIDSVersion": "1.9.0"}')
+    analysis_io.run_analyses(_analyses(), study_path("results", root=tmp_path), datasets=[_dataset(root)])
+    ref = {"analysis": "toy_mean", "output": "toy_mean"}
+    experiment = _reading_outside_its_network(root, tmp_path, _on_a_dynamics_parameter, ref=ref)
+    assert experiment.network.referenced_analyses() == []
+    staged_dir = tmp_path / "kit/derivatives/tvbo"
+    assert kit._stage_reference_containers(experiment, staged_dir) == ["toy_mean"]
+    assert dataref.locate_analysis_container(staged_dir, "toy_mean").is_file()

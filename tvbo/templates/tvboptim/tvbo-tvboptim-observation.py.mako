@@ -7,7 +7,8 @@ from tvbo.adapters.observation_sampling import tvb_iround as _tvb_iround
 from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
     adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values, resolve_tail_samples,
-    resolve_step_expression,
+    resolve_step_expression, equation_dims as _equation_dims, observation_dims as _observation_dims,
+    reduction_dims as _reduction_dims, _PIPELINE_STEP_KINDS,
     edge_label as _edge_label, edge_const as _edge_const, collect_network_edge_arrays,
     node_label as _node_label, node_const as _node_const, collect_network_node_arrays,
     functions_by_name as _functions_by_name, kernel_support_steps as _kernel_support_steps,
@@ -130,7 +131,7 @@ functions_by_name = _functions_by_name(experiment)
 
 # User-defined function names for expression rendering
 user_functions = {name: name for name in functions_by_name.keys()}
-jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
+jaxcode = lambda expr, params=None, dims=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params, dims=dims)
 from tvbo.codegen.templater import canonical_observation_ref as _canonical_observation_ref, is_derived as _is_derived
 from tvbo.templates.base.utils import docstring_text
 _obs_raw = get_attr(experiment, 'observations', {})
@@ -1032,6 +1033,7 @@ from ${module} import ${class_name} as _Ext${class_name}
 % endfor
 % endfor
 
+<% _all_obs_dims = _observation_dims(experiment, reductions) %>\
 % for obs in obs_list:
 <%
     obs_name = obs['name']
@@ -1052,6 +1054,9 @@ from ${module} import ${class_name} as _Ext${class_name}
 
     # Bound at run_experiment time by _bind_network_observations, so this template emits no monitor for it.
     is_dataset_target = obs_source and str(obs_source).startswith('dataset.subject.')
+
+    # The axes the first pipeline step reads, so an equation step may name one (`sum_axis(x, node)`): a sourced observation's own, the (time, variable, node) trajectory otherwise, unknown for an embedded constant.
+    _pipeline_input_dims = None if (network_edge_label or is_network_observation or is_dataset_target) else (_all_obs_dims.get(str(obs_source)) or ('time', 'variable', 'node'))
 
     # Resolve source to its column in the recorded variable layout (states + recorded aux).
     # Returns 0 for network/dataset/external/empty sources (back-compat for external monitors).
@@ -1412,12 +1417,17 @@ class ${class_name}(AbstractMonitor):
     if step_idx == 0:
         # Every step reads the window it is given; the settle is its head.
         input_var = '_data'
+        _step_dims = _pipeline_input_dims
     else:
         prev_step = pipeline[step_idx - 1]
         prev_output = prev_step.get('output') or prev_step['name']
         # For multi-output, use last output as input to next step
         prev_parts = [o.strip() for o in prev_output.split(',')]
         input_var = f"_{prev_parts[-1]}"
+    if not step.get('equation'):
+        # A named step's axes are those of its reduction kind, if it declares one; an equation step sets its own below, once rendered.
+        _kind = _PIPELINE_STEP_KINDS.get(str((step_callable or {}).get('name') or step_name).lower())
+        _step_dims = (_reduction_dims({'kind': _kind}) or None) if _kind else None
 %>
 % if is_static:
         ${prefixed_output} = self._${step_name}
@@ -1565,8 +1575,13 @@ class ${class_name}(AbstractMonitor):
         step['equation'], input_var, step.get('equation_params'), step.get('equation_derived'),
         _scope, f"Observation {obs_name!r} step {step_name!r}",
     )
+    try:
+        _emitted = jaxcode(_expr, dims={input_var: _step_dims} if _step_dims else None)
+    except ValueError as _error:
+        raise ValueError(f"Observation {obs_name!r} step {step_name!r}: {_error}") from None
+    _step_dims = _equation_dims(step['equation'], _step_dims)
 %>\
-        ${prefixed_output} = ${jaxcode(_expr)}
+        ${prefixed_output} = ${_emitted}
 % else:
 <%
     raise ValueError(

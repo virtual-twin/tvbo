@@ -1164,7 +1164,7 @@ def test_annotation_binds_a_computed_number():
 
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "'r = {:.2f}'.format(" in code and "_load_layer(" in code
+    assert "'r = {:.2f}'.format(_load_scalar(" in code
     assert "_txt = 'literal'" in code
 
 
@@ -1337,7 +1337,7 @@ def test_annotation_tail_anchors_on_a_computed_point():
     ]
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "_ty = float(np.asarray(_load_layer(" in code
+    assert "_ty = _load_scalar(" in code
     assert 'xytext=(25.0, _ty), textcoords="data"' in code
     assert 'xy=(0.4, 0.6), xycoords="axes fraction"' in code
 

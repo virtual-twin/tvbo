@@ -18,7 +18,7 @@ from tvbo.templates.tvboptim.utils import (
     get_all_observations_from_algo, get_transitive_observations_from_algo, get_include_info, get_all_hyperparams, network_axis_leaf, network_leaf_is_matrix,
     classify_network_obs_inputs, coupling_param_keys,
     initial_conditions_axis_sv, noise_axis_param,
-    graph_selection, observation_dims, parameter_keypath,
+    graph_selection, observation_dims, trajectory_dims, parameter_keypath,
     has_host_pipeline, pipeline_stage_is_host, data_source_arrays, selection_settings, monitor_class_name,
     analysis_settings, set_literal,
 )
@@ -42,7 +42,7 @@ else:
     user_functions = {}
 
 # JAX code generation helpers
-jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
+jaxcode = lambda expr, params=None, dims=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params, dims=dims)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 # Functions inlined so the post-solve aux recompute is self-contained.
 realign_render = lambda obj: model.render_equation(obj, format='jax', inline_functions=True)
@@ -2597,7 +2597,13 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
 % for _sym, _const in sorted(src_node_arrays.items()):
         ${_sym} = ${_const}    # per-node array carried by the network
 % endfor
-        obs.${dobs_name} = ${jaxcode(pipeline_equation, pipeline_equation_params)}
+<%
+    try:
+        _derived_code = jaxcode(pipeline_equation, pipeline_equation_params, dims={s: (_obs_dims.get(s) or trajectory_dims(_all_observations[s], _all_observations) or None) for s in src_obs_list})
+    except ValueError as _error:
+        raise ValueError(f"Observation {dobs_name!r}: {_error}") from None
+%>\
+        obs.${dobs_name} = ${_derived_code}
 % endif
 % endfor
 % if analysis_observations_dict:

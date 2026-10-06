@@ -115,21 +115,38 @@ def test_the_datamodel_constructs_a_node_named_by_label_alone():
     assert dm.Node(label="L.A1").id == UNASSIGNED_NODE_ID
 
 
-def test_label_keyed_nodes_without_data_to_match_raise():
+def test_the_generated_datamodels_read_a_mapping_of_nodes_as_the_label_keyed_list():
+    """The dialect folds it for both generated forms, so a study's datamodel pass builds the same nodes from either spelling."""
+    from tvbo.datamodel import pydantic as pyd
+    from tvbo.datamodel import schema
+    from tvbo.datamodel.dialect import UNASSIGNED_NODE_ID
+
+    for model in (schema, pyd):
+        nodes = model.Network(nodes={"L.A1": {"parameters": {"a": {"value": -0.1}}}, "R.A1": None}).nodes
+        assert [(node.id, node.label) for node in nodes] == [(UNASSIGNED_NODE_ID, "L.A1"), (UNASSIGNED_NODE_ID, "R.A1")]
+        assert nodes[0].parameters["a"].value == -0.1
+
+
+AS_LIST_AND_AS_MAPPING = pytest.mark.parametrize(
+    "nodes",
+    [[{"label": "R.A1", "parameters": {"a": {"value": -0.2}}}], {"R.A1": {"parameters": {"a": {"value": -0.2}}}}],
+    ids=["list", "mapping"],
+)
+
+
+@AS_LIST_AND_AS_MAPPING
+def test_label_keyed_nodes_without_data_to_match_raise(nodes):
     """With no data materialising nodes there is nothing to attach to, and a guessed index is exactly what the key avoids."""
     with pytest.raises(ValueError, match="materialised no node"):
-        Network(nodes=[{"label": "L.A1", "parameters": {"a": {"value": 0.0}}}])
+        Network(nodes=nodes)
 
 
-def test_a_study_carries_label_keyed_nodes_to_its_experiment(tmp_path, bids_dir):
+@AS_LIST_AND_AS_MAPPING
+def test_a_study_carries_label_keyed_nodes_to_its_experiment(tmp_path, bids_dir, nodes):
     """The study's datamodel pass and the runnable experiment both accept the declaration, and the values land by label."""
     from tvbo import SimulationStudy
 
-    network = {
-        "bids_dir": str(bids_dir),
-        "structural_measures": ["streamlineCount", "tractLength"],
-        "nodes": [{"label": "R.A1", "parameters": {"a": {"value": -0.2}}}],
-    }
+    network = {"bids_dir": str(bids_dir), "structural_measures": ["streamlineCount", "tractLength"], "nodes": nodes}
     recipe = {
         "tvbo_class": "tvbo:SimulationStudy",
         "citekey": "Probe",
@@ -180,3 +197,33 @@ def test_a_node_set_is_a_template_default_plus_labelled_members(tmp_path, bids_d
         for apply in order:
             apply()
         np.testing.assert_array_equal(resolve_network_node(net, "in_set"), [1.0, 0.0, 1.0])
+
+
+def _declared(net):
+    return [(n.id, n.label, {name: float(p.value) for name, p in n.parameters.items()}) for n in net.nodes]
+
+
+def test_a_mapping_of_nodes_declares_what_the_label_keyed_list_does(tmp_path, bids_dir):
+    """``{L.A1: {...}}`` is ``[{label: L.A1, ...}]``: each entry lands on the node its key names, beside what the data and the template give it."""
+    mapping = {"L.V1": {"parameters": {"a": {"value": -0.3}}}, "L.A1": {"parameters": {"a": {"value": -0.1}}}}
+    listed = [{"label": label, **node} for label, node in mapping.items()]
+    net = _load(tmp_path, bids_dir, mapping, IN_SET)
+    assert _declared(net) == _declared(_load(tmp_path, bids_dir, listed, IN_SET))
+    assert _declared(net)[0] == (0, "L.A1", {"a": -0.1, "in_set": 0.0})
+
+
+def test_an_integer_key_of_a_node_mapping_is_a_label_and_not_a_position(tmp_path):
+    """A region code is a name like any other, so the value lands on the node so labelled wherever the data put it."""
+    Network.from_matrix(np.ones((2, 2)), labels=["1001", "1002"]).save(tmp_path / "codes.yaml")
+    net = Network(data_file=str(tmp_path / "codes.h5"), nodes={1002: {"parameters": {"a": {"value": 0.4}}}})
+    assert _declared(net) == [(0, "1001", {}), (1, "1002", {"a": 0.4})]
+
+
+def test_a_mapping_whose_entries_carry_ids_is_the_graph_and_one_spelling_a_nodes_own_fields_is_that_node():
+    assert [(n.id, n.label) for n in Network(nodes={"x": {"id": 0}, "y": {"id": 1}}).nodes] == [(0, "x"), (1, "y")]
+    assert [(n.id, n.label) for n in Network(nodes={"id": 0, "label": "x"}).nodes] == [(0, "x")]
+
+
+def test_an_entry_stating_a_label_other_than_its_key_raises():
+    with pytest.raises(ValueError, match="keyed by its label"):
+        Network(nodes={"L.A1": {"label": "R.A1"}})

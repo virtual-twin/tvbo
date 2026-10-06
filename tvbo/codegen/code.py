@@ -262,18 +262,20 @@ def _afp_slice_axis(p, expr):
     """``slice_axis(x, axis, start, stop[, step])`` -> bounded slice of one axis (keeps ndim)."""
     a = expr.args
     step = a[4] if len(a) > 4 else None
-    return p._slice_axis(p._print(a[0]), int(a[1]), a[2], a[3], step)
+    return p._slice_axis(
+        p._print(a[0]), _literal_axis(p, a[0], a[1], "slice_axis(x, axis, start, stop[, step])"), a[2], a[3], step
+    )
 
 
 def _afp_slice_from(p, expr):
     """``slice_from(x, axis, start)`` -> open-ended slice of one axis (to the end)."""
     a = expr.args
-    return p._slice_from(p._print(a[0]), int(a[1]), a[2])
+    return p._slice_from(p._print(a[0]), _literal_axis(p, a[0], a[1], "slice_from(x, axis, start)"), a[2])
 
 
 def _afp_shape(p, expr):
     """``shape(x, axis)`` -> length of ``x`` along ``axis`` (for open-ended slices etc.)."""
-    return p._shape(p._print(expr.args[0]), int(expr.args[1]))
+    return p._shape(p._print(expr.args[0]), _literal_axis(p, expr.args[0], expr.args[1], "shape(x, axis)"))
 
 
 def _afp_global_mean(p, expr):
@@ -304,11 +306,17 @@ def _afp_arity(expr, n, signature):
     return expr.args
 
 
-def _literal_axis(axis, signature, name="axis"):
-    """*axis* as an ``int``, refusing anything but an integer literal, because an array axis (or a diagonal offset, *name* ``k``) is fixed when the code is compiled."""
-    if not getattr(axis, "is_Integer", False):
+def _literal_axis(p, operand, axis, signature, name="axis"):
+    """*axis* as an ``int``: an integer literal, or the name of one of *operand*'s axes where the printer *p* knows them (:func:`tvbo.codegen.dims.resolve_axis`).
+
+    An array axis is fixed when the code is compiled. With no *operand* the argument is a plain offset (a diagonal's ``k``) that only a literal can give.
+    """
+    from tvbo.codegen.dims import expression_dims, resolve_axis
+
+    if operand is None and not getattr(axis, "is_Integer", False):
         raise ValueError(f"{signature}: {name} must be an integer literal, got {axis!r}.")
-    return int(axis)
+    known = expression_dims(operand, p.dims_env) if isinstance(axis, Symbol) else None
+    return resolve_axis(axis, known, signature, name)
 
 
 def _afp_forward(primitive, arity, signature):
@@ -326,22 +334,22 @@ def _afp_forward(primitive, arity, signature):
 
 
 def _afp_sum_axis(p, expr):
-    """``sum_axis(x, axis)`` -> reduce a single axis (e.g. the numerator of an axis-1 masked mean). ``axis`` must be an integer literal (a compile-time array axis)."""
-    axis = _literal_axis(expr.args[1], "sum_axis(x, axis)")
+    """``sum_axis(x, axis)`` -> reduce a single axis (e.g. the numerator of an axis-1 masked mean). ``axis`` is an integer literal or, where ``x``'s axes are known, the name of one of them (:func:`_literal_axis`)."""
+    axis = _literal_axis(p, expr.args[0], expr.args[1], "sum_axis(x, axis)")
     return p._reduce_axis("sum", p._print(expr.args[0]), axis)
 
 
 def _afp_rankdata(p, expr):
-    """``rankdata(x, axis)`` -> average-tie ranks of ``x`` along ``axis``, an integer literal as for ``sum_axis``."""
+    """``rankdata(x, axis)`` -> average-tie ranks of ``x`` along ``axis``, an integer literal or an axis name as for ``sum_axis``."""
     args = _afp_arity(expr, 2, "rankdata(x, axis)")
-    return p._rankdata(p._print(args[0]), _literal_axis(args[1], "rankdata(x, axis)"))
+    return p._rankdata(p._print(args[0]), _literal_axis(p, args[0], args[1], "rankdata(x, axis)"))
 
 
 def _afp_upper_triangle(p, expr):
     """``upper_triangle(M, k)`` -> the entries of ``M`` on and above its ``k``-th diagonal; ``k`` must be an integer literal, since it fixes which entries the compiled code gathers."""
     signature = "upper_triangle(M, k)"
     args = _afp_arity(expr, 2, signature)
-    return p._upper_triangle(p._print(args[0]), _literal_axis(args[1], signature, "k"))
+    return p._upper_triangle(p._print(args[0]), _literal_axis(p, None, args[1], signature, "k"))
 
 
 def _afp_welch(p, expr):
@@ -354,9 +362,9 @@ def _afp_welch(p, expr):
 
 
 def _afp_normalize(p, expr):
-    """``normalize(M, axis)`` -> ``M`` divided by its sum along ``axis`` (column-normalised in-strength when axis=0). ``axis`` must be an integer literal, as for ``sum_axis``."""
+    """``normalize(M, axis)`` -> ``M`` divided by its sum along ``axis`` (column-normalised in-strength when axis=0). ``axis`` is an integer literal or an axis name, as for ``sum_axis``."""
     args = _afp_arity(expr, 2, "normalize(M, axis)")
-    axis = _literal_axis(args[1], "normalize(M, axis)")
+    axis = _literal_axis(p, args[0], args[1], "normalize(M, axis)")
     return p._normalize(p._print(args[0]), axis)
 
 
@@ -458,6 +466,9 @@ class _ArrayFunctionPrinterMixin:
 
     def _print_Max(self, expr):
         return self._minmax("maximum", expr.args)
+
+    dims_env: dict = {}
+    """The axis names of each symbol an expression reads, set by :func:`render_expression` so a primitive may name the axis it acts on (``sum_axis(x, node)``); empty, only a position names an axis."""
 
     def _print_Function(self, expr):
         handler = _ARRAY_FUNCTION_PRINTERS.get(expr.func.__name__)
@@ -616,26 +627,33 @@ class _ArrayFunctionPrinterMixin:
         equal = self._reduce_axis("sum", f"({pairs[0]} == {pairs[1]})", this)
         return f"(lambda _x: {below} + ({equal} + 1) / 2)({x})"
 
+    def _length(self, value, signature, name):
+        """*value* as the integral length a shape needs, checked in the emitted code: ``512`` and ``512.0`` pass as ``512``, anything else raises naming the primitive and the argument, so a length that arrives as a float from a derived parameter is never rounded in silence.
+
+        Emitted inline, so a kit stays self-contained. A traced value cannot set a shape, and ``float()`` of a tracer raises the backend's own concretization error at the same point.
+        """
+        message = f"{signature}: {name} must be an integral length (512 or 512.0), got %r"
+        return f"(lambda _n: int(_n) if float(_n).is_integer() else (_ for _ in ()).throw(ValueError({message!r} % (_n,))))({value})"
+
     def _hann(self, n):
         """``hann(n)``: the periodic Hann window of ``n`` samples, ``0.5 - 0.5 cos(2 pi k / n)``, which is ``scipy.signal.get_window('hann', n)`` and the window ``scipy.signal.welch`` uses by default; a one-sample window is ``[1]``, as scipy has it."""
-        return self._where3(
-            f"({n}) == 1",
-            "1.0",
-            f"(0.5 - 0.5 * {self._afn('cos')}(2 * {self._afn('pi')} * {self._afn('arange')}({n}) / ({n})))",
+        window = self._where3(
+            "_m == 1", "1.0", f"(0.5 - 0.5 * {self._afn('cos')}(2 * {self._afn('pi')} * {self._afn('arange')}(_m) / _m))"
         )
+        return f"(lambda _m: {window})({self._length(n, 'hann(n)', 'n')})"
 
     def _rfftfreq(self, n, d):
         """``rfftfreq(n, d)``: the frequencies of a real FFT of length ``n`` at sample spacing ``d``, ``k / (n d)`` for ``k`` up to ``n // 2``, as ``numpy.fft.rfftfreq`` gives them; the frequency axis of ``welch`` with ``d = 1 / fs``."""
-        return f"{self._afn('fft.rfftfreq')}({n}, {d})"
+        return f"{self._afn('fft.rfftfreq')}({self._length(n, 'rfftfreq(n, d)', 'n')}, {d})"
 
     def _welch(self, x, w, fs, noverlap, nfft, *, detrend):
         """``welch(x, window, fs, noverlap, nfft, detrend)``: Welch's power spectral density of ``x`` along its leading (time) axis, one-sided and density-scaled, as ``scipy.signal.welch(x, fs, window, len(window), noverlap, nfft, detrend, axis=0)`` computes it.
 
         ``x`` is cut into segments of ``len(window)`` samples, ``len(window) - noverlap`` apart, a trailing remainder dropped. With ``detrend`` each segment's mean is removed first (scipy's ``'constant'``). Each segment is multiplied by ``window`` and transformed by a real FFT of length ``nfft``; the squared magnitudes are averaged over segments and scaled by ``1 / (fs * sum(window**2))``, and every bin but DC and an even ``nfft``'s Nyquist bin is doubled for the one-sided spectrum. The result has ``nfft // 2 + 1`` rows, at ``rfftfreq(nfft, 1 / fs)``, and the trailing axes of ``x``. ``x`` and ``window`` are bound once through a lambda, so each is evaluated once however often the formula reads it.
         """
-        af, X, W, n = self._afn, "_x", "_w", f"({nfft})"
+        af, X, W, n = self._afn, "_x", "_w", "_n"
         length = f"{W}.shape[0]"
-        starts = f"{af('arange')}(0, {X}.shape[0] - {length} + 1, {length} - ({noverlap}))"
+        starts = f"{af('arange')}(0, {X}.shape[0] - {length} + 1, {length} - _o)"
         seg = f"{X}[{starts}[:, None] + {af('arange')}({length})[None, :]]"
         if detrend:
             seg = f"({seg} - {af('mean')}({seg}, axis=1, keepdims=True))"
@@ -643,7 +661,9 @@ class _ArrayFunctionPrinterMixin:
         power = f"{af('abs')}({af('fft.rfft')}({seg} * {af('reshape')}({W}, (1, -1) + {trailing}), n={n}, axis=1)) ** 2"
         k = f"{af('arange')}({n} // 2 + 1)"
         onesided = f"{af('reshape')}({af('where')}(({k} == 0) | (2 * {k} == {n}), 1, 2), (-1,) + {trailing})"
-        return f"(lambda _x, _w: {af('mean')}({power}, axis=0) * {onesided} / (({fs}) * {af('sum')}({W} ** 2)))({x}, {w})"
+        signature = "welch(x, window, fs, noverlap, nfft, detrend)"
+        lengths = f"{self._length(noverlap, signature, 'noverlap')}, {self._length(nfft, signature, 'nfft')}"
+        return f"(lambda _x, _w, _o, _n: {af('mean')}({power}, axis=0) * {onesided} / (({fs}) * {af('sum')}({W} ** 2)))({x}, {w}, {lengths})"
 
     def _linalg(self, name):
         """Module path for a linear-algebra routine (``np.linalg.eigvals``)."""
@@ -997,10 +1017,10 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
 class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     """Julia code printer for TVBO symbolic expressions.
 
-    Extends SymPy's `JuliaCodePrinter` with the `ARRAY_FUNCTION_MAPPINGS["julia"]` vocabulary and Julia-specific overrides of the mixin's array primitives, which use 1-based, `end`-relative indexing. Runs non-strict so unknown constructs print partially rather than raising, maps the legacy `atan2` name onto Julia's two-argument `atan`, and routes domain-restricted powers inside `Piecewise` branches through NaNMath.
+    Extends SymPy's `JuliaCodePrinter` with the `ARRAY_FUNCTION_MAPPINGS["julia"]` vocabulary and Julia-specific overrides of the mixin's array primitives, which use 1-based, `end`-relative indexing. Runs strict, so a primitive this printer has no Julia form for raises `PrintMethodNotImplementedError` instead of printing a `# Not supported` comment into code that would then fail to compile, maps the legacy `atan2` name onto Julia's two-argument `atan`, and routes domain-restricted powers inside `Piecewise` branches through NaNMath.
 
     Args:
-        settings: Printer settings forwarded to the SymPy base printer; `strict` defaults to `False`.
+        settings: Printer settings forwarded to the SymPy base printer; `strict` defaults to `True`.
     """
 
     # Julia array functions are bare names (resolved via known_functions), not module-qualified.
@@ -1008,8 +1028,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
 
     def __init__(self, settings=None):
         settings = settings or {}
-        # Be tolerant: allow partial printing instead of raising for unknown constructs.
-        settings.setdefault("strict", False)
+        settings.setdefault("strict", True)
         super().__init__(settings=settings)
         # Add array function mappings
         self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["julia"])
@@ -1616,6 +1635,7 @@ def render_expression(
     parameters=None,
     infer_broadcasting=False,
     preserve_order=False,
+    dims=None,
 ):
     """Render a SymPy expression or string to target format code.
 
@@ -1635,6 +1655,8 @@ def render_expression(
         If True, analyze indexed expressions and automatically add broadcasting dimensions (e.g., rmse[i] -> rmse[:, None] when used with a[i,j]). This enables mathematically correct notation to generate correct array code.
     preserve_order : bool
         If True, keep the source term order (no SymPy Add/Mul canonicalization) so generated code matches reference code operation-for-operation.
+    dims : dict, optional
+        The axis names each symbol carries (:func:`tvbo.codegen.dims.expression_dims`), so an axis argument may be a name (``sum_axis(x, node)``) and is resolved to its position here.
     """
     if user_functions is None:
         user_functions = {}
@@ -1647,6 +1669,7 @@ def render_expression(
         expression = parse_eq(expression, parameters=parameters, functions=func_names, **_po)
 
     printer = get_printer(format, parameters=parameters, order="none" if preserve_order else None)
+    printer.dims_env = dict(dims or {})
     # User functions extend built-in mappings (don't override if already mapped)
     if user_functions:
         for name, target in user_functions.items():

@@ -70,6 +70,9 @@ class AmbiguousContainerError(LookupError):
 _SUBJECT_PREFIX = r"^sub-([A-Za-z0-9]+)_"
 """The BIDS ``sub-<label>_`` entity a per-subject shard's file name starts with."""
 
+SUBJECT_DIM = "subject"
+"""The dimension a whole cohort is stacked along, its coordinate the members' identifiers."""
+
 
 def _exp_candidates(results_root, source_id) -> tuple[list[Path], bool]:
     """Experiment ``source_id``'s saved containers under ``results_root``, and whether they are ONE per-subject cohort.
@@ -275,6 +278,20 @@ def _where(ref, results_root=None, fallback_experiment=None) -> tuple:
     )
 
 
+def reference_results_root(results_root=None, source_dir=None):
+    """Where an ``analysis`` or ``experiment`` reference finds its container: *results_root* when one is stated, else the results directory the study layout gives the study holding *source_dir*, else ``None``."""
+    from tvbo.utils.study_layout import study_path, study_root
+
+    if results_root is not None:
+        return results_root
+    if not source_dir:
+        return None
+    try:
+        return study_path("results", root=study_root(source_dir))
+    except (StopIteration, LookupError, OSError):
+        return None
+
+
 def locate_container(ref, *, results_root=None, fallback_experiment=None, subject=None) -> Path:
     """Resolve a ``DataRef``'s WHERE (:func:`_where`) to a result-container path.
 
@@ -414,8 +431,8 @@ def select_labeled(da, sel: Mapping[str, object] | None):
 def reconcile_by_label(da, alias_map: Mapping[str, str], model_labels: Sequence[str], node_dims: Sequence[str] | None = None):
     """Align every labelled node axis of ``da`` to the model's node order, by label.
 
-    A node axis is any dimension carrying string coordinates. Each is relabelled source -> canonical through ``alias_map`` (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to ``model_labels`` in the model's order — on *both* axes of a per-edge matrix.
-    Unlabelled axes are left untouched (assumed already in model order). Pass ``node_dims`` to restrict reconciliation to a known set of node axes (so a labelled *non-node* dimension is not mistaken for one); the default reconciles every string-coordinate axis. This is the ``reconcile: by_label`` path; ``none`` skips it.
+    A node axis is any dimension carrying string coordinates, except the one a whole cohort is stacked along (:data:`SUBJECT_DIM`), whose labels are member identifiers even where they coincide with node labels. Each is relabelled source -> canonical through ``alias_map`` (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to ``model_labels`` in the model's order — on *both* axes of a per-edge matrix.
+    Unlabelled axes are left untouched (assumed already in model order). Pass ``node_dims`` to restrict reconciliation to a known set of node axes (so a labelled *non-node* dimension is not mistaken for one); the default reconciles every such axis that shares a label with the model. This is the ``reconcile: by_label`` path; ``none`` skips it.
     """
     import numpy as np
 
@@ -429,8 +446,8 @@ def reconcile_by_label(da, alias_map: Mapping[str, str], model_labels: Sequence[
         if vals.dtype.kind not in ("U", "S", "O"):
             continue
         mapped = [alias_map.get(str(v), str(v)) for v in vals]
-        # Only a real node axis, identified by overlapping labels; forcing another through .sel raises.
-        if node_dims is None and not (model_set & set(mapped)):
+        # Only a real node axis, one with overlapping labels that no cohort is stacked along; forcing another through .sel raises.
+        if node_dims is None and (d == SUBJECT_DIM or not (model_set & set(mapped))):
             continue
         da = da.assign_coords({d: mapped})
         da = da.sel({d: list(model_labels)})
@@ -498,10 +515,10 @@ def resolve_dataref(
         if clashing:
             raise ValueError(f"a reference names cohort {ref.cohort!r} and also `{clashing[0]}`; a reference has one WHERE.")
         sel = sel_dict(ref)
-        pinned = sel.get("subject")
+        pinned = sel.get(SUBJECT_DIM)
         if pinned is not None:
             # A `sel` naming members pins the reference to them, whichever subject the reading run is.
-            subject = None if isinstance(pinned, (list, tuple)) else sel.pop("subject")
+            subject = None if isinstance(pinned, (list, tuple)) else sel.pop(SUBJECT_DIM)
         da = select_labeled(read_cohort(ref, datasets, subject=subject, source_dir=source_dir), sel)
         return _finish(da, ref, alias_map, model_labels)
 
@@ -510,8 +527,8 @@ def resolve_dataref(
     shards = _shards_by_subject(*candidates) if candidates and subject is None else None
     if shards:
         parts = [_read_one(xr, path, ref, stacking=True) for path in shards.values()]
-        da = xr.concat(parts, dim="subject", coords="minimal", compat="override", join="outer")
-        da = da.assign_coords(subject=list(shards))
+        da = xr.concat(parts, dim=SUBJECT_DIM, coords="minimal", compat="override", join="outer")
+        da = da.assign_coords({SUBJECT_DIM: list(shards)})
         return _finish(da, ref, alias_map, model_labels)
 
     out = _read_one(xr, _container_at(where, subject, candidates), ref)
@@ -521,7 +538,7 @@ def resolve_dataref(
 
 
 def _finish(da, ref, alias_map, model_labels):
-    """TRANSFORM then RECONCILE, the two steps a resolved array takes after it leaves its container."""
+    """TRANSFORM then RECONCILE, the two steps a resolved array takes after it leaves its container. RECONCILE lays out the node axes only, so a stacked cohort keeps its members in their order (:func:`reconcile_by_label`)."""
     da = apply_transform(da, getattr(ref, "transform", None))
     if reconcile_mode(ref) == "by_label" and alias_map is not None and model_labels is not None:
         da = reconcile_by_label(da, alias_map, model_labels)

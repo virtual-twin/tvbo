@@ -104,6 +104,19 @@ def test_apply_every_keeps_every_nth_update():
     _assert_matches(_spec(cadence="\n    apply_every: 3"), every=3)
 
 
+def test_every_cadence_term_sits_in_one_gate():
+    """`update_every` (traced) and `apply_every` (static) conjoin into ONE hold on the parameter, and the update applies only where both allow: every sixth iteration here."""
+    import re
+
+    spec = _spec(cadence="\n    apply_every: 3").replace(
+        "      - {name: eta, value: 0.3}", "      - {name: eta, value: 0.3}\n      - {name: update_every, value: 2}"
+    )
+    code = SimulationExperiment.from_string(spec).render_code("tvboptim")
+    gates = re.findall(r"new_g = jnp\.where\(\s*(.*?),\s*new_g,\s*state\.dynamics\.g,?\s*\)", code, re.S)
+    assert gates == ["_apply_update & (((_i + 1) % 3) == 0)"]
+    _assert_matches(spec, every=6)
+
+
 def test_a_window_within_one_period_is_still_the_tail_of_that_period():
     _assert_matches(_spec(window=", tail_duration: 1.0"), window_samples=10)
 

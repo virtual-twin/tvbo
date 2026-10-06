@@ -36,6 +36,7 @@ __all__ = [
     "curated_entry",
     "expand_iri",
     "fold_aliases",
+    "fold_node_mapping",
     "is_literal",
     "key_members",
     "lift_scalar",
@@ -343,10 +344,30 @@ def _fold_label_keyed_node(data: dict) -> None:
         data["id"] = UNASSIGNED_NODE_ID
 
 
+def fold_node_mapping(data: dict) -> None:
+    """Read a ``nodes`` mapping as the list it abbreviates: each key is the ``label`` of its node, so ``{L.A1: {...}}`` is ``[{label: L.A1, ...}]``.
+
+    Every key is a label, an integer one included (``{0: {...}}`` is the node labelled ``"0"``), because a mapping names its nodes and a position is what a name avoids; a node that should carry an ``id`` states it in its entry, and one that does not gets the unassigned id here, so an entry holding nothing else still reaches its class whole. The mapping is keyed when each of its entries is a mapping or empty; one that holds a node's own fields (``{id: 0, label: x}``) is the single node it spells and is left as written. An entry stating a ``label`` other than its key is an error.
+    """
+    nodes = data.get("nodes")
+    if not isinstance(nodes, dict) or not all(node is None or isinstance(node, dict) for node in nodes.values()):
+        return
+    folded = []
+    for key, node in nodes.items():
+        spec = dict(node or {})
+        if spec.get("label") not in (None, key, str(key)):
+            raise ValueError(f"Node {key!r} is keyed by its label, so its entry cannot state the label {spec['label']!r}.")
+        spec["label"] = str(key)
+        _fold_label_keyed_node(spec)
+        folded.append(spec)
+    data["nodes"] = folded
+
+
 SEMANTIC_FOLDS = {
     "StateVariable": _fold_state_variable_domain,
     "Dynamics": _fold_dynamics,
     "Node": _fold_label_keyed_node,
+    "Network": fold_node_mapping,
 }
 """Per-class dialect a table of renames cannot express, keyed like the other tables.
 

@@ -66,6 +66,7 @@ process tvbo_run {
 % else:
     tvbo run experiment:${plan.experiment_key} \\
         --backend=${plan.backend.name} \\
+        --results-root ${("" if os.path.isabs(plan.reference_root) else "${baseDir}/") + plan.reference_root} \\
 % for ax in axes:
         --override=${ax.parameter}=${'$'+ax.name} \\
 % endfor

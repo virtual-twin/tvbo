@@ -17,6 +17,14 @@ import pytest
 from tvbo.codegen import render_expression
 
 
+def test_julia_refuses_a_primitive_it_has_no_form_for():
+    """Strict by default: a `# Not supported in Julia` comment inside an expression is code that fails to compile later, so the printer raises here, naming the primitive."""
+    from sympy.printing.codeprinter import PrintMethodNotImplementedError
+
+    with pytest.raises(PrintMethodNotImplementedError, match="sum_axis"):
+        render_expression("sum_axis(x, 1)", format="julia")
+
+
 # 1. Cross-backend rendering
 @pytest.mark.parametrize(
     ("expr", "numpy", "jax", "julia"),

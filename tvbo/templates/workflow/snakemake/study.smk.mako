@@ -227,10 +227,8 @@ rule ${ep["rule_name"]}:
 % for _flag in _run_flags(ep):
         "${_flag} "
 % endfor
-% if ep.get("depends_on") or ep.get("staged_containers"):
-        ## The sources' results and the staged analysis containers live under OUT_DIR, not under this rule's own output directory, which is where `tvbo run` looks by default.
-        f"--results-root {OUT_DIR} "
-% endif
+        ## What a run reads and does not write (a source run's results, staged analysis containers) is under the plan's reference root, not under this rule's own output directory, which is where `tvbo run` looks by default.
+        "--results-root ${shlex.quote(ep['reference_root'])} "
 % if _cohort_out(ep):
         "-o $(dirname {output[0]})"
 % else:

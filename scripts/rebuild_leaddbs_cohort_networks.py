@@ -3,7 +3,7 @@
 
 The networks were counted from ``.tck`` conversions of Lead-DBS's ``data.mat`` that had grouped each streamline's points with an unstable sort, so the points of most streamlines were out of order and one end lay inside the white matter: counted from them, 30% of MGH-USC 32's and 61% of PPMI 85's streamlines end outside every parcel, against 12% and 20% from the originals. The originals are Lead-DBS's ``group2017`` (MGH-USC HCP 32, Horn 2017) and ``group2017_ppmi`` (PPMI 85, Ewert 2017) releases, converted point-order-preserving by hcp-connectome-studies' ``analyses/sc/scripts/leaddbs_to_tck.py``.
 
-Each network is recounted as it was first counted, with ``connectome_from_tractogram`` (``tck2connectome`` with its default radial assignment, ``-symmetric -zero_diagonal``; mean lengths with ``-scale_length -stat_edge mean``) on the parcellation volume in ``VOLUMES``. Those volumes are the ones that reproduce every stored weight matrix exactly from the scrambled files; pass those files as ``--check-mgh`` and ``--check-ppmi`` to repeat that proof (weights equal, lengths equal at the stored float32) against companions that still hold the scrambled counts, that is before this script has rewritten them. Every network is checked and recounted before the first one is written, so a failure leaves the database as it was. Only the edge data in each HDF5 companion changes: format, precision, attributes, node table and sidecar stay as they are.
+Each network is recounted as it was first counted, with ``connectome_from_tractogram`` (``tck2connectome`` with its default radial assignment, ``-symmetric -zero_diagonal``; mean lengths with ``-scale_length -stat_edge mean``) on the parcellation volume in ``VOLUMES``. Those volumes are the ones that reproduce every stored weight matrix exactly from the scrambled files; pass those files as ``--check-mgh`` and ``--check-ppmi`` to repeat that proof (weights equal, lengths equal at the stored float32) against companions that still hold the scrambled counts, that is before this script has rewritten them. Every network is checked, recounted, written beside its companion and read back before the first companion is replaced, so a failure leaves the database as it was, with no partial file beside it. Only the weight and length data in each HDF5 companion change: format, precision, attributes, node table, any other edge group and sidecar stay as they are.
 
 Usage:
     python scripts/rebuild_leaddbs_cohort_networks.py --mgh MghUscHcp32_from-leaddbs.tck --ppmi PPMI85_from-leaddbs.tck [--check-mgh old.tck --check-ppmi old.tck] [--dry-run]
@@ -57,10 +57,9 @@ def stored(h5_path):
     return {name: M.toarray() if sparse.issparse(M) else np.asarray(M) for name, M in matrices.items()}
 
 
-def rewrite(h5_path, matrices):
-    """Replace the edge data of `h5_path` with `matrices`, keeping every group's format, precision and attributes; written beside it and renamed over it."""
-    tmp = h5_path.with_suffix(".h5.part")
-    with h5py.File(h5_path, "r") as src, h5py.File(tmp, "w") as dst:
+def stage(h5_path, part, matrices):
+    """Write to `part` the companion `h5_path` with `matrices` as its edge data, and check that it reads back as them. An edge group `matrices` names keeps its format, precision and attributes; every other group is copied as it is."""
+    with h5py.File(h5_path, "r") as src, h5py.File(part, "w") as dst:
         dst.attrs.update(src.attrs)
         for key in src:
             if key != "edges":
@@ -68,10 +67,28 @@ def rewrite(h5_path, matrices):
         edges = dst.create_group("edges")
         edges.attrs.update(src["edges"].attrs)
         for name, grp in src["edges"].items():
+            if name not in matrices:
+                src.copy(grp, edges, name=name)
+                continue
             out = edges.create_group(name)
             out.attrs.update(grp.attrs)
             write_matrix(out, matrices[name], fmt=str(grp.attrs["format"]), dtype=grp["data"].dtype)
-    os.replace(tmp, h5_path)
+    back = stored(part)
+    if not all(np.array_equal(back[k], matrices[k].astype(back[k].dtype)) for k in back):
+        raise SystemExit(f"{h5_path.name}: the rewritten companion does not read back")
+
+
+def rewrite(recounted):
+    """Replace the edge data of every companion in `recounted`, pairs of a companion and its matrices, or of none. Each is staged beside its companion (`stage`), and the staged files are renamed over the companions only once all of them stand; a failure until then removes them and leaves every companion as it was."""
+    parts = {h5_path: h5_path.with_suffix(".h5.part") for h5_path, _ in recounted}
+    try:
+        for h5_path, matrices in recounted:
+            stage(h5_path, parts[h5_path], matrices)
+        for h5_path, part in parts.items():
+            os.replace(part, h5_path)
+    finally:
+        for part in parts.values():
+            part.unlink(missing_ok=True)
 
 
 @functools.cache
@@ -117,13 +134,8 @@ def main():
                 flush=True,
             )
             recounted.append((h5_path, new))
-    if args.dry_run:
-        return
-    for h5_path, new in recounted:
-        rewrite(h5_path, new)
-        back = stored(h5_path)
-        if not all(np.array_equal(back[k], new[k].astype(back[k].dtype)) for k in back):
-            raise SystemExit(f"{h5_path.name}: the rewritten companion does not read back")
+    if not args.dry_run:
+        rewrite(recounted)
 
 
 if __name__ == "__main__":

@@ -4247,7 +4247,7 @@ classes:
                 range: Theme
                 inlined: true
                 description: >-
-                    The look every figure of this study is drawn in: one rule, stated once, usually a ``tvbo:Theme`` file under ``spec/`` named with ``!include``. It carries the colours, the type, the stroke weights and the axis rule (who places the ticks, where an axis ends, which spines are drawn and whether they meet). A figure's own ``theme`` and its own slots beat it wherever they state something; nothing else does.
+                    The look every figure of this study is drawn in: one rule, stated once, usually a ``tvbo:Theme`` file under ``spec/`` named with ``!include``. It carries the colours, the type, the stroke weights and the axis rule (who places the ticks, where an axis ends, which spines are drawn and whether they meet). A figure's own ``theme`` and its own slots beat it wherever they state something; nothing else does. Start from a curated one with ``theme: {iri: tvbo:theme/default}`` (or ``tvbo:theme/bsplot``) and state only the differences.
             code_source:
                 range: CodeSource
                 inlined: true

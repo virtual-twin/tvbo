@@ -1909,26 +1909,54 @@ class _AnyNumber:
         return _ANY_VALUE
 
 
-def _caption_annotations(panel, base_dir, any_value: bool = False) -> list[str]:
-    """The sentences a panel's ``placement: caption`` annotations, and those of its insets and grid cells, add to its caption clause, each ``text`` formatted with the value its ``used:`` binding reads under *base_dir*.
+def _binding_key(annotation) -> tuple[str, str]:
+    """What makes two bound caption annotations one statement: the template text and the data reference it is formatted with.
 
-    Without *base_dir* a bound text keeps its format field (``N={:.0f}``); with *any_value* the number becomes :data:`_ANY_VALUE`, and a sentence a placeholder may stand in for is wrapped in :data:`_MAYBE`. A binding whose container is absent contributes nothing when the panel declares a ``placeholder``, since the panel then draws that label instead of the data; without one it raises, as rendering the panel would.
+    The rendered sentence cannot tell them apart or together: two outputs may hold the same number, and a caption composed without its containers writes every number as the same stand-in.
+    """
+    import json
+
+    return (str(annotation.text), json.dumps(_plain(annotation.used), sort_keys=True, default=str))
+
+
+def load_scalar(layer: dict) -> float:
+    """The one number a resolved layer names, for a statistic a figure prints instead of plots (public API).
+
+    An output holding several values is refused: a label or a caption states one number, and the first of many would be a plausible wrong one.
     """
     import numpy as np
 
+    values = np.asarray(load_layer(layer).values).ravel()
+    if values.size != 1:
+        raise ValueError(
+            f"output {layer.get('output')!r} of {layer.get('container')} holds {values.size} values where an annotation prints one; name the one with `sel:`."
+        )
+    return float(values[0])
+
+
+def _caption_annotations(panel, base_dir, any_value: bool = False) -> list[tuple]:
+    """What a panel's ``placement: caption`` annotations, and those of its insets and grid cells, add to its caption clause, as ``(identity, sentence)`` pairs, each ``text`` formatted with the value its ``used:`` binding reads under *base_dir*.
+
+    The identity is what a sibling panel's annotation must share to be the same statement (:func:`_binding_key` for a bound annotation, the sentence itself for a literal one), the same whether the number is read or stood in for. Without *base_dir* a bound text keeps its format field (``N={:.0f}``); with *any_value* the number becomes :data:`_ANY_VALUE`, and a sentence a placeholder may stand in for is wrapped in :data:`_MAYBE`. A binding whose container is absent contributes nothing when the panel declares a ``placeholder``, since the panel then draws that label instead of the data; without one it raises, as rendering the panel would.
+    """
     sentences = []
     owners = [panel, *(inset for _, inset in _items(getattr(panel, "insets", None))), *(getattr(panel, "cells", None) or [])]
     for owner, a in ((o, a) for o in owners for a in getattr(o, "annotations", None) or []):
         if not _in_caption(a):
             continue
         used = getattr(a, "used", None)
-        if used is None or (base_dir is None and not any_value):
-            sentences.append(_sentence(str(a.text)))
+        literal = _sentence(str(a.text))
+        if used is None:
+            sentences.append((literal, literal))
+            continue
+        key = _binding_key(a)
+        if base_dir is None and not any_value:
+            sentences.append((key, literal))
             continue
         placeholder = getattr(owner, "placeholder", None) or getattr(panel, "placeholder", None)
         if any_value:
             sentence = _sentence(str(a.text).format(_AnyNumber()))
-            sentences.append(f"{_MAYBE[0]}{sentence}{_MAYBE[1]}" if placeholder else sentence)
+            sentences.append((key, f"{_MAYBE[0]}{sentence}{_MAYBE[1]}" if placeholder else sentence))
             continue
         layer = _resolve_layer(_UsedOnly(used), "cartesian", Path(base_dir))
         if not layer.get("container"):
@@ -1937,7 +1965,7 @@ def _caption_annotations(panel, base_dir, any_value: bool = False) -> list[str]:
             raise FileNotFoundError(
                 f"caption annotation {a.text!r} of panel {getattr(panel, 'panel_key', '?')!r} reads a container that is not under {base_dir}, and the panel declares no placeholder."
             )
-        sentences.append(_sentence(str(a.text).format(float(np.asarray(load_layer(layer).values).ravel()[0]))))
+        sentences.append((key, _sentence(str(a.text).format(load_scalar(layer)))))
     return sentences
 
 
@@ -2687,34 +2715,34 @@ def compose_caption(figure, base_dir=None, *, any_value: bool = False) -> str:
     clauses: list[str] = []
     seen: set[str] = set()
     group_clause: dict[str, int] = {}
-    # What each group's clause has already said, held as whole parts. Testing a part for containment in the clause TEXT instead drops any label that happens to be a substring of a sibling's prose, so a cell called "network" loses its name to an earlier sentence that merely used the word.
-    group_parts: dict[str, set[str]] = {}
+    # What each group's clause has already said, by the identity of each part (its text, or a bound annotation's template and reference), never by containment in the clause TEXT: a cell called "network" would lose its name to an earlier sentence that merely used the word.
+    group_parts: dict[str, set] = {}
     for key in _panel_layout_order(figure):
         panel = spec_by_key.get(key)
         if panel is None:
             continue
         ident = letter_case(_letter_identity(getattr(panel, "number", None), key, seen), case)
-        parts = [
+        authored = [
             _sentence(getattr(panel, "label", None) or ""),
             _sentence(_panel_descriptor(panel)),
             _sentence(getattr(panel, "description", None) or ""),
-            *_caption_annotations(panel, base_dir, any_value),
         ]
+        parts = [(s, s) for s in authored] + _caption_annotations(panel, base_dir, any_value)
         group = _group_letter(key)
         said = group_parts.setdefault(group, set())
         if ident is not None:
             group_clause[group] = len(clauses)
-            said.update(s for s in parts if s)
-            clauses.append(f"**({ident})** {' '.join(s for s in parts if s)}".strip())
+            said.update(k for k, s in parts if s)
+            clauses.append(f"**({ident})** {' '.join(s for _, s in parts if s)}".strip())
             continue
         # A cell of a paper panel already lettered, or whose letter the author suppressed: it shares that panel's clause.
         index = group_clause.get(group)
         # A sibling joins the clause for what it SAYS, never for its own title: a grid whose cells are titled and whose prose is authored once on the lettered cell would otherwise append a run of bare labels ("... power grid. spiking neurons. mean field.") that reads as debris rather than as caption.
-        carried = [s for s in parts[1:] if s and s not in said]
-        fresh = " ".join([s for s in parts[:1] if s and s not in said] + carried) if carried else ""
+        carried = [s for k, s in parts[1:] if s and k not in said]
+        fresh = " ".join([s for k, s in parts[:1] if s and k not in said] + carried) if carried else ""
         if not fresh:
             continue
-        said.update(s for s in parts if s)
+        said.update(k for k, s in parts if s)
         if index is None:
             group_clause[group] = len(clauses)
             clauses.append(fresh)

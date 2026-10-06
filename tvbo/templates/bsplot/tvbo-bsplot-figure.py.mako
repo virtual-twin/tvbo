@@ -19,7 +19,7 @@ from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   expand_bare_axes as _expand_bare_axes,
                                   fan_colors as _fan_colors,
-                                  load_layer as _load_layer, registered as _registered,
+                                  load_scalar as _load_scalar, registered as _registered,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient)
 from tvbo.data.dataref import match_output as _match_output, resolve_sel_keys as _sel_keys
 from tvbo.plot import axis_rule as _axis_rule, palette as _palette
@@ -868,13 +868,12 @@ ${colorbar(p)}\
 % endfor
 % for a in p['annotations']:
 % if a['layer']:
-    _txt = ${repr(a['text'])}.format(       # the number is READ from the run, not typed
-        float(np.asarray(_load_layer(${repr(a['layer'])}).values).ravel()[0]))
+    _txt = ${repr(a['text'])}.format(_load_scalar(${repr(a['layer'])}))   # the number is READ from the run, not typed
 % else:
     _txt = ${repr(a['text'])}
 % endif
 % if a['tail']:
-    _ty = float(np.asarray(_load_layer(${repr(a['tail']['layer'])}).values).ravel()[0])
+    _ty = _load_scalar(${repr(a['tail']['layer'])})
     ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
                 xytext=(${a['tail']['x']}, _ty), textcoords="data",   # tail ON the computed point
                 zorder=10, **${repr(a['kwargs'])},

@@ -99,6 +99,8 @@ if [ ! -d "${'$'}{TVBO_EXTRAS}" ]; then
     exit 1
 fi
 % endif
+## What a run reads and does not write (a warm-start source, staged analysis containers) is under the plan's reference root; $TVBO_RESULTS_ROOT points it elsewhere.
+RESULTS_ROOT="${'$'}{TVBO_RESULTS_ROOT:-${plan.reference_root}}"
 % if subject_axis:
 ## One array task per subject, $SLURM_ARRAY_TASK_ID indexing SUBJECTS; the results are independent, so no gather follows.
 SUBJECTS=(${" ".join(str(v) for v in subject_axis.values)})
@@ -108,18 +110,13 @@ bids_root_override=()
 if [ -n "${'$'}{TVBO_BIDS_ROOT:-}" ]; then
     bids_root_override=(--set "dataset.bids_root=${'$'}{TVBO_BIDS_ROOT}")
 fi
-## $TVBO_RESULTS_ROOT points a warm-start at its source run's output, defaulting to the output dir's parent.
-results_root_override=()
-if [ -n "${'$'}{TVBO_RESULTS_ROOT:-}" ]; then
-    results_root_override=(--results-root "${'$'}{TVBO_RESULTS_ROOT}")
-fi
 exec ${prefix}tvbo run ${run_target} \
     --backend=${plan.backend.name} \
 % if plan.experiment_selector and not spec_relpath:
     --experiment="${plan.experiment_selector}" \
 % endif
     ${'$'}{bids_root_override[@]+"${'$'}{bids_root_override[@]}"} \
-    ${'$'}{results_root_override[@]+"${'$'}{results_root_override[@]}"} \
+    --results-root "${'$'}{RESULTS_ROOT}" \
     --subject="${'$'}{SUBJECT}" \
     -o ${out_pat}
 % else:
@@ -130,6 +127,7 @@ exec ${prefix}tvbo run ${run_target} \
 % if plan.experiment_selector and not spec_relpath:
     --experiment="${plan.experiment_selector}" \
 % endif
+    --results-root "${'$'}{RESULTS_ROOT}" \
     --shard=$SLURM_ARRAY_TASK_ID/${plan.n_array_tasks} \
     -o ${out_pat}
 % endif

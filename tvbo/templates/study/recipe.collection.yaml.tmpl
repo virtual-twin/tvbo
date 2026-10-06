@@ -6,6 +6,9 @@ title: "<Document title>"
 description: >-
   What this collection reports, and what the studies under it are evidence for. Each nested study keeps its own claims in its own docs/analysis/; this file says what the document as a whole argues.
 
+# The look every figure of the collection is drawn in; a nested study's own `theme` wins for its figures.
+theme: {iri: tvbo:theme/bsplot}
+
 # Each nested study is included by its own recipe, so it stays runnable on its own and its results land in its own layout rather than here.
 studies:
   - !include <path/to/Study>/<Study>.yaml

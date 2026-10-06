@@ -1521,6 +1521,8 @@ def _${algo_name}_tuning_core_impl(
 
     rule_state = rule_state_params(rule_rhs, target_name, observations, rule_params_dict)
     rule_gate = update_gate(source_algo if source_algo is not None else algo, simulation_period)
+    # One gate per rule: the traced `update_every` cadence and the static `update_start` / `apply_every` terms, conjoined; the parameter holds its value on every other iteration.
+    cadence_gate = ' & '.join((['_apply_update'] if 'update_every' in hyperparam_dict else []) + ([rule_gate] if rule_gate else []))
 %>
         new_${target_name} = ${rule_name}(
 % if is_coupling_param:
@@ -1541,20 +1543,8 @@ def _${algo_name}_tuning_core_impl(
             eta_scale,
 % endif
         )
-% if 'update_every' in hyperparam_dict:
-        # Hold the parameter on non-cadence steps (batched-update gate).
-        new_${target_name} = jnp.where(
-            _apply_update,
-            new_${target_name},
-% if is_coupling_param:
-            state.coupling.${coupling_key}.${target_name},
-% else:
-            state.dynamics.${target_name},
-% endif
-        )
-% endif
-% if rule_gate:
-        new_${target_name} = jnp.where(${rule_gate}, new_${target_name}, ${state_param_accessor(target_name)})  # update_start / apply_every
+% if cadence_gate:
+        new_${target_name} = jnp.where(${cadence_gate}, new_${target_name}, ${state_param_accessor(target_name)})
 % endif
 % if is_coupling_param:
         state = eqx.tree_at(lambda s: s.coupling.${coupling_key}.${target_name}, state, new_${target_name})
