@@ -469,7 +469,7 @@ def _labelled(params, row, label="bp"):
     df = pd.DataFrame({"param": params, "specialpoint": [label if i == row else None for i in range(len(params))]})
     result = BifurcationResult(df=df)
     result._reclassify_folds()
-    return [label for label in result.df["specialpoint"] if label is not None]
+    return [label for label in result.df["specialpoint"] if pd.notna(label)]
 
 
 @pytest.mark.parametrize(

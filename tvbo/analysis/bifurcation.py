@@ -594,7 +594,7 @@ class BifurcationResult:
         sp_col = df.columns.get_loc("specialpoint")
         for pos in range(n):
             val = df.iat[pos, sp_col]
-            if val is None:
+            if pd.isna(val):  # a row without a special point: None in an object column, NaN in pandas 3's str column
                 continue
             toks = [t.strip() for t in str(val).split(",")]
             if any(t.lower() in bp_tokens for t in toks) and any(turns(row) for row in (pos - 1, pos, pos + 1)):
