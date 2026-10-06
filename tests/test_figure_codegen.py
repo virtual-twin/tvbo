@@ -226,7 +226,7 @@ def test_build_context_resolves_everything():
     assert ctx["subplots_kwargs"]["figsize"] == (180 / 25.4, 120 / 25.4)  # mm -> inches
     assert ctx["font_size"] == 8
     assert ctx["dpi"] == 200  # default
-    assert ctx["auto_format"] is True
+    assert ctx["rule"] == {}  # no theme speaks, so no axis is re-placed
     assert ctx["panel_numbers"] is True
     # panel_number_loc "upper right" -> resolved into each panel's placement kwargs
     assert ctx["panels"][0]["number_kwargs"]["ha"] == "right"
@@ -459,8 +459,8 @@ def test_render_code_is_valid_python():
 
 def test_render_code_font_size_emitted():
     """The base type-size block is emitted iff a physical ``font_size`` is declared."""
-    assert "plt.rcParams.update({_k: 9" in _emit(font_size=9)
-    assert "plt.rcParams.update({_k:" not in _emit()
+    assert "_body = 9.0" in _emit(font_size=9)
+    assert "_body =" not in _emit()
 
 
 def test_render_code_font_size_wins_over_mplstyle():
@@ -469,7 +469,7 @@ def test_render_code_font_size_wins_over_mplstyle():
     A study style file that sets ``font.size`` would otherwise silently override the per-figure declaration, making ``font_size:`` a no-op that is invisible in the spec and only detectable by measuring glyphs in the rendered PNG.
     """
     code = _emit(font_size=9, style=["some/study.mplstyle"])
-    assert code.index("plt.style.use(") < code.index("plt.rcParams.update({_k: 9")
+    assert code.index("plt.style.use(") < code.index("_body = 9.0")
 
 
 def test_render_code_bar_mark():
@@ -686,10 +686,13 @@ def test_render_code_layout_engine_is_declared_or_falls_back():
 
 
 def test_render_code_auto_format_toggle():
-    """``bsplot.style.format_fig`` appears iff auto_format is not disabled."""
-    assert "bsplot.style.format_fig" in _emit(auto_format=True)
-    assert "bsplot.style.format_fig" in _emit()  # default-on
-    assert "bsplot.style.format_fig" not in _emit(auto_format=False)
+    """The emitted script carries the axis rule its figure resolves to: none unless a theme states one, the curated house rule on ``auto_format: true``, and none again when the figure opts out."""
+    assert "_RULE = {}" in _emit()
+    assert "'ticks': 'round'" in _emit(auto_format=True) and "'spine_trim': True" in _emit(auto_format=True)
+    assert "_RULE = {}" in _emit(auto_format=False)
+    assert "format_fig" not in _emit(auto_format=True), (
+        "tvbo applies the rule itself, so no backend pass re-derives an axis behind it"
+    )
 
 
 # --------------------------------------------------------------------------- placeholder / axes / matrix
@@ -925,8 +928,8 @@ def test_triangle_masks_the_other_half():
         ns["_triangle"](np.zeros((2, 3)), "upper")
 
 
-def test_declared_ticks_survive_the_format_pass():
-    """Bsplot's format pass re-derives evenly spaced ticks; a DECLARED tick set is the paper's own frame and must win, so it is re-applied afterwards."""
+def test_declared_ticks_stand_over_the_axis_rule():
+    """A theme's rule places the ticks nobody declared; a DECLARED tick set is the paper's own frame and must win, so it is re-applied once the rule has run."""
     figure = _cartesian_figure()
     figure.panels["a"].xlabel = "modes"
     figure.panels["a"].xticks = [50, 100, 150, 200]
@@ -936,9 +939,167 @@ def test_declared_ticks_survive_the_format_pass():
 
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert code.index("format_fig") < code.index("{'xticks': [50.0, 100.0, 150.0, 200.0]}")
+    assert code.index("_axis_rule.place(") < code.rindex("{'xticks': [50.0, 100.0, 150.0, 200.0]}")
     # A placeholder-only panel has no frame to restore.
     assert bsplot.build_context(_placeholder_figure(), TAHER_BASE, "o.png")["panels"][0]["post_axopts"] == {}
+
+
+def test_a_drawn_tick_label_states_its_tick():
+    """A label that rounds its tick by a visible share of the spacing, or repeats its neighbour, is widened; a true label, and a label on another scale, is left alone."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import FixedLocator, FormatStrFormatter, FuncFormatter
+
+    ns: dict = {}
+    exec(compile(bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png"), "<figure>", "exec"), ns)
+    cases = [
+        ([0.0, 1.0, 2.2, 3.2], FormatStrFormatter("%.0f")),
+        ([0.001131, 0.001134], FormatStrFormatter("%.5f")),
+        ([0.0, 0.5, 1.0], FormatStrFormatter("%.1f")),
+        ([1e4, 2e4, 3e4], FuncFormatter(lambda v, _pos: f"{v / 1e4:.0f}")),
+    ]
+    fig, axes = plt.subplots(1, len(cases))
+    for ax, (ticks, formatter) in zip(axes, cases, strict=True):
+        ax.set_ylim(ticks[0], ticks[-1])
+        ax.yaxis.set_major_locator(FixedLocator(ticks))
+        ax.yaxis.set_major_formatter(formatter)
+    ns["_true_ticks"](fig)
+    fig.canvas.draw()
+    labels = [[t.get_text() for t in ax.get_yticklabels()] for ax in axes]
+    plt.close(fig)
+    assert labels[0] == ["0.0", "1.0", "2.2", "3.2"]
+    assert labels[1] == ["0.001131", "0.001134"]
+    assert labels[2] == ["0.0", "0.5", "1.0"]
+    assert labels[3] == ["1", "2", "3"]
+
+
+def test_a_spine_ends_on_the_ticks_a_panel_declares():
+    """Under a rule that trims spines, the spine ends on the ticks standing when the figure is finished, the declared ones included; with no such rule a declared tick moves no spine."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from tvbo.plot import axis_rule
+
+    ns: dict = {}
+    exec(compile(bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png"), "<figure>", "exec"), ns)
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0.2, 0.67])
+    ax.spines["top"].set_visible(False)
+    ns["_apply_axopts"](ax, {"yticks": [0.25, 0.75]})
+    untrimmed = ax.spines["left"].get_bounds()
+    axis_rule.frame(fig, {"spine_trim": True})
+    bounds = ax.spines["left"].get_bounds()
+    plt.close(fig)
+    assert untrimmed is None
+    assert bounds == (0.25, 0.75)
+
+
+def test_custom_panel_legend_is_applied_after_its_drawer():
+    """A custom panel's `legend:` names artists its drawer creates, and a custom panel gets no axis pass before it draws, so the legend rides the post-format pass. Without it the slot was accepted and silently never drawn."""
+    figure = P.Figure(
+        name="cl",
+        layout="a",
+        panels={"a": P.Panel(panel_key="a", kind="custom", render="bars", legend=P.Legend(loc="lower right", frame=False))},
+    )
+    post = bsplot.build_context(figure, TAHER_BASE, "o.png")["panels"][0]["post_axopts"]
+    assert post == {"legend": "lower right", "legend_frame": False}
+
+    grammar = _cartesian_figure()
+    grammar.panels["a"].legend = P.Legend(loc="upper left")
+    assert "legend" not in bsplot.build_context(grammar, TAHER_BASE, "o.png")["panels"][0]["post_axopts"]
+
+
+def test_custom_panel_labels_are_applied_after_its_drawer():
+    """A custom panel's `xlabel` and `ylabel` are the panel's, not its drawer's, and a custom panel gets no axis pass before it draws, so they ride the pass that follows it. Without it both were accepted and silently never drawn."""
+    figure = P.Figure(
+        name="cx",
+        layout="a",
+        panels={
+            "a": P.Panel(
+                panel_key="a", kind="custom", render="bars", xlabel="PMAT Question", ylabel="Correlation", ylabel_pad=2.0
+            )
+        },
+    )
+    assert bsplot.build_context(figure, TAHER_BASE, "o.png")["panels"][0]["post_axopts"] == {
+        "xlabel": "PMAT Question",
+        "ylabel": "Correlation",
+        "ylabel_pad": 2.0,
+    }
+
+    grammar = _cartesian_figure()
+    grammar.panels["a"].xlabel = "time"
+    assert "xlabel" not in bsplot.build_context(grammar, TAHER_BASE, "o.png")["panels"][0]["post_axopts"]
+
+
+def test_custom_panel_labels_reach_the_rendered_axes(tmp_path, monkeypatch):
+    """The declared labels are on the axes of the figure that is saved, whether or not the figure takes the house rule, and a label the drawer set itself gives way to the declared one."""
+    import sys
+    import textwrap
+
+    import matplotlib.figure
+
+    (tmp_path / "study_label_panels.py").write_text(
+        textwrap.dedent("""
+        from tvbo.adapters import bsplot
+
+        @bsplot.register_panel("demo_unlabelled_bars")
+        def bars(fig, ax, ctx):
+            ax.bar([1, 2, 3], [0.2, -0.1, 0.4])
+            ax.set_ylabel("drawer's own")
+    """)
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    saved, savefig = [], matplotlib.figure.Figure.savefig
+
+    def recording_savefig(self, *args, **kwargs):
+        saved.append([(ax.get_xlabel(), ax.get_ylabel()) for ax in self.axes])
+        return savefig(self, *args, **kwargs)
+
+    monkeypatch.setattr(matplotlib.figure.Figure, "savefig", recording_savefig)
+    try:
+        for auto_format in (True, False):
+            saved.clear()
+            figure = P.Figure(
+                name="cx",
+                layout="a",
+                auto_format=auto_format,
+                code_modules=["study_label_panels"],
+                panels={
+                    "a": P.Panel(
+                        panel_key="a",
+                        kind="custom",
+                        render="demo_unlabelled_bars",
+                        xlabel="PMAT Question",
+                        ylabel="Correlation",
+                    )
+                },
+            )
+            bsplot.render(figure, str(tmp_path), str(tmp_path / "cx.png"))
+            assert saved and ("PMAT Question", "Correlation") in saved[-1], (auto_format, saved)
+    finally:
+        bsplot.CUSTOM_PANELS.pop("demo_unlabelled_bars", None)
+        sys.modules.pop("study_label_panels", None)
+
+
+def test_custom_panel_caption_names_no_mark_its_drawer_did_not_declare():
+    """A custom panel's layers are drawn by its registered code, so an unmarked layer is captioned by its quantities alone; the grammar's line default described bar panels as lines."""
+    layer = P.Layer(used=P.DataRef(analysis="fig1c_g", output="r"), encoding=P.Encoding(x="question", y="r"))
+    custom = P.Panel(panel_key="a", kind="custom", render="bars", layers=[layer])
+    assert bsplot._panel_descriptor(custom) == "r vs question from analysis fig1c_g"
+
+    custom.layers[0].mark = "bar"
+    assert bsplot._panel_descriptor(custom) == "bar of r vs question from analysis fig1c_g"
+
+    grammar = P.Panel(
+        panel_key="a",
+        kind="cartesian",
+        layers=[P.Layer(used=P.DataRef(analysis="fig1c_g", output="r"), encoding=P.Encoding(x="question", y="r"))],
+    )
+    assert bsplot._panel_descriptor(grammar) == "line of r vs question from analysis fig1c_g"
 
 
 def test_shared_scale_unifies_a_panel_group():
@@ -951,21 +1112,39 @@ def test_shared_scale_unifies_a_panel_group():
     assert bsplot.build_context(figure, TAHER_BASE, "out.png")["shared_scales"] == {"x": [["a", "b"]], "y": [["a", "b"]]}
     assert "_share_scale(axd, ['a', 'b'], 'y')" in code
     assert "_share_scale(axd, ['a', 'b'], 'x')" in code
-    assert code.index("format_fig") < code.index(
+    assert code.index("_axis_rule.place(") < code.index(
         "_share_scale(axd, ['a', 'b'], 'y')"
     )  # the union is the last word on the limits
+    assert (
+        "shared={_n: [[axd[_k] for _k in _g if _k in axd] for _g in _gs] for _n, _gs in {'x': [['a', 'b']], 'y': [['a', 'b']]}.items()}"
+        in code
+    ), "the rule is told the groups, so it places their ticks from one common extent"
 
     undeclared = bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
     assert "_share_scale(axd, [" not in undeclared  # the helper is always defined; nothing calls it
 
 
-def test_blanked_slot_survives_the_format_pass():
-    """A colour-scale slot blanks its host axes; the format pass re-derives ticks for every axes, so the blanking is re-applied after it."""
-    code = bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
-    ast.parse(code)
-    blank = code.index("_blank = [")
-    assert 'hasattr(_ax, "zaxis")' in code  # a 3-D axes reads as blanked and must be left alone
-    assert blank < code.index("format_fig") < code.index("_ax.set_axis_off()")
+def test_a_blanked_slot_is_not_the_axis_rules_to_place():
+    """A colour-scale slot blanks its host axes and a 3-D axes has no flat frame; a rule that placed ticks or moved spines on either would draw a scale where the figure shows none."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from tvbo.plot import axis_rule
+
+    fig = plt.figure()
+    blank, solid = fig.add_subplot(1, 2, 1), fig.add_subplot(1, 2, 2, projection="3d")
+    blank.plot([0.3, 9.7], [0.3, 9.7])
+    blank.set_axis_off()
+    solid.plot([0.3, 9.7], [0.3, 9.7], [0.3, 9.7])
+    before = (blank.get_xlim(), blank.spines["left"].get_position(), solid.get_xlim())
+    rule = {"ticks": "round", "axis_ends": "ticks", "spine_offset": 0.02, "spine_trim": True}
+    axis_rule.place(fig, rule)
+    axis_rule.frame(fig, rule)
+    after = (blank.get_xlim(), blank.spines["left"].get_position(), solid.get_xlim())
+    plt.close(fig)
+    assert before == after and not blank.axison
 
 
 def test_annotation_binds_a_computed_number():

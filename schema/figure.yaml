@@ -133,6 +133,69 @@ enums:
       vertical:   {description: "Upright, beside the panel."}
       horizontal: {description: "Flat, under or over the panel."}
 
+  TickPlacement:
+    description: "Who decides where an axis's ticks sit."
+    permissible_values:
+      native: {description: "The plotting backend's own locator: nothing is re-placed, so the ticks are the ones the drawing produced. What an axis gets when no theme says otherwise."}
+      round: {description: "Re-placed on the multiples of a round step (one of `tick_steps` times a power of ten), at most `max_ticks` of them, so every label states its tick exactly."}
+      declared: {description: "The ticks each panel gives in `xticks` and `yticks`, and nothing else. A numeric axis that gives none is refused, so a figure under this rule carries no tick nobody chose."}
+
+  AxisEnds:
+    description: "Where an axis ends relative to its ticks. An axis cannot always have round ticks, a tick at each end and no empty space all at once; this states which of the three gives way."
+    permissible_values:
+      data: {description: "At the data, with the backend's margin (`axis_margin`). The outer ticks sit inside the axis and the frame is never widened to reach one. What an axis gets when no theme says otherwise."}
+      ticks: {description: "On a tick at both ends, however far the next one lies. The frame reads cleanly and may leave part of the panel empty."}
+      near: {description: "On a tick where the next one lies within `end_tick_reach` of the data, at the data otherwise, and never with fewer than three ticks."}
+
+  Spines:
+    description: "Which sides of the axes frame are drawn."
+    permissible_values:
+      open: {description: "Left and bottom only: the two that carry a scale."}
+      box: {description: "All four sides, a closed frame."}
+
+  FontWeight:
+    description: "How heavy a piece of text is set."
+    permissible_values:
+      normal: {description: "The regular weight."}
+      bold: {description: "The bold weight."}
+
+  TextAlign:
+    description: "Where a piece of text sits along the width it belongs to."
+    permissible_values:
+      left: {description: "Flush with the left edge."}
+      center: {description: "Centred."}
+      right: {description: "Flush with the right edge."}
+
+  LineCap:
+    description: "How a drawn line ends."
+    permissible_values:
+      butt: {description: "Cut square at the end point."}
+      round: {description: "Rounded, half a line width past the end point."}
+      projecting: {description: "Cut square, half a line width past the end point."}
+
+  LineStyle:
+    description: "The dash pattern of a line."
+    permissible_values:
+      solid: {description: "Unbroken."}
+      dashed: {description: "Dashes."}
+      dotted: {description: "Dots."}
+      dashdot: {description: "Dashes and dots in turn."}
+
+  MathFont:
+    description: "The typeface mathematical text is set in."
+    permissible_values:
+      dejavusans: {description: "DejaVu Sans, matplotlib's own default."}
+      dejavuserif: {description: "DejaVu Serif."}
+      cm: {description: "Computer Modern, the TeX look."}
+      stix: {description: "STIX, a Times-like serif."}
+      stixsans: {description: "STIX sans-serif."}
+
+  LetterCase:
+    description: "The case a panel letter is drawn in."
+    permissible_values:
+      lower: {description: "a, b, c: the convention of most journals."}
+      upper: {description: "A, B, C."}
+
   TickDirection:
     description: "Which side of the axes a tick mark is drawn on."
     permissible_values:
@@ -209,7 +272,7 @@ classes:
       theme:
         range: Theme
         inlined: true
-        description: "The look this figure declares: its colours and the geometry a style sheet used to own. Whatever it states beats every layer in `style`, always — declared beats layered, so a figure's look can be read off its own spec instead of reconstructed from the sheets underneath it. Start from the curated one with `theme: {iri: tvbo:theme/default}` and state only the differences."
+        description: "The look this figure declares where it differs from its study's `theme`: its colours, the geometry a style sheet used to own, and its axis rule. Whatever it states beats the study's theme and every layer in `style`, always — declared beats layered, so a figure's look can be read off its own spec instead of reconstructed from the sheets underneath it. Start from the curated one with `theme: {iri: tvbo:theme/default}` and state only the differences."
       style:
         range: string
         multivalued: true
@@ -231,7 +294,7 @@ classes:
         description: "Figure height in mm (physical print size)."
       dpi:
         range: integer
-        description: "Raster resolution (dots per inch); scales pixel output only, not the physical size or the font size."
+        description: "Raster resolution (dots per inch); scales pixel output only, not the physical size or the font size. Unset takes the theme's `dpi`."
       trim_margins:
         range: boolean
         description: "Trim surrounding whitespace from the saved figure (default true). Trimming re-crops to the drawn content, so the saved aspect can differ from width/height; set false to preserve the declared width×height proportions exactly, e.g. to match an original figure. Renders as bbox_inches='tight' on a matplotlib backend."
@@ -240,26 +303,26 @@ classes:
         description: "Whitespace left around the content when trimming, in inches. Defaults to the backend's own margin (0.1 in for matplotlib), which is visible padding at journal column widths; 0 crops flush to the drawn content. Ignored when trim_margins is false, where the declared canvas fixes the margins instead."
       font_size:
         range: float
-        description: "Base font size in points (physical: 1 pt = 1/72 inch). The real text size, unchanged by figure size or dpi; set it (or the width) so labels are legible at print size."
+        description: "Base font size in points (physical: 1 pt = 1/72 inch). The real text size, unchanged by figure size or dpi; set it (or the width) so labels are legible at print size. Unset takes the theme's `font_size`."
       auto_format:
         range: boolean
-        description: "Apply bsplot's format_fig (tick/label normalisation + panel numbers). Set false to keep full manual control, e.g. when a study's own .mplstyle already defines the look."
+        description: "Whether this figure's axes follow a theme's axis rule. `false` leaves every axis exactly as its panels drew it, whatever the study's theme says: no tick re-placed, no limit moved, no spine detached or trimmed, no labels aligned. `true` draws it by the curated `tvbo:theme/bsplot` rule wherever neither its own theme nor its study's states one. Unset follows the theme."
       panel_numbers:
         range: boolean
-        description: "Draw automatic panel letters (a, b, ...). Independent of auto_format so a study can keep its own tick styling and still get numbered panels."
+        description: "Draw automatic panel letters (a, b, ...). Unset takes the theme's `panel_numbers`, and draws them where the theme says nothing."
       panel_number_format:
         range: string
-        description: "Python format string applied to each panel letter: '{}' -> 'a', '({})' -> '(a)', '{}.' -> 'a.'. Defaults to '{}'. Match the target journal's convention."
+        description: "Python format string applied to each panel letter: '{}' -> 'a', '({})' -> '(a)', '{}.' -> 'a.'. Unset takes the theme's `panel_number_format`, then '{}'."
       panel_number_loc:
         range: Corner
-        description: "Which corner the panel letter sits in. Unset keeps bsplot's own default placement; many journals (and Taher Fig 5) use 'upper right'."
+        description: "Which corner the panel letter sits in. Unset takes the theme's `panel_number_loc`, then bsplot's own placement on top of the left spine."
       panel_number_offset:
         range: float
         multivalued: true
-        description: "[dx, dy] shift of every panel letter from its corner, in axes fractions. The default sits it on the axes corner, where a top y-tick label can reach it; a small negative dx clears the tick labels."
+        description: "[dx, dy] shift of every panel letter from its corner, in axes fractions. The default sits it on the axes corner, where a top y-tick label can reach it; a small negative dx clears the tick labels. Unset takes the theme's `panel_number_offset`."
       panel_number_size:
         range: float
-        description: "Panel-letter size in points. Unset scales it above the body font_size, the convention most journals follow — a letter set at the body size reads as a tick label rather than as the panel's name."
+        description: "Panel-letter size in points. Unset scales it above the body font_size by the theme's `panel_number_scale`, the convention most journals follow — a letter set at the body size reads as a tick label rather than as the panel's name."
       height_ratios:
         range: float
         multivalued: true
@@ -269,14 +332,14 @@ classes:
         multivalued: true
         description: "Relative widths of the mosaic columns."
       spines:
-        range: string
-        description: "Axes spine style: 'box' (all 4 spines, closed boxes — e.g. Taher) or 'open' (left+bottom only). Unset defers to the active style. Pair 'box' with auto_format: false — bsplot's format_fig otherwise detaches and trims spines (the open 'nature' look)."
+        range: Spines
+        description: "Which sides of the axes frame this figure draws: `box` (all four) or `open` (left and bottom). Unset takes the theme's `spines`, and failing that the active style's."
       layout_engine:
         range: LayoutEngine
         description: "Which layout engine positions the panels. Unset lets the backend pick; name one to stop a dense mosaic being laid out by whatever the engine falls back to when its solver gives up, and 'none' to keep the gridspec's own positions when panels place their content at absolute geometry."
       spine_offset:
         range: float
-        description: "How far the left and bottom spines sit outside the data area, in axes fractions. 0 makes them meet at the corner; the default detaches them slightly (bsplot's house look). Journals differ on this, so a replication states which one the paper uses."
+        description: "How far the left and bottom spines of this figure sit outside the data area, in axes fractions. 0 makes them meet at the origin. Unset takes the theme's `spine_offset`."
       workflow_overrides:
         range: WorkflowConfig
         inlined: true
@@ -880,7 +943,7 @@ classes:
         description: "The continuous scales, so both kinds of colour move together and no figure names a colormap of its own."
 
   Theme:
-    description: "A project's whole look in one declarable object: its colours (inherited from `Palette`) and the geometry a style sheet used to own — tick shape, axis weight, line weights, legend, grid, font. Declared on a figure, it beats every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec, where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:theme/default`; a project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means to fix and nothing else."
+    description: "A project's whole look in one declarable object: its colours (inherited from `Palette`), the geometry a style sheet used to own — tick shape, axis weight, line weights, legend, grid, type — and the rule its axes follow: who places the ticks, where an axis ends, which spines are drawn and whether they meet. Declared on a study (`SimulationStudy.theme`) it is the one rule every figure of that study is drawn by; declared on a figure it states only that figure's differences. Either way it beats every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec, where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:theme/default`; a project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means to fix and nothing else."
     is_a: Palette
     mixins:
       - Document
@@ -943,7 +1006,171 @@ classes:
       font_family:
         range: string
         multivalued: true
-        description: "The typefaces to set text in, most-wanted first (`[Helvetica, Arial, DejaVu Sans]`). A generic family (`sans-serif`, `serif`, `monospace`) as the first entry selects that family outright; otherwise the list is taken as the concrete faces to try within `sans-serif`, which is how a person means it. Type SIZE is not here: `Figure.font_size` owns it, because it is a property of the figure's print size rather than of the project's look."
+        description: "The typefaces to set text in, most-wanted first (`[Helvetica, Arial, DejaVu Sans]`). A generic family (`sans-serif`, `serif`, `monospace`) as the first entry selects that family outright; otherwise the list is taken as the concrete faces to try within `sans-serif`, which is how a person means it."
+      font_size:
+        range: float
+        description: "Body type size in points, for every figure that states none of its own. A figure whose print size differs from its siblings' still fixes its own `font_size`, which wins."
+      font_weight:
+        range: FontWeight
+        description: "Weight of body text."
+      label_scale:
+        range: float
+        description: "Size of an axis label as a multiple of the body size. Unset draws it at the body size."
+      label_weight:
+        range: FontWeight
+        description: "Weight of an axis label."
+      tick_label_scale:
+        range: float
+        description: "Size of a tick number as a multiple of the body size. Unset draws it at the body size."
+      title_scale:
+        range: float
+        description: "Size of a panel title as a multiple of the body size. Unset draws it at the body size."
+      title_weight:
+        range: FontWeight
+        description: "Weight of a panel title."
+      title_loc:
+        range: TextAlign
+        description: "Where a panel title sits along the top of its axes."
+      legend_scale:
+        range: float
+        description: "Size of legend text as a multiple of the body size. Unset draws it at the body size."
+      math_font:
+        range: MathFont
+        description: "The typeface mathematical text is set in."
+      unicode_minus:
+        range: boolean
+        description: "Write a negative number with a true minus sign rather than a hyphen."
+      exponent_as_power:
+        range: boolean
+        description: "Write an axis's shared exponent as a power of ten (x10^-3 typeset) rather than in E notation (1e-3)."
+      tick_format:
+        range: TickFormat
+        description: "How tick numbers are written on every axis that states no `xtick_format` or `ytick_format` of its own."
+      ticks:
+        range: TickPlacement
+        description: "Who places the ticks of an axis nobody placed ticks on. Unset is `native`: nothing moves. A panel's own `xticks`/`yticks`, its `nbins`, and the ticks a custom drawer fixed always stand, whatever this says."
+      max_ticks:
+        range: integer
+        description: "The most ticks a `round` axis carries. Unset is 4. A panel that states its own `nbins` keeps the backend's locator on that budget instead."
+      tick_steps:
+        range: float
+        multivalued: true
+        description: "The step multiples that count as round, each read times any power of ten. Unset is `[1, 2, 5]`; adding 2.5 admits 0, 25, 50."
+      axis_ends:
+        range: AxisEnds
+        description: "Where an automatically scaled axis ends relative to its ticks. Unset is `data`: no limit moves. An axis whose limits or ticks a panel declares, or that frames an image, keeps its limits whatever this says."
+      end_tick_reach:
+        range: float
+        description: "How far an axis end may move outward to land on a tick under `axis_ends: near`, as a fraction of the data's span. Unset is 0.2."
+      axis_margin:
+        range: float
+        description: "How far an axis extends past its data where its end is not on a tick, as a fraction of the data's span. Unset keeps the backend's own margin."
+      mirror_ticks:
+        range: boolean
+        description: "Draw tick marks on the top and right sides of a boxed frame as well as on the two that carry the numbers."
+      spines:
+        range: Spines
+        description: "Which sides of the axes frame are drawn. The default for a figure's own `spines`."
+      spine_offset:
+        range: float
+        description: "How far the left and bottom spines sit outside the data area, in axes fractions. 0 makes them meet at the origin; a small value separates them. The default for a figure's own `spine_offset`. Ignored on a boxed frame."
+      spine_trim:
+        range: boolean
+        description: "End each of the left and bottom spines on its outermost ticks instead of running it the full length of the axis. Ignored on a boxed frame."
+      align_labels:
+        range: boolean
+        description: "Align the axis labels of neighbouring panels with one another, so a column of y labels sits on one line."
+      colorbar_ends:
+        range: boolean
+        description: "Put a colour bar's ticks at the two ends of its range and at its centre (at zero where the range crosses it), each written in full, instead of on the round values inside it. A bar whose panel declares `colorbar_ticks` keeps those."
+      colorbar_outline:
+        range: boolean
+        description: "Draw the frame around a colour bar."
+      panel_numbers:
+        range: boolean
+        description: "Draw panel letters. The default for a figure's own `panel_numbers`."
+      panel_number_format:
+        range: string
+        description: "Python format string applied to each panel letter: '{}' gives a, '({})' gives (a). The default for a figure's own `panel_number_format`."
+      panel_number_case:
+        range: LetterCase
+        description: "The case panel letters are drawn in, whatever case the mosaic keys were typed in. Unset draws each key as typed."
+      panel_number_loc:
+        range: Corner
+        description: "Which corner a panel letter sits in. The default for a figure's own `panel_number_loc`."
+      panel_number_offset:
+        range: float
+        multivalued: true
+        description: "[dx, dy] shift of every panel letter from its corner, in axes fractions. The default for a figure's own `panel_number_offset`."
+      panel_number_scale:
+        range: float
+        description: "Size of a panel letter as a multiple of the body size. A figure's own `panel_number_size`, in points, wins over it."
+      panel_number_weight:
+        range: FontWeight
+        description: "Weight of a panel letter."
+      marker_edge_width:
+        range: float
+        description: "Line weight of a marker's outline, in points."
+      bar_edge_width:
+        range: float
+        description: "Line weight of the outline of a bar or any other filled patch, in points."
+      line_cap:
+        range: LineCap
+        description: "How a drawn line ends."
+      errorbar_cap_size:
+        range: float
+        description: "Length of the caps on an error bar, in points. 0 draws none."
+      legend_loc:
+        range: LegendLoc
+        description: "Where a legend sits when its panel names no place."
+      legend_label_spacing:
+        range: float
+        description: "Vertical space between legend entries, in font-size units."
+      legend_handle_text_pad:
+        range: float
+        description: "Space between a legend's sample and its text, in font-size units."
+      legend_marker_scale:
+        range: float
+        description: "Size of a legend's sample marker as a multiple of the drawn one."
+      grid_width:
+        range: float
+        description: "Line weight of the axes grid, in points. Ignored unless `grid_lines` is set."
+      grid_style:
+        range: LineStyle
+        description: "Dash pattern of the axes grid. Ignored unless `grid_lines` is set."
+      grid_below:
+        range: boolean
+        description: "Draw the grid and the ticks beneath the data rather than over it."
+      dpi:
+        range: integer
+        description: "Raster resolution in dots per inch. The default for a figure's own `dpi`."
+      trim_margins:
+        range: boolean
+        description: "Trim surrounding whitespace from every saved figure. The default for a figure's own `trim_margins`."
+      pad:
+        range: float
+        description: "Whitespace left around the content when trimming, in inches. The default for a figure's own `pad`."
+      format:
+        range: string
+        description: "Output format (pdf, svg, png). The default for a figure's own `format`."
+      transparent:
+        range: boolean
+        description: "Save figures with a transparent page instead of the `background` colour."
+      editable_text:
+        range: boolean
+        description: "Keep text as text in vector output (embedded TrueType in PDF and PostScript, live text in SVG), so a typesetter can edit a label instead of receiving outlines."
+      layout_engine:
+        range: LayoutEngine
+        description: "Which layout engine positions the panels. The default for a figure's own `layout_engine`."
+      style:
+        range: string
+        multivalued: true
+        description: "Style layers underneath this theme, applied left to right: a registered bsplot style name or a path to an .mplstyle, relative to the study root. The default for a figure's own `style`. Everything the theme itself states wins over them."
+      opts:
+        range: Argument
+        multivalued: true
+        inlined: true
+        description: "Raw backend settings for a look no slot above names, applied after every slot (matplotlib rcParams until a second backend lands), e.g. `{hatch.linewidth: 0.5}`. The escape hatch that keeps a study from needing a style sheet of its own."
 
   ColorScale:
     description: "How values become colours, and where the scale starts and stops. Shared by everything that paints a field rather than drawing marks — a colour bar, a cortical surface, a labelled volume, a connectome — so the same question is answered with the same words wherever it is asked, and a limit means the same thing on all four. Every slot here reaches all four; a scale concern only one of them can answer is declared on that one, which is why `center` sits on `Colorbar`."

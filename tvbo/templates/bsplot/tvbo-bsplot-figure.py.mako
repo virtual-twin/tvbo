@@ -22,7 +22,11 @@ from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   load_layer as _load_layer, registered as _registered,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient)
 from tvbo.data.dataref import match_output as _match_output, resolve_sel_keys as _sel_keys
-from tvbo.plot import palette as _palette
+from tvbo.plot import axis_rule as _axis_rule, palette as _palette
+
+_RULE = ${repr(rule)}   # the axis rule this figure's theme declares; empty moves no tick, limit or spine
+_COLORBAR_OUTLINE = ${repr(colorbar_outline)}   # whether the theme frames a colour bar; None leaves it as drawn
+_EXPONENT_AS_POWER = ${repr(exponent_as_power)}   # how a panel's `sci` axis writes its shared exponent: x10^-3 typeset, or 1e-3
 % if code_modules:
 import importlib as _importlib
 % endif
@@ -79,32 +83,18 @@ def _mesh_style(style, values):
     return kw
 
 
-def _distinct_ticks(fig):
-    """Widen the decimals of any linear axis whose ticks print the same number twice.
+def _true_ticks(fig):
+    """Widen the decimals of any linear axis whose drawn labels misstate its ticks.
 
-    A tick budget small enough for a dense cell can put two neighbouring values inside one
-    rounding step, and the axis then reads "0.00113, 0.00113" — two marks, one number, no
-    scale. The reader cannot recover the spacing from that, so the axis carries whatever
-    precision it takes to tell its own ticks apart.
+    A label misstates its tick in two ways. Two neighbouring ticks can print the same number ("0.00113, 0.00113"): two marks, one number, no scale. Or a label can round its tick by a visible share of the spacing: a format pass that picks its decimals from evenly spaced values and then places ticks rounded to a step labels a tick at 2.2 as "2", so every value read off the axis is wrong. The axis then carries the fewest decimals that keep its labels distinct and place each tick within 2 % of the tick spacing.
 
-    It judges the DRAWN labels, which is why it is a pass over the finished figure rather than
-    one more directive in ``_apply_axopts``: a tick formatter carries state a draw establishes,
-    so asking one for a string before then answers for every axis alike and would re-round the
-    axes that were already fine. A colourbar is left alone — panel-attached or standing in its
-    own slot, its own pass has already written the precision the spec asked for — and so is any
-    axis whose labels are not numbers, where a repeat is two entries with the same name rather
-    than a rounding collision.
+    It judges the DRAWN labels, which is why it is a pass over the finished figure rather than one more directive in ``_apply_axopts``: a tick formatter carries state a draw establishes, so asking one for a string before then answers for every axis alike and would re-round the axes that were already fine. It runs whatever the theme's rule says, because a custom drawer or a style sheet can install a formatter no rule placed. A colourbar is left alone, since its own pass has already written the precision the spec asked for, and so is an axis whose labels are not numbers, or whose distinct labels sit half a spacing or more from their ticks: those are on another scale (an offset or a mantissa beside an exponent), which is not a rounding error.
     """
     from matplotlib.ticker import FormatStrFormatter
 
     fig.canvas.draw()
     _bars = {id(_cb.ax) for _cb, _, _ in _COLORBAR_POST} | {id(_a) for _a in _SCALE_AXES.values()}
-    pending, seen = list(fig.axes), []
-    while pending:                          # a grid's cells are child_axes, not fig.axes
-        ax = pending.pop()
-        seen.append(ax)
-        pending.extend(getattr(ax, "child_axes", []))
-    for ax in seen:
+    for ax in _axis_rule.figure_axes(fig):  # a grid's cells are child axes, not fig.axes
         if id(ax) in _bars:
             continue
         for axis, scale in ((ax.xaxis, ax.get_xscale()), (ax.yaxis, ax.get_yscale())):
@@ -114,20 +104,31 @@ def _distinct_ticks(fig):
             locs, texts = list(axis.get_majorticklocs()), [t.get_text() for t in axis.get_ticklabels()]
             if len(locs) != len(texts):
                 continue
-            shown = [(v, s) for v, s in zip(locs, texts) if lo <= v <= hi and s]
-            if len(shown) < 2 or len({s for _, s in shown}) == len(shown) or not all(_numeric_text(s) for _, s in shown):
+            shown = sorted((v, s) for v, s in zip(locs, texts) if lo <= v <= hi and s)
+            if len(shown) < 2 or not all(_numeric_text(s) for _, s in shown):
                 continue
             vals = [v for v, _ in shown]
-            for d in range(1, 12):
-                if len({f"%.{d}f" % v for v in vals}) == len(vals):
+            spacing = min(b - a for a, b in zip(vals, vals[1:]))
+            errors = [abs(_number(s) - v) for v, s in shown]
+            distinct = len({s for _, s in shown}) == len(shown)
+            if spacing <= 0 or (distinct and not 0.02 * spacing < max(errors) < 0.5 * spacing):
+                continue
+            for d in range(0, 12):
+                labels = [f"%.{d}f" % v for v in vals]
+                if len(set(labels)) == len(vals) and all(abs(float(t) - v) <= 0.02 * spacing for t, v in zip(labels, vals)):
                     axis.set_major_formatter(FormatStrFormatter(f"%.{d}f"))
                     break
 
 
+def _number(text):
+    """The number a drawn tick label states."""
+    return float(text.replace("\N{MINUS SIGN}", "-"))
+
+
 def _numeric_text(text):
-    """True when a drawn tick label is the number it sits at, minus signs and all."""
+    """True when a drawn tick label is a number, minus signs and all."""
     try:
-        float(text.replace("\N{MINUS SIGN}", "-"))
+        _number(text)
     except ValueError:
         return False
     return True
@@ -141,42 +142,47 @@ def _ticks_in_scale(cb, ticks):
 
 
 def _format_colorbar(cb, decimals, declared=None):
-    """Colourbar ticks that carry their own magnitude, dropping one that collides with a neighbour.
+    """A colour bar's ticks, as the theme's rule and the panel's own declarations state them.
 
-    A slim bar has nowhere to put a shared exponent: factored out, a field spanning 3e4 reads
-    "3, 1, 0" and one spanning 1e-4 reads "3, 0, -1". So each tick is written in full — to
-    *decimals* where the spec declares them, and with `%g` otherwise. The tick rule places one
-    at each end and one at the centre value; when the data barely crosses that centre, two land
-    on the same pixel and print over each other, so the middle one goes.
+    Without ``colorbar_ends`` the backend's round ticks inside the bar stand, and only what the panel declared is applied: its ``colorbar_ticks`` were set when the bar was made, and its ``colorbar_decimals`` become the precision every number is written to.
 
-    A panel that declared its own `colorbar_ticks` gets them back AFTER the shared pass, which
-    places marks of its own over whatever was set before it — declaring them and leaving it there
-    is how a declared scale came to be drawn with the renderer's marks instead of the paper's, in
-    a bar that looked perfectly plausible. It then keeps every one of them, since dropping one
-    because it crowds a neighbour would be the renderer overruling the spec. Their text is still
-    written in full, which is the half of this pass that is about magnitude rather than about
-    which marks appear.
-
-    A declared tick outside the bar's colour range is dropped rather than set: `set_ticks` would otherwise stretch the bar's axis to reach it, printing a number beside empty paper that labels a colour the field never takes.
+    Under ``colorbar_ends`` the bar is ticked at each end of its range and at its centre, each number written in full, to *decimals* where the spec declares them and with ``%g`` otherwise. A slim bar has nowhere to put a shared exponent: factored out, a field spanning 3e4 reads "3, 1, 0" and one spanning 1e-4 reads "3, 0, -1". When the data barely crosses the centre value two ticks land on the same pixel and print over each other, so the middle one goes. A panel that declared its own ``colorbar_ticks`` gets them back after the ends are placed and keeps every one of them, since dropping one because it crowds a neighbour would be the renderer overruling the spec; a declared tick outside the bar's colour range is dropped rather than set, because ``set_ticks`` would stretch the bar's axis to reach it and print a number beside empty paper.
     """
-    bsplot.style.format_colorbar(cb, colorbar_decimals=decimals)
     ax = cb.ax
-    _pos, (_fw, _fh) = ax.get_position(), ax.figure.get_size_inches()
-    _thick = 72 * min(_pos.width * _fw, _pos.height * _fh)
-    ax.tick_params(length=min(float(plt.rcParams["ytick.major.size"]), 0.5 * _thick))   # the bar is thinner than the figure's own tick is long
     vertical = str(getattr(cb, "orientation", "vertical")) != "horizontal"   # the bar's declared orientation, not its slot's shape
-    axis, lim = (ax.yaxis, ax.get_ylim()) if vertical else (ax.xaxis, ax.get_xlim())
-    if declared is not None:
-        axis.set_ticks(_ticks_in_scale(cb, declared))
-    ticks = list(axis.get_ticklocs())
-    span = abs(lim[1] - lim[0]) or 1.0
-    keep = [t for i, t in enumerate(ticks)
-            if declared is not None or i in (0, len(ticks) - 1)
-            or min(abs(t - ticks[0]), abs(t - ticks[-1])) / span > 0.12]
-    if len(keep) != len(ticks):
-        axis.set_ticks(keep)
-    _fmt = axis.get_major_formatter() if decimals is not None else (lambda v, pos: _tick_text(v))
-    axis.set_major_formatter(lambda v, pos: _zeroless(_fmt(v, pos)))
+    axis = ax.yaxis if vertical else ax.xaxis
+    if _RULE.get("colorbar_ends"):
+        bsplot.style.format_colorbar(cb, colorbar_decimals=decimals)
+        _pos, (_fw, _fh) = ax.get_position(), ax.figure.get_size_inches()
+        _thick = 72 * min(_pos.width * _fw, _pos.height * _fh)
+        ax.tick_params(length=min(float(plt.rcParams["ytick.major.size"]), 0.5 * _thick))   # the bar is thinner than the figure's own tick is long
+        lim = ax.get_ylim() if vertical else ax.get_xlim()
+        if declared is not None:
+            axis.set_ticks(_ticks_in_scale(cb, declared))
+        ticks = list(axis.get_ticklocs())
+        span = abs(lim[1] - lim[0]) or 1.0
+        keep = [t for i, t in enumerate(ticks)
+                if declared is not None or i in (0, len(ticks) - 1)
+                or min(abs(t - ticks[0]), abs(t - ticks[-1])) / span > 0.12]
+        if len(keep) != len(ticks):
+            axis.set_ticks(keep)
+        _fmt = axis.get_major_formatter() if decimals is not None else (lambda v, pos: _tick_text(v))
+        axis.set_major_formatter(lambda v, pos: _zeroless(_fmt(v, pos)))
+    elif decimals is not None:
+        from matplotlib.ticker import FormatStrFormatter
+        _fmt = FormatStrFormatter(f"%.{int(decimals)}f")
+        axis.set_major_formatter(lambda v, pos: _zeroless(_fmt(v, pos)))
+    if _COLORBAR_OUTLINE is not None:
+        cb.outline.set_visible(bool(_COLORBAR_OUTLINE))
+
+
+def _format_stray_colorbars(fig, known):
+    """Tick the colour bars a custom drawer added by the theme's ``colorbar_ends``, like the ones the grammar made; *known* holds the ``id`` of those."""
+    if not _RULE.get("colorbar_ends"):
+        return
+    for ax in fig.axes:
+        if ax.get_label() == "<colorbar>" and id(ax) not in known:
+            bsplot.style.format_colorbar(ax)
 
 
 def _tick_text(v):
@@ -198,8 +204,8 @@ def _zeroless(text):
     return text.lstrip("-") if text.lstrip("-").strip("0.") == "" else text
 
 
-_PLACEHOLDER_AXES = []          # re-bared after the format pass, which re-derives ticks
-_INSET_POST = []                # (inset axes, declared frame) — the tidy-up must not win over it
+_PLACEHOLDER_AXES = []          # slots holding a label instead of data, which no axis rule speaks about
+_INSET_POST = []                # (inset axes, declared frame) — re-applied once the axis rule has run
 _COLORBAR_POST = []             # (colourbar, decimals) — same rule, for a bar whose scale is declared
 _SCALE_AXES = {}                # panel key -> the bar inside a `kind: colorbar` slot, which is what a declared frame is about
 
@@ -381,17 +387,14 @@ def _bounds(da, x, output):
 def _apply_tick_format(ax, o):
     """Tick notation: 'sci' factors a shared exponent out to the axis corner, 'plain' writes it in full.
 
-    A row of small panels whose values span 1e-5 cannot print its ticks in full without the
-    neighbours running together, which is why the published figure carries the magnitude once at
-    the corner. The format pass installs a fixed-point formatter, so a declared notation has to be
-    re-applied after it, like a declared rotation.
+    A row of small panels whose values span 1e-5 cannot print its ticks in full without the neighbours running together, which is why the published figure carries the magnitude once at the corner. A theme states the same choice for every axis at once (``tick_format``); this is the one panel that differs.
     """
     from matplotlib.ticker import ScalarFormatter
     for _axis, _key in ((ax.xaxis, "xtick_format"), (ax.yaxis, "ytick_format")):
         _mode = o.get(_key)
         if _mode is None:
             continue
-        _fmt = ScalarFormatter(useMathText=True)
+        _fmt = ScalarFormatter(useMathText=_EXPONENT_AS_POWER)
         _fmt.set_scientific(str(_mode) == "sci")
         if str(_mode) == "sci":
             _fmt.set_powerlimits((-2, 3))
@@ -401,10 +404,7 @@ def _apply_tick_format(ax, o):
 def _apply_tick_rotation(ax, o):
     """Slant a panel's tick labels, in degrees counter-clockwise.
 
-    Separate from the rest of ``_apply_axopts`` because the format pass resets tick parameters,
-    so a declared rotation has to be re-applied after it — the same rule that governs declared
-    ticks and colourbar decimals. A rotated x label is anchored at its tick rather than centred
-    under it, which is what stops a dense row of panels running its numbers together.
+    Separate from the rest of ``_apply_axopts`` because re-placing an axis's ticks builds new tick labels, so a declared rotation is re-applied once the axis rule has run. A rotated x label is anchored at its tick rather than centred under it, which is what stops a dense row of panels running its numbers together.
     """
     for _axis, _key in (("x", "xtick_rotation"), ("y", "ytick_rotation")):
         if o.get(_key) is None:
@@ -513,6 +513,8 @@ def _apply_axopts(ax, o):
     if o.get("nbins") or o.get("tick_prune"):
         from matplotlib.ticker import MaxNLocator   # a declared tick budget; either directive stands on its own
         _loc = {"nbins": o.get("nbins") or "auto", "prune": o.get("tick_prune") or None}
+        if _RULE.get("tick_steps"):
+            _loc["steps"] = sorted(_RULE["tick_steps"])   # the theme's round multiples govern a panel's own budget too
         ax.xaxis.set_major_locator(MaxNLocator(**_loc))
         ax.yaxis.set_major_locator(MaxNLocator(**_loc))
     if o.get("xticks") is not None:
@@ -529,7 +531,7 @@ def _apply_axopts(ax, o):
     _apply_tick_format(ax, o)
     _apply_tick_rotation(ax, o)
     if o.get("legend"):
-        _leg = {"loc": o["legend"] if isinstance(o["legend"], str) else "best"}
+        _leg = {"loc": o["legend"]} if isinstance(o["legend"], str) else {}   # unplaced leaves legend.loc to the theme
         if o.get("legend_frame") is not None:
             _leg["frameon"] = bool(o["legend_frame"])   # unset leaves legend.frameon to the theme
         if o.get("legend_columns"):
@@ -605,7 +607,7 @@ def _panel_number(ax, label, kwargs):
     if hasattr(ax, "get_zlim"):   # defaults mirror add_panel_number, so 3-D letters match their 2-D siblings
         ax.text2D(kwargs.get("x_shift", 0.0), 1.0 + kwargs.get("y_shift", 0.0), str(label),
                   transform=ax.transAxes, ha=kwargs.get("ha", "center"), va=kwargs.get("va", "bottom"),
-                  fontsize=kwargs["fontsize"], fontweight="bold")
+                  fontsize=kwargs["fontsize"], fontweight=kwargs.get("fontweight", "bold"))
         return
     _bpanels.add_panel_number(ax, label, **kwargs)
     _clear_offset_text(ax, ax.texts[-1])
@@ -627,12 +629,9 @@ def _clear_offset_text(ax, letter):
 
 
 def _cell_axes(ax):
-    """A panel's own axes: the primary, any twin sharing its subplot cell, and every INSET
-    a composite drawer opened inside it (recursively, twins of those included).
+    """A panel's own axes: the primary, any twin sharing its subplot cell, and every INSET a composite drawer opened inside it (recursively, twins of those included).
 
-    A composite panel draws its cells as inset axes, which carry no subplotspec — so
-    without walking `child_axes` a grid's deliberate per-cell ticks are invisible to the
-    snapshot and the figure-wide format pass silently replaces them."""
+    A composite panel draws its cells as inset axes, which carry no subplotspec, so they are reached through `child_axes` rather than through the figure."""
     axes = [ax]
     sp = ax.get_subplotspec()
     if sp is not None:
@@ -688,53 +687,6 @@ def _flatten_alpha(path):
     flat.save(path, **({"dpi": dpi} if dpi else {}))
 
 
-def _snapshot_fixed_axes(ax):
-    """Record the tick locator/formatter/limits of a custom panel's axes so the figure-wide
-    format pass cannot overwrite ticks the drawer set on purpose.
-
-    bsplot's format pass re-derives evenly spaced ticks for every numeric axis, keeping only
-    axes whose labels are strings. A custom drawer, though, often sets meaningful *numeric*
-    ticks — a raster's [0, n, 2n] cell axis, a 0-1 twin scale — or an intentionally bare axis
-    (``set_yticks([])``). Both cases install a ``FixedLocator``; snapshot exactly those so
-    ``_restore_fixed_axes`` can put them back verbatim after the format pass, while axes left
-    on an automatic locator still get the tidy shared formatting."""
-    from matplotlib.ticker import FixedLocator
-    snap = []
-    for a in _cell_axes(ax):
-        xloc, yloc = a.xaxis.get_major_locator(), a.yaxis.get_major_locator()
-        snap.append((a, isinstance(xloc, FixedLocator), isinstance(yloc, FixedLocator),
-                     a.get_xlim(), a.get_ylim(), xloc, a.xaxis.get_major_formatter(),
-                     yloc, a.yaxis.get_major_formatter()))
-    return snap
-
-
-def _retrim_spine(a, axis):
-    """Clip one spine to the outermost tick now on ``axis``, so it begins and ends on a tick.
-
-    bsplot's format pass trims each spine to the ticks *it* derived; restoring a drawer's own
-    ticks afterwards leaves those bounds describing ticks that no longer exist, which is what
-    makes a discrete or log axis draw a spine running past its last label. Re-trimming after the
-    restore keeps the two in step. An axis the drawer deliberately left bare has no tick to trim
-    to and is left alone."""
-    spine = a.spines["bottom" if axis == "x" else "left"]
-    lo, hi = sorted(a.get_xlim() if axis == "x" else a.get_ylim())
-    ticks = [float(t) for t in (a.get_xticks() if axis == "x" else a.get_yticks())
-             if lo - 1e-9 <= float(t) <= hi + 1e-9]
-    if len(ticks) > 1:
-        spine.set_bounds(min(ticks), max(ticks))
-
-
-def _restore_fixed_axes(snap):
-    """Put back the drawer's own fixed ticks/limits captured by ``_snapshot_fixed_axes``."""
-    for a, x_fixed, y_fixed, xlim, ylim, xloc, xfmt, yloc, yfmt in snap:
-        if x_fixed:
-            a.xaxis.set_major_locator(xloc); a.xaxis.set_major_formatter(xfmt); a.set_xlim(xlim)
-            _retrim_spine(a, "x")
-        if y_fixed:
-            a.yaxis.set_major_locator(yloc); a.yaxis.set_major_formatter(yfmt); a.set_ylim(ylim)
-            _retrim_spine(a, "y")
-
-
 <%def name="layout_engine_call(ind)">\
 % if layout_engine:
 ${ind}fig.set_layout_engine(${repr(layout_engine)})   # the engine the figure declares, no fallback
@@ -755,7 +707,7 @@ ${ind}    fig.set_layout_engine("tight")
     _cb.set_ticks(_ticks_in_scale(_cb, ${repr(p['colorbar_ticks'])}))
 % endif
     _cb.outline.set_linewidth(0.5)
-    _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}, ${repr(p['colorbar_ticks'])}))   # re-applied after the format pass
+    _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}, ${repr(p['colorbar_ticks'])}))   # ticked once every panel is drawn, by the theme's rule
 % endif
 </%def>\
 <%def name="ctx_expr(p)">\
@@ -955,7 +907,7 @@ ${draw(d)}\
     _iax = ax.inset_axes(${repr(ins['bounds'])})   # drawn after the body, over it
     _${ins['key']}(fig, _iax, _pos)
 % if ins['post_axopts']:
-    _INSET_POST.append((_SCALE_AXES.get(${repr(ins['key'])}, _iax), ${repr(ins['post_axopts'])}))   # re-applied after the format pass
+    _INSET_POST.append((_SCALE_AXES.get(${repr(ins['key'])}, _iax), ${repr(ins['post_axopts'])}))   # re-applied after the axis rule
 % endif
 % endfor
     return ax
@@ -984,40 +936,30 @@ def _compose(fig, axd, _pos=None):
 % endif
 % endfor
 
-% if auto_format:
-<% custom_keys = [p['key'] for p in panels if p['drawer']] %>\
-% if custom_keys:
-    _fixed = [_snapshot_fixed_axes(axd[_k]) for _k in ${repr(custom_keys)}]   # drawer's own fixed ticks
-% endif
-    _blank = [_ax for _ax in fig.axes if not _ax.axison and not hasattr(_ax, "zaxis")]   # a 2-D slot the panel blanked stays blank
-    bsplot.style.format_fig(fig, add_panel_numbers=False, **${repr(format_kwargs)})   # normalise ticks/labels; panel letters below
-    for _ax in _blank:
-        _ax.set_axis_off()
-% if custom_keys:
-    for _s in _fixed:                                       # ...restored so the format pass can't overwrite them
-        _restore_fixed_axes(_s)
-% endif
-    for _pax in _PLACEHOLDER_AXES:                          # a placeholder slot has no ticks to normalise
-        _bare(_pax)
+    _bars = {id(_cb.ax) for _cb, _, _ in _COLORBAR_POST} | {id(_a) for _a in _SCALE_AXES.values()}
+    _exempt = _bars | {id(_a) for _a in _PLACEHOLDER_AXES}    # a bar has its own rule and a placeholder slot has no scale
+    _axis_rule.mend_gridspecs(fig)
+    _axis_rule.place(fig, _RULE, skip=_exempt, names={id(_a): _k for _k, _a in axd.items()},
+                     shared={_n: [[axd[_k] for _k in _g if _k in axd] for _g in _gs] for _n, _gs in ${repr(shared_scales)}.items()})
     for _iax, _iopts in _INSET_POST:                        # an inset's declared frame, same rule as a panel's
         _apply_axopts(_iax, _iopts)
-    for _cbar, _dec, _declared in _COLORBAR_POST:           # declared decimals beat the tidy-up's multiplier
+    for _cbar, _dec, _declared in _COLORBAR_POST:
         _format_colorbar(_cbar, _dec, _declared)
+    _format_stray_colorbars(fig, _bars)
 % for p in panels:
 % if p['post_axopts']:
     if axd[${repr(p['key'])}] not in _PLACEHOLDER_AXES:   # a slot that fell back to a placeholder stays bare
-        _apply_axopts(_SCALE_AXES.get(${repr(p['key'])}, axd[${repr(p['key'])}]), ${repr(p['post_axopts'])})   # declared frame wins over the tidy-up
+        _apply_axopts(_SCALE_AXES.get(${repr(p['key'])}, axd[${repr(p['key'])}]), ${repr(p['post_axopts'])})   # what a panel declares stands over the axis rule
 % endif
 % endfor
-% endif
 % for p in panels:
 % if p['kind'] == 'image' or p['axopts'].get('invert_y'):
-    _iax = axd[${repr(p['key'])}]            # keep image/matrix top-down (format_fig normalises the y-axis)
+    _iax = axd[${repr(p['key'])}]            # an image or matrix reads top-down, whatever drew it
     if _iax.get_ylim()[0] < _iax.get_ylim()[1]:
         _iax.invert_yaxis()
 % endif
 % if p['axopts'].get('invert_x'):
-    _iax = axd[${repr(p['key'])}]            # restore declared x-inversion (format_fig normalises the x-axis)
+    _iax = axd[${repr(p['key'])}]            # the declared x-inversion, whatever drew it
     if _iax.get_xlim()[0] < _iax.get_xlim()[1]:
         _iax.invert_xaxis()
 % endif
@@ -1038,7 +980,8 @@ def _compose(fig, axd, _pos=None):
 % endif
 % endfor
 % endif
-    _distinct_ticks(fig)                                    # an axis whose ticks repeat one number carries no scale
+    _axis_rule.frame(fig, _RULE, skip=_exempt)              # spines stand off and end on the ticks that are final now
+    _true_ticks(fig)                                        # an axis whose labels misstate its ticks reads every value wrong
     return axd
 
 
@@ -1054,10 +997,9 @@ def main():
 % endif
 % endfor
     _palette.use(${repr(palette)})                  # the figure's declared colours, applied over every sheet above
-% if font_size:
-    plt.rcParams.update({_k: ${font_size} for _k in (          # declared font_size WINS over the
-        "font.size", "axes.labelsize", "axes.titlesize",       # .mplstyle: it is the per-figure
-        "xtick.labelsize", "ytick.labelsize", "legend.fontsize", "figure.titlesize")})
+% if type_scales:
+    _body = ${repr(float(font_size)) if font_size else 'float(plt.rcParams["font.size"])'}   # the body size every other type size is a multiple of
+    plt.rcParams.update({_k: _body * _s for _k, _s in ${repr(type_scales)}.items()})   # declared type sizes win over every style sheet
 % endif
 % if spine_rcparams:
     plt.rcParams.update(${repr(spine_rcparams)})
@@ -1082,13 +1024,17 @@ ${layout_engine_call('        ')}\
 % if still_outfile:
     _frame(min(${animation['still']}, len(_POS) - 1))       # the declared frame, also saved as a still
     fig.savefig(${repr(still_outfile)}, **${repr(savefig_kwargs)})
+% if not transparent:
     _flatten_alpha(${repr(still_outfile)})
+% endif
     print("wrote", ${repr(still_outfile)})
 % endif
 % else:
     _compose(fig, axd)
     fig.savefig(${repr(outfile)}, **${repr(savefig_kwargs)})
+% if not transparent:
     _flatten_alpha(${repr(outfile)})
+% endif
     print("wrote", ${repr(outfile)})
 % endif
     return fig

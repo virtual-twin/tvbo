@@ -781,6 +781,10 @@ def render_study_figures(study, spec: str, *, base: Path | None = None) -> None:
     figs = as_list(getattr(study, "figures", None))
     if not figs:
         return
+    if any(not hasattr(fig, "_study_theme") for fig in figs):
+        from tvbo.behaviour.study import hand_down_theme
+
+        hand_down_theme(study)  # a study built in code rather than loaded from a file has not handed its theme down yet
 
     base = Path(base).resolve() if base is not None else spec_base(spec)
     out_figs = study_path_for("figures", base)

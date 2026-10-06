@@ -1,32 +1,75 @@
 ---
 title: "Styling & colour"
 subtitle: "What the spec records, and what a style layer still owns"
-description: "Declare a figure's size, type and colours in the spec: the Figure fields that own layout and sizing, the Palette that owns every colour, and the style layers underneath them."
+description: "Declare a study's look once and every figure follows it: the Theme that owns colour, type, strokes and the axis rule, the Figure fields that own print size and override the theme, and the style layers underneath."
 jupyter: python3
 ---
 
 A figure's *look* is part of its specification, not something applied to it afterwards. Size, type size, spines, panel lettering and colour are all declared, so re-rendering a study on another machine produces the same picture, and changing a journal's column width is one edit rather than a pass over every plotting script.
 
-Two things carry that look. The `Figure` itself owns its print size and lettering, and everything else — colour and the geometry a style sheet used to own — is a [`Theme`](../../datamodel/classes/Theme.qmd): one object naming what each colour *means* and how thick a tick is, rather than a hex written wherever a line is drawn and a `.mplstyle` sitting outside the spec where nothing validates it.
+Two things carry that look. A [`Theme`](../../datamodel/classes/Theme.qmd) is the rule: what each colour *means*, the typeface and its sizes, how heavy a spine is, and how an axis is drawn, meaning who places its ticks, where it ends and whether its spines meet. A study states one, and every figure it lists is drawn by it. The `Figure` owns what is its own, its mosaic and print size, and says where it differs from the rule. Nothing is left to a `.mplstyle` sitting outside the spec where nothing validates it.
 
-## What the spec records
+## One rule per study
 
-These are fields of the `Figure`, so they are read from the YAML and never from a stylesheet:
+A study names its theme once, usually a fragment under `spec/`:
+
+```yaml
+# spec/desc-published_theme.yaml
+tvbo_class: tvbo:Theme
+ink: "#000000"
+font_family: [DejaVu Sans]
+font_size: 7
+spines: open
+ticks: native
+axis_ends: data
+spine_offset: 0
+panel_number_case: lower
+```
+
+```yaml
+# MyStudy.yaml
+theme: !include spec/desc-published_theme.yaml
+figures:
+  - !include spec/fig-01_desc-overview_figure.yaml
+  - !include spec/fig-02_desc-sweep_figure.yaml
+```
+
+Every figure in `figures:` is drawn by it, whichever file the figure record came from. A study nested under another takes its parent's theme unless it states its own, so a paper's rule reaches the studies it aggregates without restyling one that reproduces someone else's figures.
+
+The layers, weakest first, each stating only what it changes:
+
+| Layer | Where it is written |
+|---|---|
+| TVB-O's shipped theme | `tvbo:theme/default`: the colours, and an unboxed legend. It states no axis rule. |
+| The house axis rule | `tvbo:theme/bsplot`, taken only by a figure that says `auto_format: true` and only where no theme states a rule. |
+| The study's theme | `theme:` on the study. The curated theme it names by `iri` sits underneath its own statements. |
+| The figure's theme | `theme:` on the figure, for what this one figure draws differently. |
+| The figure's own fields | `font_size`, `dpi`, `spines` and the others in the table below. |
+
+A figure that must be left exactly as its panels drew it says `auto_format: false`: no tick is re-placed, no limit moved, no spine detached or trimmed, whatever the study's theme says.
+
+::: {.callout-important}
+A study with no theme follows no axis rule. Its axes carry the backend's own ticks, limits and spines. Earlier versions passed every figure through bsplot's format pass unless it said `auto_format: false`; a study that relied on that states `theme: {iri: tvbo:theme/bsplot}` once and keeps the look.
+:::
+
+## What the figure records
+
+These are fields of the `Figure`. The ones marked as overrides are also slots of the theme, where they are the study's default:
 
 | Field | What it fixes |
 |---|---|
 | `width`, `height` | Physical print size in mm. |
-| `dpi` | Raster resolution. Scales pixels only, never the physical size or the type size. |
-| `font_size` | Base type size in points, unchanged by `width` or `dpi`. |
-| `format` | Output format (`pdf`/`svg`/`png`). |
+| `dpi` | Raster resolution. Scales pixels only, never the physical size or the type size. Overrides the theme's. |
+| `font_size` | Body type size in points, unchanged by `width` or `dpi`. Overrides the theme's, for a figure printed at another width than its siblings. |
+| `format` | Output format (`pdf`/`svg`/`png`). Overrides the theme's. |
 | `layout`, `height_ratios`, `width_ratios` | The mosaic and the relative size of its rows and columns. |
-| `spines`, `spine_offset` | `box` (all four, closed) or `open` (left and bottom), and how far they sit outside the data. |
-| `panel_numbers`, `panel_number_format`, `panel_number_loc`, `panel_number_offset`, `panel_number_size` | Panel lettering: whether, how spelled, which corner, how far in, how large. |
-| `trim_margins`, `pad` | Whether the save re-crops to the drawn content, and how much whitespace is left when it does. |
+| `spines`, `spine_offset` | `box` (all four, closed) or `open` (left and bottom), and how far the two scale-bearing ones stand off the plot. Override the theme's. |
+| `panel_numbers`, `panel_number_format`, `panel_number_loc`, `panel_number_offset`, `panel_number_size` | Panel lettering: whether, how spelled, which corner, how far in, how large. All but the size override the theme's; the size in points beats the theme's `panel_number_scale`. |
+| `trim_margins`, `pad` | Whether the save re-crops to the drawn content, and how much whitespace is left when it does. Override the theme's. |
 | `share_x`, `share_y` | Panel groups that end on one scale. |
-| `auto_format` | bsplot's tick and label normalisation. Set `false` to keep full manual control. |
+| `auto_format` | Whether this figure's axes follow a theme's axis rule. `false` leaves them as drawn, `true` asks for the house rule where no theme states one, unset follows the theme. |
 
-Because these are declared, a figure states its print size rather than inheriting one:
+Because these are declared, a figure states its print size rather than inheriting one, and nothing else unless it differs from its study:
 
 ```yaml
 figures:
@@ -34,11 +77,12 @@ figures:
     layout: "ab/cc"
     width: 180          # mm, a two-column journal figure
     height: 120
-    font_size: 8
-    spines: open
-    panel_numbers: true
-    panel_number_loc: upper left
-    theme: {iri: tvbo:theme/default}
+  - name: Fig5
+    layout: "ab/cd"
+    width: 180
+    height: 155
+    font_size: 13.8     # this one is printed larger than its siblings
+    spines: box         # and its heatmaps are framed on four sides
 ```
 
 ::: {.callout-tip}
@@ -47,15 +91,15 @@ Set `width` and `font_size` together. Type size is in points and independent of 
 
 ## The theme
 
-A theme is one object carrying a project's whole look. Start from TVB-O's, curated in the database, and state only what you change — the same `iri` + merge that an `Observation` or a `Coupling` uses:
+A theme is one object carrying a project's whole look. Start from a curated one and state only what you change, the same `iri` + merge that an `Observation` or a `Coupling` uses. TVB-O's colours are always the base, so `iri` is only needed to bring in another curated theme, such as the house axis rule:
 
 ```yaml
 theme:
-  iri: tvbo:theme/default
+  iri: tvbo:theme/bsplot
   highlight: "#e4572e"
   tick_length: 3
   axis_width: 0.8
-  grid: false
+  grid_lines: false
   font_family: [Helvetica, Arial]
 ```
 
@@ -126,6 +170,28 @@ for ax, (_, colours, labels) in zip(axes, rows):
 fig.tight_layout()
 ```
 
+### The axis rule
+
+How an axis is drawn is four statements, and a theme that makes none of them leaves every axis as the backend drew it.
+
+| Slot | What it decides |
+|---|---|
+| `ticks` | Who places the ticks of an axis nobody placed ticks on. `native`: the backend's locator, nothing moves. `round`: multiples of a round step, at most `max_ticks` of them. `declared`: only the ticks each panel gives in `xticks`/`yticks`; the render refuses, naming every axis that gives none. |
+| `max_ticks`, `tick_steps` | The budget and the multiples that count as round under `round`: 4 ticks and `[1, 2, 5]` unless stated. Adding 2.5 admits 0, 25, 50. |
+| `axis_ends` | Where an autoscaled axis ends. `data`: at the data, with the backend's margin. `ticks`: on a tick at both ends, however far the next one lies. `near`: on a tick where one lies within `end_tick_reach` of the data (0.2 of its span unless stated), at the data otherwise. |
+| `axis_margin` | How far an axis extends past its data where its end is not on a tick, as a fraction of the span. |
+| `spines` | `open` (left and bottom) or `box` (all four). |
+| `spine_offset` | How far the left and bottom spines stand off the plot, in axes fractions. 0 makes them meet at the origin. |
+| `spine_trim` | End each of those two spines on its outermost ticks instead of running it the length of the axis. |
+| `align_labels` | Put the axis labels of neighbouring panels on one line. |
+| `colorbar_ends`, `colorbar_outline` | Tick a colour bar at the ends and the centre of its range, each number written in full, instead of on the round values inside it; and whether the bar is framed. |
+
+`axis_ends` exists because an axis cannot always have round ticks, a tick at each end and no empty space at once. Data running from 0.2 to 0.91 gets round ticks at 0.2, 0.4, 0.6, 0.8. Ending the axis on a tick at both sides means 0 and 1, and the data then fills 71 % of its panel. Which of the three gives way is a decision about the figure, so the rule states it: `data` gives up the end ticks, `ticks` gives up the space, and `near` takes an end tick only where it is cheap.
+
+What a panel declares always stands. Its `xticks`, `yticks`, `nbins`, limits, a logarithmic scale, the extent of an image and the ticks a custom drawer fixed are never re-placed, whatever the rule says. Panels on a shared scale (`share_x`, `share_y`) are placed from their common extent, so they stay on one scale. A boxed frame ignores `spine_offset` and `spine_trim`, since moving two sides of a closed box opens it.
+
+The rule TVB-O's own figures use is curated as `tvbo:theme/bsplot`: round ticks, `near` ends, spines stood off by 0.02 and trimmed, labels aligned, colour bars ticked at their ends. `tvbo.plot.axis_rule.place(fig, rule)` and `frame(fig, rule)` apply a rule to any matplotlib figure, for plotting code outside a spec.
+
 ### The geometry a sheet used to own
 
 | Slot | What it fixes |
@@ -138,8 +204,21 @@ fig.tight_layout()
 | `legend_frame`, `legend_handle_length`, `legend_pad` | The legend box, its sample line, and how far it sits from the axes. TVB-O's own theme is the one place that decides keys are unboxed; a panel overrides it with `legend: {frame: true}`. |
 | `grid_lines` | Whether the grid is drawn. Off in most journals, and worth stating either way. Named in full because a panel's `grid:` is the tiling of a `kind: grid`, and one word cannot mean both. |
 | `font_family` | Typefaces, most-wanted first. A generic family first (`sans-serif`) selects that family outright. |
+| `font_size`, `font_weight` | Body type size in points, and its weight. A figure's own `font_size` beats it. |
+| `label_scale`, `tick_label_scale`, `title_scale`, `legend_scale` | The size of axis labels, tick numbers, panel titles and legend text, each as a multiple of the body size. Unset draws it at the body size. |
+| `label_weight`, `title_weight`, `title_loc` | Weight of axis labels and panel titles, and where a title sits along the top of its axes. |
+| `math_font`, `unicode_minus` | The typeface of mathematical text, and whether a negative number carries a true minus sign. |
+| `tick_format`, `exponent_as_power` | `sci` or `plain` numbers on every axis that states no format of its own, and whether a shared exponent reads x10^-3 typeset or 1e-3. |
+| `mirror_ticks` | Tick marks on the top and right of a boxed frame as well. |
+| `marker_edge_width`, `bar_edge_width`, `line_cap`, `errorbar_cap_size` | Outline weight of markers and of bars, how a line ends, and the caps of an error bar. |
+| `legend_loc`, `legend_label_spacing`, `legend_handle_text_pad`, `legend_marker_scale` | Where a legend sits when its panel names no place, and the spacing inside it. |
+| `grid_width`, `grid_style`, `grid_below` | Weight and dash of the grid, and whether it runs beneath the data. |
+| `panel_numbers`, `panel_number_format`, `panel_number_case`, `panel_number_loc`, `panel_number_offset`, `panel_number_scale`, `panel_number_weight` | Panel letters: whether, how spelled, which case, which corner, how far in, how large against the body size, how heavy. The caption letters each panel in the same case. |
+| `dpi`, `format`, `trim_margins`, `pad`, `transparent`, `editable_text` | What is saved: resolution, format, whether the page is cropped to its content or left transparent, and whether text stays text in vector output so a typesetter can edit it. |
+| `layout_engine`, `style` | The layout engine that positions the panels, and the style layers underneath the theme. |
+| `opts` | Any backend setting no slot names, applied after every slot: `opts: {hatch.linewidth: 0.5}`. |
 
-Type *size* is not here: `Figure.font_size` owns it, because it is a property of the figure's print size rather than of the project's look.
+Every slot is read by the renderer, and a test pins that, so a theme cannot state something that is accepted and then ignored.
 
 ### Overriding it per panel
 
@@ -154,7 +233,7 @@ panels:
     tick_prune: upper
 ```
 
-Three of them have no theme-wide twin on purpose. `tick_size` would fight `Figure.font_size`, and `nbins` and `tick_prune` answer to one panel's neighbours — where a corner tick collides, how dense a cell is — rather than to the project's look.
+Three of them have no theme-wide twin on purpose. `tick_size` would fight the declared type sizes, and `nbins` and `tick_prune` answer to one panel's neighbours, where a corner tick collides or how dense a cell is, rather than to the project's look. A panel that states `nbins` keeps the backend's locator on that budget; the theme's `max_ticks` is the budget of its own `round` rule.
 
 Reference lines, shaded regions and the 3-D viewpoint are declared here too, each carrying the colour that has to travel with it:
 
@@ -171,7 +250,7 @@ So is the rest of the panel's frame — its labels, limits, scales and shape —
 
 ## Style layers
 
-`Figure.style` is what sits underneath the theme, and it is for looks TVB-O does not own: bsplot's registered styles, a journal's sheet, the rcParams of a paper being reproduced.
+`style`, on a theme or on a figure, is what sits underneath the theme, and it is for looks TVB-O does not own: bsplot's registered styles, a journal's sheet, the rcParams of a paper being reproduced.
 
 | Written as | What it contributes |
 |---|---|
@@ -187,30 +266,29 @@ Reaching for a sheet is deliberate. `style: [tvbo]` is the default when nothing 
 
 ## Your own theme
 
-A theme is an ordinary TVB-O document, so a project can keep one in a file and include it:
+A theme is an ordinary TVB-O document. A study keeps it under `spec/`, named with the `_theme` suffix, and includes it once:
 
 ```yaml
-# style/house.yaml
+# spec/desc-house_theme.yaml
 tvbo_class: tvbo:Theme
-iri: tvbo:theme/default
 base: "#333333"
 highlight: "#e4572e"
 palette: ["#2e86ab", "#a23b72", "#f18f01"]
 tick_length: 3
-grid: false
+grid_lines: false
 ```
 
 ```yaml
-theme: !include style/house.yaml
+theme: !include spec/desc-house_theme.yaml
 ```
 
-Because it declares its class, `tvbo validate schema style/house.yaml` checks it like any other document, and a misspelt role is refused rather than silently ignored. Different figure sets can carry different themes — a YAML anchor is usually enough:
+Because it declares its class, `tvbo validate schema spec/desc-house_theme.yaml` checks it like any other document, `tvbo validate study` checks its name against its class, and a misspelt slot is refused rather than silently ignored. A figure that differs states only the difference:
 
 ```yaml
 figures:
-  - {name: Fig2, theme: &main {iri: tvbo:theme/default, grid: false}}
-  - {name: Fig3, theme: *main}
-  - {name: FigS1, theme: {iri: tvbo:theme/default, grid: true, font_family: [DejaVu Sans]}}
+  - {name: Fig2}
+  - {name: Fig3}
+  - {name: FigS1, theme: {grid_lines: true, font_family: [DejaVu Sans]}}
 ```
 
 A colormap key takes either a registered name or the colours to ramp between:
@@ -249,7 +327,7 @@ That also writes the colours into the matplotlib rcParams that carry them, so `t
 
 ## What a sheet still owns
 
-The theme covers what six real study sheets agreed on, not all of matplotlib. A sheet is still the way to fix the long tail — `mathtext.fontset`, `lines.solid_capstyle`, `patch.linewidth`, per-axis label colours. A project that needs one ships it and names it in `style:`; the theme still wins over it on everything it does state.
+Very little. The theme has a slot for what real study sheets set, and `opts` takes any backend setting it has no slot for, so a study rarely needs a sheet of its own. What a sheet remains good for is a look that already exists as one, a journal's or a published repository's: name it in `style:`, and the theme still wins over it on everything it states.
 
 ## See also
 

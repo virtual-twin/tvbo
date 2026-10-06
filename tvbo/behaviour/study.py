@@ -48,6 +48,24 @@ def _wire_nested(study, raw: dict | None) -> None:
     object.__setattr__(study, "_nested", wired)
 
 
+def hand_down_theme(study, inherited=None) -> None:
+    """Give every figure of *study*, and of the studies nested in it, the theme it is drawn in.
+
+    A study states its look once, in ``theme``, and each figure in its ``figures`` list takes it, whichever file the figure record was included from: a figure is drawn in the look of the study that prints it. A nested study that states no theme takes its parent's, so a paper's rule reaches the studies it aggregates, and one that states its own keeps it.
+    """
+    from tvbo.utils import as_list
+
+    theme = getattr(study, "theme", None) or inherited
+    figures = as_list(getattr(study, "figures", None))
+    if figures:
+        from tvbo.adapters.bsplot import adopt_theme  # only a study that draws needs the figure adapter loaded
+
+        for figure in figures:
+            adopt_theme(figure, theme)
+    for child in as_list(getattr(study, "_nested", None) or getattr(study, "studies", None)):
+        hand_down_theme(child, theme)
+
+
 class SimulationStudyBehaviour(Catalogued):
     """A collection of related `SimulationExperiment`s with shared provenance.
 
@@ -159,6 +177,7 @@ class SimulationStudyBehaviour(Catalogued):
         # a plain dict, past the JsonObj setattr that would wrap it
         object.__setattr__(study, "_raw_experiments", raw_experiments)
         _wire_nested(study, raw)
+        hand_down_theme(study)
         return study
 
     @classmethod
@@ -246,7 +265,7 @@ class SimulationStudyBehaviour(Catalogued):
             if image.is_file():
                 try:
                     caption = compose_caption(fig, base) or None
-                except Exception:  # noqa: BLE001 — a caption whose number cannot be read is dropped, never the figure it describes
+                except (OSError, LookupError, ValueError):  # an unreadable caption number drops the caption only
                     caption = None
                 drawn.append(
                     FigureImage(

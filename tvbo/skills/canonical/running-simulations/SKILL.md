@@ -156,7 +156,7 @@ tvbo workflow snakemake <SPEC> -o ./kit --pack  # emit the whole study as one Sn
 tvbo workflow submit    ./kit.tar.gz            # run it (engine auto-detected); --dry-run validates first
 ```
 
-`snakemake` / `slurm` / `nextflow` choose the engine; one rule per experiment, dataset experiments fan out per subject, and a `from_experiment` dependency becomes a DAG edge. The **run environment is declared in the recipe's `workflow:` block** — `container: docker://…` runs every rule inside that image via Apptainer (no venv / module load), per-subject inputs travel via `Dataset.bundle: true`, and per-rule resources (`cpus_per_task` / `mem` / `time` / `partition`) via `workflow.slurm`. So the recipe that runs locally scales out unchanged.
+`snakemake` / `slurm` / `nextflow` choose the engine; one rule per experiment, dataset experiments fan out per subject, and a `from_experiment` dependency becomes a DAG edge. The **run environment is declared in the recipe's `workflow:` block** — `container: docker://…` runs every rule inside that image via Apptainer (no venv / module load), every kit carries the per-subject data its experiments read (`data/<dataset_id>/`) and the results they read from outside the kit (`derivatives/tvbo/`), and per-rule resources (`cpus_per_task` / `mem` / `time` / `partition`) via `workflow.slurm`. So the recipe that runs locally scales out unchanged.
 
 `--dry-run` only resolves the DAG — it does **not** execute a rule, so it cannot catch a runtime bug; smoke-test one experiment in the container before launching a whole cohort. For the full scale-out discipline (compute-node orchestration, the read-only-container bug class + binds, streaming observables for long fits), see the **replicating-studies** skill, Phase 8.
 

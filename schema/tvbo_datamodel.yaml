@@ -921,6 +921,15 @@ classes:
                     The data variables the container actually holds, read off it when the record is written rather than predicted from the spec, so a run that recorded less than it declared is visible here. The one fact in this record that the recipe beside it cannot supply.
             license:
                 range: string
+            how_to_acknowledge:
+                range: string
+                multivalued: true
+                slot_uri: schema:creditText
+                aliases:
+                    - HowToAcknowledge
+                    - howToAcknowledge
+                description: >-
+                    Sentences that anyone who reuses the artifact must reproduce, one per source that requires one. The meaning of the BIDS `dataset_description.json` field `HowToAcknowledge` (instructions to reusers), never of BIDS `Acknowledgements` (the producer's own thanks); a BIDS export joins the entries into that one field. A step that derives an artifact carries over the entries of every input it read.
             generated_by:
                 range: string
                 # An agent identifier, so the PROV relation is attribution rather than generation: `prov:wasGeneratedBy` ranges over a prov:Activity, never a prov:Agent.
@@ -4234,6 +4243,11 @@ classes:
                 range: Figure
                 description: >-
                     Declarative Figure specs rendered from this study's experiment results — closes the replication loop (a study is its experiments plus the figures that read them).
+            theme:
+                range: Theme
+                inlined: true
+                description: >-
+                    The look every figure of this study is drawn in: one rule, stated once, usually a ``tvbo:Theme`` file under ``spec/`` named with ``!include``. It carries the colours, the type, the stroke weights and the axis rule (who places the ticks, where an axis ends, which spines are drawn and whether they meet). A figure's own ``theme`` and its own slots beat it wherever they state something; nothing else does.
             code_source:
                 range: CodeSource
                 inlined: true

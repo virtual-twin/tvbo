@@ -151,7 +151,7 @@ def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) 
     """
     base_dir = Path(base_dir)
     name = figure.name or "figure"
-    fmt = (figure.format or "png").lstrip(".")
+    fmt = bsplot.output_format(figure)
     _spec, block = _figure_block(workflow, getattr(figure, "workflow_overrides", None))
     inputs = _figure_inputs(figure, base_dir, exp_plans_by_key)
     return {
@@ -259,7 +259,7 @@ def write_figure_kit(
     kit_out = (exp_plans[0].get("out_dir") if exp_plans else None) or "results"
     for figure in figures:
         name = figure.name or "figure"
-        fmt = (figure.format or "png").lstrip(".")
+        fmt = bsplot.output_format(figure)
         script = out_dir / "figures" / "scripts" / f"plot_{sanitize_name(name)}.py"
         code = bsplot.render_code(figure, base_dir=base_dir, outfile=f"figures/{name}.{fmt}")
         code = _rebase_containers_to_kit(code, figure, base_dir, keys, kit_out)

@@ -596,10 +596,15 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     sidecar_ext = ".json" if sidecar_format == "json" else ".yaml"
     sidecar_path = yaml_path.with_suffix(sidecar_ext)
 
-    # Every edge matrix, resident or still in the source companion (the resident one wins), keyed by edge name for the writer. Read under one open handle, and read BEFORE the companion is opened for writing: a save onto the network's own companion truncates it, and everything still lazy would be gone.
+    # Every edge matrix, resident or still in the source companion (the resident one wins), keyed by edge name for the writer. Read under one open handle, and read BEFORE the companion is opened for writing: a save onto the network's own companion truncates it, and everything still lazy would be gone. A layer declared with `used:` is never read from the companion, which holds no matrix for it once frozen; its value is the one its binding read, if any.
     store = getattr(network, "_store", None)
+    sourced = {
+        str(e.label)
+        for e in getattr(network, "edges", None) or []
+        if getattr(e, "used", None) is not None and getattr(e, "label", None)
+    }
     with store if hasattr(store, "__enter__") else nullcontext():
-        arrays = dict(store.arrays) if store else {}
+        arrays = {name: store.arrays[name] for name in store.arrays if name not in sourced} if store else {}
         edge_params = network.edge_parameter_arrays() if hasattr(network, "edge_parameter_arrays") else {}
         carried = _carry_through(network)
     arrays.update(network.edge_arrays() if hasattr(network, "edge_arrays") else {})

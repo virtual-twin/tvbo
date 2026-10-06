@@ -39,11 +39,9 @@ BundleSelectOpt = Annotated[
     list[str],
     typer.Option(
         "--bundle-select",
-        help="Override: add a BIDS entity to disambiguate when a subject directory holds several files matching the observation's query (not needed when the query already names one file). Repeatable. Implies --bundle-dataset.",
+        help="Add a BIDS entity to pick the file the kit carries when a subject directory holds several matching the observation's query (not needed when the query already names one file). Repeatable.",
     ),
 ]
-_BUNDLE_DATASET_HELP = "Copy the fan-out's per-subject dataset files into the kit ({where}) and point dataset.bids_root at them, so the kit is self-contained — no separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects."
-BundleDatasetOpt = Annotated[bool, typer.Option("--bundle-dataset", help=_BUNDLE_DATASET_HELP.format(where="spec/dataset/"))]
 
 
 _TEMPLATES = Path(__file__).resolve().parent.parent / "templates" / "workflow"
@@ -249,7 +247,7 @@ def _freeze_referenced_networks(experiment, spec_dir: Path, restore: list[tuple[
 
     A kit is self-contained only if EVERY network the run reads travels with it, not just the experiment's own connectome. An EEG/MEG/iEEG observation names its sensor array — and the gain matrix projecting regions onto it — through ``data_source.path``, which resolves on the author's machine against the curated database or the study's own ``spec/`` and against neither on a compute node. Each such network is resolved (running its ``graph_generator``, so a gain built from inputs the study may not redistribute is baked as numbers rather than as a path into ``sourcedata/``), saved beside the frozen spec, and its ``path`` rewritten to the bundled copy.
 
-    Each ``(data_source, original_path)`` pair is appended to *restore* as it is rewritten — the caller owns that list and undoes it in a ``finally``, so a network that fails to resolve halfway through leaves no half-rewritten spec behind. A path that does not resolve is fatal (:func:`_common.die`), like an unresolvable ``--bundle-dataset``: silently keeping the author's path ships a kit that fails on every node.
+    Each ``(data_source, original_path)`` pair is appended to *restore* as it is rewritten — the caller owns that list and undoes it in a ``finally``, so a network that fails to resolve halfway through leaves no half-rewritten spec behind. A path that does not resolve is fatal (:func:`_common.die`), like an unresolvable dataset file: silently keeping the author's path ships a kit that fails on every node.
     """
     from tvbo.classes.network import Network
     from tvbo.data.registry import database_dir
@@ -299,8 +297,7 @@ def _freeze_spec_yaml(
     *workflow_spec* is the effective merged workflow config (study < experiment <
     ``--set``). When given, the frozen spec's ``workflow`` block is rewritten to it, so the spec records exactly what ran and re-emits identically without the flags.
 
-    *dataset_bids_root* rewrites the frozen ``dataset.bids_root`` (e.g. to a relative
-    ``dataset`` once the per-subject data is bundled under ``spec/dataset``), so the spec points at the bundled tree instead of the author's machine-specific path.
+    *dataset_bids_root* rewrites the frozen ``dataset.bids_root`` to the kit's bundled tree (a path relative to *spec_dir*, see :func:`_bundle_dataset`) instead of the author's machine-specific path, and the frozen dataset then lists exactly the subjects the experiment fans over, since that tree may also hold other experiments' subjects.
     """
     from tvbo.classes.network import Network
     from tvbo.utils import keyed_items
@@ -313,11 +310,14 @@ def _freeze_spec_yaml(
     ds = getattr(experiment, "dataset", None)
     original_ds_root = getattr(ds, "bids_root", None) if ds is not None else None
     original_cohorts = getattr(ds, "cohorts", None) if ds is not None else None
+    original_subjects = getattr(ds, "subjects", None) if ds is not None else None
     rebundle = dataset_bids_root is not None and ds is not None
     # Read while the dataset still names its own root, and before anything below needs restoring.
     bundled = experiment.bundled_cohorts() if rebundle and hasattr(experiment, "bundled_cohorts") else []
+    fan_out = [str(s) for s in experiment.dataset_subject_ids()] if rebundle else []
     if rebundle:
         ds.bids_root = dataset_bids_root
+        ds.subjects = _fan_out_subjects(original_subjects, fan_out)
         if bundled:
             ids = {str(c.cohort_id) for c in bundled}
             ds.cohorts = [c for _, c in keyed_items(original_cohorts, "cohorts") if str(c.cohort_id) not in ids] + bundled
@@ -353,6 +353,20 @@ def _freeze_spec_yaml(
         if rebundle:
             ds.bids_root = original_ds_root
             ds.cohorts = original_cohorts
+            ds.subjects = original_subjects
+
+
+def _fan_out_subjects(listed, fan_out: list[str]) -> dict:
+    """The dataset's own entries for the subjects in *fan_out*, keyed by subject id in fan-out order; a subject the dataset does not list (one found by discovery) gets a bare ``Subject``."""
+    from tvbo.data.cohort import _slot
+    from tvbo.datamodel.schema import Subject
+    from tvbo.utils import keyed_items
+
+    entries = {
+        str(s if isinstance(s, str) else _slot(s, "subject_id", key)).removeprefix("sub-"): s
+        for key, s in keyed_items(listed, "subjects")
+    }
+    return {sid: entries.get(sid) or Subject(subject_id=sid) for sid in fan_out}
 
 
 def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
@@ -442,81 +456,97 @@ def _local_module_deps(mod, seen: set[str]):
         yield from _local_module_deps(dep, seen)
 
 
-def _bundle_request(bundle_dataset: bool, items: list[str]) -> dict[str, str] | None:
-    """The ``--bundle-dataset`` / ``--bundle-select`` flags as the entity overrides a bundle copies with, or ``None`` when neither asks for one.
+def _bundle_request(items: list[str]) -> dict[str, str]:
+    """The ``--bundle-select`` pairs as the entity overrides the kit's dataset files are picked with (``{}`` for none).
 
-    Each ``--bundle-select`` key is a BIDS entity as it appears in the target filename (``atlas``, ``desc``, ``cohort``, ``tpl`` …) or ``suffix``; the pairs pin exactly which per-subject file a bundle copies when a subject directory holds several variants, and giving one implies ``--bundle-dataset``.
+    Each key is a BIDS entity as it appears in the target filename (``atlas``, ``desc``, ``cohort``, ``tpl`` …) or ``suffix``; the pairs pin exactly which per-subject file the kit carries when a subject directory holds several variants.
     """
-    if not (bundle_dataset or items):
-        return None
     pairs = (_common.parse_assignment(raw, "--bundle-select", "KEY=VALUE (e.g. atlas=HCPMMP1)") for raw in items)
     return {k: v.strip() for k, v in pairs}
 
 
-def _bundle_dataset(experiment, dest_dir: Path, cli_select: dict | None) -> str | None:
-    """Copy the fan-out's per-subject dataset files into the kit when a bundle is requested; return the new root.
+def _copy_into_bundle(src: Path, dst: Path) -> tuple[int, int]:
+    """Copy *src* (a file or a directory) to *dst*, keeping what is already there when identical; return ``(files, bytes)`` newly copied.
 
-    A bundle is requested on the command line (*cli_select*, the entity overrides :func:`_bundle_request` returns, at least ``{}``) or declaratively in the recipe (``dataset.bundle: true``), which makes a self-contained kit the recipe's own intent so the packaging command needs no flag. Returns ``None`` when neither asks.
-
-    Resolves each enumerated subject's empirical target (sidecar + payload) through the experiment's dataset query — tightened by the entity overrides — and copies it under *dest_dir* as ``sub-<id>/<file>``, so a kit carries exactly the data its fan-out consumes and nothing else. *dest_dir* is a sibling of the frozen spec, so its bare name is the relative ``dataset.bids_root`` to record. Returns that name, or None when there is no dataset-sourced target to bundle.
-
-    A *requested* bundle that cannot be resolved (a missing file, an over-tight ``--bundle-select``) is a hard error: silently keeping the machine-specific root would ship a kit that fails on every node — the exact hazard this removes.
+    The copy gets a current modification time rather than the source's, so a cluster's scratch cleaner, which deletes by age, does not treat a dataset frozen today as expired. A file already at *dst* with different content is a hard error: two experiments of one kit would otherwise read different data under one name.
     """
+    import filecmp
     import shutil
 
-    ds = getattr(experiment, "dataset", None)
-    if cli_select is None and not (ds is not None and getattr(ds, "bundle", None)):
-        cohorts = _wf.per_subject_cohorts(experiment)
-        if cohorts:
-            _common.die(
-                f"experiment {getattr(experiment, 'id', None)!r}: its network reads cohort(s) {cohorts} per subject, and a kit "
-                "carries their members' files only in its dataset bundle. Pass --bundle-dataset or declare `dataset.bundle: true`."
-            )
-        return None
-    entity_overrides = cli_select or {}
-    try:
-        manifest = experiment.dataset_bundle_files(entity_overrides)
-    except (FileNotFoundError, LookupError, ValueError) as exc:
-        _common.die(f"--bundle-dataset: {exc}")
-    if not manifest:
-        _common.warn("--bundle-dataset: experiment has no dataset-sourced target to bundle.")
-        return None
+    pairs = [(f, dst / f.relative_to(src)) for f in sorted(src.rglob("*")) if f.is_file()] if src.is_dir() else [(src, dst)]
     n_files = n_bytes = 0
-    for subject, files in manifest.items():
-        subdir = dest_dir / f"sub-{subject}"
-        subdir.mkdir(parents=True, exist_ok=True)
-        for f in files:
-            dst = subdir / f.name
-            shutil.copytree(f, dst, dirs_exist_ok=True) if f.is_dir() else shutil.copy2(f, dst)
-            n_files += 1
-            n_bytes += sum(p.stat().st_size for p in dst.rglob("*") if p.is_file()) if dst.is_dir() else dst.stat().st_size
-    _common.info(
-        f"bundled dataset: {len(manifest)} subject(s), {n_files} file(s), "
-        f"{n_bytes / 1e6:.1f} MB → {dest_dir.name}/ "
-        f"(dataset.bids_root rewritten to relative '{dest_dir.name}')"
-    )
-    return dest_dir.name
+    for source, target in pairs:
+        if target.exists():
+            if not filecmp.cmp(source, target, shallow=False):
+                _common.die(f"the kit already holds {target}, with content that differs from {source}.")
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(source, target)
+        n_files += 1
+        n_bytes += target.stat().st_size
+    return n_files, n_bytes
 
 
-def _stage_reference_containers(experiment, results_dir: Path) -> list[str]:
-    """Copy the analysis containers the experiment's network reads into the kit's *results_dir*; return their names.
+def _bundle_dataset(experiment, kit_dir: Path, spec_dir: Path, select: dict | None = None) -> str | None:
+    """Copy the dataset files *experiment* reads into the kit; return the root its frozen spec records, relative to *spec_dir*.
 
-    A kit runs experiments, not the study's analyses, so a container a transform argument reads (a cohort aggregate) has no rule to make it on the target host. It travels instead, from the authoring study's results, and a missing one is fatal, as an unresolvable bundle is. Each is found as a run finds it (:func:`~tvbo.data.dataref.locate_analysis_container`) and staged under the name an analysis writes, so the kit's run reads it whichever layout the study holds it in.
+    A kit carries its data: each fan-out subject's empirical targets and the cohort layers its network reads per subject (:meth:`SimulationExperiment.dataset_bundle_files`, with *select* pinning the variant), so it runs on a host that has never seen the author's data tree. They land in ``<kit>/data/<dataset_id>/sub-<id>/``, one tree per dataset that every experiment of the kit reading that dataset shares, and the frozen spec's ``dataset.bids_root`` points there. Returns None for an experiment that reads no dataset file.
+
+    A file that cannot be resolved (a missing file, an over-tight ``--bundle-select``) is a hard error: keeping the machine-specific root would ship a kit that fails on every node.
     """
-    import shutil
+    import os
 
-    from tvbo.data.dataref import analysis_container_path, locate_analysis_container, sidecar_path
+    try:
+        manifest = experiment.dataset_bundle_files(select or {})
+    except (FileNotFoundError, LookupError, ValueError) as exc:
+        _common.die(f"bundling the dataset of experiment {getattr(experiment, 'id', None)!r}: {exc}")
+    if not manifest:
+        return None
+    dataset_id = getattr(getattr(experiment, "dataset", None), "dataset_id", None) or "dataset"
+    dest_dir = kit_dir / "data" / "".join(c if (c.isalnum() or c in ".-_") else "_" for c in str(dataset_id))
+    n_files = n_bytes = n_held = 0
+    for subject, files in manifest.items():
+        for f in files:
+            copied, size = _copy_into_bundle(f, dest_dir / f"sub-{subject}" / f.name)
+            n_files, n_bytes, n_held = n_files + copied, n_bytes + size, n_held + (copied == 0)
+    root = Path(os.path.relpath(dest_dir, spec_dir)).as_posix()
+    shared = f", {n_held} already held by another experiment" if n_held else ""
+    _common.info(
+        f"bundled dataset {dataset_id}: {len(manifest)} subject(s), {n_files} file(s) copied, {n_bytes / 1e6:.1f} MB{shared} "
+        f"→ {dest_dir.relative_to(kit_dir)}/ (dataset.bids_root frozen as '{root}')"
+    )
+    return root
 
+
+def _stage_reference_containers(experiment, results_dir: Path, depends_on=(), in_kit=()) -> list[str]:
+    """Copy the results *experiment* reads that the kit does not produce into the kit's *results_dir*; return what was staged.
+
+    A kit runs its own experiments, not the study's analyses nor the experiments it leaves out, so a container read from either has no rule to make it on the target host: the analysis containers the network's transforms read (a cohort aggregate), and the result of every experiment in *depends_on* that is not in *in_kit* (the group fit a per-subject fit warm-starts from). They travel instead, from the authoring study's results: an analysis container with its sidecar, found as a run finds it (:func:`~tvbo.data.dataref.locate_analysis_container`) and staged under the name an analysis writes, so the kit's run reads it whichever layout the study holds it in; a group run whole, a per-subject cohort as the shards of the subjects this experiment fans over, each result with its companions. A missing one is fatal, as an unresolvable bundle is.
+    """
+    from tvbo.classes.network import Network
+    from tvbo.data.dataref import (
+        AmbiguousContainerError,
+        analysis_container_path,
+        locate_analysis_container,
+        locate_exp_container,
+        sidecar_path,
+    )
+
+    exp_id = getattr(experiment, "id", None)
     net = getattr(experiment, "network", None)
     names = net.referenced_analyses() if hasattr(net, "referenced_analyses") else []
-    if not names:
+    kit_ids = {str(k) for k in in_kit} | {str(exp_id)}
+    sources = [str(s) for s in depends_on if str(s) not in kit_ids]
+    if not names and not sources:
         return []
     source = getattr(experiment, "_source_file", None)
-    source_root = net.reference_results_root(source_dir=Path(source).parent if source else None)
+    source_dir = Path(source).parent if source else None
+    source_root = (net if hasattr(net, "reference_results_root") else Network()).reference_results_root(source_dir=source_dir)
     if source_root is None:
         _common.die(
-            f"experiment {getattr(experiment, 'id', None)!r} reads analyses {names}, and it was not loaded from a study, so their containers cannot be found."
+            f"experiment {exp_id!r} reads {', '.join([*names, *(f'experiment {s}' for s in sources)])}, and it was not loaded from a study, so their containers cannot be found."
         )
+    files: list[tuple[Path, Path]] = []
     for name in names:
         try:
             container = locate_analysis_container(source_root, name)
@@ -525,15 +555,31 @@ def _stage_reference_containers(experiment, results_dir: Path) -> list[str]:
         missing = [f.name for f in (container, sidecar_path(container)) if not f.is_file()]
         if missing:
             _common.die(
-                f"experiment {getattr(experiment, 'id', None)!r} reads analysis {name!r}, whose container is not under "
+                f"experiment {exp_id!r} reads analysis {name!r}, whose container is not under "
                 f"{source_root} ({', '.join(missing)} missing). Run it (`tvbo run <study> --analysis {name}`) before freezing the kit."
             )
         staged = analysis_container_path(results_dir, name)
-        staged.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(container, staged)
-        shutil.copy2(sidecar_path(container), sidecar_path(staged))
-    _common.info(f"staged {len(names)} analysis container(s) into {results_dir}: {', '.join(names)}")
-    return names
+        files += [(container, staged), (sidecar_path(container), sidecar_path(staged))]
+    subjects = experiment.dataset_subject_ids() if hasattr(experiment, "dataset_subject_ids") else []
+    for source_id in sources:
+        try:
+            containers = dict.fromkeys(locate_exp_container(source_root, source_id, subject=s) for s in subjects or [None])
+        except (FileNotFoundError, AmbiguousContainerError) as exc:
+            _common.die(
+                f"experiment {exp_id!r} reads experiment {source_id}, which this kit does not run: {exc} "
+                "Run it before freezing the kit, or freeze both into one kit."
+            )
+        for container in containers:
+            stem = container.name.rsplit("_result", 1)[0] if "_result" in container.name else container.stem
+            files += [(f, results_dir / f.name) for f in sorted(container.parent.glob(f"{stem}_*"))]
+    results_dir.mkdir(parents=True, exist_ok=True)
+    copied = [_copy_into_bundle(src, dst) for src, dst in files]
+    n_files, n_bytes = sum(c[0] for c in copied), sum(c[1] for c in copied)
+    staged = [*names, *(f"exp-{s}" for s in sources)]
+    _common.info(
+        f"staged {', '.join(staged)} into {results_dir}: {n_files} of {len(files)} file(s) copied, {n_bytes / 1e6:.1f} MB, the rest already held"
+    )
+    return staged
 
 
 def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: dict | None = None) -> Path:
@@ -545,6 +591,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
           <artefact>            # Snakefile / run.sbatch / main.nf
           scripts/<exp>.<ext>   # frozen backend code from experiment.render(backend)
           spec/<exp>.yaml       # frozen YAML snapshot of the experiment
+          data/<dataset_id>/    # the dataset files the experiment reads (see _bundle_dataset)
           README.md             # provenance + how-to-run
 
     The slurm array shards a sweep and lets the backend vectorize each shard (``--shard``); it has NO per-cell ``--pin`` fan-out. An experiment that EXPLICITLY declares ``distribute.workflow`` over model/coupling parameters asked for per-cell fan-out (e.g. a non-jittable host observation computed once per cell) — slurm would silently vectorize it, tracing that host observation inside the vmap (TracerArrayConversionError). Such an experiment is rejected here with a pointer to ``tvbo workflow snakemake``, which fans one ``--pin`` per cell (see ``_emit_snakemake_study``'s fan-out note).
@@ -572,7 +619,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
     spec_dir = out_dir / "spec"
     spec_path = spec_dir / f"{plan.experiment_key}.yaml"
     # Before the error-swallowing spec freeze, so a bundling failure is a hard error the user sees.
-    bundle_root = _bundle_dataset(experiment, spec_dir / "dataset", bundle_select)
+    bundle_root = _bundle_dataset(experiment, out_dir, spec_dir, bundle_select)
     spec_relpath = None
     bundled_code = False
     try:
@@ -584,7 +631,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
         raise  # a deliberate abort (an unresolvable data_source network) is fatal, not a skipped snapshot
     except Exception as exc:
         _common.info(f"(could not snapshot YAML spec: {exc})")
-    _stage_reference_containers(experiment, out_dir / plan.out_dir)
+    _stage_reference_containers(experiment, out_dir / plan.out_dir, plan.depends_on)
 
     script_relpath = _freeze_backend_script(experiment, out_dir, plan.backend.name, plan.experiment_key)
 
@@ -864,7 +911,7 @@ def _emit_snakemake_study(
         else:
             edir = out_dir / "spec" / key
             edir.mkdir(parents=True, exist_ok=True)  # non-connectome freeze doesn't create it
-            bundle_root = _bundle_dataset(exp, edir / "dataset", bundle_select)
+            bundle_root = _bundle_dataset(exp, out_dir, edir, bundle_select)
             # Custom callable/builder modules the recipe references travel with the kit (shared code/ dir), so `tvbo run` resolves them on the node.
             bundled_code = (
                 _freeze_experiment_spec(
@@ -873,7 +920,7 @@ def _emit_snakemake_study(
                 or bundled_code
             )
             spec_relpath, select = f"spec/{key}/experiment.yaml", None
-            staged = _stage_reference_containers(exp, out_dir / plan.out_dir)
+            staged = _stage_reference_containers(exp, out_dir / plan.out_dir, plan.depends_on, in_kit=_key_of)
             # Freeze the pre-rendered backend script ALONGSIDE the spec, so the SAME kit runs either way: `--code-source frozen` runs `scripts/<key>.<ext>` with no codegen on the node. A render failure is non-fatal — the spec path still works; the rule falls back to it when the script is absent.
             if not _fanned_parameter:
                 scripts_relpath = _freeze_backend_script(exp, out_dir, plan.backend.name, key)
@@ -915,7 +962,7 @@ def _emit_snakemake_study(
                 "cohort_subjects": list(plan.cohort_subjects),
                 "cohort_result_files": list(plan.cohort_result_files),
                 "depends_on": [_key_of.get(str(d), _san(str(d))) for d in plan.depends_on],
-                # Analysis containers staged under OUT_DIR for this rule's network to read, which, like a source experiment's result, are not under its own output directory.
+                # Containers staged under OUT_DIR for this rule to read (analysis aggregates, results of experiments outside the kit), which are not under its own output directory.
                 "staged_containers": staged,
             }
         )
@@ -1401,7 +1448,6 @@ def slurm(
     override: SetOpt = (),
     stdout: StdoutOpt = False,
     pack: PackOpt = False,
-    bundle_dataset: BundleDatasetOpt = False,
     bundle_select: BundleSelectOpt = (),
 ) -> None:
     """Emit a self-contained sbatch kit (`run.sbatch` + scripts + frozen spec)."""
@@ -1414,7 +1460,7 @@ def slurm(
         override=override,
         stdout=stdout,
         pack=pack,
-        bundle_select=_bundle_request(bundle_dataset, bundle_select),
+        bundle_select=_bundle_request(bundle_select),
     )
 
 
@@ -1464,9 +1510,6 @@ def snakemake(
         "override per run with $TVBO_CODE_SOURCE (see `tvbo workflow submit --code-source`).",
         callback=_validate_code_source,
     ),
-    bundle_dataset: bool = typer.Option(
-        False, "--bundle-dataset", help=_BUNDLE_DATASET_HELP.format(where="spec/<exp>/dataset/")
-    ),
     bundle_select: BundleSelectOpt = (),
 ) -> None:
     """Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec)."""
@@ -1486,7 +1529,7 @@ def snakemake(
         override=override,
         stdout=stdout,
         pack=pack,
-        bundle_select=_bundle_request(bundle_dataset, bundle_select),
+        bundle_select=_bundle_request(bundle_select),
         code_source=code_source,
     )
 
@@ -1500,7 +1543,6 @@ def nextflow(
     override: SetOpt = (),
     stdout: StdoutOpt = False,
     pack: PackOpt = False,
-    bundle_dataset: BundleDatasetOpt = False,
     bundle_select: BundleSelectOpt = (),
 ) -> None:
     """Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec)."""
@@ -1513,7 +1555,7 @@ def nextflow(
         override=override,
         stdout=stdout,
         pack=pack,
-        bundle_select=_bundle_request(bundle_dataset, bundle_select),
+        bundle_select=_bundle_request(bundle_select),
     )
 
 

@@ -139,31 +139,23 @@ observations:
 
 An explicit `dataset.subjects` list **scopes** the fan-out — one entry for a single-subject kit, a handful for a pilot, omitted to sweep the whole cohort.
 
-The per-subject data itself reaches the compute node one of two ways:
-
-**Reference it (large cohorts).** By default the kit records the absolute `dataset.bids_root`. That tree is machine-specific, so stage it on the cluster and point each task at it with `$TVBO_BIDS_ROOT` — the `run.sbatch` reads it with no hand-edit (unset → keeps the baked value):
+The kit carries the per-subject data itself. Freezing it copies each fan-out subject's target (sidecar **+** its payload), and every layer its network reads per subject, into `data/<dataset_id>/`, and rewrites `dataset.bids_root` to a path relative to the frozen spec, so the kit needs no upload and no mount. The selection comes **from the spec itself**: the observation's own `query` (`{atlas: HCPMMP1, desc: FCavg, suffix: relmat}` above) already names the file, so no flag is needed:
 
 ```bash
-export TVBO_BIDS_ROOT=/cephfs/hcp/functional_connectomes
-tvbo workflow submit cohort_kit.tar.gz
+tvbo workflow slurm study.yaml --experiment 30 --pack -o cohort_kit
+# → cohort_kit.tar.gz carries data/<dataset_id>/sub-<id>/… for the fan-out subjects only
 ```
 
-**Bundle it (self-contained kit).** `--bundle-dataset` copies each enumerated subject's target (sidecar **+** its payload) into `spec/dataset/` and rewrites `dataset.bids_root` to a relative path that resolves against the frozen spec. The kit then carries exactly the files its fan-out consumes — no upload, no `$TVBO_BIDS_ROOT`. It resolves **from the spec itself**: the observation's own `query` (`{atlas: HCPMMP1, desc: FCavg, suffix: relmat}` above) already names the file, so no extra flags are needed:
+Results the kit reads but does not produce travel the same way, into `derivatives/tvbo/`: the cohort aggregates a network's transforms read, and the result of an experiment left out of the kit that one inside it warm-starts from (a group run whole, a per-subject cohort as the fan-out subjects' shards).
 
-```bash
-tvbo workflow slurm study.yaml --experiment 30 --bundle-dataset --pack -o cohort_kit
-# → cohort_kit.tar.gz carries spec/dataset/sub-<id>/… for the scoped subjects only
-```
-
-`--bundle-select KEY=VALUE` is only an override for when a subject directory holds
-**several** files matching the query — the bundler otherwise raises a clear "ambiguous … add entities to disambiguate" error naming the candidates, so you add just the entity that separates them:
+`--bundle-select KEY=VALUE` is only an override for when a subject directory holds **several** files matching the query. The freeze otherwise stops with a clear "ambiguous … add entities to disambiguate" error naming the candidates, so you add just the entity that separates them:
 
 ```bash
 tvbo workflow slurm study.yaml --experiment 30 \
-  --bundle-dataset --bundle-select acquisition=run1 --pack -o cohort_kit
+  --bundle-select acquisition=run1 --pack -o cohort_kit
 ```
 
-A *requested* bundle that cannot be resolved (a missing file, an over-tight or mismatched `--bundle-select`) fails loudly at emit time — a self-contained kit is never shipped silently pointing at data it does not carry.
+Anything the kit cannot resolve (a missing file, an over-tight or mismatched `--bundle-select`, a source result that was never run) fails loudly at emit time: a kit is never shipped pointing at data it does not carry. On a cluster that already holds the cohort, a `slurm` kit's `run.sbatch` reads `$TVBO_BIDS_ROOT` in place of the frozen root; unset, each task reads the kit's own copy.
 
 ## CPU and GPU: pick the tier that fits the resource
 

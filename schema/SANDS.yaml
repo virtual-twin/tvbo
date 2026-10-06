@@ -9,6 +9,11 @@ prefixes:
   dcterms: http://purl.org/dc/terms/
   skos: http://www.w3.org/2004/02/skos/core#
   schema: http://schema.org/
+  wdt: http://www.wikidata.org/prop/direct/
+  qudt: http://qudt.org/vocab/unit/
+  quantitykind: http://qudt.org/vocab/quantitykind/
+  PATO: http://purl.obolibrary.org/obo/PATO_
+  sio: http://semanticscience.org/resource/
 
 default_prefix: atom
 
@@ -38,6 +43,7 @@ classes:
       - coordinateSpace
       - name
       - abbreviation
+      - description
       - author
       - isVersionOf
       - versionIdentifier
@@ -91,6 +97,19 @@ classes:
       color:
         range: string
         description: "Add the color code used for visual representation of this entity."
+      volume:
+        range: float
+        slot_uri: wdt:P2234
+        unit:
+          ucum_code: mm3
+          symbol: mm³
+          exact_mappings:
+            - qudt:MilliM3
+          has_quantity_kind: quantitykind:Volume
+        related_mappings:
+          - PATO:0000918
+          - sio:SIO_000049
+        description: "Add the volume, in cubic millimetres, that this entity occupies in the label image of its brain atlas version. Given for labelled entities only: a parent entity names a whole structure that the label image may cover only in part."
     slots:
       - abbreviation
       - alternateName

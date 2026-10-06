@@ -23,7 +23,6 @@ experiment
 dataset:
   dataset_id: hcp_ya_fc_schaefer1000
   bids_root: /data/hcp/derivatives/functional_connectomes
-  bundle: true
 ```
 
 | Field | Meaning |
@@ -31,7 +30,6 @@ dataset:
 | `dataset_id` | The identifier the results are keyed by. |
 | `bids_root` | Where the per-subject derivatives live. The cohort is every subject under it that satisfies the observation's `query`. |
 | `subjects` | An explicit list, when you want a subset rather than everything the root holds. |
-| `bundle` | Carry each subject's data into the emitted workflow kit, so a cluster job needs no access to the original root. |
 | `batch_mode` | `fan_out` for one job per subject, `on_device` to vectorize the cohort inside a single job. |
 | `batch_size` | How many subjects per job when batching. |
 | `conditions` | Task or condition labels, when a subject contributes more than one. |
@@ -73,11 +71,11 @@ Use this first, always. A cohort array that fails on subject 700 has burned 699 
 ### The whole cohort
 
 ```bash
-tvbo workflow snakemake study.yaml --experiment 60 --bundle-dataset -o kit-cohort
+tvbo workflow snakemake study.yaml --experiment 60 -o kit-cohort
 tvbo workflow submit kit-cohort --array
 ```
 
-`fan_out` emits one task per subject, and the workflow engine schedules them. Each shard writes its own result container; `tvbo workflow finalize` reassembles them into one keyed artifact.
+`fan_out` emits one task per subject, and the workflow engine schedules them. The kit carries each subject's data in `data/<dataset_id>/`, so a cluster job needs no access to the original root. Each shard writes its own result container; `tvbo workflow finalize` reassembles them into one keyed artifact.
 
 ::::
 

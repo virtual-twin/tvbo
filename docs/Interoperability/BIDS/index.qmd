@@ -134,6 +134,7 @@ The suffix is the part that says what kind of thing the file is — which every 
 | `_study` | one `SimulationStudy` |
 | `_dataset` | one `Dataset` |
 | `_dataref` | one `DataRef` |
+| `_theme` | one `Theme` |
 
 <!-- END SPEC SUFFIXES -->
 

@@ -1,0 +1,8 @@
+name: SetCosine
+label: Cosine with a node set
+description: The cosine similarity between a per-node value and a set's membership vector, which measures how much of the value lies on the set. It is 1 when the value is proportional to the membership, which for a 0/1 membership means uniform on the members and zero elsewhere, and 0 when the value is zero on every member. Scaling the value by a positive factor leaves it unchanged, so it reads the pattern of a response and not its size.
+arguments:
+  values: {description: 'One value per node.'}
+  membership: {description: 'One membership per node, in the same order: 1 for a member and 0 otherwise, or a non-negative weight.'}
+equation:
+  rhs: sum(values * membership) / (sqrt(sum(membership**2)) * sqrt(sum(values**2)))

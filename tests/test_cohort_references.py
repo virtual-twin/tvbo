@@ -7,6 +7,7 @@ The worked case is a cohort-relative connectome normalisation: keep the pairs co
 
 from __future__ import annotations
 
+import h5py
 import numpy as np
 import pytest
 import xarray as xr
@@ -16,6 +17,7 @@ pytest.importorskip("jax")
 
 from tvbo import Network  # noqa: E402
 from tvbo.data import analysis_io, cohort, dataref  # noqa: E402
+from tvbo.data.matrix_io import read_edge  # noqa: E402
 from tvbo.data.study_manifest import _analysis_fingerprint  # noqa: E402
 from tvbo.datamodel.schema import Analysis, DataRef, Dataset  # noqa: E402
 
@@ -477,16 +479,19 @@ def test_a_bundled_kit_carries_the_cohort_each_members_connectome_and_the_aggreg
 
     out = tmp_path / "kit"
     spec_dir = out / "spec"
-    bundle = kit._bundle_dataset(experiment, spec_dir / "dataset", {})
+    bundle = kit._bundle_dataset(experiment, out, spec_dir, {})
     (spec_dir / "experiment.yaml").write_text(kit._freeze_spec_yaml(experiment, spec_dir, dataset_bids_root=bundle))
     assert kit._stage_reference_containers(experiment, out / "derivatives/tvbo") == ["toy_mean", "toy_presence"]
 
-    assert sorted(p.name for p in (spec_dir / "dataset").iterdir()) == ["sub-01", "sub-04"]
-    assert sorted(p.name for p in (spec_dir / "dataset/sub-04").glob("*.yaml")) == [
+    data = out / "data/toy_fc"
+    assert sorted(p.name for p in data.iterdir()) == ["sub-01", "sub-04"]
+    assert sorted(p.name for p in (data / "sub-04").glob("*.yaml")) == [
         "sub-04_atlas-Toy_desc-FC_relmat.yaml",
         "sub-04_atlas-Toy_desc-SC_relmat.yaml",
     ]
     frozen = yaml.safe_load((spec_dir / "experiment.yaml").read_text())
+    assert frozen["dataset"]["bids_root"] == "../data/toy_fc"
+    assert list(frozen["dataset"]["subjects"]) == ["04", "01"]
     assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"]] == [("four", ["04", "01"])]
 
     rerun = SimulationExperiment.from_file(str(spec_dir / "experiment.yaml"))
@@ -495,6 +500,14 @@ def test_a_bundled_kit_carries_the_cohort_each_members_connectome_and_the_aggreg
     rerun._bind_network_references(results_root=out / "derivatives/tvbo")
     np.testing.assert_allclose(rerun.network.matrix("weight", format="dense"), _expected("01")[0], rtol=1e-6)
     np.testing.assert_array_equal(rerun.network.matrix("length", format="dense"), _expected("01")[1])
+
+    rerun.freeze_yaml(str(tmp_path / "provenance"), network_stem="sub-01_network")
+    with h5py.File(tmp_path / "provenance/sub-01_network.h5") as companion:
+        for layer in ("weight", "length"):
+            stored, _ = read_edge(companion, layer)
+            np.testing.assert_array_equal(
+                np.asarray(stored.todense() if hasattr(stored, "todense") else stored), rerun.network.array(layer)
+            )
 
 
 def test_a_bundle_carries_a_network_read_per_subject_without_a_dataset_target(root, tmp_path):
@@ -506,10 +519,37 @@ def test_a_bundle_carries_a_network_read_per_subject_without_a_dataset_target(ro
     }
 
 
-def test_a_kit_without_a_bundle_refuses_a_network_read_per_subject(root, tmp_path):
+def test_a_kit_stages_the_results_its_experiment_reads_from_experiments_it_does_not_run(root, tmp_path):
     import typer
 
     from tvbo.cli import workflow as kit
+    from tvbo.utils.study_layout import study_path
 
+    (tmp_path / "dataset_description.json").write_text('{"Name": "ToyCohort", "BIDSVersion": "1.9.0"}')
+    results = study_path("results", root=tmp_path)
+    analysis_io.run_analyses(_analyses(), results, datasets=[_dataset(root)])
+    group = [f"exp-9_model-Toy_{part}" for part in ("result.h5", "result.yaml", "network.h5", "network.yaml")]
+    shards = [f"sub-{s}_exp-8_model-Toy_result.h5" for s in LISTED]
+    for name in [*group, *shards, "exp-90_model-Toy_result.h5"]:
+        (results / name).write_bytes(name.encode())
+    experiment = _fan_out_experiment(root, tmp_path)
+
+    staged_dir = tmp_path / "kit/derivatives/tvbo"
+    staged = kit._stage_reference_containers(experiment, staged_dir, depends_on=["9", "8", "7"], in_kit=["7"])
+    assert staged == ["toy_mean", "toy_presence", "exp-9", "exp-8"]
+    held = sorted(p.name for p in staged_dir.rglob("*exp-*"))
+    assert held == sorted([*group, "sub-01_exp-8_model-Toy_result.h5", "sub-04_exp-8_model-Toy_result.h5"])
+    assert dataref.locate_exp_container(staged_dir, "8", subject="01").read_bytes() == b"sub-01_exp-8_model-Toy_result.h5"
     with pytest.raises(typer.Exit):
-        kit._bundle_dataset(_fan_out_experiment(root, tmp_path), tmp_path / "kit/spec/dataset", None)
+        kit._stage_reference_containers(experiment, staged_dir, depends_on=["6"])
+
+
+def test_a_kit_carries_the_layer_a_network_reads_per_subject_without_any_dataset_target(root, tmp_path):
+    from tvbo.cli import workflow as kit
+
+    out = tmp_path / "kit"
+    assert kit._bundle_dataset(_fan_out_experiment(root, tmp_path), out, out / "spec") == "../data/toy_fc"
+    assert sorted(p.name for p in (out / "data/toy_fc/sub-04").iterdir()) == [
+        "sub-04_atlas-Toy_desc-SC_relmat.h5",
+        "sub-04_atlas-Toy_desc-SC_relmat.yaml",
+    ]

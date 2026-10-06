@@ -66,8 +66,39 @@ Two failures with two different fixes: a modal size that is not the declared one
 
 **Captions are the paper's, not ours.** Write each `description:` from the published caption for that display item — its claims, panel lettering, units and stated ranges — and record deviations inside it ("on the released 100-region consensus connectome rather than the paper's AAL90", "swept to 4.5 where the paper plots to 3"). A caption drafted from our own figure drifts into describing what we happened to draw, which is how a panel comes to answer a question the paper never asked while still reading as a reproduction of it.
 
+## One rule for the study's look, stated once
+
+**Read the published figures' style before drawing any of them, and write it down as ONE `Theme` the study includes.** A paper's figures share a look: where the ticks sit, whether an axis ends on one, whether the two spines meet at the origin or stand apart, open frames or boxes, the typeface, the case and weight of the panel letters. Decided per figure, those drift apart within a week and every figure repeats the same six lines. Decided once, they are a file:
+
+```yaml
+# spec/desc-published_theme.yaml
+tvbo_class: tvbo:Theme
+ink: "#000000"
+font_family: [DejaVu Sans]
+font_size: 7
+spines: open            # left and bottom only; `box` for all four
+ticks: native           # native | round | declared
+axis_ends: data         # data | ticks | near
+spine_offset: 0         # the spines meet at the origin
+panel_number_case: lower
+```
+
+```yaml
+# <Study>.yaml
+theme: !include spec/desc-published_theme.yaml
+```
+
+Every figure in the study's `figures:` list is then drawn by it. A figure that differs says only how (`spines: box`, or `theme: {axis_ends: ticks}`), and one that must be left exactly as its panels drew it says `auto_format: false`.
+
+- **`ticks` says who places them.** `native` leaves the backend's locator in charge and moves nothing, which is also what a study with no theme gets. `round` re-places every axis nobody placed on multiples of 1, 2 or 5 (`tick_steps`), at most `max_ticks` of them. `declared` accepts only the ticks each panel gives in `xticks`/`yticks` and refuses the render, naming every axis that gives none: the rule for a figure whose every tick is the paper's.
+- **`axis_ends` says which of three things gives way.** An axis cannot always have round ticks, a tick at both ends and no empty space. `data` ends the axis at the data and lets the outer ticks sit inside; `ticks` widens it to a tick at both ends, however far; `near` widens an end only where the next tick lies within `end_tick_reach` of the data. Measured on 41 autoscaled axes, `ticks` left the data filling a median 85 % of its axis and under 60 % on six, where `near` kept a median 95 %.
+- **Spines are three statements.** `spines: open|box` for which sides are drawn, `spine_offset` for how far the left and bottom ones stand off the plot (0 makes them meet), `spine_trim` for ending each on its outer ticks. A boxed frame ignores the last two.
+- **What a panel declares always stands.** Declared `xticks`, `yticks`, `nbins`, `xlim`, `ylim`, a log scale, an image's extent and the ticks a custom drawer fixed are never re-placed, whatever the rule.
+- **The house look is one curated theme.** `iri: tvbo:theme/bsplot` is the rule TVB-O's own figures use (round ticks, `near` ends, spines stood off and trimmed, colour bars ticked at their ends). Name it and state only what the paper does differently, or leave it out and build the paper's look from nothing.
+- **Everything a style sheet used to hold has a slot** (type scales and weights, stroke weights, legend spacing, grid, `tick_format`, `math_font`, `editable_text`), and `opts` takes any backend setting that does not: `opts: {hatch.linewidth: 0.5}`. A study should not need a `.mplstyle` of its own.
+
 **A `Figure` is layout + binding + style; keep compute and plotting code out of it.**
-- **Layout is metadata:** `layout` (bsplot mosaic string, e.g. `aab/ccb` — letters = panel keys, `/` = new row, repeated letters span, `.` = empty), `width`/`height` (mm), `dpi`, `font_size`, `height_ratios`/`width_ratios`, `style` (`.mplstyle` paths), `spines`, `panel_numbers`/`panel_number_format`/`panel_number_loc`. Set the paper's physical size and type scale here, once — never in code.
+- **Layout is metadata:** `layout` (bsplot mosaic string, e.g. `aab/ccb` — letters = panel keys, `/` = new row, repeated letters span, `.` = empty), `width`/`height` (mm), `height_ratios`/`width_ratios`. The look slots a figure also carries (`dpi`, `font_size`, `spines`, `spine_offset`, `panel_numbers`/`panel_number_format`/`panel_number_loc`, `style`) are overrides of the study's theme: state them on a figure only where it differs from its siblings, typically `font_size` for one printed at another width. Set the paper's physical size here and its look in the theme, once each — never in code.
 
 **Size, aspect and type size are MEASURED off the original, not guessed — get them right on the first render.** Three defaults are wrong for a replication and cost a re-render every time:
 
@@ -133,7 +164,7 @@ Every fraction in a `grid` is of the HOST PANEL, and this is where a block of sm
 
 ## Colour, scale and geometry
 
-- **A colourbar that factors out a shared multiplier is a silently wrong axis.** A field spanning 3e4 prints "3, 1, 0" and one spanning 1e-4 prints "3, 0, -1", because a slim bar has nowhere to put the exponent. tvbo now writes every colourbar tick in full and takes `colorbar_decimals` where a paper prints a specific precision — but **read the bar's numbers against the layer's own min/max** before believing a figure.
+- **A colourbar that factors out a shared multiplier is a silently wrong axis.** A field spanning 3e4 prints "3, 1, 0" and one spanning 1e-4 prints "3, 0, -1", because a slim bar has nowhere to put the exponent. Under a theme's `colorbar_ends` tvbo ticks the bar at its ends and writes every tick in full, and with or without it takes `colorbar_decimals` where a paper prints a specific precision — but **read the bar's numbers against the layer's own min/max** before believing a figure.
 - **A diverging field needs its neutral colour pinned, not its limits symmetrised.** `center: 0` in a heatmap layer's `opts` keeps the data's own limits and truncates the map to the half-range the data reaches, so a unit of change is the same colour distance either side of zero and the bar shows no colour the field never takes. (That is seaborn's `center=`, which is what most published repositories produce.) Symmetrising the limits instead invents headroom the data never uses.
 - **A colour convention the plotting stack does not ship is a NAME, registered in the study's own figure module.** Read the two hues off the published colourbar, register a `LinearSegmentedColormap` at module import, and name it from the spec like any other map — reading a colour off a published figure is a style fact, not data.
 - **Never compute geometry from `ax.get_position()` at draw time.** The layout pass has not run, so the box you read is not the box you get: a radar that corrected its aspect by a hand-computed `width/height` ratio drew its spoke labels inside the web. Use `ax.set_aspect("equal")` and let the layout engine solve it. Anything that genuinely must run after the tidy-up (an inset's declared frame, a colourbar's declared ticks) belongs in the template's post-format pass, not in the panel.

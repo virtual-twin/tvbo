@@ -29,7 +29,7 @@ _CATEGORIES = {
     "Study": "studies",
     "SimulationStudy": "studies",
     "Observation": "observation_models",
-    "Function": "observation_models",
+    "Function": "functions",
     "BrainAtlas": "atlases",
     "Continuation": "continuations",
     "GraphGenerator": "graph_generators",

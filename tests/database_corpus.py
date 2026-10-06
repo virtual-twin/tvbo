@@ -19,6 +19,7 @@ TARGETS = {
     "coupling_functions": "Coupling",
     "integrators": "Integrator",
     "observation_models": "Observation",
+    "functions": "Function",
     "experiments": "SimulationExperiment",
     "studies": "SimulationStudy",
     "networks": "Network",

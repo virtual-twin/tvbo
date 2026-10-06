@@ -1018,36 +1018,98 @@ def _resolve_colors(kw: dict) -> dict:
     return {k: (resolve_color(v) if k in COLOR_OPTS else v) for k, v in kw.items()}
 
 
-def theme_spec(figure, base_dir) -> dict:
-    """The look a figure declares, with the curated theme it names merged underneath it.
+_HOUSE_RULE = "tvbo:theme/bsplot"
+"""The curated axis rule a figure that asks for one with ``auto_format: true`` is drawn by."""
 
-    Returns the whole Theme as a plain dict — colours and geometry together — because both halves travel to the same place: the colours become the palette the emitted script puts in force, the geometry becomes the rcParams applied after every style layer. The curated theme is the base under both halves, so a figure that declares nothing, and one that declares a single tick length, get the same look everywhere it did not speak.
+_FIGURE_LOOK = (
+    "font_size",
+    "dpi",
+    "trim_margins",
+    "pad",
+    "format",
+    "spines",
+    "spine_offset",
+    "layout_engine",
+    "panel_numbers",
+    "panel_number_format",
+    "panel_number_loc",
+    "panel_number_offset",
+    "style",
+)
+"""The look slots a Figure carries directly. Each is the same word on the Theme, where it is the study's default and the figure's own value is the override."""
+
+
+def adopt_theme(figure, theme):
+    """Hand *figure* the theme of the study it belongs to, and return it.
+
+    A study states its look once (``SimulationStudy.theme``) and its figures are separate records, so the one rule has to travel with each of them to wherever it is rendered or captioned. Loading a study does this for every figure in its ``figures`` list; a caller that builds a Figure by hand and wants a study's look calls it directly.
     """
-    from tvbo.plot import palette
+    object.__setattr__(figure, "_study_theme", theme)
+    return figure
+
+
+def _stated(theme) -> dict:
+    """What a Theme states, as plain Python: a slot left unset is absent, so it never hides the layer beneath it.
+
+    An unset multivalued slot arrives empty rather than None and is dropped with the rest. ``opts`` is flattened to ``{setting: value}`` whichever way it was written, as Argument records or as a plain mapping in a curated file.
+    """
+    if theme is None:
+        return {}
+    opts = theme.get("opts") if isinstance(theme, dict) else getattr(theme, "opts", None)
+    out = {k: v for k, v in (_plain(theme) or {}).items() if k != "opts" and v not in (None, [], {})}
+    if isinstance(out.get("colormaps"), dict):
+        out["colormaps"] = {
+            role: name for role, name in out["colormaps"].items() if name is not None
+        }  # an unset role is absent too
+    if opts:
+        flat = _arg_dict(opts)
+        out["opts"] = {k: (v["value"] if isinstance(v, dict) and "value" in v else v) for k, v in flat.items()}
+    return out
+
+
+@functools.cache
+def _curated_theme(iri: str) -> dict:
+    """The statements of the curated theme *iri* names."""
+    from tvbo.data.registry import resolve_iri
     from tvbo.utils.yaml_loader import load_as_dict, strip_envelope
 
-    declared = {
-        k: v for k, v in (_plain(getattr(figure, "theme", None)) or {}).items() if v not in (None, [], {})
-    }  # an unset multivalued slot arrives empty, not None
-    iri = declared.pop("iri", None) or (_SHIPPED_THEME if _names_shipped_palette(figure) or not declared else None)
-    curated = {}
-    if iri:
-        from tvbo.data.registry import resolve_iri
+    curated = strip_envelope(load_as_dict(str(resolve_iri(str(iri)))))
+    curated.pop("iri", None)
+    return _stated(curated)
 
-        curated = strip_envelope(load_as_dict(str(resolve_iri(str(iri)))))
-        curated.pop("iri", None)
-    merged = {**palette.DEFAULT, **palette.DEFAULT_GEOMETRY, **curated, **declared}
-    merged["colormaps"] = {
-        **palette.DEFAULT["colormaps"],
-        **(curated.get("colormaps") or {}),
-        **(declared.get("colormaps") or {}),
-    }
+
+def _layer(under: dict, over: dict) -> dict:
+    """*over* laid on *under*: a stated slot replaces the one beneath it. The colormap roles and the raw backend settings merge key by key instead, so a theme adds one of either without restating the rest."""
+    merged = {**under, **over}
+    for keyed in ("colormaps", "opts"):
+        if under.get(keyed) or over.get(keyed):
+            merged[keyed] = {**(under.get(keyed) or {}), **(over.get(keyed) or {})}
     return merged
 
 
-def _names_shipped_palette(figure) -> bool:
-    """Whether the figure asks for TVB-O's own colours through the ``tvbo-palette`` style layer."""
-    return _SHIPPED_PALETTE in [str(s) for s in (getattr(figure, "style", None) or [])]
+def theme_spec(figure, base_dir=None) -> dict:
+    """The look a figure is drawn in: every layer that states one, weakest first.
+
+    TVB-O's shipped theme is the base. Over it comes the curated house axis rule when the figure asks for a rule with ``auto_format: true``, then the theme of the figure's study, then the figure's own theme, then the look slots the figure carries directly. Each theme brings the curated one it names by ``iri`` in underneath its own statements. ``auto_format: false`` then switches the axis rule off for this figure, whoever stated it.
+
+    Returns the whole look as one plain dict, colours, geometry and axis rule together, because all of it travels to the same emitted script: the colours become the palette it puts in force, the geometry the rcParams applied after every style layer, the rule the pass run over the drawn axes. A figure that declares nothing, and one that declares a single tick length, get the same look everywhere they did not speak.
+    """
+    from tvbo.plot import axis_rule, palette
+
+    look = {**palette.DEFAULT, **palette.DEFAULT_GEOMETRY}
+    auto = getattr(figure, "auto_format", None)
+    layers = [{"iri": _HOUSE_RULE}] if auto is True else []
+    layers += [_stated(getattr(figure, "_study_theme", None)), _stated(getattr(figure, "theme", None))]
+    for stated in layers:
+        iri = stated.pop("iri", None)
+        if iri:
+            look = _layer(look, _curated_theme(str(iri)))
+        look = _layer(look, stated)
+    look = _layer(look, _stated({slot: getattr(figure, slot, None) for slot in _FIGURE_LOOK}))
+    if auto is False:
+        for slot in axis_rule.SLOTS:
+            look.pop(slot, None)
+    return look
 
 
 _THEME_RCPARAMS = {
@@ -1067,8 +1129,72 @@ _THEME_RCPARAMS = {
     "legend_handle_length": ("legend.handlelength",),
     "legend_pad": ("legend.borderaxespad",),
     "grid_lines": ("axes.grid",),
+    "grid_width": ("grid.linewidth",),
+    "grid_style": ("grid.linestyle",),
+    "grid_below": ("axes.axisbelow",),
+    "font_weight": ("font.weight",),
+    "label_weight": ("axes.labelweight",),
+    "title_weight": ("axes.titleweight",),
+    "title_loc": ("axes.titlelocation",),
+    "math_font": ("mathtext.fontset",),
+    "unicode_minus": ("axes.unicode_minus",),
+    "exponent_as_power": ("axes.formatter.use_mathtext",),
+    "axis_margin": ("axes.xmargin", "axes.ymargin"),
+    "mirror_ticks": ("xtick.top", "ytick.right"),
+    "marker_edge_width": ("lines.markeredgewidth",),
+    "bar_edge_width": ("patch.linewidth",),
+    "line_cap": ("lines.solid_capstyle", "lines.dash_capstyle"),
+    "errorbar_cap_size": ("errorbar.capsize",),
+    "legend_loc": ("legend.loc",),
+    "legend_label_spacing": ("legend.labelspacing",),
+    "legend_handle_text_pad": ("legend.handletextpad",),
+    "legend_marker_scale": ("legend.markerscale",),
+    "transparent": ("savefig.transparent",),
 }
-"""Which rcParams each Theme slot fixes. The one place the spec's vocabulary meets matplotlib's, so a second backend replaces this table rather than the schema."""
+"""Which rcParams each Theme slot fixes, value unchanged. The one place the spec's vocabulary meets matplotlib's, so a second backend replaces this table rather than the schema."""
+
+_THEME_RCPARAM_VALUES = {
+    "tick_format": {
+        "sci": {"axes.formatter.limits": [-2, 3], "axes.formatter.use_mathtext": True},
+        "plain": {"axes.formatter.limits": [-99, 99], "axes.formatter.useoffset": False},
+    },
+    "spines": {
+        "box": {f"axes.spines.{side}": True for side in ("top", "right", "left", "bottom")},
+        "open": {"axes.spines.top": False, "axes.spines.right": False},
+    },
+    "editable_text": {
+        True: {"pdf.fonttype": 42, "ps.fonttype": 42, "svg.fonttype": "none"},
+        False: {"pdf.fonttype": 3, "ps.fonttype": 3, "svg.fonttype": "path"},
+    },
+}
+"""The Theme slots whose value selects a set of rcParams rather than being one."""
+
+_TYPE_SCALES = {
+    "label_scale": ("axes.labelsize",),
+    "tick_label_scale": ("xtick.labelsize", "ytick.labelsize"),
+    "title_scale": ("axes.titlesize",),
+    "legend_scale": ("legend.fontsize",),
+}
+"""Which rcParams each type-scale slot sizes, as a multiple of the body size."""
+
+_BODY_SIZED = ("font.size", "figure.titlesize")
+"""The rcParams a declared body size fixes at that size itself."""
+
+_SCRIPT_LOOK = ("colorbar_outline", "panel_number_weight", "panel_number_case", "panel_number_scale")
+"""The Theme slots the emitted script or the caption applies itself, so they are neither an rcParam nor part of the axis rule."""
+
+THEME_CONSUMERS = frozenset(
+    {
+        *_THEME_RCPARAMS,
+        *_THEME_RCPARAM_VALUES,
+        *_TYPE_SCALES,
+        *_FIGURE_LOOK,
+        *_SCRIPT_LOOK,
+        "font_family",
+        "opts",
+    }
+)
+"""Every geometry slot of a Theme the adapter reads outside the axis rule. With the rule's own slots it covers the whole Theme, which a test pins, so a slot added to the schema cannot be accepted and then ignored."""
 
 _GENERIC_FONT_FAMILIES = ("sans-serif", "serif", "monospace", "cursive", "fantasy")
 
@@ -1079,6 +1205,13 @@ def theme_rcparams(theme: dict) -> dict:
     Only what the theme states: a slot left unset is not a value, so the layer underneath keeps it.
     """
     out: dict = {}
+    for slot, choices in _THEME_RCPARAM_VALUES.items():
+        value = theme.get(slot)
+        if value is None:
+            continue
+        if value not in choices:
+            raise ValueError(f"theme {slot}: {value!r} is not one of {', '.join(map(str, choices))}")
+        out.update(choices[value])
     for slot, params in _THEME_RCPARAMS.items():
         value = theme.get(slot)
         if value is None:
@@ -1093,15 +1226,41 @@ def theme_rcparams(theme: dict) -> dict:
         else:
             out["font.family"] = "sans-serif"
             out["font.sans-serif"] = faces
+    out.update(theme.get("opts") or {})  # the raw backend settings a theme states beat every slot it also states
     return out
 
 
-def _style_entries(figure, base_dir) -> list:
+def type_scales(theme: dict) -> dict:
+    """``{rcParam: multiple of the body size}`` for the type sizes a theme fixes.
+
+    With a body size declared every text size in the figure follows from it, each at its own scale and at the body size where none is stated, so no style sheet's size survives beside a declared one. Without one only the stated scales apply, to whatever body size the style sheets leave in force when the script runs.
+    """
+    stated = {
+        param: float(theme[slot]) for slot, params in _TYPE_SCALES.items() if theme.get(slot) is not None for param in params
+    }
+    if theme.get("font_size"):
+        every = [param for params in _TYPE_SCALES.values() for param in params]
+        return {**dict.fromkeys((*_BODY_SIZED, *every), 1.0), **stated}
+    if theme.get("panel_number_scale") is not None:
+        stated["figure.titlesize"] = float(theme["panel_number_scale"])  # the size an unsized panel letter takes
+    return stated
+
+
+def letter_case(ident, case):
+    """A panel letter in the case the theme draws letters in, or as typed where it states none."""
+    if ident is None or case is None:
+        return ident
+    return str(ident).upper() if str(case) == "upper" else str(ident).lower()
+
+
+def _style_entries(figure, base_dir, styles=None) -> list:
     """Classify each style layer as a registered bsplot style or a path to an .mplstyle.
+
+    The layers are *styles* where the caller has resolved them against the study's theme, and the figure's own ``style`` otherwise.
 
     These are the looks TVB-O does not own: bsplot's registered styles, a journal's sheet, the rcParams of a paper being reproduced. Colour is not among them — a figure's colours come from its ``theme``, which is applied after every layer here, so a sheet cannot quietly reintroduce a cycle the project has replaced. ``tvbo-palette`` is read as the theme rather than as a layer, and is dropped here. Only the path form is resolved against base_dir; a registered name is not a filesystem reference.
     """
-    styles = [s for s in (list(getattr(figure, "style", None) or []) or ["tvbo"]) if str(s) != _SHIPPED_PALETTE]
+    styles = [s for s in (list(styles or getattr(figure, "style", None) or []) or ["tvbo"]) if str(s) != _SHIPPED_PALETTE]
     out = []
     for s in styles:
         s = str(s)
@@ -1122,6 +1281,10 @@ def _plain(value):
     """
     if isinstance(value, (str, bytes)) or value is None:
         return value
+    if _is_enum(value):
+        return _enum_value(
+            value
+        )  # an enum member is an object with attributes too, and flattened like a record it comes out as `{}`
     if isinstance(value, dict):
         return {k: _plain(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
@@ -1129,6 +1292,15 @@ def _plain(value):
     if hasattr(value, "__dict__") and not isinstance(value, (int, float, bool)):
         return {k: _plain(v) for k, v in vars(value).items() if not k.startswith("_")}
     return value
+
+
+def _is_enum(value) -> bool:
+    """Whether *value* is a schema enum member, in either datamodel flavor, rather than a structured record."""
+    from enum import Enum
+
+    from linkml_runtime.utils.enumerations import EnumDefinitionImpl
+
+    return isinstance(value, (Enum, EnumDefinitionImpl))
 
 
 def _arg_dict(coll) -> dict:
@@ -1232,6 +1404,8 @@ _REGION_DECOR = ("color", "fill", "opacity")
 _RULE_DIRECTIVES = tuple(f"{k}{s}" for k in ("axhline", "axvline", "axline") for s in ("", *(f"_{d}" for d in _RULE_DECOR)))
 _REGION_DIRECTIVES = ("region", *(f"region_{d}" for d in _REGION_DECOR))
 _LEGEND_DIRECTIVES = ("legend", "legend_frame", "legend_columns", "legend_title", "legend_handle_length")
+_DRAWER_DIRECTIVES = (*_LEGEND_DIRECTIVES, "xlabel", "ylabel", "xlabel_pad", "ylabel_pad")
+"""What a custom panel declares about its axes that only the template can honour: its drawer owns the interior and gets no axis pass, so the labels and the legend go on once it has drawn."""
 _CAMERA_DIRECTIVES = ("elev", "azim", "zoom")
 
 # The flat directives a grammar panel's axes are drawn from — the backend-independent set the template applies uniformly. Every one now has a declared slot behind it; the names survive as the renderer's own vocabulary, which is where the spec's words stop and matplotlib's begin.
@@ -1265,7 +1439,7 @@ Kept as a lookup rather than dropped silently: a retired option would otherwise 
 """
 
 
-# Axis directives the format pass can overwrite, so they are re-applied after it. The whole tick family plus the frame the panel declared: what a paper prints ranges and tick marks for is intent, and a tidy-up pass must not quietly replace it.
+# Axis directives re-applied once the theme's axis rule has run. The whole tick family plus the frame the panel declared: what a paper prints ranges and tick marks for is intent, and no rule may quietly replace it.
 _POST_FORMAT_OPTS = {
     *_TICK_SLOTS,
     "xlabel_side",  # re-applied beside the tick side, which also moves the label and would win alone
@@ -1938,7 +2112,7 @@ def _frame_role(layer, animation) -> str | None:
     return str(declared) if declared else None
 
 
-# Interior drawn by a callable or sub-axes, so its ticks must survive the format pass.
+# Interior drawn by a callable or sub-axes rather than by the grammar.
 _DRAWER_KINDS = {"custom", "surface", "volume", "network", "grid", "line3d"}
 
 # Kinds whose interior is a built-in callable, needing no `render:` and no code_modules.
@@ -2134,8 +2308,8 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
         colorbar_kwargs["aspect"] = float(opts["colorbar_aspect"])
     # Default the axis labels to the first layer's x-dim / output; opts override them.
     axopts = _axopts(panel)
-    # bsplot's format pass re-derives ticks and can re-normalise limits, so a DECLARED frame (the paper's own tick marks and ranges) is re-applied after it. Intent written in the spec must not be silently replaced by the tidy-up.
-    post = {k: v for k, v in axopts.items() if k in _POST_FORMAT_OPTS}
+    # A DECLARED frame (the paper's own tick marks and ranges) is re-applied after the theme's axis rule has placed everything nobody declared, so intent written in the spec is never replaced by it. A custom panel's declared labels and legend go on then too, because its drawer gets no axis pass of its own and nothing else would apply them.
+    post = {k: v for k, v in axopts.items() if k in _POST_FORMAT_OPTS or (kind == "custom" and k in _DRAWER_DIRECTIVES)}
     if kind in ("cartesian", "heatmap", "line3d") and layers:
         axopts.setdefault("xlabel", layers[0]["x"] or "")
         axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
@@ -2197,7 +2371,7 @@ def output_format(figure) -> str:
     animation = _animation(figure)
     if animation:
         return animation["format"]
-    return str(getattr(figure, "format", None) or "png").lstrip(".")
+    return str(theme_spec(figure).get("format") or "png").lstrip(".")
 
 
 def _animated_sources(drawables) -> list:
@@ -2238,6 +2412,7 @@ def _animation(figure) -> dict | None:
 
 def build_context(figure, base_dir, outfile: str) -> dict:
     """Resolve a ``Figure`` into the template context (all IO paths + names resolved)."""
+    from tvbo.plot import axis_rule as _axis_rule
     from tvbo.plot import palette as _palette_mod
 
     base_dir = Path(base_dir)
@@ -2253,11 +2428,12 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         # One row of the declared keys. A multi-character key has to go out as a token row: concatenated it would read as one cell per character.
         keys = [str(p["key"]) for p in panels] or ["a"]
         layout = [keys] if any(len(k) > 1 for k in keys) else "".join(keys)
-    fmt = getattr(figure, "panel_number_format", None) or "{}"
-    fig_loc = _enum_value(getattr(figure, "panel_number_loc", None))  # unset -> keep bsplot's own default placement
-    font_size = getattr(figure, "font_size", None)
-    number_size = getattr(figure, "panel_number_size", None) or (font_size * _PANEL_NUMBER_SCALE if font_size else None)
-    offset = [float(v) for v in (getattr(figure, "panel_number_offset", None) or [])]
+    fmt = theme.get("panel_number_format") or "{}"
+    fig_loc = theme.get("panel_number_loc")  # unset -> keep bsplot's own default placement
+    font_size = theme.get("font_size")
+    letter_scale = theme.get("panel_number_scale") or _PANEL_NUMBER_SCALE
+    number_size = getattr(figure, "panel_number_size", None) or (font_size * letter_scale if font_size else None)
+    offset = [float(v) for v in (theme.get("panel_number_offset") or [])]
     reading = {key: n for n, key in enumerate(_panel_layout_order(figure))}
     seen: set[str] = set()
     for p in sorted(panels, key=lambda p: reading.get(p["key"], len(reading))):
@@ -2269,8 +2445,10 @@ def build_context(figure, base_dir, outfile: str) -> dict:
             p["letter"] = None
             p["number_kwargs"] = {}
             continue
-        p["letter"] = fmt.format(ident)
+        p["letter"] = fmt.format(letter_case(ident, theme.get("panel_number_case")))
         place = {"option": "numbers"}  # label is given verbatim, no int->letter conversion
+        if theme.get("panel_number_weight"):
+            place["fontweight"] = theme["panel_number_weight"]
         loc = p["number_loc"] or fig_loc
         if loc:  # only override placement when a corner was asked for
             # loc is a Corner enum whose str() is the corner text in both datamodel flavors.
@@ -2283,8 +2461,8 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         p["number_kwargs"] = place  # resolved here; the template just splats it
 
     # bsplot.figure.subplots kwargs, resolved here so the template just splats them.
-    style_entries = _style_entries(figure, base_dir)
-    dpi = getattr(figure, "dpi", None) or _style_dpi(style_entries)
+    style_entries = _style_entries(figure, base_dir, theme.get("style"))
+    dpi = theme.get("dpi") or _style_dpi(style_entries)
     subplots_kwargs = {"layout": layout, "dpi": dpi}
     width, height = getattr(figure, "width", None), getattr(figure, "height", None)
     if width and height:  # physical size in mm -> inches
@@ -2296,28 +2474,16 @@ def build_context(figure, base_dir, outfile: str) -> dict:
 
     # fig.savefig kwargs, resolved here so the template just splats them. Trimming re-crops to content, so it is what makes a saved figure's aspect drift from the declared w×h.
     savefig_kwargs = {"dpi": dpi}
-    if getattr(figure, "trim_margins", None) is not False:
+    rcparams = theme_rcparams(theme)
+    if theme.get("trim_margins") is not False:
         savefig_kwargs["bbox_inches"] = "tight"
-        pad = getattr(figure, "pad", None)
-        if pad is not None:
-            savefig_kwargs["pad_inches"] = float(pad)
-
-    spines = getattr(figure, "spines", None)
-    spine_rcparams = {}
-    if spines == "box":
-        spine_rcparams = {f"axes.spines.{s}": True for s in ("top", "right", "left", "bottom")}
-    elif spines == "open":
-        spine_rcparams = {"axes.spines.top": False, "axes.spines.right": False}
-    if getattr(figure, "trim_margins", None) is False:
+        if theme.get("pad") is not None:
+            savefig_kwargs["pad_inches"] = float(theme["pad"])
+    else:
         # matplotlib reads `bbox_inches=None` as "use rcParams['savefig.bbox']", which the stylesheet sets to "tight" — so the declared `trim_margins: false` only takes effect if the rcParam itself is cleared.
-        spine_rcparams = {**spine_rcparams, "savefig.bbox": None}
-    spine_rcparams = {
-        **theme_rcparams(theme),
-        **spine_rcparams,
-    }  # the theme is declared too, and a spine the figure states beats the theme's own
+        rcparams["savefig.bbox"] = None
 
-    offset = getattr(figure, "spine_offset", None)  # undeclared defers to bsplot's own offset, as the slot documents
-    format_kwargs = {} if offset is None else {"shift_left_spine": -float(offset), "shift_bottom_spine": -float(offset)}
+    rule = {slot: theme[slot] for slot in _axis_rule.SLOTS if theme.get(slot) is not None}
 
     shared = {
         axis: [[k.strip() for k in str(g).split(",") if k.strip()] for g in (getattr(figure, f"share_{axis}", None) or [])]
@@ -2337,13 +2503,17 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         "outfile": outfile,
         "panels": panels,
         "subplots_kwargs": subplots_kwargs,
-        "layout_engine": _enum_value(getattr(figure, "layout_engine", None)),
-        "spine_rcparams": spine_rcparams,
+        "layout_engine": theme.get("layout_engine"),
+        "spine_rcparams": rcparams,
         "dpi": dpi,
         "font_size": font_size,
-        "auto_format": getattr(figure, "auto_format", None) is not False,
-        "format_kwargs": format_kwargs,
-        "panel_numbers": getattr(figure, "panel_numbers", None) is not False,
+        "type_scales": type_scales(theme),
+        "rule": rule,
+        "colorbar_outline": theme.get("colorbar_outline"),
+        "exponent_as_power": theme.get("exponent_as_power")
+        is not False,  # a panel's `sci` axis is typeset unless the theme says otherwise
+        "transparent": bool(theme.get("transparent")),
+        "panel_numbers": theme.get("panel_numbers") is not False,
         "savefig_kwargs": savefig_kwargs,
         # study-shipped custom panels/transforms register when plot.py imports these
         "code_modules": [str(m) for m in (getattr(figure, "code_modules", None) or [])],
@@ -2468,6 +2638,7 @@ def _panel_descriptor(panel) -> str:
         y = getattr(enc, "y", None) if enc else None
         z = getattr(enc, "z", None) if enc else None
         mark = str(getattr(layer, "mark", None) or "")
+        shape = mark or ("" if kind == "custom" else "line")  # a custom drawer decides how an unmarked layer looks
         src, out = _used_source(getattr(layer, "used", None))
         if kind == "heatmap":
             body = f"{y or x or 'field'} as a matrix"
@@ -2477,9 +2648,9 @@ def _panel_descriptor(panel) -> str:
         elif z:
             body = f"{mark or 'trajectory'} of {y} vs {x} vs {z}"
         elif x and y:
-            body = f"{mark or 'line'} of {y} vs {x}"
+            body = f"{shape} of {y} vs {x}" if shape else f"{y} vs {x}"
         elif y or x:
-            body = f"{mark or 'line'} of {y or x}"
+            body = f"{shape} of {y or x}" if shape else f"{y or x}"
         else:
             body = cell_kind or mark or kind
         if out and mark != "rule" and out not in body:
@@ -2487,7 +2658,7 @@ def _panel_descriptor(panel) -> str:
         clauses = by_source.setdefault(src or "", [])
         if body and body not in clauses:
             clauses.append(body)
-    # A custom panel draws through registered code, so the spec holds nothing structural to say about it: its authored description is the whole clause.
+    # A custom panel with no bound layers has nothing structural to say: its authored description is the whole clause.
     return "; ".join(", ".join(c) + (f" from {s}" if s else "") for s, c in by_source.items()) or (
         "" if kind == "custom" else kind
     )
@@ -2507,6 +2678,7 @@ def compose_caption(figure, base_dir=None, *, any_value: bool = False) -> str:
     Each panel contributes ``(letter) label — <structural descriptor> <Panel.description> <caption annotations>`` in layout order, the caption annotations' numbers read from the containers under *base_dir* (:func:`_caption_annotations`), the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling's authored prose is not dropped with its letter. A sibling that authors no prose and derives no descriptor contributes nothing at all: its drawn title is a label on the figure, not a sentence in the caption. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes. With *any_value* each bound number is left as :data:`_ANY_VALUE` and each sentence a placeholder may stand in for is marked with :data:`_MAYBE`, for :func:`caption_matches`.
     """
     spec_by_key = {k: p for k, p in _items(figure.panels)}
+    case = theme_spec(figure).get("panel_number_case")  # the drawn letter's case, so `(A)` in the caption is `A` on the panel
     lead: list[str] = []
     label = getattr(figure, "label", None)
     if label:
@@ -2521,7 +2693,7 @@ def compose_caption(figure, base_dir=None, *, any_value: bool = False) -> str:
         panel = spec_by_key.get(key)
         if panel is None:
             continue
-        ident = _letter_identity(getattr(panel, "number", None), key, seen)
+        ident = letter_case(_letter_identity(getattr(panel, "number", None), key, seen), case)
         parts = [
             _sentence(getattr(panel, "label", None) or ""),
             _sentence(_panel_descriptor(panel)),

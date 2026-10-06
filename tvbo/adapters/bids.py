@@ -76,6 +76,7 @@ SPEC_SUFFIXES = {
     "study": "SimulationStudy",
     "dataset": "Dataset",
     "dataref": "DataRef",
+    "theme": "Theme",
 }
 """BIDS suffix to the tvbo class a spec fragment of that suffix declares.
 

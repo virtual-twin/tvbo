@@ -1,4 +1,4 @@
-"""``--bundle-dataset`` makes a per-subject workflow kit self-contained: it copies each enumerated subject's empirical target (sidecar + payload) into the kit, selecting the exact BIDS variant, and rewrites ``dataset.bids_root`` to a relative path that resolves against the frozen spec (like a network ``data_file``) — so the kit ships the data its fan-out consumes and nothing else, with no separate upload or ``$TVBO_BIDS_ROOT``."""
+"""A workflow kit carries its data: freezing it copies each enumerated subject's empirical target (sidecar + payload) into the kit's shared ``data/<dataset_id>/`` tree, selecting the exact BIDS variant, and rewrites ``dataset.bids_root`` to a path relative to the frozen spec (like a network ``data_file``), so the kit ships the data its fan-out consumes and nothing else, with no separate upload or ``$TVBO_BIDS_ROOT``."""
 
 from __future__ import annotations
 
@@ -95,10 +95,11 @@ def test_subject_subset_scopes_the_bundle(cohort: Path):
 
 def test_bundle_dataset_copies_and_returns_relative_root(cohort: Path, tmp_path: Path):
     exp = _fc_experiment(cohort)
-    dest = tmp_path / "kit" / "spec" / "dataset"
-    root = _wf._bundle_dataset(exp, dest, {})
+    kit = tmp_path / "kit"
+    dest = kit / "data" / "dataset"
+    root = _wf._bundle_dataset(exp, kit, kit / "spec" / "exp")
 
-    assert root == "dataset"  # relative root recorded in the frozen spec
+    assert root == "../../data/dataset"  # relative to the frozen spec's directory
     copied = sorted(p.name for p in dest.rglob("*") if p.is_file())
     assert (dest / "sub-100206").is_dir() and (dest / "sub-100307").is_dir()
     assert all("Schaefer" not in n for n in copied)
@@ -106,23 +107,21 @@ def test_bundle_dataset_copies_and_returns_relative_root(cohort: Path, tmp_path:
 
 
 def test_relative_bids_root_rebases_to_spec_dir(tmp_path: Path):
-    """A bundled kit records ``bids_root: dataset`` and resolves it against the spec file — so `tvbo run spec/exp.yaml` finds spec/dataset regardless of the working dir."""
+    """A kit records ``bids_root: ../data/<dataset_id>`` and resolves it against the spec file, so `tvbo run spec/exp.yaml` finds the kit's data regardless of the working dir."""
     spec_dir = tmp_path / "kit" / "spec"
     spec_dir.mkdir(parents=True)
-    bundled = spec_dir / "dataset"
+    bundled = tmp_path / "kit" / "data" / "dataset"
     _write_subject(bundled, "100206", "HCPMMP1")
 
-    exp = _fc_experiment("dataset", source_file=str(spec_dir / "exp.yaml"))
-    assert exp._dataset_bids_root() == bundled
+    exp = _fc_experiment("../data/dataset", source_file=str(spec_dir / "exp.yaml"))
+    assert exp._dataset_bids_root().resolve() == bundled.resolve()
     assert exp.dataset_subject_ids() == ["100206"]
 
 
-def test_no_dataset_target_bundles_nothing(tmp_path: Path, monkeypatch):
-    warned: list[str] = []
-    monkeypatch.setattr("tvbo.cli._common.warn", lambda m: warned.append(m))
+def test_no_dataset_target_bundles_nothing(tmp_path: Path):
     exp = _stub(SimpleNamespace(bids_root=None, subjects=None), {})  # no dataset-sourced obs
-    assert _wf._bundle_dataset(exp, tmp_path / "d", {}) is None
-    assert warned and "no dataset-sourced target" in warned[0]
+    assert _wf._bundle_dataset(exp, tmp_path / "kit", tmp_path / "kit" / "spec") is None
+    assert not (tmp_path / "kit" / "data").exists()
 
 
 def test_missing_payload_raises_not_silently_dropped(tmp_path: Path):
@@ -146,13 +145,36 @@ def test_directory_payload_is_copied_as_tree(tmp_path: Path):
     (subdir / f"{stem}.yaml").write_text(f"label: z\nnumber_of_nodes: 3\ndata_file: {stem}.zarr\n", encoding="utf-8")
 
     exp = _fc_experiment(root, subjects=["100206"])
-    dest = tmp_path / "kit" / "spec" / "dataset"
-    assert _wf._bundle_dataset(exp, dest, {}) == "dataset"
-    assert (dest / "sub-100206" / f"{stem}.zarr" / "0" / ".zarray").is_file()
+    kit = tmp_path / "kit"
+    assert _wf._bundle_dataset(exp, kit, kit / "spec") == "../data/dataset"
+    assert (kit / "data" / "dataset" / "sub-100206" / f"{stem}.zarr" / "0" / ".zarray").is_file()
 
 
 def test_bundle_dies_on_unresolved_selection(cohort: Path):
     """An over-tight --bundle-select (no subject has the variant) is a hard error, not a silent fallback to the machine-specific bids_root."""
     exp = _fc_experiment(cohort)
+    kit = cohort.parent / "kit"
     with pytest.raises(typer.Exit):
-        _wf._bundle_dataset(exp, cohort.parent / "kit", {"atlas": "DoesNotExist"})
+        _wf._bundle_dataset(exp, kit, kit / "spec", {"atlas": "DoesNotExist"})
+
+
+def test_experiments_reading_one_dataset_share_its_tree_and_a_conflicting_file_is_refused(cohort: Path, tmp_path: Path):
+    """Two experiments of one kit that read the same dataset land in one ``data/<dataset_id>/`` tree, the second copying only what the first did not; a file at the same place with other content stops the freeze."""
+    kit = tmp_path / "kit"
+    assert _wf._bundle_dataset(_fc_experiment(cohort, subjects=["100206"]), kit, kit / "spec" / "a") == "../../data/dataset"
+    assert _wf._bundle_dataset(_fc_experiment(cohort), kit, kit / "spec" / "b") == "../../data/dataset"
+    assert sorted(p.name for p in (kit / "data" / "dataset").iterdir()) == ["sub-100206", "sub-100307"]
+    payload = next((kit / "data" / "dataset" / "sub-100307").glob("*.h5"))
+    payload.write_bytes(b"other content")
+    with pytest.raises(typer.Exit):
+        _wf._bundle_dataset(_fc_experiment(cohort), kit, kit / "spec" / "c")
+
+
+def test_the_frozen_dataset_lists_exactly_the_fan_out():
+    """A shared tree may hold other experiments' subjects, so the frozen dataset names its own: the dataset's entries for them, or bare ones for subjects found by discovery."""
+    from tvbo.datamodel.schema import Subject
+
+    listed = {"01": Subject(subject_id="01", group="patient"), "02": Subject(subject_id="02"), "03": Subject(subject_id="03")}
+    pinned = _wf._fan_out_subjects(listed, ["03", "01"])
+    assert list(pinned) == ["03", "01"] and pinned["01"].group == "patient"
+    assert [s.subject_id for s in _wf._fan_out_subjects(None, ["07"]).values()] == ["07"]
