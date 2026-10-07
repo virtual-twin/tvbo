@@ -1,0 +1,143 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class hhcell_1(AbstractDynamics):
+    """hhcell_1 neural mass model."""
+
+    STATE_NAMES = ("v", "m", "h", "n")
+    INITIAL_STATE = (-65.0, 0.05, 0.6, 0.32)
+    AUXILIARY_NAMES = ("alpha_h", "alpha_m", "alpha_n", "beta_h", "beta_m", "beta_n")
+
+    DEFAULT_PARAMS = Bunch(
+        C=10.0,
+        E_K=-77.0,
+        E_L=-54.3,
+        E_Na=50.0,
+        g_K=360.0,
+        g_L=3.0,
+        g_Na=1200.0,
+        midpoint_ah=-65.0,
+        midpoint_am=-40.0,
+        midpoint_an=-55.0,
+        midpoint_bh=-35.0,
+        midpoint_bm=-65.0,
+        midpoint_bn=-65.0,
+        rate_ah=0.07,
+        rate_am=1.0,
+        rate_an=0.1,
+        rate_bh=1.0,
+        rate_bm=4.0,
+        rate_bn=0.125,
+        scale_ah=-20.0,
+        scale_am=10.0,
+        scale_an=10.0,
+        scale_bh=10.0,
+        scale_bm=-18.0,
+        scale_bn=-80.0,
+        thresh=20.0,
+    )
+
+    COUPLING_INPUTS = {
+        "I_syn": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        C = params.C
+        E_K = params.E_K
+        E_L = params.E_L
+        E_Na = params.E_Na
+        g_K = params.g_K
+        g_L = params.g_L
+        g_Na = params.g_Na
+        midpoint_ah = params.midpoint_ah
+        midpoint_am = params.midpoint_am
+        midpoint_an = params.midpoint_an
+        midpoint_bh = params.midpoint_bh
+        midpoint_bm = params.midpoint_bm
+        midpoint_bn = params.midpoint_bn
+        rate_ah = params.rate_ah
+        rate_am = params.rate_am
+        rate_an = params.rate_an
+        rate_bh = params.rate_bh
+        rate_bm = params.rate_bm
+        rate_bn = params.rate_bn
+        scale_ah = params.scale_ah
+        scale_am = params.scale_am
+        scale_an = params.scale_an
+        scale_bh = params.scale_bh
+        scale_bm = params.scale_bm
+        scale_bn = params.scale_bn
+
+        v = state[0]
+        m = state[1]
+        h = state[2]
+        n = state[3]
+
+        I_syn = jnp.atleast_1d(coupling.I_syn)[0] if hasattr(coupling, "I_syn") else 0.0
+
+        alpha_h = rate_ah * jnp.exp((v - midpoint_ah) / scale_ah)
+        alpha_m = (
+            rate_am
+            * (v - midpoint_am)
+            / (scale_am * (1 - jnp.exp((midpoint_am - v) / scale_am)))
+        )
+        alpha_n = (
+            rate_an
+            * (v - midpoint_an)
+            / (scale_an * (1 - jnp.exp((midpoint_an - v) / scale_an)))
+        )
+        beta_h = rate_bh / (1 + jnp.exp((midpoint_bh - v) / scale_bh))
+        beta_m = rate_bm * jnp.exp((v - midpoint_bm) / scale_bm)
+        beta_n = rate_bn * jnp.exp((v - midpoint_bn) / scale_bn)
+
+        dv_dt = (
+            (-g_Na) * m**3 * h * (v - E_Na)
+            - g_K * n**4 * (v - E_K)
+            - g_L * (v - E_L)
+            + I_syn
+        ) / C
+        dm_dt = alpha_m * (1 - m) - beta_m * m
+        dh_dt = alpha_h * (1 - h) - beta_h * h
+        dn_dt = alpha_n * (1 - n) - beta_n * n
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dv_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dv_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dm_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dh_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dn_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(alpha_h), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_m), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_n), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_h), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_m), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_n), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

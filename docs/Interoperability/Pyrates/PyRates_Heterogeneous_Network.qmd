@@ -36,7 +36,7 @@ state_variables:
     equation:
       rhs: "omega*x + a*z - z*(x**2 + z**2)"
     initial_value: 0.0
-coupling_terms:
+coupling_inputs:
   c_in: {}
 """)
 
@@ -62,7 +62,7 @@ state_variables:
     equation:
       rhs: "(v + a - b*w)/tau"
     initial_value: -0.5
-coupling_terms:
+coupling_inputs:
   c_in: {}
 """)
 
@@ -82,7 +82,7 @@ state_variables:
     equation:
       rhs: "x/mu"
     initial_value: 0.0
-coupling_terms:
+coupling_inputs:
   c_in: {}
 """)
 ```
@@ -383,7 +383,7 @@ state_variables:
       rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability (facilitation variable)"
-coupling_terms:
+coupling_inputs:
   r_in: {}
 derived_variables:
   r_eff:
@@ -411,7 +411,7 @@ state_variables:
       rhs: "(1 - x)/tau_x - k*x*r_in"
     initial_value: 1.0
     description: "Available synaptic resources"
-coupling_terms:
+coupling_inputs:
   r_in: {}
 derived_variables:
   r_eff:
@@ -442,7 +442,7 @@ state_variables:
       rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability"
-coupling_terms:
+coupling_inputs:
   r_in: {}
 derived_variables:
   r_eff:
@@ -467,7 +467,7 @@ state_variables:
     equation:
       rhs: "(-r + I_ext + r_in)/tau"
     initial_value: 0.0
-coupling_terms:
+coupling_inputs:
   r_in: {}
 """)
 

@@ -1,12 +1,14 @@
 ---
 title: "Ex20: Analog Synapses"
 description: "Graded (non-spiking) synaptic transmission via continuous projections"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Analog Synapses
 
-Three iafCells: one source driven by pulse generators, connected to two targets via
-graded (analog) synapses — a `linearGradedSynapse` and a voltage-dependent `gradedSynapse`.
+Three iafCells: one source driven by pulse generators, connected to two targets via graded (analog) synapses — a `linearGradedSynapse` and a voltage-dependent `gradedSynapse`.
 Uses `continuousProjection` with auto-generated `silentSynapse` as the pre-component.
 
 Reference: NeuroML2 LEMS_NML2_Ex20_AnalogSynapses.xml

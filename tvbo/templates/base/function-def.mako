@@ -23,6 +23,7 @@ Standalone usage (no model context):
 </%doc>
 <%!
 from tvbo.codegen import render_expression, parse_eq
+from tvbo.templates.base.utils import docstring_text
 
 # =============================================================================
 # Helper Functions (Python code block - available to all defs)
@@ -89,13 +90,7 @@ def get_equation_rhs(func):
     return None
 
 
-def get_source_code(func):
-    """Get raw source code if available."""
-    if hasattr(func, 'source_code') and func.source_code:
-        return func.source_code
-    if func.equation and hasattr(func.equation, 'pycode') and func.equation.pycode:
-        return func.equation.pycode
-    return None
+from tvbo.templates.base.utils import get_source_code
 
 
 def get_enum_text(enum_val):
@@ -177,6 +172,7 @@ def ${func.name}(${signature}):\
 
     # Build docstring
     doc = docstring or (func.description if hasattr(func, 'description') and func.description else None)
+    doc = docstring_text(doc) if doc else None
 
     args = get_func_args(func)
     params = get_func_params_with_defaults(func)
@@ -335,7 +331,7 @@ def ${func.name}(${signature}):
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
 % if use_linspace:
     t = ${np_module}.linspace(${lo}, ${hi}, ${n_samples})
@@ -387,7 +383,7 @@ def ${func.name}(${signature}):
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
 % if ts_args:
     # Secondary inputs (e.g., kernels) - extract 1D data
@@ -511,7 +507,7 @@ def ${func.name}(${signature}):
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
 % if has_indexed_agg:
     ## Expression already contains Sum/Mean with indices - printer handles it
@@ -564,7 +560,7 @@ def ${func.name}(${signature}):
 %>\
 def ${func.name}(${signature}):
 % if hasattr(func, 'description') and func.description:
-    """${func.description}"""
+    """${docstring_text(func.description)}"""
 % endif
     return ${body}
 </%def>

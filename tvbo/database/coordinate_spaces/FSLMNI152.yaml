@@ -1,0 +1,13 @@
+name: FSLMNI152
+abbreviation: FSLMNI152
+alternateName:
+    - tpl-FSLMNI152
+    - MNI152
+    - FSL_MNI152_1mm
+description: >-
+    FSL's MNI152 standard-space template (the `FSLMNI152_1mm` average distributed
+    with FSL). The reference space in which the Schaefer2018 cortical parcellations
+    are published. Distinct from the nonlinear 2009-series MNI152 variants.
+nativeUnit: mm
+anatomicalAxesOrientation: RAS
+axesOrigin: "anterior commissure"

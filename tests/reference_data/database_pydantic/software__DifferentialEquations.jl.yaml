@@ -1,0 +1,49 @@
+name: DifferentialEquations.jl
+description: A suite for numerically solving differential equations in Julia. Supports
+  ODEs, SDEs, DAEs, DDEs, and PDEs with a unified interface, high performance, and
+  extensive algorithm selection.
+homepage: https://docs.sciml.ai/DiffEqDocs/stable/
+license: MIT
+repository: https://github.com/SciML/DifferentialEquations.jl
+doi: 10.5334/jors.151
+ecosystem:
+- julia_registry
+application_category: simulation
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- framework
+programming_language:
+- Julia
+runtime_platform:
+- Julia
+- GPU
+interoperates_with:
+- NetworkDynamics.jl
+- Neuroblox.jl
+- BifurcationKit.jl
+date_created: '2017-01-01'
+development_status: active
+author:
+- Chris Rackauckas
+maintainer:
+- Chris Rackauckas
+- SciML
+funder:
+- MIT
+- Julia Computing
+reference_publication: 10.21105/joss.00615
+keywords:
+- Julia
+- ODE
+- SDE
+- DDE
+- differential equations
+- scientific computing
+same_as:
+- https://www.wikidata.org/entity/Q111486832
+issue_tracker: https://github.com/SciML/DifferentialEquations.jl/issues
+is_accessible_for_free: true

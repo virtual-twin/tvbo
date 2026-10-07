@@ -1,0 +1,260 @@
+name: PinskyRinzelCA3
+parameters:
+  iSoma:
+    name: iSoma
+    value: 0.75
+  iDend:
+    name: iDend
+    value: 0.0
+  gLs:
+    name: gLs
+    value: 0.1
+  gLd:
+    name: gLd
+    value: 0.1
+  gNa:
+    name: gNa
+    value: 30.0
+  gKdr:
+    name: gKdr
+    value: 15.0
+  gCa:
+    name: gCa
+    value: 10.0
+  gKahp:
+    name: gKahp
+    value: 0.8
+  gKC:
+    name: gKC
+    value: 15.0
+  gc:
+    name: gc
+    value: 2.1
+  eNa:
+    name: eNa
+    value: 60.0
+  eCa:
+    name: eCa
+    value: 80.0
+  eK:
+    name: eK
+    value: -75.0
+  eL:
+    name: eL
+    value: -60.0
+  pp:
+    name: pp
+    value: 0.5
+  cm:
+    name: cm
+    value: 3.0
+source: 'NeuroML2 example: Ex22_PinskyRinzel'
+derived_variables:
+  alpha_ms:
+    name: alpha_ms
+    equation:
+      rhs: Piecewise((0.32/4.0, Eq(Vs, -46.9)), (0.32*(-46.9 - Vs)/(exp((-46.9 - Vs)/4.0)
+        - 1.0), True))
+      latex: false
+    record: false
+  beta_ms:
+    name: beta_ms
+    equation:
+      rhs: Piecewise((0.28/5.0, Eq(Vs, -19.9)), (0.28*(Vs + 19.9)/(exp((Vs + 19.9)/5.0)
+        - 1.0), True))
+      latex: false
+    record: false
+  minf_s:
+    name: minf_s
+    equation:
+      rhs: alpha_ms / (alpha_ms + beta_ms)
+      latex: false
+    record: false
+  alpha_hs:
+    name: alpha_hs
+    equation:
+      rhs: 0.128*exp((-43.0 - Vs)/18.0)
+      latex: false
+    record: false
+  beta_hs:
+    name: beta_hs
+    equation:
+      rhs: 4.0 / (1.0 + exp((-20.0 - Vs)/5.0))
+      latex: false
+    record: false
+  alpha_ns:
+    name: alpha_ns
+    equation:
+      rhs: Piecewise((0.016/5.0, Eq(Vs, -24.9)), (0.016*(-24.9 - Vs)/(exp((-24.9 -
+        Vs)/5.0) - 1.0), True))
+      latex: false
+    record: false
+  beta_ns:
+    name: beta_ns
+    equation:
+      rhs: 0.25*exp(-1.0 - 0.025*Vs)
+      latex: false
+    record: false
+  alpha_sd:
+    name: alpha_sd
+    equation:
+      rhs: 1.6 / (1.0 + exp(-0.072*(Vd - 5.0)))
+      latex: false
+    record: false
+  beta_sd:
+    name: beta_sd
+    equation:
+      rhs: Piecewise((0.02/5.0, Eq(Vd, -8.9)), (0.02*(Vd + 8.9)/(exp((Vd + 8.9)/5.0)
+        - 1.0), True))
+      latex: false
+    record: false
+  alpha_cd:
+    name: alpha_cd
+    equation:
+      rhs: Piecewise((exp((Vd + 50.0)/11.0 - (Vd + 53.5)/27.0) / 18.975, Vd < -10.0),
+        (2.0*exp((-53.5 - Vd)/27.0), True))
+      latex: false
+    record: false
+  beta_cd:
+    name: beta_cd
+    equation:
+      rhs: Piecewise((2.0*exp((-53.5 - Vd)/27.0) - alpha_cd, Vd < -10.0), (0.0, True))
+      latex: false
+    record: false
+  alpha_qd:
+    name: alpha_qd
+    equation:
+      rhs: Min(0.00002*Cad, 0.01)
+      latex: false
+    record: false
+  chi_d:
+    name: chi_d
+    equation:
+      rhs: Min(Cad/250.0, 1.0)
+      latex: false
+    record: false
+  ICa_d:
+    name: ICa_d
+    equation:
+      rhs: gCa*sd**2*(Vd - eCa)
+      latex: false
+    record: false
+state_variables:
+  Vs:
+    name: Vs
+    equation:
+      rhs: (-gLs*(Vs - eL) - gNa*minf_s**2*hs*(Vs - eNa) - gKdr*ns*(Vs - eK) + gc*(Vd
+        - Vs)/pp + iSoma/pp) / cm
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -60.0
+  Vd:
+    name: Vd
+    equation:
+      rhs: (-gLd*(Vd - eL) - ICa_d - gKahp*qd*(Vd - eK) - gKC*cd*chi_d*(Vd - eK) +
+        gc*(Vs - Vd)/(1.0 - pp) + iDend/(1.0 - pp)) / cm
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -60.0
+  Cad:
+    name: Cad
+    equation:
+      rhs: -0.13*ICa_d - 0.075*Cad
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  hs:
+    name: hs
+    equation:
+      rhs: alpha_hs - (alpha_hs + beta_hs)*hs
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.999
+  ns:
+    name: ns
+    equation:
+      rhs: alpha_ns - (alpha_ns + beta_ns)*ns
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.001
+  sd:
+    name: sd
+    equation:
+      rhs: alpha_sd - (alpha_sd + beta_sd)*sd
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.009
+  cd:
+    name: cd
+    equation:
+      rhs: alpha_cd - (alpha_cd + beta_cd)*cd
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.007
+  qd:
+    name: qd
+    equation:
+      rhs: alpha_qd - (alpha_qd + 0.001)*qd
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  Si:
+    name: Si
+    equation:
+      rhs: -Si/150.0
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  Wi:
+    name: Wi
+    equation:
+      rhs: -Wi/2.0
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

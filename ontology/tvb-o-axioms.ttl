@@ -162,6 +162,8 @@ tvbo:DelayHistoryBuffer   a tvbo:BackendCapability ; rdfs:label "Delay history b
     rdfs:comment "Storage and interpolation of past states required for DDE/SDDE integration."@en .
 tvbo:StochasticSolver     a tvbo:BackendCapability ; rdfs:label "Stochastic solver"@en .
 tvbo:StiffSolver          a tvbo:BackendCapability ; rdfs:label "Stiff solver"@en .
+tvbo:SpikingSimulation    a tvbo:BackendCapability ; rdfs:label "Spiking (point-neuron) simulation"@en ;
+    rdfs:comment "Integration of point-neuron populations with threshold-reset spiking and event-delivered synapses."@en .
 
 # Backends (instances) and their task / capability declarations.
 
@@ -208,6 +210,12 @@ tvbo:BifurcationKit a tvbo:Backend ;
     rdfs:label "BifurcationKit.jl"@en ;
     tvbo:supportsTask       tvbo:NumericalContinuation, tvbo:BifurcationAnalysis ;
     tvbo:providesCapability tvbo:ContinuationSolver, tvbo:JuliaJIT .
+
+tvbo:Brian2 a tvbo:Backend ;
+    rdfs:label "Brian2"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:EventDrivenIntegration ;
+    tvbo:providesCapability tvbo:SpikingSimulation, tvbo:NumPyExecution,
+                            tvbo:CodeGeneration .
 
 #
 # ─────────────────────────────────────────────────────────────────
@@ -258,6 +266,137 @@ tvbo:ConductionSpeedInference a tvbo:SimulationTask ;
     rdfs:label   "Conduction-speed inference"@en ;
     rdfs:comment "Gradient-based optimisation or parameter exploration of conduction speed / per-edge conduction delays."@en ;
     tvbo:requiresCapability tvbo:InterpolatedDelays, tvbo:StaticDelayBuffer .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1c Graph representation (sparse vs dense connectivity).
+# ─────────────────────────────────────────────────────────────────
+#
+# The connectome can be carried for coupling evaluation either as a dense
+# adjacency (coupling cost ~ nodes^2) or as an edge list (cost ~ edges).
+# Both compute the identical coupling, so the choice is a performance
+# contract, not a numerical one — exposed as the backend-independent
+# `Network.graph_representation` slot (auto | dense | sparse). It is
+# orthogonal to whether the coupling reads delayed states (§4.1b): the two
+# binary dimensions — edge-sparsity × delay — give the four concrete backend
+# graph kinds. `auto` resolves by connection density: the sparse
+# representation wins once the adjacency is sparse enough that summing over
+# existing edges is cheaper than the dense product — a large saving for
+# large, sparsely-connected connectomes (structural connectomes, power
+# grids), a loss for small or dense networks where dense linear algebra's
+# constant factor dominates.
+
+tvbo:SparseCoupling a tvbo:BackendCapability ;
+    rdfs:label   "Sparse (edge-list) coupling evaluation"@en ;
+    rdfs:comment "Evaluate network coupling by summing over the existing edges only (cost scales with the number of edges) rather than over the full dense adjacency (cost scales with nodes-squared). Numerically identical to the dense evaluation; a pure performance optimisation for sparsely-connected networks."@en ;
+    tvbo:enabledByGraphParameter "graph_representation" ;
+    tvbo:boundConstraint "edges << nodes^2  (connection density below the backend's sparse/dense crossover)" .
+
+tvbo:DenseCoupling a tvbo:BackendCapability ;
+    rdfs:label   "Dense (full-adjacency) coupling evaluation"@en ;
+    rdfs:comment "Evaluate network coupling as a product over the full nodes-by-nodes adjacency. Preferred for densely-connected or small networks, where dense linear algebra's constant-factor efficiency outweighs its nodes-squared scaling."@en ;
+    tvbo:enabledByGraphParameter "graph_representation" .
+
+# The four concrete backend graph kinds = {dense, sparse} × {instantaneous, delayed}.
+# Sparsity is chosen by `graph_representation`; the delay axis is chosen by whether
+# any coupling carries a conduction delay (§4.1b), independently.
+tvbo:DenseGraph a owl:Class ;
+    rdfs:label "DenseGraph"@en ;
+    rdfs:comment "Dense adjacency, instantaneous coupling. Used when graph_representation resolves to dense and no coupling carries a conduction delay."@en .
+
+tvbo:SparseGraph a owl:Class ;
+    rdfs:label "SparseGraph"@en ;
+    rdfs:comment "Edge-list adjacency, instantaneous coupling. Used when graph_representation resolves to sparse and no coupling carries a conduction delay."@en .
+
+tvbo:DenseDelayGraph a owl:Class ;
+    rdfs:label "DenseDelayGraph"@en ;
+    rdfs:comment "Dense adjacency with a delay-history buffer, used when any coupling carries a conduction delay and graph_representation resolves to dense. Required for interpolated (differentiable) delays (§4.1b)."@en .
+
+tvbo:SparseDelayGraph a owl:Class ;
+    rdfs:label "SparseDelayGraph"@en ;
+    rdfs:comment "Edge-list adjacency with a delay-history buffer, used when any coupling carries a conduction delay and graph_representation resolves to sparse."@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1d Analysis observables (Analysis.type vocabulary).
+# ─────────────────────────────────────────────────────────────────
+#
+# An Analysis derives a quantity by ANALYSING something rather than by transforming
+# a recorded trajectory. What it analyses need not be a model: empirical maps, an
+# atlas or a measured connectome are analysed in exactly the same sense as a solve.
+# The schema splits this into two forms by WHERE the analysis runs, and only one of
+# them carries a vocabulary:
+#
+#   * analysing a solve — runs inside the integration, named by the free string
+#     `Analysis.type` and dispatched by the backend. That vocabulary is the
+#     AnalysisObservable concepts below; it stays open (concepts here, not a closed
+#     schema enum) so backends can extend it. Each concept is backend-independent
+#     (says what is computed, not how); a backend with no equivalent emits a comment
+#     and skips rather than raising. Named backends below currently lower the type.
+#   * analysing saved data — runs on the host over result containers or empirical
+#     inputs, named by the `callable` it invokes. It has no closed vocabulary,
+#     because the identity of such an analysis is the function plus the data it
+#     `used:`, which the study records per instance.
+
+tvbo:Analysis
+    rdfs:label   "Analysis"@en ;
+    rdfs:comment "A quantity obtained by analysing a model, its solve, a derived loss, simulated results, or empirical data — as opposed to transforming a recorded trajectory. Analysing a solve is named by Analysis.type (see AnalysisObservable); analysing saved data is named by the callable invoked over the arrays it used."@en .
+
+tvbo:AnalysisObservable a owl:Class ;
+    rdfs:label   "Analysis observable"@en ;
+    rdfs:comment "A quantity obtained by analysing the model, its solve, or a derived loss — the vocabulary of Analysis.type, i.e. the form of Analysis that runs inside the integration. Analyses of saved results or empirical data take the callable form instead and are not drawn from this vocabulary."@en .
+
+tvbo:realisedByBackend a owl:AnnotationProperty ;
+    rdfs:label   "realised by backend"@en ;
+    rdfs:comment "Backend(s) whose codegen currently lowers this analysis observable to a concrete implementation."@en .
+
+tvbo:LyapunovAnalysis a tvbo:AnalysisObservable ;
+    rdfs:label   "Lyapunov analysis"@en ;
+    rdfs:comment "Benettin QR estimate of the tangent-dynamics Lyapunov spectrum: the leading exponents lambda_i (rate of trajectory divergence, chaos when lambda_1 > 0) and, for the leading direction, the per-node Lyapunov vector xi_i (which nodes drive the instability). Parameters: n_exponents, n_steps (rescaling segments), segment_time, mode (tangent-space jvp / two-trajectory sim). Independent per operating point, so it fans out across a parameter axis."@en ;
+    tvbo:realisedByBackend "tvboptim" .
+
+tvbo:GradientAnalysis a tvbo:AnalysisObservable ;
+    rdfs:label   "Gradient analysis"@en ;
+    rdfs:comment "Autodiff (forward/reverse) gradient of a target observable or loss with respect to named parameters — the untruncated sensitivity of the full solve. Parameters: mode. Binds via target + wrt."@en ;
+    tvbo:realisedByBackend "tvboptim" .
+
+tvbo:FiniteDifferenceAnalysis a tvbo:AnalysisObservable ;
+    rdfs:label   "Finite-difference analysis"@en ;
+    rdfs:comment "Seed-averaged central finite-difference sensitivity of a target with respect to a parameter; the mean is the gradient estimate, the sem its standard error. Parameters: delta, seeds, seed_base, stat. Binds via target + wrt."@en ;
+    tvbo:realisedByBackend "tvboptim" .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1e Coupling-stage evaluation vs auxiliary-recording alignment.
+# ─────────────────────────────────────────────────────────────────
+#
+# A recorded auxiliary (a derived variable listed in `output` or flagged
+# `record: true`) is an algebraic function of the state at its recorded instant,
+# so at every sample it must equal that function of the state recorded alongside
+# it. Native multi-stage solvers (Heun, RK4) freeze the coupling once per step
+# (`coupling_evaluation: per_step`, the default), so the coupling term an
+# auxiliary sees is the step-START value — one integration step behind the
+# recorded post-step state. For an auxiliary whose equation reads a coupling
+# input, exact alignment of its state and coupling therefore requires the
+# coupling to be re-evaluated at the recorded state, i.e. `coupling_evaluation:
+# per_stage`. State-only auxiliaries are unaffected. This layer makes the
+# requirement explicit and machine-checkable, so a SimulationExperiment that
+# records a coupling-dependent auxiliary can materialise `per_stage` at
+# configure() time instead of silently recording a one-step-stale coupling.
+
+tvbo:enabledByIntegrationSlot a owl:AnnotationProperty ;
+    rdfs:label   "enabled by integration slot"@en ;
+    rdfs:comment "Name (optionally followed by ':' and the required value) of the Integration/Integrator metadata slot a SimulationExperiment must set to realise this capability; read at configure() time to materialise the slot."@en .
+
+tvbo:PerStageCouplingEvaluation a tvbo:BackendCapability ;
+    rdfs:label   "Per-stage coupling evaluation"@en ;
+    rdfs:comment "The network coupling is re-evaluated at every stage of a multi-stage integrator (a full part of the vector field) instead of being frozen once per step. Backend-independent numerical contract carried by `Integration.coupling_evaluation: per_stage` (tvboptim maps this to recompute_coupling_per_stage=True; diffrax recomputes the whole RHS per stage regardless)."@en ;
+    tvbo:enabledByIntegrationSlot "coupling_evaluation:per_stage" .
+
+tvbo:CouplingDependentAuxiliaryRecording a tvbo:SimulationTask ;
+    rdfs:label   "Coupling-dependent auxiliary recording"@en ;
+    rdfs:comment "Recording (via `output` or `record: true`) a derived/auxiliary variable whose equation reads a coupling input, with the auxiliary aligned to the state it is recorded alongside. Under the default per-step (frozen) coupling the recorded auxiliary carries the step-start coupling — one integration step behind the recorded post-step state — so exact state/coupling alignment requires per-stage coupling evaluation."@en ;
+    tvbo:requiresCapability tvbo:PerStageCouplingEvaluation .
 
 #
 # ─────────────────────────────────────────────────────────────────
@@ -318,17 +457,11 @@ tvbo:Chaotic      a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:labe
 tvbo:Quiescent    a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Quiescent"@en .
 tvbo:Bursting     a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Bursting"@en .
 
-# Bifurcation classes.
-tvbo:SaddleNode             a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Saddle-node"@en .
-tvbo:Hopf                   a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Hopf"@en .
-tvbo:SubcriticalHopf        a owl:Class ; rdfs:subClassOf tvbo:Hopf ;        rdfs:label "Subcritical Hopf"@en .
-tvbo:SupercriticalHopf      a owl:Class ; rdfs:subClassOf tvbo:Hopf ;        rdfs:label "Supercritical Hopf"@en .
-tvbo:Pitchfork              a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Pitchfork"@en .
-tvbo:Transcritical          a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Transcritical"@en .
-tvbo:HomoclinicBifurcation  a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Homoclinic"@en .
-tvbo:FoldOfLimitCycles      a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Fold of limit cycles"@en .
-tvbo:PeriodDoubling         a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Period doubling"@en .
-tvbo:BogdanovTakens         a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Bogdanov-Takens"@en .
+# Bifurcation type taxonomy (Fold/SaddleNode, BranchPoint, Hopf, PeriodDoubling,
+# NeimarkSacker, codim-2 organising centres, ...) is defined — with codimension /
+# eigenvalue-signature / branch-geometry axioms and backend label anchoring — in the
+# dedicated module `ontology/tvb-o-bifurcation.ttl`, merged alongside this file.
+# The parent `tvbo:Bifurcation` class remains declared above (§ DynamicalProperty).
 
 # Attractor classes.
 tvbo:FixedPoint       a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Fixed point"@en .

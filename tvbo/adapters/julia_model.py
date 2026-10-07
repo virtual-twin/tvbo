@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
 """Prepared codegen context for the Julia model templates.
 
-The Julia backends (DifferentialEquations.jl, NetworkDynamics.jl, ModelingToolkit.jl)
-share the same *metadata → Julia* translation logic: which state variables/parameters
-become symbols, which optional packages are needed, how conditional derived variables
-fold into ``ifelse``, and how multi-mode models lay their state out along a mode axis.
+The Julia backends (DifferentialEquations.jl, NetworkDynamics.jl, ModelingToolkit.jl) share the same *metadata → Julia* translation logic: which state variables/parameters become symbols, which optional packages are needed, how conditional derived variables fold into ``ifelse``, and how multi-mode models lay their state out along a mode axis.
 
-This module owns that logic so the Mako templates stay slim — they only emit syntax
-from the dict returned by :func:`build_model_context` (and the small helpers here).
+This module owns that logic so the Mako templates stay slim — they only emit syntax from the dict returned by :func:`build_model_context` (and the small helpers here).
 Mirrors the "resolve in Python, not Mako" convention used by the other adapters.
 """
 
@@ -15,29 +10,122 @@ from __future__ import annotations
 
 import re
 
+from tvbo.adapters.base import dense_matrix
 from tvbo.codegen import render_expression
+from tvbo.parse.expression import parse_eq, states_an_expression
+from tvbo.utils import initial_value
 
-# Solver name → the minimal OrdinaryDiffEq sub-package that provides it. Splitting
-# out the umbrella package keeps Julia precompilation cheap / avoids Bus errors.
+JULIA_SOLVERS = {
+    "Euler": "Euler",
+    "Heun": "Heun",
+    "RungeKutta4thOrder": "RK4",
+    "Dopri5": "DP5",
+    "Dopri853": "DP8",
+    "VODE": "VCABM",
+    "Identity": "FunctionMap",
+    "Tsit5": "Tsit5",
+}
+"""Every canonical integration method (`tvbo.utils.INTEGRATION_METHODS`) → the DifferentialEquations.jl solver that integrates by it.
+
+``VODE`` is SciPy's variable-coefficient solver, whose default method is Adams; ``VCABM`` is DifferentialEquations.jl's variable-coefficient Adams-Bashforth-Moulton. ``Identity`` is the map ``X_{t+1} = f(X_t)``, which ``FunctionMap`` steps on the same right-hand side.
+"""
+
 JULIA_SOLVER_PACKAGES = {
     "Tsit5": "OrdinaryDiffEqTsit5",
     "AutoTsit5": "OrdinaryDiffEqTsit5",
-    "DP5": "OrdinaryDiffEqTsit5",
+    "DP5": "OrdinaryDiffEqLowOrderRK",
     "Heun": "OrdinaryDiffEqLowOrderRK",
     "Euler": "OrdinaryDiffEqLowOrderRK",
     "Midpoint": "OrdinaryDiffEqLowOrderRK",
     "RK4": "OrdinaryDiffEqLowOrderRK",
     "BS3": "OrdinaryDiffEqLowOrderRK",
+    "DP8": "OrdinaryDiffEqHighOrderRK",
+    "VCABM": "OrdinaryDiffEqAdamsBashforthMoulton",
+    "FunctionMap": "OrdinaryDiffEqFunctionMap",
     "Vern7": "OrdinaryDiffEqVerner",
     "Rodas5": "OrdinaryDiffEqRosenbrock",
     "TRBDF2": "OrdinaryDiffEqSDIRK",
 }
+"""DifferentialEquations.jl solver → the minimal OrdinaryDiffEq sub-package that exports it; the umbrella package is the fallback. Loading a sub-package rather than the umbrella keeps Julia precompilation cheap."""
+
+
+JULIA_SDE_SOLVERS = {
+    "Euler": "EM",
+    "Heun": "EulerHeun",
+}
+"""The canonical integration methods with a StochasticDiffEq.jl counterpart → that solver. Under additive noise ``EM`` (Euler–Maruyama) is the Euler step with the noise increment added, and ``EulerHeun`` is Heun's predictor-corrector with the increment added to both stages, TVB's ``EulerStochastic`` and ``HeunStochastic``."""
+
+
+def julia_sde_solver(method) -> str:
+    """The StochasticDiffEq.jl solver that integrates a stochastic network by *method*: `JULIA_SDE_SOLVERS`'s for a canonical method, else *method* itself, a solver the recipe names for this backend (``SOSRA``, ``SRIW1``) and handed to ``solve`` unchanged.
+
+    Raises:
+        ValueError: *method* is a canonical method with no stochastic counterpart in StochasticDiffEq.jl.
+    """
+    from tvbo.utils import integration_method
+
+    canonical = integration_method(method, strict=False)
+    if canonical is None:
+        return str(method)
+    if canonical not in JULIA_SDE_SOLVERS:
+        raise ValueError(
+            f"integration method {method!r} ({canonical}) has no stochastic counterpart in StochasticDiffEq.jl, and the network declares noise. "
+            f"Declare {' or '.join(f'{m} ({s})' for m, s in JULIA_SDE_SOLVERS.items())}, or name a StochasticDiffEq.jl solver."
+        )
+    return JULIA_SDE_SOLVERS[canonical]
+
+
+def julia_solver(method) -> str:
+    """The DifferentialEquations.jl solver that integrates by *method*: `JULIA_SOLVERS`'s for a canonical method, else *method* itself.
+
+    A spelling tvbo does not know is a solver the recipe names for this backend (``AutoTsit5``, ``Rodas5``) and is handed to ``solve`` unchanged.
+    """
+    from tvbo.utils import integration_method
+
+    canonical = integration_method(method, strict=False)
+    return JULIA_SOLVERS[canonical] if canonical else str(method)
+
 
 # Elementary functions that require ``using SpecialFunctions`` in Julia.
 JULIA_SPECIAL_FUNCTIONS = (
-    "erf", "erfc", "erfi", "erfcx", "lgamma", "digamma",
-    "beta", "lbeta", "besselj", "bessely", "besseli", "gamma",
+    "erf",
+    "erfc",
+    "erfi",
+    "erfcx",
+    "lgamma",
+    "digamma",
+    "beta",
+    "lbeta",
+    "besselj",
+    "bessely",
+    "besseli",
+    "gamma",
 )
+
+
+def julia_solve(model, integration=None, dt=0.01) -> dict:
+    """How the DifferentialEquations.jl script solves *model* under *integration* at step *dt*.
+
+    ``stochastic`` is whether a state variable has a positive noise amplitude (read through `noise_sigma`); ``solver`` is the integration's method (`julia_sde_solver` or `julia_solver`; the schema's default where the integration declares none), or ``EulerHeun`` / ``Tsit5`` for a bare model with no integration; ``package`` exports it; ``kwargs`` are the `solve` keywords, where a fixed-step solver is handed the declared step and told not to adapt it.
+    """
+    from tvbo.adapters.base import BaseAdapter
+    from tvbo.utils import noise_sigma
+
+    method = BaseAdapter.declared_integration(integration, "method") if integration is not None else None
+    stochastic = any(
+        (noise_sigma(getattr(sv, "noise", None)) or 0.0) > 0 for sv in getattr(model, "state_variables", {}).values()
+    )
+    if stochastic:
+        solver = julia_sde_solver(method) if method else "EulerHeun"
+        return {"stochastic": True, "solver": solver, "package": "StochasticDiffEq", "kwargs": f"dt={dt}, saveat={dt}"}
+    solver = julia_solver(method) if method else "Tsit5"
+    fixed = method is not None and BaseAdapter.is_fixed_step(method)
+    return {
+        "stochastic": False,
+        "solver": solver,
+        "package": julia_ode_package(solver),
+        "kwargs": f"dt={dt}, adaptive=false, saveat={dt}" if fixed else f"saveat={dt}",
+    }
 
 
 def julia_ode_package(solver_method) -> str:
@@ -48,83 +136,225 @@ def julia_ode_package(solver_method) -> str:
 def symbol_names(model):
     """Return ``(sv, params, coupling, derived_vars, derived_params)`` name lists.
 
-    These are exactly the names the Julia expression printer must treat as bare
-    symbols rather than trying to resolve.
+    These are exactly the names the Julia expression printer must treat as bare symbols rather than trying to resolve.
     """
     sv = list(model.state_variables.keys())
     params = list((model.parameters or {}).keys())
-    coupling = list((model.coupling_terms or {}).keys()) if model.coupling_terms else []
-    derived_vars = list((getattr(model, "derived_variables", None) or {}).keys())
-    derived_params = list((getattr(model, "derived_parameters", None) or {}).keys())
+    coupling = list((model.coupling_inputs or {}).keys())
+    derived_vars = list(model.in_dependency_order("derived_variables"))
+    derived_params = list(model.in_dependency_order("derived_parameters"))
     return sv, params, coupling, derived_vars, derived_params
 
 
+def parse_namespace(model) -> dict:
+    """How this model's equations parse, as keyword arguments for `parse_eq`.
+
+    Both flavours of model reach this adapter, the runtime `Dynamics` in `tvbo.classes` and the generated one a heterogeneous node's inline dynamics is, and both carry the symbolic layer, so each is parsed against the table its own equations were.
+    """
+    return {"local_dict": model.get_symbolic_elements()}
+
+
 def equation_rhs_text(model) -> str:
-    """Concatenated RHS text of all SV / derived-variable / derived-parameter equations.
+    """Concatenated text of every SV / derived-variable / derived-parameter equation.
 
-    Used to sniff which optional Julia packages the emitted model needs.
+    Used to sniff which optional Julia packages the emitted model needs. Resolved through the parser rather than read off `.rhs`, because an equation stated purely as conditional branches has no `rhs` to read: the sniff would see `"None"`, miss the `Piecewise` it contains, and emit a model that uses NaNMath without importing it.
     """
-    parts = []
-    for sv in model.state_variables.values():
-        parts.append(str(sv.equation.rhs))
-    for dv in (getattr(model, "derived_variables", None) or {}).values():
-        parts.append(str(dv.equation.rhs))
-    for dp in (getattr(model, "derived_parameters", None) or {}).values():
-        parts.append(str(dp.equation.rhs))
-    return " ".join(parts)
-
-
-def needs_special_functions(model) -> bool:
-    """True if any equation calls a SpecialFunctions.jl function (erf, gamma, …)."""
-    rhs = equation_rhs_text(model)
-    return any(re.search(rf"\b{fn}\s*\(", rhs) for fn in JULIA_SPECIAL_FUNCTIONS)
-
-
-def needs_nanmath(model) -> bool:
-    """True if any equation contains a ``Piecewise``.
-
-    The Julia printer routes domain-restricted powers inside Piecewise branches
-    through NaNMath (NaN instead of DomainError, matching numpy/JAX), so those
-    models must ``import NaNMath``.
-    """
-    return "Piecewise" in equation_rhs_text(model)
-
-
-def build_ifelse(cases, render) -> str:
-    """Fold a list of conditional ``cases`` into nested Julia ``ifelse(...)`` calls.
-
-    ``render`` turns an equation RHS into a Julia expression string. A case whose
-    condition is ``true`` (or the final case) becomes the else branch.
-    """
-    if len(cases) == 1:
-        return render(cases[0].equation.rhs)
-    first = cases[0]
-    cond = str(first.condition).strip()
-    if cond.lower() == "true":
-        return render(first.equation.rhs)
-    return f"ifelse({cond}, {render(first.equation.rhs)}, {build_ifelse(cases[1:], render)})"
-
-
-def make_renderer(model, fmt="julia"):
-    """Return an ``expr -> str`` renderer bound to this model's symbol table."""
-    sv, params, coupling, dvars, dparams = symbol_names(model)
-    all_symbols = sv + params + coupling + dvars + dparams
-    func_names = {str(f): str(f) for f in (getattr(model, "functions", None) or {})}
-    return lambda expr: render_expression(
-        expr, format=fmt, parameters=all_symbols, user_functions=func_names
+    namespace = parse_namespace(model)
+    collections = (model.state_variables, model.derived_variables, model.derived_parameters)
+    return " ".join(
+        str(parse_eq(element.equation, **namespace))
+        for collection in collections
+        for element in collection.values()
+        if states_an_expression(element.equation)
     )
 
 
-def build_model_context(model) -> dict:
+def needs_special_functions(rhs_text: str) -> bool:
+    """True if *rhs_text*, a model's `equation_rhs_text`, calls a SpecialFunctions.jl function (erf, gamma, …)."""
+    return any(re.search(rf"\b{fn}\s*\(", rhs_text) for fn in JULIA_SPECIAL_FUNCTIONS)
+
+
+def needs_nanmath(rhs_text: str) -> bool:
+    """True if *rhs_text*, a model's `equation_rhs_text`, contains a ``Piecewise``.
+
+    The Julia printer routes domain-restricted powers inside Piecewise branches through NaNMath (NaN instead of DomainError, matching numpy/JAX), so those models must ``import NaNMath``.
+    """
+    return "Piecewise" in rhs_text
+
+
+def julia_tuple_items(items) -> str:
+    """*items* joined as the inside of a Julia tuple, with the trailing comma a one-element tuple needs."""
+    items = list(items)
+    return ", ".join(items) + ("," if len(items) == 1 else "")
+
+
+def make_renderer(model, fmt="julia"):
+    """Return a renderer bound to this model's symbol table.
+
+    Takes an `Equation` as readily as an expression or a string, resolving it through the one parser, so a caller never has to know whether the equation states itself as a right-hand side or as conditional branches. Reaching for `.rhs` at the call site works only for the first kind and yields `None` for the second.
+    """
+    sv, params, coupling, dvars, dparams = symbol_names(model)
+    all_symbols = sv + params + coupling + dvars + dparams
+    func_names = {str(f): str(f) for f in (model.functions)}
+    namespace = parse_namespace(model)
+
+    def render(equation):
+        return render_expression(
+            parse_eq(equation, **namespace),
+            format=fmt,
+            parameters=all_symbols,
+            user_functions=func_names,
+        )
+
+    return render
+
+
+def _shared_parts(model, jl) -> dict:
+    """The context both model-function layouts build alike: the model's functions, derived parameters and derived variables rendered through *jl*, and the optional Julia packages its equations need, sniffed from one `equation_rhs_text`."""
+    rhs_text = equation_rhs_text(model)
+    return {
+        "func_name": model.name,
+        "needs_special": needs_special_functions(rhs_text),
+        "needs_nanmath": needs_nanmath(rhs_text),
+        "functions": [(str(name), [str(a) for a in f.arguments], jl(f.equation)) for name, f in model.functions.items()],
+        "derived_params": [(dp.name, jl(dp.equation)) for dp in model.in_dependency_order("derived_parameters").values()],
+        "derived_vars": [(dv.name, jl(dv.equation)) for dv in model.in_dependency_order("derived_variables").values()],
+    }
+
+
+def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
+    """Network-coupled variant of :func:`build_model_context` (loop-based RHS).
+
+    State is ``n_nodes`` blocks per state variable (block ``k`` spans indices ``k*N+1 .. (k+1)*N``). Each long-range coupling term becomes a connectivity matvec evaluated once per step (``_coup_<c> = W_NET · s_view``); the per-node scalar RHS (the same expressions the single-node emitter produces) runs inside a ``for i in 1:N`` loop. ``local`` coupling inputs are zero in a region sim.
+
+    ``constraints`` promotes constraint-defined free parameters (e.g. the FIC ``J_i``) from parameters to extra unknown STATE blocks, appended after the real state. Each block's defining equation is the ``TuningObjective`` residual (``target_variable − target_value``), not an ODE: at equilibrium the residual is zero so the constraint holds, and during the initial-state warm-up the same residual is stabilising negative feedback (``target_variable`` ↑ ⇒ free param ↑ ⇒ inhibition ↑ ⇒ ``target_variable`` ↓), so no separate solver is needed. This is the FIC branch of Deco 2014 Fig 2c. See ``DEV_PLAN_recipe_native.md`` (D2).
+    Each constraint is ``{"parameter", "target_variable", "target_value"}``.
+    """
+    sv, params, coupling, _dvars, _dparams = symbol_names(model)
+    jl = make_renderer(model, "julia")
+    arg_x = "_x" if "x" in sv else "x"
+
+    constraints = list(constraints or [])
+    free_names = {c["parameter"] for c in constraints}
+
+    # Connectivity matrix as a Julia literal (rows ';'-separated).
+    W = dense_matrix(network, "weight")
+    if W is None or W.shape != (n_nodes, n_nodes):
+        raise ValueError(f"weight matrix shape {None if W is None else W.shape} != ({n_nodes}, {n_nodes})")
+    w_const = "[" + ";\n ".join(" ".join(repr(float(v)) for v in row) for row in W) + "]"
+
+    # Coupling source = the state variable flagged coupling_variable (fallback: sv[0]).
+    csv_k = 0
+    for k, s in enumerate(model.state_variables.values()):
+        if getattr(s, "coupling_variable", False):
+            csv_k = k
+            break
+    csv_lo, csv_hi = csv_k * n_nodes + 1, (csv_k + 1) * n_nodes
+
+    # Per coupling term: local → 0.0 per node; long-range → W·s matvec once + gather.
+    cinputs = model.coupling_inputs
+    coupling_pre, coupling_body = [], []
+    for c in coupling:
+        ci = cinputs.get(c) if hasattr(cinputs, "get") else None
+        if ci is not None and bool(getattr(ci, "local", False)):
+            coupling_body.append(f"{c} = 0.0")
+        else:
+            coupling_pre.append(f"_coup_{c} = W_NET * (@view {arg_x}[{csv_lo}:{csv_hi}])")
+            coupling_body.append(f"{c} = _coup_{c}[i]")
+
+    # Per-node state unpack and derivative LHS (block index k*N + i; k=0 ⇒ i).
+    unpack, dfun = [], []
+    for k, (name, s) in enumerate(model.state_variables.items()):
+        idx = "i" if k == 0 else f"{k * n_nodes} + i"
+        unpack.append(f"{name} = {arg_x}[{idx}]")
+        dfun.append((f"dx[{idx}] =", jl(s.equation)))
+
+    shared = _shared_parts(model, jl)
+
+    # A per-node parameter becomes a `<name>_vec` gathered at the top of the loop; scalars stay scalar.
+    pval_parts, destructure_names, pernode_gather = [], [], []
+    for p in model.parameters.values():
+        if p.name in free_names:
+            continue  # promoted to an unknown state block below (constraint-defined)
+        v = p.value
+        is_pernode = hasattr(v, "__len__") and not isinstance(v, str) and len(v) == n_nodes
+        if is_pernode:
+            vec = "[" + ", ".join(repr(float(x)) for x in v) + "]"
+            pval_parts.append(f"{p.name}_vec = {vec}")
+            destructure_names.append(f"{p.name}_vec")
+            pernode_gather.append(f"{p.name} = {p.name}_vec[i]")
+        else:
+            pval_parts.append(f"{p.name} = {v}")
+            destructure_names.append(p.name)
+
+    u0 = []
+    for s in model.state_variables.values():
+        u0.extend([initial_value(s)] * n_nodes)
+
+    # Recorded along the branch: every state variable plus any derived variable in ``output``, each reduced across nodes to a max and a mean.
+    dv_names = {name for name, _ in shared["derived_vars"]}
+    record_obs = list(sv)
+    for o in [str(o) for o in (model.output)]:
+        if o in dv_names and o not in record_obs:
+            record_obs.append(o)
+
+    # Constraint-defined free parameters, appended after the state blocks with a residual dfun.
+    n_sv = len(model.state_variables)
+    for j, c in enumerate(constraints):
+        pname, tv, tval = c["parameter"], str(c["target_variable"]), float(c["target_value"])
+        idx = f"{(n_sv + j) * n_nodes} + i"  # block after the real state (always ≥ 1)
+        unpack.append(f"{pname} = {arg_x}[{idx}]")
+        # Defining equation: residual → 0. Rendered through the sympy printer (like every other dfun rhs) rather than string-formatted, for consistent emission.
+        dfun.append((f"dx[{idx}] =", jl(f"{tv} - {tval}")))
+        pv = model.parameters[pname].value
+        if hasattr(pv, "__len__") and not isinstance(pv, str) and len(pv) == n_nodes:
+            u0.extend([float(x) for x in pv])
+        else:
+            u0.extend([(float(pv) if pv is not None and not hasattr(pv, "__len__") else 1.0)] * n_nodes)
+        for name in (pname, tv):
+            if name not in record_obs:
+                record_obs.append(name)
+
+    return {
+        **shared,
+        "arg_x": arg_x,
+        "destructure_names": destructure_names,
+        "destructure": julia_tuple_items(destructure_names),
+        "unpack": unpack,
+        "dfun": dfun,
+        "param_values": julia_tuple_items(pval_parts),
+        "u0": u0,
+        "n_modes": 1,
+        "network_mode": True,
+        "n_nodes": n_nodes,
+        "w_const": w_const,
+        "coupling_pre": coupling_pre,
+        "coupling_body": coupling_body,
+        "pernode_gather": pernode_gather,
+        "record_obs": record_obs,
+    }
+
+
+def build_model_context(model, network=None, constraints=None) -> dict:
     """Build the full DifferentialEquations.jl model-function context.
 
-    Everything the ``tvbo-julia-model.jl.mako`` / ``tvbo-julia-ODEProblem.jl.mako``
-    templates need is pre-rendered here so those templates only emit syntax.
+    Everything the ``tvbo-julia-model.jl.mako`` / ``tvbo-julia-ODEProblem.jl.mako`` templates need is pre-rendered here so those templates only emit syntax.
 
-    Multi-mode models (``number_of_modes > 1``) lay each state variable out as a
-    contiguous length-n_modes block, so the dfun operates on per-mode vectors and
-    writes vector slices (``dx[lo:hi] .= …``); scalar models keep the flat layout.
+    Multi-mode models (``number_of_modes > 1``) lay each state variable out as a contiguous length-n_modes block, so the dfun operates on per-mode vectors and writes vector slices (``dx[lo:hi] .= …``); scalar models keep the flat layout.
+
+    When ``network`` is supplied (a multi-node ``Network``), the model is emitted as a coupled network: the state is laid out as ``n_nodes`` blocks per state variable, each long-range coupling term becomes a connectivity matvec (``c = W · s_coupling``) evaluated once per step, and the per-node scalar RHS runs inside a ``for i in 1:N`` loop — reusing the single-node equation emission verbatim (no vectorised broadcasting). This is the vector field a whole-brain equilibrium/periodic-orbit continuation (e.g. Deco 2014 Fig 2c) continues in G.
     """
+    n_nodes = int(getattr(network, "number_of_nodes", 0) or 0) if network is not None else 0
+    if n_nodes > 1:
+        return _build_network_context(model, network, n_nodes, constraints=constraints)
+
+    if constraints:
+        # Constraint-defined free params (FIC J_i) are only implemented for the coupled network path; silently ignoring them here would emit an untuned (wrong) branch. Fail loudly instead.
+        raise NotImplementedError(
+            "Constraint-defined free parameters (e.g. FIC J_i) require a multi-node "
+            "network continuation; single-node constraint continuation is not implemented."
+        )
+
     sv, params, coupling, _dvars, _dparams = symbol_names(model)
     jl = make_renderer(model, "julia")
 
@@ -137,7 +367,7 @@ def build_model_context(model) -> dict:
     unpack = []
     dfun = []
     for i, (name, s) in enumerate(model.state_variables.items()):
-        rhs = jl(s.equation.rhs)
+        rhs = jl(s.equation)
         if n_modes > 1:
             lo, hi = i * n_modes + 1, (i + 1) * n_modes
             unpack.append(f"{name} = @view {arg_x}[{lo}:{hi}]")
@@ -150,51 +380,27 @@ def build_model_context(model) -> dict:
         else:
             unpack = [f"{', '.join(sv)} = {arg_x}"]
 
-    # Custom functions (e.g. Sigm): (name, [args], body).
-    functions = []
-    for fname, fdef in (getattr(model, "functions", None) or {}).items():
-        fargs = [str(name) for name in fdef.arguments]
-        functions.append((str(fname), fargs, jl(fdef.equation.rhs)))
-
-    # Derived parameters and derived variables (conditional ones folded to ifelse).
-    derived_params = [
-        (dp.name, jl(dp.equation.rhs))
-        for dp in (getattr(model, "derived_parameters", None) or {}).values()
-    ]
-    derived_vars = []
-    for dv in (getattr(model, "derived_variables", None) or {}).values():
-        if getattr(dv, "conditional", False) and getattr(dv, "cases", None):
-            derived_vars.append((dv.name, build_ifelse(list(dv.cases), jl)))
-        else:
-            derived_vars.append((dv.name, jl(dv.equation.rhs)))
-
     # `p = (...)` parameter tuple (coupling terms default to 0.0 for single-node).
     pval_parts = [f"{p.name} = {p.value}" for p in model.parameters.values()]
     pval_parts += [f"{c} = 0.0" for c in coupling]
-    param_values = ", ".join(pval_parts) + ("," if len(pval_parts) == 1 else "")
 
     # NamedTuple destructuring on the parameter struct.
     destructure_names = params + coupling
-    destructure = ", ".join(destructure_names) + ("," if len(destructure_names) == 1 else "")
 
     # Initial conditions, mode-expanded (each SV repeated n_modes times).
     u0 = []
     for s in model.state_variables.values():
         for _ in range(n_modes if n_modes > 1 else 1):
-            u0.append(s.initial_value)
+            u0.append(initial_value(s))
 
     return {
-        "func_name": model.name,
+        **_shared_parts(model, jl),
         "arg_x": arg_x,
-        "destructure": destructure,
-        "needs_special": needs_special_functions(model),
-        "needs_nanmath": needs_nanmath(model),
-        "functions": functions,
-        "derived_params": derived_params,
-        "derived_vars": derived_vars,
+        "destructure_names": destructure_names,
+        "destructure": julia_tuple_items(destructure_names),
         "unpack": unpack,
         "dfun": dfun,
-        "param_values": param_values,
+        "param_values": julia_tuple_items(pval_parts),
         "u0": u0,
         "n_modes": n_modes,
     }

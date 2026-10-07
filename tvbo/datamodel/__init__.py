@@ -1,6 +1,5 @@
-"""
-TVB-O Data Model
-================
+"""TVB-O Data Model.
+
 Auto-generated from LinkML schema.
 
 Usage:
@@ -10,28 +9,17 @@ Usage:
 
 from tvbo.datamodel.schema import Network  # noqa: E402
 
-# number_of_regions is a deprecated alias for number_of_nodes.
-# Defined here (not in the generated file) so it survives make gen-linkml.
+# Defined here rather than in the generated file, so it survives `make gen-linkml`.
 Network.number_of_regions = property(
     lambda self: self.number_of_nodes,
     lambda self, v: setattr(self, "number_of_nodes", v),
 )
 
-from .schema import *  # noqa: E402, F401, F403
-
-# ── UnitEnum: normalize aliases on construction ──────────────────────
-# The auto-generated __post_init__ has two coercion patterns:
-#   self.unit = UnitEnum(raw_string)              — constructor
-#   self.distance_unit = getattr(UnitEnum, text)  — attribute access
-#
-# Problems: (1) constructor rejects human-readable aliases ("s^-1"),
-#           (2) getattr returns PermissibleValue, not UnitEnum, which
-#               breaks on as_dict() round-trips (JAX tree_unflatten).
-#
-# Fix: patch __init__ to coerce any input to a canonical string key.
-
+# Patched to canonicalise any input: the generated coercions reject aliases and leak PermissibleValue.
 from tvbo.datamodel.schema import UnitEnum as _UnitEnum  # noqa: E402
 from tvbo.utils.units import normalize_unit as _normalize_unit  # noqa: E402
+
+from .schema import *  # noqa: E402, F401, F403
 
 # Register slash-notation aliases (mm/ms → mm_per_ms) so both work in YAML
 for _alias, _canon in {
@@ -83,11 +71,7 @@ def _unit_enum_init(self, code):
 
 _UnitEnum.__init__ = _unit_enum_init
 
-# Patch metaclass so getattr(UnitEnum, "mm") returns a UnitEnum instance
-# instead of a bare PermissibleValue. The auto-generated __post_init__
-# uses `self.distance_unit = getattr(UnitEnum, self.distance_unit)`.
-# Without this patch, that stores a PermissibleValue which as_dict()
-# serializes to a huge dict that becomes an unparseable JsonObj on round-trip.
+# So `getattr(UnitEnum, "mm")` yields a UnitEnum, not a PermissibleValue that as_dict() blows up.
 _UnitEnumMeta = type(_UnitEnum)
 _meta_orig_getattribute = _UnitEnumMeta.__getattribute__
 
@@ -112,10 +96,60 @@ def _unit_meta_getattribute(cls, item):
 
 _UnitEnumMeta.__getattribute__ = _unit_meta_getattribute
 
+
+def _canonicalize_unit_slot(cls):
+    """Give the open ``unit`` slot the canonical spelling of a curated unit.
+
+    That slot's range is open — ``UnitEnum`` or a bare string — so a unit nobody
+    has curated is recorded as the author wrote it. Being open also takes it off
+    LinkML's enum path, which is where a curated alias used to become its one
+    canonical spelling, so without this ``mV/ms`` and ``mV_per_ms`` would both
+    reach the published record as if they were different units. An uncurated unit
+    still passes through untouched: `normalize_unit` answers ``None`` for it.
+    """
+    original = cls.__post_init__
+
+    def __post_init__(self, *args, **kwargs):
+        original(self, *args, **kwargs)
+        if self.unit is not None:
+            text = _unit_text(self.unit)
+            self.unit = _normalize_unit(text) or text
+
+    cls.__post_init__ = __post_init__
+
+
+def _open_unit_slot_classes():
+    """Generated classes declaring the shared open ``unit`` slot.
+
+    Read off the generated annotation rather than listed by hand, so a class that
+    gains the slot later is covered without anyone remembering to add it.
+    ``ToolUnit.unit`` is a class-scoped key and is annotated as such, which keeps
+    it out: it names a unit in a *tool's* vocabulary, where ``mM`` and
+    ``mol_per_m3`` are separate entries answering different questions.
+    """
+    import dataclasses
+    import typing
+
+    from tvbo.datamodel import schema as _schema
+
+    for obj in vars(_schema).values():
+        if not (isinstance(obj, type) and dataclasses.is_dataclass(obj)):
+            continue
+        if obj.__module__ != _schema.__name__:
+            continue
+        for field in dataclasses.fields(obj):
+            if field.name == "unit" and field.type == (str | None):
+                yield obj
+
+
+for _unit_bearing in _open_unit_slot_classes():
+    _canonicalize_unit_slot(_unit_bearing)
+
 # Backward-compat aliases for old module names
 import sys
-from tvbo.datamodel import schema as tvbo_datamodel  # noqa: E402, F401
+
 from tvbo.datamodel import pydantic as tvbopydantic  # noqa: E402, F401
+from tvbo.datamodel import schema as tvbo_datamodel  # noqa: E402, F401
 
 sys.modules["tvbo.datamodel.tvbo_datamodel"] = tvbo_datamodel
 sys.modules["tvbo.datamodel.tvbopydantic"] = tvbopydantic

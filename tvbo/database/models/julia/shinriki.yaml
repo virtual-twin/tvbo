@@ -31,7 +31,6 @@ derived_variables:
       lhs: Vnl
       rhs: 0.00002295*(exp(3.0038*(v1 - v2)) - exp(-3.0038*(v1 - v2)))
       latex: false
-    conditional: false
 description: |-
   Shinriki oscillator (stiff chaotic electronic circuit) with exponential nonlinearity.
   All parameters except R1 fixed to canonical literature values.

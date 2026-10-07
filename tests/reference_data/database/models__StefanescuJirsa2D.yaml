@@ -1,0 +1,286 @@
+name: StefanescuJirsa2D
+iri: tvbo:StefanescuJirsa2D
+parameters:
+  tau:
+    name: tau
+    definition: Timescale separation between fast (xi, alpha) and slow (eta, beta)
+      variables.
+    value: 3.0
+    domain:
+      enforce: none
+      lo: 1.5
+      hi: 4.5
+      step: 0.01
+      log_scale: false
+    description: Timescale separation
+  a:
+    name: a
+    definition: Heterogeneity scale parameter entering the m_i, n_i offsets.
+    value: 0.45
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+  b:
+    name: b
+    definition: FitzHugh-Nagumo recovery decay rate.
+    value: 0.9
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+  K11:
+    name: K11
+    definition: Internal coupling, excitatory to excitatory.
+    value: 0.5
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0060079
+  K12:
+    name: K12
+    definition: Internal coupling, inhibitory to excitatory.
+    value: 0.15
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0060079
+  K21:
+    name: K21
+    definition: Internal coupling, excitatory to inhibitory.
+    value: 0.15
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0060080
+  sigma:
+    name: sigma
+    definition: Standard deviation of the Gaussian heterogeneity distribution.
+    value: 0.35
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0060079
+  mu:
+    name: mu
+    definition: Mean of the Gaussian heterogeneity distribution.
+    value: 0.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0060079
+description: Reduced set of FitzHugh-Nagumo oscillators (Stefanescu & Jirsa 2008).
+  A low-dimensional description of globally coupled heterogeneous excitatory and inhibitory
+  FitzHugh-Nagumo populations. The reduction projects an infinite population onto
+  `number_of_modes` modes and yields per-mode scalar state variables (xi, eta) for
+  the excitatory and (alpha, beta) for the inhibitory subnetwork. The mode-coupling
+  matrices Aik, Bik, Cik and the per-mode inputs IE_i, II_i, m_i, n_i, e_i, f_i are
+  derived offline by Gaussian quadrature over the heterogeneity distribution N(mu,
+  sigma^2); see TVB reference implementation `tvb.simulator.models.stefanescu_jirsa.ReducedSetFitzHughNagumo`.
+references:
+- StefanescuJirsa2008
+derived_variables:
+  Aik:
+    name: Aik
+    description: Excitatory-to-excitatory mode-coupling matrix derived from Gaussian
+      quadrature over N(mu, sigma); computed offline at `update_derived_parameters`.
+    equation:
+      lhs: Aik
+      rhs: '0.5'
+      latex: false
+    record: false
+    grounding:
+    - GO:0060079
+  Bik:
+    name: Bik
+    description: Inhibitory-to-excitatory mode-coupling matrix.
+    equation:
+      lhs: Bik
+      rhs: '0.5'
+      latex: false
+    record: false
+    grounding:
+    - GO:0060079
+  Cik:
+    name: Cik
+    description: Excitatory-to-inhibitory mode-coupling matrix.
+    equation:
+      lhs: Cik
+      rhs: '0.5'
+      latex: false
+    record: false
+    grounding:
+    - GO:0060080
+  e_i:
+    name: e_i
+    description: Per-mode cubic-coefficient projection for the excitatory subnetwork.
+    equation:
+      lhs: e_i
+      rhs: '1.0'
+      latex: false
+    record: false
+  f_i:
+    name: f_i
+    description: Per-mode cubic-coefficient projection for the inhibitory subnetwork.
+    equation:
+      lhs: f_i
+      rhs: '1.0'
+      latex: false
+    record: false
+  IE_i:
+    name: IE_i
+    description: Per-mode constant excitatory input from the heterogeneity distribution.
+    equation:
+      lhs: IE_i
+      rhs: '0.0'
+      latex: false
+    record: false
+    grounding:
+    - GO:0042391
+  II_i:
+    name: II_i
+    description: Per-mode constant inhibitory input from the heterogeneity distribution.
+    equation:
+      lhs: II_i
+      rhs: '0.0'
+      latex: false
+    record: false
+    grounding:
+    - GO:0042391
+  m_i:
+    name: m_i
+    description: Per-mode offset entering the eta dynamics.
+    equation:
+      lhs: m_i
+      rhs: a
+      latex: false
+    record: false
+  n_i:
+    name: n_i
+    description: Per-mode offset entering the beta dynamics.
+    equation:
+      lhs: n_i
+      rhs: a
+      latex: false
+    record: false
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    dimension: 1
+    local: false
+  local_coupling:
+    name: local_coupling
+    dimension: 1
+    local: true
+state_variables:
+  xi:
+    name: xi
+    domain:
+      enforce: none
+      lo: -4.0
+      hi: 4.0
+      log_scale: false
+    description: Excitatory fast variable (per mode).
+    equation:
+      lhs: Derivative(xi, t)
+      rhs: tau*(xi - e_i*xi**3/3 - eta) + K11*(Aik*xi - xi) - K12*(Bik*alpha - xi)
+        + tau*(IE_i + c_glob + local_coupling*xi)
+      latex: false
+    record: true
+    grounding:
+    - GO:0060079
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  eta:
+    name: eta
+    domain:
+      enforce: none
+      lo: -3.0
+      hi: 3.0
+      log_scale: false
+    description: Excitatory slow recovery variable (per mode).
+    equation:
+      lhs: Derivative(eta, t)
+      rhs: (xi - b*eta + m_i)/tau
+      latex: false
+    record: false
+    grounding:
+    - GO:0060079
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  alpha:
+    name: alpha
+    domain:
+      enforce: none
+      lo: -4.0
+      hi: 4.0
+      log_scale: false
+    description: Inhibitory fast variable (per mode).
+    equation:
+      lhs: Derivative(alpha, t)
+      rhs: tau*(alpha - f_i*alpha**3/3 - beta) + K21*(Cik*xi - alpha) + tau*(II_i
+        + c_glob + local_coupling*xi)
+      latex: false
+    record: true
+    grounding:
+    - GO:0060080
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  beta:
+    name: beta
+    domain:
+      enforce: none
+      lo: -3.0
+      hi: 3.0
+      log_scale: false
+    description: Inhibitory slow recovery variable (per mode).
+    equation:
+      lhs: Derivative(beta, t)
+      rhs: (alpha - b*beta + n_i)/tau
+      latex: false
+    record: false
+    grounding:
+    - GO:0060080
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 3
+model_type: neural_mass
+autonomous: true
+cse: false
+compile: false

@@ -2,25 +2,21 @@
 
 Keeps the per-verb modules as thin as possible.
 """
+
 from __future__ import annotations
 
 import json as _json
-import sys
+import logging
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
 import typer
 
+logger = logging.getLogger("tvbo.cli")
 
-# ---------------------------------------------------------------------------
-# SPEC resolution
-# ---------------------------------------------------------------------------
-# A SPEC is one of:
-#   * a path-like (`./foo.yaml`, `/abs/path`, `file://...`)
-#   * a CURIE (`dynamics:JansenRit`, `study:Schirner2023`)
-#   * a bare DB name (`JansenRit`)
-# C0/C1 supports the local cases only; HTTP / platform are added in C2/C3.
 
+# A SPEC is a path, a CURIE (`dynamics:JansenRit`), or a bare DB name; local cases only for now.
 _CURIE_TO_CLASS = {
     "study": "SimulationStudy",
     "experiment": "SimulationExperiment",
@@ -48,16 +44,13 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
     *kind* is one of ``'study'``, ``'experiment'``, ``'dynamics'``,
     ``'network'``, … and *obj* is the loaded class instance.
 
-    HTTP and platform transports are not yet implemented (raise a
-    helpful message).
+    HTTP and platform transports are not yet implemented (raise a helpful message).
     """
     if spec.startswith(("http://", "https://")):
-        raise typer.BadParameter(
-            f"HTTP transport not yet implemented (C2). Pull the file locally first: {spec}"
-        )
+        raise typer.BadParameter(f"HTTP transport not yet implemented (C2). Pull the file locally first: {spec}")
 
     if spec.startswith("file://"):
-        spec = spec[len("file://"):]
+        spec = spec[len("file://") :]
 
     # Path?
     if _is_pathlike(spec):
@@ -71,10 +64,7 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
         prefix, _, name = spec.partition(":")
         cls_name = _CURIE_TO_CLASS.get(prefix.lower())
         if cls_name is None:
-            raise typer.BadParameter(
-                f"Unknown CURIE prefix {prefix!r}. "
-                f"Known: {', '.join(sorted(_CURIE_TO_CLASS))}"
-            )
+            raise typer.BadParameter(f"Unknown CURIE prefix {prefix!r}. Known: {', '.join(sorted(_CURIE_TO_CLASS))}")
         return _load_from_db(cls_name, name)
 
     # Bare name — try Study, then Experiment, then Dynamics
@@ -83,9 +73,37 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
             return _load_from_db(cls_name, spec)
         except (FileNotFoundError, ValueError):
             continue
-    raise typer.BadParameter(
-        f"Could not resolve {spec!r}: not a path, CURIE, or known DB entry."
-    )
+    raise typer.BadParameter(f"Could not resolve {spec!r}: not a path, CURIE, or known DB entry.")
+
+
+def parse_assignment(raw: str, flag: str, form: str = "key=value") -> tuple[str, str]:
+    """Split one ``KEY=VALUE`` command-line assignment into its stripped key and its verbatim value.
+
+    Leading dashes are dropped, so ``--slurm.account=foo`` and ``slurm.account=foo`` are the same assignment. A missing ``=`` is a usage error naming *flag* and the *form* it expects.
+    """
+    s = raw.lstrip("-")
+    if "=" not in s:
+        raise typer.BadParameter(f"{flag} {raw!r} must be of the form {form}")
+    key, _, value = s.partition("=")
+    return key.strip(), value
+
+
+def coerce_value(raw: str) -> Any:
+    """A command-line value as the type it spells: a JSON list or object, a bool, an int, a float, else the string unchanged."""
+    text = raw.strip()
+    if text[:1] in ("[", "{"):
+        try:
+            return _json.loads(text)
+        except ValueError:
+            return raw
+    if text.lower() in ("true", "false"):
+        return text.lower() == "true"
+    for cast in (int, float):
+        try:
+            return cast(text)
+        except ValueError:
+            pass
+    return raw
 
 
 def _load_from_file(path: Path) -> tuple[str, Any]:
@@ -95,38 +113,55 @@ def _load_from_file(path: Path) -> tuple[str, Any]:
     suffix = path.suffix.lower()
     if suffix not in {".yaml", ".yml"}:
         # Try the registry's importer (e.g. *.bidsdir, *.sedml, *.omex)
-        from tvbo.export import resolve_by_extension, load as _load
+        from tvbo.export import load as _load
+        from tvbo.export import resolve_by_extension
+
         try:
             fmt = resolve_by_extension(suffix)
         except ValueError as e:
             raise typer.BadParameter(str(e)) from e
         if fmt.importer is None:
-            raise typer.BadParameter(
-                f"Format {fmt.key!r} has no importer; cannot load {path}."
-            )
+            raise typer.BadParameter(f"Format {fmt.key!r} has no importer; cannot load {path}.")
         obj = _load(fmt.key, path)
         return _classify(obj), obj
 
-    # YAML — try Study first (it can contain Experiments), fall back to Experiment.
+    # YAML — try Study (it can contain Experiments, and a study-of-studies is just one with `studies:`), falling back to Experiment. A file that names its own class in the `tvbo_class:` envelope is taken at its word; the shape heuristics below are for the files that do not.
+    from tvbo.utils.yaml_loader import declared_class
+
     text = path.read_text(encoding="utf-8")
-    looks_like_study = "simulation_experiments" in text or (
-        "experiments:" in text and "title:" in text
+    declared = declared_class(text)
+    looks_like_study = declared == "SimulationStudy" or (
+        declared is None
+        and ("simulation_experiments" in text or ("experiments:" in text and "title:" in text) or "studies:" in text)
     )
+    # Each fallback's error is kept: when they all fail, the last one (Dynamics) is about the least likely interpretation, so reporting only that sends the reader chasing a "bad Dynamics" that was never what the file is. A spec the running tvbo is too old to parse looked exactly like a malformed Dynamics until the earlier errors were surfaced.
+    attempts: list[tuple[str, Exception]] = []
     if looks_like_study:
         try:
             obj = tvbo.SimulationStudy.from_file(str(path))
             return "study", obj
-        except Exception:
-            pass
+        except Exception as e:
+            attempts.append(("study", e))
 
     try:
         obj = tvbo.SimulationExperiment.from_file(str(path))
         return "experiment", obj
-    except Exception:
-        pass
+    except Exception as e:
+        attempts.append(("experiment", e))
 
-    obj = tvbo.Dynamics.from_file(str(path))
-    return "dynamics", obj
+    try:
+        obj = tvbo.Dynamics.from_file(str(path))
+        return "dynamics", obj
+    except Exception as e:
+        attempts.append(("dynamics", e))
+
+    # Report the most specific interpretation the file actually looked like — the first one tried — and list the rest so nothing is hidden.
+    kind, primary = attempts[0]
+    detail = "\n".join(f"  - as {k}: {type(x).__name__}: {x}" for k, x in attempts)
+    raise typer.BadParameter(
+        f"Could not load {path} as a study, experiment or dynamics.\n{detail}\n"
+        f"The {kind} error above is the most likely one to act on."
+    ) from primary
 
 
 def _load_from_db(cls_name: str, name: str) -> tuple[str, Any]:
@@ -148,9 +183,8 @@ def _classify(obj: Any) -> str:
     }.get(cls_name, cls_name.lower())
 
 
-# ---------------------------------------------------------------------------
 # Output helpers
-# ---------------------------------------------------------------------------
+
 
 def emit_json(payload: Any) -> None:
     """Write a single JSON line to stdout (CLI machine-readable contract)."""
@@ -158,10 +192,42 @@ def emit_json(payload: Any) -> None:
 
 
 def info(msg: str) -> None:
-    """Human-facing log line — always to stderr."""
-    typer.echo(msg, err=True)
+    """Human-facing progress line, routed through the central ``tvbo`` logger.
+
+    Emits at INFO on ``tvbo.cli`` (stderr by default), so ``--quiet`` / ``TVBO_LOG_LEVEL`` govern it exactly as they govern in-process ``.run()``.
+    """
+    logger.info(msg)
+
+
+def warn(msg: str) -> None:
+    """Human-facing warning line, routed through the central ``tvbo`` logger.
+
+    Emits at WARNING on ``tvbo.cli`` (stderr by default), so ``--quiet`` / ``TVBO_LOG_LEVEL`` govern it exactly as they govern ``info`` / ``.run()``.
+    """
+    logger.warning(msg)
 
 
 def die(msg: str, code: int = 1) -> None:
-    typer.echo(f"error: {msg}", err=True)
+    """Log *msg* at ERROR and abort the CLI with *code*.
+
+    A fatal abort must always explain itself: when the configured level would suppress ERROR (e.g. ``--log-level OFF`` / ``TVBO_LOG_LEVEL=OFF``) the reason still goes to stderr, so the CLI never exits non-zero in silence.
+    """
+    if logger.isEnabledFor(logging.ERROR):
+        logger.error(msg)
+    else:
+        typer.echo(f"error: {msg}", err=True)
     raise typer.Exit(code)
+
+
+@contextmanager
+def fatal():
+    """Report a :class:`tvbo.run.study.StudyRunError` raised inside the block through :func:`die`.
+
+    The library never exits the process, so the Python API sees an exception rather than ``typer.Exit``; this is where the command line turns that refusal into its error line and exit code 1. Every other exception propagates untouched.
+    """
+    from tvbo.run.study import StudyRunError
+
+    try:
+        yield
+    except StudyRunError as e:
+        die(str(e))

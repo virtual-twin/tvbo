@@ -10,6 +10,6 @@ _format = context['format'] if 'format' in context.keys() else 'jax'
 _fmt = 'jax' if _format in ('jax', 'autodiff', 'tvboptim') else 'numpy'
 _return_aux = context['return_aux'] if 'return_aux' in context.keys() else (_format == 'tvboptim')
 %>
-${dfun.imports(fmt=_fmt)}
+${dfun.imports(model=model, fmt=_fmt)}
 
 ${dfun.full_dfun(model, fmt=_fmt, signature='standard', return_aux=_return_aux)}

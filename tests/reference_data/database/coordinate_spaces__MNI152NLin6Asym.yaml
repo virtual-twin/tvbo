@@ -1,0 +1,15 @@
+name: MNI152NLin6Asym
+abbreviation: MNI152NLin6Asym
+alternateName:
+- FSLMNI152
+- MNI152NLin6
+- MNI152
+description: 'Sixth-generation nonlinear ICBM152 average (Mazziotta et al., 2001),
+  asymmetric variant. This is the template shipped with FSL as `MNI152_T1_*mm.nii.gz`
+  (commonly referred to as "FSLMNI152" or generic "MNI152" in older literature). TemplateFlow
+  id: `tpl-MNI152NLin6Asym`.'
+anatomicalAxesOrientation: RAS
+axesOrigin: anterior commissure
+nativeUnit: mm
+defaultImage:
+- tpl-MNI152NLin6Asym_res-01_T1w.nii.gz

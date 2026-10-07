@@ -1,0 +1,71 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class HindmarshRose(AbstractDynamics):
+    """HindmarshRose neural mass model."""
+
+    STATE_NAMES = ("x", "y", "z")
+    INITIAL_STATE = (-1.0, 0.0, 0.0)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        I=2.0,
+        a=1.0,
+        b=3.0,
+        c=1.0,
+        d=5.0,
+        r=0.001,
+        s=4.0,
+        xr=-1.6,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        I = params.I
+        a = params.a
+        b = params.b
+        c = params.c
+        d = params.d
+        r = params.r
+        s = params.s
+        xr = params.xr
+
+        x = state[0]
+        y = state[1]
+        z = state[2]
+
+        dx_dt = y - a * x**3 + b * x**2 - z + I
+        dy_dt = c - d * x**2 - y
+        dz_dt = r * (s * (x - xr) - z)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dz_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

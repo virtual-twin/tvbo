@@ -1,0 +1,2 @@
+harness,model,condition,processed_tokens,output_tokens,tool_calls,wall_seconds,cost_usd,success_rate,n
+claude,sonnet,explicit,183372.0,960.0,4.0,32.5,0.15372059999999999,1.0,1

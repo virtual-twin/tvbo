@@ -1,0 +1,32 @@
+function StuartLandauOscillator!(dx, _x, p, t = 0)
+
+    (;mu, omega, b) = p
+
+    x, y = _x
+
+
+    dx[1] = x .* (mu .- x .^ 2 .- y .^ 2) .- omega .* y .- b .* y .* (x .^ 2 .+ y .^ 2)
+    dx[2] = omega .* x .+ y .* (mu .- x .^ 2 .- y .^ 2) .+ b .* x .* (x .^ 2 .+ y .^ 2)
+    dx
+end
+
+# Parameter values
+p = (mu = 1.0, omega = 1.0, b = 1.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        1.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(StuartLandauOscillator!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

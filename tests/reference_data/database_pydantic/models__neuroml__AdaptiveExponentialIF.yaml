@@ -1,0 +1,77 @@
+name: AdaptiveExponentialIF
+parameters:
+  C:
+    name: C
+    value: 281.0
+  gL:
+    name: gL
+    value: 30.0
+  EL:
+    name: EL
+    value: -70.6
+  VT:
+    name: VT
+    value: -50.4
+  thresh:
+    name: thresh
+    value: -40.4
+  reset:
+    name: reset
+    value: -48.5
+  delT:
+    name: delT
+    value: 2.0
+  tauw:
+    name: tauw
+    value: 40.0
+  a:
+    name: a
+    value: 4.0
+  b:
+    name: b
+    value: 0.08
+  I_ext:
+    name: I_ext
+    value: 0.8
+source: 'NeuroML2 example: Ex14_PyNN'
+state_variables:
+  v:
+    name: v
+    equation:
+      rhs: (-gL*(v - EL) + gL*delT*exp((v - VT)/delT) - w + I_ext) / C
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -70.6
+  w:
+    name: w
+    equation:
+      rhs: (a*(v - EL) - w) / tauw
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: true
+events:
+  spike:
+    name: spike
+    event_type: stimulus
+    condition:
+      rhs: v > thresh
+      latex: false
+    affect:
+      rhs: v = reset; w = w + b
+      latex: false
+    sampling_rate: 1.0
+    interpolation: linear
+cse: false
+compile: false

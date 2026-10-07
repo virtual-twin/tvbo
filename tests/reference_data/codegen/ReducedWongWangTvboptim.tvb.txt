@@ -1,0 +1,160 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class ReducedWongWangTvboptim(Model):
+
+    a = NArray(
+        label=r":math:`a`",
+        default=np.array([0.27]),
+        domain=Range(lo=0.0, hi=0.27, step=0.01),
+        doc="""Input gain parameter""",
+    )
+    b = NArray(
+        label=r":math:`b`",
+        default=np.array([0.108]),
+        domain=Range(lo=0.0, hi=1.0, step=0.01),
+        doc="""Input shift parameter""",
+    )
+    d = NArray(
+        label=r":math:`d`",
+        default=np.array([154.0]),
+        domain=Range(lo=0.0, hi=200.0, step=0.01),
+        doc="""Scaling parameter""",
+    )
+    gamma = NArray(
+        label=r":math:`gamma`",
+        default=np.array([0.641]),
+        domain=Range(lo=0.0, hi=1.0, step=0.01),
+        doc="""Kinetic parameter""",
+    )
+    tau_s = NArray(
+        label=r":math:`tau_s`",
+        default=np.array([100.0]),
+        domain=Range(lo=50.0, hi=150.0, step=1.0),
+        doc="""NMDA decay time constant""",
+    )
+    w = NArray(
+        label=r":math:`w`",
+        default=np.array([0.5]),
+        domain=Range(lo=0.0, hi=1.0, step=0.01),
+        doc="""Excitatory recurrence strength (local feedback)""",
+    )
+    J_N = NArray(
+        label=r":math:`J_N`",
+        default=np.array([0.2609]),
+        domain=Range(lo=0.2609, hi=0.5, step=0.001),
+        doc="""NMDA synaptic coupling strength""",
+    )
+    I_o = NArray(
+        label=r":math:`I_o`",
+        default=np.array([0.34]),
+        domain=Range(lo=0.0, hi=1.0, step=0.01),
+        doc="""External input current""",
+    )
+
+    _nvar = 1
+    state_variables = ["S"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={"S": np.array([0.0, 1.0])},
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    state_variable_boundaries = Final(
+        label="State Variable boundaries [lo, hi]",
+        default={"S": np.array([0.0, 1.0])},
+        doc="""State variable boundaries for phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("S", "H_x"),
+        default=("S", "H_x"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=["a", "b", "d", "gamma", "tau_s", "w", "J_N", "I_o"],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "S": "-S/tau_s + gamma*(1 - S)*H(x)",
+        },
+    )
+
+    cvar = np.array([0], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["instant", "delayed"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def _build_observer(self):
+        template = (
+            "def observe(state):\n"
+            "    {svars} = state\n"
+            "    H_x = H(x)\n"
+            "    return numpy.array([{voi_names}])"
+        )
+        svars = ",".join(self.state_variables)
+        if len(self.state_variables) == 1:
+            svars += ","
+        code = template.format(
+            svars=svars, voi_names=",".join(self.variables_of_interest)
+        )
+        namespace = {"numpy": np, "np": np, "pi": np.pi, "sin": np.sin}
+        namespace.update(self.__dict__)
+        self.log.debug("building observer with code:\n%s", code)
+        exec(code, namespace)
+        self.observe = namespace["observe"]
+        self.observe.code = code
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        S = state_variables[0, :]
+
+        a = self.a
+        b = self.b
+        d = self.d
+        gamma = self.gamma
+        tau_s = self.tau_s
+        w = self.w
+        J_N = self.J_N
+        I_o = self.I_o
+
+        # Functions
+
+        def H(x):
+            return (-b + a * x) / (1 - np.exp(-d * (-b + a * x)))
+
+        # Coupling Terms (from coupling array)
+        instant = coupling[0, :]
+        delayed = coupling[1, :]
+
+        # Derived Variables
+        self.x = x = I_o + J_N * delayed + J_N * instant + J_N * S * w
+        self.H_x = H_x = H(x)
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(-S / tau_s + gamma * (1 - S) * H(x)),  # S
+        )
+        return np.array(_derivs)

@@ -1,0 +1,16 @@
+---
+title: "The replication pipeline"
+description: "How TVBO turns a published study into generated simulations, figures, and HPC jobs — one declarative spec, provenance-traceable."
+format:
+  html:
+    page-layout: full
+resources:
+  - pipeline.html
+---
+
+TVBO replicates a published study from a single declarative `SimulationStudy` — its experiments **and** the figures that read them. The schema below traces the full pipeline: paper → declarative spec → codegen → workflow / HPC → faithful figures, with every plotted number traceable to the run that produced it.
+
+<iframe src="pipeline.html" title="TVBO replication pipeline schema"
+        style="width:100%; height:1760px; border:0; border-radius:12px;" loading="lazy"></iframe>
+
+[Open the full schema in a new tab](pipeline.html){target="_blank"}

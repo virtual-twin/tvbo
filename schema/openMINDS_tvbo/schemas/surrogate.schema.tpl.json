@@ -1,0 +1,22 @@
+{
+  "_type": "tvbo:Surrogate",
+  "required": [
+    "statistic",
+    "permute",
+    "permutations"
+  ],
+  "properties": {
+    "statistic": {
+      "type": "string"
+    },
+    "permute": {
+      "type": "string"
+    },
+    "permutations": {
+      "type": "string"
+    },
+    "direction": {
+      "type": "string"
+    }
+  }
+}

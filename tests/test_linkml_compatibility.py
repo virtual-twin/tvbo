@@ -1,24 +1,17 @@
 """LinkML compatibility-contract smoke tests.
 
-Per `dev/OntologicalRestructuring/plan.md` §2.8 (Phase 0 governance baseline):
-these tests guard the 13 generated LinkML classes that are subclassed by
-runtime knowledge classes. Removing or renaming any of these (or their
-critical fields) silently breaks YAML loading and the tvbo-platform Pydantic
-contract.
+These tests are the Phase 0 governance baseline: they guard the 13 generated LinkML classes that are subclassed by runtime knowledge classes. Removing or renaming any of these (or their critical fields) silently breaks YAML loading and the tvbo-platform Pydantic contract.
 
 Run:
 
     pytest tests/test_linkml_compatibility.py -x -n0 -v
 
-If any test fails, the LinkML schema change is in the FORBIDDEN category
-(per main proposal Appendix E) and must be reverted or migrated with
-deprecation aliases.
+If any test fails, the LinkML schema change is in the FORBIDDEN category (per main proposal Appendix E) and must be reverted or migrated with deprecation aliases.
 """
 
 import importlib
 
 import pytest
-
 
 # Generated dataclass module -> list of class names that runtime code subclasses.
 SUBCLASSED_GENERATED = {
@@ -48,9 +41,6 @@ PYDANTIC_REQUIRED = [
     "SimulationStudy",
 ]
 
-# Critical fields that MUST exist on the generated dataclass for runtime
-# `__post_init__()` `_normalize_inlined_as_dict` calls (main proposal Appendix
-# A.2). Changing the `name` key here silently drops YAML data on load.
 CRITICAL_FIELDS = {
     "Dynamics": ["name", "parameters", "state_variables", "derived_variables"],
     "Parameter": ["name"],
@@ -60,6 +50,7 @@ CRITICAL_FIELDS = {
     "SimulationExperiment": ["id"],
     "SimulationStudy": ["key"],
 }
+"""Fields that MUST exist on the generated dataclass for the runtime ``__post_init__()`` ``_normalize_inlined_as_dict`` calls (main proposal Appendix A.2). Changing the ``name`` key here silently drops YAML data on load."""
 
 
 @pytest.mark.parametrize(

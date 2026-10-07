@@ -1,0 +1,52 @@
+"""<Study> bespoke figure panels — the ESCAPE HATCH the figure grammar can't express.
+
+Registered with TVBO's bsplot figure system via ``@bsplot.register_panel`` /
+``@bsplot.register_transform``. A ``Figure`` in ``<Study>.yaml`` refers to these by name and
+lists this module in its ``code_modules:``, so the generated ``plot_<name>.py`` imports it and
+dispatches the panels. Each panel reads its resolved layers with ``bsplot.load_layer``.
+
+Reach for a callable ONLY when a ``cartesian``/``heatmap`` grammar panel genuinely can't do
+the job — a twin axis, a connectome/brain-surface, a merge of two experiments' outputs, a
+dense nested subgrid. Everything else stays declarative in the YAML (layers + mark + encoding).
+
+This module lives flat in ``code/`` (importable by the zero-config ``code/`` convention — no
+``code_source`` needed; loading the study puts ``code/`` on the path). Keep the same file for
+every figure's bespoke panels — do NOT scatter per-figure ``plot_*.py`` scripts.
+"""
+from tvbo.adapters import bsplot
+
+
+# ---------------------------------------------------------------------------- transforms
+# A presentation-only reduction fn(da) -> da, named by a layer's ``transform:``. Prefer an
+# upstream Observation or a declarative reduction (the compute ladder); use this only for a
+# purely visual reshape. Keep transforms pure and cheap — they run at render time.
+
+# Rename `my_transform` to your transform's name and reference it from a layer's `transform:`.
+@bsplot.register_transform("my_transform")
+def my_transform(da):
+    """<what this selects/reshapes, in the paper's terms>."""
+    import numpy as np  # noqa: F401 — local import keeps the module import cheap
+    # e.g. take one half of a hysteresis scan, sort by a branch ordinal, take a magnitude…
+    return da
+
+
+# ------------------------------------------------------------------------------- panels
+# A registered panel is fn(fig, ax, ctx). ``ctx["layers"]`` are the resolved layers (container
+# path + output + transform + sel already applied) — open the i-th with bsplot.load_layer;
+# ``ctx["opts"]`` are the panel's ``opts:`` from the YAML (typed). Draw on ``ax``. Set NO
+# absolute font sizes — the Figure's ``font_size`` + ``.mplstyle`` own the type scale.
+
+# Rename `my_panel` to your panel's name and reference it from a panel's `render:`.
+@bsplot.register_panel("my_panel")
+def my_panel(fig, ax, ctx):
+    """<panel letter + what it draws, and WHY it can't be a grammar layer>."""
+    import numpy as np
+    o = ctx["opts"]
+    da = bsplot.load_layer(ctx["layers"][0])          # first bound layer as an xarray DataArray
+    x = np.asarray(da[da.dims[-1]].values)
+    y = np.asarray(da.values).ravel()
+    ax.plot(x, y, color=o.get("color", "C0"), lw=o.get("linewidth", 1.3))
+    if o.get("xlabel"):
+        ax.set_xlabel(o["xlabel"])
+    if o.get("ylabel"):
+        ax.set_ylabel(o["ylabel"])

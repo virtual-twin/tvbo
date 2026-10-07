@@ -8,13 +8,10 @@ Endpoints:
   POST /api/v1/experiments/render      — render or save an experiment from a payload
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
+from linkml_runtime.dumpers import json_dumper, yaml_dumper
 from pydantic import BaseModel, Field
-
-from linkml_runtime.dumpers import yaml_dumper, json_dumper
 
 from tvbo.data.registry import database_dir
 
@@ -40,7 +37,7 @@ def _index_experiments() -> dict:
     return experiments
 
 
-_EXPERIMENTS: Optional[dict] = None
+_EXPERIMENTS: dict | None = None
 
 
 def _get_experiments() -> dict:
@@ -86,16 +83,13 @@ def get_sidecar(experiment_id: str, format: str = Query("yaml")):
         return Response(content, media_type="application/x-yaml")
 
 
-# ---------------------------------------------------------------------------
 # Export format discovery & render endpoints
-# ---------------------------------------------------------------------------
+
 
 class RenderExperimentRequest(BaseModel):
     """Request body for rendering or saving an experiment from an inline payload.
 
-    Describes a [`SimulationExperiment`](../classes/experiment.qmd) to render (or
-    persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is
-    supplied inline as a mapping rather than referenced by stored id.
+    Describes a [`SimulationExperiment`](/api/classes/experiment.qmd) to render (or persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is supplied inline as a mapping rather than referenced by stored id.
 
     Args:
         experiment: Mapping of `SimulationExperiment` constructor keyword arguments
@@ -112,21 +106,22 @@ class RenderExperimentRequest(BaseModel):
 
     experiment: dict
     format: str = "yaml"
-    filename: Optional[str] = None
-    save_path: Optional[str] = None
+    filename: str | None = None
+    save_path: str | None = None
     metadata_only: bool = True
     render_kwargs: dict = Field(default_factory=dict)
 
 
 def _resolve_format(fmt: str):
     from tvbo import export as _export
+
     try:
         return _export.resolve(fmt)
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
 
 
-def _render_response(content: str, fmt, filename: Optional[str]) -> Response:
+def _render_response(content: str, fmt, filename: str | None) -> Response:
     fname = filename or f"experiment{fmt.extension}"
     headers = {"Content-Disposition": f'attachment; filename="{fname}"'}
     return Response(content, media_type=fmt.media_type, headers=headers)
@@ -136,6 +131,7 @@ def _render_response(content: str, fmt, filename: Optional[str]) -> Response:
 def get_export_formats():
     """Return supported export formats for UI dropdowns."""
     from tvbo import export as _export
+
     return _export.list_format_dicts()
 
 
@@ -143,7 +139,7 @@ def get_export_formats():
 def render_experiment(
     experiment_id: str,
     format: str = Query("yaml"),
-    filename: Optional[str] = Query(None),
+    filename: str | None = Query(None),
     metadata_only: bool = Query(True),
 ):
     """Render a stored experiment in the requested format."""
@@ -183,4 +179,3 @@ def render_experiment_payload(request: RenderExperimentRequest):
 
     content = exp.render(format=fmt.key, **request.render_kwargs)
     return _render_response(content, fmt, request.filename)
-

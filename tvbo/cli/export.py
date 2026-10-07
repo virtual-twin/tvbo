@@ -1,4 +1,5 @@
 """``tvbo export`` — render a SPEC into a target format (no execution)."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -6,6 +7,7 @@ from pathlib import Path
 import typer
 
 from tvbo import export as _export
+
 from . import _common
 
 
@@ -13,19 +15,20 @@ def export(
     format: str = typer.Argument(..., help="Format key or alias (see `tvbo formats`)."),
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name."),
     output: Path = typer.Option(
-        None, "-o", "--output",
+        None,
+        "-o",
+        "--output",
         help="Output file or directory. When omitted, writes to stdout (text formats only).",
     ),
     metadata_only: bool = typer.Option(
-        True, "--metadata-only/--with-data",
+        True,
+        "--metadata-only/--with-data",
         help="Bundle binary network/data alongside the metadata file.",
     ),
 ) -> None:
     """Render *spec* into *format* without executing it.
 
-    Resolves *spec* (file path, CURIE, or DB name) to a TVBO object and
-    writes the rendered output to *--output* or stdout. Use `tvbo formats`
-    to list available format keys.
+    Resolves *spec* (file path, CURIE, or DB name) to a TVBO object and writes the rendered output to *--output* or stdout. Use `tvbo formats` to list available format keys.
     """
     kind, obj = _common.resolve_spec(spec)
 

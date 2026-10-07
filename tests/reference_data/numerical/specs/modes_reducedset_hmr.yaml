@@ -1,0 +1,14 @@
+label: modes_reducedset_hmr
+description: >-
+  ReducedSetHindmarshRose, the curated model that genuinely carries a mode axis
+  (3 modes, real (3,3) mixing matrices). The only spec that exercises the
+  mode_dot / mode_sum array primitives through codegen into a running solver.
+dynamics:
+  iri: tvbo:ReducedSetHindmarshRose
+integration:
+  method: Heun
+  step_size: 0.1
+  duration: 50.0
+  transient_time: 0.0
+execution:
+  random_seed: 0

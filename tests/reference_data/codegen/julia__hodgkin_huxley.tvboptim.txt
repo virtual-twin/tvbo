@@ -1,0 +1,109 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class HodgkinHuxley(AbstractDynamics):
+    """HodgkinHuxley neural mass model."""
+
+    STATE_NAMES = ("V", "m", "h", "n")
+    INITIAL_STATE = (-65.0, 0.0529, 0.5961, 0.3177)
+    AUXILIARY_NAMES = (
+        "IK",
+        "IL",
+        "INa",
+        "alpha_h",
+        "alpha_m",
+        "alpha_n",
+        "beta_h",
+        "beta_m",
+        "beta_n",
+    )
+
+    DEFAULT_PARAMS = Bunch(
+        Cm=1.0,
+        EK=-77.0,
+        EL=-54.387,
+        ENa=50.0,
+        Iext=10.0,
+        gK=36.0,
+        gL=0.3,
+        gNa=120.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        Cm = params.Cm
+        EK = params.EK
+        EL = params.EL
+        ENa = params.ENa
+        Iext = params.Iext
+        gK = params.gK
+        gL = params.gL
+        gNa = params.gNa
+
+        V = state[0]
+        m = state[1]
+        h = state[2]
+        n = state[3]
+
+        IK = gK * n**4 * (V - EK)
+        IL = gL * (V - EL)
+        INa = gNa * m**3 * h * (V - ENa)
+        alpha_h = 0.07 * jnp.exp((-65 - V) / 20)
+        alpha_m = 0.1 * (V + 40) / (1 - jnp.exp((-40 - V) / 10))
+        alpha_n = 0.01 * (V + 55) / (1 - jnp.exp((-55 - V) / 10))
+        beta_h = 1 / (1 + jnp.exp((-35 - V) / 10))
+        beta_m = 4 * jnp.exp((-65 - V) / 18)
+        beta_n = 0.125 * jnp.exp((-65 - V) / 80)
+
+        dV_dt = (
+            (-gNa) * m**3 * h * (V - ENa) - gK * n**4 * (V - EK) - gL * (V - EL) + Iext
+        ) / Cm
+        dm_dt = alpha_m * (1 - m) - beta_m * m
+        dh_dt = alpha_h * (1 - h) - beta_h * h
+        dn_dt = alpha_n * (1 - n) - beta_n * n
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dV_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dV_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dm_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dh_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dn_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(IK), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(IL), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(INa), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_h), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_m), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_n), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_h), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_m), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_n), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

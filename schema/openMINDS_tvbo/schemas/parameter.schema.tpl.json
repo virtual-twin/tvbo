@@ -41,9 +41,6 @@
     "unit": {
       "type": "string"
     },
-    "dataset_path": {
-      "type": "string"
-    },
     "grounding": {
       "type": "array",
       "minItems": 1,
@@ -67,6 +64,14 @@
       "type": "string"
     },
     "measure": {
+      "type": "string"
+    },
+    "producer": {
+      "_embeddedTypes": [
+        "tvbo:FunctionCall"
+      ]
+    },
+    "used": {
       "type": "string"
     },
     "free": {

@@ -1,0 +1,27 @@
+{
+  "_type": "tvbo:DistributionConfig",
+  "properties": {
+    "by": {
+      "type": "string"
+    },
+    "vectorize": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "workflow": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "chunk": {
+      "type": "integer"
+    }
+  }
+}

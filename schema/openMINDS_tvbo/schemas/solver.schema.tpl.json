@@ -9,6 +9,9 @@
     },
     "rel_tol": {
       "type": "number"
+    },
+    "step_size": {
+      "type": "number"
     }
   }
 }

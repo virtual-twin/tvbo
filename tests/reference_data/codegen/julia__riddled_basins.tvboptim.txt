@@ -1,0 +1,72 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class RiddledBasins(AbstractDynamics):
+    """RiddledBasins neural mass model."""
+
+    STATE_NAMES = ("x", "y", "vx", "vy")
+    INITIAL_STATE = (0.5, 0.6, 0.0, 0.0)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        f0=2.3,
+        gamma=0.05,
+        omega=3.5,
+        x0=1.0,
+        xbar=1.9,
+        y0=0.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        f0 = params.f0
+        gamma = params.gamma
+        omega = params.omega
+        x0 = params.x0
+        xbar = params.xbar
+        y0 = params.y0
+
+        x = state[0]
+        y = state[1]
+        vx = state[2]
+        vy = state[3]
+
+        dx_dt = vx
+        dy_dt = vy
+        dvx_dt = (
+            (-gamma) * vx - (-4 * x * (1 - x**2) + y**2) + f0 * jnp.sin(omega * t) * x0
+        )
+        dvy_dt = (-gamma) * vy - 2 * y * (x + xbar) + f0 * jnp.sin(omega * t) * y0
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dvx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dvy_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

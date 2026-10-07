@@ -1,0 +1,39 @@
+function DoublePendulum!(dx, x, p, t = 0)
+
+    (;G, L1, L2, M1, M2) = p
+
+    theta1, omega1, theta2, omega2 = x
+
+
+    phi = theta2 .- theta1
+    Delta = M1 .+ M2 .- M2 .* cos(phi) .^ 2
+
+    dx[1] = omega1
+    dx[2] = (M2 .* ((G .* sin(theta2) .+ L1 .* omega1 .^ 2 .* sin(phi)) .* cos(phi) .+ L2 .* omega2 .^ 2 .* sin(phi)) .- G .* (M1 .+ M2) .* sin(theta1)) ./ (Delta .* L1)
+    dx[3] = omega2
+    dx[4] = ((M1 .+ M2) .* (G .* (-sin(theta2) .+ cos(phi) .* sin(theta1)) .- L1 .* omega1 .^ 2 .* sin(phi)) .- L2 .* M2 .* omega2 .^ 2 .* cos(phi) .* sin(phi)) ./ (Delta .* L2)
+    dx
+end
+
+# Parameter values
+p = (G = 10.0, L1 = 1.0, L2 = 1.0, M1 = 1.0, M2 = 1.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        1.5707963267948966,
+        0.0,
+        0.0,
+        0.5,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(DoublePendulum!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

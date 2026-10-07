@@ -41,7 +41,6 @@ derived_variables:
       lhs: f
       rhs: 1 - (X**2 + Y**2 + Z**2)/r**2
       latex: false
-    conditional: false
 description: |-
   Lorenz system modified by smooth radial confinement factor f = 1 - (||X||^2)/r^2
   producing bounded dynamics with altered basin geometry while retaining core

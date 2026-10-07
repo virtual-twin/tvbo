@@ -1,29 +1,24 @@
 ---
 title: "Ex4: Kinetic Scheme Channels"
 description: "Ion channels defined via kinetic scheme (Markov) state transitions"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Kinetic Scheme Ion Channels
 
-This example demonstrates `ionChannelKS` — ion channels defined by Markov state
-transitions between open/closed states.  The `k_vh` channel uses a
-`vHalfTransition` with rates:
+This example demonstrates `ionChannelKS` — ion channels defined by Markov state transitions between open/closed states.  The `k_vh` channel uses a `vHalfTransition` with rates:
 
-$$r_{f0} = \frac{\exp(z\gamma(v - v_{Half})/k_{te})}{\tau}, \quad
-r_{r0} = \frac{\exp(-z(1-\gamma)(v - v_{Half})/k_{te})}{\tau}$$
+$$r_{f0} = \frac{\exp(z\gamma(v - v_{Half})/k_{te})}{\tau}, \quad r_{r0} = \frac{\exp(-z(1-\gamma)(v - v_{Half})/k_{te})}{\tau}$$
 
-$$r_f = \frac{1}{1/r_{f0} + \tau_{Min}}, \quad
-r_r = \frac{1}{1/r_{r0} + \tau_{Min}}$$
+$$r_f = \frac{1}{1/r_{f0} + \tau_{Min}}, \quad r_r = \frac{1}{1/r_{r0} + \tau_{Min}}$$
 
-where $k_{te} = 25.3\,\text{mV}$.  The cell has a standard HH Na channel ($m^3 h$)
-and the KS K channel ($n$, instances=1):
+where $k_{te} = 25.3\,\text{mV}$.  The cell has a standard HH Na channel ($m^3 h$) and the KS K channel ($n$, instances=1):
 
 $$C\frac{dv}{dt} = -g_{Na}m^3 h(v - E_{Na}) - g_K n(v - E_K) + I_{\text{ext}}$$
 
-By annotating the dynamics with `iri: neuroml:pointCellCondBased` and structuring
-the ion channels as `components` (including `ionChannelKS` with `gateKS` and
-`vHalfTransition`), TVBO emits standard NeuroML2 types that preserve the jLEMS
-child-before-parent RK4 evaluation order — giving exact numerical identity.
+By annotating the dynamics with `iri: neuroml:pointCellCondBased` and structuring the ion channels as `components` (including `ionChannelKS` with `gateKS` and `vHalfTransition`), TVBO emits standard NeuroML2 types that preserve the jLEMS child-before-parent RK4 evaluation order, so the traces match the reference to correlation r ≈ 1.
 
 ---
 
@@ -144,9 +139,7 @@ print(f"Components: {list(exp.dynamics.components.keys())}")
 ::: {.callout-note}
 ## Kinetic Scheme via Standard NeuroML Types
 This example uses `iri: neuroml:ionChannelKS` with `gateKS` containing `closedState`,
-`openState`, and `vHalfTransition` sub-components. TVBO's adapter emits these as standard
-NeuroML2 XML elements — no need to flatten the Markov scheme into ODEs. This gives exact
-numerical identity with the reference simulation at the original step size (0.01 ms).
+`openState`, and `vHalfTransition` sub-components. TVBO's adapter emits these as standard NeuroML2 XML elements — no need to flatten the Markov scheme into ODEs. This gives exact numerical identity with the reference simulation at the original step size (0.01 ms).
 :::
 
 ## 2. Render LEMS XML

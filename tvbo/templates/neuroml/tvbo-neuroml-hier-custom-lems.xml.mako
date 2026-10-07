@@ -20,6 +20,7 @@
 ##   sim_id           - simulation id
 ##   sim_length       - simulation length with unit (e.g. "150ms")
 ##   sim_step         - simulation step with unit (e.g. "0.01ms")
+##   settle_constant  - the settle every ``t`` reading subtracts (e.g. "10ms"), or None
 ##   output_var       - output variable name (e.g. "v")
 ##   dyn_id           - dynamics id for file naming
 ##
@@ -39,6 +40,9 @@ def _attr(name, val):
   % for p in ct.get('parameters', []):
     <Parameter name="${p['name']}" dimension="${p['dimension']}"/>
   % endfor
+  % if settle_constant:
+    <Constant name="SETTLE" dimension="time" value="${settle_constant}"/>
+  % endif
   % for name, typ in ct.get('child_slots', []):
     <Child name="${name}" type="${typ}"/>
   % endfor

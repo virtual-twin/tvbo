@@ -1,0 +1,90 @@
+name: FunctionalConnectivity
+description: Functional Connectivity (FC) observation model that computes pairwise
+  Pearson correlation coefficients between regional time series. Commonly used to
+  characterize the statistical dependencies between brain regions from fMRI or simulated
+  neural activity.
+parameters:
+  TR:
+    name: TR
+    value: 720.0
+    description: Repetition time
+    unit: ms
+  fisher_z:
+    name: fisher_z
+    value: true
+    description: Apply Fisher z-transformation to correlations
+period: 720.0
+reconcile: by_label
+pipeline:
+- name: bandpass_filter
+  equation:
+    rhs: bandpass(X, low_freq, high_freq, fs)
+    latex: false
+  callable:
+    name: butter
+    module: scipy.signal
+  output: filtered
+  apply_on_dimension: time
+  arguments:
+    low_freq:
+      name: low_freq
+      description: Low frequency cutoff
+      value: 0.01
+      unit: Hz
+    high_freq:
+      name: high_freq
+      description: High frequency cutoff
+      value: 0.1
+      unit: Hz
+    order:
+      name: order
+      description: Filter order
+      value: 2
+- name: zscore
+  equation:
+    rhs: (X - mean(X)) / std(X)
+    latex: false
+  callable:
+    name: zscore
+    module: scipy.stats
+  input: bandpass_filter
+  output: normalized
+  apply_on_dimension: time
+  arguments:
+    axis:
+      name: axis
+      description: Normalize along time axis
+      value: 0
+- name: correlation
+  equation:
+    rhs: corrcoef(transpose(X))
+    latex: false
+  callable:
+    name: corrcoef
+    module: numpy
+  input: zscore
+  output: fc_matrix
+  arguments:
+    rowvar:
+      name: rowvar
+      description: Each column represents a variable (region)
+      value: false
+- name: fisher_z_transform
+  equation:
+    parameters:
+      clip_value:
+        name: clip_value
+        value: 0.999
+        description: Clip correlations to avoid infinity at r=±1
+    rhs: arctanh(X)
+    latex: false
+  callable:
+    name: arctanh
+    module: numpy
+  input: correlation
+  output: FC
+  arguments:
+    apply:
+      name: apply
+      description: Whether to apply Fisher z-transformation
+      value: true

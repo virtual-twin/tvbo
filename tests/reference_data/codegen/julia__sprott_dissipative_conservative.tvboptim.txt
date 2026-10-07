@@ -1,0 +1,61 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class SprottDissipativeConservative(AbstractDynamics):
+    """SprottDissipativeConservative neural mass model."""
+
+    STATE_NAMES = ("x", "y", "z")
+    INITIAL_STATE = (1.0, 0.0, 0.0)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        a=2.0,
+        b=1.0,
+        c=1.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        a = params.a
+        b = params.b
+        c = params.c
+
+        x = state[0]
+        y = state[1]
+        z = state[2]
+
+        dx_dt = y + a * x * y + x * z
+        dy_dt = 1 - 2 * x**2 + b * y * z
+        dz_dt = c * x - x**2 - y**2
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dz_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

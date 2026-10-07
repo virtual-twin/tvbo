@@ -1,0 +1,42 @@
+# Which documentation page owns which specification slot; see docs/Developer/DocsMachinery.qmd.
+
+slots:
+  explorations:      2-specify/ParameterExploration.qmd
+  analyses:          2-specify/Analyses.qmd
+  figures:           2-specify/Figures/index.qmd
+  events:            2-specify/Events.qmd
+  observations:      2-specify/Observation/index.qmd
+  algorithms:        2-specify/Fitting/Algorithms.qmd
+  code_source:       2-specify/CodeSource.qmd
+  code_modules:      2-specify/CodeSource.qmd
+  requires:          2-specify/CodeSource.qmd
+  optimizations:     2-specify/Fitting/ModelFitting.qmd
+  optimization:      2-specify/Fitting/ModelFitting.qmd
+  loss:              2-specify/Fitting/LossFunction.qmd
+  inference:         2-specify/Fitting/index.qmd
+  continuations:     2-specify/Models/Bifurcation/BifurcationAnalysis.qmd
+  continuation:      2-specify/Models/Bifurcation/BifurcationAnalysis.qmd
+  dataset:           2-specify/FanOut.qmd
+  sample:            2-specify/FanOut.qmd
+  workflow:          3-generate/workflows/DistributedWorkflows.qmd
+  execution:         4-run/Backends.qmd
+  noise:             2-specify/Models/Noise.qmd
+  transforms:        2-specify/Networks/Network.qmd
+  graph_generator:   2-specify/Networks/Network.qmd
+  parcellation:      2-specify/Networks/Network.qmd
+  coupling:          2-specify/Networks/CouplingFunctions.qmd
+  members:           2-specify/SimulationStudies.qmd
+  results:           2-specify/SimulationStudies.qmd
+  distribution:      2-specify/Models/InitialConditions.qmd
+  initial_state:     2-specify/Models/InitialConditions.qmd
+  subnetwork:        2-specify/Models/BeyondMeanField/MultiScaleModelling.qmd
+  pde:               examples/PDESimulation.qmd
+  spatial_domain:    examples/PDESimulation.qmd
+
+# Idioms that are not slots: a regular expression over the raw recipe text.
+idioms:
+  "!include":                    2-specify/YAML.qmd
+  "^\\s*<<:\\s*\\*":             2-specify/YAML.qmd
+  "reduce:\\s*streaming":        2-specify/Observation/index.qmd
+  "reconcile:\\s*by_label":      2-specify/FanOut.qmd
+  "interpolate_delays:\\s*true": 2-specify/Integrators/index.qmd

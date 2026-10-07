@@ -1,0 +1,31 @@
+name: TemporalAverage_tvboptim
+label: Temporal Average (tvboptim windowing)
+description: 'Running temporal mean over non-overlapping windows of `period`, windowed
+  as tvboptim''s TemporalAverage windows them: the first window covers integration
+  steps 1..istep. Use TemporalAverage for TVB''s windowing, which opens at step 0.'
+iri: tvbo:TemporalAverage_tvboptim
+period: 0.9765625
+reconcile: by_label
+pipeline:
+- name: temporal_average_tvboptim
+  equation:
+    parameters:
+      window_size:
+        name: window_size
+        description: Integration steps per averaging window, so the window tracks
+          the grid the experiment declares rather than the one this file was written
+          on.
+        equation:
+          rhs: iround(period / dt)
+          latex: false
+    rhs: window_mean(slice_axis(X, 0, 1, 1 + window_size * floor((shape(X, 0) - 1)
+      / window_size)), window_size)
+    latex: false
+  output: averaged
+  apply_on_dimension: time
+  arguments:
+    window_size:
+      name: window_size
+      description: Integration steps per averaging window. Its value is declared on
+        the equation parameter of the same name; a backend that has not yet been migrated
+        to read that still derives it here.

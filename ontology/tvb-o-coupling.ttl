@@ -1,0 +1,66 @@
+@prefix tvbo:    <https://w3id.org/tvbo/> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+#
+# ═════════════════════════════════════════════════════════════════
+# TVB-O coupling-evaluation scheme enrichment (mergeable module).
+# ═════════════════════════════════════════════════════════════════
+#
+# Enriches the CouplingStageEvaluation enum values (per_step / per_stage),
+# which LinkML gen-owl emits into `tvb-o-struct.owl` as owl:Class values
+# under `tvbo:CouplingStageEvaluation`. Merged into `tvbo.owl` by
+# `make gen-merged` — never edit the merged artefact directly.
+#
+# WHY: coupling_evaluation states a backend-neutral numerical contract —
+# whether the network coupling term is recomputed at each stage of a
+# multi-stage integrator (Heun, RK4) or frozen once per step. The struct
+# enum already captures the two values and their definitions; this module
+# adds the backend-independent label and the concrete parameter each value
+# lowers to per backend, so the ontology documents the cross-backend
+# mapping (mirroring `tvb-o-neuroml-mappings.ttl`). The distinction is
+# inert for a single node — there is no network coupling to re-evaluate —
+# but changes the trajectory of a coupled network in a stiff or chaotic
+# regime, where a stage-consistent coupling term is not negligible.
+#
+# The enrichment attaches to the identities LinkML minted, rather than
+# minting parallel classes, so each value keeps a single identity.
+# Annotation-only (skos + one annotation property): no logical axioms,
+# so the merge's ELK reasoning step is unaffected.
+#
+
+<https://w3id.org/tvbo/coupling> a owl:Ontology ;
+    dcterms:title       "TVB-O coupling-evaluation scheme enrichment"@en ;
+    dcterms:description  "Backend-independent labels and per-backend parameter mappings for the CouplingStageEvaluation enum (per_step / per_stage)."@en ;
+    dcterms:license      <https://creativecommons.org/licenses/by/4.0/> ;
+    rdfs:seeAlso         <https://w3id.org/tvbo/struct> .
+
+# Annotation property declarations (OWL-DL cleanliness).
+dcterms:title        a owl:AnnotationProperty .
+dcterms:description  a owl:AnnotationProperty .
+dcterms:license      a owl:AnnotationProperty .
+tvbo:backendParameter a owl:AnnotationProperty ;
+    rdfs:label   "backend parameter"@en ;
+    rdfs:comment "Concrete backend parameter that realises a backend-neutral tvbo term (e.g. the tvboptim solver keyword an evaluation scheme lowers to). Documentary: states how a value is enacted per backend without binding tvbo to any one of them."@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# CouplingStageEvaluation values — enriched on the identities LinkML
+# minted in `tvb-o-struct.owl` (each already rdfs:subClassOf
+# tvbo:CouplingStageEvaluation, with a skos:definition).
+# ─────────────────────────────────────────────────────────────────
+#
+
+<https://w3id.org/tvbo/CouplingStageEvaluation#per_stage>
+    skos:prefLabel "per-stage coupling evaluation"@en ;
+    skos:altLabel  "per_stage", "recompute_coupling_per_stage" ;
+    skos:scopeNote "Re-evaluate the network coupling term at every stage of a multi-stage integrator. Costlier, but the coupling seen by each stage is consistent with that stage's state; the difference from per-step matters for stiff or chaotic coupled networks."@en ;
+    tvbo:backendParameter "tvboptim: recompute_coupling_per_stage=True" .
+
+<https://w3id.org/tvbo/CouplingStageEvaluation#per_step>
+    skos:prefLabel "per-step coupling evaluation"@en ;
+    skos:altLabel  "per_step" ;
+    skos:scopeNote "Evaluate the network coupling once per integration step and hold it frozen across the integrator's stages. The default, and the classic TVB treatment."@en ;
+    tvbo:backendParameter "tvboptim: recompute_coupling_per_stage=False" .

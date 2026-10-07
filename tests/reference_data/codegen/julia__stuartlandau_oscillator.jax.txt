@@ -1,0 +1,20 @@
+import jax.numpy as jnp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    mu = _p.mu
+    omega = _p.omega
+    b = _p.b
+
+    # State variables
+    x = current_state[0]
+    y = current_state[1]
+
+    # Derivatives
+    dx_dt = x * (mu - x**2 - y**2) - omega * y - b * y * (x**2 + y**2)
+    dy_dt = omega * x + y * (mu - x**2 - y**2) + b * x * (x**2 + y**2)
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dx_dt, dy_dt))
+
+    return derivatives

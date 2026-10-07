@@ -1,0 +1,44 @@
+name: LFPy
+description: A Python module for calculating local field potentials (LFPs) and extracellular
+  potentials from multicompartment neuron models using the line-source method on NEURON
+  simulations.
+homepage: https://lfpy.readthedocs.io
+license: GPL-3.0-only
+repository: https://github.com/LFPy/LFPy
+doi: 10.3389/fninf.2013.00041
+ecosystem:
+- pypi
+application_category: analysis
+scale:
+- neuron
+- network_system
+model_paradigm:
+- compartmental
+tool_role:
+- analysis_tool
+programming_language:
+- Python
+runtime_platform:
+- NEURON backend
+interoperates_with:
+- NEURON
+- HNN-core
+- TVB
+date_created: '2013-01-01'
+development_status: active
+author:
+- Espen Hagen
+- Gaute Einevoll
+maintainer:
+- Espen Hagen
+funder:
+- Norwegian University of Life Sciences
+- EU HBP
+reference_publication: 10.3389/fncom.2013.00041
+keywords:
+- LFP
+- EEG
+- extracellular potential
+- compartmental model
+issue_tracker: https://github.com/LFPy/LFPy/issues
+is_accessible_for_free: true

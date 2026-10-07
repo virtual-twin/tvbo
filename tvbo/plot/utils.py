@@ -1,18 +1,12 @@
-#
-# Module: utils.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Plotting helpers for TVB-O figures.
 
-Provides the shared matplotlib style, the TVB brand color palette derived from the
-TVB logo SVG, colormap and color-conversion utilities, and a multi-view brain
-surface renderer.
+Provides the entry point that puts TVB-O's look in force, the TVB brand color palette derived from the TVB logo SVG, colormap and color-conversion utilities, and a multi-view brain surface renderer.
 """
 
-from os.path import join, abspath, dirname
+from os.path import abspath, dirname, join
 from xml.etree import ElementTree as ET
 
 import matplotlib.colors as mcolors
@@ -25,14 +19,20 @@ ROOT = abspath(dirname(__file__))
 
 
 def use_tvbo_style():
-    """Activate the bundled TVB-O matplotlib style sheet."""
-    plt.style.use(join(ROOT, "tvbo.mplstyle"))
+    """Put TVB-O's own look in force: bsplot's registered sheet for the geometry, the curated theme for the colours.
+
+    The same two layers a declared figure gets, in the same order, so a built-in plot and a rendered `Figure` beside it cannot disagree about what TVB-O looks like. There is no sheet of our own any more — one carrying its own colour cycle is exactly what the palette exists to prevent.
+    """
+    import bsplot
+
+    from tvbo.plot import palette
+
+    bsplot.style.use("tvbo")
+    palette.use(palette.PATH)
 
 
 def extract_svg_colors(svg_path):
-    """
-    Extracts colors from an SVG file and returns them as a list of hex codes.
-    """
+    """Extracts colors from an SVG file and returns them as a list of hex codes."""
     # Parse the SVG file
     tree = ET.parse(svg_path)
     root = tree.getroot()
@@ -145,7 +145,7 @@ def get_cmap(colors=None):
     colors : list, optional
         List of colors.
 
-    Returns
+    Returns:
     -------
     ListedColormap
     """
@@ -164,7 +164,7 @@ def get_continuous_cmap(hex_list, float_list=None):
     float_list : list, optional
         List of floats between 0 and 1 of the same length as hex_list.
 
-    Returns
+    Returns:
     -------
     LinearSegmentedColormap
     """
@@ -188,8 +188,7 @@ def get_continuous_cmap(hex_list, float_list=None):
 def multiview(data, cortex, suptitle="", figsize=(15, 10), **kwds):
     """Display multiple views of brain regions.
 
-    Adapted from
-    https://github.com/the-virtual-brain/tvb-root/blob/master/tvb_documentation/tutorials/utils.py
+    Adapted from https://github.com/the-virtual-brain/tvb-root/blob/master/tvb_documentation/tutorials/utils.py
 
     Parameters
     ----------

@@ -1,0 +1,801 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class ZerlautAdaptationSecondOrder(Model):
+
+    g_L = NArray(
+        label=r":math:`g_L`",
+        default=np.array([10.0]),
+        domain=Range(lo=0.1, hi=100.0, step=0.1),
+        doc="""leak conductance [nS]""",
+    )
+    E_L_e = NArray(
+        label=r":math:`E_L_e`",
+        default=np.array([-65.0]),
+        domain=Range(lo=-90.0, hi=-60.0, step=0.1),
+        doc="""leak reversal potential for excitatory [mV]""",
+    )
+    E_L_i = NArray(
+        label=r":math:`E_L_i`",
+        default=np.array([-65.0]),
+        domain=Range(lo=-90.0, hi=-60.0, step=0.1),
+        doc="""leak reversal potential for inhibitory [mV]""",
+    )
+    C_m = NArray(
+        label=r":math:`C_m`",
+        default=np.array([200.0]),
+        domain=Range(lo=10.0, hi=500.0, step=10.0),
+        doc="""membrane capacitance [pF]""",
+    )
+    b_e = NArray(
+        label=r":math:`b_e`",
+        default=np.array([60.0]),
+        domain=Range(lo=0.0, hi=150.0, step=1.0),
+        doc="""Excitatory adaptation current increment [pA]""",
+    )
+    a_e = NArray(
+        label=r":math:`a_e`",
+        default=np.array([4.0]),
+        domain=Range(lo=0.0, hi=20.0, step=0.1),
+        doc="""Excitatory adaptation conductance [nS]""",
+    )
+    b_i = NArray(
+        label=r":math:`b_i`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=100.0, step=0.1),
+        doc="""Inhibitory adaptation current increment [pA]""",
+    )
+    a_i = NArray(
+        label=r":math:`a_i`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=20.0, step=0.1),
+        doc="""Inhibitory adaptation conductance [nS]""",
+    )
+    tau_w_e = NArray(
+        label=r":math:`tau_w_e`",
+        default=np.array([500.0]),
+        domain=Range(lo=1.0, hi=1000.0, step=1.0),
+        doc="""Adaptation time constant of excitatory neurons [ms]""",
+    )
+    tau_w_i = NArray(
+        label=r":math:`tau_w_i`",
+        default=np.array([1.0]),
+        domain=Range(lo=1.0, hi=1000.0, step=1.0),
+        doc="""Adaptation time constant of inhibitory neurons [ms]""",
+    )
+    E_e = NArray(
+        label=r":math:`E_e`",
+        default=np.array([0.0]),
+        domain=Range(lo=-20.0, hi=20.0, step=0.01),
+        doc="""excitatory reversal potential [mV]""",
+    )
+    E_i = NArray(
+        label=r":math:`E_i`",
+        default=np.array([-80.0]),
+        domain=Range(lo=-100.0, hi=-60.0, step=1.0),
+        doc="""inhibitory reversal potential [mV]""",
+    )
+    Q_e = NArray(
+        label=r":math:`Q_e`",
+        default=np.array([1.5]),
+        domain=Range(lo=0.0, hi=5.0, step=0.1),
+        doc="""excitatory quantal conductance [nS]""",
+    )
+    Q_i = NArray(
+        label=r":math:`Q_i`",
+        default=np.array([5.0]),
+        domain=Range(lo=0.0, hi=10.0, step=0.1),
+        doc="""inhibitory quantal conductance [nS]""",
+    )
+    tau_e = NArray(
+        label=r":math:`tau_e`",
+        default=np.array([5.0]),
+        domain=Range(lo=1.0, hi=10.0, step=1.0),
+        doc="""excitatory decay [ms]""",
+    )
+    tau_i = NArray(
+        label=r":math:`tau_i`",
+        default=np.array([5.0]),
+        domain=Range(lo=0.5, hi=10.0, step=0.01),
+        doc="""inhibitory decay [ms]""",
+    )
+    N_tot = NArray(
+        label=r":math:`N_tot`",
+        default=np.array([10000]),
+        domain=Range(lo=1000, hi=50000, step=1000),
+        doc="""cell number""",
+    )
+    p_connect_e = NArray(
+        label=r":math:`p_connect_e`",
+        default=np.array([0.05]),
+        domain=Range(lo=0.001, hi=0.2, step=0.001),
+        doc="""connectivity probability""",
+    )
+    p_connect_i = NArray(
+        label=r":math:`p_connect_i`",
+        default=np.array([0.05]),
+        domain=Range(lo=0.001, hi=0.2, step=0.001),
+        doc="""connectivity probability""",
+    )
+    g = NArray(
+        label=r":math:`g`",
+        default=np.array([0.2]),
+        domain=Range(lo=0.01, hi=0.4, step=0.01),
+        doc="""fraction of inhibitory cells""",
+    )
+    K_ext_e = NArray(
+        label=r":math:`K_ext_e`",
+        default=np.array([400]),
+        domain=Range(lo=0, hi=10000, step=1),
+        doc="""Number of excitatory connexions from external population""",
+    )
+    K_ext_i = NArray(
+        label=r":math:`K_ext_i`",
+        default=np.array([0]),
+        domain=Range(lo=0, hi=10000, step=1),
+        doc="""Number of inhibitory connexions from external population""",
+    )
+    T = NArray(
+        label=r":math:`T`",
+        default=np.array([20.0]),
+        domain=Range(lo=1.0, hi=20.0, step=0.1),
+        doc="""time scale of describing network activity""",
+    )
+    P_e0 = NArray(
+        label=r":math:`P_e0`",
+        default=np.array([-0.04983106]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 0)""",
+    )
+    P_e1 = NArray(
+        label=r":math:`P_e1`",
+        default=np.array([0.005063550882777035]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 1)""",
+    )
+    P_e2 = NArray(
+        label=r":math:`P_e2`",
+        default=np.array([-0.023470121807314552]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 2)""",
+    )
+    P_e3 = NArray(
+        label=r":math:`P_e3`",
+        default=np.array([0.0022951513725067503]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 3)""",
+    )
+    P_e4 = NArray(
+        label=r":math:`P_e4`",
+        default=np.array([-0.0004105302652029825]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 4)""",
+    )
+    P_e5 = NArray(
+        label=r":math:`P_e5`",
+        default=np.array([0.010547051343547399]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 5)""",
+    )
+    P_e6 = NArray(
+        label=r":math:`P_e6`",
+        default=np.array([-0.03659252821136933]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 6)""",
+    )
+    P_e7 = NArray(
+        label=r":math:`P_e7`",
+        default=np.array([0.007437487505797858]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 7)""",
+    )
+    P_e8 = NArray(
+        label=r":math:`P_e8`",
+        default=np.array([0.001265064721846073]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 8)""",
+    )
+    P_e9 = NArray(
+        label=r":math:`P_e9`",
+        default=np.array([-0.04072161294490446]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of excitatory phenomenological threshold (coefficient 9)""",
+    )
+    P_i0 = NArray(
+        label=r":math:`P_i0`",
+        default=np.array([-0.05149122024209484]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 0)""",
+    )
+    P_i1 = NArray(
+        label=r":math:`P_i1`",
+        default=np.array([0.004003689190271077]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 1)""",
+    )
+    P_i2 = NArray(
+        label=r":math:`P_i2`",
+        default=np.array([-0.008352013668528155]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 2)""",
+    )
+    P_i3 = NArray(
+        label=r":math:`P_i3`",
+        default=np.array([0.0002414237992765705]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 3)""",
+    )
+    P_i4 = NArray(
+        label=r":math:`P_i4`",
+        default=np.array([-0.0005070645080016026]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 4)""",
+    )
+    P_i5 = NArray(
+        label=r":math:`P_i5`",
+        default=np.array([0.0014345394104282397]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 5)""",
+    )
+    P_i6 = NArray(
+        label=r":math:`P_i6`",
+        default=np.array([-0.014686689498949967]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 6)""",
+    )
+    P_i7 = NArray(
+        label=r":math:`P_i7`",
+        default=np.array([0.004502706285435741]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 7)""",
+    )
+    P_i8 = NArray(
+        label=r":math:`P_i8`",
+        default=np.array([0.0028472190352532454]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 8)""",
+    )
+    P_i9 = NArray(
+        label=r":math:`P_i9`",
+        default=np.array([-0.015357804594594548]),
+        domain=Range(lo=-1.0, hi=1.0, step=1e-06),
+        doc="""Polynome of inhibitory phenomenological threshold (coefficient 9)""",
+    )
+    external_input_ex_ex = NArray(
+        label=r":math:`external_input_ex_ex`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=0.1, step=0.001),
+        doc="""external drive""",
+    )
+    external_input_ex_in = NArray(
+        label=r":math:`external_input_ex_in`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=0.1, step=0.001),
+        doc="""external drive""",
+    )
+    external_input_in_ex = NArray(
+        label=r":math:`external_input_in_ex`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=0.1, step=0.001),
+        doc="""external drive""",
+    )
+    external_input_in_in = NArray(
+        label=r":math:`external_input_in_in`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=0.1, step=0.001),
+        doc="""external drive""",
+    )
+    tau_OU = NArray(
+        label=r":math:`tau_OU`",
+        default=np.array([5.0]),
+        domain=Range(lo=0.1, hi=10.0, step=0.01),
+        doc="""time constant noise""",
+    )
+    weight_noise = NArray(
+        label=r":math:`weight_noise`",
+        default=np.array([10.5]),
+        domain=Range(lo=0.0, hi=50.0, step=1.0),
+        doc="""weight noise""",
+    )
+    S_i = NArray(
+        label=r":math:`S_i`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.0, hi=2.0, step=0.01),
+        doc="""Scaling of the remote input for the inhibitory population""",
+    )
+
+    _nvar = 8
+    state_variables = ["E", "I", "C_ee", "C_ei", "C_ii", "W_e", "W_i", "ou_drift"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "E": np.array([0.001, 0.25]),
+            "I": np.array([0.001, 0.25]),
+            "C_ee": np.array([0.0, 0.0005]),
+            "C_ei": np.array([-0.0005, 0.0005]),
+            "C_ii": np.array([0.0, 0.0005]),
+            "W_e": np.array([0.0, 200.0]),
+            "W_i": np.array([0.0, 0.0]),
+            "ou_drift": np.array([0.0, 0.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    state_variable_boundaries = Final(
+        label="State Variable boundaries [lo, hi]",
+        default={"E": np.array([0.0, np.inf]), "I": np.array([0.0, np.inf])},
+        doc="""State variable boundaries for phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("E", "I", "C_ee", "C_ei", "C_ii", "W_e", "W_i", "ou_drift"),
+        default=("E",),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "g_L",
+            "E_L_e",
+            "E_L_i",
+            "C_m",
+            "b_e",
+            "a_e",
+            "b_i",
+            "a_i",
+            "tau_w_e",
+            "tau_w_i",
+            "E_e",
+            "E_i",
+            "Q_e",
+            "Q_i",
+            "tau_e",
+            "tau_i",
+            "N_tot",
+            "p_connect_e",
+            "p_connect_i",
+            "g",
+            "K_ext_e",
+            "K_ext_i",
+            "T",
+            "P_e0",
+            "P_e1",
+            "P_e2",
+            "P_e3",
+            "P_e4",
+            "P_e5",
+            "P_e6",
+            "P_e7",
+            "P_e8",
+            "P_e9",
+            "P_i0",
+            "P_i1",
+            "P_i2",
+            "P_i3",
+            "P_i4",
+            "P_i5",
+            "P_i6",
+            "P_i7",
+            "P_i8",
+            "P_i9",
+            "external_input_ex_ex",
+            "external_input_ex_in",
+            "external_input_in_ex",
+            "external_input_in_in",
+            "tau_OU",
+            "weight_noise",
+            "S_i",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "E": "(TFe - E + 0.5*C_ee*d2_fefe_e + 0.5*C_ei*d2_fefi_e + 0.5*C_ei*d2_fife_e + 0.5*C_ii*d2_fifi_e)/T",
+            "I": "(TFi - I + 0.5*C_ee*d2_fefe_i + 0.5*C_ei*d2_fefi_i + 0.5*C_ei*d2_fife_i + 0.5*C_ii*d2_fifi_i)/T",
+            "C_ee": "((TFe - E)**2 - 2.0*C_ee + 2.0*C_ee*dfe_TFe + 2.0*C_ei*dfi_TFe + TFe*(-TFe + 1.0/T)/(N_tot*(1.0 - g)))/T",
+            "C_ei": "(-2.0*C_ei + C_ee*dfe_TFe + C_ei*dfe_TFi + C_ei*dfi_TFe + C_ii*dfi_TFi + (TFe - E)*(TFi - I))/T",
+            "C_ii": "((TFi - I)**2 - 2.0*C_ii + 2.0*C_ei*dfe_TFi + 2.0*C_ii*dfi_TFi + TFi*(-TFi + 1.0/T)/(N_tot*g))/T",
+            "W_e": "E*b_e - W_e/tau_w_e + a_e*(muV_e - E_L_e)/tau_w_e",
+            "W_i": "I*b_i - W_i/tau_w_i + a_i*(muV_i - E_L_i)/tau_w_i",
+            "ou_drift": "-ou_drift/tau_OU",
+        },
+    )
+
+    cvar = np.array([0], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_glob"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        E = state_variables[0, :]
+        I = state_variables[1, :]
+        C_ee = state_variables[2, :]
+        C_ei = state_variables[3, :]
+        C_ii = state_variables[4, :]
+        W_e = state_variables[5, :]
+        W_i = state_variables[6, :]
+        ou_drift = state_variables[7, :]
+
+        g_L = self.g_L
+        E_L_e = self.E_L_e
+        E_L_i = self.E_L_i
+        C_m = self.C_m
+        b_e = self.b_e
+        a_e = self.a_e
+        b_i = self.b_i
+        a_i = self.a_i
+        tau_w_e = self.tau_w_e
+        tau_w_i = self.tau_w_i
+        E_e = self.E_e
+        E_i = self.E_i
+        Q_e = self.Q_e
+        Q_i = self.Q_i
+        tau_e = self.tau_e
+        tau_i = self.tau_i
+        N_tot = self.N_tot
+        p_connect_e = self.p_connect_e
+        p_connect_i = self.p_connect_i
+        g = self.g
+        K_ext_e = self.K_ext_e
+        K_ext_i = self.K_ext_i
+        T = self.T
+        P_e0 = self.P_e0
+        P_e1 = self.P_e1
+        P_e2 = self.P_e2
+        P_e3 = self.P_e3
+        P_e4 = self.P_e4
+        P_e5 = self.P_e5
+        P_e6 = self.P_e6
+        P_e7 = self.P_e7
+        P_e8 = self.P_e8
+        P_e9 = self.P_e9
+        P_i0 = self.P_i0
+        P_i1 = self.P_i1
+        P_i2 = self.P_i2
+        P_i3 = self.P_i3
+        P_i4 = self.P_i4
+        P_i5 = self.P_i5
+        P_i6 = self.P_i6
+        P_i7 = self.P_i7
+        P_i8 = self.P_i8
+        P_i9 = self.P_i9
+        external_input_ex_ex = self.external_input_ex_ex
+        external_input_ex_in = self.external_input_ex_in
+        external_input_in_ex = self.external_input_in_ex
+        external_input_in_in = self.external_input_in_in
+        tau_OU = self.tau_OU
+        weight_noise = self.weight_noise
+        S_i = self.S_i
+
+        # Functions
+
+        def muV(fe, fi, fe_ext, fi_ext, W, E_leak):
+            _cse0 = (
+                Q_i
+                * tau_i
+                * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+            )
+            _cse1 = (
+                Q_e
+                * tau_e
+                * (K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe))
+            )
+            return (-W + E_e * _cse1 + E_i * _cse0 + E_leak * g_L) / (
+                _cse0 + _cse1 + g_L
+            )
+
+        def sigmaV(fe, fi, fe_ext, fi_ext, W, E_leak):
+            _cse0 = K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi)
+            _cse1 = -muV(fe, fi, fe_ext, fi_ext, W, E_leak)
+            _cse2 = K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+            _cse3 = g_L + Q_e * _cse2 * tau_e + Q_i * _cse0 * tau_i
+            _cse4 = _cse3 ** (-2.0)
+            _cse5 = 2.0 * C_m / _cse3
+            return np.sqrt(
+                _cse0
+                * _cse4
+                * Q_i**2
+                * tau_i**2
+                * (E_i + _cse1) ** 2
+                / (_cse5 + 2.0 * tau_i)
+                + _cse2
+                * _cse4
+                * Q_e**2
+                * tau_e**2
+                * (E_e + _cse1) ** 2
+                / (_cse5 + 2.0 * tau_e)
+            )
+
+        def T_V(fe, fi, fe_ext, fi_ext, W, E_leak):
+            _cse0 = K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi)
+            _cse1 = -muV(fe, fi, fe_ext, fi_ext, W, E_leak)
+            _cse2 = K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+            _cse3 = g_L + Q_e * _cse2 * tau_e + Q_i * _cse0 * tau_i
+            _cse4 = _cse3 ** (-2.0)
+            _cse5 = _cse0 * _cse4 * Q_i**2 * tau_i**2 * (E_i + _cse1) ** 2
+            _cse6 = _cse2 * _cse4 * Q_e**2 * tau_e**2 * (E_e + _cse1) ** 2
+            _cse7 = C_m / _cse3
+            return (_cse5 + _cse6) / (_cse5 / (_cse7 + tau_i) + _cse6 / (_cse7 + tau_e))
+
+        def TF_e(fe, fi, fe_ext, fi_ext, W):
+            _cse0 = T_V(fe, fi, fe_ext, fi_ext, W, E_L_e)
+            _cse1 = sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+            _cse2 = muV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+            _cse3 = 6.0 + 0.1 * _cse2
+            _cse4 = 1000.0 * _cse3
+            _cse5 = -0.666666666666667 + 0.166666666666667 * _cse1
+            _cse6 = 1000.0 * _cse5
+            _cse7 = -0.5 + 1.0 * _cse0 * g_L / C_m
+            return (
+                0.5
+                * scipy.special.erfc(
+                    0.707106781186547
+                    * (
+                        -_cse2
+                        + 1000.0 * P_e0
+                        + P_e1 * _cse4
+                        + P_e2 * _cse6
+                        + 1000.0 * P_e3 * _cse7
+                        + 1000.0 * P_e4 * _cse3**2
+                        + 1000.0 * P_e5 * _cse5**2
+                        + 1000.0 * P_e6 * _cse7**2
+                        + P_e7 * _cse4 * _cse5
+                        + P_e8 * _cse4 * _cse7
+                        + P_e9 * _cse6 * _cse7
+                    )
+                    / _cse1
+                )
+                / _cse0
+            )
+
+        def TF_i(fe, fi, fe_ext, fi_ext, W):
+            _cse0 = T_V(fe, fi, fe_ext, fi_ext, W, E_L_i)
+            _cse1 = sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+            _cse2 = muV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+            _cse3 = 6.0 + 0.1 * _cse2
+            _cse4 = 1000.0 * _cse3
+            _cse5 = -0.666666666666667 + 0.166666666666667 * _cse1
+            _cse6 = 1000.0 * _cse5
+            _cse7 = -0.5 + 1.0 * _cse0 * g_L / C_m
+            return (
+                0.5
+                * scipy.special.erfc(
+                    0.707106781186547
+                    * (
+                        -_cse2
+                        + 1000.0 * P_i0
+                        + P_i1 * _cse4
+                        + P_i2 * _cse6
+                        + 1000.0 * P_i3 * _cse7
+                        + 1000.0 * P_i4 * _cse3**2
+                        + 1000.0 * P_i5 * _cse5**2
+                        + 1000.0 * P_i6 * _cse7**2
+                        + P_i7 * _cse4 * _cse5
+                        + P_i8 * _cse4 * _cse7
+                        + P_i9 * _cse6 * _cse7
+                    )
+                    / _cse1
+                )
+                / _cse0
+            )
+
+        # Coupling Terms (from coupling array)
+        c_glob = coupling[0, :]
+
+        # Derived Variables
+        self.E_input_excitatory = E_input_excitatory = np.where(
+            np.less(
+                c_glob
+                + external_input_ex_ex
+                + E * local_coupling
+                + ou_drift * weight_noise,
+                0,
+            ),
+            0.0,
+            c_glob
+            + external_input_ex_ex
+            + E * local_coupling
+            + ou_drift * weight_noise,
+        )
+        self.E_input_inhibitory = E_input_inhibitory = np.where(
+            np.less(
+                external_input_in_ex
+                + E * local_coupling
+                + S_i * c_glob
+                + ou_drift * weight_noise,
+                0,
+            ),
+            0.0,
+            external_input_in_ex
+            + E * local_coupling
+            + S_i * c_glob
+            + ou_drift * weight_noise,
+        )
+        self.I_input_excitatory = I_input_excitatory = (
+            external_input_ex_in + I * local_coupling
+        )
+        self.I_input_inhibitory = I_input_inhibitory = (
+            external_input_in_in + I * local_coupling
+        )
+        self.TFe = TFe = TF_e(E, I, E_input_excitatory, I_input_excitatory, W_e)
+        self.TFi = TFi = TF_i(E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+        self.d2_fefi_e = d2_fefi_e = (
+            25000000.0
+            * TF_e(1.0e-7 + E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+            + 25000000.0
+            * TF_e(
+                -1.0e-7 + E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e
+            )
+            - 25000000.0
+            * TF_e(1.0e-7 + E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+            - 25000000.0
+            * TF_e(-1.0e-7 + E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        )
+        self.d2_fefi_i = d2_fefi_i = (
+            25000000.0
+            * TF_i(1.0e-7 + E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+            + 25000000.0
+            * TF_i(
+                -1.0e-7 + E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i
+            )
+            - 25000000.0
+            * TF_i(1.0e-7 + E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+            - 25000000.0
+            * TF_i(-1.0e-7 + E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        )
+        self.d2_fife_e = d2_fife_e = (
+            25000000.0
+            * TF_e(1.0e-7 + E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+            + 25000000.0
+            * TF_e(
+                -1.0e-7 + E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e
+            )
+            - 25000000.0
+            * TF_e(1.0e-7 + E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+            - 25000000.0
+            * TF_e(-1.0e-7 + E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        )
+        self.d2_fife_i = d2_fife_i = (
+            25000000.0
+            * TF_i(1.0e-7 + E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+            + 25000000.0
+            * TF_i(
+                -1.0e-7 + E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i
+            )
+            - 25000000.0
+            * TF_i(1.0e-7 + E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+            - 25000000.0
+            * TF_i(-1.0e-7 + E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        )
+        self.dfe_TFe = dfe_TFe = 5000.0 * TF_e(
+            1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e
+        ) - 5000.0 * TF_e(-1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e)
+        self.dfe_TFi = dfe_TFi = 5000.0 * TF_i(
+            1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i
+        ) - 5000.0 * TF_i(-1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+        self.dfi_TFe = dfi_TFe = 5000.0 * TF_e(
+            E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e
+        ) - 5000.0 * TF_e(E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        self.dfi_TFi = dfi_TFi = 5000.0 * TF_i(
+            E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i
+        ) - 5000.0 * TF_i(E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        self.muV_e = muV_e = muV(
+            E, I, E_input_excitatory, I_input_excitatory, W_e, E_L_e
+        )
+        self.muV_i = muV_i = muV(
+            E, I, E_input_inhibitory, I_input_inhibitory, W_i, E_L_i
+        )
+        self.d2_fefe_e = d2_fefe_e = (
+            100000000.0
+            * TF_e(1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e)
+            + 100000000.0
+            * TF_e(-1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e)
+            - 200000000.0 * TFe
+        )
+        self.d2_fefe_i = d2_fefe_i = (
+            100000000.0
+            * TF_i(1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+            + 100000000.0
+            * TF_i(-1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+            - 200000000.0 * TFi
+        )
+        self.d2_fifi_e = d2_fifi_e = (
+            100000000.0
+            * TF_e(E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+            + 100000000.0
+            * TF_e(E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+            - 200000000.0 * TFe
+        )
+        self.d2_fifi_i = d2_fifi_i = (
+            100000000.0
+            * TF_i(E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+            + 100000000.0
+            * TF_i(E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+            - 200000000.0 * TFi
+        )
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(
+                (
+                    TFe
+                    - E
+                    + 0.5 * C_ee * d2_fefe_e
+                    + 0.5 * C_ei * d2_fefi_e
+                    + 0.5 * C_ei * d2_fife_e
+                    + 0.5 * C_ii * d2_fifi_e
+                )
+                / T
+            ),  # E
+            np.asarray(
+                (
+                    TFi
+                    - I
+                    + 0.5 * C_ee * d2_fefe_i
+                    + 0.5 * C_ei * d2_fefi_i
+                    + 0.5 * C_ei * d2_fife_i
+                    + 0.5 * C_ii * d2_fifi_i
+                )
+                / T
+            ),  # I
+            np.asarray(
+                (
+                    (TFe - E) ** 2
+                    - 2.0 * C_ee
+                    + 2.0 * C_ee * dfe_TFe
+                    + 2.0 * C_ei * dfi_TFe
+                    + TFe * (-TFe + 1.0 / T) / (N_tot * (1.0 - g))
+                )
+                / T
+            ),  # C_ee
+            np.asarray(
+                (
+                    -2.0 * C_ei
+                    + C_ee * dfe_TFe
+                    + C_ei * dfe_TFi
+                    + C_ei * dfi_TFe
+                    + C_ii * dfi_TFi
+                    + (TFe - E) * (TFi - I)
+                )
+                / T
+            ),  # C_ei
+            np.asarray(
+                (
+                    (TFi - I) ** 2
+                    - 2.0 * C_ii
+                    + 2.0 * C_ei * dfe_TFi
+                    + 2.0 * C_ii * dfi_TFi
+                    + TFi * (-TFi + 1.0 / T) / (N_tot * g)
+                )
+                / T
+            ),  # C_ii
+            np.asarray(
+                E * b_e - W_e / tau_w_e + a_e * (muV_e - E_L_e) / tau_w_e
+            ),  # W_e
+            np.asarray(
+                I * b_i - W_i / tau_w_i + a_i * (muV_i - E_L_i) / tau_w_i
+            ),  # W_i
+            np.asarray(-ou_drift / tau_OU),  # ou_drift
+        )
+        return np.array(_derivs)

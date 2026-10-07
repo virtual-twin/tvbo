@@ -20,6 +20,7 @@
         "SimpleWeightedGraphs":     {"uuid": "47aef6b3-ad0c-573a-a1e2-d07658019622"},
         "SpecialFunctions":         {"uuid": "276daf66-3868-5448-9aa4-cd146d93841b"},
         "StableRNGs":               {"uuid": "860ef19b-820b-49d6-a774-d7a799459cd3"},
-        "StochasticDiffEq":         {"uuid": "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"}
+        "StochasticDiffEq":         {"uuid": "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"},
+        "SymbolicIndexingInterface": {"uuid": "2efcf032-c050-4f8e-a9bb-153293bab1f5"}
     }
 }

@@ -143,7 +143,7 @@ parameters:
       hi: 5.0
       step: 0.0
     description: initial concentration of intracellular Cl
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Cl_o0:
     definition: initial concentration of extracellular Cl
     value: 112.0
@@ -152,7 +152,7 @@ parameters:
       hi: 112.0
       step: 0.0
     description: initial concentration of extracellular Cl
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Cmna:
     value: -24.0
     domain:
@@ -216,7 +216,7 @@ parameters:
       hi: 130.0
       step: 0.0
     description: initial concentration of intracellular K
-    unit: mmol_per_m3
+    unit: mol_per_m3
   K_o0:
     definition: initial concentration of extracellular K
     value: 4.8
@@ -225,7 +225,7 @@ parameters:
       hi: 4.8
       step: 0.0
     description: initial concentration of extracellular K
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Na_i0:
     definition: initial concentration of intracellular Na
     value: 16.0
@@ -234,7 +234,7 @@ parameters:
       hi: 16.0
       step: 0.0
     description: initial concentration of intracellular Na
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Na_o0:
     definition: initial concentration of extracellular Na
     value: 138.0
@@ -243,7 +243,7 @@ parameters:
       hi: 138.0
       step: 0.0
     description: initial concentration of extracellular Na
-    unit: mmol_per_m3
+    unit: mol_per_m3
   g_Cl:
     definition: chloride conductance
     value: 7.5
@@ -326,139 +326,108 @@ derived_variables:
       lhs: DNa_i
       rhs: -DKi
       latex: false
-    conditional: false
   I_Cl:
     equation:
       lhs: I_Cl
       rhs: g_Cl*(V + 26.64*log(Cl_o0/Cl_i0))
       latex: false
-    conditional: false
   K_i:
     equation:
       lhs: K_i
       rhs: DKi + K_i0
       latex: false
-    conditional: false
   beta:
     equation:
       lhs: beta
       rhs: w_i/w_o
       latex: false
-    conditional: false
   h:
     equation:
       lhs: h
       rhs: 1.1 - 1.0/(1.0 + 24.5325301971094*exp(-8.0*n))
       latex: false
-    conditional: false
   minf:
     equation:
       lhs: minf
       rhs: 1.0/(exp((Cmna - V)/DCmna) + 1.0)
       latex: false
-    conditional: false
   ninf:
     equation:
       lhs: ninf
       rhs: 1.0/(exp((Cnk - V)/DCnk) + 1.0)
       latex: false
-    conditional: false
   r:
     equation:
       lhs: r
       rhs: R_minus*x/pi
       latex: false
-    conditional: false
   DK_o:
     equation:
       lhs: DK_o
       rhs: -DKi*beta
       latex: false
-    conditional: false
   DNa_o:
     equation:
       lhs: DNa_o
       rhs: -DNa_i*beta
       latex: false
-    conditional: false
   Na_i:
     equation:
       lhs: Na_i
       rhs: DNa_i + Na_i0
       latex: false
-    conditional: false
   xcond:
     symbol: xcond
     equation:
       lhs: xcond
       rhs: Piecewise((Delta - J*r*x + 2*R_minus*x*(V - c_minus), V <= Vstar), (Delta - J*r*x + 2*R_plus*x*(V - c_plus), True))
       latex: false
-    conditional: true
-    cases:
-    - condition: V <= Vstar
-      equation:
-        lhs: xcond
-        rhs: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: xcond
-        rhs: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
-        latex: false
+      conditionals:
+      - condition: V <= Vstar
+        expression: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
+      - condition: 'True'
+        expression: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
   K_o:
     equation:
       lhs: K_o
       rhs: DK_o + K_o0 + Kg
       latex: false
-    conditional: false
   Na_o:
     equation:
       lhs: Na_o
       rhs: DNa_o + Na_o0
       latex: false
-    conditional: false
   I_K:
     equation:
       lhs: I_K
       rhs: (V - 26.64*log(K_o/K_i))*(g_K*n + g_Kl)
       latex: false
-    conditional: false
   I_Na:
     equation:
       lhs: I_Na
       rhs: (V - 26.64*log(Na_o/Na_i))*(g_Na*h*minf + g_Nal)
       latex: false
-    conditional: false
   I_pump:
     equation:
       lhs: I_pump
       rhs: 1.0*rho/((exp((Ckp - K_o)/DCkp) + 1.0)*(exp((Cnap - Na_i)/DCnap) + 1.0))
       latex: false
-    conditional: false
   V_temp:
     equation:
       lhs: V_temp
       rhs: -1.0*(I_Cl + I_K + I_Na + I_pump)/Cm
       latex: false
-    conditional: false
   Vcond:
     symbol: Vcond
     equation:
       lhs: Vcond
       rhs: Piecewise((R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V <= Vstar), (R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))
       latex: false
-    conditional: true
-    cases:
-    - condition: V <= Vstar
-      equation:
-        lhs: Vcond
-        rhs: R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: Vcond
-        rhs: R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta
-        latex: false
+      conditionals:
+      - condition: V <= Vstar
+        expression: R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta
+      - condition: 'True'
+        expression: R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta
 coupling_inputs:
   c_glob: {}
 state_variables:

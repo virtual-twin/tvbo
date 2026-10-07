@@ -3,10 +3,7 @@ title: PyRates Parameter Analysis
 jupyter: python3
 ---
 
-This guide demonstrates parameter sweeps and grid searches using TVBO's `SimulationExperiment.explorations`
-with PyRates as the backend.  Grid searches are declared declaratively — no manual loops, no YAML
-export plumbing.  TVBO translates each `Exploration` into a PyRates-native `grid_search()` call
-automatically.
+This guide demonstrates parameter sweeps and grid searches using TVBO's `SimulationExperiment.explorations` with PyRates as the backend.  Grid searches are declared declaratively — no manual loops, no YAML export plumbing.  TVBO translates each `Exploration` into a PyRates-native `grid_search()` call automatically.
 
 ## Workflow
 

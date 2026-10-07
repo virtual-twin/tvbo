@@ -1,0 +1,53 @@
+import jax.numpy as jnp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    A = _p.A
+    B = _p.B
+    J = _p.J
+    a_1 = _p.a_1
+    a_2 = _p.a_2
+    a_3 = _p.a_3
+    a_4 = _p.a_4
+    a = _p.a
+    b = _p.b
+    mu = _p.mu
+    nu_max = _p.nu_max
+    r = _p.r
+    v0 = _p.v0
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    y0 = current_state[0]
+    y1 = current_state[1]
+    y2 = current_state[2]
+    y3 = current_state[3]
+    y4 = current_state[4]
+    y5 = current_state[5]
+
+    # Derived variables
+    sigma_y0_1 = 2.0 * nu_max / (1.0 + jnp.exp(r * (v0 - J * a_1 * y0)))
+    sigma_y0_3 = 2.0 * nu_max / (1.0 + jnp.exp(r * (v0 - J * a_3 * y0)))
+    sigma_y1_y2 = 2.0 * nu_max / (1.0 + jnp.exp(r * (v0 + y2 - y1)))
+
+    # Derivatives
+    dy0_dt = y3
+    dy1_dt = y4
+    dy2_dt = y5
+    dy3_dt = -y0 * a**2 - 2.0 * a * y3 + A * a * sigma_y1_y2
+    dy4_dt = (
+        -y1 * a**2
+        - 2.0 * a * y4
+        + A * a * (c_glob + mu + local_coupling * (y1 - y2) + J * a_2 * sigma_y0_1)
+    )
+    dy5_dt = -y2 * b**2 - 2.0 * b * y5 + B * J * a_4 * b * sigma_y0_3
+
+    derivatives = jnp.array(
+        jnp.broadcast_arrays(dy0_dt, dy1_dt, dy2_dt, dy3_dt, dy4_dt, dy5_dt)
+    )
+
+    return derivatives

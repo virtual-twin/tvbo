@@ -1,23 +1,17 @@
-# -*- coding: utf-8 -*-
 """DifferentialEquations.jl backend adapter for SimulationExperiment.
 
-Generates a self-contained Julia script from the existing Julia templates
-and executes it via juliacall, returning a TVBO TimeSeries.
+Generates a self-contained Julia script from the existing Julia templates and executes it via juliacall, returning a TVBO TimeSeries.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
-    from tvbo.data.types import ExperimentResult
     from tvbo.classes.experiment import SimulationExperiment
+    from tvbo.data.types import ExperimentResult
 
 
-# Julia packages required by the base Julia templates
-# Use specific sub-packages instead of monolithic DifferentialEquations
-# to avoid excessive memory usage / Bus errors during precompilation.
 REQUIRED_PACKAGES = [
     "OrdinaryDiffEqTsit5",
     "StochasticDiffEq",
@@ -40,25 +34,32 @@ def _strip_plot_lines(code: str) -> str:
 class DiffEqAdapter:
     """Adapter for running SimulationExperiment via DifferentialEquations.jl.
 
-    Renders the Julia DifferentialEquations template, executes it via
-    juliacall, and returns a TVBO TimeSeries.
+    Renders the Julia DifferentialEquations template, executes it via juliacall, and returns a TVBO TimeSeries.
     """
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
 
+    def settle(self) -> float:
+        """The declared ``transient_time``, integrated as the head of the run: the script solves over the settle and the measured window together."""
+        from tvbo.adapters.base import BaseAdapter
+
+        return float(BaseAdapter.declared_integration(self.experiment.integration, "transient_time") or 0.0)
+
     def render_code(self, **kwargs) -> str:
-        """Render Julia code for this experiment."""
+        """Render Julia code for this experiment.
+
+        Reads the experiment and does not modify it, like every other renderer: a model is normalised when it is built, and re-normalising here made the emitted source depend on how many times it had already been rendered. The time span is the settle (`settle`) and the measured ``duration`` together.
+        """
         from tvbo import templates
 
         exp = self.experiment
         model = exp.dynamics
-        model.update_metadata()
 
         ctx = {
             "experiment": exp,
             "model": model,
-            "duration": exp.integration.duration,
+            "duration": self.settle() + exp.integration.duration,
             "dt": exp.integration.step_size,
             "plot": False,
             "fout": False,
@@ -68,14 +69,15 @@ class DiffEqAdapter:
         template = templates.lookup.get_template("tvbo-julia-DifferentialEquations.jl.mako")
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "ExperimentResult":
+    def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using DifferentialEquations.jl.
 
-        Returns
+        Returns:
         -------
         ExperimentResult
             Simulation results with named dimensions and coordinates.
         """
+        from tvbo.adapters.base import refuse_network, refuse_observations
         from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
             ensure_packages,
@@ -86,9 +88,13 @@ class DiffEqAdapter:
 
         exp = self.experiment
         model = exp.dynamics
+        refuse_network(exp, "julia", "the dynamics alone")
+        refuse_observations(exp, "julia")
 
-        # 1. Ensure required Julia packages
-        ensure_packages(*REQUIRED_PACKAGES)
+        # 1. Ensure required Julia packages, the declared method's solver among them
+        from tvbo.adapters.julia_model import julia_solve
+
+        ensure_packages(*REQUIRED_PACKAGES, julia_solve(model, exp.integration, exp.integration.step_size)["package"])
 
         # 2. Generate Julia code, strip plotting
         code = self.render_code(**kwargs)
@@ -105,7 +111,10 @@ class DiffEqAdapter:
         n_modes = getattr(model, "number_of_modes", 1) or 1
         da = solution_to_dataarray(t, u, sv_names, 1, n_modes)
 
-        sim = SimulationResult(data=da)
+        from tvbo.adapters.base import on_the_measurement_clock
+
+        da, n_settle = on_the_measurement_clock(da, self.settle(), exp.integration.step_size)
+        sim = SimulationResult(data=da, n_transient=n_settle)
         return ExperimentResult(
             integration=sim,
             source=exp,

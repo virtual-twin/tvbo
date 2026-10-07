@@ -59,9 +59,9 @@ Both Odoo models and Pydantic models are generated from the same LinkML schema. 
    ```python
    # WRONG - manual unpacking
    if record.parameters:
-       data['parameters'] = record.parameters.read()
+       data["parameters"] = record.parameters.read()
    if record.state_variables:
-       data['state_variables'] = record.state_variables.read()
+       data["state_variables"] = record.state_variables.read()
    # ... more fields
    ```
 
@@ -69,9 +69,9 @@ Both Odoo models and Pydantic models are generated from the same LinkML schema. 
    ```python
    # CORRECT - schema-driven, adapts automatically when schema changes
    for field_name, field_obj in record._fields.items():
-       if field_obj.type == 'many2one':
+       if field_obj.type == "many2one":
            data[field_name] = resolve_record(getattr(record, field_name))
-       elif field_obj.type == 'many2many':
+       elif field_obj.type == "many2many":
            data[field_name] = [resolve_record(r) for r in getattr(record, field_name)]
    ```
 
@@ -103,11 +103,11 @@ algorithms:
 
 ```python
 # Python - mirrors YAML structure
-results.integration.data              # Simulation data
-results.integration.observations.bold # BOLD from main simulation
-results.integration.transient         # Transient (warm-up) simulation
-results.algorithms.fic.state          # FIC tuned state
-results.algorithms.fic.history        # Per-iteration tracking
+results.integration.data  # Simulation data
+results.integration.observations.bold  # BOLD from main simulation
+results.integration.transient  # Transient (warm-up) simulation
+results.algorithms.fic.state  # FIC tuned state
+results.algorithms.fic.history  # Per-iteration tracking
 ```
 
 ## Template & Code Generation Principles
@@ -179,10 +179,11 @@ Example - correct approach for aggregated loss:
 ```python
 # Pure SymPy: L = (1/N) * Sum(1 - corr(x[i], y[i]), (i, 0, N-1))
 from sympy import Sum, IndexedBase, Symbol, Function
-x, y = IndexedBase('x'), IndexedBase('y')
-i, N = Symbol('i'), Symbol('N')
-corr = Function('correlation')
-L = Sum(1 - corr(x[i], y[i]), (i, 0, N-1)) / N  # NOT a custom Mean() function
+
+x, y = IndexedBase("x"), IndexedBase("y")
+i, N = Symbol("i"), Symbol("N")
+corr = Function("correlation")
+L = Sum(1 - corr(x[i], y[i]), (i, 0, N - 1)) / N  # NOT a custom Mean() function
 ```
 
 ## Core Architecture
@@ -335,7 +336,7 @@ result = exp.run()
 result.plot()
 
 # Generate code
-print(exp.render_code('jax'))
+print(exp.render_code("jax"))
 ```
 
 ## Important Conventions
@@ -375,3 +376,10 @@ Before submitting changes (always activate the venv first: `source .venv/bin/act
 | `.qmd` | Quarto documentation | `docs/` |
 
 Trust these instructions. Only search the codebase if information here is incomplete or found to be incorrect.
+
+<!-- mermaid-ai-skills:start -->
+## Mermaid Diagrams
+
+When the user asks to create, edit, or visualize a diagram, follow the
+instructions in `.github/instructions/mermaid.instructions.md`.
+<!-- mermaid-ai-skills:end -->

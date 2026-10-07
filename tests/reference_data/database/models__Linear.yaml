@@ -1,0 +1,48 @@
+name: Linear
+iri: tvbo:Linear
+parameters:
+  gamma:
+    name: gamma
+    definition: The damping coefficient
+    value: -10.0
+    domain:
+      enforce: none
+      lo: -100.0
+      hi: 0.0
+      step: 1.0
+      log_scale: false
+    description: The damping coefficient specifies how quickly the node's activity
+      relaxes, must be larger than the node's in-degree in order to remain stable.
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    dimension: 1
+    local: false
+  local_coupling:
+    name: local_coupling
+    dimension: 1
+    local: true
+state_variables:
+  x:
+    name: x
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The Linear model has a single state variable.
+    equation:
+      lhs: Derivative(x, t)
+      rhs: gamma*x + c_glob + local_coupling*x
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 1
+model_type: generic
+autonomous: true
+cse: false
+compile: false

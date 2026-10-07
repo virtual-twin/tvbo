@@ -1,16 +1,66 @@
 ---
-title: "Replication Studies"
-listing:
-  id: replication-listing
-  contents: "*/Run_*.qmd"
-  type: grid
-  image-height: "200"
-  grid-columns: 3
-  sort: "title"
-  fields: [image, title, description]
+title: "Replication studies"
+subtitle: "Published papers rebuilt as one declarative SimulationStudy each"
+description: "The catalogue of papers replicated in TVB-O, and which specification blocks each one exercises."
+jupyter: python3
 ---
 
-Computational replications of published neuroscience studies using TVB-O.
+A replication in TVB-O is one `SimulationStudy`: the paper's experiments, the analyses that turn their results into the paper's numbers, and the figures that draw them, in a single specification that anyone can re-run. Nothing is a driver script, and nothing is a notebook that only its author can execute.
 
-::: {#replication-listing}
+The studies below live in the tvbo-manuscript corpus rather than in this repository, because a replication carries its source data and its derivatives with it and the documentation should stay small. What this page catalogues is which of them exist and which parts of the specification language each one leans on.
+
+```{python}
+#| label: catalogue
+#| echo: false
+from pathlib import Path
+
+import yaml
+from IPython.display import Markdown
+
+studies = yaml.safe_load(Path("../_static/usecase_studies.yml").read_text())["studies"]
+studies.sort(key=lambda s: s["year"])
+
+def citation(key, year):
+    names = key.rstrip("0123456789")
+    for i in range(1, len(names)):
+        if names[i].isupper():
+            names = names[:i] + " & " + names[i:]
+            break
+    return f"{names} ({year})"
+
+rows = ["| Study | Paper | Specification blocks it uses |", "|---|---|---:|"]
+for s in studies:
+    link = f"[{citation(s['key'], s['year'])}](https://doi.org/{s['doi']})" if s["doi"] else citation(s["key"], s["year"])
+    rows.append(f"| {link} | {s['title']} | {len(s['documents'])} |")
+
+Markdown(f"{len(studies)} papers are replicated as declarative studies.\n\n" + "\n".join(rows))
+```
+
+## What each study exercises
+
+The right-hand column above is not a hand-kept list. `scripts/build_usecase_tags.py` reads each recipe, records which specification slots it actually writes, and maps them onto the page that documents each slot. The same artifact drives the **Used in published replications** block that appears at the foot of those pages, so a page cannot claim a study that has stopped using its feature.
+
+```{python}
+#| label: coverage
+#| echo: false
+from collections import Counter
+
+counts = Counter(page for s in studies for page in s["documents"])
+rows = ["| Documented block | Studies that use it |", "|---|---:|"]
+for page, n in counts.most_common():
+    rows.append(f"| [{page.removesuffix('.qmd')}](../{page}) | {n} |")
+
+Markdown("\n".join(rows))
+```
+
+## Building one yourself
+
+The [replication pipeline](pipeline.qmd) covers how a study becomes generated simulations, figures and cluster jobs from one specification. The figures are declarative too: [specify a figure](../2-specify/Figures/index.qmd) is the grammar, and [custom figure panels](../2-specify/Figures/custom-panels.qmd) the escape hatch for a paper's bespoke layouts.
+
+The `replicating-studies` skill turns a paper into that specification plus an honest, fully computed report. See [installing and tuning skills](../agents/installing-skills.qmd).
+
+::: {.callout-note}
+## Only published sources appear here
+
+TVB-O's study database holds replication specifications whose source work is still embargoed. Those are deliberately absent from this catalogue, which is generated from the corpus and filtered to studies carrying a DOI.
 :::

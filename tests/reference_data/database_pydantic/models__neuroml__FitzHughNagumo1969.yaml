@@ -1,0 +1,44 @@
+name: FitzHughNagumo1969
+parameters:
+  a:
+    name: a
+    value: 0.7
+  b:
+    name: b
+    value: 0.08
+  I:
+    name: I
+    value: 1.0
+  phi:
+    name: phi
+    value: 0.08
+source: 'NeuroML2 example: NML2_AbstractCells'
+state_variables:
+  V:
+    name: V
+    equation:
+      rhs: V - V**3/3 - W + I
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  W:
+    name: W
+    equation:
+      rhs: phi*(V + a - b*W)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

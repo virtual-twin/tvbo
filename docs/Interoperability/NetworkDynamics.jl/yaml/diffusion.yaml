@@ -1,20 +1,9 @@
-# =============================================================================
-# Network Diffusion - Getting Started with NetworkDynamics.jl
-# =============================================================================
-# Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/
-#
-# Diffusion on an undirected network. Each node state evolves as the sum of
-# incoming edge flows.
-# Vertex has no intrinsic dynamics; edge is antisymmetric: e = v_src - v_dst.
-# =============================================================================
+# Network diffusion (NetworkDynamics.jl Getting Started tutorial)
 
 id: 100
 label: "Network Diffusion"
 description: >
-    Diffusion on an undirected network.  Each node state evolves as the sum
-    of incoming edge flows.  The edge computes the antisymmetric difference
-    between source and destination states: e = v_src - v_dst.
-    Recreates the NetworkDynamics.jl Getting Started tutorial.
+    Diffusion on an undirected network. Each node state evolves as the sum of incoming edge flows. The edge computes the antisymmetric difference between source and destination states: e = v_src - v_dst. Recreates the NetworkDynamics.jl Getting Started tutorial.
 references:
     - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/getting_started_with_network_dynamics/"
 
@@ -23,13 +12,11 @@ dynamics:
     name: Diffusion
     label: "Diffusion vertex"
     description: >
-        Node with no internal dynamics.  The rate of change of the single
-        state variable v equals the aggregated incoming edge flow (esum).
-        Corresponds to the discrete Laplacian: dx_i = sum_j A_ji (x_j - x_i).
+        Node with no internal dynamics.  The rate of change of the single state variable v equals the aggregated incoming edge flow (esum). Corresponds to the discrete Laplacian: dx_i = sum_j A_ji (x_j - x_i).
     system_type: continuous
     autonomous: true
     parameters: {}
-    coupling_terms:
+    coupling_inputs:
         c_flow:
             description: "Aggregated edge flow into this vertex (sum of incident edge outputs)"
     state_variables:
@@ -49,8 +36,7 @@ dynamics:
 network:
     label: "20-node Barabási-Albert network"
     description: >
-        Undirected Barabási-Albert scale-free random graph with 20 nodes
-        and average degree 4.  Matches the original tutorial.
+        Undirected Barabási-Albert scale-free random graph with 20 nodes, each new node attaching with k = 4 edges, the tutorial's generator and parameters. tvbo draws it with networkx, seed 0, so it is not the tutorial's Graphs.jl draw.
     number_of_nodes: 20
     graph_generator:
         name: barabasi_albert
@@ -62,10 +48,7 @@ network:
             name: DiffusiveCoupling
             label: "Diffusive Coupling"
             description: >
-                Antisymmetric edge function: output is the difference between
-                source and destination vertex states.
-                g_dst(v_src, v_dst) = v_src - v_dst;
-                g_src(v_src, v_dst) = v_dst - v_src (by AntiSymmetric wrapper).
+                Antisymmetric edge function: the output is the difference between source and destination vertex states, g(v_src, v_dst) = v_src - v_dst. The reverse direction of a connection is its own edge, so each node receives its own difference.
             delayed: false
             pre_expression:
                 rhs: "x_j - x_i"
@@ -75,6 +58,7 @@ network:
 integration:
     description: "Explicit Runge-Kutta (Tsit5) with dt=0.01 over t in [0, 2]"
     method: Tsit5
+    coupling_evaluation: per_stage
     step_size: 0.01
     duration: 2.0
     time_scale: "a.u."

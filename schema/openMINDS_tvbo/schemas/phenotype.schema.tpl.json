@@ -12,6 +12,11 @@
     "description": {
       "type": "string"
     },
+    "provenance": {
+      "_embeddedTypes": [
+        "tvbo:Provenance"
+      ]
+    },
     "dataset_id": {
       "type": "string"
     },
@@ -47,11 +52,6 @@
     },
     "cohort": {
       "type": "string"
-    },
-    "provenance": {
-      "_embeddedTypes": [
-        "tvbo:Provenance"
-      ]
     }
   }
 }

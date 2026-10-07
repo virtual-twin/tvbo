@@ -1,0 +1,333 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class EpileptorCodim3SlowMod(AbstractDynamics):
+    """EpileptorCodim3SlowMod neural mass model."""
+
+    STATE_NAMES = ("x", "y", "z", "uA", "uB")
+    INITIAL_STATE = (0.5, 0.0, 0.05, 0.0, 0.0)
+    AUXILIARY_NAMES = (
+        "A0",
+        "A1",
+        "A2",
+        "B0",
+        "B1",
+        "B2",
+        "C0",
+        "C1",
+        "C2",
+        "normA",
+        "E0",
+        "E1",
+        "E2",
+        "Fx0",
+        "Fx1",
+        "Fx2",
+        "normF",
+        "F0",
+        "F1",
+        "F2",
+        "mu1",
+        "mu2",
+        "nu",
+        "disc",
+        "sqdisc",
+        "xs",
+    )
+
+    DEFAULT_PARAMS = Bunch(
+        Ks=0.0,
+        R=0.4,
+        b=1.0,
+        c=0.002,
+        cA=0.0001,
+        cB=0.00012,
+        dstar=0.3,
+        modification=1.0,
+        mu1_Aend=0.06485,
+        mu1_Ain=0.05494,
+        mu1_Bend=0.03676,
+        mu1_Bin=-0.0461,
+        mu2_Aend=0.07337,
+        mu2_Ain=0.2731,
+        mu2_Bend=-0.02792,
+        mu2_Bin=0.243,
+        nu_Aend=-0.3878,
+        nu_Ain=0.287,
+        nu_Bend=-0.3973,
+        nu_Bin=0.3144,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        Ks = params.Ks
+        R = params.R
+        b = params.b
+        c = params.c
+        cA = params.cA
+        cB = params.cB
+        dstar = params.dstar
+        modification = params.modification
+        mu1_Aend = params.mu1_Aend
+        mu1_Ain = params.mu1_Ain
+        mu1_Bend = params.mu1_Bend
+        mu1_Bin = params.mu1_Bin
+        mu2_Aend = params.mu2_Aend
+        mu2_Ain = params.mu2_Ain
+        mu2_Bend = params.mu2_Bend
+        mu2_Bin = params.mu2_Bin
+        nu_Aend = params.nu_Aend
+        nu_Ain = params.nu_Ain
+        nu_Bend = params.nu_Bend
+        nu_Bin = params.nu_Bin
+
+        G0 = mu2_Ain / jnp.sqrt(mu2_Ain**2 + mu1_Ain**2 + nu_Ain**2)
+        G1 = (-mu1_Ain) / jnp.sqrt(mu2_Ain**2 + mu1_Ain**2 + nu_Ain**2)
+        G2 = nu_Ain / jnp.sqrt(mu2_Ain**2 + mu1_Ain**2 + nu_Ain**2)
+        H0 = (
+            mu1_Ain * ((-mu1_Aend) * mu2_Ain + mu1_Ain * mu2_Aend)
+            + nu_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+        ) / jnp.sqrt(
+            (
+                mu1_Ain * ((-mu1_Aend) * mu2_Ain + mu1_Ain * mu2_Aend)
+                + nu_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                (-mu1_Ain) * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+                - mu2_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                mu2_Ain * ((-mu1_Aend) * mu2_Ain + mu1_Ain * mu2_Aend)
+                - nu_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+            )
+            ** 2
+        )
+        H1 = (
+            mu2_Ain * ((-mu1_Aend) * mu2_Ain + mu1_Ain * mu2_Aend)
+            - nu_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+        ) / jnp.sqrt(
+            (
+                mu1_Ain * ((-mu1_Aend) * mu2_Ain + mu1_Ain * mu2_Aend)
+                + nu_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                (-mu1_Ain) * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+                - mu2_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                mu2_Ain * ((-mu1_Aend) * mu2_Ain + mu1_Ain * mu2_Aend)
+                - nu_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+            )
+            ** 2
+        )
+        H2 = (
+            (-mu1_Ain) * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+            - mu2_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+        ) / jnp.sqrt(
+            (
+                mu1_Ain * ((-mu1_Aend) * mu2_Ain + mu1_Ain * mu2_Aend)
+                + nu_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                (-mu1_Ain) * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+                - mu2_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                mu2_Ain * ((-mu1_Aend) * mu2_Ain + mu1_Ain * mu2_Aend)
+                - nu_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+            )
+            ** 2
+        )
+        L0 = mu2_Bin / jnp.sqrt(mu2_Bin**2 + mu1_Bin**2 + nu_Bin**2)
+        L1 = (-mu1_Bin) / jnp.sqrt(mu2_Bin**2 + mu1_Bin**2 + nu_Bin**2)
+        L2 = nu_Bin / jnp.sqrt(mu2_Bin**2 + mu1_Bin**2 + nu_Bin**2)
+        M0 = (
+            mu1_Bin * ((-mu1_Bend) * mu2_Bin + mu1_Bin * mu2_Bend)
+            + nu_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+        ) / jnp.sqrt(
+            (
+                mu1_Bin * ((-mu1_Bend) * mu2_Bin + mu1_Bin * mu2_Bend)
+                + nu_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                (-mu1_Bin) * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+                - mu2_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                mu2_Bin * ((-mu1_Bend) * mu2_Bin + mu1_Bin * mu2_Bend)
+                - nu_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+            )
+            ** 2
+        )
+        M1 = (
+            mu2_Bin * ((-mu1_Bend) * mu2_Bin + mu1_Bin * mu2_Bend)
+            - nu_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+        ) / jnp.sqrt(
+            (
+                mu1_Bin * ((-mu1_Bend) * mu2_Bin + mu1_Bin * mu2_Bend)
+                + nu_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                (-mu1_Bin) * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+                - mu2_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                mu2_Bin * ((-mu1_Bend) * mu2_Bin + mu1_Bin * mu2_Bend)
+                - nu_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+            )
+            ** 2
+        )
+        M2 = (
+            (-mu1_Bin) * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+            - mu2_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+        ) / jnp.sqrt(
+            (
+                mu1_Bin * ((-mu1_Bend) * mu2_Bin + mu1_Bin * mu2_Bend)
+                + nu_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                (-mu1_Bin) * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+                - mu2_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                mu2_Bin * ((-mu1_Bend) * mu2_Bin + mu1_Bin * mu2_Bend)
+                - nu_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+            )
+            ** 2
+        )
+
+        x = state[0]
+        y = state[1]
+        z = state[2]
+        uA = state[3]
+        uB = state[4]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+
+        A0 = R * (G0 * jnp.cos(uA) + H0 * jnp.sin(uA))
+        A1 = R * (G1 * jnp.cos(uA) + H1 * jnp.sin(uA))
+        A2 = R * (G2 * jnp.cos(uA) + H2 * jnp.sin(uA))
+        B0 = R * (L0 * jnp.cos(uB) + M0 * jnp.sin(uB))
+        B1 = R * (L1 * jnp.cos(uB) + M1 * jnp.sin(uB))
+        B2 = R * (L2 * jnp.cos(uB) + M2 * jnp.sin(uB))
+        C0 = A1 * B2 - A2 * B1
+        C1 = A2 * B0 - A0 * B2
+        C2 = A0 * B1 - A1 * B0
+        normA = jnp.sqrt(A0**2 + A1**2 + A2**2)
+        E0 = A0 / normA
+        E1 = A1 / normA
+        E2 = A2 / normA
+        Fx0 = C1 * A2 - C2 * A1
+        Fx1 = C2 * A0 - C0 * A2
+        Fx2 = C0 * A1 - C1 * A0
+        normF = jnp.sqrt(Fx0**2 + Fx1**2 + Fx2**2)
+        F0 = Fx0 / normF
+        F1 = Fx1 / normF
+        F2 = Fx2 / normF
+        mu1 = (-R) * (E1 * jnp.cos(z) + F1 * jnp.sin(z))
+        mu2 = R * (E0 * jnp.cos(z) + F0 * jnp.sin(z))
+        nu = R * (E2 * jnp.cos(z) + F2 * jnp.sin(z))
+        disc = mu1**2 / 4 - mu2**3 / 27
+        sqdisc = jnp.sqrt(abs(disc))
+        xs = jnp.where(
+            jnp.greater_equal(disc, 0),
+            abs(mu1 / 2 + sqdisc) ** (1 / 3)
+            * jnp.cos(jnp.arctan2(0, mu1 / 2 + sqdisc) / 3)
+            + abs(mu1 / 2 - sqdisc) ** (1 / 3)
+            * jnp.cos(jnp.arctan2(0, mu1 / 2 - sqdisc) / 3),
+            (jnp.sqrt((mu1 / 2) ** 2 + sqdisc**2)) ** (1 / 3)
+            * jnp.cos(jnp.arctan2(sqdisc, mu1 / 2) / 3)
+            + (jnp.sqrt((mu1 / 2) ** 2 + sqdisc**2)) ** (1 / 3)
+            * jnp.cos(jnp.arctan2(-sqdisc, mu1 / 2) / 3),
+        )
+
+        dx_dt = -y
+        dy_dt = x**3 - mu2 * x - mu1 - y * (nu + b * x + x**2)
+        dz_dt = (-c) * (
+            jnp.sqrt((x - xs) ** 2 + y**2)
+            - dstar
+            + jnp.where(jnp.greater(modification, 0), (z - 1 / 2) ** 7 / 10, 0)
+            + Ks * c_glob
+        )
+        duA_dt = cA + 0 * uA
+        duB_dt = cB + 0 * uB
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dz_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(duA_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(duB_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(A0), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(A1), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(A2), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(B0), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(B1), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(B2), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(C0), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(C1), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(C2), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(normA), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(E0), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(E1), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(E2), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(Fx0), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(Fx1), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(Fx2), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(normF), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(F0), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(F1), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(F2), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(mu1), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(mu2), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(nu), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(disc), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(sqdisc), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(xs), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

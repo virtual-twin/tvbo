@@ -1,0 +1,493 @@
+id: 8
+references:
+- tvboptim Stimulation_with_Bayesian_Inference.qmd
+part: main
+description: 'Recover stimulus amplitude and excitability I of a pulse-driven Generic2dOscillator
+  from one noisy recording, via numpyro NUTS/MCMC. Three prior scenarios steer the
+  posterior along the amplitude/excitability degeneracy ridge. Replicates tvboptim.
+
+  '
+label: Bayesian Inference (Stimulation)
+dynamics:
+  name: Generic2dOscillator
+  label: Generic 2D Oscillator (quiescent regime)
+  iri: tvbo:Generic2dOscillator
+  parameters:
+    I:
+      name: I
+      definition: Baseline shift of the cubic nullcline
+      value: 0.1
+      domain:
+        enforce: none
+        lo: -5.0
+        hi: 5.0
+        step: 0.01
+        log_scale: false
+      description: Baseline shift of the cubic nullcline
+      grounding:
+      - GO:0060079
+    a:
+      name: a
+      definition: Vertical shift of the configurable nullcline
+      value: -1.5
+      domain:
+        enforce: none
+        lo: -5.0
+        hi: 5.0
+        step: 0.01
+        log_scale: false
+      description: Vertical shift of the configurable nullcline
+    alpha:
+      name: alpha
+      definition: alpha_G2D is the coefficient of the linear feedback coupling term
+        of the state-variable W_G2D to the first state-equation Vdot_G2D. Constant
+        parameter to scale the rate of feedback from the slow variable to the fast
+        variable.
+      value: 1.0
+      domain:
+        enforce: none
+        lo: -5.0
+        hi: 5.0
+        step: 0.0001
+        log_scale: false
+      description: Constant parameter to scale the rate of feedback from the slow
+        variable to the fast variable.
+    b:
+      name: b
+      definition: Linear slope of the configurable nullcline
+      value: -15.0
+      domain:
+        enforce: none
+        lo: -20.0
+        hi: 15.0
+        step: 0.01
+        log_scale: false
+      description: Linear slope of the configurable nullcline
+      grounding:
+      - GO:0098873
+      - GO:0099178
+    beta:
+      name: beta
+      definition: "Constant parameter to scale the rate of feedback from the\n   \
+        \         slow variable to itself"
+      value: 1.0
+      domain:
+        enforce: none
+        lo: -5.0
+        hi: 5.0
+        step: 0.0001
+        log_scale: false
+      description: Constant parameter to scale the rate of feedback from the             slow
+        variable to itself
+    c:
+      name: c
+      definition: Parabolic term of the configurable nullcline
+      value: 0.0
+      domain:
+        enforce: none
+        lo: -10.0
+        hi: 10.0
+        step: 0.01
+        log_scale: false
+      description: Parabolic term of the configurable nullcline
+    d:
+      name: d
+      definition: "Temporal scale factor. Warning: do not use it unless\n        you\
+        \ know what you are doing and know about time tides."
+      value: 0.015
+      domain:
+        enforce: none
+        lo: 0.0001
+        hi: 1.0
+        step: 0.0001
+        log_scale: false
+      description: Temporal scale factor
+    e:
+      name: e
+      definition: Coefficient of the quadratic term of the cubic nullcline.
+      value: 3.0
+      domain:
+        enforce: none
+        lo: -5.0
+        hi: 5.0
+        step: 0.0001
+        log_scale: false
+      description: Coefficient of the quadratic term of the cubic nullcline
+    f:
+      name: f
+      definition: Coefficient of the cubic term of the cubic nullcline.
+      value: 1.0
+      domain:
+        enforce: none
+        lo: -5.0
+        hi: 5.0
+        step: 0.0001
+        log_scale: false
+      description: Coefficient of the cubic term of the cubic nullcline
+    g:
+      name: g
+      definition: Coefficient of the linear term of the cubic nullcline.
+      value: 0.0
+      domain:
+        enforce: none
+        lo: -5.0
+        hi: 5.0
+        step: 0.5
+        log_scale: false
+      description: Coefficient of the linear term of the cubic nullcline
+    gamma:
+      name: gamma
+      definition: "Constant parameter to reproduce FHN dynamics where\n          \
+        \     excitatory input currents are negative.\n               It scales both\
+        \ I and the long range coupling term."
+      value: 1.0
+      domain:
+        enforce: none
+        lo: -1.0
+        hi: 1.0
+        step: 0.1
+        log_scale: false
+      description: Constant parameter to reproduce FHN dynamics where                excitatory
+        input currents are negative
+    tau:
+      name: tau
+      definition: "A time-scale hierarchy can be introduced for the state\n      \
+        \  variables :math:`V` and :math:`W`. Default parameter is 1, which means\n\
+        \        no time-scale hierarchy."
+      value: 4.0
+      domain:
+        enforce: none
+        lo: 1.0
+        hi: 5.0
+        step: 0.01
+        log_scale: false
+      description: A time-scale hierarchy can be introduced for the state         variables
+        :math:`V` and :math:`W`
+  description: The Generic 2-Dimensional Oscillator (G2D) is a phenomenological, coupled,
+    nonlinear two-dimensional (i.e., two state-variables ('V', 'W')) oscillatory,
+    neural mass model. The G2D is a generalization of the well-known FitzHugh-Nagumo
+    model (FitzHugh, 1961; Nagumo et. al, 1962), adapted here for reproducing a wilder
+    class of dynamical configurations of physiological phenomena as observed in neuronal
+    population using phase-portrait method.
+  references:
+  - Nagumo1962
+  - Fitzhugh1961
+  coupling_inputs:
+    c_glob:
+      name: c_glob
+      dimension: 1
+      local: false
+    local_coupling:
+      name: local_coupling
+      dimension: 1
+      local: true
+  state_variables:
+    V:
+      name: V
+      domain:
+        enforce: none
+        lo: -2.0
+        hi: 4.0
+        log_scale: false
+      description: V_G2D is the first state-variable of the Generic 2-Dimensional
+        Oscillator model, that can be associated with membrane potentials and sodium
+        activation (FitzHugh, 1961)
+      equation:
+        lhs: Derivative(V, t)
+        rhs: d*tau*(I*gamma - V**3*f + V**2*e + V*g + V*local_coupling + W*alpha +
+          c_glob*gamma) + stimulus
+        latex: false
+      record: true
+      grounding:
+      - GO:0005272
+      variable_of_interest: true
+      coupling_variable: true
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+    W:
+      name: W
+      domain:
+        enforce: none
+        lo: -6.0
+        hi: 6.0
+        log_scale: false
+      description: W_G2D is the second state-variable of the Generic 2-Dimensional
+        Oscillator model, that can be associated with accommodation and refractoriness
+        and considered to represent potassium activation, sodium inactivation, or
+        both (FitzHugh, 1961)
+      equation:
+        lhs: Derivative(W, t)
+        rhs: d*(V**2*c + V*b - W*beta + a)/tau
+        latex: false
+      record: true
+      grounding:
+      - GO:0005272
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+  number_of_modes: 1
+  model_type: generic
+  system_type: continuous
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: Heun
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.2
+  duration: 150.0
+  transient_time: 0.0
+  block_size: 1000
+  noise_draw: fused
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  label: Single node
+  description: Single-region model — stimulus and excitability trade off here.
+  coupling:
+    c_lin:
+      name: c_lin
+      label: Linear coupling
+      iri: tvbo:Linear
+      parameters:
+        b:
+          name: b
+          value: 0.0
+          description: Shifts the base of the connection strength while maintaining
+            the absolute difference between different values.
+        a:
+          name: a
+          value: 0.00390625
+          description: Linear scaling factor of the coupled (delayed) input.
+        G:
+          name: G
+          value: 0.0
+          description: No inter-node coupling (single node)
+      sparse: false
+      pre_expression:
+        rhs: x_j
+        latex: false
+      post_expression:
+        rhs: a*gx + b
+        latex: false
+      incoming_states:
+      - V
+      delayed: false
+      interpolate_delays: false
+      vectorized: false
+      symmetry: directed
+  graph_representation: auto
+  number_of_nodes: 1
+  distance_unit: mm
+observations:
+  recorded_ts:
+    name: recorded_ts
+    label: Simulated fast variable V (subsampled)
+    description: 'The noiseless forward run: V at node 0, subsampled every 15 steps.
+      This is what the model PREDICTS at a proposed theta, so it carries no measurement
+      noise.'
+    source:
+    - V
+    dims:
+    - time
+    reconcile: by_label
+    pipeline:
+    - function: subsample_ts
+  observed_ts:
+    name: observed_ts
+    label: Observed recording (noisy)
+    description: 'The single recording all three scenarios are fitted to: the forward
+      run at the declared (true) parameters plus Gaussian measurement noise at sigma
+      0.1. Declared rather than synthesised at run time, so the data is reproducible
+      from this recipe alone. It is evaluated ONCE — the likelihood scores it against
+      the noiseless `recorded_ts`, never against itself, or the fixed noise draw would
+      appear on both sides of the residual and cancel.'
+    source:
+    - recorded_ts
+    dims:
+    - time
+    reconcile: by_label
+    pipeline:
+    - function: add_recording_noise
+      arguments:
+        sigma:
+          name: sigma
+          value: 0.1
+        seed:
+          name: seed
+          value: 42
+functions:
+  subsample_ts:
+    name: subsample_ts
+    description: Subsample the recording every 15 steps (reference obs_idx).
+    arguments:
+      data:
+        name: data
+    source_code: data[::15, 0, 0]
+  add_recording_noise:
+    name: add_recording_noise
+    description: The measurement noise a real recording carries, at a fixed seed so
+      the recording is reproducible.
+    arguments:
+      data:
+        name: data
+      sigma:
+        name: sigma
+      seed:
+        name: seed
+    source_code: data + sigma * jax.random.normal(jax.random.key(seed), data.shape)
+events:
+  stimulus:
+    name: stimulus
+    label: Pulse stimulus
+    description: 1 ms rectangular pulse of amplitude A at onset=10 ms, driving V.
+    parameters:
+      amplitude:
+        name: amplitude
+        value: 0.4
+        description: True pulse amplitude (inferred)
+      onset:
+        name: onset
+        value: 10.0
+        unit: ms
+      duration:
+        name: duration
+        value: 1.0
+        unit: ms
+    event_type: stimulus
+    equation:
+      rhs: Piecewise((amplitude, (t >= onset) & (t < onset + duration)), (0.0, True))
+      latex: false
+    nodes:
+    - 0
+    weights:
+    - 1.0
+    sampling_rate: 1.0
+    interpolation: linear
+inferences:
+  scenario_A:
+    name: scenario_A
+    label: A — no hypothesis (wide priors)
+    priors:
+      stimulus.amplitude:
+        name: stimulus.amplitude
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.2
+            std:
+              name: std
+              value: 0.2
+          axis: space
+      Generic2dOscillator.I:
+        name: Generic2dOscillator.I
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.0
+            std:
+              name: std
+              value: 0.1
+          axis: space
+    likelihood:
+      name: Normal
+      source:
+      - observed_ts
+      predicted:
+      - recorded_ts
+      sigma: 0.2
+    sampler: nuts
+    num_samples: 2000
+    num_warmup: 500
+    num_chains: 1
+    seed: 0
+  scenario_B:
+    name: scenario_B
+    label: 'B — H1: higher excitability (tight amplitude prior)'
+    priors:
+      stimulus.amplitude:
+        name: stimulus.amplitude
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.2
+            std:
+              name: std
+              value: 0.1
+          axis: space
+      Generic2dOscillator.I:
+        name: Generic2dOscillator.I
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.0
+            std:
+              name: std
+              value: 0.1
+          axis: space
+    likelihood:
+      name: Normal
+      source:
+      - observed_ts
+      predicted:
+      - recorded_ts
+      sigma: 0.2
+    sampler: nuts
+    num_samples: 2000
+    num_warmup: 500
+    num_chains: 1
+    seed: 1
+  scenario_C:
+    name: scenario_C
+    label: 'C — H2: stronger stimulus (tight excitability prior)'
+    priors:
+      stimulus.amplitude:
+        name: stimulus.amplitude
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.2
+            std:
+              name: std
+              value: 0.2
+          axis: space
+      Generic2dOscillator.I:
+        name: Generic2dOscillator.I
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.0
+            std:
+              name: std
+              value: 0.05
+          axis: space
+    likelihood:
+      name: Normal
+      source:
+      - observed_ts
+      predicted:
+      - recorded_ts
+      sigma: 0.2
+    sampler: nuts
+    num_samples: 2000
+    num_warmup: 500
+    num_chains: 1
+    seed: 2

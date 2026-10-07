@@ -17,6 +17,14 @@
     "noise_type": {
       "type": "string"
     },
+    "covariance": {
+      "_embeddedTypes": [
+        "tvbo:Parameter"
+      ]
+    },
+    "correlated_over": {
+      "type": "string"
+    },
     "correlated": {
       "type": "boolean"
     },

@@ -5,10 +5,9 @@ import numpy as np
 
 from tvbo.classes.dynamics import Dynamics
 from tvbo.classes.experiment import SimulationExperiment
-from tvbo.data.types import ExperimentResult, SimulationResult, ExplorationResult
+from tvbo.data.types import ExperimentResult, ExplorationResult, SimulationResult
 from tvbo.plot.experiment_layout import _auto_experiment_panels
 from tvbo.utils import Bunch
-
 
 LINEAR = """
 name: LinearScalar

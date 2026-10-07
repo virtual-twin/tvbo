@@ -1,11 +1,11 @@
-"""Test tvboptim experiment execution for all experiments in database/experiments."""
+"""Test tvboptim experiment execution for all experiments in database/experiments.
+
+The virtual CPU devices come from ``conftest``, which owns ``XLA_FLAGS`` for the whole run: a module that rewrote it at import would change the device count and drop conftest's other flags for every test collected after it.
+"""
 
 import pytest
-import os
 
 pytest.importorskip("tvboptim", reason="tvboptim not installed")
-
-os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=8"
 
 from tvbo import SimulationExperiment, database_path
 from tvbo.utils import as_list
@@ -49,5 +49,9 @@ def test_experiment_runs(experiment_name):
     results = exp.run(mode="all", n_iterations=2, max_steps=2, format="tvboptim")
 
     assert results is not None
-    assert "integration" in results
-    assert results.integration is not None
+    if exp.algorithms:
+        # An algorithm (FIC/EIB tuning, …) IS the experiment's deliverable and runs its own simulations, so 'all' mode no longer runs the spurious pre-tuning base forward-sim before it — that sim integrates the untuned operating point nobody consumes, and at a fitting length materializes the whole trajectory and OOMs. `integration` is therefore legitimately absent; assert the algorithm output instead. (Forward-sim experiments still carry it.)
+        assert "algorithms" in results
+    else:
+        assert "integration" in results
+        assert results.integration is not None

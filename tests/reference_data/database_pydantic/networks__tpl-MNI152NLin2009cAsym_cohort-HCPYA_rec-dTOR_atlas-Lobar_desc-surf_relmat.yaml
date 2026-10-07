@@ -1,0 +1,24 @@
+label: Lobar surface (fsLR 32k, 64984 vertices)
+parameters:
+  conduction_speed:
+    name: conduction_speed
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+time_unit: ms
+graph_representation: auto
+number_of_nodes: 64984
+parcellation:
+  atlas:
+    name: Lobar
+    coordinateSpace: MNI152NLin2009cAsym
+data_file: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-surf_relmat.h5
+descriptor: surf
+bids:
+  template: MNI152NLin2009cAsym
+  cohort: HCPYA
+  reconstruction: dTOR
+  atlas: Lobar
+parent_network: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-SC_relmat.yaml
+node_mapping: /mesh/region_mapping
+distance_unit: mm

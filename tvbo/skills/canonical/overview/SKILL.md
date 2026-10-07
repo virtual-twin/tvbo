@@ -58,8 +58,7 @@ A discussion / Q&A layer for the community is on the roadmap. See the `platform`
 ## Installation
 
 ```bash
-pip install tvbo            # core
-pip install tvbo[jax]       # JAX backend
+pip install tvbo            # core — includes the JAX backend
 pip install tvbo[tvb]       # The Virtual Brain backend
 pip install tvbo[pyrates]   # PyRates backend
 pip install tvbo[julia]     # juliacall + Julia backends

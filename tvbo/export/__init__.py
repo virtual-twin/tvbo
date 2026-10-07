@@ -1,10 +1,8 @@
-"""
-TVB-O Export
-============
+"""TVB-O Export.
+
 Non-code exports: reports, metadata standards (OpenMINDS).
 
-Importing this package also populates the export-format
-:mod:`registry <tvbo.export.registry>` with all built-in backends.
+Importing this package also populates the export-format :mod:`registry <tvbo.export.registry>` with all built-in backends.
 """
 
 from . import formats  # noqa: F401  — populates the registry on import

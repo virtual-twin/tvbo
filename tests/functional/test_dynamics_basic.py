@@ -1,11 +1,10 @@
 """Functional smoke test for Dynamics constructed from ontology.
 
-Focus: ensure ontology-backed model populates parameters, state variables, and
-equations; no heavy simulation run.
+Focus: ensure ontology-backed model populates parameters, state variables, and equations; no heavy simulation run.
 """
 
-from tvbo.ontology import owl as ontology
 from tvbo.classes.dynamics import Dynamics
+from tvbo.ontology import owl as ontology
 
 
 def test_dynamics_jansenrit_populates():

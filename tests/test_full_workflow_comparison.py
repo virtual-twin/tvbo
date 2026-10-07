@@ -1,12 +1,7 @@
-"""
-Full workflow comparison: TVBO-generated vs original tvboptim RWW workflow.
+"""Full workflow comparison: TVBO-generated vs original tvboptim RWW workflow.
 
 Tests:
-1. Simulation output identity
-2. BOLD computation identity
-3. FC computation identity
-4. Exploration grid identity
-5. Optimization convergence comparison
+1. Simulation output identity 2. BOLD computation identity 3. FC computation identity 4. Exploration grid identity 5. Optimization convergence comparison
 """
 
 import pytest
@@ -17,22 +12,23 @@ import jax
 
 jax.config.update("jax_enable_x64", True)
 
+import copy
+
 import jax.numpy as jnp
 import numpy as np
-import copy
+from tvboptim.data import load_functional_connectivity, load_structural_connectivity
+from tvboptim.execution import ParallelExecution
 
 # tvboptim imports
 from tvboptim.experimental.network_dynamics import Network, prepare
-from tvboptim.experimental.network_dynamics.dynamics.tvb import ReducedWongWang
 from tvboptim.experimental.network_dynamics.coupling import FastLinearCoupling
+from tvboptim.experimental.network_dynamics.dynamics.tvb import ReducedWongWang
 from tvboptim.experimental.network_dynamics.graph import DenseGraph
-from tvboptim.experimental.network_dynamics.solvers import Heun
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
-from tvboptim.data import load_structural_connectivity, load_functional_connectivity
-from tvboptim.observations.tvb_monitors.bold import Bold as TvboptimBold
+from tvboptim.experimental.network_dynamics.solvers import Heun
 from tvboptim.observations.observation import compute_fc, fc_corr, rmse
-from tvboptim.types import Space, GridAxis
-from tvboptim.execution import ParallelExecution
+from tvboptim.observations.tvb_monitors.bold import Bold as TvboptimBold
+from tvboptim.types import GridAxis, Space
 
 
 def run_original_workflow():
@@ -119,10 +115,10 @@ def run_tvbo_workflow():
     print("TVBO-GENERATED WORKFLOW")
     print("=" * 70)
 
-    from tvbo import SimulationExperiment, Network as TvboNetwork
+    from tvbo import Network as TvboNetwork
 
     # Load experiment
-    from tvbo import database_path
+    from tvbo import SimulationExperiment, database_path
 
     exp = SimulationExperiment.from_file(str(database_path / "experiments" / "RWW_BOLD_FC_Optimization.yaml"))
     weights, lengths, region_labels = load_structural_connectivity(name="dk_average")
@@ -149,13 +145,13 @@ def run_tvbo_workflow():
 
 
 def compare_results(original, tvbo):
-    """Compare the two workflows."""
+    """Compare the two workflows.
+
+    Noise means the two runs match exactly only when they share a seed; what the comparison shows is whether the pipelines are equivalent, reported as a correlation and a maximum difference per quantity.
+    """
     print("\n" + "=" * 70)
     print("COMPARISON")
     print("=" * 70)
-
-    # Note: Due to noise, we can't expect exact match - use same seed
-    # The comparison should show if the pipelines are equivalent
 
     # FC comparison
     fc_orig = np.array(original["fc"])

@@ -1,31 +1,26 @@
 """Functional tests for NeuroML/LEMS backend.
 
 Tests:
-  1. Render every TVBO database model as LEMS (Dynamics.render_code('lems'))
-  2. Render every TVBO database model as full experiment (SimulationExperiment.render('lems'))
-  3. Render NeuroML canonical example experiments from YAML
-  4. Split-file export (dynamics / network / simulation)
-  5. PyLEMS validation (where possible)
+  1. Render every TVBO database model as LEMS (Dynamics.render_code('lems')) 2. Render every TVBO database model as full experiment (SimulationExperiment.render('lems')) 3. Render NeuroML canonical example experiments from YAML 4. Split-file export (dynamics / network / simulation) 5. PyLEMS validation (where possible)
 """
 
 from pathlib import Path
 
 import pytest
 
+from tests.functional.simulation_backends_shared import (
+    _HAVE_BRIAN2,
+    _HAVE_EDEN,
+    _HAVE_LEMS,
+    _HAVE_NETPYNE,
+    _HAVE_NEUROML,
+    _HAVE_NEURON,
+    MODEL_FILES,
+    MODEL_IDS,
+)
 from tvbo import database_path
 from tvbo.classes.dynamics import Dynamics
 from tvbo.classes.experiment import SimulationExperiment
-from tests.functional.simulation_backends_shared import (
-    MODEL_FILES,
-    MODEL_IDS,
-    _HAVE_LEMS,
-    _HAVE_NEUROML,
-    _HAVE_NEURON,
-    _HAVE_BRIAN2,
-    _HAVE_NETPYNE,
-    _HAVE_EDEN,
-)
-
 
 # ── NeuroML experiment YAML files ─────────────────────────────────────
 
@@ -90,8 +85,7 @@ class TestNeuroMLExperiments:
         xml = exp.render("lems")
         assert xml is not None
         assert "<Lems>" in xml
-        # Standard NeuroML types use <Include file="Cells.xml"/> instead of
-        # custom <ComponentType> definitions.
+        # Standard NeuroML types use <Include file="Cells.xml"/> instead of custom <ComponentType> definitions.
         assert "<ComponentType" in xml or '<Include file="Cells.xml"/>' in xml
         assert "<Simulation" in xml
 
@@ -181,7 +175,10 @@ class TestNeuroMLValidation:
     """Test PyLEMS validation of rendered XML."""
 
     def test_validate_simple_model(self):
-        """Simple 2-variable model validates with PyLEMS."""
+        """Simple 2-variable model validates with PyLEMS.
+
+        Validation may fail for complex expressions because of known PyLEMS ExprParser limitations (v0.6.9), but FitzHughNagumo is within what the parser handles, so a failure here is a real regression.
+        """
         from tvbo.adapters.neuroml import NeuroMLAdapter
 
         exp_file = NEUROML_EXPERIMENTS_DIR / "FitzHughNagumo_Ex9.yaml"
@@ -189,22 +186,20 @@ class TestNeuroMLValidation:
             pytest.skip("FitzHughNagumo_Ex9.yaml not found")
         exp = SimulationExperiment.from_file(str(exp_file))
         adapter = NeuroMLAdapter(exp)
-        # PyLEMS validation may fail for complex expressions due to known
-        # ExprParser limitations (v0.6.9). For FHN it should work.
         adapter.validate()
 
     @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
     def test_validate_all_models(self, model_file):
-        """Attempt PyLEMS validation for all models (xfail for known issues)."""
+        """Attempt PyLEMS validation for all models, xfailing the known parser limitations.
+
+        The PyLEMS ExprParser (v0.6.9) cannot handle some compound expressions or certain parameter names (`H`, for instance, clashes with Heaviside), so a failure is xfailed rather than raised; the models are still validated so that a new failure mode shows up as a change in which models xfail.
+        """
         from tvbo.adapters.neuroml import NeuroMLAdapter
 
         model = Dynamics.from_file(model_file)
         exp = SimulationExperiment(dynamics=model)
         adapter = NeuroMLAdapter(exp)
         xml = adapter.render_code()
-        # PyLEMS ExprParser (v0.6.9) has known limitations with compound
-        # expressions and certain parameter names (e.g. H clashes with
-        # Heaviside). We still test to detect regressions.
         try:
             adapter.validate(xml)
         except Exception as e:
@@ -213,8 +208,7 @@ class TestNeuroMLValidation:
 
 # ── Run tests (downstream simulator execution) ───────────────────────
 
-# Use FitzHughNagumo — simple 2-variable model that validates and runs
-# reliably across all backends.
+# Use FitzHughNagumo — simple 2-variable model that validates and runs reliably across all backends.
 _RUN_EXPERIMENT = str(NEUROML_EXPERIMENTS_DIR / "FitzHughNagumo_Ex9.yaml")
 
 

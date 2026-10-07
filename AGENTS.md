@@ -8,40 +8,22 @@ read this whole file.
 ## What is TVBO?
 
 **TVBO (The Virtual Brain Ontology)** is a knowledge-representation and
-simulation toolkit for large-scale brain network models. It consists of
-**three pillars** plus a **platform**:
+simulation toolkit for large-scale brain network models — three pillars plus a
+platform:
 
-1. **LinkML datamodel** — `schema/*.yaml` defines the structured metadata for
-   `SimulationExperiment`, `SimulationStudy`, `Dynamics`, `Network`, `Atlas`,
-   and friends. Python types in `tvbo/datamodel/` are *generated* from this
-   schema; **never hand-edit `tvbo/datamodel/**`**.
+1. **LinkML datamodel** — `schema/*.yaml`, generated into Python types under
+   `tvbo/datamodel/`.
+2. **Ontology** — `ontology/*.{owl,ttl,shacl}`, loaded via `owlready2`.
+3. **Python package** — specifies models, loads ontology-backed classes
+   (`tvbo/classes/`), generates backend code (`tvbo/codegen/` +
+   `tvbo/templates/` + `tvbo/adapters/`), and executes it (`tvbo/run/`).
 
-2. **Ontology** — `ontology/*.{owl,ttl,shacl}` carries axioms about
-   `SimulationExperiment`, `SimulationStudy`, `Network`, `DynamicalSystem`,
-   and `Software` — i.e. what they are and how they can be combined to
-   specify and run **Dynamical Network Models**. Loaded via `owlready2`
-   from `tvbo/ontology/`.
+The **platform** at [tvbo.charite.de](https://tvbo.charite.de) is an Odoo layer
+that shares curated knowledge and experiments; a FastAPI surface (`tvbo/api/`)
+mirrors it locally.
 
-3. **TVBO Python package** — `tvbo/` does four things:
-   1. **Specifies** models (`Dynamics`, `Equation`, `Network`, …) in Python
-      or YAML.
-   2. **Loads** `SimulationExperiment`s, `SimulationStudy`s, and other
-      ontology-backed classes (`tvbo/classes/`).
-   3. **Generates code** for all supported backends — JAX, NumPy, TVB,
-      Julia (DifferentialEquations.jl, ModelingToolkit, NetworkDynamics),
-      PyRates, NeuroML, … — via `tvbo/codegen/` + `tvbo/templates/` +
-      `tvbo/adapters/`.
-   4. **Executes** the generated code and runs experiments against the
-      chosen backend (`tvbo/run/`).
-
-**Platform** — [tvbo.charite.de](https://tvbo.charite.de) is an Odoo-based
-management layer over the ontology: it displays curated knowledge, lets
-users set up their own models, and stores/shares `SimulationExperiment`s
-and `SimulationStudy`s (public, or private via API key). Experiments can be
-loaded back into Python through `tvbo.api`. A community discussion layer
-is on the roadmap.
-
-A FastAPI REST surface (`tvbo/api/`) mirrors the platform locally.
+See the `overview` skill for the full picture — pillars, supported backends,
+and installation.
 
 ## Working in this repo (maintainers)
 
@@ -53,6 +35,11 @@ A FastAPI REST surface (`tvbo/api/`) mirrors the platform locally.
 - **LinkML schema:** edit `schema/*.yaml`; the regeneration pipeline produces
   `tvbo/datamodel/**`, which is excluded from `ruff` and `mypy`. **Never**
   hand-edit the generated dir. See the `linkml-schema` skill.
+- **Comments:** a comment states the code's *current* contract, addressed to a
+  reader who has never seen your diff. Changing a commented line means
+  rewriting that comment, never appending a second one beside it. Document a
+  function in its docstring, not a stack of leading `#` lines — `scripts/check_prose.py`
+  gates this. See the `writing-code` and `writing-docstrings` skills.
 - **Git:** the user owns all version control — agents must never run
   `git add` / `git commit` / `git push`. See the `git` skill.
 
@@ -75,9 +62,10 @@ tvbo skills uninstall          # remove previously installed user skills
 | Skill | Description | Location |
 |-------|-------------|----------|
 | `codegen-templates` | How TVBO's code generation works — template engines, backend dispatch in tvbo/codegen/, and the contract for adding a new backend. | `.claude/skills/codegen-templates/SKILL.md` |
+| `fitting-and-sweeps` | Hygiene for parameter fits, working-point tuning and sweeps: gate on convergence, never argmax onto a grid edge or into a degenerate regime, and make the selection criterion match the claim. Use when tuning a model to a working point, sweeping a coupling, or fitting parameters against data. | `.claude/skills/fitting-and-sweeps/SKILL.md` |
 | `git` | Rules for git operations in TVBO. The user manages all version control. Use when clarifying what git actions are allowed or when a task involves version control. | `.claude/skills/git/SKILL.md` |
-| `grill-me` | Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions "grill me". | `.claude/skills/grill-me/SKILL.md` |
 | `linkml-schema` | How to edit the LinkML schema in schema/*.yaml and why tvbo/datamodel/** is generated and must never be hand-edited. | `.claude/skills/linkml-schema/SKILL.md` |
+| `mermaid` | Create, validate and preview Mermaid diagrams through the Mermaid Chart VS Code extension: the LM tools to call, the real command IDs, and the @mermaid-chart slash commands. Use when asked to draw, edit or visualize any diagram. | `.claude/skills/mermaid/SKILL.md` |
 | `tests-and-backends` | pytest marker conventions for backend-tagged tests in TVBO, the slow/julia markers, and how to run the test suite locally. | `.claude/skills/tests-and-backends/SKILL.md` |
 | `writing-code` | Behavioral guidelines to reduce common LLM coding mistakes: think before coding, simplicity first, surgical changes, goal-driven execution. Use when the user wants to enforce strict coding discipline or review coding approach. | `.claude/skills/writing-code/SKILL.md` |
 | `writing-docstrings` | How to write Python docstrings in TVBO so that quartodoc renders them correctly in the API site. Google style, markdown body, type info on signature (not in the docstring). | `.claude/skills/writing-docstrings/SKILL.md` |
@@ -90,8 +78,10 @@ Install with: `tvbo skills install --target claude-code` (or `--target cursor` /
 |-------|-------------|------------------|
 | `tvbo-overview` | What TVBO is — the three pillars (LinkML datamodel, ontology, Python package) plus the Odoo platform. Use when working with the tvbo library or deciding whether to reach for it. | `tvbo/skills/canonical/overview/SKILL.md` |
 | `tvbo-platform` | How to use the Odoo-based TVBO platform at tvbo.charite.de — retrieve curated knowledge, manage your account, share SimulationExperiments and Studies (public or with API key), and load them back into Python. | `tvbo/skills/canonical/platform/SKILL.md` |
-| `tvbo-running-simulations` | How to run a SimulationExperiment in TVBO — choosing a backend, calling run/plot, and what each optional extra (jax, tvb, pyrates, julia) provides. | `tvbo/skills/canonical/running-simulations/SKILL.md` |
+| `tvbo-replicating-studies` | How to replicate a published study in TVBO — turn a paper into ONE declarative, fully tvbo-native `SimulationStudy` (any kind: single-node bifurcation to whole-brain network; forward simulation, parameter sweep, or fit to data) + declarative figures + an honest, fully-computed report. Encodes the hard-won rules so the replication is fast and trustworthy. Composes the atomic skills (writing-models, running-simulations, writing-reports). | `tvbo/skills/canonical/replicating-studies/SKILL.md` |
+| `tvbo-running-simulations` | How to run a SimulationExperiment in TVBO — discovering curated components, reusing a curated experiment, choosing a backend, and calling run/plot. Read this before grepping the repo for models, networks, or how to run something. | `tvbo/skills/canonical/running-simulations/SKILL.md` |
 | `tvbo-writing-models` | How to specify a Dynamics in TVBO — the YAML and Python forms, parameter / state-variable / equation conventions, and common pitfalls. | `tvbo/skills/canonical/writing-models/SKILL.md` |
+| `tvbo-writing-reports` | How to write a TVBO study report — one IMRAD Quarto document whose every number is computed from the run (never transcribed), whose equations render natively from the recipe, that states negative results honestly, and holds its prose to a strict anti-slop standard. Two sections marked "replication only" cover the scorecard and the copyright-safe figure split a replication adds. | `tvbo/skills/canonical/writing-reports/SKILL.md` |
 
 <!-- END SKILLS INDEX -->
 
@@ -111,3 +101,10 @@ Install with: `tvbo skills install --target claude-code` (or `--target cursor` /
 - Metadata schema: <https://virtual-twin.github.io/tvbo/datamodel>
 - Platform: <https://tvbo.charite.de>
 - Issues: <https://github.com/virtual-twin/tvbo/issues>
+
+## Planning documents
+
+Design papers, audits and roadmaps are not in this repo. They live in an internal
+project-management folder alongside the manuscript repo; ask a maintainer for its location.
+Do not add planning documents here.
+

@@ -1,0 +1,64 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class GrebogiMap(AbstractDynamics):
+    """GrebogiMap neural mass model."""
+
+    STATE_NAMES = ("theta", "x")
+    INITIAL_STATE = (0.2, 0.0)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        J0=0.3,
+        a=1.32,
+        b=0.9,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        J0 = params.J0
+        a = params.a
+        b = params.b
+
+        theta = state[0]
+        x = state[1]
+
+        dtheta_dt = jnp.mod(
+            theta
+            + a * jnp.sin(2 * theta)
+            - b * jnp.sin(4 * theta)
+            - x * jnp.sin(theta),
+            2 * jnp.pi,
+        )
+        dx_dt = (-J0) * jnp.cos(theta)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dtheta_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dtheta_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

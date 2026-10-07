@@ -1,0 +1,65 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class UlamRing4(AbstractDynamics):
+    """UlamRing4 neural mass model."""
+
+    STATE_NAMES = ("x0", "x1", "x2", "x3")
+    INITIAL_STATE = (
+        0.5403023058681398,
+        0.8414709848078965,
+        -0.4161468365471424,
+        -0.9899924966004454,
+    )
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        eps=0.6,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        eps = params.eps
+
+        x0 = state[0]
+        x1 = state[1]
+        x2 = state[2]
+        x3 = state[3]
+
+        dx0_dt = 2 - (eps * x3 + (1 - eps) * x0) ** 2
+        dx1_dt = 2 - (eps * x0 + (1 - eps) * x1) ** 2
+        dx2_dt = 2 - (eps * x1 + (1 - eps) * x2) ** 2
+        dx3_dt = 2 - (eps * x2 + (1 - eps) * x3) ** 2
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx0_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx0_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx2_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx3_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

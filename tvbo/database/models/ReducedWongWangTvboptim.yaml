@@ -109,7 +109,6 @@ derived_variables:
       lhs: x
       rhs: w*J_N*S + I_o + J_N*instant + J_N*delayed
       latex: false
-    conditional: false
   H_x:
     description: >-
       Average population firing rate H evaluated at the total synaptic input x.
@@ -117,7 +116,6 @@ derived_variables:
       lhs: H_x
       rhs: H(x)
       latex: false
-    conditional: false
     record: true
 functions:
   H:

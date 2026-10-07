@@ -1,0 +1,151 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: Lorenz96
+       Generated from TVBO Dynamics: Lorenz96
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="Lorenz96">
+
+    <!-- Parameters -->
+    <Parameter name="F" dimension="none"/>
+    <Parameter name="N" dimension="none"/>
+    <!-- Coupling inputs -->
+    <!-- Initial condition parameters -->
+    <Parameter name="x0_0" dimension="none"/>
+    <Parameter name="x1_0" dimension="none"/>
+    <Parameter name="x2_0" dimension="none"/>
+    <Parameter name="x3_0" dimension="none"/>
+    <Parameter name="x4_0" dimension="none"/>
+    <Parameter name="x5_0" dimension="none"/>
+    <Parameter name="x6_0" dimension="none"/>
+    <Parameter name="x7_0" dimension="none"/>
+    <Parameter name="x8_0" dimension="none"/>
+    <Parameter name="x9_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="x0" dimension="none"/>
+    <Exposure name="x1" dimension="none"/>
+    <Exposure name="x2" dimension="none"/>
+    <Exposure name="x3" dimension="none"/>
+    <Exposure name="x4" dimension="none"/>
+    <Exposure name="x5" dimension="none"/>
+    <Exposure name="x6" dimension="none"/>
+    <Exposure name="x7" dimension="none"/>
+    <Exposure name="x8" dimension="none"/>
+    <Exposure name="x9" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="x0" dimension="none" exposure="x0"/>
+      <StateVariable name="x1" dimension="none" exposure="x1"/>
+      <StateVariable name="x2" dimension="none" exposure="x2"/>
+      <StateVariable name="x3" dimension="none" exposure="x3"/>
+      <StateVariable name="x4" dimension="none" exposure="x4"/>
+      <StateVariable name="x5" dimension="none" exposure="x5"/>
+      <StateVariable name="x6" dimension="none" exposure="x6"/>
+      <StateVariable name="x7" dimension="none" exposure="x7"/>
+      <StateVariable name="x8" dimension="none" exposure="x8"/>
+      <StateVariable name="x9" dimension="none" exposure="x9"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="x0" value="(F - x0 + x9*(x1 - x8)) / SEC"/>
+      <TimeDerivative variable="x1" value="(F - x1 + x0*(x2 - x9)) / SEC"/>
+      <TimeDerivative variable="x2" value="(F - x2 + x1*(x3 - x0)) / SEC"/>
+      <TimeDerivative variable="x3" value="(F - x3 + x2*(x4 - x1)) / SEC"/>
+      <TimeDerivative variable="x4" value="(F - x4 + x3*(x5 - x2)) / SEC"/>
+      <TimeDerivative variable="x5" value="(F - x5 + x4*(x6 - x3)) / SEC"/>
+      <TimeDerivative variable="x6" value="(F - x6 + x5*(x7 - x4)) / SEC"/>
+      <TimeDerivative variable="x7" value="(F - x7 + x6*(x8 - x5)) / SEC"/>
+      <TimeDerivative variable="x8" value="(F - x8 + x7*(x9 - x6)) / SEC"/>
+      <TimeDerivative variable="x9" value="(F - x9 + x8*(x0 - x7)) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="x0" value="x0_0"/>
+        <StateAssignment variable="x1" value="x1_0"/>
+        <StateAssignment variable="x2" value="x2_0"/>
+        <StateAssignment variable="x3" value="x3_0"/>
+        <StateAssignment variable="x4" value="x4_0"/>
+        <StateAssignment variable="x5" value="x5_0"/>
+        <StateAssignment variable="x6" value="x6_0"/>
+        <StateAssignment variable="x7" value="x7_0"/>
+        <StateAssignment variable="x8" value="x8_0"/>
+        <StateAssignment variable="x9" value="x9_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="Lorenz96_inst" type="Lorenz96" F="0.01" N="10" x0_0="0.0" x1_0="0.1" x2_0="0.2" x3_0="0.3" x4_0="0.4" x5_0="0.5" x6_0="0.6" x7_0="0.7" x8_0="0.8" x9_0="0.9"/>
+
+
+
+</Lems>

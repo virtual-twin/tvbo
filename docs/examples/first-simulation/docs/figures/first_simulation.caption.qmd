@@ -1,0 +1,1 @@
+**A first whole-brain simulation.** **(a)** The connectome. network (integration) from experiment 1. **(b)** On the cortex. surface (integration) from experiment 1. **(c)** Regional activity. line of time (integration), rule at integration from experiment 1.

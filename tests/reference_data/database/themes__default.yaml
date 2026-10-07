@@ -1,0 +1,15 @@
+ink: '#183231'
+base: '#3f5457'
+muted: '#c3cbcb'
+highlight: '#c0504d'
+background: '#ffffff'
+palette:
+- '#1f7d78'
+- '#d9922f'
+- '#4a7fbf'
+- '#7a5a8e'
+- '#bf869c'
+colormaps:
+  sequential: viridis
+  diverging: RdBu_r
+legend_frame: false

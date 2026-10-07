@@ -1,13 +1,14 @@
 ---
 title: "NML2: Abstract Cells"
 description: "Catalog of all abstract cell types — iafTau, iafRef, Izh, AdEx, FHN, PinskyRinzel"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## NML2_AbstractCells.nml
 
-This is the master catalog of all abstract (non-morphological) cell types in
-NeuroML2.  Each cell type is a single-compartment model with analytically defined
-dynamics.
+This is the master catalog of all abstract (non-morphological) cell types in NeuroML2.  Each cell type is a single-compartment model with analytically defined dynamics.
 
 | Cell Type | TVBO Equivalent | State Vars |
 |-----------|----------------|------------|

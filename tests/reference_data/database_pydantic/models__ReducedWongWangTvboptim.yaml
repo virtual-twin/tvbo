@@ -1,0 +1,188 @@
+name: ReducedWongWangTvboptim
+iri: tvbo:ReducedWongWangTvboptim
+parameters:
+  a:
+    name: a
+    definition: Input gain parameter of the sigmoid transfer function H(x).
+    value: 0.27
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.27
+      step: 0.01
+      log_scale: false
+    description: Input gain parameter
+    unit: per_pC
+  b:
+    name: b
+    definition: Input shift parameter of the sigmoid transfer function H(x).
+    value: 0.108
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    description: Input shift parameter
+    unit: kHz
+  d:
+    name: d
+    definition: Scaling parameter of the sigmoid transfer function H(x).
+    value: 154.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 200.0
+      step: 0.01
+      log_scale: false
+    description: Scaling parameter
+    unit: ms
+  gamma:
+    name: gamma
+    definition: Kinetic parameter governing the rate of NMDA channel dynamics.
+    value: 0.641
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    description: Kinetic parameter
+  tau_s:
+    name: tau_s
+    definition: NMDA decay time constant for the synaptic gating variable S.
+    value: 100.0
+    domain:
+      enforce: none
+      lo: 50.0
+      hi: 150.0
+      step: 1.0
+      log_scale: false
+    description: NMDA decay time constant
+    unit: ms
+  w:
+    name: w
+    definition: Local excitatory recurrence strength. Controls the positive feedback
+      within each cortical population. Higher values increase local excitation and
+      push the system toward higher firing rates.
+    value: 0.5
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    description: Excitatory recurrence strength (local feedback)
+    unit: dimensionless
+  J_N:
+    name: J_N
+    definition: NMDA synaptic coupling strength. Scales both local recurrence and
+      long-range network coupling inputs.
+    value: 0.2609
+    domain:
+      enforce: none
+      lo: 0.2609
+      hi: 0.5
+      step: 0.001
+      log_scale: false
+    description: NMDA synaptic coupling strength
+    unit: nA
+  I_o:
+    name: I_o
+    definition: Effective external input current to each cortical population. Default
+      0.34 nA sets the system in bistability (Hansen et al., 2015). Together with
+      w, this is a key parameter for fitting functional connectivity.
+    value: 0.34
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    description: External input current
+    unit: nA
+description: 'The Reduced Wong-Wang (RWW) model is a biophysically-based neural mass
+  model that describes the dynamics of NMDA-mediated synaptic gating (Deco et al.,
+  2013). It captures the slow dynamics relevant for resting-state fMRI and has been
+  widely used for modeling whole-brain functional connectivity.
+
+  RWW is the dynamical mean-field (DMF) reduction of the Wong & Wang (2006) spiking
+  model. Each network node is described by a single state variable S representing
+  the average NMDA synaptic gating (fraction of open channels).
+
+  The total synaptic input x combines local excitatory recurrence (w), external input
+  (I_o), and long-range network coupling (instant and delayed) scaled by the synaptic
+  coupling strength J_N. The sigmoid transfer function H(x) maps the total input current
+  to the average population firing rate. In a network setting, the global coupling
+  strength G (a coupling parameter) scales the structural connectivity weights that
+  modulate inter-regional communication.'
+references:
+- Wong2006
+- Deco2013
+derived_variables:
+  x:
+    name: x
+    description: Total synaptic input current combining local recurrence, external
+      input, and network coupling (instant and delayed) scaled by J_N.
+    equation:
+      lhs: x
+      rhs: w*J_N*S + I_o + J_N*instant + J_N*delayed
+      latex: false
+    record: false
+  H_x:
+    name: H_x
+    description: Average population firing rate H evaluated at the total synaptic
+      input x.
+    equation:
+      lhs: H_x
+      rhs: H(x)
+      latex: false
+    record: true
+coupling_inputs:
+  instant:
+    name: instant
+    description: Instantaneous network coupling input
+    dimension: 1
+    local: false
+  delayed:
+    name: delayed
+    description: Delayed network coupling input
+    dimension: 1
+    local: false
+state_variables:
+  S:
+    name: S
+    domain:
+      enforce: clamp
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+    description: Average NMDA synaptic gating variable, representing the fraction
+      of open NMDA channels at each network node.
+    equation:
+      lhs: Derivative(S, t)
+      rhs: -S/tau_s + (1 - S)*H(x)*gamma
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 1
+functions:
+  H:
+    name: H
+    equation:
+      rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
+      latex: false
+    definition: Sigmoid transfer function mapping total synaptic input current to
+      the average population firing rate (Deco et al., 2013).
+    arguments:
+      x:
+        name: x
+model_type: mean_field
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

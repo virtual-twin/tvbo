@@ -1,6 +1,7 @@
 ---
 title: "Interoperability"
 subtitle: "TVBO integrations with external tools and standards"
+description: "Bridges between TVBO and external tools and standards: TVB, PyRates, NeuroML, the Julia backends, BIDS and openMINDS."
 ---
 
 TVBO provides seamless interoperability with various neuroimaging tools, optimization frameworks, and metadata standards. This enables researchers to leverage specialized capabilities from different ecosystems while maintaining a unified model representation.
@@ -103,10 +104,10 @@ model.to_yaml(format="pyrates")
 ### Export to BIDS
 
 ```python
-from tvbo import SimulationExperiment
+from tvbo import SimulationStudy
 
-exp = SimulationExperiment.from_file("experiment.yaml")
-exp.to_bids("output/bids")
+study = SimulationStudy.from_file("Study.yaml")
+study.run()  # writes derivatives/tvbo/ inside the study dataset
 ```
 
 ### Export to OpenMINDS

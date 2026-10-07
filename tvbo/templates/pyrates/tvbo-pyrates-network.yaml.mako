@@ -25,8 +25,8 @@ else:
 
 def get_weights_matrix(network):
     """Get weights matrix from Network."""
-    if hasattr(network, 'weights_matrix'):
-        return network.weights_matrix
+    if hasattr(network, 'matrix'):
+        return network.matrix("weight", format="dense")
     elif hasattr(network, 'weights') and network.weights is not None:
         if hasattr(network.weights, 'data'):
             return np.array(network.weights.data)
@@ -136,14 +136,14 @@ if hasattr(network, 'graph') and network.graph is not None:
     tgt_m = tgt_node_data.get('model')
     if src_m and src_m.state_variables:
         src_var = list(src_m.state_variables.keys())[0]
-    if tgt_m and tgt_m.coupling_terms:
-        tgt_var = list(tgt_m.coupling_terms.keys())[0]
+    if tgt_m and tgt_m.coupling_inputs:
+        tgt_var = list(tgt_m.coupling_inputs.keys())[0]
 elif context.get('model'):
     base_m = context.get('model')
     if base_m.state_variables:
         src_var = list(base_m.state_variables.keys())[0]
-    if base_m.coupling_terms:
-        tgt_var = list(base_m.coupling_terms.keys())[0]
+    if base_m.coupling_inputs:
+        tgt_var = list(base_m.coupling_inputs.keys())[0]
 %>\
     - [${src}/${src_model}_op/${src_var}, ${tgt}/${tgt_model}_op/${tgt_var}, null, {weight: ${weight}, delay: ${delay}}]
 % endfor

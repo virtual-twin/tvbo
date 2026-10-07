@@ -55,6 +55,10 @@ pipeline:
       output: projected
       equation:
           rhs: "gain @ sum(X, axis=-1) / period_steps"
+          parameters:
+              period_steps:
+                  equation: {rhs: "floor(period / dt)"}
+                  description: "Integration steps per sampling period. TVB's Projection monitors TRUNCATE this ratio (`int(period / dt)`) where the averaging monitors round it, so at the default period the two differ by a sample."
       arguments:
           gain:
               description: "Lead field matrix (n_sensors, n_sources)"

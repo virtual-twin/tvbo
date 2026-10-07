@@ -9,7 +9,8 @@ The TVBO datamodel is defined in **LinkML** YAML in `schema/` and *generated* in
 ## What is canonical
 
 - `schema/common.yaml`, `schema/SANDS.yaml`, `schema/openMINDS_tvbo/**` — hand-written LinkML definitions.
-- `tvbo/datamodel/pydantic.py`, `tvbo/datamodel/schema.py` — **generated**. Do not edit.
+- `tvbo/datamodel/pydantic.py`, `tvbo/datamodel/schema.py`, `tvbo/datamodel/tvbo_datamodel.schema.json`
+  — **generated** at build time by `hatch_build.py` and **gitignored**. Do not edit.
 
 `pyproject.toml` makes this explicit:
 
@@ -17,15 +18,15 @@ The TVBO datamodel is defined in **LinkML** YAML in `schema/` and *generated* in
 - `tool.ruff.lint.exclude` includes `tvbo/datamodel/**`
 - `tool.mypy.exclude` includes `tvbo/datamodel/`
 
-If your diff touches `tvbo/datamodel/**` *and* anything else, that is a bug — split the change.
-
 ## Editing the schema
 
 1. Edit the appropriate `schema/*.yaml`.
-2. Regenerate the Python types via the LinkML pipeline (see `Makefile` / CI).
-3. Commit both the schema change *and* the regenerated `tvbo/datamodel/**` in the same commit.
+2. Regenerate the Python types via the LinkML pipeline (see `Makefile` / CI). A build
+   regenerates them automatically through the hatch build hook.
 
-Never patch the generated file directly — the next regeneration will silently revert it.
+The generated types are untracked, so a schema change has nothing to stage alongside it —
+`schema/*.yaml` is the whole diff. Never patch a generated file directly: it is not in
+git, and the next build silently overwrites it.
 
 ## When in doubt
 

@@ -1,0 +1,45 @@
+name: NetworkDynamics.jl
+description: A Julia package for simulating dynamics on networks. Provides an efficient
+  interface for defining node and edge dynamics that compiles to optimized DifferentialEquations.jl
+  ODE/SDE problems.
+homepage: https://juliadynamics.github.io/NetworkDynamics.jl/stable/
+license: MIT
+repository: https://github.com/PIK-ICoNe/NetworkDynamics.jl
+doi: 10.1063/5.0051387
+ecosystem:
+- julia_registry
+application_category: simulation
+scale:
+- neural_mass
+- network_system
+model_paradigm:
+- neural_mass
+- generic
+tool_role:
+- simulator
+- framework
+programming_language:
+- Julia
+runtime_platform:
+- DifferentialEquations.jl
+interoperates_with:
+- DifferentialEquations.jl
+- Graphs.jl
+date_created: '2020-01-01'
+development_status: active
+author:
+- Frank Hellmann
+- Michael Lindner
+maintainer:
+- PIK Potsdam
+funder:
+- PIK Potsdam
+reference_publication: 10.1063/5.0051387
+keywords:
+- Julia
+- network dynamics
+- differential equations
+- power grid
+- neural network
+issue_tracker: https://github.com/JuliaDynamics/NetworkDynamics.jl/issues
+is_accessible_for_free: true

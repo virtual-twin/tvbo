@@ -1,0 +1,51 @@
+import numpy as np
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    G = _p.G
+    I_ext = _p.I_ext
+    I_o = _p.I_o
+    J_N = _p.J_N
+    J_i = _p.J_i
+    M_i = _p.M_i
+    W_e = _p.W_e
+    W_i = _p.W_i
+    a_e = _p.a_e
+    a_i = _p.a_i
+    b_e = _p.b_e
+    b_i = _p.b_i
+    d_e = _p.d_e
+    d_i = _p.d_i
+    gamma_e = _p.gamma_e
+    gamma_i = _p.gamma_i
+    lamda = _p.lamda
+    tau_e = _p.tau_e
+    tau_i = _p.tau_i
+    w_p = _p.w_p
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    S_e = current_state[0]
+    S_i = current_state[1]
+
+    # Derived variables
+    J_N_S_e = J_N * S_e
+    coupling = G * J_N * (c_glob + S_e * local_coupling)
+    I_e = I_ext + coupling + I_o * W_e + J_N_S_e * w_p - J_i * S_i
+    I_i = J_N_S_e - S_i + I_o * W_i + coupling * lamda
+    x_e = M_i * (-b_e + I_e * a_e)
+    x_i = M_i * (-b_i + I_i * a_i)
+    H_e = x_e / (1 - np.exp(-d_e * x_e))
+    H_i = x_i / (1 - np.exp(-d_i * x_i))
+
+    # Derivatives
+    dS_e_dt = -S_e / tau_e + H_e * gamma_e * (1 - S_e)
+    dS_i_dt = H_i * gamma_i - S_i / tau_i
+
+    derivatives = np.array(np.broadcast_arrays(dS_e_dt, dS_i_dt))
+
+    return derivatives

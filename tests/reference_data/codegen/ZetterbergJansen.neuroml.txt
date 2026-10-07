@@ -1,0 +1,192 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: ZetterbergJansen
+       Generated from TVBO Dynamics: ZetterbergJansen
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="ZetterbergJansen">
+
+    <!-- Parameters -->
+    <Parameter name="He" dimension="none"/>
+    <Parameter name="Hi" dimension="none"/>
+    <Parameter name="P" dimension="none"/>
+    <Parameter name="Q" dimension="none"/>
+    <Parameter name="U" dimension="none"/>
+    <Parameter name="e0" dimension="none"/>
+    <Parameter name="gamma_1T" dimension="none"/>
+    <Parameter name="gamma_1" dimension="none"/>
+    <Parameter name="gamma_2T" dimension="none"/>
+    <Parameter name="gamma_2" dimension="none"/>
+    <Parameter name="gamma_3T" dimension="none"/>
+    <Parameter name="gamma_3" dimension="none"/>
+    <Parameter name="gamma_4" dimension="none"/>
+    <Parameter name="gamma_5" dimension="none"/>
+    <Parameter name="ke" dimension="none"/>
+    <Parameter name="ki" dimension="none"/>
+    <Parameter name="rho_1" dimension="none"/>
+    <Parameter name="rho_2" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <Parameter name="local_coupling" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="v1_0" dimension="none"/>
+    <Parameter name="v2_0" dimension="none"/>
+    <Parameter name="v3_0" dimension="none"/>
+    <Parameter name="v4_0" dimension="none"/>
+    <Parameter name="v5_0" dimension="none"/>
+    <Parameter name="v6_0" dimension="none"/>
+    <Parameter name="v7_0" dimension="none"/>
+    <Parameter name="y1_0" dimension="none"/>
+    <Parameter name="y2_0" dimension="none"/>
+    <Parameter name="y3_0" dimension="none"/>
+    <Parameter name="y4_0" dimension="none"/>
+    <Parameter name="y5_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="v1" dimension="none"/>
+    <Exposure name="v2" dimension="none"/>
+    <Exposure name="v3" dimension="none"/>
+    <Exposure name="v4" dimension="none"/>
+    <Exposure name="v5" dimension="none"/>
+    <Exposure name="v6" dimension="none"/>
+    <Exposure name="v7" dimension="none"/>
+    <Exposure name="y1" dimension="none"/>
+    <Exposure name="y2" dimension="none"/>
+    <Exposure name="y3" dimension="none"/>
+    <Exposure name="y4" dimension="none"/>
+    <Exposure name="y5" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="v1" dimension="none" exposure="v1"/>
+      <StateVariable name="v2" dimension="none" exposure="v2"/>
+      <StateVariable name="v3" dimension="none" exposure="v3"/>
+      <StateVariable name="v4" dimension="none" exposure="v4"/>
+      <StateVariable name="v5" dimension="none" exposure="v5"/>
+      <StateVariable name="v6" dimension="none" exposure="v6"/>
+      <StateVariable name="v7" dimension="none" exposure="v7"/>
+      <StateVariable name="y1" dimension="none" exposure="y1"/>
+      <StateVariable name="y2" dimension="none" exposure="y2"/>
+      <StateVariable name="y3" dimension="none" exposure="y3"/>
+      <StateVariable name="y4" dimension="none" exposure="y4"/>
+      <StateVariable name="y5" dimension="none" exposure="y5"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="coupled_input" dimension="none" value="2*e0/(1 + exp(rho_1*(rho_2 - c_glob - local_coupling*v6)))"/>
+      <ConditionalDerivedVariable name="sigma_v1" dimension="none">
+        <Case condition="rho_1*(rho_2 - v1) .gt. 709" value="0"/>
+        <Case value="2*e0/(1 + exp(rho_1*(rho_2 - v1)))"/>
+      </ConditionalDerivedVariable>
+      <ConditionalDerivedVariable name="sigma_v23" dimension="none">
+        <Case condition="rho_1*(rho_2 + v3 - v2) .gt. 709" value="0"/>
+        <Case value="2*e0/(1 + exp(rho_1*(rho_2 + v3 - v2)))"/>
+      </ConditionalDerivedVariable>
+      <ConditionalDerivedVariable name="sigma_v45" dimension="none">
+        <Case condition="rho_1*(rho_2 + v5 - v4) .gt. 709" value="0"/>
+        <Case value="2*e0/(1 + exp(rho_1*(rho_2 + v5 - v4)))"/>
+      </ConditionalDerivedVariable>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="v1" value="(y1) / SEC"/>
+      <TimeDerivative variable="v2" value="(y2) / SEC"/>
+      <TimeDerivative variable="v3" value="(y3) / SEC"/>
+      <TimeDerivative variable="v4" value="(y4) / SEC"/>
+      <TimeDerivative variable="v5" value="(y5) / SEC"/>
+      <TimeDerivative variable="v6" value="(y2 - y3) / SEC"/>
+      <TimeDerivative variable="v7" value="(y4 - y5) / SEC"/>
+      <TimeDerivative variable="y1" value="(-v1*ke^2 - 2*ke*y1 + He*ke*(gamma_1*sigma_v23 + gamma_1T*(U + coupled_input))) / SEC"/>
+      <TimeDerivative variable="y2" value="(-v2*ke^2 - 2*ke*y2 + He*ke*(gamma_2*sigma_v1 + gamma_2T*(P + coupled_input))) / SEC"/>
+      <TimeDerivative variable="y3" value="(-v3*ki^2 - 2*ki*y3 + Hi*gamma_4*ki*sigma_v45) / SEC"/>
+      <TimeDerivative variable="y4" value="(-v4*ke^2 - 2*ke*y4 + He*ke*(gamma_3*sigma_v23 + gamma_3T*(Q + coupled_input))) / SEC"/>
+      <TimeDerivative variable="y5" value="(-v5*ke^2 - 2*ki*y5 + Hi*gamma_5*ki*sigma_v45) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="v1" value="v1_0"/>
+        <StateAssignment variable="v2" value="v2_0"/>
+        <StateAssignment variable="v3" value="v3_0"/>
+        <StateAssignment variable="v4" value="v4_0"/>
+        <StateAssignment variable="v5" value="v5_0"/>
+        <StateAssignment variable="v6" value="v6_0"/>
+        <StateAssignment variable="v7" value="v7_0"/>
+        <StateAssignment variable="y1" value="y1_0"/>
+        <StateAssignment variable="y2" value="y2_0"/>
+        <StateAssignment variable="y3" value="y3_0"/>
+        <StateAssignment variable="y4" value="y4_0"/>
+        <StateAssignment variable="y5" value="y5_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="ZetterbergJansen_inst" type="ZetterbergJansen" He="3.25" Hi="22.0" P="0.12" Q="0.12" U="0.12" e0="0.0025" gamma_1T="1.0" gamma_1="135.0" gamma_2T="1.0" gamma_2="108.0" gamma_3T="1.0" gamma_3="33.75" gamma_4="33.75" gamma_5="15.0" ke="0.1" ki="0.05" rho_1="0.56" rho_2="6.0" c_glob="0" local_coupling="0" v1_0="0.1" v2_0="0.1" v3_0="0.1" v4_0="0.1" v5_0="0.1" v6_0="0.1" v7_0="0.1" y1_0="0.1" y2_0="0.1" y3_0="0.1" y4_0="0.1" y5_0="0.1"/>
+
+
+
+</Lems>

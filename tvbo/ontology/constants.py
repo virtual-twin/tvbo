@@ -1,13 +1,7 @@
-#
-# Module: constants.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""
-Constants
-=========
+# SPDX-License-Identifier: EUPL-1.2
+
+"""Constants.
 
 This module contains the constants used in the project.
 | Variable | Description |
@@ -17,7 +11,7 @@ This module contains the constants used in the project.
 
 """
 
-from os.path import join, dirname, realpath, abspath
+from os.path import abspath, dirname, join, realpath
 
 ROOT_DIR = abspath(join(dirname(realpath(__file__)), ".."))
 DATA_DIR = join(ROOT_DIR, "data")

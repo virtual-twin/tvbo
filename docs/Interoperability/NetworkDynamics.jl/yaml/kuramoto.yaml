@@ -1,19 +1,9 @@
-# =============================================================================
-# Heterogeneous Kuramoto Oscillators
-# =============================================================================
-# Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/
-#
-# Kuramoto phase oscillators on a ring (Watts-Strogatz k=2, p=0) with
-# heterogeneous natural frequencies and sinusoidal coupling K sin(theta_j - theta_i).
-# =============================================================================
+# Heterogeneous Kuramoto oscillators on a ring (NetworkDynamics.jl Heterogeneous System tutorial)
 
 id: 101
 label: "Heterogeneous Kuramoto Oscillators"
 description: >
-    Kuramoto model on an 8-node ring network.  Each oscillator has a natural
-    frequency omega_0 and is coupled to its nearest neighbours via
-    K sin(theta_src - theta_dst).  Demonstrates heterogeneous per-node parameters.
-    Recreates the NetworkDynamics.jl Heterogeneous System tutorial.
+    Kuramoto model on an 8-node ring network. Each oscillator has a natural frequency omega_0 and is coupled to its nearest neighbours via K sin(theta_src - theta_dst). Demonstrates heterogeneous per-node parameters. Recreates the NetworkDynamics.jl Heterogeneous System tutorial.
 references:
     - "https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/"
     - "Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators."
@@ -23,8 +13,7 @@ dynamics:
     name: Kuramoto
     label: "Kuramoto phase oscillator"
     description: >
-        Single-variable phase oscillator: d(theta)/dt = omega_0 + sum(edges).
-        The natural frequency omega_0 is a per-node parameter (heterogeneous).
+        Single-variable phase oscillator: d(theta)/dt = omega_0 + sum(edges). The natural frequency omega_0 is a per-node parameter (heterogeneous).
     system_type: continuous
     autonomous: true
     parameters:
@@ -37,7 +26,7 @@ dynamics:
             distribution:
                 name: Uniform
                 domain: { lo: 0.2, hi: 1.0 }
-    coupling_terms:
+    coupling_inputs:
         c_coupling:
             description: "Aggregated sinusoidal coupling from incident edges"
     state_variables:
@@ -57,9 +46,7 @@ dynamics:
 network:
     label: "8-node ring (Watts-Strogatz k=2, p=0)"
     description: >
-        Regular ring lattice: each node is connected to its 2 nearest
-        neighbours on each side.  Equivalent to watts_strogatz(8, 2, 0)
-        in Graphs.jl.
+        Regular ring lattice: each node is connected to its nearest neighbour on each side, k = 2 neighbours in all. With no rewiring (p = 0) it is the graph watts_strogatz(8, 2, 0) builds in Graphs.jl.
     number_of_nodes: 8
     graph_generator:
         name: watts_strogatz
@@ -73,8 +60,7 @@ network:
             name: KuramotoCoupling
             label: "Kuramoto sinusoidal coupling"
             description: >
-                Antisymmetric coupling: K sin(theta_src - theta_dst).
-                The AntiSymmetric wrapper ensures g_src = -g_dst.
+                Antisymmetric coupling: K sin(theta_src - theta_dst). Each direction of a connection is its own edge, so each node receives its own term.
             delayed: false
             parameters:
                 K:
@@ -91,6 +77,7 @@ network:
 integration:
     description: "Explicit Runge-Kutta (Tsit5) with dt=0.05 over t in [0, 10]"
     method: Tsit5
+    coupling_evaluation: per_stage
     step_size: 0.05
     duration: 10.0
     time_scale: "s"

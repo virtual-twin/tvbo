@@ -1,14 +1,14 @@
 ---
 title: "Ex16: Input Types"
 description: "Various input types — Izhikevich 2007 RS cells with 13 different NeuroML input generators"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Input Types
 
-Demonstrates all NeuroML2 input generator types applied to Izhikevich 2007 RS cells.
-13 cells each receive a different input: pulse, sine, ramp, voltage clamp, spike array,
-spike generators (regular, random, Poisson, refractory Poisson), Poisson firing synapse,
-compound input, transient Poisson firing synapse, and timed synaptic input.
+Demonstrates all NeuroML2 input generator types applied to Izhikevich 2007 RS cells. 13 cells each receive a different input: pulse, sine, ramp, voltage clamp, spike array, spike generators (regular, random, Poisson, refractory Poisson), Poisson firing synapse, compound input, transient Poisson firing synapse, and timed synaptic input.
 
 ---
 

@@ -1,0 +1,30 @@
+import numpy as np
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    R1 = _p.R1
+
+    # State variables
+    v1 = current_state[0]
+    v2 = current_state[1]
+    v3 = current_state[2]
+
+    # Derived variables
+    Vnl = 2.295e-5 * np.exp(3.0038 * v1 - 3.0038 * v2) - 2.295e-5 * np.exp(
+        3.0038 * v2 - 3.0038 * v1
+    )
+
+    # Derivatives
+    dv1_dt = (
+        6.89655172413793 * v2
+        - 100.0 * Vnl
+        - 6.89655172413793 * v1
+        + 100.0 * v1 * (0.144927536231884 - 1 / R1)
+    )
+    dv2_dt = 10.0 * Vnl + 0.689655172413793 * v1 - 10.0 * v3 - 0.689655172413793 * v2
+    dv3_dt = 3.125 * v2 - 0.3125 * v3
+
+    derivatives = np.array(np.broadcast_arrays(dv1_dt, dv2_dt, dv3_dt))
+
+    return derivatives

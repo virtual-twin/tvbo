@@ -1,0 +1,10 @@
+name: SoftPeakFrequency
+label: Soft peak frequency
+description: A differentiable peak frequency of one spectrum. The frequencies are averaged with softmax weights over the power, normalised to its maximum and sharpened by beta, so the result approaches the frequency of the largest peak as beta grows while keeping a gradient with respect to the spectrum. The leading skip bins are left out, which drops the DC bin and the slow drift a finite record leaves at the lowest frequencies. The normalised power peaks at exactly 1, so the weights are written as exp(beta * (power / max(power) - 1)), the max-shifted softmax, which cannot overflow. The function takes one spectrum; a pipeline step applies it per node with apply_on_dimension.
+arguments:
+  psd: {description: 'Power at each frequency bin of one spectrum.'}
+  freqs: {description: 'The frequency of each bin, in the unit the result is wanted in, e.g. rfftfreq(nfft, 1 / fs) for a WelchPSD.'}
+  beta: {description: 'Sharpness of the softmax over the normalised power; the larger it is, the closer the result to the hard argmax.'}
+  skip: {description: 'Number of leading bins left out.'}
+equation:
+  rhs: sum(slice_from(freqs, 0, skip) * exp(beta * (slice_from(psd, 0, skip) / max(slice_from(psd, 0, skip)) - 1))) / sum(exp(beta * (slice_from(psd, 0, skip) / max(slice_from(psd, 0, skip)) - 1)))

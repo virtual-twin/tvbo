@@ -44,4 +44,4 @@ integration:
   method: euler
   step_size: 0.01
   duration: 200.0
-  time_scale: s
+  time_unit: s

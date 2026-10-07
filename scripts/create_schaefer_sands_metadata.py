@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 """Create SANDS-compliant atlas metadata for Schaefer2018 originals.
 
-This script reads Schaefer NIfTI files downloaded to
-`tvbo/data/tvbo_data/atlas/schaefer2018_original_mni/`, fetches the
-corresponding official LUT + centroid tables from ThomasYeoLab/CBIG,
-and writes LinkML/SANDS-compatible `BrainAtlas` YAML sidecars.
+This script reads Schaefer NIfTI files downloaded to `tvbo/data/tvbo_data/atlas/schaefer2018_original_mni/`, fetches the corresponding official LUT + centroid tables from ThomasYeoLab/CBIG, and writes LinkML/SANDS-compatible `BrainAtlas` YAML sidecars.
 
-Output files are written to `tvbo/data/tvbo_data/atlas/` using a BIDS-like
-naming convention with explicit segmentation and scale entities.
+Output files are written to `tvbo/data/tvbo_data/atlas/` using a BIDS-like naming convention with explicit segmentation and scale entities.
 """
 
 from __future__ import annotations
@@ -23,10 +19,11 @@ from linkml_runtime.loaders import yaml_loader
 
 from tvbo.datamodel import tvbo_datamodel
 
-
 ROOT = Path(__file__).resolve().parent.parent
-ATLAS_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "atlas"
-ORIGINAL_DIR = ATLAS_DIR / "schaefer2018_original_mni"
+# Atlases are consolidated under tvbo/database/atlases (the runtime SoT).
+ATLAS_DIR = ROOT / "tvbo" / "database" / "atlases"
+# Non-BIDS Schaefer download staging stays out of the BIDS database (gitignored).
+ORIGINAL_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "atlas" / "schaefer2018_original_mni"
 
 CBIG_BASE = (
     "https://raw.githubusercontent.com/ThomasYeoLab/CBIG/master/"

@@ -1,0 +1,87 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class ReducedWongWangFunc(AbstractDynamics):
+    """ReducedWongWangFunc neural mass model."""
+
+    STATE_NAMES = ("S",)
+    INITIAL_STATE = (0.1,)
+    AUXILIARY_NAMES = ("x",)
+
+    DEFAULT_PARAMS = Bunch(
+        I_o=0.33,
+        J_N=0.2609,
+        a=0.27,
+        b=0.108,
+        d=154.0,
+        gamma=0.641,
+        tau_s=100.0,
+        w=0.6,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+        "local_coupling": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        I_o = params.I_o
+        J_N = params.J_N
+        a = params.a
+        b = params.b
+        d = params.d
+        gamma = params.gamma
+        tau_s = params.tau_s
+        w = params.w
+
+        S = state[0]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+        local_coupling = (
+            jnp.atleast_1d(coupling.local_coupling)[0]
+            if hasattr(coupling, "local_coupling")
+            else 0.0
+        )
+
+        def H(x):
+            return (a * x - b) / (1 - jnp.exp((-d) * (a * x - b)))
+
+        x = I_o + J_N * S * local_coupling + J_N * S * w + J_N * c_glob
+
+        dS_dt = H(x) * gamma * (1 - S) - S / tau_s
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dS_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dS_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(x), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

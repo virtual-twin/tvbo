@@ -13,42 +13,24 @@ Output:
 - Noise getter function
 </%doc>
 <%
-import numpy as np
+from tvbo.utils import noise_sigma
 
-# Get from context
+# Every amplitude is read by tvbo.utils.noise_sigma: per state variable through the experiment, else the integration's own.
 if 'experiment' in context.keys():
-    integration = experiment.integration
     model = experiment.dynamics
-    noise_sigma = np.asarray(experiment.noise_sigma_array) if hasattr(experiment, 'noise_sigma_array') else None
+    noise_config = experiment.run_noise
+    sigma_values = [float(s) for s in experiment.noise_sigma_array]
 else:
-    integration = context.get('integration', None)
     model = context.get('model', None)
-    noise_sigma = context.get('noise_sigma', None)
+    noise_config = getattr(context.get('integration', None), 'noise', None)
+    sigma_values = [noise_sigma(noise_config) or 0.0]
 
-# Parse noise config
-has_noise = integration is not None and integration.noise is not None
+has_noise = noise_config is not None
 noise_type = 'additive'
-sigma_values = [0.0]
 apply_to = None
 
 if has_noise:
-    noise_config = integration.noise
     noise_type = getattr(noise_config, 'type', 'additive').lower() if hasattr(noise_config, 'type') else 'additive'
-
-    if noise_sigma is not None:
-        sigma_values = noise_sigma.flatten().tolist()
-    elif hasattr(noise_config, 'sigma'):
-        sigma_val = noise_config.sigma
-        sigma_values = list(sigma_val) if hasattr(sigma_val, '__iter__') else [float(sigma_val)]
-    elif hasattr(noise_config, 'nsig'):
-        nsig = noise_config.nsig
-        if hasattr(nsig, '__iter__'):
-            sigma_values = [np.sqrt(2 * float(n)) for n in nsig]
-        else:
-            sigma_values = [np.sqrt(2 * float(nsig))]
-    else:
-        sigma_values = [0.1]
-
     apply_to = getattr(noise_config, 'apply_to', None)
     if apply_to is None and model is not None:
         apply_to = list(model.state_variables.keys())

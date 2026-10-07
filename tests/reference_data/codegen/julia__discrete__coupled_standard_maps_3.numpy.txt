@@ -1,0 +1,64 @@
+import numpy as np
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    k0 = _p.k0
+    k1 = _p.k1
+    k2 = _p.k2
+    Gamma = _p.Gamma
+
+    # State variables
+    theta0 = current_state[0]
+    p0 = current_state[1]
+    theta1 = current_state[2]
+    p1 = current_state[3]
+    theta2 = current_state[4]
+    p2 = current_state[5]
+
+    # Derivatives
+    dtheta0_dt = np.mod(
+        p0
+        + theta0
+        + k0 * np.sin(theta0)
+        - Gamma * (-np.sin(theta0 - theta1) - np.sin(theta0 - theta2)),
+        2 * np.pi,
+    )
+    dp0_dt = np.mod(
+        p0
+        + k0 * np.sin(theta0)
+        - Gamma * (-np.sin(theta0 - theta1) - np.sin(theta0 - theta2)),
+        2 * np.pi,
+    )
+    dtheta1_dt = np.mod(
+        p1
+        + theta1
+        + k1 * np.sin(theta1)
+        - Gamma * (-np.sin(theta1 - theta2) + np.sin(theta0 - theta1)),
+        2 * np.pi,
+    )
+    dp1_dt = np.mod(
+        p1
+        + k1 * np.sin(theta1)
+        - Gamma * (-np.sin(theta1 - theta2) + np.sin(theta0 - theta1)),
+        2 * np.pi,
+    )
+    dtheta2_dt = np.mod(
+        p2
+        + theta2
+        + k2 * np.sin(theta2)
+        - Gamma * (np.sin(theta0 - theta2) + np.sin(theta1 - theta2)),
+        2 * np.pi,
+    )
+    dp2_dt = np.mod(
+        p2
+        + k2 * np.sin(theta2)
+        - Gamma * (np.sin(theta0 - theta2) + np.sin(theta1 - theta2)),
+        2 * np.pi,
+    )
+
+    derivatives = np.array(
+        np.broadcast_arrays(dtheta0_dt, dp0_dt, dtheta1_dt, dp1_dt, dtheta2_dt, dp2_dt)
+    )
+
+    return derivatives

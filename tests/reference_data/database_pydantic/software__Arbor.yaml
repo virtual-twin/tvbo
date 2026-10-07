@@ -1,0 +1,52 @@
+name: Arbor
+description: A high-performance library for computational neuroscience simulation
+  with native support for morphologically detailed neuron models on modern hardware
+  including GPUs and many-core CPUs.
+homepage: https://arbor-sim.org
+license: BSD-2-Clause
+repository: https://github.com/arbor-sim/arbor
+doi: 10.5281/zenodo.1459679
+ecosystem:
+- pypi
+application_category: simulation
+scale:
+- channel
+- neuron
+- network_system
+model_paradigm:
+- compartmental
+- spiking
+tool_role:
+- simulator
+programming_language:
+- C++
+- Python
+runtime_platform:
+- GPU
+- MPI
+- SIMD
+interoperates_with:
+- NeuroML
+- NEURON
+- TVB
+- SONATA
+date_created: '2018-01-01'
+development_status: active
+author:
+- Ben Cumming
+- Nora Abi Akar
+maintainer:
+- Arbor Development Team
+funder:
+- EU HBP
+- Swiss National Science Foundation
+reference_publication: 10.3389/fninf.2019.00034
+keywords:
+- morphologically detailed
+- GPU
+- multi-compartment
+- HPC
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_023698
+issue_tracker: https://github.com/arbor-sim/arbor/issues
+is_accessible_for_free: true
