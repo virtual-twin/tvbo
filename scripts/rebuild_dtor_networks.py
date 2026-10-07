@@ -25,7 +25,6 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import h5py
 import numpy as np
 import pandas as pd
 from create_lobar_network import LOBE_ORDER, LOBE_ORDER_8, build_lobar_atlas
@@ -34,7 +33,6 @@ from rebuild_leaddbs_cohort_networks import VOLUMES as LEADDBS_VOLUMES
 from scipy.stats import spearmanr
 
 from tvbo.data.connectome_build import connectome_from_tractogram, ensure_mrtrix, tck2connectome_commands
-from tvbo.data.matrix_io import read_matrix
 
 COHORT = "cohort-HCPYA_rec-dTOR"
 ATLASES = NETWORKS.parent / "atlases"
@@ -244,15 +242,8 @@ def main():
             flush=True,
         )
         recounted.append((h5_path, new))
-    if args.dry_run:
-        return
-    for h5_path, new in recounted:
-        with h5py.File(h5_path, "r") as f:
-            kept = {name: read_matrix(f[f"edges/{name}"]) for name in f["edges"] if name not in new}
-        rewrite(h5_path, {**kept, **new})
-        back = stored(h5_path)
-        if not all(np.array_equal(back[k], new[k].astype(back[k].dtype)) for k in back):
-            raise SystemExit(f"{h5_path.name}: the rewritten companion does not read back")
+    if not args.dry_run:
+        rewrite(recounted)
 
 
 if __name__ == "__main__":
