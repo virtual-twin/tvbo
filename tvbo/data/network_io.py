@@ -477,6 +477,26 @@ def write_embedded_metadata(companion_path, meta: dict) -> None:
         raise ValueError(f"cannot embed metadata in {companion_path.suffix!r} companion")
 
 
+def load_declared_network(path):
+    """The network the file at *path* declares, read the way whatever uses that file reads it.
+
+    A sidecar names its companion relative to itself, so it is loaded where it stands (:func:`load_network`). A fragment in a study's spec directory is written to be included by the study's recipe, so its relative paths mean the study root: it is constructed as the recipe constructs it, with its ``data_file``, generator or parcellation resolved against that root.
+    """
+    from tvbo.classes.network import Network
+    from tvbo.utils import study_layout
+    from tvbo.utils.source import loading_from
+
+    path = Path(path).resolve()
+    try:
+        root = study_layout.study_root(path)
+    except (StopIteration, LookupError, OSError):
+        return load_network(path)
+    if study_layout.study_path("spec", root).resolve() not in path.parents:
+        return load_network(path)
+    with loading_from(root / path.name):
+        return tvbo_yaml_loader.construct(tvbo_yaml_loader.load_as_dict(path), Network)
+
+
 def load_network(path):
     """Load a tvbo Network from a sidecar, or from a self-describing companion.
 

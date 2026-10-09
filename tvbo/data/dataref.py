@@ -207,11 +207,54 @@ def source_producers(container) -> list[str]:
     return [str(n) for n in reversed(names) if n]
 
 
-def locate_analysis_container(results_root, name) -> Path:
+_TRANSIENT: dict[tuple[str, str], Path] = {}
+"""The containers of this process's transient analyses (``persist: false``), by (study results root, analysis name), consulted before that root by the in-process ``used:`` resolver."""
+
+_TRANSIENT_DIR: list[Path] = []
+"""The one temporary directory this process writes transient containers under, created by :func:`transient_root`."""
+
+
+def _root_key(results_root) -> str:
+    """The registry key of a study results root: its resolved path, or ``""`` for the default root."""
+    return "" if results_root is None else str(Path(results_root).resolve())
+
+
+def transient_root(results_root=None) -> Path:
+    """This process's directory for the transient analysis containers of the study whose results live in *results_root*: one per study, so two studies' transient analyses of one name never share a file, all under one temporary directory created on first use outside any study and removed when the process exits."""
+    import atexit
+    import hashlib
+    import shutil
+    import tempfile
+
+    if not _TRANSIENT_DIR:
+        root = Path(tempfile.mkdtemp(prefix="tvbo-transient-"))
+        _TRANSIENT_DIR.append(root)
+        atexit.register(shutil.rmtree, root, True)
+    return _TRANSIENT_DIR[0] / hashlib.sha256(_root_key(results_root).encode()).hexdigest()[:16]
+
+
+def register_transient(results_root, name, path) -> None:
+    """Make *path*, the container just written for transient analysis ``name`` of the study whose results live in ``results_root``, the one its in-process readers resolve. ``None`` says the analysis was last written under the study, so an earlier transient container of it is no longer what anything reads."""
+    key = (_root_key(results_root), str(name))
+    if path is None:
+        _TRANSIENT.pop(key, None)
+    else:
+        _TRANSIENT[key] = Path(path)
+
+
+def locate_analysis_container(results_root, name, *, transient: bool = False) -> Path:
     """Path to the container a study analysis named ``name`` writes in ``results_root``.
 
-    :func:`analysis_container_path` is the one place the convention is spelled, so the writer (:mod:`tvbo.data.analysis_io`), the run-time resolver and the figure adapter cannot disagree about where an analysis result lives, and a container left by the pre-record layout still resolves until the analysis is next written. Raises when it has not been produced yet, with the command that produces it.
+    :func:`analysis_container_path` is the one place the convention is spelled, so the writer (:mod:`tvbo.data.analysis_io`), the run-time resolver and the figure adapter cannot disagree about where an analysis result lives, and a container left by the pre-record layout still resolves until the analysis is next written. With ``transient=True``, the call is the in-process ``used:`` resolver's and a transient analysis of this study computed earlier in this process (:func:`register_transient`) resolves first, from outside the study; a figure, report, kit or study reader leaves it unset and is refused such an analysis by name, since it keeps no container. Raises when the container has not been produced, with the command that produces it.
     """
+    registered = _TRANSIENT.get((_root_key(results_root), str(name)))
+    if registered is not None:
+        if transient and registered.is_file():
+            return registered
+        if not transient:
+            raise FileNotFoundError(
+                f"analysis {name!r} is declared `persist: false`: it keeps no container under the study, so only an analysis or experiment of the same run can read it, not a figure, report or kit."
+            )
     path = analysis_container_path(results_root, name)
     if not path.is_file():
         legacy = legacy_analysis_container_path(results_root, name)
@@ -292,20 +335,56 @@ def reference_results_root(results_root=None, source_dir=None):
         return None
 
 
+NETWORK_SIDECARS = (".yaml", ".yml", ".json")
+"""The file types a network's sidecar is written in. A result container is HDF5, so one of these under ``iri`` names a network."""
+
+
+def network_file(iri, source_dir=None) -> Path | None:
+    """The sidecar of the network an ``iri`` names, or ``None`` when it names something else.
+
+    A network is named by its sidecar on disk, as written or relative to the study that holds *source_dir*, or by the exact id of a curated one (``tvbo:<file stem>``). An ``exp/`` or ``ana/`` scope, a bare experiment number and any other existing file name a result container, which :func:`_where` resolves.
+    """
+    if not iri or iri_scope(iri)[0] is not None or experiment_id(iri) is not None:
+        return None
+    given = Path(str(iri))
+    places = [given]
+    if source_dir and not given.is_absolute():
+        from tvbo.utils.study_layout import study_root
+
+        try:
+            places.append(Path(study_root(source_dir)) / given)
+        except (StopIteration, LookupError, OSError):
+            places.append(Path(source_dir) / given)
+    for path in places:
+        if path.is_file():
+            return path if path.suffix.lower() in NETWORK_SIDECARS else None
+    from tvbo.classes.network import Network, _iri_local
+
+    curated = Network._resolve_network_iri(str(iri))
+    return Path(curated) if curated and Path(curated).stem.lower() == _iri_local(str(iri)).lower() else None
+
+
+def names_a_network(ref, source_dir=None) -> Path | None:
+    """The network a reference reads a layer of (:func:`network_file`), or ``None``: an ``experiment`` or an ``analysis`` beside the ``iri`` is the WHERE, as in :func:`_where`."""
+    if any(getattr(ref, where, None) is not None for where in ("experiment", "analysis", "cohort")):
+        return None
+    return network_file(getattr(ref, "iri", None), source_dir)
+
+
 def locate_container(ref, *, results_root=None, fallback_experiment=None, subject=None) -> Path:
     """Resolve a ``DataRef``'s WHERE (:func:`_where`) to a result-container path.
 
-    ``subject`` is the reading run's own subject: against a per-subject cohort it selects that subject's shard (:func:`locate_exp_container`), and it is inert for every other kind of container.
+    ``subject`` is the reading run's own subject: against a per-subject cohort it selects that subject's shard (:func:`locate_exp_container`), and it is inert for every other kind of container. A transient analysis keeps no container, so a reference to one is refused here (:func:`locate_analysis_container`): a provenance record names only what is left on disk.
     """
     return _container_at(_where(ref, results_root, fallback_experiment), subject)
 
 
-def _container_at(where, subject=None, candidates=None) -> Path:
-    """The container a resolved WHERE (:func:`_where`) names; *candidates* reuses an experiment's :func:`_exp_candidates` answer already in hand."""
+def _container_at(where, subject=None, candidates=None, *, transient: bool = False) -> Path:
+    """The container a resolved WHERE (:func:`_where`) names; *candidates* reuses an experiment's :func:`_exp_candidates` answer already in hand, and *transient* lets an analysis resolve to a transient container of this process (:func:`locate_analysis_container`)."""
     if where[0] == "exp":
         return _pick(*(candidates or _exp_candidates(where[1], where[2])), where[1], where[2], subject)
     if where[0] == "ana":
-        return locate_analysis_container(where[1], where[2])
+        return locate_analysis_container(where[1], where[2], transient=transient)
     return where[1]
 
 
@@ -493,6 +572,7 @@ def resolve_dataref(
     subject=None,
     datasets=None,
     source_dir=None,
+    transient: bool = True,
 ):
     """Resolve a container-backed ``DataRef`` to a labelled :class:`xarray.DataArray`.
 
@@ -503,6 +583,10 @@ def resolve_dataref(
     A reference to a per-subject COHORT is read per subject. ``subject`` (the reading run's own, e.g. a per-subject experiment sourcing its fitted parameters) selects that subject's shard. Without one (a study analysis) the reference means the whole cohort: the selected array of every shard, stacked along a leading ``subject`` dimension whose coordinate is the ``sub-`` entity of each shard, so the reader never sees one subject posing as the cohort.
 
     A reference to a dataset ``cohort`` follows the same rule one level down, on the members' own files instead of result shards (:func:`tvbo.data.cohort.read_cohort`): *datasets* are the study's, where the cohort is declared, and *source_dir* resolves a relative ``bids_root``.
+
+    A reference whose ``iri`` names a network (:func:`network_file`) reads ``output`` as that network delivers it, an edge layer with its declared transforms applied or a per-node quantity, and follows the cohort rule when the network itself reads per subject (:func:`tvbo.data.cohort.read_network`).
+
+    An analysis reference reads a transient analysis this process computed (:func:`locate_analysis_container`) unless *transient* is False, which a reader of kept results (a report's number) passes to be refused it by name.
 
     A *local* reference (no WHERE) raises, as it does in :func:`locate_container`; callers test :func:`is_local_ref` first and route those to the in-run resolver.
     """
@@ -515,12 +599,18 @@ def resolve_dataref(
         if clashing:
             raise ValueError(f"a reference names cohort {ref.cohort!r} and also `{clashing[0]}`; a reference has one WHERE.")
         sel = sel_dict(ref)
-        pinned = sel.get(SUBJECT_DIM)
-        if pinned is not None:
-            # A `sel` naming members pins the reference to them, whichever subject the reading run is.
-            subject = None if isinstance(pinned, (list, tuple)) else sel.pop(SUBJECT_DIM)
+        sel.pop(SUBJECT_DIM, None)  # the members a `sel` names are the ones `read_cohort` reads
         da = select_labeled(read_cohort(ref, datasets, subject=subject, source_dir=source_dir), sel)
         return _finish(da, ref, alias_map, model_labels)
+
+    network = names_a_network(ref, source_dir)
+    if network is not None:
+        from tvbo.data.cohort import read_network
+
+        sel = sel_dict(ref)
+        sel.pop(SUBJECT_DIM, None)  # the members a `sel` names are the ones `read_network` reads
+        da = read_network(ref, network, subject=subject, datasets=datasets, results_root=results_root, source_dir=source_dir)
+        return _finish(select_labeled(da, sel), ref, alias_map, model_labels)
 
     where = _where(ref, results_root, fallback_experiment)
     candidates = _exp_candidates(where[1], where[2]) if where[0] == "exp" else None
@@ -531,7 +621,7 @@ def resolve_dataref(
         da = da.assign_coords({SUBJECT_DIM: list(shards)})
         return _finish(da, ref, alias_map, model_labels)
 
-    out = _read_one(xr, _container_at(where, subject, candidates), ref)
+    out = _read_one(xr, _container_at(where, subject, candidates, transient=transient), ref)
     if not isinstance(out, xr.DataArray):
         return out
     return _finish(out, ref, alias_map, model_labels)

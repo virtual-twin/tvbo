@@ -7,6 +7,9 @@ The worked case is a cohort-relative connectome normalisation: keep the pairs co
 
 from __future__ import annotations
 
+import copy
+import shutil
+
 import h5py
 import numpy as np
 import pytest
@@ -770,3 +773,283 @@ def test_a_kit_stages_an_analysis_a_parameter_reads(root, tmp_path):
     staged_dir = tmp_path / "kit/derivatives/tvbo"
     assert kit._stage_reference_containers(experiment, staged_dir) == ["toy_mean"]
     assert dataref.locate_analysis_container(staged_dir, "toy_mean").is_file()
+
+
+def _pinned(member, **extra):
+    """A reference to the cohort's weights pinned to *member*: one subject, or a list of them."""
+    return _member("weight", sel={"subject": member}, **extra)
+
+
+def test_a_reference_pinned_to_one_member_reads_it_whichever_subject_runs(root):
+    ref = DataRef(**_pinned("02"))
+    for subject in (None, "01", OUTSIDER):
+        da = dataref.resolve_dataref(ref, datasets=[_dataset(root)], subject=subject)
+        assert da.dims == ("node_i", "node_j")
+        np.testing.assert_array_equal(da.values, _raw("02")[0])
+    with pytest.raises(LookupError, match="pins sub-05, not a member of cohort 'four'"):
+        dataref.resolve_dataref(DataRef(**_pinned(OUTSIDER)), datasets=[_dataset(root)])
+
+
+def test_a_reference_pinned_to_several_members_reads_their_files_and_no_other(root):
+    """The listed members come back stacked in the listed order, on the first one's node labels, and a member the list leaves out is never opened."""
+    shutil.rmtree(root / "sub-02")
+    da = dataref.resolve_dataref(DataRef(**_pinned([SHUFFLED, "01"])), datasets=[_dataset(root)], subject="04")
+    assert da.dims == ("subject", "node_i", "node_j") and list(da.subject.values) == [SHUFFLED, "01"]
+    for member in (SHUFFLED, "01"):
+        np.testing.assert_array_equal(da.sel(subject=member, node_i=LABELS, node_j=LABELS).values, _raw(member)[0])
+
+
+@pytest.mark.parametrize("declare", DECLARED)
+def test_a_pinned_reference_narrows_no_fan_out(root, tmp_path, declare):
+    """A reference pinned to a member reads it for every subject, so a dataset subject outside the cohort has all it needs and keeps its job."""
+    from tvbo.run.workflow import plan
+
+    experiment = _reading_outside_its_network(root, tmp_path, declare, ref=_pinned("01"))
+    assert experiment.dataset_subject_ids() == LISTED
+    assert experiment.subject_selection()["cohorts"] == {} and experiment.subject_selection()["excluded"] == []
+    assert experiment.referenced_cohorts() == ["four"] and experiment.per_subject_cohorts() == []
+    built = plan(study_key="ToyCohort", experiment=experiment, backend="tvboptim", engine="slurm")
+    (axis,) = [ax for ax in built.workflow_axes if ax.name == "subject"]
+    assert axis.values == tuple(LISTED) and built.subject_selection == {}
+
+
+def _frozen_kit(experiment, out):
+    """Bundle and freeze *experiment* into a kit under *out* as the emitters do; returns the bundle's root as the frozen spec records it, the frozen spec as plain data and its path."""
+    from tvbo.cli import workflow as kit
+
+    spec_dir = out / "spec"
+    spec_dir.mkdir(parents=True)
+    bundle = kit._bundle_dataset(experiment, out, spec_dir, {})
+    path = spec_dir / "experiment.yaml"
+    path.write_text(kit._freeze_spec_yaml(experiment, spec_dir, dataset_bids_root=bundle))
+    return bundle, yaml.safe_load(path.read_text()), path
+
+
+def test_a_kit_carries_a_pinned_members_file_once_and_every_subject_reads_it(root, tmp_path):
+    from tvbo import SimulationExperiment
+
+    experiment = _reading_outside_its_network(root, tmp_path, _on_a_dynamics_parameter, ref=_pinned("01"))
+    bundle, frozen, path = _frozen_kit(experiment, tmp_path / "kit")
+    assert sorted(p.name for p in (tmp_path / "kit/data/toy_fc").iterdir()) == ["sub-01"]
+    assert list(frozen["dataset"]["subjects"]) == LISTED
+    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"]] == [("four", ["01"])]
+
+    rerun = SimulationExperiment.from_file(str(path))
+    assert rerun.dataset_subject_ids() == LISTED
+    (ref,) = rerun.declared_references()
+    for subject in LISTED:
+        rerun._active_subject = subject
+        np.testing.assert_array_equal(dataref.resolve_dataref(ref, **rerun._reference_context()).values, _raw("01")[0])
+
+
+def test_a_kit_refuses_a_pinned_member_its_experiment_does_not_fan_over(root, tmp_path):
+    """A frozen dataset lists the subjects its experiment runs, and a cohort's members have to be among a dataset's subjects, so the kit cannot declare this member; making it says so, where the run on the node would have."""
+    experiment = _reading_outside_its_network(root, tmp_path, _on_a_dynamics_parameter, ref=_pinned("02"))
+    assert experiment.dataset_subject_ids() == LISTED
+    with pytest.raises(ValueError, match="reads sub-02 through a reference pinned to it and does not fan over it"):
+        experiment.dataset_bundle_files({})
+
+
+def test_a_group_kit_carries_every_member_a_whole_cohort_read_takes(root, tmp_path):
+    """A run with no subject reads the whole cohort, so its kit holds every member's file, the cohort, and a dataset to find them in, though the experiment declares none of its own."""
+    from tvbo import SimulationExperiment
+
+    experiment = _reading_outside_its_network(root, tmp_path, _on_a_dynamics_parameter, subjects=None)
+    bundle, frozen, path = _frozen_kit(experiment, tmp_path / "kit")
+    assert bundle == "../data/toy_sc" and experiment.dataset is None
+    assert sorted(p.name for p in (tmp_path / "kit/data/toy_sc").iterdir()) == [f"sub-{m}" for m in MEMBERS]
+    assert frozen["dataset"]["bids_root"] == "../data/toy_sc" and not frozen["dataset"].get("subjects")
+    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"]] == [("four", MEMBERS)]
+
+    rerun = SimulationExperiment.from_file(str(path))
+    assert rerun.dataset_subject_ids() == []
+    (ref,) = rerun.declared_references()
+    stack = dataref.resolve_dataref(ref, **rerun._reference_context())
+    assert list(stack.subject.values) == MEMBERS
+    np.testing.assert_array_equal(stack.sel(node_i=LABELS, node_j=LABELS).values, _stack(0))
+
+
+def test_a_group_run_on_one_pinned_members_connectome_plans_and_travels(root, results, tmp_path):
+    """A network layer pinned to one member needs no subject: the experiment plans as one run and its kit holds that member's file alone."""
+    from tvbo import SimulationExperiment, SimulationStudy
+    from tvbo.run.workflow import plan
+
+    edges = [{"label": "weight", "used": _pinned("02", reconcile="by_label")}]
+    study = SimulationStudy.from_file(str(_study_file(root, tmp_path, edges=edges, transforms=[])))
+    experiment = study.get_experiment(1)
+    assert experiment.network.per_subject_cohorts() == []
+    built = plan(study_key="ToyCohort", experiment=experiment, backend="tvboptim", engine="slurm")
+    assert [ax.name for ax in built.workflow_axes] == []
+
+    bundle, frozen, path = _frozen_kit(experiment, tmp_path / "kit")
+    assert sorted(p.name for p in (tmp_path / "kit/data/toy_sc").iterdir()) == ["sub-02"]
+    rerun = SimulationExperiment.from_file(str(path))
+    rerun._bind_network_references(results_root=results)
+    np.testing.assert_array_equal(rerun.network.matrix("weight", format="dense"), _raw("02")[0][::-1, ::-1])
+
+
+def _on_device(root, tmp_path, declare=None, ref=None, **network_extra):
+    """The relaxation experiment fitting every listed subject's FC as one on-device cohort job, on a network that reads no cohort unless *network_extra* declares one, with one reference declared by *declare* (the member's weights unless *ref* is given)."""
+    from tvbo import SimulationStudy
+
+    fc_root = tmp_path / "functional_connectomes"
+    for subject in LISTED:
+        _write_fc(fc_root, subject)
+    dataset = {
+        "dataset_id": "toy_fc",
+        "bids_root": str(fc_root),
+        "batch_mode": "on_device",
+        "subjects": [{"subject_id": s} for s in LISTED],
+    }
+    query = {"atlas": "Toy", "desc": "FC", "suffix": "relmat"}
+    observations = {"fc_target": {"source": ["dataset.subject.fc"], "query": query, "reconcile": "by_label"}}
+    network = {"edges": [{"label": "weight"}], "transforms": [], **network_extra}
+    path = _study_file(root, tmp_path, dataset=dataset, observations=observations, **network)
+    if declare is not None:
+        spec = yaml.safe_load(path.read_text())
+        declare(spec["experiments"][0], ref or _member("weight"))
+        path.write_text(yaml.safe_dump(spec, sort_keys=False))
+    return SimulationStudy.from_file(str(path)).get_experiment(1)
+
+
+@pytest.mark.parametrize("declare", DECLARED)
+def test_an_on_device_cohort_refuses_a_cohort_read_per_subject_wherever_it_is_declared(root, tmp_path, declare):
+    """The cohort job has no subject, so a reference that follows the run would hand it every member at once, in the cohort's order, for a batch that runs in the dataset's."""
+    from tvbo.run.workflow import plan
+
+    experiment = _on_device(root, tmp_path, declare)
+    assert experiment.dataset_on_device()
+    with pytest.raises(ValueError, match="on_device.* reads cohort 'four' one subject at a time"):
+        plan(study_key="ToyCohort", experiment=experiment, backend="tvboptim", engine="slurm")
+
+
+@pytest.mark.parametrize("pinned_in", ["a parameter", "the network"])
+def test_an_on_device_cohort_takes_a_value_pinned_to_one_member(root, tmp_path, pinned_in):
+    """A pinned reference reads the same member for every subject of the batch, so nothing about it is per subject: the cohort plans, over every dataset subject."""
+    from tvbo.run.workflow import plan
+
+    if pinned_in == "the network":
+        experiment = _on_device(root, tmp_path, edges=[{"label": "weight", "used": _pinned("02", reconcile="by_label")}])
+    else:
+        experiment = _on_device(root, tmp_path, _on_a_dynamics_parameter, _pinned("02"))
+    built = plan(study_key="ToyCohort", experiment=experiment, backend="tvboptim", engine="slurm")
+    assert built.cohort_subjects == LISTED
+
+
+def _reading_another_experiment(root, tmp_path, source_fans_out: bool):
+    """The on-device experiment with a parameter read from experiment 2 of its study, which fans over the same subjects or is one group run; returns the study, the reading experiment and the recipe's path."""
+    from tvbo import SimulationStudy
+
+    _on_device(root, tmp_path)
+    path = tmp_path / "ToyCohort.yaml"
+    spec = yaml.safe_load(path.read_text())
+    reader, source = spec["experiments"][0], copy.deepcopy(spec["experiments"][0])
+    source.update(id=2, label="the experiment whose result is read")
+    if source_fans_out:
+        source["dataset"]["batch_mode"] = "fan_out"
+    else:
+        del source["dataset"], source["observations"]
+    _on_a_dynamics_parameter(reader, {"experiment": 2, "output": "x"})
+    spec["experiments"].append(source)
+    path.write_text(yaml.safe_dump(spec, sort_keys=False))
+    study = SimulationStudy.from_file(str(path))
+    return study, study.get_experiment(1), path
+
+
+@pytest.mark.parametrize("source_fans_out", [True, False])
+def test_an_on_device_cohort_reads_another_experiments_result_only_from_a_group_run(root, tmp_path, source_fans_out):
+    """A per-subject experiment leaves one shard per subject, which a job with no subject would read all at once or as the first one; a group run leaves one result for every subject of the batch."""
+    from tvbo.cli import workflow as kit
+
+    study, reader, path = _reading_another_experiment(root, tmp_path, source_fans_out)
+
+    def planned():
+        return kit._plan_for(
+            study,
+            reader,
+            kit._parse_overrides([]),
+            spec=str(path),
+            study_key="ToyCohort",
+            backend="tvboptim",
+            engine="slurm",
+            selector=None,
+        )
+
+    if source_fans_out:
+        with pytest.raises(ValueError, match="reads the result of per-subject experiment 2 one subject at a time"):
+            planned()
+    else:
+        built = planned()
+        assert built.depends_on == ["2"] and built.cohort_subjects == LISTED
+
+
+def test_an_on_device_run_started_without_a_plan_is_refused_the_same(root, results, tmp_path):
+    """The refusal holds for a run started directly: for a cohort read that follows the run, and for an experiment whose saved result is one shard per subject."""
+    pytest.importorskip("tvboptim")
+    experiment = _on_device(root, tmp_path, _on_a_dynamics_parameter)
+    with pytest.raises(ValueError, match="reads cohort 'four' one subject at a time"):
+        experiment.run(format="tvboptim", results_root=results)
+
+    reader = _on_device(root, tmp_path, _on_a_dynamics_parameter, {"experiment": 8, "output": "x"})
+    for subject in LISTED:
+        (results / f"sub-{subject}_exp-8_model-Toy_result.h5").write_bytes(b"")
+    with pytest.raises(ValueError, match="reads the result of per-subject experiment 8 one subject at a time"):
+        reader.run(format="tvboptim", results_root=results)
+
+
+def test_held_lengths_masked_through_a_reference_keep_their_delay_flags_until_bound(root, results, tmp_path):
+    """Lengths a network holds, masked by a transform whose argument is read through a reference, are lengths before any run binds it: configure leaves the declared delays on, computes them once bound, and raises when the bound argument cannot be read."""
+    from tvbo import SimulationStudy
+
+    network = _over_a_group_companion(tmp_path, {"label": "weight"}, {"label": "length"})
+    path = _study_file(root, tmp_path, **network, transforms=[_network_spec()["transforms"][1]])
+    experiment = SimulationStudy.from_file(str(path)).get_experiment(1)
+    assert not experiment.network.sources_layer("length")
+    experiment.configure()
+    assert experiment.integration.delayed
+    assert experiment.network.reads_references("length") and not experiment.network.reads_references("weight")
+
+    experiment._bind_network_references(results_root=results)
+    experiment.configure()
+    assert experiment.integration.delayed
+
+    experiment._bind_network_references(results_root=tmp_path / "nowhere")
+    with pytest.raises((FileNotFoundError, LookupError)):
+        experiment.configure()
+
+
+def test_a_network_built_from_a_datamodel_record_keeps_its_enumerations_and_its_own_copy(root, results):
+    """A record's enumerations, its `reconcile: by_label` among them, reach the Network as enumerations, and the Network reads through its own copy of each reference."""
+    from tvbo.datamodel import schema
+
+    record = schema.Network(**_network_spec())
+    net = Network.from_datamodel(record)
+    assert isinstance(net, Network) and net.per_subject_cohorts() == ["four"]
+    assert dataref.reconcile_mode(net.edges[0].used) == "by_label" and net.edges[0] is not record.edges[0]
+    net.bind_references(subject="01", datasets=[_dataset(root)], results_root=results)
+    np.testing.assert_allclose(net.matrix("weight", format="dense"), _expected("01")[0], rtol=1e-6)
+
+
+def test_configure_reads_a_network_held_as_a_datamodel_record(root, tmp_path, recwarn):
+    """A network that reached the experiment as a plain datamodel record is read like any other: with no lengths its delays are switched off, and nothing is skipped behind a warning."""
+    from tvbo import SimulationStudy
+    from tvbo.datamodel import schema
+
+    path = _study_file(root, tmp_path, edges=[{"label": "weight"}], transforms=[])
+    experiment = SimulationStudy.from_file(str(path)).get_experiment(1)
+    experiment.network = schema.Network(nodes=[{"id": i, "label": lbl} for i, lbl in enumerate(LABELS)])
+    experiment.configure()
+    assert not [w for w in recwarn if "Could not configure delays" in str(w.message)]
+    assert not experiment.integration.delayed
+
+
+def test_a_dataset_names_its_subjects_one_way(root, tmp_path):
+    """The fan-out, a cohort's member check and a kit's frozen subject list read a `subjects` slot through one helper, so an id is the same string in all three: the `sub-` prefix comes off the front and nothing else is touched."""
+    from tvbo.cli.workflow import _fan_out_subjects
+
+    listed = ["sub-01", "04", "resub-07"]
+    experiment = _reading_outside_its_network(root, tmp_path, _on_a_dynamics_parameter, ref=_pinned("01"), subjects=listed)
+    ids = ["01", "04", "resub-07"]
+    assert experiment.dataset_subject_ids() == ids
+    assert list(cohort.subject_entries(experiment.dataset.subjects)) == ids
+    assert list(_fan_out_subjects(experiment.dataset.subjects, ids)) == ids

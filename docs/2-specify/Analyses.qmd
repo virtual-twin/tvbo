@@ -10,6 +10,8 @@ A simulation produces trajectories. A paper reports numbers: a correlation, a sp
 
 The consequence is the point. An analysis result is persisted in its own container, `derivatives/tvbo/ana-<name>_result.h5`, so a figure binds to it exactly as it binds to a run, and a second analysis can consume the first. A study therefore needs no driver script for its non-simulation figures.
 
+Not every analysis is a result. An intermediate table whose rows are individual-level data, one per subject of a cohort, must not stay in the study tree, and `persist: false` declares it transient: it runs in dependency order like any other and its outputs feed every analysis of the same run that reads it, but its container lives in a temporary directory outside the study for the length of the process, and no container, sidecar or provenance record of it is left behind. It is re-run whenever a run needs it and counts as neither missing nor stale. Only the analyses and experiments of the same run can read it: a figure, a report or a workflow kit reads containers and is refused a transient analysis by name, so bind them to the reduction downstream.
+
 ## Two forms, and which one you want
 
 An `Analysis` is an invocation with two mutually exclusive ways of saying what is analysed.
@@ -44,7 +46,7 @@ The callable is found by bare `module:` name because the study declares [where i
 ::: {.callout-note}
 ## Declare `dims`, never infer them
 
-`dims` names the axes of the analysis output, in order. It is declared rather than read off the result's shape, because a shape cannot distinguish a `(node, node)` matrix from a `(time, time)` one, and a square result silently transposed is a bug no assertion catches.
+`dims` names the axes of the analysis output, in order. It is declared rather than read off the result's shape, because a shape cannot distinguish a `(node, node)` matrix from a `(time, time)` one, and a square result silently transposed is a bug no assertion catches. The one result that needs none is a single number: an expression that reduces every axis leaves no axis to name.
 :::
 
 ## `used:`, the reference that is also the provenance
@@ -55,6 +57,7 @@ The callable is found by bare `module:` name because the study declares [where i
 used: {experiment: 4, output: psd_post}      # a run in this study
 used: {analysis: power_table, output: gain}  # another analysis
 used: {iri: "tvbo:..."}                      # a curated entity, or another study's result
+used: {iri: spec/desc-ruled_network.yaml, output: weight}  # a layer of a network
 ```
 
 | Field | What it does |
@@ -70,6 +73,25 @@ used: {iri: "tvbo:..."}                      # a curated entity, or another stud
 
 Selecting by position is how a result gets silently misaligned: a dropped parcel, a reordered node set, and every downstream number is wrong but plausible. `sel` keys on dimension and coordinate label, so a name that is not there raises instead of returning the wrong slice.
 :::
+
+## A layer of a network
+
+An `iri` that names a network reads one of its layers. The network is a sidecar file (`.yaml`, `.yml` or `.json`, at the path as written or against the study root) or a curated network named by its exact id, and `output` is an edge layer or a per-node quantity. The array that arrives is the layer as the network delivers it: read from wherever the network declares it, passed through the network's own transforms, and labelled by node.
+
+```yaml
+analyses:
+  - name: connectome_scale
+    equation: {rhs: "mean(reference) / mean(weight)"}
+    arguments:
+      weight:    {used: {iri: spec/cohort-A_desc-individualSC_network.yaml, output: weight}}
+      reference: {used: {iri: sourcedata/networks/group.yaml, output: weight}}
+```
+
+A normalisation rule is written once this way. The network declares it as a transform, and an analysis that needs the normalised connectomes names that network; repeating the equation in the analysis would leave two definitions free to drift apart. A network that reads a layer per subject from a cohort is read the way a `cohort` reference is: a run for one subject gets that subject's layer, and a study analysis gets every member's, stacked on `subject`.
+
+The schedule and the staleness check both follow the network. The analysis runs after the analyses and experiments the network's transforms read, and it is recomputed when the network's declaration, the array file beside it or the cohort's members change.
+
+A workflow kit carries dataset files and result containers, and no network file a reference names. An experiment that needs such a layer reads it through an analysis, whose container travels with the kit; `tvbo workflow` refuses the direct reference to a file and says which one. A curated network named by its id is installed with the package on the node and passes.
 
 ## Ordering
 

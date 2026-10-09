@@ -513,8 +513,8 @@ class ${class_name}(AbstractExternalInput):
         ${pname} = params.${pname}
         % endfor
         % if is_stochastic:
-        # Per-step iid sample: index the pre-generated sequence by step number, counted from the scan start so the settle draws its own samples rather than repeating the first.
-        _step = jnp.int32(jnp.clip((t - self.SCAN_T0) * self.INV_DT, 0, input_data.u.shape[0] - 1))
+        # Per-step iid sample: index the pre-generated sequence by step number, counted from the scan start so the settle draws its own samples; rounded, because a step time on a grid that starts off zero lands a hair under its index.
+        _step = jnp.int32(jnp.clip(jnp.round((t - self.SCAN_T0) * self.INV_DT), 0, input_data.u.shape[0] - 1))
         ${_stoch_pname} = input_data.u[_step]
         % endif
 

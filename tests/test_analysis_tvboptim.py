@@ -98,6 +98,13 @@ def test_scalar_argument_is_not_treated_as_an_axis():
     np.testing.assert_allclose(out.values, [[3.0, 6.0]])
 
 
+def test_a_dimension_less_container_observation_is_a_scalar_argument():
+    """A 0-d DataArray read from a container (`used: {analysis: …, output: n}`) reaches JAX as a number, not as the DataArray."""
+    out = render_tvboptim(_Analysis(rhs="n * 2"), {"n": xr.DataArray(643.0)})
+    assert out.ndim == 0
+    assert float(out) == 1286.0
+
+
 def test_result_without_mapping_keeps_input_axes():
     a = _da([1.0, 2.0, 3.0], ["mode"], {"mode": [1, 2, 3]})
     out = render_tvboptim(_Analysis(rhs="a ** 2"), {"a": a})

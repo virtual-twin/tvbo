@@ -104,6 +104,19 @@ def test_a_study_result_keeps_a_figure_whose_caption_number_has_no_container(tmp
     assert result.figure("fig-1").caption is None
 
 
+def test_a_study_result_refuses_a_caption_number_bound_to_several_values(tmp_path):
+    """A binding that names several values is an error of the spec, which rendering the figure raises; collecting the run raises it as well, where a missing container only leaves the caption out."""
+    from tvbo.run.study import figure_outputs, study_path_for
+
+    figure = _figure(tmp_path)
+    _, image, _ = figure_outputs(figure, study_path_for("figures", tmp_path))
+    image.parent.mkdir(parents=True, exist_ok=True)
+    image.write_bytes(b"")
+    _write_groups(tmp_path, [663.0, 640.0])
+    with pytest.raises(ValueError, match="'n_subjects' .* holds 2 values where an annotation prints one"):
+        tvbo.SimulationStudy.from_file(str(tmp_path / "study.yaml"))._collect(tmp_path)
+
+
 @pytest.mark.parametrize("slot", ["insets", "cells"])
 def test_an_inset_or_grid_cells_caption_annotation_joins_its_panels_clause(tmp_path, slot):
     (tmp_path / "dataset_description.json").write_text('{"Name": "captiontest", "BIDSVersion": "1.9.0"}')

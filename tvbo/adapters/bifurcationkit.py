@@ -430,14 +430,15 @@ class BifurcationKitAdapter(ContinuationAdapter):
             res = BifurcationResult(br=br_obj, model=model, ICS=ICS, **kwargs)
             res._is_codim2 = True
             res._source_type = kinds.get(continuation_kind(br_obj), "fold")
-            if not res.df.empty:
-                second = [c for c in res.df.columns if c in model.parameters and c != ICS]
-                if ICS not in res.df.columns or len(second) != 1:
+            if res.n_steps:
+                recorded = [c for c in res.branch.data_vars if c in model.parameters]
+                second = [c for c in recorded if c != ICS]
+                if ICS not in recorded or len(second) != 1:
                     raise KeyError(
-                        f"a BifurcationKit codim-2 curve records the parameters {[c for c in res.df.columns if c in model.parameters]}, "
+                        f"a BifurcationKit codim-2 curve records the parameters {recorded}, "
                         f"where the primary {ICS!r} and one second parameter were expected."
                     )
-                res.df["param"], res.df["param2"] = res.df[ICS], res.df[second[0]]
+                res.branch = res.branch.assign(param=res.branch[ICS], param2=res.branch[second[0]])
                 res._ics_name, res._fp2_name = ICS, second[0]
             results.append(res)
         return results

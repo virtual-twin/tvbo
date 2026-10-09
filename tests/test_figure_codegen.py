@@ -254,9 +254,19 @@ def test_build_context_resolves_everything():
             "layer": None,
             "arrow": None,
             "tail": None,
+            "significance": None,
             "kwargs": _centred,
         },  # literal text
-        {"text": "xy", "x": 0.2, "y": 0.3, "layer": None, "arrow": None, "tail": None, "kwargs": _centred},
+        {
+            "text": "xy",
+            "x": 0.2,
+            "y": 0.3,
+            "layer": None,
+            "arrow": None,
+            "tail": None,
+            "significance": None,
+            "kwargs": _centred,
+        },
     ]
     assert a["placeholder"] is None
 
@@ -742,6 +752,66 @@ def test_placeholder_fallback_does_not_redraw_the_declared_frame():
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
     assert "if axd['a'] not in _PLACEHOLDER_AXES:" in code
+
+
+LONG_LABEL = "Group-average PMAT24_A_RTCR vs input-current correlation: needs the cohort fits (Exp 47) and analysis fig4ab_input_vs_rtcr"
+
+
+def _two_slots(label, tmp_path, width=70, height=28):
+    """Draw two placeholder slots side by side, the left one labelled *label*, and return per slot its box in the figure, its box in pixels and its label artist with that artist's box in pixels."""
+    figure = P.Figure(
+        name="ph2",
+        layout="ab",
+        width=width,
+        height=height,
+        panels={
+            "a": P.Panel(panel_key="a", kind="cartesian", placeholder=label),
+            "b": P.Panel(panel_key="b", kind="cartesian", placeholder="needs exp-2"),
+        },
+    )
+    ns: dict = {}
+    exec(compile(bsplot.render_code(figure, TAHER_BASE, str(tmp_path / "out.png")), "<figure>", "exec"), ns)
+    fig = ns["main"]()
+    renderer = fig.canvas.get_renderer()
+    slots = []
+    for ax in ns["_PLACEHOLDER_AXES"]:
+        (artist,) = [t for t in ax.texts if t.get_style() == "italic"]
+        slots.append((ax.get_position().bounds, ax.get_window_extent(renderer), artist, artist.get_window_extent(renderer)))
+    return slots
+
+
+def test_a_placeholder_label_stays_inside_its_slot(tmp_path):
+    """A label longer than its slot is wrapped and sized to it: nothing of it is drawn outside the dashed box, so it never runs across a neighbour."""
+    for _, slot, artist, box in _two_slots(LONG_LABEL, tmp_path):
+        assert slot.x0 <= box.x0 and box.x1 <= slot.x1 and slot.y0 <= box.y0 and box.y1 <= slot.y1, (
+            f"label {artist.get_text()!r} spans x {box.x0:.0f}..{box.x1:.0f}, y {box.y0:.0f}..{box.y1:.0f} px; its slot is x {slot.x0:.0f}..{slot.x1:.0f}, y {slot.y0:.0f}..{slot.y1:.0f}"
+        )
+
+
+def test_a_placeholder_label_moves_no_panel(tmp_path):
+    """The slots sit where they would with a two-word label: a label is not part of the layout, so a long one cannot shrink its own panel or the one beside it."""
+    import numpy as np
+
+    long_, short = _two_slots(LONG_LABEL, tmp_path), _two_slots("needs exp-2", tmp_path)
+    for (with_long, *_), (with_short, *_) in zip(long_, short, strict=True):
+        np.testing.assert_allclose(with_long, with_short, atol=1e-9)
+
+
+def test_a_placeholder_label_keeps_its_words_whole_while_a_size_takes_them(tmp_path):
+    """A smaller type size is preferred over a word broken across two lines, and the whole label is drawn."""
+    _, _, artist, _ = _two_slots(LONG_LABEL, tmp_path)[0]
+    assert artist.get_text().replace("-\n", "-").split() == LONG_LABEL.split()  # a line may end on a hyphen the label wrote
+    assert 4.0 <= artist.get_fontsize() <= 10.0
+
+
+def test_a_placeholder_label_too_long_for_its_slot_is_cut_and_printed_in_full(tmp_path, capsys):
+    """A label no size can fit loses words from its end, ends in an ellipsis, stays inside the slot and is printed whole, so nothing of it is lost without a word."""
+    label = " ".join([LONG_LABEL] * 6)
+    _, slot, artist, box = _two_slots(label, tmp_path, width=40, height=12)[0]
+    drawn = artist.get_text().split()
+    assert drawn[-1] == "…" and drawn[:-1] == label.split()[: len(drawn) - 1] and len(drawn) > 1
+    assert slot.x0 <= box.x0 and box.x1 <= slot.x1 and slot.y0 <= box.y0 and box.y1 <= slot.y1
+    assert f"placeholder cut to fit its slot: {label}" in capsys.readouterr().out
 
 
 def test_reference_lines_are_declared_objects_carrying_their_own_colour():

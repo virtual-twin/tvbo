@@ -20,6 +20,7 @@ from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   expand_bare_axes as _expand_bare_axes,
                                   fan_colors as _fan_colors,
                                   load_scalar as _load_scalar, registered as _registered,
+                                  significance_marks as _significance_marks,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient)
 from tvbo.data.dataref import match_output as _match_output, resolve_sel_keys as _sel_keys
 from tvbo.plot import axis_rule as _axis_rule, palette as _palette
@@ -204,7 +205,9 @@ def _zeroless(text):
     return text.lstrip("-") if text.lstrip("-").strip("0.") == "" else text
 
 
-_PLACEHOLDER_AXES = []          # slots holding a label instead of data, which no axis rule speaks about
+_PLACEHOLDER_AXES = {}          # slot -> (label artist, declared label): slots holding a label instead of data, which no axis rule speaks about
+_PLACEHOLDER_FILL = 0.88        # share of a slot's width and height its label may take
+_PLACEHOLDER_MIN_PT = 4.0       # type size below which a label loses words instead of shrinking further
 _INSET_POST = []                # (inset axes, declared frame) — re-applied once the axis rule has run
 _COLORBAR_POST = []             # (colourbar, decimals) — same rule, for a bar whose scale is declared
 _SCALE_AXES = {}                # panel key -> the bar inside a `kind: colorbar` slot, which is what a declared frame is about
@@ -280,22 +283,55 @@ def _bare(ax):
         _s.set_linewidth(0.6)
 
 
-def _wrap(ax, text, pad=0.88):
-    """Wrap text to the AXES width — matplotlib's ``wrap=True`` wraps to the figure edge,
-    so a long placeholder label would otherwise run across its neighbours."""
+def _placeholder(ax, label):
+    """Honest labelled placeholder when a panel's data is missing/degenerate.
+
+    The label is kept out of the layout, so it can neither move nor shrink the panels beside it, and ``_fit_placeholders`` sizes it to the slot once the layout is final.
+    """
+    artist = ax.text(0.5, 0.5, str(label), ha="center", va="center", transform=ax.transAxes, color="0.35", style="italic")
+    artist.set_in_layout(False)
+    _bare(ax)
+    _PLACEHOLDER_AXES[ax] = (artist, str(label))
+
+
+def _wrapped(artist, label, size, room, renderer, split_words):
+    """Set *label* on *artist* at *size*, wrapped to the widest lines that stay inside the width of *room*, and say whether the block stays inside its height too.
+
+    matplotlib's ``wrap=True`` wraps to the figure edge, so the lines are broken here and measured as drawn. A word wider than the room is broken across lines only with *split_words*.
+    """
     import textwrap
 
-    width_pt = ax.get_window_extent().width / ax.figure.dpi * 72.0 * pad
-    n = max(14, int(width_pt / (0.5 * plt.rcParams.get("font.size", 10.0))))
-    return "\n".join(textwrap.fill(line, n) for line in str(text).splitlines())
+    artist.set_fontsize(size)
+    for n in range(max(1, min(len(label), int(room[0] / renderer.points_to_pixels(0.5 * size)))), 0, -1):
+        artist.set_text("\n".join(textwrap.fill(line, n, break_long_words=split_words) for line in label.splitlines()))
+        box = artist.get_window_extent(renderer)
+        if box.width <= room[0]:
+            return box.height <= room[1]
+    return False
 
 
-def _placeholder(ax, label):
-    """Honest labelled placeholder when a panel's data is missing/degenerate."""
-    ax.text(0.5, 0.5, _wrap(ax, label), ha="center", va="center", transform=ax.transAxes,
-            color="0.35", style="italic")
-    _bare(ax)
-    _PLACEHOLDER_AXES.append(ax)
+def _fit_placeholders(fig):
+    """Size every placeholder label to the slot it stands in.
+
+    A label is wrapped to its slot's width and shrunk in half-point steps until the wrapped block also fits the slot's height, down to ``_PLACEHOLDER_MIN_PT``, with its words whole; only if no size takes it whole is a word broken across lines. One that does not fit at the smallest size loses words from its end, marked by an ellipsis, and is printed in full. It is a pass over the finished figure because a slot's size is final only once the layout has run, and a figure without a placeholder skips the draw it needs.
+    """
+    if not _PLACEHOLDER_AXES:
+        return
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    for ax, (artist, label) in _PLACEHOLDER_AXES.items():
+        slot = ax.get_window_extent(renderer)
+        room = (slot.width * _PLACEHOLDER_FILL, slot.height * _PLACEHOLDER_FILL)
+        floor = min(artist.get_fontsize(), _PLACEHOLDER_MIN_PT)
+        sizes = [*np.arange(artist.get_fontsize(), floor, -0.5), floor]
+        if any(_wrapped(artist, label, _size, room, renderer, _split) for _split in (False, True) for _size in sizes):
+            continue
+        words = label.split()
+        while words and not _wrapped(artist, " ".join(words) + " …", floor, room, renderer, True):
+            words.pop()
+        if not words:
+            artist.set_text("…")
+        print("placeholder cut to fit its slot:", label)
 
 
 def _triangle(C, which, gap=0):
@@ -872,6 +908,9 @@ ${colorbar(p)}\
 % else:
     _txt = ${repr(a['text'])}
 % endif
+% if a['significance']:
+    _txt += _significance_marks(_load_scalar(${repr(a['significance']['layer'])}), ${repr(a['significance']['levels'])})
+% endif
 % if a['tail']:
     _ty = _load_scalar(${repr(a['tail']['layer'])})
     ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
@@ -981,6 +1020,7 @@ def _compose(fig, axd, _pos=None):
 % endif
     _axis_rule.frame(fig, _RULE, skip=_exempt)              # spines stand off and end on the ticks that are final now
     _true_ticks(fig)                                        # an axis whose labels misstate its ticks reads every value wrong
+    _fit_placeholders(fig)                                  # a label stays inside the slot it stands in for
     return axd
 
 

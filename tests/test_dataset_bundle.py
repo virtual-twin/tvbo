@@ -40,6 +40,7 @@ def _stub(dataset, observations, source_file=None):
         "declared_references",
         "_referenced",
         "referenced_cohorts",
+        "per_subject_cohorts",
         "reference_cohort_files",
         "dataset_bundle_files",
         "_find_subject_file",

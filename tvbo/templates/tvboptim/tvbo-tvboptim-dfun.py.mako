@@ -89,6 +89,8 @@ if 'experiment' in context.keys():
 else:
     _stoch_dt = 0.001  # fallback for standalone dfun rendering
 _stoch_inv_dt = 1.0 / _stoch_dt
+# The settle a scan of this experiment may run before t = 0, which is where the pre-generated draws start; zero when the dynamics render on their own.
+_stoch_settle = float((context.get('settle') or {}).get('transient_time', 0.0) or 0.0)
 for pname in param_names:
     p_obj = (model.parameters[pname] if pname in model.parameters else None) if model.parameters else None
     if p_obj and getattr(p_obj, 'distribution', None):
@@ -201,8 +203,13 @@ class ${class_name}(AbstractDynamics):
         ${name} = params.${name}
         % endfor
         % for sp_name, sp_info in stochastic_params.items():
+        % if _stoch_settle:
+        # ${sp_name} ~ ${sp_info['dist'].capitalize()}(${sp_info['lo']}, ${sp_info['hi']}), one pre-generated array over the settle and the measured window, indexed by step from the settle's start at t = ${-_stoch_settle}; rounded, because a step time on a grid that starts off zero lands a hair under its index about one time in ten
+        ${sp_name} = params._stoch_${sp_name}[jnp.int32(jnp.clip(jnp.round((t + ${_stoch_settle}) * ${_stoch_inv_dt}), 0, params._stoch_${sp_name}.shape[0] - 1))]
+        % else:
         # ${sp_name} ~ ${sp_info['dist'].capitalize()}(${sp_info['lo']}, ${sp_info['hi']}), pre-generated array indexed per step
         ${sp_name} = params._stoch_${sp_name}[jnp.int32(jnp.clip(t * ${_stoch_inv_dt}, 0, params._stoch_${sp_name}.shape[0] - 1))]
+        % endif
         % endfor
 
         % if derived_param_names:

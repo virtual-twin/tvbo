@@ -402,7 +402,7 @@ class NumContAdapter(ContinuationAdapter):
         orbits = getattr(result, "periodic_orbits", None) or []
         if len(orbits) == len(po_profiles):
             for orbit, profiles in zip(orbits, po_profiles, strict=True):
-                if profiles is not None and len(profiles) == len(orbit.df):
+                if profiles is not None and len(profiles) == orbit.n_steps:
                     orbit.orbit_profiles = profiles
                     if getattr(orbit, "model", None) is None:
                         orbit.model = model

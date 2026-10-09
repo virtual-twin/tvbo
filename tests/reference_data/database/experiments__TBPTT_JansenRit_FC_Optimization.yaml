@@ -338,6 +338,7 @@ observations:
         k:
           name: k
           value: 1
+      persist: true
       type: lyapunov
       wrt:
       - c_sigmJR.G
@@ -352,6 +353,7 @@ observations:
         mode:
           name: mode
           value: reverse
+      persist: true
       type: gradient
       target: loss
       wrt:
@@ -379,6 +381,7 @@ observations:
         stat:
           name: stat
           value: mean
+      persist: true
       type: finite_difference
       target: loss
       wrt:
@@ -407,6 +410,7 @@ observations:
         stat:
           name: stat
           value: sem
+      persist: true
       type: finite_difference
       target: loss
       wrt:

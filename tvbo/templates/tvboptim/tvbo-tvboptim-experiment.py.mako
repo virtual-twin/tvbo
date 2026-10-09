@@ -225,7 +225,7 @@ assert integration.duration, "integration.duration required in YAML"
 t1_default = settle['duration']
 transient_time = settle['transient_time']
 has_transient = transient_time > 0
-# Where a measured scan opens. The settle is its own scan over (-transient_time, 0] and hands its endpoint on through `update_history`, so every later scan opens at t=0 on a network that is already settled — and none of them carries the settle on its gradient tape.
+# Where a measured scan opens. The settle is its own scan over (-transient_time, 0] and hands its endpoint on, so a measured scan opens at t=0 on a settled state and never carries the settle on its gradient tape. The base run and every scan at the base run's parameters share one settle; a swept cell runs its own, at its own values.
 scan_t0 = 0.0
 n_transient = settle['n_transient']
 block_size = int(integration.block_size) if getattr(integration, 'block_size', None) else 1000
@@ -2088,7 +2088,8 @@ def run_simulation(
             _tr_state.noise.key = _settle_key
         % endif
         % if stochastic_param_info:
-        _inject_stochastic_trajectories(_tr_state, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        # One draw spans the settle and the measured window and the dynamics index it from the settle's start, so the settle is driven by its own samples.
+        _inject_stochastic_trajectories(_tr_state, ${transient_time} + t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
         result_transient = _run_compiled(_tr_model_fn, _tr_state)
         # Kept whole even when `run_main` is False: the delay horizon is trimmed here, the kernel support by each monitor's own `carry_warmup`, and neither substitutes for the other.
@@ -2100,7 +2101,7 @@ def run_simulation(
     # A settle already opened the window and `update_history` carried its endpoint over, so the IC is reconstructed only when this scan is the opening one; a parameter sourced from another run is the model's own and holds in every scan.
     state = _apply_seed_params(state) if _settled else _open_window(state)
     % if stochastic_param_info:
-    _inject_stochastic_trajectories(state, t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+    _inject_stochastic_trajectories(state, ${f'{transient_time} + ' if has_transient else ''}t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
     % endif
 
     result = None
@@ -2167,6 +2168,9 @@ def run_simulation(
         state=state,
         result=result,
         result_transient=result_transient,
+% if has_transient and (has_explorations or has_algorithms):
+        opening=(_tr_state if _settled else state).initial_state.dynamics,   # the declared initial condition, before any settle
+% endif
         observations=observations,
 % if _base_stream:
         stream_fn=_stream_fn,   # re-fold a caller's own state without materialising
@@ -2331,26 +2335,116 @@ sorted_observation_names = list(observation_names)
 sorted_derived_obs_names = toposort_observations(sorted(derived_observation_names), derived_observations_dict, _all_observations)
 %>
 
-def _rebuilt_on(network, graph):
+_OWN_HISTORY = object()
+
+
+def _rebuilt_on(network, graph, history=_OWN_HISTORY):
     """The same network over a rebuilt graph, keeping everything the graph does not carry.
 
-    prepare() sizes the delay history buffer once from the graph it is handed, so an axis that
-    can lengthen a delay is served by replacing the graph before the run rather than per cell.
+    prepare() sizes the delay history buffer once from the graph it is handed, so an axis that can lengthen a delay is served by replacing the graph before the run rather than per cell.
 
-    The external inputs and the settled history travel with it. Both belong to the network rather
-    than to the graph, so a rebuild that dropped them left every cell of a delay-axis sweep running
-    unstimulated and cold — from the raw prepared state over a flat delay buffer — while a bare run
-    of the same experiment was driven from the settle's endpoint, the two disagreeing with nothing
-    to say so.
+    The external inputs and the settled history travel with it. Both belong to the network rather than to the graph, so a rebuild that dropped them would leave a delay-axis sweep unstimulated beside a bare run of the same experiment that is driven.
+
+    *history* replaces the settled history instead; ``None`` is the network before any settle, which is where a run of the experiment opens.
     """
     return type(network)(
         network.dynamics,
         network.coupling,
         graph,
         noise=network.noise,
-        history=getattr(network, "_history", None),
+        history=getattr(network, "_history", None) if history is _OWN_HISTORY else history,
         external_input=network.externals,
     )
+% if (has_explorations or has_algorithms) and has_transient:
+<%
+    # A settle folds to its tail wherever blocking cannot change it: on the block grain the base run already draws its settle noise on, or with no noise to draw.
+    _settle_folds = _native_scan and (solver_block != 'None' or not has_noise)
+    _settle_block = (solver_block if solver_block != 'None' else repr(block_size)) if _settle_folds else solver_block
+%>
+
+
+def _off_tape(tree):
+    """*tree* with no gradient passing through any of its floating-point leaves."""
+    return jax.tree.map(lambda _l: jax.lax.stop_gradient(_l) if eqx.is_inexact_array(_l) else _l, tree)
+
+
+% if _settle_folds:
+def _tail_reduction(rows):
+    """A reducer that keeps a scan's last *rows* steps and nothing else, so a settle folds to the stretch whatever follows it can read."""
+    def _init(template, n_steps):
+        return jnp.zeros((rows,) + template.shape, template.dtype)
+
+    def _update(acc, block):
+        return jnp.concatenate([acc, block])[-rows:]
+
+    return (_init, _update, lambda acc: acc)
+
+
+% endif
+def _own_settle(network, base):
+    """The function that gives a run of the experiment at other values its own settle: it takes that run's state, which opens at the declared initial condition, and returns the state its measured window opens from together with the settle behind it. A swept cell is such a run, and so is the evaluation after an algorithm has tuned.
+
+    Such a run is the experiment at its own values, so it integrates the two scans a bare run does: the declared settle over (${-transient_time}, 0], then the measured window from where that settle ended. The settle is prepared here once, on the network before any settle and on the noise grain the base run's settle is drawn on, and each cell runs it under its own parameters, noise key and initial condition. The hand-over is the one every chained solve in this module makes: the last state becomes the initial condition and `_carry_delay_history` continues each delay line. *base* is the base run's settle, whose clock and channel names every cell's shares.
+
+    Nothing a gradient passes through enters the settle, so it stays off the tape of whatever differentiates a cell.
+    """
+% if _settle_folds:
+    # The settle keeps what the delay lines and the longest kernel read back over, never its whole trajectory.
+    _rows = min(base.ys.shape[0], max(_history_window(base, network, ${dt}).ys.shape[0], _KERNEL_REACH_STEPS))
+% endif
+    _settle_fn, _cold = prepare(
+        _rebuilt_on(network, network.graph, history=None), get_solver(block_size=${_settle_block}),
+        t0=${-transient_time}, t1=0.0, dt=${dt},${' reduce=_tail_reduction(_rows),' if _settle_folds else ''}
+    )
+
+    def _settled(s):
+        _tr = s.copy()
+        _tr._internal = _cold._internal
+        _tr.initial_state = Bunch(dynamics=s.initial_state.dynamics, coupling=_cold.initial_state.coupling, external=_cold.initial_state.external)
+% if has_noise and settle_seed is not None:
+        _tr.noise.key = jax.random.key(jnp.asarray(${int(settle_seed)}, dtype=jnp.uint32))   # the declared `Noise.settle_seed`, as in the base run
+% endif
+        _run = _settle_fn(_off_tape(_tr))
+% if _settle_folds:
+        _run = NativeSolution(ts=base.ts[-_rows:], ys=_run, dt=base.dt, variable_names=base.variable_names)
+% endif
+        _s = s.copy()
+        _s.initial_state = Bunch(
+            dynamics=_run.ys[-1][:${len(state_names)}],
+            coupling=_carry_delay_history(_tr, _run).initial_state.coupling,
+            external=s.initial_state.external,
+        )
+        return _s, _run
+
+    return _settled
+
+
+def _settled_first(own, window_fn):
+    """*window_fn* run from the settle *own* gives its state: the measured window of a run that settles under its own values, and that settle."""
+    def _run(s):
+        s, _settle = own(s)
+        return window_fn(s), _settle
+
+    return _run
+% if any(_r is not None for _r in _reductions.values()):
+
+
+def _settled_fold(network, own, names, block_size, progress=False):
+    """The streamed observations *names* of a run that settles under its own values, in that order: folded in-carry over the measured window that follows the settle *own* gives its state, so the run holds no trajectory.
+
+    The fold is prepared per call, because a kernel's ring opens on the settle of the run it measures. *block_size* is a multiple of every reducer's period, so each sampling boundary falls on a block boundary.
+    """
+    def _run(s):
+        s, _settle = own(s)
+        _fold_fn, _ = prepare(
+            network, get_solver(block_size=block_size), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
+            reduce=_stream_reduction(names, ${dt}, settle=_settle_rows(_settle), progress=progress),
+        )
+        return _fold_fn(s)
+
+    return _run
+% endif
+% endif
 
 
 def _obs_data(_o):
@@ -2651,7 +2745,7 @@ ${render_analysis_observations(analysis_observations_dict, coupling_keys, solver
 % endif
 
 
-<%include file="tvbo-tvboptim-algorithm.py.mako" args="stream_plan=_base_plan"/>
+<%include file="tvbo-tvboptim-algorithm.py.mako" args="stream_plan=_base_plan, own_settle=has_transient"/>
 
 
 % if has_optimization:
@@ -2829,16 +2923,24 @@ def run_optimization(
 % endif
 
 
-<%def name="folded_cells(names, block_size, t0, t1, dt)">\
+<%def name="folded_cells(names, block_size)">\
+% if has_transient:
+        _folded_model_fn = _settled_fold(_network, _own, ${repr(names)}, ${block_size})
+
+        def _folded(s):
+            """The cell's streamed observations by name, folded in-carry over the measured window from the cell's own settle, so no cell holds its trajectory."""
+            return dict(zip(${repr(names)}, _folded_model_fn(s)))
+% else:
         _folded_model_fn, _ = prepare(
             _network, get_solver(block_size=${block_size}),
-            t0=${t0}, t1=${t1}, dt=${dt},
+            t0=${scan_t0}, t1=${t1_default}, dt=${dt},
             reduce=_stream_reduction(${repr(names)}, ${dt}, settle=_settle_rows(settle)),
         )
 
         def _folded(s):
-            """The cell's streamed observations by name, folded in-carry over the measured window from the settled network, so no cell holds its trajectory."""
+            """The cell's streamed observations by name, folded in-carry over the measured window, so no cell holds its trajectory."""
             return dict(zip(${repr(names)}, _folded_model_fn(s)))
+% endif
 
 </%def>
 % if has_explorations:
@@ -2948,8 +3050,13 @@ def run_optimization(
     # Reset per exploration; the `record:` branch narrows it to that sweep's recorded closure. Every jit/vmap decision here reads `_rec_host or has_host_pipeline_obs`, so an un-jitted observable can never reach ParallelExecution.
     _rec_host = False
 %>
-def ${expl['name']}(state, model_fn, settle=None, **kwargs):
-    """${docstring_text(expl['label'])} - ${docstring_text(grid_desc)}."""
+def ${expl['name']}(state, model_fn, settle=None${', opening=None' if has_transient else ''}, **kwargs):
+    """${docstring_text(expl['label'])} - ${docstring_text(grid_desc)}.
+% if has_transient:
+
+    With a *network* every cell runs the declared settle under its own values, which takes the base run's *settle* and the *opening* state that settle started from.
+% endif
+    """
     _network = kwargs.get('network')
 % if any(ax.get('builder_expr') for ax in expl['axes']):
     # The observations the main run computed before this exploration, defined ahead of the graph rebuild that sizes the delay buffer from a builder-produced length axis.
@@ -3003,13 +3110,17 @@ def ${expl['name']}(state, model_fn, settle=None, **kwargs):
         _network = _rebuilt_on(_network, _delay_graph)
 % endif
     if _network is not None:
-        # The same window a bare run measures: the settle already ran once and the network carries its endpoint, so a swept cell and a bare run are the same computation from the same settled state.
+        # The same window a bare run measures, prepared once for every cell.
         _solver = get_solver(block_size=${solver_block})
         _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=${scan_t0}, t1=${t1_default}, dt=${dt})
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
         % if has_transient:
-        # Only the parameters are re-applied: `prepare` rebuilds those from the network defaults, while the initial condition already comes from the settled history and re-declaring it here would put every cell back at the cold state the settle started from.
+        if settle is None or opening is None:
+            raise TypeError("${expl['name']}: a cell on a network runs the declared settle under its own values, so the call needs the base run's `settle` and the `opening` state that settle started from")
+        # A cell is the experiment at its own values, so it opens at the initial condition the base run's settle opened from and `_own` runs the declared settle from there, at the cell's values, before its measured window.
         _expl_state = _apply_seed_params(_expl_state)
+        _expl_state.initial_state.dynamics = jnp.asarray(opening)
+        _own = _own_settle(_network, settle)
         % else:
         # The main run's IC construction, so the sweep starts from the declared state rather than cold.
         % if sv_distribution_info:
@@ -3018,7 +3129,7 @@ def ${expl['name']}(state, model_fn, settle=None, **kwargs):
         _expl_state = _apply_seed_params(_apply_seed_dynamics(_apply_node_overrides(_expl_state)))
         % endif
         % if stochastic_param_info:
-        _inject_stochastic_trajectories(_expl_state, ${t1_default}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        _inject_stochastic_trajectories(_expl_state, ${settle['total_duration']}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
 % if _state_only_aux:
         def _expl_model_fn(s):
@@ -3029,6 +3140,10 @@ def ${expl['name']}(state, model_fn, settle=None, **kwargs):
     else:
         _expl_model_fn = model_fn
         _expl_state = state
+% if has_transient:
+        _own = lambda s: (s, settle)   # a passed-in model carries no network to settle again, so its cells keep the base run's
+% endif
+
 % if expl['strategy'] == 'nsga2':
 ${search.nsga2_body(expl)}\
 % elif expl.get('branch_seed'):
@@ -3158,18 +3273,27 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
         grid = grid[_shard_i::_shard_n]
 % endif
 
-    # Create observation monitors ONCE with history baked in (optimized pattern)
+% if has_transient:
+    # A cell's measured window and the settle that ran before it.
+    _expl_cell = _settled_first(_own, _expl_model_fn)
+% else:
+    def _expl_cell(s):
+        """A cell's measured window and the settle the base run handed over."""
+        return _expl_model_fn(s), settle
+% endif
+
+    # Each observable warms its kernels on the settle of the cell it measures.
 % if _use_stream:
     # Every recorded observable folds into the integrator carry, so peak memory is O(batch·block·n_node) and the whole grid vmaps on one device; a passed-in model_fn falls back to the post-scan path.
     if _network is not None:
-${folded_cells(_stream_names, _stream_bs, scan_t0, t1_default, dt)}
+${folded_cells(_stream_names, _stream_bs)}
         @jax.jit
         def observable_fn(s):
             return Bunch(**_folded(s))
     else:
         @jax.jit
         def observable_fn(s):
-            result = _expl_model_fn(s)
+            result, _ = _expl_cell(s)
             return compute_all_observations(result, s, only=${set_literal(_stream_names)})
 % elif expl.get('record'):
 <%
@@ -3186,8 +3310,8 @@ ${folded_cells(_stream_names, _stream_bs, scan_t0, t1_default, dt)}
     # compute_all_observations, `analysis` diagnostics via compute_analysis_observations),
     # stacked over the sweep into one array per name.
 % if _rec_host:
-    # Host pipeline callables cannot trace under jit: jit only the solve.
-    _expl_model_fn = jax.jit(_expl_model_fn)
+    # Host pipeline callables cannot trace under jit: jit only the solves.
+    _expl_cell = jax.jit(_expl_cell)
 % else:
     @jax.jit
 % endif
@@ -3211,18 +3335,11 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # The streamed observations those reads reach, which is all a streamed cell folds; the whole base set only when the function reads none.
     _call_folded = [n for n in _base_stream_names if n in _observation_closure(obs_used)] or _base_stream_names
 %>
-% for obs in sorted(simulated_obs):
-<%
-    obs_class = monitor_class_name(obs)
-%>
-    _${obs}_monitor = _warmed(${obs_class}(), settle)
-% endfor
-
     @jax.jit
     def observable_fn(s):
-        result = _expl_model_fn(s)
+        result, settle = _expl_cell(s)
 % for obs in sorted(simulated_obs):
-        _${obs} = _${obs}_monitor(result)
+        _${obs} = _warmed(${monitor_class_name(obs)}(), settle)(result)
 % endfor
 % if needs_all_obs:
         # Compute all observations to get derived observations
@@ -3256,7 +3373,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % if _call_stream:
     if _network is not None:
         # Rebinds observable_fn to read the function's inputs from the values folded in-carry; the definition above serves a passed-in model_fn.
-${folded_cells(_call_folded, _base_bs, scan_t0, t1_default, dt)}
+${folded_cells(_call_folded, _base_bs)}
         @jax.jit
         def observable_fn(s):
             _all_obs = compute_all_observations(None, s, only=${repr(_call_only)}, precomputed=_folded(s))
@@ -3275,21 +3392,21 @@ ${folded_cells(_call_folded, _base_bs, scan_t0, t1_default, dt)}
 % if bundles_observations:
     # Each grid point returns only its declared observations' values, never its trajectory, so trial vmaps and grid axes stay tractable.
 % if has_host_pipeline_obs or _rec_host:
-    # Host pipeline callables cannot trace under jit: jit only the solve.
-    _expl_model_fn_jit = jax.jit(_expl_model_fn)
+    # Host pipeline callables cannot trace under jit: jit only the solves.
+    _expl_cell_jit = jax.jit(_expl_cell)
     def observable_fn(s):
-        result = _expl_model_fn_jit(s)
+        result, settle = _expl_cell_jit(s)
         return keep_recorded(compute_all_observations(result, s, settle=settle))
 % else:
     @jax.jit
     def observable_fn(s):
-        result = _expl_model_fn(s)
+        result, settle = _expl_cell(s)
         return keep_recorded(compute_all_observations(result, s, settle=settle))
 % endif
 % if _bundle_fully_stream:
     if _network is not None:
         # Rebinds observable_fn so the deliverables come from the values folded in-carry; the definition above serves a passed-in model_fn.
-${folded_cells(_base_stream_names, _base_bs, scan_t0, t1_default, dt)}
+${folded_cells(_base_stream_names, _base_bs)}
         @jax.jit
         def observable_fn(s):
             return keep_recorded(compute_all_observations(None, s, precomputed=_folded(s)))
@@ -3298,20 +3415,20 @@ ${folded_cells(_base_stream_names, _base_bs, scan_t0, t1_default, dt)}
     # ``model_output_channel_index`` is a scalar for one output, dropping the variable dim, or a slice for several.
     @jax.jit
     def observable_fn(s):
-        result = _expl_model_fn(s)
+        result, _ = _expl_cell(s)
         return result.data[:, ${model_output_channel_index}, ...]
 % else:
     # No observable specified, no model output, no observations — return full simulation data
     @jax.jit
     def observable_fn(s):
-        result = _expl_model_fn(s)
+        result, _ = _expl_cell(s)
         return result.data
 % endif
 % elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
     @jax.jit
     def observable_fn(s):
-        result = _expl_model_fn(s)
+        result, settle = _expl_cell(s)
         all_obs = compute_all_observations(result, s, settle=settle)
 % if output_key:
         obs_result = getattr(all_obs, '${obs_name}', None)
@@ -3326,12 +3443,10 @@ ${folded_cells(_base_stream_names, _base_bs, scan_t0, t1_default, dt)}
         return obs_result.data if hasattr(obs_result, 'data') else obs_result
 % endif
 % else:
-    _${obs_name}_monitor = _warmed(${obs_class}(), settle)
-
     @jax.jit
     def observable_fn(s):
-        result = _expl_model_fn(s)
-        obs_result = _${obs_name}_monitor(result)
+        result, settle = _expl_cell(s)
+        obs_result = _warmed(${obs_class}(), settle)(result)
 % if output_key:
         return obs_result['${output_key}'] if isinstance(obs_result, dict) else obs_result.data
 % else:
@@ -3389,7 +3504,7 @@ ${folded_cells(_base_stream_names, _base_bs, scan_t0, t1_default, dt)}
     # === Trial parallelization: ${expl['n_trials']} trials via jax.vmap ===
     # One noise realization per trial, vmapped over trials on the same device.
     _n_trials = ${expl['n_trials']}
-    # Sized over the whole integrated window, settle included, which is what `test_the_draw_spans_the_settle_and_the_window` pins. The settle scan itself reads index 0 throughout -- the dfun indexes with `clip(t / dt, 0, N - 1)` and the settle runs on negative t -- so the leading rows are allocated rather than read, and the draw stays a function of the window the experiment integrates.
+    # Sized over the whole integrated window, settle included, which is what `test_the_draw_spans_the_settle_and_the_window` pins: the dynamics index the draw from the settle's start, so a trial's settle reads the leading rows and its measured window the rows after them.
     _n_steps_stoch = int(${settle['total_duration']} / ${dt}) + 2
     _trial_keys = jax.random.split(jax.random.key(${stochastic_param_info[_sp_names[0]]['seed']}), _n_trials)
     % for _sp_idx, _sp_name in enumerate(_sp_names):
@@ -4127,7 +4242,10 @@ def run_experiment(
         exploration_result.${expl['name']} = ${expl['name']}(
             state, model_fn,
             network=network,
-            settle=result_transient,   # kernel observables open on the settle a swept cell no longer integrates
+            settle=result_transient,   # the base run's settle: the clock and channel names of every cell's own
+% if has_transient:
+            opening=sim_result.opening,   # where the base run's settle opened, and so where every cell's does
+% endif
             base_observations=observations,  # base-sim observations for builder-axis arguments
             **kwargs,  # Pass runtime kwargs (e.g., target data for correlation-based observables)
         )
@@ -4257,7 +4375,13 @@ def run_experiment(
                 # Use get_solver() to ensure consistent solver config (with BoundedSolver if needed)
                 algo_model_fn, algo_state = prepare(network, get_solver(), t1=${float(algo_sim_period)}, dt=${dt})
 
-% if _pp_names:
+% if _pp_names and has_transient:
+                # The evaluation is the experiment at the tuned values: it opens at the declared initial condition and runs the declared settle under them, and the fold is prepared per call because a kernel's ring opens on that settle.
+                _, post_state = prepare(network, get_solver(block_size=${_pp_bs}), t0=${scan_t0}, t1=${t1_default}, dt=${dt})
+                post_state.initial_state.dynamics = jnp.asarray(sim_result.opening)
+                # A single long fold outside any vmap, so progress streams live from inside the scan.
+                post_model_fn = _settled_fold(network, _own_settle(network, result_transient), ${repr(_pp_names)}, ${_pp_bs}, progress=True)
+% elif _pp_names:
                 # Folds ${', '.join(_pp_names)} into the carry so the ${t1_default}ms trajectory is never materialised; block size ${_pp_bs} is a multiple of the reducer period, aligning TR boundaries to block boundaries.
                 post_model_fn, post_state = prepare(
                     network, get_solver(block_size=${_pp_bs}), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
@@ -4268,6 +4392,11 @@ def run_experiment(
                 # Create post-tuning model_fn/state using experiment-level integration duration
                 # (needed for full-length BOLD simulation for FC computation)
                 post_model_fn, post_state = prepare(network, get_solver(block_size=${solver_block}), t0=${scan_t0}, t1=${t1_default}, dt=${dt})
+% if has_transient:
+                # The evaluation is the experiment at the tuned values: it opens at the declared initial condition and runs the declared settle under them before its measured window.
+                post_state.initial_state.dynamics = jnp.asarray(sim_result.opening)
+                post_model_fn = _settled_first(_own_settle(network, result_transient), post_model_fn)
+% endif
 % endif
 
                 # Determine source state: depends_on result or initial_state

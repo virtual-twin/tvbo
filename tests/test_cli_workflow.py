@@ -1172,9 +1172,9 @@ def test_experiment_override_does_not_clear_inherited_list():
 
 
 def test_nextflow_enables_the_container_runtime():
-    """`process.container` is inert unless a runtime is switched on.
+    """`process.container` is inert unless a runtime is switched on, and both are configuration: Nextflow reads them from ``nextflow.config``, never from the pipeline script.
 
-    Without `singularity.enabled` Nextflow runs the task on the bare host and the declared image — and every bind — is silently ignored.
+    Without `singularity.enabled` Nextflow runs the task on the bare host and the declared image — and every bind — is silently ignored. The kit's own directory is bound with the declared paths, because a task reads the results tree there.
     """
     from tvbo.cli.workflow import _render_template
 
@@ -1192,9 +1192,12 @@ def test_nextflow_enables_the_container_runtime():
         n_array_tasks=1,
         chunk=1,
     )
-    nf = _render_template("nextflow/main.nf.mako", plan=plan, block={}, bundled_code=False)
-    assert "singularity.enabled = true" in nf
-    assert "singularity.runOptions = '--bind /data/cephfs-1'" in nf
+    config = _render_template("nextflow/nextflow.config.mako", plan=plan, block={})
+    assert "process.container = 'docker://ghcr.io/virtual-twin/tvbo:dev'" in config
+    assert "singularity.enabled = true" in config
+    assert 'singularity.runOptions = "--bind ${projectDir} --bind /data/cephfs-1"' in config
+    nf = _render_template("nextflow/main.nf.mako", plan=plan, block={}, spec_relpath="spec/30.yaml", bundled_code=False)
+    assert "singularity" not in nf and "process.container" not in nf
 
 
 def test_profile_accepts_prebuilt_image_path(tmp_path: Path):
@@ -1344,7 +1347,7 @@ def test_workflow_nextflow_emits_kit(tmp_path: Path):
     [
         ("slurm", "run.sbatch", "#SBATCH --qos=normal", "export OMP_NUM_THREADS=2"),
         ("snakemake", "Snakefile", 'slurm_partition="gpu"', "export OMP_NUM_THREADS=2 &&"),
-        ("nextflow", "main.nf", "process.clusterOptions = '--gres=gpu:1'", "export OMP_NUM_THREADS=2"),
+        ("nextflow", "main.nf+nextflow.config", "process.clusterOptions = '--gres=gpu:1'", "export OMP_NUM_THREADS=2"),
     ],
 )
 def test_env_and_options_render_across_engines(tmp_path, engine, artefact, opt_needle, env_needle):
@@ -1368,7 +1371,7 @@ def test_env_and_options_render_across_engines(tmp_path, engine, artefact, opt_n
         ],
     )
     assert r.exit_code == 0, r.stdout
-    text = (out / artefact).read_text()
+    text = "".join((out / name).read_text() for name in artefact.split("+"))
     assert opt_needle in text
     assert env_needle in text
 

@@ -1034,6 +1034,7 @@ from ${module} import ${class_name} as _Ext${class_name}
 % endfor
 
 <% _all_obs_dims = _observation_dims(experiment, reductions) %>\
+<% _kernel_reach = [] %>\
 % for obs in obs_list:
 <%
     obs_name = obs['name']
@@ -1247,6 +1248,8 @@ class ${class_name}(AbstractMonitor):
     _takes_settle = bool(_feeds_from_result and (n_transient or _warmup_steps))
     # A caller that hands over successive short windows — a tuning loop — has no settle inside any one of them, so the kernel carries its warm-up between calls instead.
     _carries_warmup = bool(_feeds_from_result and _warmup_steps)
+    if _carries_warmup:
+        _kernel_reach.append(_warmup_steps)
 
     # Determine final output key - must match the actual variable name generated
     if pipeline:
@@ -1812,3 +1815,7 @@ def _stream_reduction(names, dt, skip=0, settle=None, progress=False):
         for _n in names
     ])
 % endif
+
+
+_KERNEL_REACH_STEPS = max(${repr([0] + _kernel_reach)}${' + [_STREAMING_WARMUP_STEPS]' if _streaming else ''})
+"""Integration steps of settle the longest kernel of any observation here convolves back over, streamed or not, which is what a settle folded to its tail has to keep for them."""

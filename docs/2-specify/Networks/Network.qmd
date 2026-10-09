@@ -294,6 +294,43 @@ print(yaml.dump({"transforms": meta.get("transforms")}, default_flow_style=False
 The `rhs` field captures *what* was done, not just the result.
 Anyone who loads this YAML gets the same transformed weights, with no hidden in-memory mutations, and the raw matrix in HDF5 stays untouched.
 
+### Nodes and edges beside a source
+
+A network that reads its connectivity from a source (an `iri`, a `data_file`, a `bids_dir`, a `graph_generator`, or a `parcellation` with its normative connectome) can still declare nodes and edges of its own. The form of a declaration fixes what it means.
+
+```yaml
+network:
+  iri: tvbo:tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat
+  nodes:
+    ctx-lh-precuneus:
+      parameters:
+        J: {value: 1.2}
+  edges:
+    - label: weight
+      unit: count
+      description: Streamline counts from the dTOR tractogram
+    - label: length
+      producer:
+        callable: {module: my_study, name: euclidean_lengths}
+```
+
+#### Nodes by label
+
+A `nodes` mapping keyed by region label attaches values to the nodes the source provides: above, one region gets its own `J` and the other regions are untouched. The same declaration can be written as a list whose entries carry a `label` and no `id`. A label the source does not carry is an error that lists the labels it does carry. A `nodes` list whose entries carry an `id` is something else: it lists the graph itself, as in section 1.
+
+#### Edges by kind
+
+| The entry has | It is | Beside a source |
+|---|---|---|
+| no `source`/`target`, and a `used:` or a `producer:` | a layer the network supplies | It replaces the source's layer of that name under any spelling (`weights` is `weight`). The source provides the nodes and every other layer. |
+| no `source`/`target`, and no origin | a layer entry | It keeps every slot it states (`unit`, `description`, `coupling`, a flag) and takes the others, and the matrix, from the source's entry of that layer. |
+| a `source_network` or a `target_network` | a route to another network | It is kept as written. It is no connectivity of this network, so the source loads beside it. |
+| a `source` and a `target` in this network | a listed edge | The network is refused. A graph is either read from a source or listed edge by edge. |
+
+In the example the `weight` entry describes the curated matrix and the `length` entry replaces the curated tract lengths with computed ones.
+
+A `parcellation` beside listed edges is not a source: it names the atlas the listed nodes belong to and loads nothing. A file source the network names (`data_file`, `bids_dir`, `edge_matrix_files`) precedes an `iri`.
+
 ## 6. Delays from Tract Lengths
 
 Transmission delays are computed from the lengths matrix and conduction speed ($v$, default 3 mm/ms):

@@ -96,19 +96,27 @@ def _exp_key_of(iri, keys) -> str | None:
     return next((c for c in (f"exp{eid}", f"exp-{eid}", eid) if c in keys), None) if eid else None
 
 
+def _panel_bindings(panel) -> list:
+    """Every ``DataRef`` a panel's render opens: each layer's ``used``, and each annotation's ``used``, ``significance.used`` and ``tail_used``."""
+    layers = getattr(panel, "layers", None) or []
+    annotations = getattr(panel, "annotations", None) or []
+    refs = [getattr(holder, "used", None) for holder in (*layers, *annotations)]
+    refs += [getattr(getattr(a, "significance", None), "used", None) for a in annotations]
+    refs += [getattr(a, "tail_used", None) for a in annotations]
+    return [ref for ref in refs if ref is not None]
+
+
 def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]:
     """This figure's ``used`` result dependencies, deduped, as ``{value, raw}`` items.
 
     A ``used`` edge to a KIT experiment resolves to that experiment's own output files — the ``expand()`` over its fanned grid (so the figure waits for EVERY cell) or its single group-run path — emitted RAW so Snakemake evaluates the ``expand``. A ``used`` edge to something the kit does not produce (an external/author-time container, or an analysis's own container) falls back to the single resolved container path via the same ``bsplot._container_path`` the ``plot.py`` reads, emitted as a quoted string. Unresolved edges are dropped — a rule cannot depend on a file that does not exist.
 
-    The reference is read through ``bsplot._used_ref``, so the short ``experiment:`` and ``analysis:`` forms register their dependency exactly as a full ``iri`` does. Both a layer's ``used`` (a plotted result) and an annotation's ``used`` (a printed statistic read from a run) carry the same PROV edge, so both are walked — a figure whose only binding to an experiment is a computed annotation still waits for that run.
+    The reference is read through ``bsplot._used_ref``, so the short ``experiment:`` and ``analysis:`` forms register their dependency exactly as a full ``iri`` does. Every binding :func:`_panel_bindings` lists carries the same PROV edge, a layer's plotted result as much as an annotation's printed statistic, its significance or its arrow tail, so all are walked: a figure whose only binding to an experiment is a computed annotation still waits for that run.
     """
     inputs, seen = [], set()
     for panel in as_list(getattr(figure, "panels", None)):
-        layers = getattr(panel, "layers", None) or []
-        annotations = getattr(panel, "annotations", None) or []
-        for holder in (*layers, *annotations):
-            iri = bsplot._used_ref(getattr(holder, "used", None))
+        for used in _panel_bindings(panel):
+            iri = bsplot._used_ref(used)
             key = _exp_key_of(iri, exp_plans_by_key)
             if key is not None:
                 item = {"value": _wf.fan_input_expr(exp_plans_by_key[key]), "raw": True}
@@ -131,10 +139,8 @@ def _has_unresolved_used(figure, base_dir: Path, exp_plans_by_key: dict) -> bool
     Reported separately so the figure is kept out of the default target rather than added to it with a dependency silently missing.
     """
     for panel in as_list(getattr(figure, "panels", None)):
-        layers = getattr(panel, "layers", None) or []
-        annotations = getattr(panel, "annotations", None) or []
-        for holder in (*layers, *annotations):
-            iri = bsplot._used_ref(getattr(holder, "used", None))
+        for used in _panel_bindings(panel):
+            iri = bsplot._used_ref(used)
             if not iri or _exp_key_of(iri, exp_plans_by_key) is not None:
                 continue
             if not bsplot._container_path(iri, Path(base_dir)):
@@ -221,10 +227,8 @@ def _rebase_containers_to_kit(code: str, figure, base_dir, exp_plans_by_key: dic
     Left unrewritten, the frozen ``plot.py`` reads an absolute laptop path that does not exist on the compute node. Only a single-file (group / on-device-vectorized grid) experiment is rebased; a workflow-FANNED experiment and an on-device COHORT both resolve to several cell files with no single container a plot could point at, so they are left alone, as is an edge whose author-time container does not resolve (an empty path would splice the kit path between every character of the script).
     """
     for panel in as_list(getattr(figure, "panels", None)):
-        layers = getattr(panel, "layers", None) or []
-        annotations = getattr(panel, "annotations", None) or []
-        for holder in (*layers, *annotations):
-            iri = bsplot._used_ref(getattr(holder, "used", None))
+        for used in _panel_bindings(panel):
+            iri = bsplot._used_ref(used)
             key = _exp_key_of(iri, exp_plans_by_key)
             if key is None:
                 continue

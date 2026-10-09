@@ -6,6 +6,7 @@ Every settle row passed to ``_stream_reduction`` is captured as a constant of th
 import re
 
 import jax.numpy as jnp
+import numpy as np
 import pytest
 import xarray as xr
 
@@ -79,3 +80,16 @@ def test_a_swept_cell_at_the_base_parameters_reproduces_the_base_run():
     base = result.observations.bold
     cell = result.explorations["sweep"].observations["bold"].sel({"Relax.k": 0.5}, drop=True).transpose(*base.dims)
     xr.testing.assert_allclose(cell, base.drop_vars([c for c in base.coords if c not in cell.coords]), rtol=1e-12)
+
+
+@pytest.mark.parametrize("observation", [KERNEL, "iri: 'tvbo:BOLD_HRF_strided'"], ids=["streamed", "materialised"])
+def test_a_swept_cell_at_other_parameters_reproduces_the_experiment_run_there(observation):
+    """A cell's kernel opens on that cell's own settle: at k = 0.9 it reports what the experiment alone reports at k = 0.9, from its first sample."""
+    swept = _experiment(observation).run("tvboptim").explorations["sweep"].observations["bold"]
+    alone = SimulationExperiment.from_string(
+        SPEC.replace("OBSERVATION", observation).replace("k: {value: 0.5}", "k: {value: 0.9}")
+    )
+    alone.explorations = None
+    reference = np.asarray(alone.run("tvboptim").observations.bold.data)
+    assert abs(reference).max() > 0, "the reference must carry signal for the comparison to mean anything"
+    np.testing.assert_allclose(swept.sel({"Relax.k": 0.9}, drop=True).values, reference, rtol=1e-9)

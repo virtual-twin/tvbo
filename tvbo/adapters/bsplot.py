@@ -1867,6 +1867,10 @@ def _annotations(panel, base_dir=Path(".")) -> list:
     out = []
     for a in getattr(panel, "annotations", None) or []:
         if _in_caption(a):
+            if getattr(a, "significance", None) is not None:
+                raise ValueError(
+                    f"annotation {a.text!r} of panel {getattr(panel, 'panel_key', '?')!r} declares `significance` with `placement: caption`: the asterisks belong to a label drawn on the panel, and a caption states the test in words."
+                )
             continue
         loc = getattr(a, "loc", None)
         if loc in _ANNOT_LOC:
@@ -1886,8 +1890,41 @@ def _annotations(panel, base_dir=Path(".")) -> list:
         )
         text_kwargs.setdefault("ha", "center")
         text_kwargs.setdefault("va", "center")
-        out.append({"text": a.text, "x": x, "y": y, "layer": layer, "arrow": arrow, "tail": tail, "kwargs": text_kwargs})
+        out.append(
+            {
+                "text": a.text,
+                "x": x,
+                "y": y,
+                "layer": layer,
+                "arrow": arrow,
+                "tail": tail,
+                "significance": _significance(a, base_dir),
+                "kwargs": text_kwargs,
+            }
+        )
     return out
+
+
+SIGNIFICANCE_LEVELS = (0.05, 0.01, 0.001)
+"""The thresholds an annotation's ``significance`` counts asterisks against when it declares none."""
+
+
+def _significance(annotation, base_dir=Path(".")) -> dict | None:
+    """An annotation's ``significance`` as ``{layer, levels}``: where the render script reads the p-value, and the thresholds it sets one asterisk for."""
+    declared = getattr(annotation, "significance", None)
+    if declared is None:
+        return None
+    levels = [float(v) for v in (getattr(declared, "levels", None) or SIGNIFICANCE_LEVELS)]
+    if any(not 0.0 < v < 1.0 for v in levels):
+        raise ValueError(
+            f"annotation {annotation.text!r}: every `significance.levels` threshold lies strictly between 0 and 1, got {levels}."
+        )
+    return {"layer": _resolve_layer(_UsedOnly(declared.used), "cartesian", base_dir), "levels": levels}
+
+
+def significance_marks(p_value: float, levels=SIGNIFICANCE_LEVELS) -> str:
+    """The asterisks a p-value earns: one per threshold in *levels* it is below (public API)."""
+    return "*" * sum(p_value < float(level) for level in levels)
 
 
 def _in_caption(annotation) -> bool:
@@ -2202,7 +2239,16 @@ def _grid_geometry(opts, n_cells):
 
     def _text(text, x, y, **kw):
         kwargs = {"ha": "center", "va": "center", **kw}
-        return {"text": str(text), "x": x, "y": y, "layer": None, "arrow": None, "tail": None, "kwargs": kwargs}
+        return {
+            "text": str(text),
+            "x": x,
+            "y": y,
+            "layer": None,
+            "arrow": None,
+            "tail": None,
+            "significance": None,
+            "kwargs": kwargs,
+        }
 
     labels = []
     _col_size = {"size": float(opts["col_label_size"])} if opts.get("col_label_size") else {}

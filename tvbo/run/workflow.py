@@ -374,7 +374,7 @@ def _dataset_subject_axis(experiment) -> SweepAxis | None:
     if not subjects:
         if per_subject_cohorts(experiment) or _subject_selection(experiment):
             raise ValueError(
-                f"experiment {getattr(experiment, 'id', None)!r}: it reads cohort(s) {cohorts} per subject, but its dataset "
+                f"experiment {getattr(experiment, 'id', None)!r}: it reads cohort(s) {getattr(experiment, 'per_subject_cohorts', list)()} per subject, but its dataset "
                 "yields no subject that is a member of each. Declare `dataset.subjects` or a dataset-sourced observation, or check the cohort's members."
             )
         return None
@@ -393,7 +393,7 @@ def per_subject_cohorts(experiment) -> list[str]:
 
 
 def _subject_selection(experiment) -> dict:
-    """How the cohorts the experiment's references name (:meth:`SimulationExperiment.referenced_cohorts`) narrowed its fan-out, or ``{}`` when none did."""
+    """How the cohorts the experiment reads per subject (:meth:`SimulationExperiment.per_subject_cohorts`) narrowed its fan-out, or ``{}`` when none did."""
     select = getattr(experiment, "subject_selection", None)
     selection = select() if callable(select) else {}
     return selection if selection.get("cohorts") else {}
@@ -530,6 +530,10 @@ def runtime_minutes(t) -> int | None:
         return None
 
 
+SUBJECT_AXIS = "dataset.active_subject"
+"""The parameter a dataset fan-out's axis names: one cell per subject."""
+
+
 def _wildcard(name: str) -> str:
     """A Snakemake wildcard placeholder, doubled for the f-string that carries it.
 
@@ -538,20 +542,28 @@ def _wildcard(name: str) -> str:
     return "{{" + name + "}}"
 
 
-def cell_out_relpath(ep: dict) -> str:
+def cell_out_relpath(ep: dict, wildcard=_wildcard) -> str:
     """Per-cell output path under ``results/<key>/`` — exactly the file ``tvbo run`` writes.
 
     A dataset (subject) fan-out writes ``sub-<subject>_<stem>.h5``; an exploration fan writes one nested ``<axis>=<val>/…/<stem>.h5`` per cell; a group run writes ``<stem>.h5``.
-    Wildcards are doubled (see :func:`_wildcard`) so the carrying f-string leaves them intact.
-    This is the single source of truth for the fanned-cell path — the Snakefile's ``rule all`` and each figure rule that depends on a fanned experiment resolve to the same pattern.
+    *wildcard* spells an axis's placeholder in the launcher's own syntax. The default is Snakemake's, doubled (see :func:`_wildcard`) so the carrying f-string leaves it intact.
+    This is the single source of truth for the fanned-cell path — the Snakefile's ``rule all``, each figure rule that depends on a fanned experiment and the Nextflow task's output directory resolve to the same pattern.
     """
     axes = ep["axes"]
     stem = ep["result_stem"]
-    if len(axes) == 1 and axes[0]["parameter"] == "dataset.active_subject":
-        return "sub-" + _wildcard("subject") + "_" + stem + ".h5"
+    if len(axes) == 1 and axes[0]["parameter"] == SUBJECT_AXIS:
+        return "sub-" + wildcard("subject") + "_" + stem + ".h5"
     if axes:
-        return "/".join("{}={}".format(a["name"], _wildcard(a["name"])) for a in axes) + "/" + stem + ".h5"
+        return "/".join("{}={}".format(a["name"], wildcard(a["name"])) for a in axes) + "/" + stem + ".h5"
     return stem + ".h5"
+
+
+def cell_run_flag(parameter: str, value: str) -> str:
+    """The ``tvbo run`` flag that puts one cell of a fanned axis at *value*: ``--subject`` for the dataset fan-out, ``--pin`` for an exploration axis.
+
+    ``--pin`` sets the axis's parameter and drops it from the sweep, so the cell is a single point, its base run and every declared observation computed there; a plain ``--set`` of a swept parameter would neither resolve nor collapse the sweep.
+    """
+    return f"--subject={value}" if parameter == SUBJECT_AXIS else f"--pin={parameter}={value}"
 
 
 def _cohort_result_files(experiment, subjects: list[str]) -> list[str]:
@@ -603,6 +615,83 @@ def fan_input_expr(ep: dict) -> str:
     return f"expand({single}, {fan_expand_kwargs(ep)})"
 
 
+def result_dependencies(experiment) -> list[str]:
+    """The experiments whose saved results *experiment* reads, each as the identifier it is named by, in the order found: the source of a ``from_experiment`` initial state, a ``source:`` naming ``…exp<id>`` on an observation or a parameter, and a ``used:`` reference that names an experiment wherever the experiment declares it (:meth:`SimulationExperiment.declared_references`). A plan orders the experiment after each of them."""
+    # A ``from_experiment`` initial state makes this experiment depend on another experiment's completed result (its operating point). Recorded as an ordering edge so DAG engines run the source first (Snakemake input; SLURM afterok).
+    depends_on: list[str] = []
+    _ini = getattr(experiment, "initial_state", None)
+    if _ini is not None and str(getattr(_ini, "method", "") or "") == "from_experiment":
+        _src = getattr(_ini, "source_experiment", None)
+        if _src is not None:
+            # ``source_experiment`` is referenced by identifier; keep the raw reference (id, key, or name) as a string. The emitter resolves it to the source's canonical workflow key, so a non-numeric key/name here does not crash and an explicit ``key`` still matches its rule/output.
+            _sid = getattr(_src, "id", None)
+            depends_on.append(str(_sid if _sid is not None else (getattr(_src, "name", None) or _src)))
+
+    # A post-hoc experiment (e.g. Fig 4 input-statistics) reads a prior fit's recorded parameters/observations by sourcing ``<study>.exp<id>`` on one of its observations or parameters. That is a result dependency exactly like ``from_experiment``, so record the referenced experiment id here — otherwise a DAG engine schedules the analysis before the fit it consumes. Match ``exp<id>`` as a whole dotted segment: the bare ref (``…exp30``) and a sub-reference into a prior result (``…exp30.observations.fc``) both depend on experiment 30. Anchoring on ``$`` alone would miss the dotted sub-reference.
+    _exp_ref = re.compile(r"(?:^|\.)exp(\d+)(?:\.|$)")
+
+    def _record_source_deps(container):
+        _items = container.values() if hasattr(container, "values") else (container or [])
+        for _it in _items:
+            _src = getattr(_it, "source", None)
+            if not _src:
+                continue
+            for _s in _src if isinstance(_src, (list, tuple)) else [_src]:
+                _sn = _s if isinstance(_s, str) else (getattr(_s, "name", None) or str(_s))
+                _m = _exp_ref.search(str(_sn))
+                if _m and _m.group(1) != str(getattr(experiment, "id", "")) and _m.group(1) not in depends_on:
+                    depends_on.append(_m.group(1))
+
+    _record_source_deps(getattr(experiment, "observations", None))
+    _dyn = getattr(experiment, "dynamics", None)
+    if _dyn is not None:
+        _record_source_deps(getattr(_dyn, "parameters", None))
+    _record_source_deps(getattr(experiment, "parameters", None))
+
+    # A ``used:`` reference that names an in-study experiment is the same result dependency: the PROV ``used`` edge is the ordering edge, wherever the experiment declares it (SimulationExperiment.declared_references).
+    from tvbo.data.dataref import experiment_id
+
+    for _ref in getattr(experiment, "declared_references", list)():
+        _exp = getattr(_ref, "experiment", None)
+        # Only an iri whose last segment is an experiment token (``exp-30`` / ``exp30`` / ``30``) names a dependency, as in dataref.locate_container: a curated or dataset iri that merely contains digits registers no edge on an experiment that does not exist.
+        _id = str(getattr(_exp, "id", _exp)) if _exp is not None else experiment_id(getattr(_ref, "iri", None))
+        if _id and _id != str(getattr(experiment, "id", "")) and _id not in depends_on:
+            depends_on.append(_id)
+    return depends_on
+
+
+def writes_per_subject(experiment) -> bool:
+    """Whether *experiment* writes one result per subject: it fans over its dataset's subjects, or runs them as one on-device cohort."""
+    if bool(getattr(experiment, "dataset_on_device", lambda: False)()):
+        return bool(experiment.dataset_subject_ids())
+    return _dataset_subject_axis(experiment) is not None
+
+
+def _per_subject_in_study(study, identifier: str) -> bool:
+    """Whether the experiment *study* holds under *identifier* (any spelling :func:`tvbo.run.study.experiment_ids` accepts) writes one result per subject (:func:`writes_per_subject`). An identifier the study does not hold names nothing that does."""
+    from tvbo.run.study import StudyRunError, runtime_experiment, select_experiments
+
+    try:
+        records = select_experiments(study, identifier)
+    except StudyRunError:
+        return False
+    return any(writes_per_subject(runtime_experiment(study, record)) for record in records)
+
+
+def refuse_per_subject_reads_on_device(experiment, per_subject_experiments: Iterable[str] = ()) -> None:
+    """Raise when *experiment*, run as one on-device cohort job, would read something one subject at a time.
+
+    The job has no subject of its own. A ``cohort`` reference that follows the run (:meth:`SimulationExperiment.per_subject_cohorts`) would read every member at once in the cohort's order, and the result of one of *per_subject_experiments* would be read as every shard at once or as the first shard, while the batch runs in the dataset's order. A reference pinned to named members reads the same values for every subject and is not refused.
+    """
+    cohorts = getattr(experiment, "per_subject_cohorts", list)()
+    reads = [f"cohort {c!r}" for c in cohorts] + [f"the result of per-subject experiment {s}" for s in per_subject_experiments]
+    if reads:
+        raise ValueError(
+            f"Experiment {getattr(experiment, 'id', None)!r} sets dataset.batch_mode: on_device, which runs the cohort as one job with no subject of its own, "
+            f"but it reads {', '.join(reads)} one subject at a time. Use batch_mode: fan_out, or pin the reference to the member it means with `sel: {{subject: ...}}`."
+        )
+
+
 def plan(
     *,
     study_key: str,
@@ -613,10 +702,11 @@ def plan(
     overrides: list[dict[str, Any]] | None = None,
     source_spec: str = "",
     experiment_selector: str | None = None,
+    study: Any = None,
 ) -> WorkflowPlan:
     """Compute a :class:`WorkflowPlan` from an Experiment + spec.
 
-    *workflow_spec* mirrors the Study-level ``workflow:`` block from ``study.yaml`` (§4.10.1). Missing keys use sensible defaults, and an unset *backend* is the experiment's own (see :func:`tvbo.run.backends.effective_backend`).
+    *workflow_spec* mirrors the Study-level ``workflow:`` block from ``study.yaml`` (§4.10.1). Missing keys use sensible defaults, and an unset *backend* is the experiment's own (see :func:`tvbo.run.backends.effective_backend`). *study* is the study the experiment belongs to, which tells whether an experiment it reads the result of writes one per subject (:func:`refuse_per_subject_reads_on_device`).
     """
     from tvbo.utils import as_list
 
@@ -635,13 +725,11 @@ def plan(
     cohort_subjects: list[str] = []
     cohort_result_files: list[str] = []
     subject_axis = None
+    depends_on = result_dependencies(experiment)
     if on_device:
-        per_subject = per_subject_cohorts(experiment)
-        if per_subject:
-            raise ValueError(
-                f"Experiment {getattr(experiment, 'id', None)!r} sets dataset.batch_mode: on_device, which runs the cohort as one job "
-                f"on one network, but its network reads cohort(s) {per_subject} one subject at a time. Use batch_mode: fan_out."
-            )
+        refuse_per_subject_reads_on_device(
+            experiment, [d for d in depends_on if study is not None and _per_subject_in_study(study, d)]
+        )
         cohort_subjects = [str(s) for s in experiment.dataset_subject_ids()]
         if not cohort_subjects:
             raise ValueError(
@@ -700,9 +788,11 @@ def plan(
     if engine != "slurm":
         # Engine-agnostic resources map across engines (WorkflowEngineConfig doc).
         _shared = ["cpus_per_task", "mem", "time", "modules", "venv", "env", "setup"]
-        # Snakemake orchestrates Slurm through its executor, so it also needs the Slurm scheduler identity; other engines (Nextflow) have their own and must not inherit these.
+        # Snakemake orchestrates Slurm through its executor, so it also needs the Slurm scheduler identity; Nextflow inherits only `env`, the one shared slot its emitter writes, and refuses the rest when its own block states them.
         if engine == "snakemake":
             _shared += ["partition", "account", "gres"]
+        elif engine == "nextflow":
+            _shared = ["env"]
         _slurm = spec.get("slurm") or {}
         for _k in _shared:
             if _k not in engine_block and _k in _slurm:
@@ -730,47 +820,6 @@ def plan(
     # Results land in the kit's own ``derivatives/tvbo/`` by default — the same role the study's layout gives them, so a kit that travels comes back holding a derivative dataset rather than a bare ``results/``. An explicit out_dir (relative or absolute) overrides it; the {study}/{experiment} placeholders still resolve for custom templates.
     out_dir = str(spec.get("out_dir") or "derivatives/tvbo")
     out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", exp_key)
-
-    # A ``from_experiment`` initial state makes this experiment depend on another experiment's completed result (its operating point). Recorded as an ordering edge so DAG engines run the source first (Snakemake input; SLURM afterok).
-    depends_on: list[str] = []
-    _ini = getattr(experiment, "initial_state", None)
-    if _ini is not None and str(getattr(_ini, "method", "") or "") == "from_experiment":
-        _src = getattr(_ini, "source_experiment", None)
-        if _src is not None:
-            # ``source_experiment`` is referenced by identifier; keep the raw reference (id, key, or name) as a string. The emitter resolves it to the source's canonical workflow key, so a non-numeric key/name here does not crash and an explicit ``key`` still matches its rule/output.
-            _sid = getattr(_src, "id", None)
-            depends_on.append(str(_sid if _sid is not None else (getattr(_src, "name", None) or _src)))
-
-    # A post-hoc experiment (e.g. Fig 4 input-statistics) reads a prior fit's recorded parameters/observations by sourcing ``<study>.exp<id>`` on one of its observations or parameters. That is a result dependency exactly like ``from_experiment``, so record the referenced experiment id here — otherwise a DAG engine schedules the analysis before the fit it consumes. Match ``exp<id>`` as a whole dotted segment: the bare ref (``…exp30``) and a sub-reference into a prior result (``…exp30.observations.fc``) both depend on experiment 30. Anchoring on ``$`` alone would miss the dotted sub-reference.
-    _exp_ref = re.compile(r"(?:^|\.)exp(\d+)(?:\.|$)")
-
-    def _record_source_deps(container):
-        _items = container.values() if hasattr(container, "values") else (container or [])
-        for _it in _items:
-            _src = getattr(_it, "source", None)
-            if not _src:
-                continue
-            for _s in _src if isinstance(_src, (list, tuple)) else [_src]:
-                _sn = _s if isinstance(_s, str) else (getattr(_s, "name", None) or str(_s))
-                _m = _exp_ref.search(str(_sn))
-                if _m and _m.group(1) != str(getattr(experiment, "id", "")) and _m.group(1) not in depends_on:
-                    depends_on.append(_m.group(1))
-
-    _record_source_deps(getattr(experiment, "observations", None))
-    _dyn = getattr(experiment, "dynamics", None)
-    if _dyn is not None:
-        _record_source_deps(getattr(_dyn, "parameters", None))
-    _record_source_deps(getattr(experiment, "parameters", None))
-
-    # A ``used:`` reference that names an in-study experiment is the same result dependency: the PROV ``used`` edge is the ordering edge, wherever the experiment declares it (SimulationExperiment.declared_references).
-    from tvbo.data.dataref import experiment_id
-
-    for _ref in getattr(experiment, "declared_references", list)():
-        _exp = getattr(_ref, "experiment", None)
-        # Only an iri whose last segment is an experiment token (``exp-30`` / ``exp30`` / ``30``) names a dependency, as in dataref.locate_container: a curated or dataset iri that merely contains digits registers no edge on an experiment that does not exist.
-        _id = str(getattr(_exp, "id", _exp)) if _exp is not None else experiment_id(getattr(_ref, "iri", None))
-        if _id and _id != str(getattr(experiment, "id", "")) and _id not in depends_on:
-            depends_on.append(_id)
 
     # An explicit run venv wins over a declared container, with a notice.
     _container = resolve_container_ref(spec.get("container"))

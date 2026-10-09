@@ -107,6 +107,114 @@ def test_a_bare_array_that_contradicts_its_declared_dims_raises(tmp_path, calls)
         analysis_io.run_analysis(_analysis("eye", "square", {"n": {"value": 2}}, dims=["node"]), tmp_path)
 
 
+def test_a_transient_analysis_feeds_its_reader_and_leaves_nothing_under_the_study(tmp_path, calls):
+    """``persist: false``: the reader resolves the table from outside the study, and the study holds only the reduction."""
+    table = _analysis("table", "spectrum", {"n": {"value": 5}}, persist=False)
+    reduction = _analysis("total", "total", {"power": {"used": {"analysis": "table", "output": "power"}}})
+
+    written = analysis_io.run_analyses([table, reduction], tmp_path)
+
+    assert not (tmp_path / "ana-table_result.h5").exists()
+    assert not (tmp_path / "ana-table_result.yaml").exists()
+    assert not written[0].is_relative_to(tmp_path)
+    ds = xr.open_dataset(tmp_path / "ana-total_result.h5", engine="h5netcdf")
+    try:
+        assert float(ds["observation__sum"]) == 10.0
+    finally:
+        ds.close()
+    assert calls.record == ["spectrum", "total"]
+
+
+def test_a_transient_analysis_is_neither_missing_nor_stale(tmp_path, calls):
+    """The manifest's staleness pass skips it: there is no container to be missing, and its readers re-run it."""
+    from tvbo.data.study_manifest import _stale_or_missing_analyses
+
+    table = _analysis("table", "spectrum", {"n": {"value": 5}}, persist=False)
+    reduction = _analysis("total", "total", {"power": {"used": {"analysis": "table", "output": "power"}}})
+    analysis_io.run_analyses([table, reduction], tmp_path)
+
+    inv = types.SimpleNamespace(analyses=[table, reduction], datasets=None)
+    assert _stale_or_missing_analyses(inv, tmp_path, None) == []
+
+
+def test_a_transient_analysis_is_scoped_to_its_study_and_refused_to_a_figure(tmp_path, calls):
+    """The registry is keyed by study: another study's lookup of the same name does not see it, and a container reader (a figure, a report, a kit) is refused it by name while the in-process ``used:`` resolver reads it."""
+    study_a, study_b = tmp_path / "a", tmp_path / "b"
+    table = _analysis("table", "spectrum", {"n": {"value": 5}}, persist=False)
+    analysis_io.run_analyses([table], study_a)
+
+    with pytest.raises(FileNotFoundError, match="persist: false"):
+        dataref.locate_analysis_container(study_a, "table")
+    assert dataref.locate_analysis_container(study_a, "table", transient=True).is_file()
+    with pytest.raises(FileNotFoundError, match="tvbo run"):
+        dataref.locate_analysis_container(study_b, "table")
+
+
+def test_a_recomputed_transient_analysis_marks_no_other_consumer_stale(tmp_path, calls, caplog):
+    """Re-deriving one consumer re-runs the transient table it reads; the table's other consumers keep valid numbers and are not reported stale."""
+    import logging
+
+    from tvbo.run.study import warn_stale_analyses
+
+    table = _analysis("table", "spectrum", {"n": {"value": 5}}, persist=False)
+    first = _analysis("first", "total", {"power": {"used": {"analysis": "table", "output": "power"}}})
+    second = _analysis("second", "total", {"power": {"used": {"analysis": "table", "output": "power"}}})
+    analysis_io.run_analyses([table, first, second], tmp_path)
+
+    with caplog.at_level(logging.WARNING):
+        warn_stale_analyses([table, first, second], str(tmp_path / "study.yaml"), tmp_path, recomputed={"table", "first"})
+    assert "stale" not in caplog.text and "second" not in caplog.text
+
+    persisted = _analysis("table", "spectrum", {"n": {"value": 5}})
+    analysis_io.run_analyses([persisted], tmp_path)
+    with caplog.at_level(logging.WARNING):
+        warn_stale_analyses([persisted, first, second], str(tmp_path / "study.yaml"), tmp_path, recomputed={"table", "first"})
+    assert "second" in caplog.text
+
+
+def test_two_studies_keep_their_own_transient_container_of_one_name(tmp_path, calls):
+    """Two studies in one process, each with a transient analysis named alike, write two files, and each study reads its own."""
+    study_a, study_b = tmp_path / "a", tmp_path / "b"
+    analysis_io.run_analyses([_analysis("table", "spectrum", {"n": {"value": 5}}, persist=False)], study_a)
+    analysis_io.run_analyses([_analysis("table", "spectrum", {"n": {"value": 3}}, persist=False)], study_b)
+
+    path_a = dataref.locate_analysis_container(study_a, "table", transient=True)
+    path_b = dataref.locate_analysis_container(study_b, "table", transient=True)
+    assert path_a != path_b
+    for path, n in ((path_a, 5), (path_b, 3)):
+        ds = xr.open_dataset(path, engine="h5netcdf")
+        try:
+            assert ds["observation__power"].size == n
+        finally:
+            ds.close()
+
+
+def test_a_persisted_write_replaces_an_earlier_transient_one(tmp_path, calls):
+    """An analysis written transient and then persisted under one study is read from the study afterwards, by figures as by in-run readers."""
+    analysis_io.run_analyses([_analysis("table", "spectrum", {"n": {"value": 5}}, persist=False)], tmp_path)
+    analysis_io.run_analyses([_analysis("table", "spectrum", {"n": {"value": 4}})], tmp_path)
+
+    kept = tmp_path / "ana-table_result.h5"
+    assert dataref.locate_analysis_container(tmp_path, "table") == kept
+    assert dataref.locate_analysis_container(tmp_path, "table", transient=True) == kept
+
+
+def test_a_report_number_is_refused_a_transient_analysis(tmp_path, calls):
+    """A report binds kept results: a reference to a transient analysis is refused by name rather than read from a file deleted at exit."""
+    analysis_io.run_analyses([_analysis("table", "spectrum", {"n": {"value": 5}}, persist=False)], tmp_path)
+    ref = types.SimpleNamespace(analysis="table", output="power", experiment=None, iri=None, sel=None, reconcile=None)
+
+    assert dataref.resolve_dataref(ref, results_root=str(tmp_path)).size == 5
+    with pytest.raises(FileNotFoundError, match="persist: false"):
+        dataref.resolve_dataref(ref, results_root=str(tmp_path), transient=False)
+
+
+def test_a_persisted_analysis_is_the_default(tmp_path, calls):
+    assert analysis_io.is_persisted(_analysis("spec", "spectrum", {"n": {"value": 4}}))
+    assert analysis_io.is_persisted({"name": "spec", "callable": {"name": "spectrum", "module": "_test_analysis_calls"}})
+    assert not analysis_io.is_persisted({"name": "spec", "persist": False})
+
+
 def test_the_sidecar_records_what_was_invoked_and_what_it_used(tmp_path, calls):
     """Provenance is the point of declaring the analysis, so it must be on disk."""
     import yaml

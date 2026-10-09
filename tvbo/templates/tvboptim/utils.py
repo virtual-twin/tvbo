@@ -2857,7 +2857,7 @@ def render_recorded_observable(
     channel = {n: i for i, n in enumerate(recorded_var_names or [])}
     # A declared observation is a recorded name that is neither an analysis diagnostic nor a raw model channel; only those need compute_all_observations.
     obs_names = [n for n in record_names if n not in analysis_set and n not in channel]
-    lines = ["result = _expl_model_fn(s)"]
+    lines = ["result, settle = _expl_cell(s)"]
     if obs_names:
         # Restrict the per-cell computation to the recorded observations and their closure (passed by the caller), so non-recorded — possibly non-jittable — observations never execute inside this jitted observable.
         if only_obs is not None:

@@ -81,7 +81,48 @@ def container_path(name: str, results_root=None) -> Path:
 # ---------------------------------------------------------------------------- order
 
 
-def dependencies(analysis) -> dict:
+def networks_read(analysis, source_dir=None) -> dict:
+    """The networks this analysis reads a layer of through an ``iri`` (:func:`tvbo.data.dataref.names_a_network`), as ``{iri: (sidecar path, the network it declares)}`` in argument order.
+
+    What such a network reads is what the analysis reads, so its dependencies, its cohorts and its staleness digest all go through here. *source_dir* is the study a relative ``iri`` is written against.
+    """
+    from tvbo.data.network_io import load_declared_network
+
+    out: dict = {}
+    for _, arg in _arg_items(_slot(analysis, "arguments")):
+        used = _slot(arg, "used")
+        iri = _slot(used, "iri") if used is not None else None
+        if iri is None or str(iri) in out:
+            continue
+        path = _dref.names_a_network(used, source_dir)
+        if path is not None:
+            out[str(iri)] = (path, load_declared_network(path))
+    return out
+
+
+def network_digests(analysis, source_dir=None) -> dict:
+    """A digest per network this analysis reads (:func:`networks_read`), over what changes the array it delivers: its declaration with every include expanded, and the bytes of the companion it holds its own arrays in.
+
+    The cohorts and analyses the network reads are digested where an analysis's own are, through :func:`used_cohorts` and the dependency walk.
+    """
+    import hashlib
+    import json
+
+    from tvbo.utils import yaml_loader
+
+    out: dict = {}
+    for iri, (path, net) in networks_read(analysis, source_dir).items():
+        digest = hashlib.sha256(json.dumps(yaml_loader.load_as_dict(str(path)), sort_keys=True, default=str).encode())
+        companion = getattr(getattr(net, "_store", None), "_path", None)
+        if companion is not None and Path(companion).is_file():
+            with open(companion, "rb") as handle:
+                for block in iter(lambda: handle.read(1 << 20), b""):
+                    digest.update(block)
+        out[iri] = digest.hexdigest()[:16]
+    return out
+
+
+def dependencies(analysis, source_dir=None) -> dict:
     """What this analysis consumes, read off its arguments' ``used:`` edges.
 
     Returns ``{"experiments": {...}, "analyses": {...}}`` — the ids/names that must have run before it. A literal argument contributes nothing.
@@ -108,10 +149,14 @@ def dependencies(analysis) -> dict:
             eid = _dref.experiment_id(iri)
             if eid is not None:
                 exps.add(str(eid))
+    for _, net in networks_read(analysis, source_dir).values():
+        anas.update(net.referenced_analyses())
+        for exp in net._referenced("experiment"):
+            exps.update({exp, _dref.experiment_id(exp) or exp})
     return {"experiments": exps, "analyses": anas}
 
 
-def used_cohorts(analysis, datasets) -> dict:
+def used_cohorts(analysis, datasets, source_dir=None) -> dict:
     """The cohorts this analysis reads, each as its dataset and its members in declared order.
 
     Membership is part of what the analysis computes: a cohort mean over 93 subjects and over 1065 are different numbers under one declaration. This is what a container's staleness digest and its provenance record take the cohort from, so editing a cohort's members marks every analysis over it as needing a re-run.
@@ -125,10 +170,15 @@ def used_cohorts(analysis, datasets) -> dict:
             continue
         dataset, cohort = find_cohort(datasets, cohort_id)
         out[str(cohort_id)] = {"dataset": str(_slot(dataset, "dataset_id")), "members": cohort_members(dataset, cohort)}
+    for _, net in networks_read(analysis, source_dir).values():
+        for cohort_id in net._referenced("cohort"):
+            if cohort_id not in out:
+                dataset, cohort = find_cohort(datasets, cohort_id)
+                out[cohort_id] = {"dataset": str(_slot(dataset, "dataset_id")), "members": cohort_members(dataset, cohort)}
     return out
 
 
-def dependents_of(analyses, *, experiments=(), changed_analyses=()) -> list[str]:
+def dependents_of(analyses, *, experiments=(), changed_analyses=(), source_dir=None) -> list[str]:
     """Every analysis downstream of the given experiments or analyses, in declaration order.
 
     An analysis container records no link back to the run it was derived from, so re-running part of a study leaves each downstream container holding the PREVIOUS run's numbers with nothing to raise. This names the set to invalidate, and it must be transitive: the second-order analyses (a landscape built from a per-cell reduction, a correlation built from that) are exactly the ones a hand-written list forgets.
@@ -138,7 +188,7 @@ def dependents_of(analyses, *, experiments=(), changed_analyses=()) -> list[str]
     wanted = {str(e) for e in experiments}
     stale = {str(a) for a in changed_analyses}
     names = [analysis_name(a) for a in as_list(analyses)]
-    deps = {n: dependencies(a) for n, a in zip(names, as_list(analyses), strict=True)}
+    deps = {n: dependencies(a, source_dir) for n, a in zip(names, as_list(analyses), strict=True)}
     changed = True
     while changed:
         changed = False
@@ -151,7 +201,7 @@ def dependents_of(analyses, *, experiments=(), changed_analyses=()) -> list[str]
     return [n for n in names if n in stale]
 
 
-def analysis_closure(analyses, names, exists) -> set[str]:
+def analysis_closure(analyses, names, exists, source_dir=None) -> set[str]:
     """The named analyses plus the upstream ones that have no container yet.
 
     The upstream counterpart of :func:`dependents_of`, and it belongs beside it: both walk the study's ``used:`` edges, and a caller that needs one usually needs the other.
@@ -162,18 +212,19 @@ def analysis_closure(analyses, names, exists) -> set[str]:
         analyses: The study's declared analyses.
         names: The names asked for.
         exists: Predicate saying whether an analysis's container is already on disk.
+        source_dir: The study's directory, against which a network file an analysis reads through is found.
     """
     by_name = {analysis_name(a): a for a in as_list(analyses)}
     needed, queue = set(names), list(names)
     while queue:
-        for dep in dependencies(by_name[queue.pop()])["analyses"]:
+        for dep in dependencies(by_name[queue.pop()], source_dir)["analyses"]:
             if dep in by_name and dep not in needed and not exists(dep):
                 needed.add(dep)
                 queue.append(dep)
     return needed
 
 
-def _toposort(analyses) -> list:
+def _toposort(analyses, source_dir=None) -> list:
     """Analyses in dependency order, declaration order breaking every tie.
 
     Also enforces the two things a name-keyed container makes structural: names are unique (two analyses sharing one would overwrite each other's result), and every ``used: {analysis: …}`` names one that exists. Raises on a cycle, listing the analyses left unresolved.
@@ -187,8 +238,9 @@ def _toposort(analyses) -> list:
             "analysis's result container, so duplicates would overwrite each other."
         )
     known = set(names)
+    reads = {analysis_name(a): dependencies(a, source_dir)["analyses"] for a in items}
     for a in items:
-        missing = sorted(dependencies(a)["analyses"] - known)
+        missing = sorted(reads[analysis_name(a)] - known)
         if missing:
             raise KeyError(
                 f"analysis {analysis_name(a)!r} sources {missing} through a `used: {{analysis: …}}`, "
@@ -199,7 +251,7 @@ def _toposort(analyses) -> list:
     done: set[str] = set()
     ordered: list = []
     while pending:
-        ready = [a for a in pending if dependencies(a)["analyses"] <= done]
+        ready = [a for a in pending if reads[analysis_name(a)] <= done]
         if not ready:
             raise ValueError(
                 "study `analyses:` have a circular `used:` dependency among "
@@ -213,15 +265,15 @@ def _toposort(analyses) -> list:
     return ordered
 
 
-def schedule(analyses) -> tuple[list, list]:
+def schedule(analyses, source_dir=None) -> tuple[list, list]:
     """Split the analyses into ``(before_experiments, after_experiments)``.
 
     An analysis that reads an experiment result runs after the experiments, and so does everything downstream of it. The rest run first, so an experiment's own parameter can source one through a ``used:``. Each list is topologically ordered.
     """
-    ordered = _toposort(analyses)
+    ordered = _toposort(analyses, source_dir)
     deferred: set[str] = set()
     for a in ordered:
-        deps = dependencies(a)
+        deps = dependencies(a, source_dir)
         if deps["experiments"] or (deps["analyses"] & deferred):
             deferred.add(analysis_name(a))
     before = [a for a in ordered if analysis_name(a) not in deferred]
@@ -548,8 +600,11 @@ def render_tvboptim(analysis, kwargs):
     for key in names:
         arg_dims, array = _labelled(kwargs[key])
         if not arg_dims:
+            scalar = np.asarray(array)
+            if precision is not None and scalar.dtype.kind == "f":
+                scalar = scalar.astype(precision, copy=False)
             in_axes.append(None)
-            args.append(array)
+            args.append(scalar)
             continue
         arr, is_mapped = _aligned(kwargs[key], arg_dims, dims, mapped)
         if precision is not None and arr.dtype.kind == "f":
@@ -569,6 +624,8 @@ def render_tvboptim(analysis, kwargs):
     declared = _slot(analysis, "dims")
     if declared:
         dims = tuple(str(d) for d in declared)
+    elif np.ndim(produced) == 0:
+        dims = ()  # an expression that reduces every axis leaves none to name, and an empty `dims:` cannot be told from an absent one
     if produced.ndim != len(dims):
         raise ValueError(
             f"analysis {name!r}: the expression returned a rank-{produced.ndim} result "
@@ -793,28 +850,37 @@ def _provenance(analysis, produced_keys: Iterable[str], cohorts: Mapping | None 
     }
 
 
+def is_persisted(analysis) -> bool:
+    """Whether the analysis keeps its container under the study (``persist``, true unless declared false)."""
+    return bool(_slot(analysis, "persist", True))
+
+
 def run_analysis(analysis, results_root=None, *, compress: bool = True, datasets=None, source_dir=None) -> Path:
     """Execute one declared analysis and persist its result. Returns the container path.
 
     *datasets* are the study's (``SimulationStudy.datasets``), needed by an analysis that reads a ``cohort``; *source_dir* is the study root a relative ``bids_root`` resolves against.
+
+    An analysis declared ``persist: false`` is written to this process's transient root for its study instead (:func:`tvbo.data.dataref.transient_root`, deleted at exit) and registered under that study, so the analyses and experiments that read it in the same run resolve it, a figure, report or kit is refused it, and nothing of it is left under the study. A persisted write drops any such registration, so what reads the analysis next reads the container under the study.
     """
     import yaml
 
     from tvbo.data.experiment_result_io import write_container
 
     name = analysis_name(analysis)
-    cohorts = used_cohorts(analysis, datasets)
+    cohorts = used_cohorts(analysis, datasets, source_dir)
     produced = _render(analysis, _kwargs_of(analysis, results_root, datasets, source_dir))
     ds = _as_dataset(name, produced, _slot(analysis, "dims"))
 
-    path = container_path(name, results_root)
+    persisted = is_persisted(analysis)
+    path = container_path(name, results_root if persisted else _dref.transient_root(results_root))
     path.parent.mkdir(parents=True, exist_ok=True)
     write_container(ds, path, compress)
+    _dref.register_transient(results_root, name, None if persisted else path)
     record = _provenance(analysis, (str(v)[len("observation__") :] for v in ds.data_vars), cohorts)
     # The declaration's own digest travels in the sidecar, so staleness is per analysis rather than "the spec file was touched" (see study_manifest._stale_or_missing_analyses) and the container has one companion rather than three.
     from tvbo.data.study_manifest import _analysis_fingerprint
 
-    record["declaration_digest"] = _analysis_fingerprint(analysis, cohorts)
+    record["declaration_digest"] = _analysis_fingerprint(analysis, cohorts, network_digests(analysis, source_dir))
     _dref.sidecar_path(path).write_text(yaml.safe_dump(record, sort_keys=False))
     return path
 

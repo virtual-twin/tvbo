@@ -561,7 +561,7 @@ def _exec_one(experiment, backend: str, out_dir: Path, options: RunOptions, prov
 # A study's analyses
 
 
-def _study_analysis_stages(study) -> tuple[list, list]:
+def _study_analysis_stages(study, source_dir=None) -> tuple[list, list]:
     """A study's ``analyses:`` split into the stages that run before / after its experiments.
 
     Returns two empty lists when the study declares none, so callers need no guard. A malformed schedule (duplicate name, unknown or circular ``used:``) raises here, before any experiment runs, rather than half way through a long study.
@@ -569,7 +569,7 @@ def _study_analysis_stages(study) -> tuple[list, list]:
     from tvbo.data.analysis_io import schedule, study_analyses
 
     analyses = study_analyses(study)
-    return schedule(analyses) if analyses else ([], [])
+    return schedule(analyses, source_dir) if analyses else ([], [])
 
 
 def _import_figure_code_modules(study) -> None:
@@ -591,17 +591,18 @@ def warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experiment
 
     Both partial modes need this and they need it identically. ``--experiment`` re-runs a simulation, ``--analysis`` re-derives a container, and in each case everything downstream keeps the PREVIOUS numbers while the thing it reads is fresh. Nothing raises, so a figure or report built next mixes the two.
 
-    ``recomputed`` names what this run actually produced, which both seeds the walk and drops out of its result. It is the CLOSURE, not what was asked for on the command line: a named analysis pulls a never-produced upstream in with it, and seeding on the request would miss every dependent of that upstream.
+    ``recomputed`` names what this run actually produced, which both seeds the walk and drops out of its result. A transient analysis (``persist: false``) among them is recomputed by every run that reads it and seeds nothing: its other consumers go stale only through a persisted change upstream of it, which the walk reaches on its own. It is the CLOSURE, not what was asked for on the command line: a named analysis pulls a never-produced upstream in with it, and seeding on the request would miss every dependent of that upstream.
     """
-    from tvbo.data.analysis_io import container_path, dependents_of
+    from tvbo.data.analysis_io import analysis_name, container_path, dependents_of, is_persisted
 
     if not analyses:
         return
     root = results_root(spec, out_dir)
     produced = set(recomputed)
+    changed = {analysis_name(a) for a in analyses if analysis_name(a) in produced and is_persisted(a)}
     stale = [
         n
-        for n in dependents_of(analyses, experiments=experiments, changed_analyses=produced)
+        for n in dependents_of(analyses, experiments=experiments, changed_analyses=changed, source_dir=spec_base(spec))
         if n not in produced and container_path(n, root).exists()
     ]
     if not stale:
@@ -624,7 +625,7 @@ def _run_study_analyses(
 
     A failure is only ever SWALLOWED when there are completed experiments to protect. The ``before`` stage raises — nothing has run yet, and an experiment may source the missing analysis. A ``named`` stage (``--analysis``) raises too: it ran no experiments, the analysis is the whole of what was asked for, and a warning there would exit zero on a job that produced nothing. Only the ``after`` stage reports and returns False, because the experiments already succeeded and must not be lost to a reduction; the figures that would read the missing container are then skipped rather than drawn from absent data.
     """
-    from tvbo.data.analysis_io import run_analyses
+    from tvbo.data.analysis_io import is_persisted, run_analyses
 
     if not analyses:
         return True
@@ -634,6 +635,9 @@ def _run_study_analyses(
     by_name = {str(getattr(a, "name", "")): a for a in analyses}
 
     def _done(name, path):
+        if not is_persisted(by_name.get(name)):
+            logger.info(f"  computed {name} (transient: read by this run's analyses, not kept)")
+            return
         logger.info(f"  wrote {path.relative_to(shown_from) if path.is_relative_to(shown_from) else path}")
         _emit_provenance(
             ctx,
@@ -664,6 +668,21 @@ def _run_study_analyses(
     return True
 
 
+def _transient_reads(study, before, records, source_dir) -> list:
+    """The transient analyses (``persist: false``) of the *before* stage that the experiments of *records* read, with the transient ones those read in turn, in schedule order.
+
+    No earlier run keeps a transient analysis, so a run of some of a study's experiments (``--experiment``, a fan-out cell, a shard) computes these itself before them.
+    """
+    from tvbo.data.analysis_io import analysis_closure, analysis_name, is_persisted
+
+    transient = {analysis_name(a) for a in before if not is_persisted(a)}
+    if not transient:
+        return []
+    read = {n for record in records for n in runtime_experiment(study, record).referenced_analyses() if n in transient}
+    needed = analysis_closure(before, read, exists=lambda n: n not in transient, source_dir=source_dir)
+    return [a for a in before if analysis_name(a) in needed]
+
+
 def run_named_analyses(study, spec: str, wanted: str, out_dir: Path | None = None) -> None:
     """Run only the named ``analyses:`` (comma-separated *wanted*), plus whatever they read, in dependency order.
 
@@ -676,7 +695,7 @@ def run_named_analyses(study, spec: str, wanted: str, out_dir: Path | None = Non
     from tvbo.data.analysis_io import analysis_closure, analysis_name, container_path
 
     _import_figure_code_modules(study)
-    before, after = _study_analysis_stages(study)
+    before, after = _study_analysis_stages(study, spec_base(spec))
     analyses = before + after
     names = [s.strip() for s in str(wanted).split(",") if s.strip()]
     if not names:
@@ -690,7 +709,7 @@ def run_named_analyses(study, spec: str, wanted: str, out_dir: Path | None = Non
         )
 
     root = results_root(spec, out_dir)
-    needed = analysis_closure(analyses, names, exists=lambda n: container_path(n, root).exists())
+    needed = analysis_closure(analyses, names, exists=lambda n: container_path(n, root).exists(), source_dir=spec_base(spec))
     ordered = [a for a in analyses if analysis_name(a) in needed]
     if len(ordered) > len(names):
         logger.info(f"also producing {len(ordered) - len(names)} upstream analysis container(s) that do not exist yet")
@@ -838,7 +857,7 @@ def run_study(
     base = Path(base).resolve() if base is not None else spec_base(spec)
     root = results_root(spec, out_dir, base=base)
     _import_figure_code_modules(study)
-    before, after = _study_analysis_stages(study)
+    before, after = _study_analysis_stages(study, base)
     whole = experiment is None and options.shard is None
     if whole:
         _run_study_analyses(study, before, spec, root, stage="before", out_dir=out_dir, base=base)
@@ -848,6 +867,10 @@ def run_study(
         raise StudyRunError(
             f"--rendered is a single pre-rendered experiment script but {len(records)} "
             f"experiments matched; pass --experiment to select exactly one."
+        )
+    if not whole:
+        _run_study_analyses(
+            study, _transient_reads(study, before, records, base), spec, root, stage="before", out_dir=out_dir, base=base
         )
     for record in records:
         logger.info(f"running experiment: {getattr(record, 'key', None) or getattr(record, 'label', None)}")

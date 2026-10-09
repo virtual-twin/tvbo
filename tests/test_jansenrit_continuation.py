@@ -461,15 +461,17 @@ def test_the_formats_page_lists_every_built_in_format_with_its_aliases():
 
 
 def _labelled(params, row, label="bp"):
-    """The labels `_reclassify_folds` leaves on an equilibrium branch through *params* whose row *row* BifurcationKit labelled *label*."""
-    import pandas as pd
+    """The labels `_reclassify_folds` leaves on an equilibrium branch through *params* whose step *row* BifurcationKit labelled *label*."""
+    import xarray as xr
 
     from tvbo.analysis.bifurcation import BifurcationResult
 
-    df = pd.DataFrame({"param": params, "specialpoint": [label if i == row else None for i in range(len(params))]})
-    result = BifurcationResult(df=df)
+    branch = xr.Dataset(
+        {"param": ("step", list(params)), "specialpoint": ("step", [label if i == row else "" for i in range(len(params))])}
+    )
+    result = BifurcationResult(branch=branch)
     result._reclassify_folds()
-    return [label for label in result.df["specialpoint"] if pd.notna(label)]
+    return [label for label in result.branch["specialpoint"].values if label]
 
 
 @pytest.mark.parametrize(
@@ -496,8 +498,8 @@ def test_a_branch_point_the_parameter_passes_through_stays_one():
 
 def _special(result, kind, column="param") -> list[float]:
     """The *column* values of every special point of *kind* on *result*'s branch."""
-    labels = result.df["specialpoint"].astype(str)
-    return [float(p) for label, p in zip(labels, result.df[column], strict=True) if kind in label.split(",")]
+    labels = result.branch["specialpoint"].values
+    return [float(p) for label, p in zip(labels, result.branch[column].values, strict=True) if kind in label.split(",")]
 
 
 def _assert_near(found, expected, tol=0.05):
@@ -512,10 +514,10 @@ def _needs_auto():
 def _curves(result) -> dict:
     """*result*'s codim-2 curves by source kind, each checked to carry the primary ``p`` in ``param`` and the second ``C`` in ``param2`` within its domain."""
     curves = {curve._source_type: curve for curve in result.codim2_curves}
-    assert set(curves) == {"fold", "hopf"} and all(len(curve.df) > 10 for curve in curves.values())
+    assert set(curves) == {"fold", "hopf"} and all(curve.n_steps > 10 for curve in curves.values())
     for curve in curves.values():
         assert (curve._ics_name, curve._fp2_name) == ("p", "C")
-        assert 10 - 1e-6 <= curve.df["param2"].min() and curve.df["param2"].max() <= 500 + 1e-6
+        assert 10 - 1e-6 <= float(curve.branch["param2"].min()) and float(curve.branch["param2"].max()) <= 500 + 1e-6
     return curves
 
 
@@ -530,7 +532,7 @@ def test_auto07p_finds_both_folds_and_three_hopf_points(experiment, monkeypatch,
     curves = _curves(result)
     # The fold curve runs through its cusp and stops where C leaves its domain, not where p would.
     _assert_near(_special(curves["fold"], "cusp"), [168.705])
-    assert curves["fold"].df["param2"].max() == pytest.approx(500.0)
+    assert float(curves["fold"].branch["param2"].max()) == pytest.approx(500.0)
     # With the analytic Jacobian both curves reach their Bogdanov-Takens point at the equilibrium's newton_tol.
     for curve in curves.values():
         _assert_near(_special(curve, "bt"), [15.937])
@@ -548,7 +550,7 @@ def test_pyrates_finds_both_folds_and_three_hopf_points(experiment, monkeypatch,
     assert len(result.periodic_orbits) == 3
     curves = _curves(result)
     _assert_near(_special(curves["fold"], "cusp"), [168.705])
-    assert curves["fold"].df["param2"].max() == pytest.approx(500.0)
+    assert float(curves["fold"].branch["param2"].max()) == pytest.approx(500.0)
     for curve in curves.values():
         _assert_near(_special(curve, "bt"), [15.937])
 
@@ -565,9 +567,12 @@ def test_bifurcationkit_finds_the_folds_the_hopf_points_and_the_orbit_between_tw
     assert not _special(result, "bp")
     # Detection level 2 flags a Hopf point at the step past its crossing, without bisecting to it.
     _assert_near(_special(result, "hopf"), [-12.148, 89.829, 315.696], tol=1.5)
-    assert any(orbit.df["param"].min() < 95 and orbit.df["param"].max() > 310 for orbit in result.periodic_orbits)
+    assert any(
+        float(orbit.branch["param"].min()) < 95 and float(orbit.branch["param"].max()) > 310
+        for orbit in result.periodic_orbits
+    )
     curves = _curves(result)
     _assert_near(_special(curves["fold"], "cusp"), [168.705])
     _assert_near(_special(curves["hopf"], "bt"), [15.937])
     # BifurcationKit continues a curve in C, so the finaliser stops it at the first step where p leaves its domain.
-    assert all(curve.df["param"].iloc[1:-1].between(-50, 400).all() for curve in curves.values())
+    assert all(((p := curve.branch["param"].values[1:-1]) >= -50).all() and (p <= 400).all() for curve in curves.values())

@@ -7,19 +7,8 @@ def _values(vals):
     return ", ".join(repr(v) for v in vals)
 
 def _run_flags(ep):
-    """Per-cell `tvbo run` flags: --subject for the dataset fan-out, --pin for a fanned
-    exploration axis. --pin sets the axis's parameter AND drops it from the sweep, so the
-    cell is a single point (its base run — and every declared observation — computed there);
-    a plain --set of a swept model parameter would neither resolve nor collapse the sweep.
-    Shell directives reference wildcards as ``{wildcards.<name>}``."""
-    out = []
-    for a in ep["axes"]:
-        wc = "{wildcards.%s}" % a["name"]
-        if a["parameter"] == "dataset.active_subject":
-            out.append("--subject=" + wc)
-        else:
-            out.append("--pin=%s=%s" % (a["parameter"], wc))
-    return out
+    """Per-cell `tvbo run` flags (`tvbo.run.workflow.cell_run_flag`), each axis's value spelled as the shell directive's ``{wildcards.<name>}``."""
+    return [_cell_flag(a["parameter"], "{wildcards.%s}" % a["name"]) for a in ep["axes"]]
 
 # key -> plan, so a from_experiment dependency can reference the source's output.
 _ep_by_key = {ep["key"]: ep for ep in exp_plans}
@@ -33,7 +22,7 @@ _figure_outputs = context.get('figure_outputs') or []
 import shlex
 
 from tvbo.run.workflow import (mem_mb as _mem_mb, runtime_minutes as _runtime_min,
-                                cell_out_relpath as _cell_out, fan_expand_kwargs as _expand_kwargs,
+                                cell_out_relpath as _cell_out, cell_run_flag as _cell_flag, fan_expand_kwargs as _expand_kwargs,
                                 cohort_out_relpaths as _cohort_out)
 
 def _activation(block):

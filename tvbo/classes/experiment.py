@@ -940,7 +940,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def configure(self):
         """Resolve coupling declarations and normalize delay flags.
 
-        Runs at the execution boundary and is backend-agnostic and idempotent: the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero). Tract lengths declared with ``used:`` have no values until a run binds the network's references (:meth:`Network.bind_references`), so until then the declared delay flags stand, and once they are bound an error reading them is raised here. Declarative stimulus events are lowered at the same boundary, turning `target_variable` into a name and `target_regions` into node indices — the fields codegen consumes.
+        Runs at the execution boundary and is backend-agnostic and idempotent: the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero). Tract lengths that depend on a ``used:`` reference, their own or an argument's of a transform on them (:meth:`Network.reads_references`), have no values until a run binds the network's references (:meth:`Network.bind_references`), so until then the declared delay flags stand, and once they are bound an error reading them is raised here. Declarative stimulus events are lowered at the same boundary, turning `target_variable` into a name and `target_regions` into node indices — the fields codegen consumes.
         """
         _resolve_coupling(self)
         self._resolve_events()
@@ -952,15 +952,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             if network is None:
                 return
 
-            # Get the network as a Network (it might already be one)
-            if isinstance(network, Network):
-                conn = network
-            else:
-                conn = Network(network)
+            conn = network if isinstance(network, Network) else Network.from_datamodel(network)
 
-            if conn.sources_layer("length"):
+            if conn.reads_references("length"):
                 if not conn._binding():
-                    # Tract lengths declared with `used:` are lengths even while no run has named whose: the declared delay flags stand.
+                    # Tract lengths that read a reference are lengths even while no run has named what it resolves against: the declared delay flags stand.
                     return
                 lengths_bound = True
                 delays = conn.calculate_delays()
@@ -1437,6 +1433,23 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             return
         net.bind_references(results_root=results_root, **self._reference_context())
 
+    def _refuse_per_subject_reads_on_device(self, results_root=None) -> None:
+        """Raise before an on-device cohort run reads something one subject at a time (:func:`tvbo.run.workflow.refuse_per_subject_reads_on_device`): a cohort through a reference that follows the run, or an experiment whose saved result under the run's results directory is one shard per subject."""
+        from tvbo.data import dataref as _dref
+        from tvbo.run import workflow as _wf
+
+        source_file = getattr(self, "_source_file", None)
+        root = _dref.reference_results_root(results_root, Path(source_file).parent if source_file else None)
+
+        def per_subject(source_id) -> bool:
+            eid = _dref.experiment_id(source_id)  # a container is named by the bare id, however the recipe spelled it
+            try:
+                return eid is not None and _dref.cohort_shards(root, eid) is not None
+            except (FileNotFoundError, LookupError):  # not run yet, or several runs: the read itself reports either
+                return False
+
+        _wf.refuse_per_subject_reads_on_device(self, [d for d in _wf.result_dependencies(self) if per_subject(d)])
+
     def _reference_context(self) -> dict:
         """What a ``used:`` reference of this run resolves against besides its results directory: the run's subject, the datasets a ``cohort`` is declared in (:meth:`_reference_datasets`) and the directory a relative ``bids_root`` is read from, as keyword arguments of :func:`tvbo.data.dataref.resolve_dataref`."""
         source_file = getattr(self, "_source_file", None)
@@ -1481,8 +1494,12 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         return list(dict.fromkeys(str(name) for ref in self.declared_references() if (name := getattr(ref, where, None))))
 
     def referenced_cohorts(self) -> list[str]:
-        """The cohorts a reference of this experiment names (:meth:`declared_references`). A run with a subject reads that one member of each, so its subject has to belong to all of them."""
+        """The cohorts a reference of this experiment names (:meth:`declared_references`), whichever of their members it reads: the ones a kit has to carry."""
         return self._referenced("cohort")
+
+    def per_subject_cohorts(self) -> list[str]:
+        """The cohorts a reference of this experiment reads the running subject's own member of (:func:`tvbo.data.cohort.follows_run`), in declaration order. A run's subject has to belong to all of them, so they narrow the fan-out; a reference pinned to named members reads those whichever subject runs and narrows nothing."""
+        return list(dict.fromkeys(str(ref.cohort) for ref in self.declared_references() if _cohort.follows_run(ref)))
 
     def referenced_analyses(self) -> list[str]:
         """The analyses whose containers a reference of this experiment reads, so a run needs them under its results directory."""
@@ -1610,6 +1627,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         if active_subject is None:
             active_subject = getattr(getattr(self, "dataset", None), "active_subject", None)
         self._active_subject = str(active_subject) if active_subject is not None else None
+        if self._active_subject is None and self.dataset_on_device():
+            self._refuse_per_subject_reads_on_device(results_root)
         self._bind_network_references(results_root)
 
         self.configure()
@@ -2628,10 +2647,10 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def subject_selection(self) -> dict:
         """The per-subject fan-out and how it was reached, as ``{"dataset": n, "cohorts": {id: n_members}, "subjects": [...], "excluded": [...]}``.
 
-        The dataset's subjects are kept in the dataset's order where they belong to every cohort a reference of the experiment names (:meth:`referenced_cohorts`: a network layer, a sourced parameter, a stimulus recording or a builder argument), since a subject outside one has nothing to read there. ``cohorts`` is empty, and nothing is excluded, for an experiment that reads no cohort. The selection is held with the dataset's subjects and each cohort's members it was reached from, and reached again only when one of them differs, so the restriction is logged once per fan-out. A workflow plan carries it, so it is stated wherever the fan-out is.
+        The dataset's subjects are kept in the dataset's order where they belong to every cohort a reference of the experiment reads the running subject's own member of (:meth:`per_subject_cohorts`: a network layer, a sourced parameter, a stimulus recording or a builder argument that pins no member), since a subject outside one has nothing to read there. ``cohorts`` is empty, and nothing is excluded, for an experiment that reads no cohort per subject. The selection is held with the dataset's subjects and each cohort's members it was reached from, and reached again only when one of them differs, so the restriction is logged once per fan-out. A workflow plan carries it, so it is stated wherever the fan-out is.
         """
         listed = self._dataset_subjects()
-        cohort_ids = self.referenced_cohorts() if listed else []
+        cohort_ids = self.per_subject_cohorts() if listed else []
         datasets = self._reference_datasets() if cohort_ids else []
         members = {c: tuple(_cohort.cohort_members(*_cohort.find_cohort(datasets, c))) for c in cohort_ids}
         reached_from = (tuple(listed), tuple(members.items()))
@@ -2661,10 +2680,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             return []
         subs = getattr(ds, "subjects", None)
         if subs:
-            ids = [
-                s if isinstance(s, str) else _cohort._slot(s, "subject_id", key) for key, s in keyed_items(subs, "subjects")
-            ]
-            return [str(s).replace("sub-", "") for s in ids]
+            return list(_cohort.subject_entries(subs))
         targets = self.dataset_observation_targets
         root = getattr(ds, "bids_root", None)
         if not targets or not root:
@@ -2708,11 +2724,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         return [sidecar.parent / r for r in refs]
 
     def dataset_bundle_files(self, entity_overrides: dict | None = None) -> dict:
-        """Per enumerated subject, the source file(s) a self-contained kit must carry.
+        """Per subject, the source file(s) a self-contained kit must carry.
 
-        For each dataset-sourced observation, resolve the subject's matching sidecar under ``dataset.bids_root`` and pair it with the payload(s) it references, so a workflow kit can bundle exactly the empirical targets its fan-out consumes and drop its dependence on a machine-specific data tree. Each file the experiment's ``cohort`` references read for the subject travels the same way (:meth:`reference_cohort_files`), with or without a dataset target beside it. *entity_overrides* pins or tightens the BIDS entities used for selection (e.g. ``{'atlas': 'HCPMMP1', 'suffix': 'relmat'}``) — the exact variant is chosen when a subject directory holds several. ``suffix`` overrides the trailing filename component; every other key overrides a ``key-value`` entity. The overrides disambiguate among the variants a subject already has; the cohort itself is still enumerated by the observation's own query (:meth:`dataset_subject_ids`).
+        For each dataset-sourced observation, resolve the subject's matching sidecar under ``dataset.bids_root`` and pair it with the payload(s) it references, so a workflow kit can bundle exactly the empirical targets its fan-out consumes and drop its dependence on a machine-specific data tree. Each file the experiment's ``cohort`` references read travels the same way (:meth:`reference_cohort_files`), with or without a dataset target beside it, filed under the member it is read for: the running subject for a reference that follows the run, the named members for a pinned one, and every member for a run with no subject, which reads the whole cohort. *entity_overrides* pins or tightens the BIDS entities used for selection (e.g. ``{'atlas': 'HCPMMP1', 'suffix': 'relmat'}``) — the exact variant is chosen when a subject directory holds several. ``suffix`` overrides the trailing filename component; every other key overrides a ``key-value`` entity. The overrides disambiguate among the variants a subject already has; the cohort itself is still enumerated by the observation's own query (:meth:`dataset_subject_ids`).
 
-        Returns ``{subject_id: [sidecar, payload, …]}`` (existing files, de-duplicated in first-seen order); empty when the experiment has neither a dataset target nor a cohort reference.
+        Returns ``{subject_id: [sidecar, payload, …]}`` (existing files, de-duplicated in first-seen order) for every subject a file is carried for, the fan-out's first; empty when the experiment has neither a dataset target nor a cohort reference. A pinned member the experiment does not fan over raises: a kit's dataset lists exactly the subjects its experiment runs, and a cohort's members have to be among a dataset's listed subjects.
         """
         targets = self.dataset_observation_targets
         if not targets and not self.referenced_cohorts():
@@ -2720,68 +2736,80 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         root = self._dataset_bids_root() if targets else None
         overrides = dict(entity_overrides or {})
         suffix_override = overrides.pop("suffix", None)
-        out: dict = {}
-        for subject in self.dataset_subject_ids():
-            picked: list = []
-            for name in targets:
+        fan_out = self.dataset_subject_ids()
+        picked: dict = {subject: [] for subject in fan_out}
+        for subject in fan_out or [None]:
+            for name in targets if subject is not None else ():
                 obs = self.observations[name]
                 ents, suffix = self._bids_query_dict(getattr(obs, "query", None))
                 ents = {**ents, **overrides}
                 if suffix_override is not None:
                     suffix = suffix_override
                 sidecar = self._find_subject_file_by_entities(root, subject, ents, suffix)
-                picked.append(sidecar)
-                picked.extend(self._sidecar_companions(sidecar))
-            for sidecar in self.reference_cohort_files(subject):
-                picked.append(sidecar)
-                picked.extend(self._sidecar_companions(sidecar))
-            seen: set = set()
-            unique: list = []
-            for f in picked:
-                if f in seen:
-                    continue
-                seen.add(f)
+                picked[subject] += [sidecar, *self._sidecar_companions(sidecar)]
+            for member, sidecars in self.reference_cohort_files(subject).items():
+                for sidecar in sidecars:
+                    picked.setdefault(member, []).extend([sidecar, *self._sidecar_companions(sidecar)])
+        outside = [f"sub-{m}" for m in picked if m not in fan_out] if fan_out else []
+        if outside:
+            raise ValueError(
+                f"experiment {getattr(self, 'id', None)!r} reads {', '.join(outside)} through a reference pinned to it and does not fan over it. "
+                "A kit's dataset lists exactly the subjects its experiment runs, and a cohort's members have to be among them, so this kit cannot declare the pinned member."
+            )
+        out: dict = {}
+        for subject, files in picked.items():
+            unique = list(dict.fromkeys(files))
+            for f in unique:
                 if not f.exists():
                     # A referenced payload absent from the tree would bundle a sidecar without its data — surface it now, not as a load failure on a node.
                     raise FileNotFoundError(
                         f"sub-{subject}: dataset target references {f.name}, absent under "
                         f"{f.parent} — the source tree is incomplete."
                     )
-                unique.append(f)
-            out[subject] = unique
+            if unique:
+                out[subject] = unique
         return out
 
-    def reference_cohort_files(self, subject) -> list:
-        """The sidecars the experiment's ``cohort`` references (:meth:`declared_references`) read for *subject*, one per distinct file, each found under its cohort's dataset by the reference's ``query``."""
+    def reference_cohort_files(self, subject=None) -> dict:
+        """``{member: [sidecar, …]}``: the files the experiment's ``cohort`` references (:meth:`declared_references`) read in a run of *subject*, one per distinct file, each found under its cohort's dataset by the reference's ``query`` and filed under the member it is read for (:func:`tvbo.data.cohort.members_read`)."""
         context = self._reference_context()
-        files: list = []
+        files: dict = {}
         for ref in self.declared_references():
             if not getattr(ref, "cohort", None):
                 continue
             dataset, _ = _cohort.find_cohort(context["datasets"], ref.cohort)
             root = _cohort.dataset_root(dataset, context["source_dir"])
-            path = _cohort.subject_file(root, subject, *_cohort.query_entities(getattr(ref, "query", None)))
-            if path not in files:
-                files.append(path)
+            entities = _cohort.query_entities(getattr(ref, "query", None))
+            for member in _cohort.members_read(ref, context["datasets"], subject)[0]:
+                path = _cohort.subject_file(root, member, *entities)
+                held = files.setdefault(member, [])
+                if path not in held:
+                    held.append(path)
         return files
 
     def bundled_cohorts(self) -> list:
         """The cohorts the experiment's references name, as the experiment's own dataset declares them in a kit that bundles their members' files.
 
-        A kit carries no study, so each cohort moves into the dataset the frozen experiment keeps, holding only the members the fan-out runs (:meth:`subject_selection`), since only their files travel. Its description records how many members the study's cohort has. Empty for an experiment that reads no cohort.
+        A kit carries no study, so each cohort moves into the dataset the frozen experiment keeps, holding only the members the kit's runs read (:func:`tvbo.data.cohort.members_read`, over the fan-out's subjects or the one run that has none), since only their files travel, in the order they are first read. Its description records how many members the study's cohort has. Empty for an experiment that reads no cohort.
         """
-        selection = self.subject_selection()
+        datasets = self._reference_datasets()
+        read: dict = {}
+        for subject in self.dataset_subject_ids() or [None]:
+            for ref in self.declared_references():
+                if getattr(ref, "cohort", None):
+                    read.setdefault(str(ref.cohort), {}).update(dict.fromkeys(_cohort.members_read(ref, datasets, subject)[0]))
         cohorts = []
-        for cohort_id, n_members in selection["cohorts"].items():
-            _, declared = _cohort.find_cohort(self._reference_datasets(), cohort_id)
-            note = f"Bundled into this kit: the {len(selection['subjects'])} of its {n_members} members the experiment runs."
+        for cohort_id, members in read.items():
+            dataset, declared = _cohort.find_cohort(datasets, cohort_id)
+            n_members = len(_cohort.cohort_members(dataset, declared))
+            note = f"Bundled into this kit: the {len(members)} of its {n_members} members the experiment reads."
             description = getattr(declared, "description", None)
             cohorts.append(
                 tvbo_datamodel.Cohort(
                     cohort_id=cohort_id,
                     label=getattr(declared, "label", None),
                     description=f"{description} {note}" if description else note,
-                    members=list(selection["subjects"]),
+                    members=list(members),
                 )
             )
         return cohorts

@@ -1939,6 +1939,11 @@ classes:
                 inlined: true
                 description: >-
                     Which backend renders this analysis, and at what precision / accelerator / worker count — the same declaration a ``SimulationExperiment`` carries, so an analysis is not tied to one engine. Unset means the study's default.
+            persist:
+                range: boolean
+                ifabsent: "true"
+                description: >-
+                    Whether the result is kept as a container under the study. ``false`` declares a TRANSIENT analysis: it still runs in dependency order and its outputs feed every analysis that reads it in the same run, but they are written to a temporary directory outside the study for the length of the process, and no container, sidecar or provenance record of them is left behind. It is the form for an intermediate table whose rows are individual-level data (one row per subject of a cohort) that a study must not keep on disk, where only the reductions downstream are results. A transient analysis is re-run whenever a run needs it, counts as neither missing nor stale, and is read only by the analyses and experiments of the same run: a figure, a report or a kit, which read containers, are refused it by name.
             dims:
                 range: string
                 multivalued: true

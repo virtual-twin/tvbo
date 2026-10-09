@@ -46,15 +46,18 @@ def test_a_kits_launcher_passes_the_kits_results_tree(tmp_path: Path, engine, ar
 
 @pytest.mark.parametrize(
     ("root", "passed"),
-    [("", "--results-root ${baseDir}/" + KIT_ROOT), ("/study/derivatives/tvbo", "--results-root /study/derivatives/tvbo")],
+    [
+        ("", '--results-root "${projectDir}"/' + KIT_ROOT),
+        ("/study/derivatives/tvbo", "--results-root /study/derivatives/tvbo"),
+    ],
 )
 def test_a_nextflow_task_reads_relative_to_the_pipeline_and_not_to_its_work_directory(root, passed):
-    """A task runs in a work directory of its own, so a kit-relative root is spelled from ``baseDir``; an absolute one is passed as it is."""
+    """A task runs in a work directory of its own, so a kit-relative root is spelled from ``projectDir``; an absolute one is passed as it is."""
     exp = SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization")
     planned = _workflow.plan(study_key="s", experiment=exp, backend="jax", engine="nextflow")
     planned.reference_root = root or planned.reference_root
     nf = _render_template("nextflow/main.nf.mako", plan=planned, block={}, script_relpath=None)
-    assert passed + " \\" in nf
+    assert passed + " \\\\\n" in nf
 
 
 @pytest.mark.parametrize(

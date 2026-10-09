@@ -589,6 +589,7 @@ Everything in this section is generated from `schema/study_layout.yaml` and from
 | `_dataset` | one `Dataset` |
 | `_dataref` | one `DataRef` |
 | `_theme` | one `Theme` |
+| `_function` | one `Function` |
 
 <!-- END SPEC SUFFIXES -->
 

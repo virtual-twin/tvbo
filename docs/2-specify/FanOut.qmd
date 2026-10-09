@@ -91,6 +91,8 @@ tvbo workflow submit kit-cohort --array
 
 A per-subject fit that peaks near 10 GB and spends most of its time in launch overhead belongs on `fan_out` across CPU nodes, not vectorized onto one accelerator. The reverse is true for a short forward simulation over a few dozen subjects.
 
+An `on_device` cohort is one job with no subject of its own, so it is refused when it reads something one subject at a time: a `used: {cohort: ...}` reference that follows the run, or the result of an experiment that writes one per subject. A reference pinned to a member with `sel: {subject: ...}` reads the same values for every subject and is accepted.
+
 ## Phenotypes
 
 A `Phenotype` is the per-subject measurement table BIDS keeps in `phenotype/` — cognitive scores, clinical scales, demographics, task outputs. It carries `subjects`, `measures`, a `cohort` and a `data_file`, so a study can group or stratify by a measured variable instead of hard-coding subject lists into the recipe.

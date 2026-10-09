@@ -123,6 +123,7 @@ def _plan_for(study, exp, parsed: dict, *, spec: str, study_key, backend: str | 
         overrides=parsed["records"],
         source_spec=spec,
         experiment_selector=selector,
+        study=study,
     )
 
 
@@ -297,9 +298,10 @@ def _freeze_spec_yaml(
     *workflow_spec* is the effective merged workflow config (study < experiment <
     ``--set``). When given, the frozen spec's ``workflow`` block is rewritten to it, so the spec records exactly what ran and re-emits identically without the flags.
 
-    *dataset_bids_root* rewrites the frozen ``dataset.bids_root`` to the kit's bundled tree (a path relative to *spec_dir*, see :func:`_bundle_dataset`) instead of the author's machine-specific path, and the frozen dataset then lists exactly the subjects the experiment fans over, since that tree may also hold other experiments' subjects.
+    *dataset_bids_root* rewrites the frozen ``dataset.bids_root`` to the kit's bundled tree (a path relative to *spec_dir*, see :func:`_bundle_dataset`) instead of the author's machine-specific path, and the frozen dataset then lists exactly the subjects the experiment fans over, since that tree may also hold other experiments' subjects. An experiment with no dataset of its own, which reads a cohort one of its study's datasets declares, is frozen with one that holds that tree and the cohorts (:func:`_kit_dataset_id`).
     """
     from tvbo.classes.network import Network
+    from tvbo.datamodel.schema import Dataset
     from tvbo.utils import keyed_items
 
     net = getattr(experiment, "network", None)
@@ -307,7 +309,10 @@ def _freeze_spec_yaml(
 
     original_net = getattr(experiment, "network", None)
     original_wf = getattr(experiment, "workflow", None)
-    ds = getattr(experiment, "dataset", None)
+    own_ds = getattr(experiment, "dataset", None)
+    ds = own_ds
+    if own_ds is None and dataset_bids_root is not None:
+        ds = Dataset(dataset_id=_kit_dataset_id(experiment))
     original_ds_root = getattr(ds, "bids_root", None) if ds is not None else None
     original_cohorts = getattr(ds, "cohorts", None) if ds is not None else None
     original_subjects = getattr(ds, "subjects", None) if ds is not None else None
@@ -318,6 +323,8 @@ def _freeze_spec_yaml(
     restore_ds: list[tuple[object, str]] = []
     try:
         if rebundle:
+            if own_ds is None:
+                experiment.dataset = ds
             ds.bids_root = dataset_bids_root
             ds.subjects = _fan_out_subjects(original_subjects, fan_out)
             if bundled:
@@ -354,18 +361,29 @@ def _freeze_spec_yaml(
             ds.bids_root = original_ds_root
             ds.cohorts = original_cohorts
             ds.subjects = original_subjects
+            if own_ds is None:
+                experiment.dataset = None
+
+
+def _kit_dataset_id(experiment) -> str:
+    """The identifier a kit files *experiment*'s bundle under, ``data/<id>/``: its own dataset's, else that of the dataset declaring the first cohort it reads, since an experiment may read a cohort of its study's datasets and have none of its own."""
+    own = getattr(getattr(experiment, "dataset", None), "dataset_id", None)
+    if own:
+        return str(own)
+    cohorts = getattr(experiment, "referenced_cohorts", list)()
+    if cohorts:
+        from tvbo.data.cohort import _slot, find_cohort
+
+        return str(_slot(find_cohort(experiment._reference_datasets(), cohorts[0])[0], "dataset_id") or "dataset")
+    return "dataset"
 
 
 def _fan_out_subjects(listed, fan_out: list[str]) -> dict:
     """The dataset's own entries for the subjects in *fan_out*, keyed by subject id in fan-out order; a subject the dataset does not list (one found by discovery) gets a bare ``Subject``."""
-    from tvbo.data.cohort import _slot
+    from tvbo.data.cohort import subject_entries
     from tvbo.datamodel.schema import Subject
-    from tvbo.utils import keyed_items
 
-    entries = {
-        str(s if isinstance(s, str) else _slot(s, "subject_id", key)).removeprefix("sub-"): s
-        for key, s in keyed_items(listed, "subjects")
-    }
+    entries = subject_entries(listed)
     return {sid: entries.get(sid) or Subject(subject_id=sid) for sid in fan_out}
 
 
@@ -506,7 +524,7 @@ def _bundle_dataset(
 
     *written* is the emission's record of the files it has placed (:func:`_copy_into_bundle`), shared by every experiment frozen into one kit; a call given none is an emission of its own.
 
-    A kit carries its data: each fan-out subject's empirical targets and the cohort layers its network reads per subject (:meth:`SimulationExperiment.dataset_bundle_files`, with *select* pinning the variant), so it runs on a host that has never seen the author's data tree. They land in ``<kit>/data/<dataset_id>/sub-<id>/``, one tree per dataset that every experiment of the kit reading that dataset shares, and the frozen spec's ``dataset.bids_root`` points there. Returns None for an experiment that reads no dataset file.
+    A kit carries its data: each fan-out subject's empirical targets and the file of every cohort member a reference of the experiment reads (:meth:`SimulationExperiment.dataset_bundle_files`, with *select* pinning the variant), so it runs on a host that has never seen the author's data tree. They land in ``<kit>/data/<dataset_id>/sub-<id>/`` (:func:`_kit_dataset_id`), one tree per dataset that every experiment of the kit reading that dataset shares, and the frozen spec's ``dataset.bids_root`` points there. Returns None for an experiment that reads no dataset file.
 
     A file that cannot be resolved (a missing file, an over-tight ``--bundle-select``) is a hard error: keeping the machine-specific root would ship a kit that fails on every node.
     """
@@ -518,8 +536,8 @@ def _bundle_dataset(
         _common.die(f"bundling the dataset of experiment {getattr(experiment, 'id', None)!r}: {exc}")
     if not manifest:
         return None
-    dataset_id = getattr(getattr(experiment, "dataset", None), "dataset_id", None) or "dataset"
-    dest_dir = kit_dir / "data" / "".join(c if (c.isalnum() or c in ".-_") else "_" for c in str(dataset_id))
+    dataset_id = _kit_dataset_id(experiment)
+    dest_dir = kit_dir / "data" / "".join(c if (c.isalnum() or c in ".-_") else "_" for c in dataset_id)
     written = set() if written is None else written
     n_files = n_bytes = n_held = n_refreshed = 0
     for subject, files in manifest.items():
@@ -583,7 +601,7 @@ def _stage_reference_containers(
         if missing:
             _common.die(
                 f"experiment {exp_id!r} reads analysis {name!r}, whose container is not under "
-                f"{source_root} ({', '.join(missing)} missing). Run it (`tvbo run <study> --analysis {name}`) before freezing the kit."
+                f"{source_root} ({', '.join(missing)} missing). Run it (`tvbo run <study> --analysis {name}`) before freezing the kit; an analysis declared `persist: false` keeps no container and cannot be read by a kit's experiment."
             )
         staged = analysis_container_path(results_dir, name)
         files += [(container, staged), (sidecar_path(container), sidecar_path(staged))]
@@ -621,7 +639,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
     Layout::
 
         out_dir/
-          <artefact>            # Snakefile / run.sbatch / main.nf
+          <artefact>            # Snakefile / run.sbatch / main.nf (with nextflow.config)
           scripts/<exp>.<ext>   # frozen backend code from experiment.render(backend)
           spec/<exp>.yaml       # frozen YAML snapshot of the experiment
           data/<dataset_id>/    # the dataset files the experiment reads (see _bundle_dataset)
@@ -644,6 +662,10 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
             f"vectorizes, so a non-jittable per-cell observation (e.g. a host wave metric) traces "
             f"inside the vmap and crashes. Emit with `tvbo workflow snakemake` (one --pin per cell)."
         )
+
+    if engine == "nextflow":
+        _refuse_unrendered_nextflow_slots(plan.engine_block)
+    _refuse_network_references(experiment)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "scripts").mkdir(exist_ok=True)
@@ -684,6 +706,13 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
     artefact.write_text(text, encoding="utf-8")
     _common.info(f"wrote {artefact.relative_to(out_dir)}")
 
+    if engine == "nextflow":
+        config = out_dir / "nextflow.config"
+        config.write_text(
+            _render_template("nextflow/nextflow.config.mako", plan=plan, block=plan.engine_block), encoding="utf-8"
+        )
+        _common.info(f"wrote {config.relative_to(out_dir)}")
+
     # A single-task array writes the canonical result directly, so it needs no gather job.
     if engine == "slurm" and plan.n_array_tasks > 1:
         finalize = out_dir / "finalize.sbatch"
@@ -703,6 +732,43 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
         spec_layout=spec_relpath or f"spec/{plan.experiment_key}.yaml",
     )
     return out_dir
+
+
+_NEXTFLOW_SLOTS = ("executor", "queue", "options", "env")
+"""The engine-block slots the Nextflow emitter writes: two into nextflow.config by name, `options` as process directives, `env` as exports in the task script."""
+
+
+def _refuse_unrendered_nextflow_slots(block: dict) -> None:
+    """Stop a Nextflow kit whose engine block sets a slot the emitter writes nowhere, naming it and the slot that takes its place."""
+    unrendered = sorted(k for k, v in (block or {}).items() if k not in _NEXTFLOW_SLOTS and v not in (None, "", [], {}))
+    if unrendered:
+        _common.die(
+            f"workflow.nextflow sets {', '.join(unrendered)}, which the Nextflow emitter writes nowhere, so the tasks would run without it. "
+            "State it as a process directive through `options`, e.g. `options: [{name: memory, value: '16 GB'}]`, `{name: time, value: '2h'}`, "
+            "`{name: clusterOptions, value: '--account=...'}` or `{name: beforeScript, value: 'module load ...'}`."
+        )
+
+
+def _refuse_network_references(experiment) -> None:
+    """Stop a kit whose experiment reads an array out of a network file a reference names by ``iri``.
+
+    A kit carries the files of the experiment's dataset and the containers of the analyses and experiments it reads; a network file named by a reference is neither, so the run would fail on the node looking for it. A curated network (``tvbo:<id>``) is installed with the package on the node and passes.
+    """
+    import tvbo
+    from tvbo.data import dataref
+
+    package = Path(tvbo.__file__).resolve().parent
+    source_dir = experiment._reference_context().get("source_dir")
+    named = []
+    for ref in experiment.declared_references():
+        path = dataref.names_a_network(ref, source_dir)
+        if path is not None and package not in Path(path).resolve().parents:
+            named.append(ref)
+    if named:
+        _common.die(
+            f"Experiment {getattr(experiment, 'id', None)!r} reads {getattr(named[0], 'output', None)!r} from the network `{named[0].iri}` through a reference, and a kit does not carry a network file a reference names. "
+            "Read it in an analysis and point the experiment at that analysis: its container travels with the kit."
+        )
 
 
 def _result_stem(experiment) -> str:

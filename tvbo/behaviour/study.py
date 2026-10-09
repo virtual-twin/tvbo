@@ -265,7 +265,7 @@ class SimulationStudyBehaviour(Catalogued):
             if image.is_file():
                 try:
                     caption = compose_caption(fig, base) or None
-                except (OSError, LookupError, ValueError):  # an unreadable caption number drops the caption only
+                except (OSError, LookupError):  # a caption number whose container or output is absent drops the caption only
                     caption = None
                 drawn.append(
                     FigureImage(

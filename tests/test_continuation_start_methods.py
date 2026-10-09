@@ -122,7 +122,7 @@ def test_every_backend_reads_an_undeclared_initial_value_as_the_same_state():
 
 
 def _branch(backend, experiment):
-    return experiment.run(backend).continuations["eq"].df
+    return experiment.run(backend).continuations["eq"].branch
 
 
 BRANCH_BACKENDS = [
@@ -141,10 +141,10 @@ def test_every_start_continues_the_equilibrium_branch(backend, method, monkeypat
     pytest.importorskip("juliacall" if backend == "bifurcationkit" else "auto" if backend == "auto-07p" else "pycobi")
     monkeypatch.chdir(tmp_path)
     x0 = {"given": A, "newton": 1.5, "time_integration": 0.0}[method]
-    df = _branch(backend, _experiment(method, x0=x0))
-    assert len(df) > 10
-    assert (df["x"] - df["param"]).abs().max() < 1e-8
-    assert df["param"].min() < -1.9 and df["param"].max() > 1.9
+    branch = _branch(backend, _experiment(method, x0=x0))
+    assert branch.sizes["step"] > 10
+    assert float(abs(branch["x"] - branch["param"]).max()) < 1e-8
+    assert float(branch["param"].min()) < -1.9 and float(branch["param"].max()) > 1.9
 
 
 @pytest.mark.slow
@@ -156,5 +156,5 @@ def test_a_numcont_continuation_starts_from_none_of_the_previous_runs(monkeypatc
     pytest.importorskip("pycobi")
     monkeypatch.chdir(tmp_path)
     _branch("pyrates-bifurcation", _experiment("given"))
-    df = _branch("auto-07p", _experiment("given", extra_states=1))
-    assert (df["x"] - df["param"]).abs().max() < 1e-8
+    branch = _branch("auto-07p", _experiment("given", extra_states=1))
+    assert float(abs(branch["x"] - branch["param"]).max()) < 1e-8

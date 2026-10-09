@@ -138,7 +138,7 @@ def resolve_binding(binding: Any, results_root: Path | None, *, inv: Any = None)
         return rendered, prov
 
     root = _owning_results_root(used, results_root, inv)
-    da = resolve_dataref(used, results_root=str(root) if root else None)
+    da = resolve_dataref(used, results_root=str(root) if root else None, transient=False)
     rendered = _format(_scalar(da), fmt)
     ref = "/".join(
         p
@@ -199,10 +199,10 @@ def emit_manifest(inv: Any, results_root: Path | None, out_path: Path) -> tuple[
 # --------------------------------------------------------------------------- verify
 
 
-def _analysis_fingerprint(analysis: Any, cohorts: Any = None) -> str:
+def _analysis_fingerprint(analysis: Any, cohorts: Any = None, networks: Any = None) -> str:
     """A stable digest of the one analysis, over the fields that change its numbers.
 
-    *cohorts* (:func:`tvbo.data.analysis_io.used_cohorts`) are the cohorts it reads with their members, which change its numbers as surely as its own declaration does. An analysis that reads none digests exactly as its declaration alone.
+    *cohorts* (:func:`tvbo.data.analysis_io.used_cohorts`) are the cohorts it reads with their members, and *networks* (:func:`tvbo.data.analysis_io.network_digests`) the networks it reads a layer of, each by a digest of its declaration and its arrays. Both change its numbers as surely as its own declaration does. An analysis that reads neither digests exactly as its declaration alone.
     """
     import hashlib
     import json
@@ -220,6 +220,8 @@ def _analysis_fingerprint(analysis: Any, cohorts: Any = None) -> str:
     blob = json.dumps(plain(analysis), sort_keys=True, default=str)
     if cohorts:
         blob += json.dumps(plain(cohorts), sort_keys=True, default=str)
+    if networks:
+        blob += json.dumps(plain(networks), sort_keys=True, default=str)
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
@@ -233,11 +235,21 @@ def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Path |
     import yaml
 
     from tvbo.data import dataref as _dataref
-    from tvbo.data.analysis_io import analysis_name, container_path, study_analyses, used_cohorts
+    from tvbo.data.analysis_io import (
+        analysis_name,
+        container_path,
+        is_persisted,
+        network_digests,
+        study_analyses,
+        used_cohorts,
+    )
 
     datasets = getattr(inv, "datasets", None)
+    source_dir = Path(source_file).parent if source_file else None
     problems: list[str] = []
     for analysis in study_analyses(inv):
+        if not is_persisted(analysis):
+            continue  # a transient analysis keeps no container: it is recomputed by every run that reads it
         name = analysis_name(analysis)
         path = container_path(name, results_root)
         if not path.exists():
@@ -248,11 +260,12 @@ def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Path |
         if not recorded:
             continue
         try:
-            cohorts = used_cohorts(analysis, datasets)
-        except (LookupError, ValueError) as error:
+            cohorts = used_cohorts(analysis, datasets, source_dir)
+            networks = network_digests(analysis, source_dir)
+        except (LookupError, ValueError, OSError) as error:
             problems.append(f"{name}: {error}")
             continue
-        if recorded != _analysis_fingerprint(analysis, cohorts):
+        if recorded != _analysis_fingerprint(analysis, cohorts, networks):
             problems.append(f"{name}: analysis declaration changed since its container was written (edited but not re-run)")
     return problems
 

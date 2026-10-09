@@ -8,8 +8,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-pytest.importorskip("juliacall")
-
 from tvbo.classes.experiment import SimulationExperiment
 
 H, SETTLE, DURATION = 0.1, 0.5, 1.0
@@ -30,6 +28,7 @@ integration: {method: %(method)s, step_size: %(h)s, duration: %(duration)s, tran
 @pytest.mark.xdist_group("julia")
 @pytest.mark.parametrize("method", sorted(GROWTH))
 def test_the_declared_method_steps_the_declared_window(tmp_path, method):
+    pytest.importorskip("juliacall")
     spec = tmp_path / "decay.yaml"
     spec.write_text(_SPEC % {"method": method, "h": H, "duration": DURATION, "settle": SETTLE})
 

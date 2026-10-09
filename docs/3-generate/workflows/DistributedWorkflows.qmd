@@ -139,7 +139,7 @@ observations:
 
 An explicit `dataset.subjects` list **scopes** the fan-out — one entry for a single-subject kit, a handful for a pilot, omitted to sweep the whole cohort.
 
-The kit carries the per-subject data itself. Freezing it copies each fan-out subject's target (sidecar **+** its payload), and every file a `used: {cohort: ...}` reference of the experiment reads for that subject (a network layer, a sourced parameter, a stimulus recording, a builder argument), into `data/<dataset_id>/`, and rewrites `dataset.bids_root` to a path relative to the frozen spec, so the kit needs no upload and no mount. The selection comes **from the spec itself**: the observation's own `query` (`{atlas: HCPMMP1, desc: FCavg, suffix: relmat}` above) already names the file, so no flag is needed:
+The kit carries the per-subject data itself. Freezing it copies each fan-out subject's target (sidecar **+** its payload), and the file of every cohort member a `used: {cohort: ...}` reference of the experiment reads (a network layer, a sourced parameter, a stimulus recording, a builder argument), into `data/<dataset_id>/`: the running subject's for a reference that follows the run, the named member's for one pinned with `sel: {subject: ...}`, and every member's for a group run, which reads the whole cohort. It rewrites `dataset.bids_root` to a path relative to the frozen spec, so the kit needs no upload and no mount. The selection comes **from the spec itself**: the observation's own `query` (`{atlas: HCPMMP1, desc: FCavg, suffix: relmat}` above) already names the file, so no flag is needed:
 
 ```bash
 tvbo workflow slurm study.yaml --experiment 30 --pack -o cohort_kit

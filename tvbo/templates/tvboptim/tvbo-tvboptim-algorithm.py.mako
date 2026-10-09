@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-<%doc>TVB-Optim Algorithm Template. Context: experiment (SimulationExperiment); `stream_plan` is the experiment's streaming_post_eval_plan when the including template already holds it.</%doc>
-<%page args="stream_plan=None"/>\
+<%doc>TVB-Optim Algorithm Template. Context: experiment (SimulationExperiment); `stream_plan` is the experiment's streaming_post_eval_plan when the including template already holds it, and `own_settle` says the experiment declares a settle, which the evaluation after tuning then runs under the tuned values.</%doc>
+<%page args="stream_plan=None, own_settle=False"/>\
 <%
 from tvbo.codegen import render_expression
 from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
@@ -815,7 +815,11 @@ def run_${algo_name}(
 % endfor
     )
 
+% if own_settle:
+    # The evaluation is the experiment at the tuned values: post_state opens at the declared initial condition and post_model_fn runs the declared settle under them, where the loop's last mid-trajectory state lands a different attractor in a multistable model.
+% else:
     # Carries the tuned parameters but keeps post_state's settled initial conditions: the loop's last mid-trajectory state lands a different attractor in a multistable model.
+% endif
     if run_post_tuning:
 % if _pp_names:
         # ${', '.join(_pp_names)} fold into the integrator carry, so ${', '.join(_pp_deliverables)} come from the streamed value alone and no fit-scale trajectory is materialised.
@@ -844,17 +848,23 @@ def run_${algo_name}(
             _post_state = copy.deepcopy(post_state)
             _post_state.dynamics = state.dynamics
             _post_state.coupling = state.coupling
+% if own_settle:
+            post_tuning, _post_settle = post_model_fn(_post_state)   # the window and the settle behind it, which a kernel observation warms on as in a bare run
+        else:
+            post_tuning, _post_settle = model_fn(state), None
+% else:
             post_tuning = post_model_fn(_post_state)
         else:
             post_tuning = model_fn(state)
+% endif
 
 % if external_inputs:
         # Scores against this call's `${', '.join(external_inputs)}`, since the module-level default would score a per-subject run against the wrong target.
         post_tuning_observations = compute_all_observations(
             post_tuning, state,
-            network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}})
+            network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}}${', settle=_post_settle' if own_settle else ''})
 % else:
-        post_tuning_observations = compute_all_observations(post_tuning, state)
+        post_tuning_observations = compute_all_observations(post_tuning, state${', settle=_post_settle' if own_settle else ''})
 % endif
 % endif
     else:

@@ -897,6 +897,24 @@ classes:
       placement:
         range: AnnotationPlacement
         description: "Where the text appears: on the panel (absent, or `panel`) or in the figure's composed caption (`caption`), where the position and text style slots do not apply."
+      significance:
+        range: Significance
+        inlined: true
+        description: "Asterisks set after the text for a p-value READ from a result, as a paper prints `r=0.89***`. On the panel only: a caption states a test in words, so a `placement: caption` annotation that declares one is refused."
+
+  Significance:
+    description: "How significant a printed statistic is, as the asterisks a paper sets after it. The p-value is read from a result container and compared with every threshold in `levels`; the label gains one asterisk per threshold the p-value is below, and none when it reaches the largest."
+    attributes:
+      used:
+        range: DataRef
+        inlined: true
+        required: true
+        slot_uri: prov:used
+        description: "The p-value, a scalar in a result container (same reference form a Layer uses, and the same PROV edge)."
+      levels:
+        range: float
+        multivalued: true
+        description: "The thresholds, each strictly between 0 and 1, one asterisk apiece. Defaults to 0.05, 0.01 and 0.001, so p < 0.001 prints three."
 
   Style:
     description: "Layer/panel styling, portable intent plus a namespaced backend passthrough. Reuses Argument for the passthrough (matplotlib implicit in the MVP)."
