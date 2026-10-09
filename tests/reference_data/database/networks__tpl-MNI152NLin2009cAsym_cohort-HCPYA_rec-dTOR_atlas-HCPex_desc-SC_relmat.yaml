@@ -7,10 +7,6 @@ parameters:
     unit: mm_per_ms
 time_unit: ms
 nodes:
-- id: 0
-  label: node_0
-  record: true
-  size: 1
 - id: 1
   label: node_1
   record: true
@@ -1732,7 +1728,7 @@ edges:
   directed: false
   allow_self_connections: true
 graph_representation: auto
-number_of_nodes: 427
+number_of_nodes: 426
 parcellation:
   atlas:
     name: HCPex

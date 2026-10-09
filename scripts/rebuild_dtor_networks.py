@@ -3,7 +3,7 @@
 
 The networks were counted from a ``.tck`` of dTOR (Elias 2024, 11,820,000 streamlines) whose every point lay (+0.25, +0.25, -0.25) mm off, because the conversion from Lead-DBS's ``.trk`` read its voxel-centre coordinates as voxel corners. The replacement holds the same streamlines in the same order with the same points, minus that shift.
 
-Each network is recounted as it was first counted: ``tck2connectome`` with its default radial assignment and ``-symmetric -zero_diagonal``, mean lengths as ``-scale_length -stat_edge mean`` gives them, on the parcellation volume in ``VOLUMES``. The edges named in ``KEEP_UNASSIGNED`` were counted with ``-keep_unassigned`` as well, so their first row and column hold the streamlines with an unassigned end; HCPex's weights were counted that way and its lengths were not, so its weight matrix has one node more than its length matrix and the two are offset by that node. That assignment reads nothing of a streamline but its two endpoints, so the 12.5 GB tractogram is read once into a two-point ``.tck`` of the endpoints and the length of every streamline (the sum of its segment lengths); each volume then costs one ``tck2connectome`` pass over the endpoints, and weights and mean lengths follow from its ``-out_assignments``. Both are cached in ``--cache-dir``, so a volume shared by several networks is counted once and a second run reads no tractogram. A network the endpoints do not reproduce is counted with ``connectome_from_tractogram`` over the full tractogram instead.
+Each network is recounted as it was first counted: ``tck2connectome`` with its default radial assignment and ``-symmetric -zero_diagonal``, mean lengths as ``-scale_length -stat_edge mean`` gives them, on the parcellation volume in ``VOLUMES``. Streamlines with an end outside every parcel are left out, so weights and lengths have one row per parcel. That assignment reads nothing of a streamline but its two endpoints, so the 12.5 GB tractogram is read once into a two-point ``.tck`` of the endpoints and the length of every streamline (the sum of its segment lengths); each volume then costs one ``tck2connectome`` pass over the endpoints, and weights and mean lengths follow from its ``-out_assignments``. Both are cached in ``--cache-dir``, so a volume shared by several networks is counted once and a second run reads no tractogram. A network the endpoints do not reproduce is counted with ``connectome_from_tractogram`` over the full tractogram instead.
 
 The volumes are the ones that reproduce every stored weight matrix exactly from the shifted file; pass that file as ``--check`` to repeat that proof (weights equal, lengths equal at the stored float32) against companions that still hold the shifted counts, that is before this script has rewritten them. Every network is checked and recounted before the first one is written, so a failure leaves the database as it was. Only the edge data in each HDF5 companion changes: format, precision, attributes, node table and sidecar stay as they are.
 
@@ -49,7 +49,6 @@ VOLUMES = {
     "tpl-MNI152NLin2009cAsym_{c}_atlas-HCPex_desc-SC": SOURCE / "atlases/HCPex/HCPex.nii.gz",
     "tpl-MNI152NLin2009cAsym_{c}_atlas-Lobar_desc-SC": LOBAR,
 }
-KEEP_UNASSIGNED = {"tpl-MNI152NLin2009cAsym_{c}_atlas-HCPex_desc-SC": {"weight"}}
 SUBNETWORKS = {
     "tpl-MNI152NLin2009cAsym_{c}_atlas-Lobar8_desc-SCFC": (
         "tpl-MNI152NLin2009cAsym_{c}_atlas-Lobar_desc-SC",
@@ -136,12 +135,11 @@ def endpoints(tck, cache_dir):
     return ends_tck, lengths
 
 
-def matrices(assignments, lengths, n, keep_unassigned):
+def matrices(assignments, lengths, n):
     """Streamline-count and mean-length matrices from each streamline's node pair, as ``tck2connectome -symmetric -zero_diagonal`` forms them."""
     a, b = np.sort(assignments, axis=1).T
-    first = 0 if keep_unassigned else 1
-    keep = (a != b) & (a >= first)
-    pair = (a[keep] - first) * n + (b[keep] - first)
+    keep = (a != b) & (a >= 1)
+    pair = (a[keep] - 1) * n + (b[keep] - 1)
     counts = np.bincount(pair, minlength=n * n).reshape(n, n).astype(np.float64)
     sums = np.bincount(pair, weights=lengths[keep], minlength=n * n).reshape(n, n)
     counts, sums = counts + counts.T, sums + sums.T
@@ -149,24 +147,23 @@ def matrices(assignments, lengths, n, keep_unassigned):
 
 
 @functools.cache
-def count(tck, volume, cache_dir, keep_unassigned):
+def count(tck, volume, cache_dir):
     """The weight and mean-length matrices of `tck` on `volume` from its endpoints, counted once however many networks share the pair."""
-    flags = ["-keep_unassigned"] if keep_unassigned else []
-    cached = cache_dir / f"{file_key(tck)}_{file_key(volume)}{'_unassigned' if keep_unassigned else ''}.npz"
+    cached = cache_dir / f"{file_key(tck)}_{file_key(volume)}.npz"
     if cached.exists():
         return dict(np.load(cached))
     ends_tck, lengths = endpoints(tck, cache_dir)
     with tempfile.TemporaryDirectory(dir=cache_dir) as tmp:
         weights_csv, assignments_csv = Path(tmp) / "weights.csv", Path(tmp) / "assignments.txt"
         cmd = tck2connectome_commands(
-            ends_tck, volume, weights_csv, Path(tmp) / "unused.csv", assignments_csv, extra_args=THREADS + flags
+            ends_tck, volume, weights_csv, Path(tmp) / "unused.csv", assignments_csv, extra_args=THREADS
         )[0]
         subprocess.run(cmd, check=True)
         weights = np.atleast_2d(np.loadtxt(weights_csv, delimiter=","))
         assignments = pd.read_csv(assignments_csv, sep=" ", header=None, comment="#", dtype=np.int64).to_numpy()
     if len(assignments) != len(lengths):
         raise SystemExit(f"{volume}: {len(assignments):,} assignments for {len(lengths):,} streamlines")
-    result = matrices(assignments, lengths, len(weights), keep_unassigned)
+    result = matrices(assignments, lengths, len(weights))
     if not np.array_equal(result["weight"], weights):
         raise SystemExit(f"{volume}: the assignments do not add up to tck2connectome's own weights")
     np.savez(cached, **result)
@@ -174,16 +171,14 @@ def count(tck, volume, cache_dir, keep_unassigned):
 
 
 @functools.cache
-def count_full(tck, volume, keep_unassigned):
+def count_full(tck, volume):
     """The weight and mean-length matrices of `tck` on `volume` from every point of every streamline, as the networks were first counted."""
-    weights, lengths = connectome_from_tractogram(
-        Path(tck), volume, extra_args=THREADS + (["-keep_unassigned"] if keep_unassigned else [])
-    )
+    weights, lengths = connectome_from_tractogram(Path(tck), volume, extra_args=THREADS)
     return {"weight": weights, "length": lengths}
 
 
 def counted(stem, tck, cache_dir, full=False):
-    """The recount of the network `stem` from `tck`: its volume's count, without the unassigned node for the edges not in ``KEEP_UNASSIGNED``, or for a subnetwork its parent's restricted to its nodes."""
+    """The recount of the network `stem` from `tck`: its volume's count, or for a subnetwork its parent's restricted to its nodes."""
     if stem in SUBNETWORKS:
         parent, nodes = SUBNETWORKS[stem]
         return {k: M[np.ix_(nodes, nodes)] for k, M in counted(parent, tck, cache_dir, full).items()}
@@ -192,9 +187,7 @@ def counted(stem, tck, cache_dir, full=False):
         volume = cache_dir / "lobar_atlas.nii.gz"
         if not volume.exists():
             build_lobar_atlas(volume)
-    keep = KEEP_UNASSIGNED.get(stem, set())
-    result = count_full(tck, volume, bool(keep)) if full else count(tck, volume, cache_dir, bool(keep))
-    return {k: M if k in keep or not keep else M[1:, 1:] for k, M in result.items()}
+    return count_full(tck, volume) if full else count(tck, volume, cache_dir)
 
 
 def reproduces(again, old):
