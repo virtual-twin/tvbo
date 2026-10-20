@@ -38,8 +38,12 @@ The **one tracked pointer** to every input — **none of the data itself is in g
 
 ## Open-data gaps (if any)
 
-<Any target with no openly-available machine-readable data, such as a topology printed only as a map image. State the gap honestly and the resolution options; scope that target as `extended` or `out` in the scorecard.>
+<Any target with no openly-available machine-readable data, such as a topology printed only as a map image. State the gap honestly and the resolution options; the verdict table of the writing-reports skill gives each target that rests on it its status.>
 
 ## Processed artifacts (git-ignored, regenerable)
 
 `code/prepare_<study>.py` reads the raw source and emits the tvbo-ready `Network` plus small human-readable `.npz`/`.csv` for inspection, into a **git-ignored** location regenerable from the raw input by the steps above. These are **derived intermediates, not the source** — do not hand-edit them, and never commit them.
+
+## Personal data
+
+<If an input describes individual people: the rule the study holds that data under (the agreement, the terms of use), one table that classifies every input (what | level: per participant or aggregate | where it lives | may it be published), and one sentence on what the report shows of individual participants. A study with no such input says so in one line.>

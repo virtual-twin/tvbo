@@ -64,7 +64,7 @@ assert min(drawn) >= 6.0  # nothing is below what a reader can follow in print
 
 Two failures with two different fixes: a modal size that is not the declared one means an override you did not write, and a minimum below the floor means a crowding problem a smaller type size was hiding — spend a label budget, not a font step.
 
-**Captions are the paper's, not ours.** Write each `description:` from the published caption for that display item — its claims, panel lettering, units and stated ranges — and record deviations inside it ("on the released 100-region consensus connectome rather than the paper's AAL90", "swept to 4.5 where the paper plots to 3"). A caption drafted from our own figure drifts into describing what we happened to draw, which is how a panel comes to answer a question the paper never asked while still reading as a reproduction of it.
+**The caption is anchored to the published display item.** Write each `description:` against that item and record every deviation of ours inside it ("on the released 100-region consensus connectome rather than the paper's AAL90", "swept to 4.5 where the paper plots to 3"). **writing-reports** states the whole rule once ("Every table and every figure carries a caption").
 
 ## One rule for the study's look, stated once
 

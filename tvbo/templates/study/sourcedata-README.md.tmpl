@@ -2,7 +2,7 @@
 
 The **one tracked pointer** to every input this study does not compute — **none of the data itself is in git.** Raw inputs live in `sourcedata/`, which is git-ignored. State exactly where every input comes from, name the **true upstream source** (never a derived intermediate), give the exact fetch and regenerate steps, and mark which quantities are **sourced** and which are **synthesised**.
 
-A study that computes all of its own inputs says so here in one line and stops. That is a complete provenance record, not an empty one.
+A study that computes all of its own inputs says so here in one line, which is then the whole file. That is a complete provenance record, not an empty one.
 
 ## Obtaining the data (nothing here is in git)
 
@@ -42,3 +42,7 @@ A study that computes all of its own inputs says so here in one line and stops. 
 ## Processed artifacts (git-ignored, regenerable)
 
 `code/prepare_<study>.py` reads the raw source and emits the tvbo-ready `Network` plus small human-readable `.npz`/`.csv` for inspection, into a **git-ignored** location regenerable from the raw input by the steps above. These are **derived intermediates, not the source** — do not hand-edit them, and never commit them.
+
+## Personal data
+
+<If an input describes individual people: the rule the study holds that data under (the agreement, the terms of use), one table that classifies every input (what | level: per participant or aggregate | where it lives | may it be published), and one sentence on what the report shows of individual participants. A study with no such input says so in one line.>
