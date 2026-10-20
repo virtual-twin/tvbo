@@ -158,13 +158,16 @@ the loaded branch instead of an in-process scan.
     _branch_ic = jnp.stack([jnp.asarray(_branch_seeds[_s]) for _s in _rows], axis=1)  # (n_cells, n_states, n_nodes)
     # A bidirectional branch repeats its swept values, so the position index is what keeps the two hysteresis branches separable.
     _branch_idx = jnp.arange(_branch_p.shape[0])
-    # HPC shard: keep this array task's slice of the branch (cells j where j % N == i).
-    _shard = kwargs.get('shard')
-    if _shard is not None:
-        _si, _sN = _shard
-        _branch_p = _branch_p[_si::_sN]
-        _branch_ic = _branch_ic[_si::_sN]
-        _branch_idx = _branch_idx[_si::_sN]
+    # A shard or a `--limit` sample keeps its strided slice of the branch, counted on the branch this run read.
+    _n_cells = int(_branch_p.shape[0])
+    if kwargs.get('shard') is not None or kwargs.get('limit') is not None:
+        _cells = sweep_slice(_n_cells, kwargs.get('shard'), kwargs.get('limit'))
+        if not range(_n_cells)[_cells]:
+            logger.info(f"exploration ${expl['name']}: none of its {_n_cells} branch points falls in this task's share, so it runs none")
+            return None
+        _branch_p = _branch_p[_cells]
+        _branch_ic = _branch_ic[_cells]
+        _branch_idx = _branch_idx[_cells]
 % for a in analyses:
 ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_branch_p', '_branch_ic')}\
 % endfor
@@ -175,7 +178,8 @@ ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_branch_p', '_branch_i
         observations={${', '.join(obs_pairs)}},
         cell_coords={'branch_point': _branch_idx},
         # Declared, not inferred: `n` above is the sliced length, so a shard looks complete.
-        is_shard=_shard is not None,
+        is_shard=kwargs.get('shard') is not None or int(_branch_idx.shape[0]) < _n_cells,
+        cell_count=(int(_branch_idx.shape[0]), _n_cells),
         observable='branch', dt=${dt}, strategy='branch',
     )
 </%def>\

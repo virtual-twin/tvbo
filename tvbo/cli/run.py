@@ -81,8 +81,7 @@ def run(
         None,
         "--limit",
         min=1,
-        help="Run at most N cells of the sweep (a spread sample) — a quick look "
-        "without needing to know the grid size. Ignored when --shard is given.",
+        help="Run at most N cells of the sweep (a spread sample) — a quick look without needing to know the grid size. The sample, its analyses and its figures land in a directory of their own beside the results directory (<results>-limit-N). Ignored when --shard is given.",
     ),
     subject: str = typer.Option(
         None,
@@ -112,12 +111,7 @@ def run(
     pin: list[str] = typer.Option(
         [],
         "--pin",
-        help="Pin an exploration axis to a single value for THIS run, e.g. "
-        "--pin Kuramoto.omega_mean_hz=20 --pin network.conduction_speed=6. The workflow "
-        "fan-out emits one --pin per fanned axis per cell: it sets the axis's parameter "
-        "AND drops the axis from the sweep, so the cell is a single run at that point (its "
-        "base run — and every declared observation — computed there). The model-scope "
-        "sibling of --subject. Repeatable.",
+        help="Pin an exploration axis to a single value for THIS run, e.g. --pin Kuramoto.omega_mean_hz=20 --pin network.conduction_speed=6. The workflow fan-out emits one --pin per fanned axis per cell: it sets the axis's parameter AND drops the axis from the sweep, so the cell is a single run at that point (its base run — and every declared observation — computed there). One element of a per-node parameter: --pin 'Model.k[0]=0.9' (its declared index) or --pin 'Model.k[V1]=0.9' (a node label); the other elements keep sweeping. The model-scope sibling of --subject. Repeatable.",
     ),
     compress: bool = typer.Option(
         True,
@@ -156,6 +150,11 @@ def run(
         "figures. On by default; --no-figures skips rendering (e.g. a partial/smoke "
         "run whose panels would be placeholders). No effect on an experiment spec or "
         "a study without figures.",
+    ),
+    analyses: bool = typer.Option(
+        True,
+        "--analyses/--no-analyses",
+        help="Run a Study's `analyses:` around its experiments. On by default; --no-analyses runs only the analyses its experiments read, skips the others and the figures that read them (e.g. a --limit probe of the simulations alone), and names the analysis containers it left stale. No effect on an experiment spec.",
     ),
     skip: list[str] = typer.Option(
         [],
@@ -227,6 +226,7 @@ def run(
                 ("--save-all", save_all or None),
                 ("--no-compress", None if compress else True),
                 ("--results-root", results_root),
+                ("--no-analyses", None if analyses else True),
             )
             if v is not None
         ]
@@ -255,6 +255,8 @@ def run(
             _common.die(
                 f"--analysis runs no experiments, so {', '.join(_sim_flags)} would be ignored. Run them as a separate command."
             )
+        if not analyses:
+            _common.die("--analysis runs only the named analyses, which --no-analyses would skip; drop one of the two.")
         if kind != "study":
             _common.die(
                 f"--analysis needs a study: {spec} resolves to a {kind}, which "
@@ -281,7 +283,9 @@ def run(
     )
     with _common.fatal():
         if kind == "study":
-            _study_run.run_study(obj, spec, out_dir, options=options, experiment=experiment, figures=figures)
+            _study_run.run_study(
+                obj, spec, out_dir, options=options, experiment=experiment, figures=figures, analyses=analyses
+            )
             return
         if kind == "experiment":
             _study_run.run_experiment(obj, spec, out_dir, options=options)

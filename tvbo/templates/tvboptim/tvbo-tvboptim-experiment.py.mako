@@ -672,13 +672,7 @@ for expl in exploration_list:
     }
     # Schema: space is keyed by parameter (optional for trial-only explorations)
     axes_list = as_list(expl.space)
-    def _resolve_n(domain):
-        """Compute n from domain: prefer n, else compute from step, else default 50."""
-        if domain.n:
-            return int(domain.n)
-        if domain.step and domain.lo is not None and domain.hi is not None:
-            return int(round((float(domain.hi) - float(domain.lo)) / float(domain.step))) + 1
-        return 50
+    from tvbo.utils import range_point_count as _resolve_n
     for axis in axes_list:
         domain = axis.domain
         explored_values = axis.explored_values
@@ -946,6 +940,9 @@ for expl in exploration_list:
                 _ek = _ek if _ek is not None else _edi
                 _el_dom_map[_ek] = _ed
             for _ei in range(_n):
+                # An element with no domain of its own and no shared one is not swept: it keeps the parameter's declared value.
+                if _el_dom_map.get(_ei) is None and not explored_values and domain is None:
+                    continue
                 ax_entry = {
                     'name': pname,
                     'label': _axis_label,
@@ -1327,7 +1324,7 @@ from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis, AbstractAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
-from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, resolve_exploration_n_pmap, resolve_exploration_n_vmap, stack_grid_cells   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width and replica count; grid cells → one stacked pytree
+from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, resolve_exploration_n_pmap, resolve_exploration_n_vmap, stack_grid_cells, sweep_slice   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width and replica count; grid cells → one stacked pytree; a run's shard or sample → a slice of the sweep
 % endif
 % if _dataset_on_device:
 from tvbo.templates.tvboptim.callbacks import resolve_cohort_batch_size   # dataset.batch_size → subjects per on-device batch
@@ -3333,14 +3330,15 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     % endif
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
-    # HPC sharding (tvboptim-native): `shard=(i, N)` runs only this array task's
-    # slice of the sweep via Space's strided slice — the cells where j % N == i,
-    # still vectorised, with fewer cells → bounded memory per task. The full grid
-    # is reassembled by parameter value downstream (two-stage HPC pattern).
-    _shard = kwargs.get('shard')
-    if _shard is not None:
-        _shard_i, _shard_n = int(_shard[0]), int(_shard[1])
-        grid = grid[_shard_i::_shard_n]
+    _n_cells = len(grid)
+    # A shard or a `--limit` sample is a strided slice of the grid this script built, still vectorised, reassembled by parameter value downstream; a slice that keeps every cell leaves the grid as built.
+    _cells = sweep_slice(_n_cells, kwargs.get('shard'), kwargs.get('limit'))
+    _taken = len(range(_n_cells)[_cells])
+    if not _taken:
+        logger.info(f"exploration ${expl['name']}: none of its {_n_cells} cells falls in this task's share, so it runs none")
+        return None
+    if _taken < _n_cells:
+        grid = grid[_cells]
 % endif
 
 % if has_transient:
@@ -4058,7 +4056,8 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
         # The whole axis table: the container keeps the ARRAY-valued entries as keyed sidecars and drops the scalar ones.
         axis_points=_array_axis_points,
         # Guarded with the slicing, since an axis-less exploration is never sliced and calling it sharded would suppress the provenance sidecar.
-        is_shard=kwargs.get('shard') is not None,
+        is_shard=kwargs.get('shard') is not None or len(grid) < _n_cells,
+        cell_count=(len(grid), _n_cells),
 % endif
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
@@ -4322,10 +4321,12 @@ def run_experiment(
     if mode in ('exploration', 'all'):
         _log("STEP 2: Running explorations...")
         exploration_result = Bunch()
+        # The explorations none of whose cells fall in this shard task's share, which the result leaves out.
+        results.outside_share = []
 
         % for expl in explorations:
         _log(f"  > ${expl['name']}")
-        exploration_result.${expl['name']} = ${expl['name']}(
+        _expl = ${expl['name']}(
             state, model_fn,
             network=network,
             settle=result_transient,   # the base run's settle: the clock and channel names of every cell's own
@@ -4335,6 +4336,10 @@ def run_experiment(
             base_observations=observations,  # base-sim observations for builder-axis arguments
             **kwargs,  # Pass runtime kwargs (e.g., target data for correlation-based observables)
         )
+        if _expl is None:
+            results.outside_share.append('${expl['name']}')
+        else:
+            exploration_result.${expl['name']} = _expl
         % endfor
 
         results.explorations = exploration_result

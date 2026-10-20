@@ -6,7 +6,7 @@ Given a Study + Experiment + workflow spec + (resolved) backend, produce a :clas
 * which axes the workflow engine must fan out as wildcards / array tasks,
 * the resulting cell count, chunking, and per-cell command line.
 
-The planner is backend-aware. It consults the capability table in :mod:`tvbo.run.backends`, so the same ``study.yaml`` produces a *different* DAG when re-rendered against a different backend. `tvbo workflow` emits the plan as a Slurm, Snakemake or Nextflow kit, and `tvbo run --shard` / `--limit` read its sweep axes to slice a run in process.
+The planner is backend-aware. It consults the capability table in :mod:`tvbo.run.backends`, so the same ``study.yaml`` produces a *different* DAG when re-rendered against a different backend. `tvbo workflow` emits the plan as a Slurm, Snakemake or Nextflow kit, and `tvbo run --shard` / `--limit` read its sweep axes to decide whether the backend can slice a run in process.
 """
 
 from __future__ import annotations
@@ -108,7 +108,7 @@ class SweepAxis:
     values: tuple[float, ...]
     kind: str  # AXIS_KIND (parameters | initial_conditions | ...)
     placement: str = "auto"  # auto | vectorize | workflow
-    # A branch-restart axis (initial_state source_point='branch') whose cell count is known only at run time, from the source run's recorded branch. It fans into a fixed number of array shards (``chunk``); each task slices its share of the loaded branch. ``values`` is empty and ``n`` is unknown until the source result is read.
+    # An axis whose cells exist only at run time: a branch restart (initial_state source_point='branch') reads them from the source run's recorded branch, an axis on a per-node parameter (or swept through ``element_domains``) is expanded per node, and a ``builder`` axis is built by the backend. It splits into ``chunk`` array shards, each task slicing its share of the grid the backend builds; ``values`` is empty and ``n`` is 0.
     runtime_sized: bool = False
 
     @property
@@ -197,7 +197,7 @@ class WorkflowPlan:
         """Cells the backend runs inside one invocation: the product of the statically sized vectorised axes."""
         n = 1
         for ax in self.vectorize_axes:
-            # Runtime-sized (branch-restart) axes have an unknown cell count at plan time; they don't contribute a static factor to the vectorised total.
+            # A runtime-sized axis has no cell count at plan time, so it contributes no static factor to the vectorised total.
             if getattr(ax, "runtime_sized", False):
                 continue
             n *= ax.n
@@ -209,7 +209,7 @@ class WorkflowPlan:
         if self.workflow_axes:
             # Fanned axes → one array task per ``chunk`` workflow cells.
             return max(1, (self.n_workflow_cells + self.chunk - 1) // self.chunk)
-        # A runtime-sized (branch-restart) sweep is fanned into exactly ``chunk`` array shards: the cell count is known only when the source branch is read, so each task slices its share of the loaded branch (``_branch_p[i::N]``). No cell-count cap, because there is no static count to cap against.
+        # A runtime-sized sweep is split into exactly ``chunk`` array shards, each task slicing its share of the grid the backend builds; no cell-count cap, because there is no static count to cap against.
         if any(getattr(ax, "runtime_sized", False) for ax in self.vectorize_axes):
             return max(1, self.chunk)
         # Fully backend-vectorized sweep (no fanned axes): ``chunk`` is the number of SLURM array shards. Each task runs ``tvbo run --slurm-chunk=$i/N`` over 1/N of the sweep cells (the backend vmap/pmap-s its own share). Capped at the cell count so we never emit more tasks than there are cells.
@@ -280,7 +280,9 @@ class WorkflowPlan:
 
 
 def _axis_values(ax) -> tuple[float, ...]:
-    """Materialise an ExplorationAxis into a tuple of values."""
+    """Materialise an ExplorationAxis into a tuple of values, its point count from :func:`tvbo.utils.range_point_count` as the generated grid counts it."""
+    from tvbo.utils import range_point_count
+
     vals = list(getattr(ax, "explored_values", None) or [])
     if vals:
         return tuple(float(v) for v in vals)
@@ -289,7 +291,7 @@ def _axis_values(ax) -> tuple[float, ...]:
         return ()
     lo = float(getattr(dom, "lo", 0.0))
     hi = float(getattr(dom, "hi", 0.0))
-    n = int(getattr(dom, "n", 1) or 1)
+    n = range_point_count(dom)
     log = bool(getattr(dom, "log_scale", False))
     if n <= 1:
         return (lo,)
@@ -309,6 +311,45 @@ def experiment_key(exp: Any) -> str:
 def _short_name(parameter: str) -> str:
     """Pick a wildcard-friendly short name from a dotted parameter path."""
     return parameter.rsplit(".", 1)[-1] or parameter.replace(".", "_")
+
+
+def dynamics_parameter(experiment, path: str) -> tuple[str, Any]:
+    """Where the parameter reference *path* binds, as :func:`tvbo.templates.tvboptim.utils.parameter_keypath` resolves it, and the dynamics parameter it names when that is the dynamics (``None`` when it binds a coupling, an external input or a reserved scope, or the model declares no parameter of that name)."""
+    from tvbo.templates.tvboptim.utils import active_stimulus_events, parameter_keypath
+    from tvbo.utils import network_couplings
+
+    binds = parameter_keypath(
+        path,
+        couplings=network_couplings(getattr(experiment, "network", None)),
+        external={str(event.name) for event in active_stimulus_events(experiment)},
+    )
+    leaf = path.rsplit(".", 1)[-1]
+    params = getattr(getattr(experiment, "dynamics", None), "parameters", None) or {}
+    return binds, params.get(leaf) if binds == f"dynamics.{leaf}" else None
+
+
+def is_per_node(param, leaf: str, nodes: list) -> bool:
+    """Whether the dynamics parameter *param* holds one value per node: its shape spans ``n_nodes``, or a node declares it at a value of its own, which the generated code promotes to a per-node array; a node that names it without a value keeps the shared one."""
+    from tvbo.adapters.base import BaseAdapter
+
+    if "n_nodes" in str(getattr(param, "shape", None) or ""):
+        return True
+    shared = getattr(param, "value", None)
+    declared = (BaseAdapter.parse_node_parameters(nd).get(leaf) for nd in nodes)
+    return any(value is not None and value != shared for value in declared)
+
+
+def _expands_per_node(experiment, path: str) -> bool:
+    """Whether an exploration axis on *path* sweeps a per-node dynamics parameter, which the generated grid expands into an axis per node.
+
+    A reference in a reserved scope that tvboptim's keypath resolver cannot bind (a Brian2 projection's ``network.edges.<label>.weight``, a network parameter only `--pin` writes) names no dynamics parameter, so it is not one; the backend that renders the axis decides whether it can sweep it.
+    """
+    try:
+        _binds, param = dynamics_parameter(experiment, path)
+    except ValueError:
+        return False
+    nodes = list(getattr(getattr(experiment, "network", None), "nodes", None) or [])
+    return param is not None and is_per_node(param, path.rsplit(".", 1)[-1], nodes)
 
 
 def extract_axes(experiment) -> list[SweepAxis]:
@@ -344,13 +385,19 @@ def extract_axes(experiment) -> list[SweepAxis]:
                 i += 1
             seen.add(uniq)
             _branch_axis = _is_branch and getattr(ax, "domain", None) is None and not getattr(ax, "explored_values", None)
+            runtime_sized = (
+                _branch_axis
+                or bool(getattr(ax, "element_domains", None))
+                or getattr(ax, "builder", None) is not None
+                or _expands_per_node(experiment, param)
+            )
             out.append(
                 SweepAxis(
                     name=uniq,
                     parameter=param,
-                    values=() if _branch_axis else _axis_values(ax),
+                    values=() if runtime_sized else _axis_values(ax),
                     kind=axis_kind_of(param),
-                    runtime_sized=_branch_axis,
+                    runtime_sized=runtime_sized,
                 )
             )
     return out
@@ -772,6 +819,12 @@ def plan(
             workflow.append(SweepAxis(**{**ax.__dict__, "placement": "workflow"}))
         else:
             vectorize.append(SweepAxis(**{**ax.__dict__, "placement": "vectorize"}))
+
+    unsized = sorted(ax.parameter for ax in workflow if ax.runtime_sized)
+    if unsized:
+        raise ValueError(
+            f"Axis {', '.join(unsized)} has cells that exist only at run time (a branch restart, a per-node parameter, `element_domains` or a `builder`), so the workflow engine has no values to fan it over. Vectorise it (`distribute.vectorize`) on a backend that can, such as tvboptim, which splits it into `chunk` array shards."
+        )
 
     if on_device and workflow:
         _fanned = ", ".join(sorted(ax.parameter for ax in workflow))

@@ -13,7 +13,10 @@ tvbo run SPEC
     [--experiment NAME]
     [--duration MS]
     [--set PATH=VALUE ...]
+    [--pin PARAMETER=VALUE ...]
     [--limit N]
+    [--no-analyses]
+    [--no-figures]
     [--engine, -e {local|slurm|snakemake|nextflow}]
     [--container IMAGE]
     [--shard i/N]
@@ -28,7 +31,10 @@ tvbo run SPEC
 | `--experiment` | _(all)_ | If SPEC is a Study, run only this experiment (by `key`/`name`/`label`/numeric `id`). A comma-list (`2,3,20,30`) runs several. |
 | `--duration` | _(spec)_ | Override `integration.duration` in milliseconds (shorthand for `--set integration.duration=…`). |
 | `--set` | _(none, repeatable)_ | Override any experiment metadata field for this run only — the recipe file is not touched. Dotted `PATH` traverses attributes and keyed collections; `VALUE` is coerced (bool/int/float/JSON). See [Overriding metadata](#overriding-metadata-for-a-run---set). |
-| `--limit` | _(none)_ | Run at most `N` cells of the sweep (a spread sample) without needing to know the grid size. Ignored when `--shard` is given. |
+| `--limit` | _(none)_ | Run at most `N` cells of the sweep, an evenly strided sample, without needing to know the grid size. The backend counts the grid it builds, so an axis swept per element or sized by a `builder` at run time is counted as what it runs, and the log says how many of how many cells ran. The sample, the study's analyses drawn from it and its figures land in a directory of their own beside the results directory, `derivatives/tvbo-limit-N/` with the figures in its `figures/`, so a sample never mixes with a whole run; `--no-analyses` and `--no-figures` skip those. The sample reads the experiments and analyses it runs from that directory and every other one from the results directory. A backend that cannot slice a sweep (TVB) refuses it: TVB runs a sweep only through a workflow kit. Ignored when `--shard` is given. |
+| `--pin` | _(none, repeatable)_ | `PARAMETER=VALUE` — pin an exploration axis to one value for this run: the parameter is set and the axis dropped from the sweep. `Model.k[0]=0.9` (the index an `element_domains` entry declares) or `Model.k[V1]=0.9` (a node label, alias-aware) pins one element of a per-node parameter while its other elements keep sweeping. |
+| `--no-analyses` | _(analyses run)_ | If SPEC is a Study, run only the analyses its experiments read; skip the others and the figures that read them, and name the analysis containers left stale. |
+| `--no-figures` | _(figures render)_ | If SPEC is a Study, skip rendering its declared `figures:` after the run. |
 | `--engine, -e` | `local` | `local` runs in-process; the others re-emit via `tvbo workflow ENGINE` and submit. |
 | `--container` | _(none)_ | OCI image to re-exec inside (Singularity preferred, then Docker). |
 | `--shard` | _(none)_ | `i/N` — shard the sweep grid: cell `j` runs iff `j % N == i`. (`--slurm-chunk` is a deprecated alias.) |

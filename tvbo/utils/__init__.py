@@ -34,6 +34,19 @@ def domain_enforcement(domain) -> str:
     return str(enf).rsplit(".", 1)[-1]
 
 
+def range_point_count(domain) -> int:
+    """How many points a swept `Range` spans: its declared `n`, else the points `step` lays from `lo` to `hi` inclusive, else 50.
+
+    The one count every reader of an exploration axis uses, so the generated grid and the run options that count its cells (`--limit`, `--shard`, a workflow kit's fan-out) never disagree on a domain that declares neither `n` nor `step`.
+    """
+    if getattr(domain, "n", None):
+        return int(domain.n)
+    step, lo, hi = getattr(domain, "step", None), getattr(domain, "lo", None), getattr(domain, "hi", None)
+    if step and lo is not None and hi is not None:
+        return int(round((float(hi) - float(lo)) / float(step))) + 1
+    return 50
+
+
 def initial_value(sv, default=0.1) -> float:
     """The initial value a state variable declares, else *default*.
 
@@ -311,8 +324,7 @@ def noise_sigma(noise):
     The one reader for every spelling the schema allows, so a recipe cannot mean a different amplitude on different backends. Each spelling has exactly one meaning:
 
     * ``parameters: {sigma: {value: s}}`` → ``s``. Wins whenever present.
-    * ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. The dispersion spelling
-      (``D = σ²/2``) — what a TVB import writes.
+    * ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. The dispersion spelling (``D = σ²/2``) — what a TVB import writes.
 
     Returns ``None`` when the noise declares no amplitude at all (and for a missing ``Noise``), leaving "absent" distinguishable from an explicit zero.
     """

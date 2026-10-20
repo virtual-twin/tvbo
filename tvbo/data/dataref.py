@@ -10,7 +10,10 @@ Every selection is keyed by label, never positional.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
+from typing import NamedTuple
 
 # --------------------------------------------------------------------------- WHERE
 
@@ -63,6 +66,46 @@ def _source_id_int(value) -> int:
     return int(eid)
 
 
+class _Sample(NamedTuple):
+    """A ``--limit`` sample run's reading rule: its own directory, the whole run's results directory, and what the sample run produces."""
+
+    own: Path
+    whole: Path
+    experiments: frozenset[str]
+    analyses: frozenset[str]
+
+
+_SAMPLE: ContextVar[_Sample | None] = ContextVar("sample", default=None)
+
+
+@contextmanager
+def reading_sample(own: Path, whole: Path, *, experiments: Iterable, analyses: Iterable[str]):
+    """Read a ``--limit`` sample's inputs by what the sample run produces, for the duration of the block.
+
+    A lookup in the sample's own directory *own* for one of *experiments* (ids in any spelling :func:`experiment_id` reads) or *analyses* (names) reads it there, since this run writes it; any other experiment or analysis is read from the whole run's results directory *whole*. Decided by what the run produces, never by what is on disk, so an older sample left in *own* is never read in place of the whole run.
+    """
+    produced = _Sample(
+        Path(own).resolve(),
+        Path(whole).resolve(),
+        frozenset(i for i in map(experiment_id, experiments) if i is not None),
+        frozenset(map(str, analyses)),
+    )
+    token = _SAMPLE.set(produced)
+    try:
+        yield
+    finally:
+        _SAMPLE.reset(token)
+
+
+def _read_root(results_root, *, experiment=None, analysis=None):
+    """The directory a lookup in *results_root* reads *experiment* or *analysis* from: *results_root* itself, except inside :func:`reading_sample` for an input the sample run does not produce, which is read from the whole run."""
+    sample = _SAMPLE.get()
+    if sample is None or results_root is None or Path(results_root).resolve() != sample.own:
+        return results_root
+    produced = experiment_id(experiment) in sample.experiments if experiment is not None else str(analysis) in sample.analyses
+    return results_root if produced else sample.whole
+
+
 class AmbiguousContainerError(LookupError):
     """Several saved runs of one experiment answer a container lookup, so none can be chosen without guessing which run a reference meant."""
 
@@ -83,6 +126,7 @@ def _exp_candidates(results_root, source_id) -> tuple[list[Path], bool]:
     """
     import re
 
+    results_root = _read_root(results_root, experiment=source_id)
     root = Path(results_root) if results_root else Path.cwd()
     from tvbo.utils.study_layout import is_network_companion
 
@@ -119,20 +163,17 @@ def locate_exp_container(results_root, source_id, subject=None) -> Path:
 
     A per-subject cohort is answered per subject. With ``subject`` given, the shard carrying that ``sub-`` entity is returned, and its absence raises: a per-subject run reading another subject's shard is a plausible wrong answer that nothing downstream can detect. Without ``subject`` the first shard is returned, the whole-cohort read being :func:`cohort_shards`.
     """
-    return _pick(*_exp_candidates(results_root, source_id), results_root, source_id, subject)
+    return _pick(*_exp_candidates(results_root, source_id), source_id, subject)
 
 
-def _pick(cands, is_cohort, results_root, source_id, subject=None) -> Path:
-    """The container a reader with *subject* takes out of :func:`_exp_candidates`' answer, by the rules :func:`locate_exp_container` states."""
+def _pick(cands, is_cohort, source_id, subject=None) -> Path:
+    """The container a reader with *subject* takes out of :func:`_exp_candidates`' answer, by the rules :func:`locate_exp_container` states; a cohort's shards share one directory, which a missing shard's refusal names."""
     if subject is not None and is_cohort:
         wanted = f"sub-{str(subject).removeprefix('sub-')}_"
         own = [p for p in cands if p.name.startswith(wanted)]
         if not own:
             raise FileNotFoundError(
-                f"cross-experiment sourcing: experiment {source_id} is a per-subject cohort "
-                f"({len(cands)} shard(s) under {Path(results_root) if results_root else Path.cwd()}) "
-                f"with no shard for subject {str(subject)!r}. Run experiment {source_id} for this "
-                f"subject first; reading another subject's shard would silently mix subjects."
+                f"cross-experiment sourcing: experiment {source_id} is a per-subject cohort ({len(cands)} shard(s) under {cands[0].parent}) with no shard for subject {str(subject)!r}. Run experiment {source_id} for this subject first; reading another subject's shard would silently mix subjects."
             )
         return own[0]
     return cands[0]
@@ -247,6 +288,7 @@ def locate_analysis_container(results_root, name, *, transient: bool = False) ->
 
     :func:`analysis_container_path` is the one place the convention is spelled, so the writer (:mod:`tvbo.data.analysis_io`), the run-time resolver and the figure adapter cannot disagree about where an analysis result lives, and a container left by the pre-record layout still resolves until the analysis is next written. With ``transient=True``, the call is the in-process ``used:`` resolver's and a transient analysis of this study computed earlier in this process (:func:`register_transient`) resolves first, from outside the study; a figure, report, kit or study reader leaves it unset and is refused such an analysis by name, since it keeps no container. Raises when the container has not been produced, with the command that produces it.
     """
+    results_root = _read_root(results_root, analysis=name)
     registered = _TRANSIENT.get((_root_key(results_root), str(name)))
     if registered is not None:
         if transient and registered.is_file():
@@ -382,7 +424,7 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None, subjec
 def _container_at(where, subject=None, candidates=None, *, transient: bool = False) -> Path:
     """The container a resolved WHERE (:func:`_where`) names; *candidates* reuses an experiment's :func:`_exp_candidates` answer already in hand, and *transient* lets an analysis resolve to a transient container of this process (:func:`locate_analysis_container`)."""
     if where[0] == "exp":
-        return _pick(*(candidates or _exp_candidates(where[1], where[2])), where[1], where[2], subject)
+        return _pick(*(candidates or _exp_candidates(where[1], where[2])), where[2], subject)
     if where[0] == "ana":
         return locate_analysis_container(where[1], where[2], transient=transient)
     return where[1]

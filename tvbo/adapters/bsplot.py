@@ -10,6 +10,8 @@ from __future__ import annotations
 import functools
 import itertools
 import re
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 
 from tvbo.adapters.base import dense_matrix
@@ -2019,9 +2021,22 @@ class _UsedOnly:
         self.used = used
 
 
+_RESULTS_DIR: ContextVar[Path | None] = ContextVar("results_dir", default=None)
+
+
+@contextmanager
+def reading_results(results_dir: Path | None):
+    """Resolve the containers a figure reads from its own study in *results_dir* for the duration of the block, in place of that study's results directory; ``None`` keeps the study's own. A ``--limit`` sample's figures read the sample this way."""
+    token = _RESULTS_DIR.set(results_dir)
+    try:
+        yield
+    finally:
+        _RESULTS_DIR.reset(token)
+
+
 @functools.cache
-def _container_path(iri, base_dir: Path) -> str:
-    """Resolve a ``used`` edge's IRI/key to its result container under ``base_dir``.
+def _container_path(iri, base_dir: Path, results_dir: Path | None = None) -> str:
+    """Resolve a ``used`` edge's IRI/key to its result container under ``base_dir``, or under *results_dir* when given, which stands in for the study's own results directory (the one :func:`reading_results` names while a figure reads a sample).
 
     One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. Both are found by :mod:`tvbo.data.dataref` — :func:`~tvbo.data.dataref.locate_exp_container` for a run, :func:`~tvbo.data.dataref.locate_analysis_container` for an analysis — the lookups every cross-experiment reader shares, so a figure cannot read a different container than a warm start or a report does.
 
@@ -2041,7 +2056,7 @@ def _container_path(iri, base_dir: Path) -> str:
     if owner:
         base_dir = sibling_study_root(owner, base_dir) or base_dir
     key = re.split(r"[:/#]", str(iri))[-1]  # last IRI segment (e.g. "exp-3" or "fig3")
-    results = study_path("results", root=base_dir)
+    results = (None if owner else results_dir) or study_path("results", root=base_dir)
     # Only an experiment reference (exp-N / expN / bare N) names a run. A digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be misread as exp-1 — the strict matcher DataRef.experiment_id already uses decides.
     eid = _experiment_id(iri)
     if not eid and not entity_value(key):
@@ -2147,7 +2162,7 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None):
     if _fans_by_color or _shades_points:
         kwargs.pop("color", None)  # a per-entry/per-point colour and a layer-wide one collide
     return {
-        "container": _container_path(_used_ref(used), base_dir),
+        "container": _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get()),
         "output": used.output,
         "mark": mark,
         "x": getattr(enc, "x", None),

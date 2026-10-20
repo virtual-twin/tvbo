@@ -236,21 +236,13 @@ def resolve_n_vmap(spec, grid_n, per_cell_bytes=None, n_pmap=1):
     """Resolve an ``Exploration.n_parallel`` spec to a concrete vmap chunk width.
 
     Args:
-        spec: An integer chunk size (``1`` = fully sequential), or the string
-            ``"auto"`` to vectorise up to the count cap and memory budget.
+        spec: An integer chunk size (``1`` = fully sequential), or the string ``"auto"`` to vectorise up to the count cap and memory budget.
         grid_n: Number of cells in the exploration grid.
-        per_cell_bytes: Optional per-cell working-memory estimate (see
-            :func:`estimate_per_cell_bytes`). When given, ``"auto"`` additionally caps
-            ``n_vmap`` so the concurrently-held batch fits the budget.
-        n_pmap: Number of devices whose batches share one RAM pool (see
-            :func:`shared_ram_device_count`). The live batch is ``n_pmap × n_vmap`` cells
-            in that shared RAM, so the budget bounds ``n_pmap × n_vmap × per_cell`` — not
-            ``n_vmap`` alone (else forced host devices multiply the footprint past it).
+        per_cell_bytes: Optional per-cell working-memory estimate (see :func:`estimate_per_cell_bytes`). When given, ``"auto"`` additionally caps ``n_vmap`` so the concurrently-held batch fits the budget.
+        n_pmap: Number of devices whose batches share one RAM pool (see :func:`shared_ram_device_count`). The live batch is ``n_pmap × n_vmap`` cells in that shared RAM, so the budget bounds ``n_pmap × n_vmap × per_cell`` — not ``n_vmap`` alone (else forced host devices multiply the footprint past it).
 
     Returns:
-        Positive integer vmap chunk width. An explicit integer bypasses the auto memory
-        budget (the caller opted in), but a ``TVBO_NVMAP_MAX`` env cap, when set, still
-        applies to it — the workflow retry lowers it to shrink a failed cell's batch.
+        Positive integer vmap chunk width. An explicit integer bypasses the auto memory budget (the caller opted in), but a ``TVBO_NVMAP_MAX`` env cap, when set, still applies to it — the workflow retry lowers it to shrink a failed cell's batch.
     """
     _cap = nvmap_hard_cap()
     if not _is_auto(spec):
@@ -306,8 +298,7 @@ def progress_ticker(total: int, *, every: int | None = None, label: str = "batch
         label: Noun for the line, e.g. ``"grid batch"``.
 
     Returns:
-        ``wrap(fn) -> fn`` — the identity when INFO is disabled, so there is zero runtime
-        overhead under ``--quiet`` or a coarse ``TVBO_LOG_LEVEL``.
+        ``wrap(fn) -> fn`` — the identity when INFO is disabled, so there is zero runtime overhead under ``--quiet`` or a coarse ``TVBO_LOG_LEVEL``.
     """
     from itertools import count
 
@@ -335,6 +326,18 @@ def progress_ticker(total: int, *, every: int | None = None, label: str = "batch
     return wrap
 
 
+def sweep_slice(n_cells: int, shard=None, limit=None) -> slice:
+    """The cells of an *n_cells* sweep one run takes, as one slice of the whole sweep.
+
+    Under ``shard=(i, n)`` the cells ``j`` with ``j % n == i``; under ``limit`` an evenly strided sample of at most *limit* of those (or of the whole sweep), starting at its first cell. The generated script applies it to the sweep it has built, so the count is the grid's own: an axis expanded per element or sized by a builder at run time counts as what it runs.
+    """
+    start, step = (int(shard[0]), int(shard[1])) if shard is not None else (0, 1)
+    if limit is not None:
+        taken = len(range(start, int(n_cells), step))
+        step *= max(1, -(-taken // max(1, int(limit))))
+    return slice(start, None, step)
+
+
 def point_indices(cell_values, points):
     """Index of each cell's ARRAY-VALUED axis point among *points*, matched by value.
 
@@ -352,8 +355,7 @@ def point_indices(cell_values, points):
         ``np.ndarray`` of int, one index per cell.
 
     Raises:
-        ValueError: a cell's point has a different width from the declared ones, so it names a
-            different quantity and the nearest match would be meaningless.
+        ValueError: a cell's point has a different width from the declared ones, so it names a different quantity and the nearest match would be meaningless.
     """
     import numpy as _np
 

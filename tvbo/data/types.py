@@ -1412,13 +1412,16 @@ class ExplorationResult(Bunch):
         cell_coords=None,
         is_shard=None,
         axis_points=None,
+        cell_count=None,
         **kwargs,
     ):
         """A sweep's results, labelled against the axes that produced them.
 
         ``cell_coords`` (``{axis: (n_cell,) array}``) is each cell's actual parameter values, set for EVERY keyed sweep — a whole grid as much as one array task's slice. It drives placement by value in ``as_grid``: into the rectangular grid for a full product, onto a flat ``point`` dim for a subset. It is NOT a shard marker, and reading it as one cost every local sweep its provenance sidecar.
 
-        ``is_shard`` is that marker, declared by the producer — the generated script holds ``kwargs['shard']``. ``None`` means undeclared, and ``_is_partial_shard`` falls back to counting cells. Nothing downstream can re-derive it reliably: a branch shard's axis ``n`` is taken from the already-sliced index, so the slice looks complete.
+        ``is_shard`` is that marker, declared by the producer — the generated script holds ``kwargs['shard']`` and ``kwargs['limit']`` and the sweep they slice. ``None`` means undeclared, and ``_is_partial_shard`` falls back to counting cells. Nothing downstream can re-derive it reliably: a branch shard's axis ``n`` is taken from the already-sliced index, so the slice looks complete.
+
+        ``cell_count`` (``(run, total)``) is how many cells this result holds and how many the whole sweep has, counted by the producer on the sweep it built, so a run that took a shard or a ``--limit`` sample can say what it took; ``None`` where the producer does not count.
 
         ``axis_points`` (``{axis: (n_point, ...) array}``) is the materialised points of each ARRAY-valued axis — only the producer holds them, and the point-index coordinate such an axis sweeps on is meaningless without them. Kept as keyed ``DataArray`` sidecars (see :func:`_axis_points_dataarray`); scalar axes carry nothing extra and are dropped here, so the producer may hand over its whole axis table.
         """
@@ -1431,6 +1434,7 @@ class ExplorationResult(Bunch):
         self.transient_time = float(transient_time or 0.0)
         self.output_names = output_names or []
         self.is_shard = is_shard
+        self.cell_count = tuple(int(c) for c in cell_count) if cell_count is not None else None
         self.cell_coords = cell_coords
         self.axis_points = {
             str(k): _axis_points_dataarray(str(k), v)

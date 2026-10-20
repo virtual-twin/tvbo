@@ -1643,6 +1643,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         _export.refuse_unlowered_parameter_starts(self, format)
 
         if format.lower() == "tvb":
+            declared = [str(name) for name, _ in keyed_items(self.explorations, "explorations")]
+            if declared:
+                raise ValueError(
+                    f"Backend 'tvb' runs no exploration in-process, and {self.label!r} declares {', '.join(declared)}. Emit a workflow kit (`tvbo workflow snakemake|nextflow|slurm --backend tvb`), whose tasks run each cell as a TVB run of its own, or run the sweep on a backend that runs explorations (tvboptim)."
+                )
             initial_conditions = self.collect_initial_conditions()
             simulator_ = self.execute(rendered_code=rendered_code)
             simulator_.initial_conditions = initial_conditions.data

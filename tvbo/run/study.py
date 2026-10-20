@@ -7,14 +7,17 @@ Nothing here exits the process. A run that refuses its input or cannot finish ra
 
 from __future__ import annotations
 
+import difflib
 import logging
+import re
 from collections.abc import Iterable, Sequence
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from tvbo.run.backends import effective_backend, resolve_backend
-from tvbo.run.workflow import extract_axes
+from tvbo.run.workflow import dynamics_parameter, extract_axes, is_per_node
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,7 @@ class RunOptions:
     Attributes:
         backend: Backend for every experiment, over each one's declared `execution.backend` (`--backend`).
         overrides: `(dotted.path, value)` assignments applied to each experiment before it runs (`--set`).
-        pins: `(axis parameter, value)` pairs, each setting that parameter and dropping its exploration axis (`--pin`).
+        pins: `(axis parameter, value)` pairs, each setting that parameter and dropping its exploration axis, or for `<parameter>[<element>]` holding that one element while the others keep sweeping (`--pin`).
         max_iterations: Cap on every algorithm's and stage's `n_iterations` (`--max-iterations`, `--smoke`).
         duration: `integration.duration` in ms (`--duration`).
         subject: Active subject of a per-subject dataset experiment (`--subject`).
@@ -59,6 +62,11 @@ class RunOptions:
     shard: tuple[int, int] | None = None
     compress: bool = True
     record_only: bool = True
+
+    @property
+    def sample(self) -> int | None:
+        """The cell count a `--limit` run samples each sweep to; ``None`` for a run that takes its sweeps whole or as a shard, which ignores the limit."""
+        return self.limit if self.shard is None else None
 
     def backend_kwargs(self) -> dict:
         """The keyword arguments `SimulationExperiment.run` takes from these options."""
@@ -97,14 +105,19 @@ def study_path_for(role: str, base: Path) -> Path:
     return study_path(role, root=base)
 
 
-def results_root(spec: str, out_dir: Path | None, *, base: Path | None = None) -> Path:
+def results_root(spec: str, out_dir: Path | None, *, base: Path | None = None, sample: int | None = None) -> Path:
     """The directory holding THIS run's result containers.
 
     The results directory of the study root the run writes into (:mod:`tvbo.utils.study_layout`, role ``results``), holding ``exp-<id>_*_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, flat. That root is *base*, defaulting to the recipe's own directory. *out_dir* (``-o``) overrides the location and nothing else. Writer and reader ask this one function, because two independent answers disagreeing is invisible: a run would render this run's experiments against a previous run's analyses and report success.
+
+    A run sampled to *sample* cells per sweep (``--limit``) has a directory of its own beside that one, ``<results>-limit-<N>``, holding its containers, its analyses and its figures, so a sample never mixes with a whole run. Beside it, not inside it, because the container lookups glob the results directory recursively.
     """
-    if out_dir is not None:
-        return Path(out_dir).resolve()
-    return study_path_for("results", Path(base).resolve() if base is not None else spec_base(spec))
+    root = (
+        Path(out_dir).resolve()
+        if out_dir is not None
+        else study_path_for("results", Path(base).resolve() if base is not None else spec_base(spec))
+    )
+    return root.with_name(f"{root.name}-limit-{sample}") if sample is not None else root
 
 
 # Which experiments a run covers
@@ -368,11 +381,108 @@ def apply_axis_pins(experiment, pins: Iterable[tuple[str, Any]]) -> None:
     """Pin fanned exploration axes to single values for THIS run — the workflow fan-out's per-cell restriction (the model-scope sibling of ``--subject``).
 
     For each ``(parameter, value)``: set the axis's parameter on the experiment so the base (representative) run uses it — every DECLARED observation, host or not, is computed on that run, so this is what makes a fanned cell's host observation land at the cell's coordinates — AND drop that axis from every exploration so the sweep does not re-expand it. An exploration left with no axes is removed, collapsing the run to a single point.
+
+    A parameter written ``<path>[<element>]`` pins one element of a per-node parameter (:func:`_pin_element`): the element is the index its ``element:`` declares or a node label, and the other elements keep sweeping.
     """
     for parameter, value in pins:
-        _set_axis_parameter(experiment, parameter, value)
-        _drop_exploration_axis(experiment, parameter)
+        element = _ELEMENT_PIN.fullmatch(str(parameter))
+        if element is not None:
+            _pin_element(experiment, element["path"], element["element"], value)
+        else:
+            _set_axis_parameter(experiment, parameter, value)
+            _drop_exploration_axis(experiment, parameter)
         logger.info(f"--pin {parameter} = {value!r}")
+
+
+_ELEMENT_PIN = re.compile(r"(?P<path>[^\[\]]+)\[(?P<element>[^\[\]]+)\]")
+
+
+def _pin_element(experiment, path: str, element: str, value) -> None:
+    """Pin element *element* of the per-node parameter *path* to *value*, leaving the axis sweeping its other elements.
+
+    The axis's domain for that element is replaced by the one value (each ``element_domains`` entry for it gets ``explored_values: [value]``, one added where the axis declares none), never removed, and the node declares the parameter at *value* (``network.nodes[i].parameters``, the per-node value every backend reads), so the base run and every cell agree on it. A parameter per node only through the values its nodes declare is declared per node (``shape: '(n_nodes,)'``), since a pin at the shared value would leave no node differing and the generated code would sweep it in lockstep. Everything is checked before anything is written, so a refused pin leaves the experiment as it was.
+
+    Raises:
+        StudyRunError: *value* is not a number, no exploration axis sweeps *path*, an axis that does takes its values from a ``builder`` (each point a value for every node, which no element domain overrides), the element is neither a node index of the network nor one of its node labels, *path* binds somewhere other than the dynamics (a coupling, an external input or a reserved scope, as :func:`tvbo.templates.tvboptim.utils.parameter_keypath` resolves it), or the parameter is not a per-node parameter of the dynamics.
+    """
+    from tvbo import datamodel as dm
+
+    what = f"--pin {path}[{element}]"
+    axes = [ax for ax in _exploration_axes(experiment) if str(getattr(ax, "parameter", "")) == path]
+    if not axes:
+        raise StudyRunError(f"{what}: no exploration axis sweeps {path!r}.")
+    if any(getattr(ax, "builder", None) is not None for ax in axes):
+        raise StudyRunError(
+            f"{what}: the axis sweeping {path!r} takes its values from a builder, each point a value for every node, so no element of it can be held. Pin the whole axis (--pin {path}=VALUE), or sweep it through `element_domains`."
+        )
+    index = _node_index(experiment, element, what)
+    leaf = path.rsplit(".", 1)[-1]
+    try:
+        value = float(value)
+        binds, param = dynamics_parameter(experiment, path)
+    except (TypeError, ValueError) as refusal:
+        raise StudyRunError(f"{what}: {refusal}") from None
+    if param is None:
+        raise StudyRunError(
+            f"{what}: {path!r} names no parameter of the dynamics (it binds {binds!r}), so it has no per-node value to pin."
+        )
+    nodes = list(experiment.network.nodes)
+    if not is_per_node(param, leaf, nodes):
+        raise StudyRunError(
+            f"{what}: {leaf!r} holds one value for every node, so the axis sweeps it in lockstep and has no element to pin; pinning one would split it into an axis per node. Pin the whole axis (--pin {path}=VALUE), or declare the parameter per node (shape: '(n_nodes,)')."
+        )
+    for ax in axes:
+        keyed = [
+            d
+            for i, d in enumerate(ax.element_domains or [])
+            if (d.element if getattr(d, "element", None) is not None else i) == index
+        ]
+        for d in keyed:
+            for slot in ("lo", "hi", "n", "step"):
+                setattr(d, slot, None)
+            d.explored_values = [value]
+        if not keyed:
+            ax.element_domains.append(dm.Range(element=index, explored_values=[value]))
+    if "n_nodes" not in str(getattr(param, "shape", None) or ""):
+        param.shape = "(n_nodes,)"
+    if getattr(nodes[index], "parameters", None) is None:
+        nodes[index].parameters = {}
+    nodes[index].parameters[leaf] = dm.Parameter(name=leaf, value=value)
+
+
+def _exploration_axes(experiment) -> list:
+    """Every exploration axis declared on *experiment*, in declaration order."""
+    from tvbo.utils import as_list
+
+    return [ax for expl in as_list(getattr(experiment, "explorations", None)) for ax in as_list(getattr(expl, "space", None))]
+
+
+def _node_index(experiment, element: str, what: str) -> int:
+    """The position *element* names among *experiment*'s network nodes: an integer index, or a node label resolved through the network's region aliases.
+
+    Raises:
+        StudyRunError: An index outside the network, a label the network does not carry, or a label given for a network that declares no node labels.
+    """
+    net = getattr(experiment, "network", None)
+    if re.fullmatch(r"\s*-?\d+\s*", element, flags=re.ASCII):
+        index, n = int(element), len(getattr(net, "nodes", None) or [])
+        if not 0 <= index < n:
+            raise StudyRunError(f"{what}: element {index} is outside the network's {n} nodes.")
+        return index
+    labels = list(getattr(net, "node_labels", None) or [])
+    if not labels:
+        raise StudyRunError(
+            f"{what}: {element!r} names a node by label, but the network declares no node labels; name the element by its index."
+        )
+    try:
+        aliases = net.region_alias_map() if hasattr(net, "region_alias_map") else {}
+    except ValueError as ambiguous:
+        raise StudyRunError(f"{what}: {ambiguous}") from ambiguous
+    canonical = aliases.get(element, element)
+    if canonical not in labels:
+        near = ", ".join(difflib.get_close_matches(element, labels, n=3)) or "none close"
+        raise StudyRunError(f"{what}: the network has no node labelled {element!r} (nearest: {near}).")
+    return labels.index(canonical)
 
 
 def _set_axis_parameter(experiment, parameter: str, value) -> None:
@@ -468,40 +578,45 @@ def run_experiment(
         base: The study root the run writes into; defaults to the recipe's own directory.
 
     Raises:
-        StudyRunError: An override or pin names nothing on the experiment, or a shard asks a backend to slice a sweep it does not vectorise.
+        StudyRunError: An override or pin names nothing on the experiment, an element pin names no per-node parameter, or a shard or limit asks a backend to slice a sweep it does not vectorise.
     """
     options = options or RunOptions()
     apply_overrides(experiment, options.overrides)
     apply_axis_pins(experiment, options.pins)
     apply_max_iterations(experiment, options.max_iterations)
     ctx = provenance_ctx(spec, experiment if owner is None else owner, out_dir, base=base)
-    _run_one(experiment, effective_backend(experiment, options.backend), results_root(spec, out_dir, base=base), options, ctx)
+    # A study's run declares what its sample produces once, for every experiment it runs.
+    reading = (
+        nullcontext()
+        if owner is not None
+        else _reading_sample(spec, out_dir, base, options, experiments=experiment_ids(experiment), analyses=())
+    )
+    with reading:
+        _run_one(
+            experiment,
+            effective_backend(experiment, options.backend),
+            results_root(spec, out_dir, base=base, sample=options.sample),
+            options,
+            ctx,
+        )
 
 
 def _run_one(experiment, backend: str, out_dir: Path, options: RunOptions, prov_ctx: dict | None) -> None:
-    """Run *experiment* whole, or the slice of its sweep that ``options.shard`` or ``options.limit`` selects."""
-    import math
+    """Run *experiment* whole, or the slice of its sweep that ``options.shard`` or ``options.limit`` selects.
 
-    shard = options.shard
-    if options.limit is not None and shard is None:
-        n_cells = math.prod(len(ax.values) for ax in extract_axes(experiment))
-        if n_cells > options.limit:
-            shard = (0, math.ceil(n_cells / options.limit))
-            logger.info(
-                f"--limit {options.limit}: running ~{-(-n_cells // shard[1])} of {n_cells} cells (Space[0::{shard[1]}])"
-            )
-
-    if shard is None:
+    The backend that builds the sweep slices it (:func:`tvbo.templates.tvboptim.callbacks.sweep_slice`) and counts its cells, so an axis expanded per element or sized by a builder at run time is counted as what it runs; the counts are logged from the result. A shard past the last cell of a sweep sized at run time runs none of it and writes no container, so every array task of a kit succeeds whatever the sweep's size and the gather job reassembles the shards that hold cells. A backend that does not vectorise a swept axis refuses the slice by name: it runs a sweep only through a workflow kit, whose tasks run one cell each.
+    """
+    shard, limit = options.shard, options.limit
+    if shard is None and limit is None:
         _exec_one(experiment, backend, out_dir, options, prov_ctx)
         return
-
-    chunk_i, chunk_n = shard
     axes = extract_axes(experiment)
     if not axes:
         logger.info("no sweep axes on experiment; running once")
         _exec_one(experiment, backend, out_dir, options, prov_ctx)
         return
-    # Shardable in-process only where the backend vectorises every swept axis (BackendSpec.can_vectorize).
+    option = "--shard" if shard is not None else "--limit"
+    # Sliceable in-process only where the backend vectorises every swept axis (BackendSpec.can_vectorize).
     try:
         capabilities = resolve_backend(backend)
     except ValueError:
@@ -515,40 +630,61 @@ def _run_one(experiment, backend: str, out_dir: Path, options: RunOptions, prov_
             else "is not in the backend capability registry, so it vectorises none of"
         )
         raise StudyRunError(
-            f"--shard shards a sweep by slicing the backend's vectorised "
-            f"batch, but backend {backend!r} {why}: {names}. Emit "
-            f"the kit with snakemake/nextflow (which fan these axes into per-cell "
-            f"tasks), or use a backend that vectorises them (e.g. tvboptim)."
+            f"{option} slices a sweep in the backend's vectorised batch, but backend {backend!r} {why}: {names}. Emit the kit with snakemake/nextflow (which fan these axes into per-cell tasks), or use a backend that vectorises them (e.g. tvboptim)."
         )
-    if any(getattr(ax, "runtime_sized", False) for ax in axes):
-        # Branch-restart sweep: the cell count comes from the source run's recorded branch (read at run time), so this task just slices its share of it.
-        logger.info(
-            f"sharding: task {chunk_i}/{chunk_n} runs its slice of a runtime-sized "
-            f"branch (Space[{chunk_i}::{chunk_n}]; cell count known at run time)"
-        )
-    else:
-        n_cells = math.prod(len(ax.values) for ax in axes)
-        per_task = -(-n_cells // chunk_n)  # ceil
-        logger.info(
-            f"sharding: task {chunk_i}/{chunk_n} runs ~{per_task} of {n_cells} "
-            f"sweep cells (backend-vectorised, Space[{chunk_i}::{chunk_n}])"
-        )
-    # Names this task's slice `split-<i>`, so N tasks writing one directory cannot overwrite each other.
-    experiment._active_split = chunk_i
-    _exec_one(experiment, backend, out_dir, options, prov_ctx, shard=(chunk_i, chunk_n))
+    if shard is not None:
+        # Names this task's slice `split-<i>`, so N tasks writing one directory cannot overwrite each other.
+        experiment._active_split = shard[0]
+    _exec_one(experiment, backend, out_dir, options, prov_ctx, shard=shard, limit=None if shard is not None else limit)
 
 
-def _exec_one(experiment, backend: str, out_dir: Path, options: RunOptions, prov_ctx: dict | None, shard=None) -> None:
-    """Run one experiment and persist its container into ``out_dir``.
+def _empty_share(result, shard) -> bool:
+    """Whether the shard task that produced *result* holds none of its sweep, its share lying past the last cell of a sweep sized at run time: the backend names each exploration with no cell in the share (``outside_share``) and leaves it out of the result."""
+    return shard is not None and bool(getattr(result, "outside_share", None)) and not result.explorations
+
+
+def _cell_counts(result) -> tuple[int | None, int | None]:
+    """How many sweep cells *result* holds and how many its sweeps have, summed over its explorations, from the counts the producer recorded (``ExplorationResult.cell_count``); ``(None, None)`` where none did."""
+    counts = [c for e in (getattr(result, "explorations", None) or {}).values() if (c := getattr(e, "cell_count", None))]
+    if not counts:
+        return None, None
+    return sum(r for r, _ in counts), sum(n for _, n in counts)
+
+
+def _exec_one(
+    experiment, backend: str, out_dir: Path, options: RunOptions, prov_ctx: dict | None, shard=None, limit=None
+) -> None:
+    """Run one experiment and persist its container into ``out_dir``, *shard* and *limit* handed to the backend that slices its sweep and the cells it ran logged from the counts it recorded; a shard task whose share holds no cell of the sweep persists nothing.
 
     ``out_dir`` is the study's results directory, already resolved by :func:`results_root`: a run always persists, so nothing here has to warn that the figures a caller is about to draw came from a previous run. ``options.results_root`` still wins as the place a warm start reads from, for a run whose cross-experiment sources live elsewhere.
     """
     kwargs = options.backend_kwargs()
     if shard is not None:
         kwargs["shard"] = shard
+    if limit is not None:
+        kwargs["limit"] = limit
     source_root = str(options.results_root) if options.results_root is not None else out_dir
     result = experiment.run(format=backend, results_root=source_root, **kwargs)
     logger.info(f"done: {type(result).__name__}")
+    if shard is not None or limit is not None:
+        if _empty_share(result, shard):
+            logger.info(
+                f"--shard {shard[0]}/{shard[1]}: no cell of the sweep falls in this task's share, so it writes no container"
+            )
+            return
+        ran, total = _cell_counts(result)
+        if total is None:
+            logger.warning(
+                f"{'--shard' if shard is not None else '--limit'}: backend {backend!r} reported no sweep cell count, so this run may hold the whole sweep rather than the slice asked for."
+            )
+        elif shard is not None:
+            logger.info(
+                f"sharding: task {shard[0]}/{shard[1]} ran {ran} of {total} sweep cells (backend-vectorised, Space[{shard[0]}::{shard[1]}])"
+            )
+        else:
+            logger.info(f"--limit {limit}: ran {ran} of {total} sweep cells, an evenly strided sample")
+            if ran < total:
+                experiment._active_split = 0  # a sample is named as slice 0 of its sweep, never as the whole sweep
     out_dir.mkdir(parents=True, exist_ok=True)
     if hasattr(result, "save"):
         saved = result.save(str(out_dir), compress=options.compress, record_only=options.record_only)
@@ -790,10 +926,10 @@ def render_figures(figures, base_dir: Path, out_dir: Path, origins: dict[str, Pa
     return written
 
 
-def render_study_figures(study, spec: str, *, base: Path | None = None) -> None:
+def render_study_figures(study, spec: str, *, base: Path | None = None, sample: Path | None = None) -> None:
     """Render a study's declarative ``figures:`` after its experiments have run.
 
-    Reuses the exact ``tvbo figure render`` path (:func:`render_figures`), so the images and render scripts a one-command run produces are byte-identical to a follow-up ``tvbo figure render`` — the study run just fuses the two steps. ``base`` is the study root each layer's ``used`` IRI resolves against and whose figures directory the images land in, defaulting to the recipe's own directory; ``-o`` moves the containers and not the figures, so there is no results directory to pass here. A study with no ``figures:`` is a silent no-op. A render failure is reported but does not fail the run — the experiments already succeeded and their results are on disk.
+    Reuses the exact ``tvbo figure render`` path (:func:`render_figures`), so the images and render scripts a one-command run produces are byte-identical to a follow-up ``tvbo figure render`` — the study run just fuses the two steps. ``base`` is the study root each layer's ``used`` IRI resolves against and whose figures directory the images land in, defaulting to the recipe's own directory; ``-o`` moves the containers and not the figures. *sample* is a ``--limit`` run's own directory (:func:`results_root`): its figures read the sample's containers and land in its ``figures/``, leaving the study's untouched. A study with no ``figures:`` is a silent no-op. A render failure is reported but does not fail the run — the experiments already succeeded and their results are on disk.
     """
     from tvbo.utils import as_list
 
@@ -805,12 +941,14 @@ def render_study_figures(study, spec: str, *, base: Path | None = None) -> None:
 
         hand_down_theme(study)  # a study built in code rather than loaded from a file has not handed its theme down yet
 
+    from tvbo.adapters.bsplot import reading_results
+
     base = Path(base).resolve() if base is not None else spec_base(spec)
-    out_figs = study_path_for("figures", base)
+    out_figs = sample / "figures" if sample is not None else study_path_for("figures", base)
     logger.info(f"rendering {len(figs)} figure(s) -> {out_figs}")
     try:
-        # Layers resolve against the study root, whose results directory is where the run and the analysis stage just wrote.
-        render_figures(figs, base, out_figs)
+        with reading_results(sample):
+            render_figures(figs, base, out_figs)
     except Exception as e:  # noqa: BLE001 - never lose a completed run over a plotting error
         # At WARNING because the default level suppresses INFO: a failure reported below the threshold is one the run never mentions, and what follows is a reader failing on a figure that was never drawn.
         logger.warning(
@@ -831,12 +969,13 @@ def run_study(
     options: RunOptions | None = None,
     experiment: str | None = None,
     figures: bool = True,
+    analyses: bool = True,
 ) -> bool:
     """Run *study*: its before-analyses, its experiments, its after-analyses and its figures, each container recording the run that wrote it.
 
     The one path every study run takes — `tvbo run <recipe>`, each study of a tree, and `SimulationStudy.run()` — so the flags a run honours and the provenance it records cannot depend on how it was launched.
 
-    A run narrowed by *experiment* or by ``options.shard`` runs only those experiments: no analysis stage and no figures, since both would read a half-refreshed set of containers. An unsharded narrowed run then names the analysis containers it left stale.
+    A run narrowed by *experiment* or by ``options.shard``, or one told to skip its analyses, runs its experiments with only the analyses they read: no analysis stage and no figures, since both would read a half-refreshed set of containers. An unsharded narrowed run then names the analysis containers it left stale.
 
     Args:
         study: The loaded study.
@@ -846,6 +985,7 @@ def run_study(
         options: How each experiment executes and saves; the defaults run the recipe as written.
         experiment: Comma-separated ids of the experiments to run, instead of all of them.
         figures: Render the declared ``figures:`` once a whole-study run's analyses hold.
+        analyses: Run the study's analysis stages; false runs only the analyses its experiments read, and no figures.
 
     Returns:
         Whether the after-experiment analysis stage held; figures are skipped when it did not.
@@ -853,14 +993,14 @@ def run_study(
     Raises:
         StudyRunError: *experiment* matches nothing, a pre-rendered script is given for several experiments, or an experiment cannot be materialised, overridden or sharded as asked.
     """
+    from tvbo.data.analysis_io import analysis_name
+
     options = options or RunOptions()
     base = Path(base).resolve() if base is not None else spec_base(spec)
-    root = results_root(spec, out_dir, base=base)
+    root = results_root(spec, out_dir, base=base, sample=options.sample)
     _import_figure_code_modules(study)
     before, after = _study_analysis_stages(study, base)
-    whole = experiment is None and options.shard is None
-    if whole:
-        _run_study_analyses(study, before, spec, root, stage="before", out_dir=out_dir, base=base)
+    whole = experiment is None and options.shard is None and analyses
     records = select_experiments(study, experiment)
     # A single frozen script belongs to a single experiment; each experiment renders its own code.
     if options.rendered_code is not None and len(records) > 1:
@@ -868,22 +1008,37 @@ def run_study(
             f"--rendered is a single pre-rendered experiment script but {len(records)} "
             f"experiments matched; pass --experiment to select exactly one."
         )
-    if not whole:
-        _run_study_analyses(
-            study, _transient_reads(study, before, records, base), spec, root, stage="before", out_dir=out_dir, base=base
-        )
-    for record in records:
-        logger.info(f"running experiment: {getattr(record, 'key', None) or getattr(record, 'label', None)}")
-        run_experiment(runtime_experiment(study, record), spec, out_dir, options=options, owner=study, base=base)
-    if not whole:
-        if options.shard is None:
-            # Not per shard: an array task holds one slice of one sweep, so every task would repeat the warning and its "refresh now" remedy would run on a half-done grid.
-            warn_stale_analyses(before + after, spec, root, experiments={i for r in records for i in experiment_ids(r)})
-        return True
-    ok = _run_study_analyses(study, after, spec, root, stage="after", out_dir=out_dir, base=base)
-    if figures and ok:
-        render_study_figures(study, spec, base=base)
+    staged = before if whole else _transient_reads(study, before, records, base)
+    produced = [analysis_name(a) for a in staged + (after if whole else [])]
+    ran = [i for r in records for i in experiment_ids(r)]
+    with _reading_sample(spec, out_dir, base, options, experiments=ran, analyses=produced):
+        _run_study_analyses(study, staged, spec, root, stage="before", out_dir=out_dir, base=base)
+        for record in records:
+            logger.info(f"running experiment: {getattr(record, 'key', None) or getattr(record, 'label', None)}")
+            run_experiment(runtime_experiment(study, record), spec, out_dir, options=options, owner=study, base=base)
+        if not whole:
+            if options.shard is None:
+                # Not per shard: an array task holds one slice of one sweep, so every task would repeat the warning and its "refresh now" remedy would run on a half-done grid.
+                warn_stale_analyses(before + after, spec, root, experiments=set(ran))
+            return True
+        ok = _run_study_analyses(study, after, spec, root, stage="after", out_dir=out_dir, base=base)
+        if figures and ok:
+            render_study_figures(study, spec, base=base, sample=root if options.sample is not None else None)
     return ok
+
+
+def _reading_sample(spec: str, out_dir: Path | None, base: Path | None, options: RunOptions, *, experiments, analyses):
+    """:func:`tvbo.data.dataref.reading_sample` for a ``--limit`` run of *experiments* and *analyses* into its own directory, so what it does not produce is read from the whole run; a run that takes no sample, or is told where to read its sources (``--results-root``), reads as it writes."""
+    from tvbo.data.dataref import reading_sample
+
+    if options.sample is None or options.results_root is not None:
+        return nullcontext()
+    return reading_sample(
+        results_root(spec, out_dir, base=base, sample=options.sample),
+        results_root(spec, out_dir, base=base),
+        experiments=experiments,
+        analyses=analyses,
+    )
 
 
 def nested_root(base: Path, recipe_dir: Path, label: str) -> Path | None:

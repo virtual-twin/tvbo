@@ -106,3 +106,56 @@ def test_a_refusal_is_an_exception_not_an_exit(tmp_path):
     study = tvbo.SimulationStudy.from_file(str(spec))
     with pytest.raises(study_run.StudyRunError, match="No experiment"):
         study_run.run_study(study, str(spec), experiment="99")
+
+
+@pytest.mark.parametrize(
+    ("analyses", "stages"), [(True, ["before", "experiment", "after", "figures"]), (False, ["before", "experiment", "stale"])]
+)
+def test_a_run_without_analyses_runs_only_what_its_experiments_read(tmp_path, monkeypatch, analyses, stages):
+    """`analyses=False` (`tvbo run --no-analyses`) runs the experiments with the analyses they read, skips the after-stage and the figures, and names what it left stale, as a run narrowed by `--experiment` does."""
+    ran = []
+    monkeypatch.setattr(study_run, "run_experiment", lambda *args, **kwargs: ran.append("experiment"))
+    monkeypatch.setattr(study_run, "_run_study_analyses", lambda *args, stage, **kwargs: ran.append(stage) or True)
+    monkeypatch.setattr(study_run, "render_study_figures", lambda *args, **kwargs: ran.append("figures"))
+    monkeypatch.setattr(study_run, "warn_stale_analyses", lambda *args, **kwargs: ran.append("stale"))
+    spec = _write_demo(tmp_path / "demo")
+    study_run.run_study(tvbo.SimulationStudy.from_file(str(spec)), str(spec), analyses=analyses)
+    assert ran == stages
+
+
+def test_a_limited_study_run_keeps_its_analyses_and_figures_in_the_sample(tmp_path, monkeypatch):
+    """`--limit` gives the study's analyses and figures the sample's own directory, so they neither read nor replace the whole run's."""
+    seen = {}
+
+    def analyses(study, declared, spec, root, *, stage, **kwargs):
+        seen[stage] = root
+        return True
+
+    monkeypatch.setattr(study_run, "run_experiment", lambda *args, **kwargs: None)
+    monkeypatch.setattr(study_run, "_run_study_analyses", analyses)
+    monkeypatch.setattr(study_run, "render_study_figures", lambda *args, sample=None, **kwargs: seen.update(figures=sample))
+    spec = _write_demo(tmp_path / "demo")
+    study_run.run_study(tvbo.SimulationStudy.from_file(str(spec)), str(spec), options=study_run.RunOptions(limit=2))
+    sample = study_run.results_root(str(spec), None, sample=2)
+    assert seen == {"before": sample, "after": sample, "figures": sample}
+
+
+@pytest.mark.parametrize(("results_from", "reads"), [(None, True), ("elsewhere", False)])
+def test_a_limited_study_run_declares_what_its_sample_produces(tmp_path, monkeypatch, results_from, reads):
+    """A `--limit` run of one experiment reads that experiment from its sample and everything else from the whole run; `--results-root` names where to read instead."""
+    from tvbo.data import dataref
+
+    seen = []
+    monkeypatch.setattr(study_run, "run_experiment", lambda *args, **kwargs: seen.append(dataref._SAMPLE.get()))
+    spec = _write_demo(tmp_path / "demo")
+    options = study_run.RunOptions(limit=2, results_root=results_from and tmp_path / results_from)
+    study_run.run_study(tvbo.SimulationStudy.from_file(str(spec)), str(spec), options=options, experiment="3")
+    (sample,) = seen
+    if not reads:
+        assert sample is None
+        return
+    assert sample.experiments == {"3"} and sample.analyses == frozenset()
+    assert (sample.own, sample.whole) == (
+        study_run.results_root(str(spec), None, sample=2),
+        study_run.results_root(str(spec), None),
+    )
