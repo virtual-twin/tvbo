@@ -97,7 +97,11 @@ To compare deterministically, replace `p.distribution = None` and freeze `p.valu
 
 A state variable with a `distribution:` block samples a fresh IC per trial when an `Exploration(n_trials=N)` with $N > 1$ is active. For parity, run without trial-based explorations or strip the SV `distribution` similarly.
 
-### 4. Settling window (`integration.transient_time`)
+### 4. Parameter starts: a distribution over space, or an equation
+
+A dynamics or coupling parameter whose `distribution` declares no `axis: time` says where its value starts, and so does a parameter declared by an `equation`. tvboptim draws such a distribution when it builds the network, one value per node, or one per connection on the network's edges for a coupling parameter of shape `(n_nodes, n_nodes)`, keyed by the distribution's own `seed`, else by `execution.random_seed`, and evaluates an equation once from the other parameters of the same dynamics or coupling. The trials of an `n_trials` ensemble share their cell's draw; a distribution that declares `axis: trial` is drawn again for each trial, under the same key with the trial index folded in, and an equation that reads it follows it. NetworkDynamics.jl draws a per-node dynamics parameter uniform on its distribution's `domain` under the same seed, from its own generator, so its values are not tvboptim's, and refuses a draw per trial. Every other backend refuses the declaration by name when it renders or runs, rather than integrating the parameter's `value` on every node. For parity, run the comparison on tvboptim alone, or declare the parameter by `value`.
+
+### 5. Settling window (`integration.transient_time`)
 
 Every backend now reads this the same way: `duration` is the **measured** window, `transient_time` is prepended to it, and total integrated time is `transient_time + duration`. The settle is the head of one integration — never a separate pre-simulation — and it is cut where the run is consumed, so on every backend the settle carries non-positive timestamps, ends at `t = 0`, and the measured window opens one step later.
 

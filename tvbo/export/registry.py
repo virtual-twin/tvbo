@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,15 @@ from typing import Any
 Renderer = Callable[..., str]
 # Importer signature: (path) -> SimulationExperiment | SimulationStudy | Network | Dynamics | ...
 Importer = Callable[..., Any]
+
+
+class StartKind(StrEnum):
+    """What a backend must do to honour a `tvbo.adapters.base.ParameterStart`: draw a dynamics parameter per node, draw a coupling parameter per node or per connection, evaluate a parameter's equation once, or draw a start again for each trial of an `n_trials` ensemble. ``tuple(StartKind)`` is every kind."""
+
+    NODE = "node"
+    COUPLING = "coupling"
+    EQUATION = "equation"
+    TRIAL = "trial"
 
 
 @dataclass(frozen=True)
@@ -42,6 +52,8 @@ class ExportFormat:
     extensions: tuple[str, ...] = ()  # extra accepted file suffixes (incl. leading dot)
     # Output language for `tvbo.codegen.style`; empty means "return verbatim".
     language: str = ""
+    # The `StartKind`s this backend honours, every other one refused by name before rendering; None for a format that integrates nothing and writes the declaration out.
+    parameter_starts: tuple[str, ...] | None = ()
 
     def to_public_dict(self) -> dict[str, Any]:
         """Serialisable view (without the renderer callable)."""
@@ -114,12 +126,26 @@ def keys() -> Iterable[str]:
     return _REGISTRY.keys()
 
 
+def refuse_unlowered_parameter_starts(experiment, key: str) -> None:
+    """Raise where the backend *key* would integrate a parameter start it does not lower at one constant: the one check `render` and the run path share.
+
+    A key no format registers lowers nothing, so every start is refused; a format whose ``parameter_starts`` is None integrates nothing and is not checked.
+    """
+    fmt = _REGISTRY.get(key.lower())
+    lowered = () if fmt is None else fmt.parameter_starts
+    if lowered is not None:
+        from tvbo.adapters.base import refuse_parameter_starts
+
+        refuse_parameter_starts(experiment, key if fmt is None else fmt.key, lowered)
+
+
 def render(experiment, fmt_key: str, **kwargs) -> str:
     """Resolve *fmt_key*, invoke its renderer, prune its dead imports, and format it.
 
     All three happen here rather than in each renderer so that every backend — including the ones that render through an adapter and never touch the template helpers — is held to the same house style. Pruning precedes formatting because it edits statements and black only edits layout. See :mod:`tvbo.codegen.prune` and :mod:`tvbo.codegen.style`.
     """
     fmt = resolve(fmt_key)
+    refuse_unlowered_parameter_starts(experiment, fmt.key)
     rendered = fmt.renderer(experiment, **kwargs)
     if not fmt.language:
         return rendered

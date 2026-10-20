@@ -21,10 +21,16 @@ Usage in templates:
 
 import ast
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
+from tvbo.export.registry import StartKind
+from tvbo.templates.base.utils import (  # noqa: F401  re-exported for the mako templates
+    distribution_family,
+    resolve_distribution,
+    samples_over_time,
+)
 from tvbo.templates.base.utils import safe_name as _base_safe_name
 from tvbo.utils import (  # noqa: F401  re-exported for the mako templates
     _NETWORK_EDGE_ALIASES,
@@ -216,6 +222,346 @@ def render_jax_default(value: Any) -> str:
     return repr(value)
 
 
+def stochastic_moments(info: Mapping[str, Any]) -> tuple[float, float]:
+    """The mean and spread a stochastic parameter's draw over time takes from its resolved distribution *info*: the explicit moments, else the parameter's ``default`` value and a quarter of the domain's width."""
+    mean = info["mean"] if info.get("mean") is not None else info["default"]
+    std = info["std"] if info.get("std") is not None else (info["hi"] - info["lo"]) / 4.0
+    return mean, std
+
+
+def draw_expression(
+    family: str,
+    key: str,
+    shape: str,
+    *,
+    lo: float | None = None,
+    hi: float | None = None,
+    mean: float | None = None,
+    std: float | None = None,
+) -> str:
+    """JAX source drawing *shape* values of one *family* under the PRNG key expression *key*: the single place a declared distribution becomes a ``jax.random`` call.
+
+    ``uniform`` draws on [*lo*, *hi*), ``normal`` around *mean* with spread *std*, ``truncated_normal`` the same kept inside [*lo*, *hi*]. Which family a declaration means, and what stands in for a moment it leaves out, is the caller's reading (`resolve_distribution`, `distribution_family`).
+    """
+    if family == "uniform":
+        return f"jax.random.uniform({key}, {shape}, minval={lo}, maxval={hi})"
+    if family == "normal":
+        return f"{mean} + {std} * jax.random.normal({key}, {shape})"
+    if family == "truncated_normal":
+        spread = max(std, 1e-6)
+        return f"{mean} + {std} * jax.random.truncated_normal({key}, lower={(lo - mean) / spread}, upper={(hi - mean) / spread}, shape={shape})"
+    raise ValueError(f"no draw is implemented for the distribution family {family!r}")
+
+
+def initial_condition_draw(info: Mapping[str, Any], key: str, shape: str) -> str:
+    """JAX source drawing one state variable's initial condition from its resolved distribution *info*: a normal around the middle of its bounds with a quarter of their width as spread, and uniform between the bounds for every other declared name."""
+    if distribution_family(info["dist"]) == "normal":
+        return draw_expression("normal", key, shape, mean=(info["lo"] + info["hi"]) / 2, std=(info["hi"] - info["lo"]) / 4.0)
+    return draw_expression("uniform", key, shape, lo=info["lo"], hi=info["hi"])
+
+
+_START_FILLS = {"dynamics": ("(n_nodes,)",), "coupling": ("(n_nodes,)", "(n_nodes,n_nodes)")}
+
+
+def _start_shape(start: Any) -> tuple[int, str | None]:
+    """The rank and the shape source a parameter start fills: the declared `shape`, one value per node for a dynamics parameter drawn without one, or none for an equation that declares none, which keeps the shape of what it reads.
+
+    Raises where the emitted start function, which knows only ``n_nodes``, cannot size the declaration: a shape other than one value per node or, on a coupling parameter, one per connection, and a coupling parameter drawn without a shape.
+    """
+    declared = getattr(start.parameter, "shape", None)
+    inner = str(declared or "").strip().strip("()").replace(" ", "")
+    shape = "(" + inner + ("," if "," not in inner else "") + ")" if inner else None
+    if shape is None and start.kind == StartKind.EQUATION:
+        return 0, None
+    if shape is None and start.owner_kind == "dynamics":
+        return 1, "(n_nodes,)"
+    if shape not in _START_FILLS[start.owner_kind]:
+        raise ValueError(
+            f'{start.label}: a start fills one value per node (`shape: "(n_nodes,)"`, or no shape on a dynamics parameter) or, on a coupling parameter, one per connection '
+            f'(`shape: "(n_nodes, n_nodes)"`), and the parameter declares shape {declared!r}.'
+        )
+    return _shape_ndim(shape), shape
+
+
+def _draw_code(start: Any, random_seed: int) -> tuple[str, bool, int]:
+    """The JAX source that draws one parameter start, whether it follows the run's seed, and its rank; raises where the declaration does not say what to draw (`start_draw`) or a shape a draw cannot fill (`_start_shape`). A draw per trial folds the module's ``_trial`` index into its key through ``_trial_key``."""
+    import zlib
+
+    from tvbo.adapters.base import start_draw
+
+    parameter = start.parameter
+    family, spec = start_draw(start, random_seed)
+    rank, shape = _start_shape(start)
+    # Folded into the key so two parameters under one seed draw independently and a parameter keeps its draw when another is added.
+    tag = zlib.crc32(f"{start.owner if start.owner_kind == 'coupling' else 'dynamics'}.{start.name}".encode()) & 0x7FFFFFFF
+    base_key = f"jax.random.key({spec['seed']})" if spec["own_seed"] else "_key"
+    key = f"jax.random.fold_in({base_key}, {tag})"
+    if start.per_trial:
+        key = f"_trial_key({key}, _trial)"
+    moments = {field: spec[field] for field in ("lo", "hi", "mean", "std")}
+    if rank == 1:
+        return draw_expression(family, key, shape, **moments), not spec["own_seed"], rank
+    if getattr(parameter, "value", None) is None:
+        raise ValueError(
+            f"{start.label}: a draw per connection fills the network's edges, and the entries off them keep the parameter's `value`, which it does not declare."
+        )
+    return (
+        f"jnp.full({shape}, {float(parameter.value)}).at[_edges[:, 0], _edges[:, 1]].set({draw_expression(family, key, '(_edges.shape[0],)', **moments)})",
+        not spec["own_seed"],
+        rank,
+    )
+
+
+def _owner_parameter_starts(
+    owner_kind: str,
+    owner: str,
+    starts: list,
+    declared: Mapping[str, Any],
+    random_seed: int,
+    *,
+    experiment: Any,
+) -> tuple[list[dict[str, Any]], list[tuple[str, str]]]:
+    """The starts of one owner in evaluation order, and the literal parameters their equations read as ``(name, source)``.
+
+    *declared* is every parameter of the owner by name. A draw resolves through `_draw_code`; an equation is parsed against the owner's parameters, resolved after everything it reads, and rendered to JAX in the order it is written. A literal it reads is the constant `create_network` gives that parameter, so one whose value on the network comes from elsewhere (`value_elsewhere`) is refused.
+    """
+    from tvbo.adapters.base import value_elsewhere
+    from tvbo.codegen.code import render_expression
+    from tvbo.parse.expression import parse_eq
+
+    by_name = {start.name: start for start in starts}
+    resolved: dict[str, dict[str, Any]] = {}
+    inputs: dict[str, str] = {}
+    ranks: dict[str, int] = {}
+
+    def literal(name: str, reader: Any) -> None:
+        """Register the literal parameter *name* that *reader*'s equation reads, as the source `create_network` gives it."""
+        parameter = declared[name]
+        distribution = getattr(parameter, "distribution", None)
+        elsewhere = value_elsewhere(parameter, owner_kind, name, experiment)
+        if elsewhere is not None:
+            raise ValueError(
+                f"{reader.label}: its equation reads {name!r}, whose value on the network comes from {elsewhere}, while the equation is evaluated once from the declared `value`. Declare {name!r} by `value` alone, or give the parameter a `value` instead of the equation."
+            )
+        if getattr(parameter, "value", None) is None or (distribution is not None and samples_over_time(distribution)):
+            raise ValueError(f"{reader.label}: its equation reads {name!r}, which has no literal `value` to evaluate it from.")
+        shape = getattr(parameter, "shape", None)
+        value = list(parameter.value) if isinstance(parameter.value, (list, tuple)) else float(parameter.value)
+        ranks[name] = _shape_ndim(shape) if shape else 0
+        inputs[name] = f"jnp.full({shape}, {value})" if shape and not isinstance(value, list) else render_jax_default(value)
+
+    def resolve(name: str, chain: tuple[str, ...]) -> None:
+        """Resolve the start *name* after everything its equation reads, so the emitted assignments run in order."""
+        if name in resolved:
+            return
+        start = by_name[name]
+        if name in chain:
+            raise ValueError(
+                f"{start.label}: its equation reads itself through {' -> '.join((*chain[chain.index(name) :], name))}."
+            )
+        if start.kind != StartKind.EQUATION:
+            code, seeded, rank = _draw_code(start, random_seed)
+            ranks[name] = rank
+            resolved[name] = {
+                "name": name,
+                "kind": "draw",
+                "code": code,
+                "seeded": seeded,
+                "trial": start.per_trial,
+                "rank": rank,
+                "reads": (),
+            }
+            return
+        rhs = str(getattr(start.parameter.equation, "rhs", None) or "")
+        reads = sorted(str(symbol) for symbol in parse_eq(rhs, parameters=list(declared)).free_symbols) if rhs else []
+        unknown = [symbol for symbol in reads if symbol not in declared]
+        if not rhs or unknown:
+            fault = (
+                f"reads {', '.join(unknown)}, which {owner_kind} {owner!r} does not declare"
+                if unknown
+                else "has no right-hand side"
+            )
+            raise ValueError(
+                f"{start.label}: its equation {rhs!r} {fault}. A parameter's equation is evaluated once from the other parameters of its owner ({', '.join(sorted(declared))})."
+            )
+        for symbol in reads:
+            if symbol in by_name:
+                resolve(symbol, (*chain, name))
+            elif symbol not in inputs:
+                literal(symbol, start)
+        rank, shape = _start_shape(start)
+        needed = max((ranks[symbol] for symbol in reads), default=0)
+        if needed > max(rank, 1 if owner_kind == "dynamics" else 0):
+            widest = next(symbol for symbol in reads if ranks[symbol] == needed)
+            holds = "one value per connection" if needed == 2 else "one value per node"
+            raise ValueError(
+                f"{start.label}: its equation reads {widest!r}, which holds {holds}; declare the same `shape` on the parameter."
+            )
+        expression = render_expression(rhs, format="jax", parameters=list(declared), preserve_order=True)
+        ranks[name] = max(rank, needed)
+        resolved[name] = {
+            "name": name,
+            "kind": "equation",
+            "code": f"jnp.broadcast_to({expression}, {shape})" if shape else expression,
+            "seeded": any(resolved[symbol]["seeded"] for symbol in reads if symbol in resolved),
+            "trial": any(resolved[symbol]["trial"] for symbol in reads if symbol in resolved),
+            "rank": ranks[name],
+            "reads": tuple(reads),
+        }
+
+    for start in starts:
+        resolve(start.name, ())
+    return list(resolved.values()), list(inputs.items())
+
+
+def resolve_parameter_starts(
+    experiment: Any,
+    random_seed: int,
+    *,
+    couplings: Mapping[str, Any],
+    coupling_inputs: Mapping[str, list[str]],
+) -> list[dict[str, Any]]:
+    """The parameter starts a tvboptim module computes when it builds the network, one group per owner, or a refusal naming the declaration it cannot honour.
+
+    A start is a parameter of the experiment's dynamics or of one of its couplings that declares a distribution sampled over space, drawn per node or per connection, or an equation, evaluated once from the other parameters of the same owner (`tvbo.adapters.base.parameter_starts`). Each group carries the function the module emits for its owner (``function``) and the name `create_network` binds its result to (``variable``), the literal parameters its equations read (``inputs``), its starts in evaluation order (``starts``: ``name``, ``kind``, ``code``, ``seeded``, ``trial``, ``rank``, ``reads``), whether any start follows the run's seed (``seeded``) or is drawn again for each trial of an ensemble (``trial``), whether a draw is keyed by the run's seed (``run_key``) or fills the network's edges (``edges``), and for a coupling the coupling inputs it serves (``inputs_served``, from *coupling_inputs*). A coupling start is grouped under its coupling's key in *couplings*, the couplings the template integrates, whatever alias the network declares that coupling under.
+
+    Refused, by name: a start on a dynamics the module does not integrate, a parameter whose value something else declares as well (`tvbo.adapters.base.refuse_second_definition`), a distribution that does not say what to draw or a shape a draw cannot fill (`_draw_code`), and an equation that reads a symbol that is not a parameter of its owner, a parameter with no literal value or one whose value comes from elsewhere, or itself through other equations (`_owner_parameter_starts`).
+    """
+    from tvbo.adapters.base import parameter_starts, refuse_second_definition
+
+    model = getattr(experiment, "dynamics", None)
+    owners = {("dynamics", str(getattr(model, "name", None) or "dynamics")): model}
+    owners.update({("coupling", str(key)): coupling for key, coupling in couplings.items()})
+    declared = {
+        owner: {
+            str(getattr(q, "name", None) or key): q
+            for key, q in keyed_items(getattr(holder, "parameters", None), "parameters")
+        }
+        for owner, holder in owners.items()
+    }
+    grouped: dict[tuple[str, str], list] = {}
+    for start in parameter_starts(experiment):
+        owner = next((o for o, params in declared.items() if any(q is start.parameter for q in params.values())), None)
+        if owner is None or owner[0] != start.owner_kind:
+            raise NotImplementedError(
+                f"{start.label}: the tvboptim module integrates the experiment's own dynamics over its couplings, and this parameter belongs to neither."
+            )
+        if any(seen.parameter is start.parameter for seen in grouped.get(owner, [])):
+            continue
+        start = start._replace(owner=owner[1])
+        refuse_second_definition(start, experiment)
+        grouped.setdefault(owner, []).append(start)
+
+    groups = []
+    for (owner_kind, owner), starts in grouped.items():
+        ordered, inputs = _owner_parameter_starts(
+            owner_kind,
+            owner,
+            starts,
+            declared[(owner_kind, owner)],
+            random_seed,
+            experiment=experiment,
+        )
+        slug = "dynamics" if owner_kind == "dynamics" else owner
+        groups.append(
+            {
+                "owner_kind": owner_kind,
+                "owner": owner,
+                "function": f"_{slug}_parameter_starts",
+                "variable": f"_{slug}_starts",
+                "inputs": inputs,
+                "starts": ordered,
+                "names": [entry["name"] for entry in ordered],
+                "seeded": any(entry["seeded"] for entry in ordered),
+                "trial": any(entry["trial"] for entry in ordered),
+                "run_key": any(entry["kind"] == "draw" and entry["seeded"] for entry in ordered),
+                "edges": any(entry["kind"] == "draw" and entry["rank"] == 2 for entry in ordered),
+                "inputs_served": list(coupling_inputs.get(owner, [])) if owner_kind == "coupling" else [],
+            }
+        )
+    return groups
+
+
+def refuse_axis_on_parameter_start(
+    axis: str, owner_kind: str, owner: str | None, name: str, groups: list[dict[str, Any]]
+) -> None:
+    """Raise where an exploration axis sweeps a parameter that declares its start, or one a start is computed from.
+
+    The start is written when the network is built and again in every cell of a seed axis, so a swept value on the same parameter has a second claimant; and an equation is evaluated once, from the declared values, so a swept value of something it reads would not reach it.
+    """
+    for group in groups:
+        if group["owner_kind"] != owner_kind or (owner_kind == "coupling" and group["owner"] != owner):
+            continue
+        for entry in group["starts"]:
+            if entry["name"] == name:
+                declares, does = ("equation", "computes") if entry["kind"] == "equation" else ("distribution", "draws")
+                raise ValueError(
+                    f"exploration axis '{axis}': parameter '{name}' also declares a{'n' if declares == 'equation' else ''} {declares}, which {does} its value when the network is built and would overwrite the swept value. "
+                    f"Drop the {declares} to sweep the parameter, or drop the axis to keep the declared start."
+                )
+            if name in entry["reads"]:
+                raise ValueError(
+                    f"exploration axis '{axis}': parameter '{entry['name']}' is computed from '{name}' by its equation once, when the network is built, so the swept value would not reach it. "
+                    f"Sweep '{entry['name']}' itself after dropping its equation, or drop the axis."
+                )
+
+
+def free_parameter_ref(free: dict[str, Any]) -> str:
+    """The dotted reference a parsed free parameter (`parse_free_param`) was declared under, its scope joined back to its name, which `parameter_keypath` resolves to the keypath the optimizer binds."""
+    scope = free.get("coupling_key") or free.get("dynamics_key")
+    return f"{scope}.{free['name']}" if scope else free["name"]
+
+
+def refuse_initial_value_on_parameter_start(
+    stages: list[dict[str, Any]], groups: list[dict[str, Any]], keypath: Callable[[str], str]
+) -> None:
+    """Raise where an optimization stage gives a parameter that declares its start an `initial_value` of its own.
+
+    The declared draw or equation is where the optimizer starts, so a free parameter's `initial_value` is a second definition of that start. A free parameter is matched by the keypath it binds, *keypath* being the experiment's `parameter_keypath`, so ``noise.sigma`` never matches a dynamics ``sigma``. *stages* are the parsed optimization stages (`parse_free_param` entries under ``free_parameters``), *groups* the resolved parameter starts.
+    """
+    for stage in stages:
+        for free in stage["free_parameters"]:
+            if free.get("initial_value") is None:
+                continue
+            bound = keypath(free_parameter_ref(free))
+            for group in groups:
+                owner = f"{group['owner']}." if group["owner_kind"] == "coupling" else ""
+                if bound in {keypath(owner + name) for name in group["names"]}:
+                    raise ValueError(
+                        f"optimization stage {stage['name']!r}: free parameter {free['name']!r} declares an `initial_value`, and the parameter also declares where it starts (a distribution or an equation of {group['owner_kind']} {group['owner']!r}), which is where the optimizer starts. "
+                        "A parameter has one definition: drop the `initial_value`, or the parameter's distribution or equation."
+                    )
+
+
+def refuse_trial_starts_under_algorithms(exploration: str, groups: list[dict[str, Any]]) -> None:
+    """Raise where *exploration* wires an algorithm into each cell and runs a trial ensemble over a parameter start drawn per trial.
+
+    The algorithm tunes each cell once, from the cell's draw, and the cell's trials then integrate what it tuned; a trial that draws its own start would integrate a value the tuning never saw.
+    """
+    drawn = [
+        f"parameter {entry['name']!r} of {group['owner_kind']} {group['owner']!r}"
+        for group in groups
+        for entry in group["starts"]
+        if entry["trial"]
+    ]
+    if drawn:
+        raise ValueError(
+            f"exploration {exploration!r}: {', '.join(drawn)} is drawn per trial, and the wired algorithm tunes each cell once, from the cell's draw, so each trial would integrate a start the tuning never saw. "
+            "Declare `axis: space` to tune and measure one draw per cell, or run the trial ensemble without the algorithm."
+        )
+
+
+_SEED_RANGE = 2**32
+
+
+def refuse_seed_outside_key_range(seed: Any, where: str) -> None:
+    """Raise where *seed*, which the generated module casts to the 32-bit unsigned integer that keys its PRNG, does not fit in one; *where* names the declaration for the message."""
+    if not 0 <= int(seed) < _SEED_RANGE:
+        raise ValueError(
+            f"{where} = {seed} is outside 0 to {_SEED_RANGE - 1}: the generated module keys its draws with the seed as a 32-bit unsigned integer, which cannot hold it. Declare a seed in that range."
+        )
+
+
 def get_recorded_variable_names(model: Any, experiment: Any = None) -> tuple[list[str], list[str], list[str]]:
     """Compute the variable layout recorded by tvboptim's solver.
 
@@ -277,12 +623,8 @@ def _state_recomputable_derived(model: Any) -> set[str]:
     params = model.parameters
     state_vars = model.state_variables or {}
 
-    def _is_time_stochastic(p):
-        dist = getattr(p, "distribution", None)
-        return dist is not None and "time" in str(getattr(dist, "axis", "space"))
-
     safe = set(state_vars.keys())
-    safe |= {name for name, p in params.items() if not _is_time_stochastic(p)}
+    safe |= {name for name, p in params.items() if not samples_over_time(getattr(p, "distribution", None))}
     safe |= set(dparams.keys())
     safe.add("t")
 

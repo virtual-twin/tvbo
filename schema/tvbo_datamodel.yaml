@@ -303,9 +303,11 @@ enums:
         description: "Dimension along which a distribution is sampled."
         permissible_values:
             space:
-                description: "Sample once per node (heterogeneous parameter or spatially varying IC)."
+                description: "Sample once over space: one value per node, or per connection for a coupling parameter of the graph's shape (heterogeneous parameter or spatially varying IC). A parameter keeps the draw across the trials of an `n_trials` ensemble; a state variable's initial condition is redrawn for each trial."
             time:
                 description: "Resample every integration timestep (stochastic time-varying input)."
+            trial:
+                description: "Sample over space once per trial of an `n_trials` ensemble: each trial starts from its own draw, keyed as the run's draw with the trial index folded in. Outside an ensemble it is the run's draw, as under `space`."
     NoiseType:
         permissible_values:
             gaussian:
@@ -2155,7 +2157,7 @@ classes:
             axis:
                 range: SamplingAxis
                 ifabsent: "space"
-                description: "Dimension along which the distribution is sampled. 'space' = per-node (default), 'time' = per-timestep (stochastic input)."
+                description: "Dimension along which the distribution is sampled. 'space' = once per node or connection (default), 'time' = per-timestep (stochastic input), 'trial' = once per node or connection for each trial of an `n_trials` ensemble."
             correlation:
                 range: Matrix
                 inlined: true
@@ -2166,6 +2168,9 @@ classes:
             value:
                 annotations:
                     simple_dict_value: true
+            equation:
+                description: >-
+                    The value of a dynamics or coupling parameter as an expression of the other parameters of the same owner, evaluated once when the network is built. It stands in place of `value`, and declaring both is refused. Beside a parameter `u` that declares a `distribution`, `p: {equation: {rhs: "1 + u"}}` and `q: {equation: {rhs: "1 - u"}}` give two parameters that share one draw. The result is a value like any other: an algorithm that tunes the parameter, or the one it was computed from, does not evaluate the equation again. A backend that cannot evaluate it refuses the declaration.
         slots:
             - name
             - label
@@ -2189,7 +2194,8 @@ classes:
             distribution:
                 range: Distribution
                 inlined: true
-                description: "Distribution for heterogeneous per-node parameter sampling. Implies heterogeneous=true."
+                description: >-
+                    The distribution a dynamics or coupling parameter's value is drawn from. Sampled over space (the default `axis`), the parameter starts from one draw per run: one value per node, or, for a coupling parameter whose `shape` is the graph's `(n_nodes, n_nodes)`, one per connection on the network's edges in row order, every other entry keeping `value`. The draw is keyed by `execution.random_seed` unless the distribution declares its own `seed`, and two parameters under one seed draw independently, so each cell of an `execution.random_seed` axis draws its own start and the trials of one cell share it. Sampled per trial (`axis: trial`), each trial of an `n_trials` ensemble starts from its own draw instead. An algorithm that tunes the parameter starts from the draw. Sampled over time (`axis: time`), the parameter is a stochastic input redrawn at every integration step. Implies heterogeneous=true. A backend that cannot draw refuses the declaration.
             source:
                 range: uriorcurie
                 required: false
@@ -2842,7 +2848,7 @@ classes:
                 range: integer
                 ifabsent: integer(1)
                 description: >-
-                    Number of independent trials per grid point. Each trial uses a different noise seed. Used for averaging stochastic simulations (e.g., VEP = average of 20 trials).
+                    Number of independent trials per grid point. Each trial uses a different noise seed, redraws the initial condition of every state variable that declares a distribution, and redraws the start of every parameter whose distribution declares `axis: trial`. Used for averaging stochastic simulations (e.g., VEP = average of 20 trials).
             average:
                 range: string
                 description: >-

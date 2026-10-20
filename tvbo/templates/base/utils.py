@@ -4,8 +4,9 @@ Extracts Python logic from Mako templates for cleaner, testable code.
 """
 
 import keyword
+from typing import Any
 
-from tvbo.utils import as_list
+from tvbo.utils import as_list, keyed_items
 
 
 def is_name(text: str) -> bool:
@@ -300,6 +301,57 @@ def needs_scipy_special(model, fmt):
 
 
 # ── Distribution utilities, reusable across every backend ──
+def samples_over_time(dist) -> bool:
+    """True when *dist* is resampled at every integration step (``axis: time``), which makes its parameter a stochastic input; every other declared distribution is sampled over space, once per run or once per trial (`samples_per_trial`)."""
+    return "time" in str(getattr(dist, "axis", None) or "space")
+
+
+def samples_per_trial(dist) -> bool:
+    """True when *dist* is sampled over space once for each trial of an ``n_trials`` ensemble (``axis: trial``) rather than once per run."""
+    return "trial" in str(getattr(dist, "axis", None) or "space")
+
+
+_DISTRIBUTION_FAMILIES = {
+    "uniform": "uniform",
+    "gaussian": "normal",
+    "normal": "normal",
+    "truncated_normal": "truncated_normal",
+    "truncatednormal": "truncated_normal",
+}
+
+
+def distribution_family(name: Any) -> str | None:
+    """The family a declared distribution name draws from (``uniform``, ``normal`` or ``truncated_normal``), or None for a name no emitted draw implements."""
+    return _DISTRIBUTION_FAMILIES.get(str(name).lower())
+
+
+def resolve_distribution(
+    dist: Any, random_seed: int, *, fallback_domain: Any = None, bounds: tuple[float | None, float | None] = (0.0, 1.0)
+) -> dict[str, Any]:
+    """What a declared `Distribution` says to draw, with the seed that keys the draw.
+
+    The one reading of a distribution every emitted draw shares: ``dist`` is the declared name in lower case, ``lo`` and ``hi`` the bounds of its domain (*fallback_domain* where it declares none, then *bounds*), ``mean`` and ``std`` its explicit ``mean``/``mu`` and ``std``/``sigma``/``sd`` parameters or None, ``own_seed`` whether it declares a seed, and ``seed`` that seed, which overrides *random_seed*, the run's.
+    """
+    domain = getattr(dist, "domain", None) or fallback_domain
+    moments: dict[str, float | None] = {"mean": None, "std": None}
+    for key, parameter in keyed_items(getattr(dist, "parameters", None), "parameters"):
+        value = getattr(parameter, "value", None)
+        name = str(getattr(parameter, "name", None) or key)
+        if value is not None and name in ("mean", "mu"):
+            moments["mean"] = float(value)
+        elif value is not None and name in ("std", "sigma", "sd"):
+            moments["std"] = float(value)
+    own_seed = getattr(dist, "seed", None)
+    return {
+        "dist": str(getattr(dist, "name", "Uniform")).lower(),
+        "lo": float(domain.lo) if domain is not None and domain.lo is not None else bounds[0],
+        "hi": float(domain.hi) if domain is not None and domain.hi is not None else bounds[1],
+        **moments,
+        "own_seed": own_seed is not None,
+        "seed": int(own_seed) if own_seed is not None else random_seed,
+    }
+
+
 def collect_sv_distributions(model):
     """Collect state variables that have a distribution for random ICs.
 

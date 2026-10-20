@@ -5,6 +5,7 @@
 <%namespace name="search" file="tvbo-tvboptim-search.py.mako"/>
 <%namespace name="sweep" file="tvbo-tvboptim-sweep.py.mako"/>
 <%namespace name="lyap" file="tvbo-tvboptim-lyapunov.py.mako"/>\
+<%namespace name="compact" file="tvbo-tvboptim-compact-coupling.py.mako"/>\
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.base.utils import docstring_text
@@ -21,7 +22,11 @@ from tvbo.templates.tvboptim.utils import (
     graph_selection, observation_dims, trajectory_dims, parameter_keypath,
     has_host_pipeline, pipeline_stage_is_host, data_source_arrays, selection_settings, monitor_class_name,
     analysis_settings, set_literal,
+    resolve_distribution, distribution_family, draw_expression, initial_condition_draw,
+    stochastic_moments, resolve_parameter_starts, refuse_axis_on_parameter_start, refuse_initial_value_on_parameter_start, free_parameter_ref,
+    refuse_seed_outside_key_range, refuse_trial_starts_under_algorithms,
 )
+from tvbo.templates.base.utils import samples_over_time
 import numpy as np
 import re
 
@@ -318,36 +323,12 @@ for pname in list(dyn_param_names):
     p_obj = (model.parameters[pname] if pname in model.parameters else None) if model.parameters else None
     if p_obj and getattr(p_obj, 'distribution', None):
         dist = p_obj.distribution
-        axis = str(getattr(dist, 'axis', 'space'))
-        if axis == 'time' or 'time' in axis:
+        if samples_over_time(dist):
             stochastic_param_names.add(pname)
-            domain = getattr(dist, 'domain', None)
-            dist_name = str(getattr(dist, 'name', 'Uniform')).lower()
-            # Explicit mean/std (sigma) from the distribution parameters take
-            # precedence over the domain; the domain is only a sampling-bounds
-            # fallback (mean<-value, std<-(hi-lo)/4) when they are not given.
-            _dmean = _dstd = None
-            _dparams = getattr(dist, 'parameters', None) or {}
-            for _dp in (_dparams.values() if hasattr(_dparams, 'values') else _dparams):
-                _dn = str(getattr(_dp, 'name', ''))
-                _dv = getattr(_dp, 'value', None)
-                if _dv is None:
-                    continue
-                if _dn in ('mean', 'mu'):
-                    _dmean = float(_dv)
-                elif _dn in ('std', 'sigma', 'sd'):
-                    _dstd = float(_dv)
-            _lo = float(getattr(domain, 'lo', 0)) if domain else 0.0
-            _hi = float(getattr(domain, 'hi', 1)) if domain else 1.0
+            # The emit sites read the moments of the draw through `stochastic_moments`.
             stochastic_param_info[pname] = {
-                'dist': dist_name,
-                'lo': _lo,
-                'hi': _hi,
+                **resolve_distribution(dist, random_seed),
                 'default': float(p_obj.value) if p_obj.value is not None else 0.0,
-                'mean': _dmean,
-                'std': _dstd,
-                # A distribution's own seed overrides execution.random_seed, which defaults to 0.
-                'seed': int(dist.seed) if getattr(dist, 'seed', None) is not None else random_seed,
                 'shape': str(getattr(p_obj, 'shape', '')) if getattr(p_obj, 'shape', None) else '',
             }
 # Remove stochastic params from dynamics params (trajectories injected after prepare)
@@ -360,20 +341,31 @@ sv_distribution_info = {}
 for sv_name, sv in model.state_variables.items():
     dist = getattr(sv, 'distribution', None)
     if dist:
-        # Fallback chain: distribution.domain → sv.domain → default
-        domain = getattr(dist, 'domain', None)
-        if not domain:
-            domain = getattr(sv, 'domain', None)
-        lo = float(domain.lo) if domain and domain.lo is not None else -1.0
-        hi = float(domain.hi) if domain and domain.hi is not None else 1.0
+        # Fallback chain for the bounds: distribution.domain → sv.domain → [-1, 1].
         sv_distribution_info[sv_name] = {
-            'dist': str(getattr(dist, 'name', 'Uniform')).lower(),
-            'lo': lo,
-            'hi': hi,
+            **resolve_distribution(dist, random_seed, fallback_domain=getattr(sv, 'domain', None), bounds=(-1.0, 1.0)),
             'idx': state_names.index(sv_name if n_modes == 1 else f"{sv_name}__mode0"),
-            # A distribution's own seed overrides execution.random_seed, which defaults to 0.
-            'seed': int(dist.seed) if getattr(dist, 'seed', None) is not None else random_seed,
         }
+
+# Parameters that declare where their value starts (a distribution over space, or an equation), resolved or refused once here; create_network() and every cell of a seed axis evaluate the same emitted functions.
+parameter_start_groups = resolve_parameter_starts(
+    experiment, random_seed,
+    couplings=all_couplings,
+    coupling_inputs={_fn: [_ci for _ci, (_f, _o) in ci_coupling_map.items() if _f == _fn] for _fn in all_couplings},
+)
+parameter_start_names = {(_g['owner_kind'], _g['owner'] if _g['owner_kind'] == 'coupling' else None): set(_g['names']) for _g in parameter_start_groups}
+dyn_start_names = parameter_start_names.get(('dynamics', None), set())
+# What a seed axis reseeds without noise: the draws that follow the run's seed.
+seeded_parameter_starts = any(_g['seeded'] for _g in parameter_start_groups)
+edge_parameter_starts = any(_g['edges'] for _g in parameter_start_groups)
+trial_parameter_starts = any(_g['trial'] for _g in parameter_start_groups)
+# Handed to every create_network() call the module makes, so a runtime random_seed keys the draws as it keys the noise.
+start_seed_arg = "random_seed=kwargs.get('random_seed'), " if parameter_start_groups else ""
+# The module casts the run's seed to the uint32 that keys the noise and the drawn starts, and the settle's own seed likewise.
+if has_noise or any(_g['run_key'] for _g in parameter_start_groups):
+    refuse_seed_outside_key_range(random_seed, 'execution.random_seed')
+if has_noise and settle_seed is not None:
+    refuse_seed_outside_key_range(settle_seed, 'integration.noise.settle_seed')
 
 # === Events metadata (stimuli and other time-dependent inputs) ===
 # Each active stimulus/continuous event becomes an AbstractExternalInput in the dfun; the shared resolver drops fisher-analysis target events, which are linear-response metadata and never integrated.
@@ -383,17 +375,10 @@ has_stimulus_events = len(stimulus_events) > 0
 from tvbo.templates.tvboptim.utils import is_data_driven_event
 has_data_events = any(is_data_driven_event(ev) for ev in stimulus_events)
 
-# A stimulus event whose signal is an iid per-step draw (an event parameter with
-# distribution.axis == 'time') needs the same step-time freeze as stochastic
-# dynamics params: multi-stage solvers (Heun/RK4) must see one sample per step,
-# not advance the step index at the t+dt sub-evaluation.
 def _event_is_stochastic(ev):
+    """Whether a stimulus event's signal is an iid per-step draw (an event parameter with `distribution.axis: time`), which needs the same step-time freeze as a stochastic dynamics parameter: a multi-stage solver (Heun, RK4) must see one sample per step, not advance the step index at the t+dt sub-evaluation."""
     params = dict(ev.parameters) if getattr(ev, 'parameters', None) else {}
-    for pobj in params.values():
-        dist = getattr(pobj, 'distribution', None)
-        if dist is not None and 'time' in str(getattr(dist, 'axis', 'space')):
-            return True
-    return False
+    return any(samples_over_time(getattr(pobj, 'distribution', None)) for pobj in params.values())
 has_stochastic_stimulus = any(_event_is_stochastic(ev) for ev in stimulus_events)
 
 # A `subset` weight_distribution pre-samples one random-region mask per trial; the trial ensemble selects a row by writing state.external.<name>.trial.
@@ -526,6 +511,7 @@ for opt in optim_list:
                 stage_info['hyperparameters'][str(hp_name)] = float(hp_value)
 
         optimization_stages.append(stage_info)
+refuse_initial_value_on_parameter_start(optimization_stages, parameter_start_groups, _parameter_keypath)
 
 # For single-stage or default case, extract settings from first stage
 optimizer_name = optimization_stages[0]['algorithm'] if optimization_stages else 'adam'
@@ -796,6 +782,16 @@ for expl in exploration_list:
             'element_idx': None,
             'reduce': _reduce_stat,
         }
+        # A parameter that declares its start is written from it at build time and in every seed cell, so an axis on it, or on what its equation reads, is refused.
+        if is_coupling_param:
+            refuse_axis_on_parameter_start(str(axis.parameter), 'coupling', prefix, pname, parameter_start_groups)
+        elif not (is_network_param or is_noise_param or is_external_param or is_ic or source_key == 'execution'):
+            refuse_axis_on_parameter_start(str(axis.parameter), 'dynamics', None, pname, parameter_start_groups)
+        if is_network_param and graph_leaf == 'weights' and edge_parameter_starts:
+            raise ValueError(
+                f"exploration axis '{axis.parameter}': a parameter of this experiment draws one value per connection on the network's edges, "
+                f"and a swept weight matrix could change which entries are edges from cell to cell. Drop the axis, or declare the parameter without a distribution."
+            )
         # The values come from the source run's recorded branch rather than a domain here, so the analysis restarts on exactly the points that were computed.
         if from_experiment_branch and not (domain or explored_values or _el_domains or _builder is not None):
             exp_info['axes'].append({
@@ -872,10 +868,12 @@ for expl in exploration_list:
                 or _seeding == 'from_previous'
                 or bool(getattr(expl, 'branch_seed', None))
             )
-            if not has_noise or _bypasses_grid:
+            # A parameter drawn under the run's seed is a consumer too: every cell draws its own start.
+            _seed_unread = not has_noise and not seeded_parameter_starts
+            if _seed_unread or _bypasses_grid:
                 _why = (
                     "this experiment's integration declares no noise (every state's "
-                    "sigma is 0)" if not has_noise else
+                    "sigma is 0)" if _seed_unread else
                     "this exploration's strategy (%r) never reaches the per-cell grid "
                     "binding that applies the seed" % _expl_strategy
                 )
@@ -895,6 +893,8 @@ for expl in exploration_list:
             else:
                 _slo = int(domain.lo) if (domain and domain.lo is not None) else 0
                 _seed_vals = [_slo + _i for _i in range(_resolve_n(domain))]
+            for _seed_val in _seed_vals:
+                refuse_seed_outside_key_range(_seed_val, "exploration %r: execution.random_seed" % str(getattr(expl, 'name', None) or '<unnamed>'))
             exp_info['axes'].append({
                 'name': 'random_seed',
                 'label': _axis_label,
@@ -1378,23 +1378,14 @@ def _inject_stochastic_trajectories(state, t1, dt, key=None):
         _noise_shape = '(n_steps, n_nodes)'
     else:
         _noise_shape = '(n_steps,)'
-    # Effective mean/std: explicit distribution parameters win; the domain
-    # (mean<-value, std<-(hi-lo)/4) is only the fallback.
-    _mu = sp_info['mean'] if sp_info.get('mean') is not None else sp_info['default']
-    _sigma = sp_info['std'] if sp_info.get('std') is not None else (sp_info['hi'] - sp_info['lo']) / 4.0
+    _mu, _sigma = stochastic_moments(sp_info)
+    _family = distribution_family(sp_info['dist'])
 %>\
     key, _subkey = jax.random.split(key)
-    % if sp_info['dist'] == 'uniform':
-    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, ${_noise_shape}, minval=${sp_info['lo']}, maxval=${sp_info['hi']})
-    % elif sp_info['dist'] in ('gaussian', 'normal'):
-    state.dynamics._stoch_${sp_name} = ${_mu} + ${_sigma} * jax.random.normal(_subkey, ${_noise_shape})
-    % elif sp_info['dist'] in ('truncated_normal', 'truncatednormal'):
-    _raw = jax.random.truncated_normal(_subkey, lower=${(sp_info['lo'] - _mu) / max(_sigma, 1e-6)}, upper=${(sp_info['hi'] - _mu) / max(_sigma, 1e-6)}, shape=${_noise_shape})
-    state.dynamics._stoch_${sp_name} = ${_mu} + ${_sigma} * _raw
-    % else:
+    % if _family is None:
     # Unsupported distribution '${sp_info['dist']}', using uniform fallback
-    state.dynamics._stoch_${sp_name} = jax.random.uniform(_subkey, ${_noise_shape}, minval=${sp_info['lo']}, maxval=${sp_info['hi']})
     % endif
+    state.dynamics._stoch_${sp_name} = ${draw_expression(_family or 'uniform', '_subkey', _noise_shape, lo=sp_info['lo'], hi=sp_info['hi'], mean=_mu, std=_sigma)}
     % endfor
     return state
 
@@ -1498,6 +1489,60 @@ _TVBO_DYNAMICS_CLS = ${dynamics_class}
 % endif
 
 
+% if parameter_start_groups:
+% if edge_parameter_starts and not has_delay:
+import numpy as _np
+from tvboptim.experimental.network_dynamics.graph import SparseGraph as _SparseGraph
+
+
+${compact.render_compact_edge_list()}
+
+% endif
+% if trial_parameter_starts:
+def _trial_key(key, trial):
+    """*key* with the index of a trial folded in, for a start drawn per trial; *key* itself outside a trial ensemble (*trial* None), which is the run's draw."""
+    return key if trial is None else jax.random.fold_in(key, trial)
+
+
+% endif
+% for _g in parameter_start_groups:
+def ${_g['function']}(_seed, n_nodes, _edges${', _trial=None' if _g['trial'] else ''}):
+    """The values the parameters of ${'the dynamics' if _g['owner_kind'] == 'dynamics' else 'coupling ' + _g['owner']} start from under the run seed *_seed*: each declared distribution drawn per node, or per connection on the (target, source) rows of *_edges*, and each declared equation evaluated from them."""
+% if _g['run_key']:
+    _key = jax.random.key(jnp.asarray(_seed, dtype=jnp.uint32))
+% endif
+% for _in_name, _in_source in _g['inputs']:
+    ${_in_name} = ${_in_source}
+% endfor
+% for _e in _g['starts']:
+    ${_e['name']} = ${_e['code']}
+% endfor
+    return {${', '.join("'%s': %s" % (_e['name'], _e['name']) for _e in _g['starts'])}}
+
+
+% endfor
+% if (seeded_parameter_starts and any(_ax.get('is_seed') for _x in explorations for _ax in _x['axes'])) or (trial_parameter_starts and any(_x.get('n_trials', 1) > 1 for _x in explorations)):
+def _apply_parameter_starts(state, seed, n_nodes, edges${', trial=None' if trial_parameter_starts else ''}):
+    """Write into a prepared *state* the parameter starts that follow the run's seed, as create_network() gives them to a network built under *seed*${', and, for a *trial* of an ensemble, the starts drawn per trial as that trial draws them' if trial_parameter_starts else ''}."""
+% for _g in parameter_start_groups:
+% if _g['seeded'] or _g['trial']:
+    _starts = ${_g['function']}(seed, n_nodes, edges${', trial' if _g['trial'] else ''})
+% for _e in _g['starts']:
+% if (_e['seeded'] or _e['trial']) and _g['owner_kind'] == 'dynamics':
+    state.dynamics['${_e['name']}'] = _starts['${_e['name']}']
+% elif _e['seeded'] or _e['trial']:
+% for _ci in _g['inputs_served']:
+    state.coupling['${_ci}']['${_e['name']}'] = _starts['${_e['name']}']
+% endfor
+% endif
+% endfor
+% endif
+% endfor
+    return state
+
+
+% endif
+% endif
 _DELAY_SOURCE_STATES = {}
 """Coupling-input name -> the state variables a delayed coupling transmits, filled by create_network(); _carry_delay_history() reads it to rebuild each history buffer."""
 
@@ -1539,6 +1584,9 @@ def create_network(
     noise_sigma: float = ${noise_sigma_value},
     % if has_delay:
     max_delay: float = None,
+    % endif
+    % if parameter_start_groups:
+    random_seed: int = None,
     % endif
 ) -> Network:
 % if has_weight_transforms:
@@ -1588,9 +1636,22 @@ def create_network(
 
     n_nodes = weights.shape[0]
 
+    % if parameter_start_groups:
+    # The declared parameter starts, drawn under the run's seed (the declared ${random_seed} unless one is passed)${" over the graph's edges" if edge_parameter_starts else ''}.
+    _start_seed = ${random_seed} if random_seed is None else random_seed
+    % if edge_parameter_starts:
+    _start_edges = _compact_edge_list(graph)[0]
+    % endif
+    % for _g in parameter_start_groups:
+    ${_g['variable']} = ${_g['function']}(_start_seed, n_nodes, ${'_start_edges' if _g['edges'] else 'None'})
+    % endfor
+
+    % endif
     _dynamics_params = {
         % for name in dyn_param_names:
-        % if name in node_param_overrides:
+        % if name in dyn_start_names:
+        '${name}': _dynamics_starts['${name}'],
+        % elif name in node_param_overrides:
         '${name}': jnp.array([${', '.join(str(v) for v in node_param_overrides[name])}]),
         % elif name in dyn_param_lazy:
         '${name}': _load_param(${repr(dyn_param_lazy[name][0])}, ${repr(dyn_param_lazy[name][1])}),
@@ -1618,7 +1679,9 @@ def create_network(
 %>
     _${coupling_key}_params = {
         % for name in c_param_names:
-        % if name in c_param_lazy:
+        % if name in parameter_start_names.get(('coupling', coupling_key), ()):
+        '${name}': _${coupling_key}_starts['${name}'],
+        % elif name in c_param_lazy:
         '${name}': _load_param(${repr(c_param_lazy[name][0])}, ${repr(c_param_lazy[name][1])}),
         % elif name in c_param_shapes:
         '${name}': jnp.full(${c_param_shapes[name]}, ${c_param_defaults.get(name, 1.0)}),
@@ -1682,11 +1745,7 @@ def _sample_initial_conditions(state, key=None):
         ic = jnp.broadcast_to(ic[:, None], (ic.shape[0], n_nodes)).copy()
 % for _si, (_sv_name, _sv_info) in enumerate(sv_distribution_info.items()):
     _k${_si} = jax.random.fold_in(key if key is not None else jax.random.key(${_sv_info['seed']}), ${_si})
-% if _sv_info['dist'] in ('gaussian', 'normal'):
-    ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(_k${_si}, (n_nodes,)))
-% else:
-    ic = ic.at[${_sv_info['idx']}].set(jax.random.uniform(_k${_si}, (n_nodes,), minval=${_sv_info['lo']}, maxval=${_sv_info['hi']}))
-% endif
+    ic = ic.at[${_sv_info['idx']}].set(${initial_condition_draw(_sv_info, '_k%d' % _si, '(n_nodes,)')})
 % endfor
     state.initial_state.dynamics = ic
     return state
@@ -2790,9 +2849,8 @@ fp_hi = fp.get('upper_bound', None)
 has_bounds = fp_lo is not None or fp_hi is not None
 # FreeParameter.initial_value: the marked Parameter wraps this instead of the base config's value, so the descent starts from the declared point while the base/warm-up config keeps its own.
 fp_init = fp.get('initial_value', None)
-# State keypath the parameter is marked on, resolved from its declared scope (the parser split the reference on its last dot, so scope + name recovers it losslessly).
-_fp_scope = fp.get('coupling_key', None) or fp.get('dynamics_key', None)
-fp_path = _parameter_keypath(f"{_fp_scope}.{fp_name}" if _fp_scope else fp_name)
+# State keypath the parameter is marked on, resolved from the reference it was declared under.
+fp_path = _parameter_keypath(free_parameter_ref(fp))
 fp_scope_name = fp_path.rsplit('.', 1)[0]
 # Format bounds for code generation (None -> jnp.inf)
 lo_str = f'{fp_lo}' if fp_lo is not None else '-jnp.inf'
@@ -2923,6 +2981,18 @@ def run_optimization(
 % endif
 
 
+<%def name="map_trials(mode, batch, arrays)">\
+        # Exploration.parallel_mode maps the trials: vmap batches them all, pmap shards them over devices, and lax_map or auto runs them in sequence, parallel_batch_size at a time (default 1).
+% if mode == 'vmap':
+        trial_results = jax.vmap(_run_trial)(${', '.join(arrays)})
+% elif mode == 'pmap':
+        trial_results = jax.pmap(_run_trial)(${', '.join(arrays)})
+% elif len(arrays) == 1:
+        trial_results = jax.lax.map(_run_trial, ${arrays[0]}, batch_size=${batch if batch else 1})
+% else:
+        trial_results = jax.lax.map(lambda args: _run_trial(*args), (${', '.join(arrays)}), batch_size=${batch if batch else 1})
+% endif
+</%def>\
 <%def name="folded_cells(names, block_size)">\
 % if has_transient:
         _folded_model_fn = _settled_fold(_network, _own, ${repr(names)}, ${block_size})
@@ -3496,10 +3566,31 @@ ${folded_cells(_base_stream_names, _base_bs)}
         return _ic_base_fn(s)
 % endif
 
+<%
+    _seed_cell_starts = seeded_parameter_starts and any(ax.get('is_seed') for ax in expl['axes'])
+    _trial_cell_starts = trial_parameter_starts and expl.get('n_trials', 1) > 1
+    if _trial_cell_starts and expl['algorithms']:
+        refuse_trial_starts_under_algorithms(expl['name'], parameter_start_groups)
+    _trial_index = ['_ti'] if _trial_cell_starts else []
+    _trial_indices = ['jnp.arange(_n_trials)'] if _trial_cell_starts else []
+    # Each trial draws its starts under its cell's seed: the swept one on a seed axis, else the run's.
+    _trial_starts = f"_apply_parameter_starts(s, {'s.dynamics._noise_seed' if any(ax.get('is_seed') for ax in expl['axes']) else '_run_seed'}, _start_n, _start_edges, trial=_ti)"
+%>\
+% if _seed_cell_starts or _trial_cell_starts:
+    # A cell of the seed axis is the experiment at that seed, and a trial of the ensemble that experiment's trial, so each starts from the parameters create_network() draws for it, over the same edges.
+    if _network is None:
+        raise ValueError("${expl['name']}: every ${'cell of the seed axis' if _seed_cell_starts else 'trial of the ensemble'} draws its own parameter starts, which takes the network they are drawn over (run_experiment passes network=...)")
+    _start_n = _network.graph.weights.shape[0]
+    _start_edges = ${'_compact_edge_list(_network.graph)[0]' if edge_parameter_starts else 'None'}
+% endif
+% if _trial_cell_starts and not any(ax.get('is_seed') for ax in expl['axes']):
+    _run_seed = ${random_seed} if kwargs.get('random_seed') is None else kwargs['random_seed']
+% endif
 % if expl.get('n_trials', 1) > 1 and stochastic_param_info:
 <%
     _sp_names = list(stochastic_param_info.keys())
     _n_sp = len(_sp_names)
+    _trial_noises = _trial_indices + [f'_trial_noises_{sp}' for sp in _sp_names]
 %>\
     # === Trial parallelization: ${expl['n_trials']} trials via jax.vmap ===
     # One noise realization per trial, vmapped over trials on the same device.
@@ -3515,18 +3606,11 @@ ${folded_cells(_base_stream_names, _base_bs)}
         _trial_noise_shape = f'(_n_steps_stoch, {n_nodes})'
     else:
         _trial_noise_shape = '(_n_steps_stoch,)'
-    # Distribution-specific noise generation. Explicit mean/std (sigma) from the
-    # distribution parameters win; the domain is only a fallback.
-    if _sp_info['dist'] in ('gaussian', 'normal'):
-        _mean = _sp_info['mean'] if _sp_info.get('mean') is not None else _sp_info['default']
-        _std = _sp_info['std'] if _sp_info.get('std') is not None else (_sp_info['hi'] - _sp_info['lo']) / 4.0
-        _noise_gen = f'{_mean} + {_std} * jax.random.normal(k, {_trial_noise_shape})'
-    else:
-        # Default: uniform
-        _noise_gen = f"jax.random.uniform(k, {_trial_noise_shape}, minval={_sp_info['lo']}, maxval={_sp_info['hi']})"
-    # For multiple stochastic params, split each trial key for independent sub-keys
-    if _n_sp > 1:
-        _noise_gen = _noise_gen.replace('(k,', f"(jax.random.split(k, {_n_sp + 1})[{_sp_idx + 1}],")
+    # Each stochastic parameter draws from its own sub-key of the trial's key when there are several.
+    _trial_key = f"jax.random.split(k, {_n_sp + 1})[{_sp_idx + 1}]" if _n_sp > 1 else 'k'
+    # The family and moments a single run's `_inject_stochastic_trajectories` draws, so a trial draws what the run draws.
+    _mean, _std = stochastic_moments(_sp_info)
+    _noise_gen = draw_expression(distribution_family(_sp_info['dist']) or 'uniform', _trial_key, _trial_noise_shape, lo=_sp_info['lo'], hi=_sp_info['hi'], mean=_mean, std=_std)
 %>\
     _trial_noises_${_sp_name} = jax.vmap(lambda k: ${_noise_gen})(_trial_keys)
     % endfor
@@ -3540,31 +3624,28 @@ ${folded_cells(_base_stream_names, _base_bs)}
 % if has_host_pipeline_obs or _rec_host:
     # A host pipeline callable cannot trace under jit, so trials run in a host loop with each solve still jitted.
     def observable_fn(s):
-        def _run_trial(${', '.join(f'_tn_{sp}' for sp in _sp_names)}):
+        def _run_trial(${', '.join(_trial_index + [f'_tn_{sp}' for sp in _sp_names])}):
+    % if _trial_cell_starts:
+            ${_trial_starts}
+    % endif
     % for _sp_name in _sp_names:
             s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
     % endfor
             return _base_trial_observable(s)
-        _trial_outs = [_run_trial(${', '.join(f'_trial_noises_{sp}[_ti]' for sp in _sp_names)}) for _ti in range(_n_trials)]
+        _trial_outs = [_run_trial(${', '.join(_trial_index + [f'_trial_noises_{sp}[_ti]' for sp in _sp_names])}) for _ti in range(_n_trials)]
         trial_results = jax.tree.map(lambda *_xs: jnp.stack([jnp.asarray(_x) for _x in _xs]), *_trial_outs)
 % else:
     @jax.jit
     def observable_fn(s):
-        def _run_trial(${', '.join(f'_tn_{sp}' for sp in _sp_names)}):
+        def _run_trial(${', '.join(_trial_index + [f'_tn_{sp}' for sp in _sp_names])}):
+    % if _trial_cell_starts:
+            ${_trial_starts}
+    % endif
     % for _sp_name in _sp_names:
             s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
     % endfor
             return _base_trial_observable(s)
-        # See the IC-trial branch for parallel_mode semantics.
-% if _pmode_s == 'vmap':
-        trial_results = jax.vmap(_run_trial)(${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)})
-% elif _pmode_s == 'pmap':
-        trial_results = jax.pmap(_run_trial)(${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)})
-% elif len(_sp_names) == 1:
-        trial_results = jax.lax.map(_run_trial, _trial_noises_${_sp_names[0]}, batch_size=${_pbatch_s if _pbatch_s else 1})
-% else:
-        trial_results = jax.lax.map(lambda args: _run_trial(*args), (${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)}), batch_size=${_pbatch_s if _pbatch_s else 1})
-% endif
+${map_trials(_pmode_s, _pbatch_s, _trial_noises)}\
 % endif
     % if expl.get('average') == 'trials':
         return jax.tree.map(lambda _l: jnp.mean(_l, axis=0), trial_results)  # per-leaf so a Bunch of streamed observables averages over trials (jnp.mean fails on a Bunch)
@@ -3582,11 +3663,7 @@ ${folded_cells(_base_stream_names, _base_bs)}
         ic = _expl_state.initial_state.dynamics  # (n_states, n_nodes)
     % for _si, (_sv_name, _sv_info) in enumerate(sv_distribution_info.items()):
         _k${_si} = jax.random.fold_in(jax.random.fold_in(jax.random.key(${_sv_info['seed']}), ${_si}), i)
-    % if _sv_info['dist'] in ('gaussian', 'normal'):
-        ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(_k${_si}, ic[${_sv_info['idx']}].shape))
-    % else:
-        ic = ic.at[${_sv_info['idx']}].set(jax.random.uniform(_k${_si}, ic[${_sv_info['idx']}].shape, minval=${_sv_info['lo']}, maxval=${_sv_info['hi']}))
-    % endif
+        ic = ic.at[${_sv_info['idx']}].set(${initial_condition_draw(_sv_info, '_k%d' % _si, 'ic[%s].shape' % _sv_info['idx'])})
     % endfor
         return ic
 
@@ -3601,29 +3678,24 @@ ${folded_cells(_base_stream_names, _base_bs)}
 % if has_host_pipeline_obs or _rec_host:
     # A host pipeline callable cannot trace under jit, so trials run in a host loop with each solve still jitted.
     def observable_fn(s):
-        def _run_trial(ic):
+        def _run_trial(${', '.join(_trial_index + ['ic'])}):
+    % if _trial_cell_starts:
+            ${_trial_starts}
+    % endif
             s.initial_state.dynamics = ic
             return _base_ic_observable(s)
-        _trial_outs = [_run_trial(_trial_ics[_ti]) for _ti in range(_n_trials)]
+        _trial_outs = [_run_trial(${', '.join(_trial_index + ['_trial_ics[_ti]'])}) for _ti in range(_n_trials)]
         trial_results = jax.tree.map(lambda *_xs: jnp.stack([jnp.asarray(_x) for _x in _xs]), *_trial_outs)
 % else:
     @jax.jit
     def observable_fn(s):
-        def _run_trial(ic):
+        def _run_trial(${', '.join(_trial_index + ['ic'])}):
+    % if _trial_cell_starts:
+            ${_trial_starts}
+    % endif
             s.initial_state.dynamics = ic
             return _base_ic_observable(s)
-        # Trial-axis parallelism is picked per the Exploration.parallel_mode
-        # slot. ``vmap`` batches all trials (fast, peak memory n_trials ×
-        # per-trial working set); ``lax_map`` runs them sequentially with
-        # peak memory bounded by one trial. ``auto`` defaults to lax_map
-        # at batch_size=1 — safe for any n_trials × n_nodes.
-% if _pmode == 'vmap':
-        trial_results = jax.vmap(_run_trial)(_trial_ics)
-% elif _pmode == 'pmap':
-        trial_results = jax.pmap(_run_trial)(_trial_ics)
-% else:
-        trial_results = jax.lax.map(_run_trial, _trial_ics, batch_size=${_pbatch if _pbatch else 1})
-% endif
+${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
 % endif
     % if expl.get('average') == 'trials':
         return jax.tree.map(lambda _l: jnp.mean(_l, axis=0), trial_results)  # per-leaf so a Bunch of streamed observables averages over trials (jnp.mean fails on a Bunch)
@@ -3642,7 +3714,7 @@ ${folded_cells(_base_stream_names, _base_bs)}
             f"as a trial-only exploration (n_trials over solver noise) instead."
         )
 %>\
-% if expl.get('n_trials', 1) > 1 and not stochastic_param_info and not sv_distribution_info and (has_noise or subset_mask_events or trial_bank_events):
+% if expl.get('n_trials', 1) > 1 and not stochastic_param_info and not sv_distribution_info and (has_noise or subset_mask_events or trial_bank_events or _trial_cell_starts):
     # ${expl['n_trials']} trials differing through live state leaves, run host-side because a per-trial observable may end in numpy, each solve still jitted.
     _n_trials = ${expl['n_trials']}
 
@@ -3659,6 +3731,9 @@ ${folded_cells(_base_stream_names, _base_bs)}
             % for _sev in subset_mask_events + trial_bank_events:
             s.external.${_sev.name}.trial = float(_ti)
             % endfor
+            % if _trial_cell_starts:
+            ${_trial_starts}
+            % endif
             return _base_trial_observable(s)
         # Runs OUTSIDE jit, so it writes the caller's live state: restore the leaves or the next cell's ensemble folds on top of trial n-1's key.
         try:
@@ -3679,6 +3754,14 @@ ${folded_cells(_base_stream_names, _base_bs)}
     % endif
 % endif
 
+% if _seed_cell_starts:
+% if not expl['algorithms']:
+    _start_base_fn = observable_fn
+    def observable_fn(s):
+        return _start_base_fn(_apply_parameter_starts(s, s.dynamics._noise_seed, _start_n, _start_edges))
+% endif
+
+% endif
 % if expl['algorithms']:
     # ── Algorithm-wired exploration (Exploration.algorithms) ─────────────────
     # The wired algorithm chain runs AT EACH sweep point before the observable.
@@ -3695,6 +3778,9 @@ ${folded_cells(_base_stream_names, _base_bs)}
     def _algo_point_fn(_pt_state):
         # Bunch.copy() rebuilds the containers and shares the leaves, which is what a deepcopy cannot do here: the state carries a PRNG key, and deep-copying one while it is traced asserts, so a deepcopy pins the whole sweep to the sequential path.
         _ps = _pt_state.copy()
+% if _seed_cell_starts:
+        _ps = _apply_parameter_starts(_ps, _ps.dynamics._noise_seed, _start_n, _start_edges)   # the cell's own start, which the tuning below then updates
+% endif
 % for _algo in expl['algorithms']:
         _ts = _tune_state_${_algo['name']}.copy()
         for _k in _ps.dynamics.keys():
@@ -4057,16 +4143,16 @@ def run_experiment(
 
     % if use_length_graph:
     # tract lengths → DenseLengthGraph derives delays = lengths / conduction_speed.
-    network = create_network(weights, distances=distances, region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, distances=distances, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % elif use_delay_graph:
     # explicit per-edge delays → DenseDelayGraph over the delay matrix directly.
     if delays is None:
         delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
     else:
         delays = jnp.array(delays)
-    network = create_network(weights, ${weight_transform_distances_arg}delays=delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
-    network = create_network(weights, ${weight_transform_distances_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
     # Whether the base forward-sim is materialised at all. Algorithm/optimization/exploration modes run their own simulations, so the base trajectory is prepared but never integrated.
@@ -4810,11 +4896,11 @@ def run_experiment(
 % else:
             # No depends_on: start from FRESH network (not modified by algorithms)
             % if use_length_graph:
-            opt_network = create_network(weights, distances=distances, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, distances=distances, ${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % elif use_delay_graph:
-            opt_network = create_network(weights, ${weight_transform_distances_arg}delays=delays, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % else:
-            opt_network = create_network(weights, ${weight_transform_distances_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % endif
             # This network is fresh, so it settles its own: `run_simulation` runs the settle, warm-starts through `update_history` and hands back the measured-window model, without materialising a base trajectory nobody reads.
             _opt_sim = run_simulation(opt_network, t1=${opt_t1}, dt=${opt_dt}, t_transient=${transient_time}, run_main=False, random_seed=kwargs.get('random_seed'))

@@ -1,8 +1,19 @@
 <%doc>
 Compact delayed coupling: a concrete tvboptim DelayedCoupling that integrates over the connectome's nonzero edges.
 
-Emitted once into a generated module that defines any delayed coupling; every delayed coupling class the cfun template renders then inherits from it. Built only on tvboptim's public coupling and graph contract (prepare / precompute / compute / pre / post, the roll history buffer, and a sparse graph's `edge_indices` and per-edge `data`), so it runs on the released tvboptim as well as a development checkout.
+Emitted once into a generated module that defines any delayed coupling; every delayed coupling class the cfun template renders then inherits from it. The edge order it integrates over is its own def, `render_compact_edge_list`, which a module without a delayed coupling emits alone when a parameter is drawn per connection. Built only on tvboptim's public coupling and graph contract (prepare / precompute / compute / pre / post, the roll history buffer, and a sparse graph's `edge_indices` and per-edge `data`), so it runs on the released tvboptim as well as a development checkout.
 </%doc>
+<%def name="render_compact_edge_list()">\
+def _compact_edge_list(graph):
+    """The graph's edges as a concrete ``(n_edges, 2)`` array of (target, source), in the order its per-edge data follows, and the entries a dense weight must keep at zero.
+
+    A sparse graph's edges are its stored indices, which its ``weights.data`` and ``delays.data`` follow, and it has no off-pattern entries to guard (None). A dense graph's edges are the nonzero entries of its weight matrix at prepare() time, and every other entry must stay zero.
+    """
+    if isinstance(graph, _SparseGraph):
+        return _np.asarray(graph.edge_indices), None
+    pattern = _np.asarray(graph.weights) != 0
+    return _np.argwhere(pattern), ~pattern
+</%def>
 <%def name="render_compact_delayed_coupling()">\
 import equinox as _eqx
 import numpy as _np
@@ -99,15 +110,7 @@ class CompactDelayedCoupling(DelayedCoupling):
         return self.post(chunk_sums[:, slots.chunk_table].sum(axis=-1), local_states, params)
 
 
-def _compact_edge_list(graph):
-    """The graph's edges as a concrete ``(n_edges, 2)`` array of (target, source), in the order its per-edge data follows, and the entries a dense weight must keep at zero.
-
-    A sparse graph's edges are its stored indices, which its ``weights.data`` and ``delays.data`` follow, and it has no off-pattern entries to guard (None). A dense graph's edges are the nonzero entries of its weight matrix at prepare() time, and every other entry must stay zero.
-    """
-    if isinstance(graph, _SparseGraph):
-        return _np.asarray(graph.edge_indices), None
-    pattern = _np.asarray(graph.weights) != 0
-    return _np.argwhere(pattern), ~pattern
+${render_compact_edge_list()}\
 
 
 def _compact_edge_slots(edges, n_target, chunk, off_pattern):

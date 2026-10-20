@@ -571,7 +571,7 @@ def nd_references(tmp_path_factory):
 def _on_reference_inputs(name, ref, states=(), parameters=None, adjacency=False):
     """The docs example *name* run on the reference's own inputs, so the two integrate the same system and any difference is TVBO's.
 
-    *states* are the state variables the reference's ``x0`` holds per node, in NetworkDynamics.jl's layout (node by node, each node's states in order), and become each node's declared ``state``; *parameters* maps a node parameter to its per-node values. With *adjacency*, the network drops its generator and takes the reference's graph as its weight matrix: a random generator draws a different graph in Graphs.jl than in the networkx build tvbo integrates, and the reference is the tutorial's draw.
+    *states* are the state variables the reference's ``x0`` holds per node, in NetworkDynamics.jl's layout (node by node, each node's states in order), and become each node's declared ``state``; *parameters* maps a node parameter to its per-node values, which replace the distribution the example draws it from, since a parameter has one definition. With *adjacency*, the network drops its generator and takes the reference's graph as its weight matrix: a random generator draws a different graph in Graphs.jl than in the networkx build tvbo integrates, and the reference is the tutorial's draw.
     """
     import yaml
 
@@ -579,6 +579,8 @@ def _on_reference_inputs(name, ref, states=(), parameters=None, adjacency=False)
 
     with open(os.path.join(EXAMPLES_DIR, f"{name}.yaml")) as f:
         spec = yaml.safe_load(f)
+    for p in parameters or {}:
+        spec["dynamics"]["parameters"][p].pop("distribution", None)
     network = spec["network"]
     if "edge_matrix_files" in network:
         network["edge_matrix_files"] = [os.path.join(EXAMPLES_DIR, path) for path in network["edge_matrix_files"]]

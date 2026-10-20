@@ -9,7 +9,15 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from tvbo.adapters.base import BaseAdapter, dense_matrix, refuse_observations
+from tvbo.adapters.base import (
+    BaseAdapter,
+    dense_matrix,
+    parameter_starts,
+    refuse_observations,
+    refuse_second_definition,
+    start_draw,
+)
+from tvbo.export.registry import StartKind
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult, SimulationResult
@@ -677,6 +685,52 @@ class NetworkDynamicsAdapter(BaseAdapter):
         by_row = {rows[node.id]: node.label or f"node_{node.id}" for node in ctx["nodes"] if node.id in rows}
         return [str(by_row.get(row, f"node_{row}")) for row in range(ctx["n_nodes"])]
 
+    def refuse_undrawn_starts(self) -> None:
+        """Raise where the emitted Julia would not draw a per-node parameter start as it is declared.
+
+        The template draws a dynamics parameter per node, uniform on its distribution's `domain`, when it sets the initial state. Refused, by name: a declaration no backend can draw (`start_draw`), a second definition of the parameter's value (`refuse_second_definition`), a family other than uniform, and a steady-state search, which sets no initial state.
+        """
+        execution = self.get_execution_info()
+        starts = [start for start in parameter_starts(self.experiment) if start.kind == StartKind.NODE]
+        families = {start.label: start_draw(start, execution["random_seed"])[0] for start in starts}
+        for start in starts:
+            refuse_second_definition(start, self.experiment)
+        other = [
+            f"{label}, declared as a {family.replace('_', ' ')}," for label, family in families.items() if family != "uniform"
+        ]
+        if other:
+            raise NotImplementedError(
+                f"the NetworkDynamics.jl templates draw a per-node parameter uniform on its distribution's `domain` and from no other family, so {'; '.join(other)} would be drawn uniform. "
+                "Declare Uniform, or run the experiment on tvboptim."
+            )
+        if starts and execution["find_fixpoint"]:
+            raise NotImplementedError(
+                f"the NetworkDynamics.jl templates draw a per-node parameter when they set the initial state, which a steady-state search skips, so {'; '.join(families)} would run at one constant on every node. "
+                "Integrate the network, or run the experiment on tvboptim."
+            )
+
+    def refuse_seed_mismatch(self) -> None:
+        """Raise where two distributions the emitted Julia draws resolve to different seeds.
+
+        The module draws every declared distribution, initial conditions and parameters alike, from one `MersenneTwister` seeded once, with the first own `seed` it finds, else `execution.random_seed`. A distribution keyed by any other seed would be drawn from that one stream, so the seed it resolves to (`distribution.seed`, else the run's) would not key it.
+        """
+        from tvbo.templates.base.utils import collect_param_distributions, collect_sv_distributions
+
+        run_seed = self.get_execution_info()["random_seed"]
+        seeds = {}
+        for name, dyn in self.build_dynamics_dict().items():
+            drawn = [(f"state variable {sv.name!r}", d) for _, sv, d in collect_sv_distributions(dyn)]
+            drawn += [(f"parameter {p_name!r}", d) for p_name, _, d in collect_param_distributions(dyn)]
+            for what, d in drawn:
+                own = getattr(d, "seed", None)
+                seeds[f"{what} of dynamics {name!r}"] = run_seed if own is None else int(own)
+        if len(set(seeds.values())) > 1:
+            raise NotImplementedError(
+                "the NetworkDynamics.jl module draws every declared distribution from one random stream seeded once, and "
+                + ", ".join(f"{label} resolves to seed {seed}" for label, seed in seeds.items())
+                + ". Give them one seed (`distribution.seed`, else `execution.random_seed`), or run the experiment on tvboptim."
+            )
+
     def refuse_unrenderable(self) -> None:
         """Raise where the emitted Julia would quietly integrate something other than what was declared.
 
@@ -691,6 +745,8 @@ class NetworkDynamicsAdapter(BaseAdapter):
                 "(tvb, tvboptim, jax), or declare the coupling undelayed."
             )
         refuse_observations(self.experiment, "NetworkDynamics.jl")
+        self.refuse_undrawn_starts()
+        self.refuse_seed_mismatch()
         if self.get_execution_info()["find_fixpoint"] and self.holds_coupling():
             raise NotImplementedError(
                 "execution.find_fixpoint searches the steady state of the network's vector field, and under integration.coupling_evaluation: per_step "

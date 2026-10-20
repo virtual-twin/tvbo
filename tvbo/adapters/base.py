@@ -9,7 +9,7 @@ from __future__ import annotations
 import ast
 import re
 from collections import OrderedDict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import numpy as np
 
@@ -18,11 +18,16 @@ if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
 
 from tvbo.adapters.smallscale.lowering import node_dynamics_name
+from tvbo.export.registry import StartKind
 from tvbo.templates.base.utils import (
     collect_param_distributions,
     collect_sv_distributions,
+    distribution_family,
     get_distribution_seed,
     has_distributions,
+    resolve_distribution,
+    samples_over_time,
+    samples_per_trial,
 )
 from tvbo.utils import initial_value, keyed_items, network_couplings, noise_sigma
 
@@ -120,6 +125,159 @@ def refuse_observations(experiment, backend: str) -> None:
             f"the {backend} backend emits no observation, so {', '.join(observations)} would be dropped and the run would return the raw trajectory alone. "
             "Run the monitors on a backend that lowers them (tvb, tvboptim, jax), or drop them from the experiment."
         )
+
+
+def dynamics_library(experiment) -> OrderedDict:
+    """Every distinct Dynamics of *experiment* by name: its own model first, then each further entry of the network's dynamics library (a heterogeneous network), one per name."""
+    model, network = getattr(experiment, "dynamics", None), getattr(experiment, "network", None)
+    library = OrderedDict()
+    if model:
+        library[model.name] = model
+    net_dynamics = getattr(network, "dynamics", None) if network else None
+    if isinstance(net_dynamics, dict):
+        for name, dyn in net_dynamics.items():
+            if name not in library:
+                library[name] = dyn
+    return library
+
+
+class ParameterStart(NamedTuple):
+    """One dynamics or coupling parameter whose value is declared by something other than a literal: a distribution sampled over space, or an equation.
+
+    ``kind`` is the `StartKind` a backend must honour: a dynamics parameter drawn per node, a coupling parameter drawn per node or per connection, or an equation evaluated once from the other parameters of its owner. A draw whose distribution declares ``axis: trial`` is drawn again for each trial of an ``n_trials`` ensemble (`per_trial`), which a backend honours only by listing `StartKind.TRIAL` as well.
+    """
+
+    owner_kind: str
+    owner: str
+    name: str
+    kind: StartKind
+    parameter: Any
+
+    @property
+    def per_trial(self) -> bool:
+        """Whether the start is a draw redrawn for each trial of an ``n_trials`` ensemble."""
+        return self.kind != StartKind.EQUATION and samples_per_trial(self.parameter.distribution)
+
+    @property
+    def label(self) -> str:
+        """The parameter as a message names it, with what it declares."""
+        declares = "an equation" if self.kind == StartKind.EQUATION else "a distribution sampled over space"
+        return f"parameter {self.name!r} of {self.owner_kind} {self.owner!r} ({declares}{', drawn per trial' if self.per_trial else ''})"
+
+
+def parameter_starts(experiment) -> list[ParameterStart]:
+    """Every parameter of *experiment*'s dynamics and couplings that declares where its value starts, in declaration order.
+
+    A parameter with an ``equation`` is listed as ``equation`` whatever else it declares, so a backend that cannot evaluate one refuses it; a parameter with a ``distribution`` whose axis is not time is a draw. A distribution over time is a stochastic input, which is another capability and is not listed.
+    """
+    owners = [("dynamics", str(name), dyn) for name, dyn in dynamics_library(experiment).items()]
+    owners += [("coupling", str(key), c) for key, c in network_couplings(getattr(experiment, "network", None)).items()]
+    found = []
+    for owner_kind, owner, holder in owners:
+        for key, parameter in keyed_items(getattr(holder, "parameters", None), "parameters"):
+            name = str(getattr(parameter, "name", None) or key)
+            distribution = getattr(parameter, "distribution", None)
+            if getattr(parameter, "equation", None) is not None:
+                found.append(ParameterStart(owner_kind, owner, name, StartKind.EQUATION, parameter))
+            elif distribution is not None and not samples_over_time(distribution):
+                kind = StartKind.NODE if owner_kind == "dynamics" else StartKind.COUPLING
+                found.append(ParameterStart(owner_kind, owner, name, kind, parameter))
+    return found
+
+
+def refuse_parameter_starts(experiment, backend: str, lowered: tuple[str, ...] = ()) -> None:
+    """Raise where *backend* would accept a parameter that declares its start and integrate one constant in its place.
+
+    A backend whose templates read a parameter's ``value`` alone runs a declared distribution at that value on every node and in every seed, and a parameter defined by an equation at whatever its fallback is, and still reports success; one that draws a start once per run gives every trial of an ensemble the same draw. *lowered* names the kinds of `ParameterStart` the backend does honour; every other one, and a start drawn per trial where `StartKind.TRIAL` is not among them, is refused by name.
+    """
+    starts = parameter_starts(experiment)
+    dropped = [start.label for start in starts if start.kind not in lowered]
+    if dropped:
+        raise NotImplementedError(
+            f"the {backend} backend does not lower {'; '.join(dropped)}, so each would be integrated at one constant on every node and in every run. "
+            "Run the experiment on tvboptim, which draws a declared distribution and evaluates a parameter's equation when it builds the network, or declare the parameter by `value`."
+        )
+    once = [start.label for start in starts if start.per_trial and StartKind.TRIAL not in lowered]
+    if once:
+        raise NotImplementedError(
+            f"the {backend} backend draws a parameter start once per run, so {'; '.join(once)} would start every trial of an ensemble from one draw. "
+            "Declare `axis: space` to share the draw between the trials, or run the experiment on tvboptim, which draws it for each trial."
+        )
+
+
+def node_declared_parameters(network) -> set[str]:
+    """The names of the dynamics parameters any declared node of *network* sets to a value, the dynamics' own value included: each pins the parameter on that node."""
+    nodes = getattr(network, "nodes", None) or []
+    return {name for node in nodes for name, value in BaseAdapter.parse_node_parameters(node).items() if value is not None}
+
+
+def value_elsewhere(parameter: Any, owner_kind: str, name: str, experiment: Any) -> str | None:
+    """Where the network takes the value of the parameter *name* of a dynamics or coupling (*owner_kind*) from, other than its declaration, or None.
+
+    A `source` or `producer`, a `used` reference, a `measure` read under ``initial_state.method: from_experiment``, or, for a dynamics parameter, a value a node of the network declares for it (`node_declared_parameters`). Each replaces whatever `value`, distribution or equation the parameter declares.
+    """
+    from tvbo.data import param_io
+
+    initial = getattr(experiment, "initial_state", None)
+    if param_io.is_lazy(parameter):
+        return "a `source` or `producer`"
+    if getattr(parameter, "used", None) is not None:
+        return "a `used` reference"
+    if getattr(parameter, "measure", None) and str(getattr(initial, "method", "") or "") == "from_experiment":
+        return "a `measure` read from the experiment the initial state names"
+    if owner_kind == "dynamics" and name in node_declared_parameters(getattr(experiment, "network", None)):
+        return "per-node values on the network's nodes"
+    return None
+
+
+def _other_declaration(start: ParameterStart, experiment: Any) -> str | None:
+    """What else declares the value of a parameter that declares its start, or None: a parameter has one definition."""
+    parameter = start.parameter
+    if start.kind == StartKind.EQUATION and getattr(parameter, "value", None) is not None:
+        return "a `value`"
+    if start.kind == StartKind.EQUATION and getattr(parameter, "distribution", None) is not None:
+        return "a `distribution`"
+    return value_elsewhere(parameter, start.owner_kind, start.name, experiment)
+
+
+def refuse_second_definition(start: ParameterStart, experiment: Any) -> None:
+    """Raise where a parameter that declares its start declares its value a second time (`_other_declaration`), on every backend that honours the start."""
+    also = _other_declaration(start, experiment)
+    if also is not None:
+        inherited = " `value: null` clears a value inherited through a merge key." if also == "a `value`" else ""
+        raise ValueError(
+            f"{start.label}: the parameter also declares {also}, and a parameter has one definition. Keep one of the two.{inherited}"
+        )
+
+
+def start_draw(start: ParameterStart, random_seed: int) -> tuple[str, dict[str, Any]]:
+    """The family a drawn parameter start draws from and its resolved distribution (`resolve_distribution`), on every backend that draws one.
+
+    Refused, by name: a name no draw implements, a bound or a moment the family needs and the distribution does not declare, bounds in the wrong order or a spread that is not positive, and a `domain` on a normal, which is unbounded and would ignore it.
+    """
+    distribution = start.parameter.distribution
+    spec = resolve_distribution(distribution, random_seed, bounds=(None, None))
+    family = distribution_family(spec["dist"])
+    needs = {"uniform": ("lo", "hi"), "normal": ("mean", "std"), "truncated_normal": ("lo", "hi", "mean", "std")}.get(family)
+    if needs is None:
+        raise ValueError(
+            f"{start.label}: no draw is implemented for the distribution {getattr(distribution, 'name', None)!r}. Declare Uniform, Normal (Gaussian) or TruncatedNormal."
+        )
+    missing = [field for field in needs if spec[field] is None]
+    if missing:
+        raise ValueError(
+            f"{start.label}: a {family.replace('_', ' ')} draw needs {', '.join(needs)}, and the distribution declares no {', '.join(missing)} "
+            "(`domain: {lo, hi}` for the bounds, `parameters: {mean, std}` for the moments)."
+        )
+    if ("lo" in needs and not spec["lo"] < spec["hi"]) or ("std" in needs and not spec["std"] > 0):
+        raise ValueError(
+            f"{start.label}: the distribution needs lo < hi and std > 0, and declares { ({k: spec[k] for k in needs}) }."
+        )
+    if family == "normal" and getattr(distribution, "domain", None) is not None:
+        raise ValueError(
+            f"{start.label}: a normal draw is unbounded, so the `domain` the distribution declares would be ignored. Declare TruncatedNormal to draw inside the domain, or drop the domain."
+        )
+    return family, spec
 
 
 def require_observations(experiment, result, backend: str) -> None:
@@ -245,21 +403,8 @@ class BaseAdapter:
     # ── Dynamics library ─────────────────────────────────────────────────
 
     def build_dynamics_dict(self) -> OrderedDict:
-        """Build an ordered dict of all unique Dynamics models.
-
-        Always includes the default model first, then any additional dynamics from the network's dynamics library (for heterogeneous networks).
-        """
-        exp = self.experiment
-        model = exp.dynamics
-        d = OrderedDict()
-        if model:
-            d[model.name] = model
-        net_dynamics = getattr(exp.network, "dynamics", None) if exp.network else None
-        if isinstance(net_dynamics, dict):
-            for name, dyn in net_dynamics.items():
-                if name not in d:
-                    d[name] = dyn
-        return d
+        """Every distinct Dynamics of the experiment by name (`dynamics_library`)."""
+        return dynamics_library(self.experiment)
 
     # ── Node-dynamics mapping ────────────────────────────────────────────
 
@@ -528,8 +673,8 @@ class BaseAdapter:
     # ── Distribution collection ──────────────────────────────────────────
 
     @staticmethod
-    def collect_all_distributions(dynamics_dict: OrderedDict) -> dict:
-        """Collect SV and parameter distributions from all dynamics.
+    def collect_all_distributions(dynamics_dict: OrderedDict, default_seed: int = 0) -> dict:
+        """Collect SV and parameter distributions from all dynamics, each dynamics' seed being its first own `seed`, else *default_seed* (the run's).
 
         Returns {dyn_name: {'sv': [...], 'param': [...], 'has': bool, 'seed': int}}
         """
@@ -539,7 +684,7 @@ class BaseAdapter:
                 "sv": collect_sv_distributions(dyn),
                 "param": collect_param_distributions(dyn),
                 "has": has_distributions(dyn),
-                "seed": get_distribution_seed(dyn),
+                "seed": get_distribution_seed(dyn, default_seed),
             }
         return result
 
@@ -593,10 +738,11 @@ class BaseAdapter:
     # ── Execution config ─────────────────────────────────────────────
 
     def get_execution_info(self) -> dict:
-        """Extract execution config (find_fixpoint, etc.)."""
+        """Extract execution config: whether to search a fixed point, and the run's seed (`execution.random_seed`, 0 where none is declared)."""
         execution = getattr(self.experiment, "execution", None)
         return {
             "find_fixpoint": bool(getattr(execution, "find_fixpoint", False)),
+            "random_seed": int(getattr(execution, "random_seed", None) or 0),
         }
 
     # ── Full context for templates ───────────────────────────────────────
@@ -633,8 +779,10 @@ class BaseAdapter:
         listed_edges = self.listed_edges()
         W = self.build_weight_matrix(listed_edges)
 
+        exec_info = self.get_execution_info()
+
         # Distribution info
-        dist_info = self.collect_all_distributions(dynamics_dict)
+        dist_info = self.collect_all_distributions(dynamics_dict, exec_info["random_seed"])
         needs_random = any(d["has"] for d in dist_info.values())
         dist_seed = next((d["seed"] for d in dist_info.values() if d["has"]), 0)
 
@@ -667,9 +815,6 @@ class BaseAdapter:
                         except ValueError:
                             pass
         tstops = sorted(tstops)
-
-        # Execution config
-        exec_info = self.get_execution_info()
 
         return {
             # Core objects (still needed by sub-templates)

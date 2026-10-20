@@ -7,7 +7,7 @@ Each renderer is a thin closure ``(experiment, **kwargs) -> str``. Heavy adapter
 
 from __future__ import annotations
 
-from .registry import ExportFormat, register
+from .registry import ExportFormat, StartKind, register
 
 # Serialisation (LinkML YAML / openMINDS JSON-LD)
 
@@ -239,17 +239,32 @@ _BUILTINS = [
         _render_yaml,
         aliases=("tvbo", "tvbo-yaml"),
         supports_with_data=True,
+        parameter_starts=None,
     ),
     # No language: `to_yaml(filepath=...)` writes the file, so normalising would diverge.
     ExportFormat(
         "pyrates-yaml", "PyRates YAML", ".yaml", "application/x-yaml", _render_pyrates_yaml, aliases=("pyrates_yaml",)
     ),
     ExportFormat(
-        "openminds", "openMINDS JSON-LD", ".jsonld", "application/ld+json", _render_openminds, aliases=("jsonld", "json-ld")
+        "openminds",
+        "openMINDS JSON-LD",
+        ".jsonld",
+        "application/ld+json",
+        _render_openminds,
+        aliases=("jsonld", "json-ld"),
+        parameter_starts=None,
     ),
     # reports
-    ExportFormat("markdown", "Markdown report", ".md", "text/markdown", _render_markdown, aliases=("md", "report")),
-    ExportFormat("pdf", "PDF report", ".pdf", "application/pdf", _render_pdf),
+    ExportFormat(
+        "markdown",
+        "Markdown report",
+        ".md",
+        "text/markdown",
+        _render_markdown,
+        aliases=("md", "report"),
+        parameter_starts=None,
+    ),
+    ExportFormat("pdf", "PDF report", ".pdf", "application/pdf", _render_pdf, parameter_starts=None),
     # standards
     ExportFormat(
         "neuroml",
@@ -264,7 +279,14 @@ _BUILTINS = [
     # code: python
     ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb, language="python"),
     ExportFormat(
-        "tvboptim", "tvboptim Python", ".py", "text/x-python", _render_tvboptim, aliases=("tvb-optim",), language="python"
+        "tvboptim",
+        "tvboptim Python",
+        ".py",
+        "text/x-python",
+        _render_tvboptim,
+        aliases=("tvb-optim",),
+        language="python",
+        parameter_starts=tuple(StartKind),
     ),
     ExportFormat("jax", "JAX Python", ".py", "text/x-python", _render_jax, aliases=("autodiff",), language="python"),
     ExportFormat(
@@ -291,6 +313,7 @@ _BUILTINS = [
         _render_networkdynamics,
         aliases=("nd", "networkdynamics.jl"),
         language="julia",
+        parameter_starts=(StartKind.NODE,),
     ),
     ExportFormat(
         "modelingtoolkit",

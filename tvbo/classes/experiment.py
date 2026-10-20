@@ -1637,6 +1637,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         # The experiment's own ``execution.backend`` selects the engine when the caller passed none (a spiking network declares ``brian2``).
         format = self._backend(format)
 
+        # Checked here as well as at render, for the run paths that never render through the export registry (python, pyrates, gillespie).
+        from tvbo import export as _export
+
+        _export.refuse_unlowered_parameter_starts(self, format)
+
         if format.lower() == "tvb":
             initial_conditions = self.collect_initial_conditions()
             simulator_ = self.execute(rendered_code=rendered_code)

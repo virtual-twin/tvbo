@@ -17,8 +17,8 @@ Output:
 import textwrap
 from tvbo.codegen import render_expression
 from tvbo.codegen.templater import entry_point_name
-from tvbo.templates.base.utils import referenced_parameters
-from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout
+from tvbo.templates.base.utils import referenced_parameters, samples_over_time
+from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout, resolve_distribution
 from tvbo.utils import initial_value as _initial_value
 
 # Get model from context
@@ -95,16 +95,10 @@ for pname in param_names:
     p_obj = (model.parameters[pname] if pname in model.parameters else None) if model.parameters else None
     if p_obj and getattr(p_obj, 'distribution', None):
         dist = p_obj.distribution
-        axis = str(getattr(dist, 'axis', 'space'))
-        if axis == 'time' or 'time' in axis:
-            domain = getattr(dist, 'domain', None)
-            dist_name = str(getattr(dist, 'name', 'Uniform')).lower()
+        if samples_over_time(dist):
             stochastic_params[pname] = {
-                'dist': dist_name,
-                'lo': float(getattr(domain, 'lo', 0)) if domain else 0.0,
-                'hi': float(getattr(domain, 'hi', 1)) if domain else 1.0,
+                **resolve_distribution(dist, _random_seed),
                 'default': float(p_obj.value) if p_obj.value is not None else 0.0,
-                'seed': (int(dist.seed) if getattr(dist, 'seed', None) is not None else _random_seed),
                 'shape': str(getattr(p_obj, 'shape', '')) if getattr(p_obj, 'shape', None) else '',
             }
             continue
