@@ -31,7 +31,6 @@ def generate_datamodel(root: str | Path) -> None:
 
     from linkml.generators.jsonschemagen import JsonSchemaGenerator
     from linkml.generators.pydanticgen import PydanticGenerator
-    from linkml.generators.pythongen import PythonGenerator
 
     root = Path(root)
     schema = root / "schema" / "tvbo_datamodel.yaml"
@@ -48,7 +47,7 @@ def generate_datamodel(root: str | Path) -> None:
     _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed, defaults))
     _write(
         out_dir / "schema.py",
-        _with_strict_text(_with_behaviour(PythonGenerator(str(schema)).serialize(), mixins)) + _INSTALL_DIALECT,
+        _with_strict_text(_with_behaviour(_python_generator(schema).serialize(), mixins)) + _INSTALL_DIALECT,
     )
     _write(
         out_dir / "pydantic.py",
@@ -65,6 +64,23 @@ def generate_datamodel(root: str | Path) -> None:
     _relax_additional_properties(js)
     _drop_redundant_anyof_type(js)
     (out_dir / "tvbo_datamodel.schema.json").write_text(json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _python_generator(schema: Path):
+    """LinkML's ``PythonGenerator``, reading a union that has an unconstrained (``linkml:Any``) branch as unconstrained.
+
+    The generator turns a single-valued ``any_of`` into one coercion per branch, guarded by ``isinstance(value, (<branch types>,))``. A branch ranged over a ``linkml:Any`` class, stated or inherited by a branch that states no range (the ``array: {}`` branch of ``value``), puts ``typing.Any`` in that tuple, and the class then raises ``TypeError`` the first time it is built. Every value already matches such a union, so the slot is generated as its unconstrained range alone: no coercion and no check.
+    """
+    from linkml.generators.pythongen import PythonGenerator
+
+    class _Generator(PythonGenerator):
+        def _boolean_combinator_branch_slots(self, slot, branches):
+            classes = self.schema.classes
+            if any((r := b.range or slot.range) in classes and self.is_class_unconstrained(classes[r]) for b in branches):
+                return None
+            return super()._boolean_combinator_branch_slots(slot, branches)
+
+    return _Generator(str(schema))
 
 
 # `boundaries` also implies `enforce: clamp`; yaml_loader._fold_one_state_variable_domain owns it.
