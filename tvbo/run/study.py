@@ -878,7 +878,7 @@ def register_figure_code(base: Path) -> None:
     """
     from tvbo.utils import register_recipe_code_paths
 
-    code_dir = study_path_for("code", Path(base))
+    code_dir = study_path_for("code_source", Path(base))
     if code_dir.is_dir():
         register_recipe_code_paths(None, {"path": str(code_dir)})
 

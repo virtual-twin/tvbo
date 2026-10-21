@@ -1,7 +1,7 @@
 # Copyright © Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 [build-system]
-# Build-time only, and pinned so `hatch_build.py` regenerates the datamodel deterministically; importing the generated classes needs only `linkml-runtime`.
-requires = ["hatchling", "linkml==1.11.1"]
+# Build-time only: `hatch_build.py` regenerates the datamodel with the newest LinkML; importing the generated classes needs only `linkml-runtime`.
+requires = ["hatchling", "linkml>=1.12.1"]
 build-backend = "hatchling.build"
 
 [project]
@@ -19,7 +19,7 @@ dependencies = [
     "pandas>=2.2.3",
     "xarray>=2025.0",
     # Needed to *use* the generated datamodel; the heavy `linkml` generator is build-time only (see [build-system].requires).
-    "linkml-runtime>=1.11.0",
+    "linkml-runtime>=1.12.1",
     # Backs `tvbo validate schema` against the shipped JSON Schema; declared explicitly because we import it directly.
     "jsonschema>=4.0.0",
     "h5py>=3.12.1",

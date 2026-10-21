@@ -154,7 +154,7 @@ jobs:
                   uv pip install pytest pytest-xdist
                   pytest -v --tb=short tests/test_study_layout.py tests/test_workflow_kit_paths.py
 
-    # The schema and every tvbo/database/ YAML as LinkML's own tools read them, pinned to the build's LinkML; no `needs: lint`, so a lint failure cannot hide it — see "CI notes" in CONTRIBUTING.md.
+    # The schema and every tvbo/database/ YAML as the newest LinkML's own tools read them, the release the build generates with; no `needs: lint`, so a lint failure cannot hide it — see "CI notes" in CONTRIBUTING.md.
     schema-validate:
         name: Schema validation (native LinkML)
         runs-on: ubuntu-latest
@@ -172,7 +172,7 @@ jobs:
             - name: Install validation deps
               run: |
                   uv pip install \
-                      "linkml==1.11.1" "linkml-runtime>=1.11.0" \
+                      "linkml>=1.12.1" "linkml-runtime>=1.12.1" \
                       pyyaml pytest pytest-xdist
             - name: Every generator accepts the schema
               run: |
@@ -183,7 +183,7 @@ jobs:
               run: pytest -v --tb=short -n auto tests/test_native_linkml.py
             - name: Validate every database YAML against the shipped JSON Schema
               run: |
-                  uv run --isolated --no-project --python 3.12 --with "linkml==1.11.1" python hatch_build.py
+                  uv run --isolated --no-project --python 3.12 --with "linkml>=1.12.1" python hatch_build.py
                   pytest -v --tb=short tests/test_database_validation.py
 
     # Builds tvb-o-struct.owl + tvb-o.shacl.ttl and uploads them for the reasoner job and external consumers.
@@ -206,7 +206,7 @@ jobs:
             - name: Install schema-gen deps
               run: |
                   uv pip install \
-                      "linkml>=1.11.0" "linkml-runtime>=1.11.0" \
+                      "linkml>=1.12.1" "linkml-runtime>=1.12.1" \
                       pyyaml rdflib
             - name: Generate OWL
               run: make gen-owl
@@ -248,7 +248,7 @@ jobs:
             - name: Install schema-gen deps
               run: |
                   uv pip install \
-                      "linkml>=1.11.0" "linkml-runtime>=1.11.0" \
+                      "linkml>=1.12.1" "linkml-runtime>=1.12.1" \
                       pyyaml rdflib
             - name: Generate OWL
               run: make gen-owl
@@ -325,7 +325,6 @@ jobs:
                   key: venv-compat-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
             - name: Install (cache miss)
               if: steps.venv-cache.outputs.cache-hit != 'true'
-              # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
               run: |
                   uv pip install -e . pytest pytest-xdist pytest-timeout
             - name: Refresh editable link (cache hit)
@@ -482,7 +481,6 @@ jobs:
                   key: venv-native-${{ matrix.shard }}-3.12-${{ hashFiles('pyproject.toml', '.github/workflows/ci.yml') }}
             - name: Install with all extras (cache miss)
               if: steps.venv-cache.outputs.cache-hit != 'true'
-              # linkml/linkml-runtime pinned to v1.11.0-rc1; remove once on PyPI.
               run: |
                   uv pip install -e ".[all]" pytest pytest-xdist pytest-timeout
             - name: Refresh editable link (cache hit)

@@ -87,7 +87,7 @@ subdirs:
       entities from the start, so adding a second instance renames nothing.
 
   - name: code
-    role: code
+    role: code_source
     opaque: true
     description: >-
       Callables the recipe references by bare `module:` name: builders, transforms,

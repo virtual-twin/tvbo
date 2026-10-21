@@ -489,8 +489,8 @@ enums:
     permissible_values:
       spec:
         description: "Recipe fragments the entry recipe includes."
-      code:
-        description: "Callables the recipe references by bare module name."
+      code_source:
+        description: "Callables the recipe references by bare module name: the directory a recipe's `code_source` defaults to."
       sourcedata:
         description: "Inputs the study did not compute: connectomes, atlases, empirical data."
       original_study:

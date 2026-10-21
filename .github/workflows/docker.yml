@@ -377,7 +377,6 @@ jobs:
           echo "Version $PKG_VERSION is consistent."
 
       - name: Verify package installs cleanly from wheel
-        # linkml/linkml-runtime pinned to v1.11.0-rc1 until 1.11 is on PyPI.
         run: |
           uv pip install dist/*.whl
           python -c "from tvbo import Dynamics, SimulationExperiment; print('Import OK')"
