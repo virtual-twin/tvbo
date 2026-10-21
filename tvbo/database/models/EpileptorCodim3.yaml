@@ -88,84 +88,72 @@ derived_variables:
       lhs: E0
       rhs: mu2_start/sqrt(mu1_start**2 + mu2_start**2 + nu_start**2)
       latex: false
-    conditional: false
   E1:
     description: Second component of the unit vector E parametrising the great arc.
     equation:
       lhs: E1
       rhs: -mu1_start/sqrt(mu1_start**2 + mu2_start**2 + nu_start**2)
       latex: false
-    conditional: false
   E2:
     description: Third component of the unit vector E parametrising the great arc.
     equation:
       lhs: E2
       rhs: nu_start/sqrt(mu1_start**2 + mu2_start**2 + nu_start**2)
       latex: false
-    conditional: false
   F0:
     description: First component of the unit vector F parametrising the great arc (normalised ((A x B) x A) with B = [mu2_stop, -mu1_stop, nu_stop]).
     equation:
       lhs: F0
       rhs: (mu1_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) + nu_start*(-mu2_start*nu_stop + mu2_stop*nu_start))/sqrt((mu1_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) + nu_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (-mu1_start*(-mu1_start*nu_stop + mu1_stop*nu_start) - mu2_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (mu2_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) - nu_start*(-mu1_start*nu_stop + mu1_stop*nu_start))**2)
       latex: false
-    conditional: false
   F1:
     description: Second component of the unit vector F parametrising the great arc.
     equation:
       lhs: F1
       rhs: (mu2_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) - nu_start*(-mu1_start*nu_stop + mu1_stop*nu_start))/sqrt((mu1_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) + nu_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (-mu1_start*(-mu1_start*nu_stop + mu1_stop*nu_start) - mu2_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (mu2_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) - nu_start*(-mu1_start*nu_stop + mu1_stop*nu_start))**2)
       latex: false
-    conditional: false
   F2:
     description: Third component of the unit vector F parametrising the great arc.
     equation:
       lhs: F2
       rhs: (-mu1_start*(-mu1_start*nu_stop + mu1_stop*nu_start) - mu2_start*(-mu2_start*nu_stop + mu2_stop*nu_start))/sqrt((mu1_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) + nu_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (-mu1_start*(-mu1_start*nu_stop + mu1_stop*nu_start) - mu2_start*(-mu2_start*nu_stop + mu2_stop*nu_start))**2 + (mu2_start*(mu1_start*mu2_stop - mu1_stop*mu2_start) - nu_start*(-mu1_start*nu_stop + mu1_stop*nu_start))**2)
       latex: false
-    conditional: false
   mu2:
     description: Bifurcation parameter mu2 along the great arc as a function of the slow variable z.
     equation:
       lhs: mu2
       rhs: R*(E0*cos(z) + F0*sin(z))
       latex: false
-    conditional: false
   mu1:
     description: Bifurcation parameter mu1 along the great arc as a function of the slow variable z.
     equation:
       lhs: mu1
       rhs: -R*(E1*cos(z) + F1*sin(z))
       latex: false
-    conditional: false
   nu:
     description: Bifurcation parameter nu along the great arc as a function of the slow variable z.
     equation:
       lhs: nu
       rhs: R*(E2*cos(z) + F2*sin(z))
       latex: false
-    conditional: false
   cardano_a:
     description: Half of mu1 (the Cardano coefficient mu1/2 for the depressed cubic xs**3 - mu2*xs - mu1 = 0).
     equation:
       lhs: cardano_a
       rhs: mu1/2
       latex: false
-    conditional: false
   cardano_d:
     description: Cardano discriminant mu1**2/4 - mu2**3/27 for the cubic xs**3 - mu2*xs - mu1 = 0.
     equation:
       lhs: cardano_d
       rhs: mu1**2/4 - mu2**3/27
       latex: false
-    conditional: false
   xs:
     description: The x-coordinate of the resting state (branch N=1), the real part of the Cardano root of xs**3 - mu2*xs - mu1 = 0, reproducing TVB's principal-branch complex cube root. For negative discriminant (three real roots) the trigonometric form is used; for non-negative discriminant the principal-branch real cube root sum is used (a real cube root for non-negative argument, half the real cube root of the magnitude for negative argument).
     equation:
       lhs: xs
       rhs: Piecewise((2*(cardano_a**2 - cardano_d)**(1/6)*cos(atan2(sqrt(-cardano_d), cardano_a)/3), cardano_d < 0), (Piecewise(((cardano_a + sqrt(cardano_d))**(1/3), (cardano_a + sqrt(cardano_d)) >= 0), (Abs(cardano_a + sqrt(cardano_d))**(1/3)/2, True)) + Piecewise(((cardano_a - sqrt(cardano_d))**(1/3), (cardano_a - sqrt(cardano_d)) >= 0), (Abs(cardano_a - sqrt(cardano_d))**(1/3)/2, True)), True))
       latex: false
-    conditional: false
 state_variables:
   x:
     domain:

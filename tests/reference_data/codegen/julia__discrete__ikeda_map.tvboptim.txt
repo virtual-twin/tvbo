@@ -1,0 +1,67 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class IkedaMap(AbstractDynamics):
+    """IkedaMap neural mass model."""
+
+    STATE_NAMES = ("x", "y")
+    INITIAL_STATE = (1.0, 1.0)
+    AUXILIARY_NAMES = ("theta",)
+
+    DEFAULT_PARAMS = Bunch(
+        a=1.0,
+        b=1.0,
+        c=0.4,
+        d=6.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        a = params.a
+        b = params.b
+        c = params.c
+        d = params.d
+
+        x = state[0]
+        y = state[1]
+
+        theta = c - d / (1 + x**2 + y**2)
+
+        dx_dt = a + b * (x * jnp.cos(theta) - y * jnp.sin(theta))
+        dy_dt = b * (x * jnp.sin(theta) + y * jnp.cos(theta))
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(theta), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

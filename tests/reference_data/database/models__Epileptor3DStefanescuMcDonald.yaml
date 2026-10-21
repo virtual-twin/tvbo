@@ -1,0 +1,92 @@
+name: Epileptor3DStefanescuMcDonald
+iri: tvbo:Epileptor3DStefanescuMcDonald
+parameters:
+  N:
+    name: N
+    definition: Effective population size / scaling of the resting-state regulation
+      term.
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.1
+      hi: 10.0
+      step: 0.1
+      log_scale: false
+    grounding:
+    - GO:0042391
+  x_0:
+    name: x_0
+    definition: Excitability parameter (Epileptor convention).
+    value: -1.6
+    domain:
+      enforce: none
+      lo: -2.4
+      hi: -0.5
+      step: 0.01
+      log_scale: false
+  tau_z:
+    name: tau_z
+    definition: Slow timescale for the z permittivity variable.
+    value: 2857.0
+    domain:
+      enforce: none
+      lo: 100.0
+      hi: 10000.0
+      step: 1.0
+      log_scale: false
+    unit: ms
+description: 'Stefanescu-McDonald reduced 3D Epileptor variant migrated as a placeholder
+  scaffold from the legacy tvb-o.owl ontology. The original publication for this exact
+  variant could not be located; the only OWL-side parameter is `N` (population size,
+  grounded to "regulation of resting membrane potential"). Equations are minimal placeholders:
+  a fast (x1) - slow (z) excitable system inspired by the canonical Epileptor (Jirsa
+  et al. 2014), gated by N. This scaffold preserves the ontology lineage and parameter
+  grounding; it should be replaced with the published equations once located, or removed
+  if the variant is confirmed obsolete.'
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    dimension: 1
+    local: false
+state_variables:
+  x1:
+    name: x1
+    domain:
+      enforce: none
+      lo: -2.0
+      hi: 2.0
+      log_scale: false
+    description: Fast excitable variable (placeholder Epileptor-like dynamics).
+    equation:
+      lhs: Derivative(x1, t)
+      rhs: N*(x1 - x1**3/3 - z + c_glob)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: -1.5
+  z:
+    name: z
+    domain:
+      enforce: none
+      lo: 2.0
+      hi: 5.0
+      log_scale: false
+    description: Slow permittivity / excitability variable.
+    equation:
+      lhs: Derivative(z, t)
+      rhs: (4*(x1 - x_0) - z)/tau_z
+      latex: false
+    record: false
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 3.0
+number_of_modes: 1
+model_type: neural_mass
+autonomous: true
+cse: false
+compile: false

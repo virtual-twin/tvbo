@@ -1,14 +1,7 @@
-#
-# Module: __init__.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-TVB-O API
-=========
+"""TVB-O API.
 
 This module provides the API for the TVB Ontology.
 """

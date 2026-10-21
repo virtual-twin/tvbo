@@ -1,0 +1,22 @@
+import numpy as np
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    a = _p.a
+    b = _p.b
+    c = _p.c
+
+    # State variables
+    x = current_state[0]
+    y = current_state[1]
+    z = current_state[2]
+
+    # Derivatives
+    dx_dt = y + x * z + a * x * y
+    dy_dt = 1 - 2 * x**2 + b * y * z
+    dz_dt = -(x**2) - y**2 + c * x
+
+    derivatives = np.array(np.broadcast_arrays(dx_dt, dy_dt, dz_dt))
+
+    return derivatives

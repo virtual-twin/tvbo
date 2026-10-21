@@ -1,13 +1,14 @@
 ---
 title: "NML2: Analog Synapses"
 description: "Graded (continuous) synaptic transmission between FHN cells"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## NML2_AnalogSynapses.nml
 
-Demonstrates graded synaptic transmission using `<gradedSynapse>` — the
-postsynaptic current is a continuous function of presynaptic voltage, without
-discrete spike events.  Uses FitzHugh-Nagumo cells.
+Demonstrates graded synaptic transmission using `<gradedSynapse>` — the postsynaptic current is a continuous function of presynaptic voltage, without discrete spike events.  Uses FitzHugh-Nagumo cells.
 
 ```{python}
 

@@ -1,0 +1,105 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class CoupledStandardMaps3(AbstractDynamics):
+    """CoupledStandardMaps3 neural mass model."""
+
+    STATE_NAMES = ("theta0", "p0", "theta1", "p1", "theta2", "p2")
+    INITIAL_STATE = (0.001, 0.001, 0.002, 0.002, 0.003, 0.003)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        Gamma=1.0,
+        k0=1.0,
+        k1=1.0,
+        k2=1.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        Gamma = params.Gamma
+        k0 = params.k0
+        k1 = params.k1
+        k2 = params.k2
+
+        theta0 = state[0]
+        p0 = state[1]
+        theta1 = state[2]
+        p1 = state[3]
+        theta2 = state[4]
+        p2 = state[5]
+
+        dtheta0_dt = jnp.mod(
+            p0
+            + theta0
+            + k0 * jnp.sin(theta0)
+            - Gamma * (-jnp.sin(theta0 - theta1) - jnp.sin(theta0 - theta2)),
+            2 * jnp.pi,
+        )
+        dp0_dt = jnp.mod(
+            p0
+            + k0 * jnp.sin(theta0)
+            - Gamma * (-jnp.sin(theta0 - theta1) - jnp.sin(theta0 - theta2)),
+            2 * jnp.pi,
+        )
+        dtheta1_dt = jnp.mod(
+            p1
+            + theta1
+            + k1 * jnp.sin(theta1)
+            - Gamma * (-jnp.sin(theta1 - theta2) + jnp.sin(theta0 - theta1)),
+            2 * jnp.pi,
+        )
+        dp1_dt = jnp.mod(
+            p1
+            + k1 * jnp.sin(theta1)
+            - Gamma * (-jnp.sin(theta1 - theta2) + jnp.sin(theta0 - theta1)),
+            2 * jnp.pi,
+        )
+        dtheta2_dt = jnp.mod(
+            p2
+            + theta2
+            + k2 * jnp.sin(theta2)
+            - Gamma * (jnp.sin(theta0 - theta2) + jnp.sin(theta1 - theta2)),
+            2 * jnp.pi,
+        )
+        dp2_dt = jnp.mod(
+            p2
+            + k2 * jnp.sin(theta2)
+            - Gamma * (jnp.sin(theta0 - theta2) + jnp.sin(theta1 - theta2)),
+            2 * jnp.pi,
+        )
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dtheta0_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dtheta0_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dp0_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dtheta1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dp1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dtheta2_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dp2_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

@@ -1,0 +1,546 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    g_L = _p.g_L
+    E_L_e = _p.E_L_e
+    E_L_i = _p.E_L_i
+    C_m = _p.C_m
+    b_e = _p.b_e
+    a_e = _p.a_e
+    b_i = _p.b_i
+    a_i = _p.a_i
+    tau_w_e = _p.tau_w_e
+    tau_w_i = _p.tau_w_i
+    E_e = _p.E_e
+    E_i = _p.E_i
+    Q_e = _p.Q_e
+    Q_i = _p.Q_i
+    tau_e = _p.tau_e
+    tau_i = _p.tau_i
+    N_tot = _p.N_tot
+    p_connect_e = _p.p_connect_e
+    p_connect_i = _p.p_connect_i
+    g = _p.g
+    K_ext_e = _p.K_ext_e
+    K_ext_i = _p.K_ext_i
+    T = _p.T
+    P_e0 = _p.P_e0
+    P_e1 = _p.P_e1
+    P_e2 = _p.P_e2
+    P_e3 = _p.P_e3
+    P_e4 = _p.P_e4
+    P_e5 = _p.P_e5
+    P_e6 = _p.P_e6
+    P_e7 = _p.P_e7
+    P_e8 = _p.P_e8
+    P_e9 = _p.P_e9
+    P_i0 = _p.P_i0
+    P_i1 = _p.P_i1
+    P_i2 = _p.P_i2
+    P_i3 = _p.P_i3
+    P_i4 = _p.P_i4
+    P_i5 = _p.P_i5
+    P_i6 = _p.P_i6
+    P_i7 = _p.P_i7
+    P_i8 = _p.P_i8
+    P_i9 = _p.P_i9
+    external_input_ex_ex = _p.external_input_ex_ex
+    external_input_ex_in = _p.external_input_ex_in
+    external_input_in_ex = _p.external_input_in_ex
+    external_input_in_in = _p.external_input_in_in
+    tau_OU = _p.tau_OU
+    weight_noise = _p.weight_noise
+    S_i = _p.S_i
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    E = current_state[0]
+    I = current_state[1]
+    C_ee = current_state[2]
+    C_ei = current_state[3]
+    C_ii = current_state[4]
+    W_e = current_state[5]
+    W_i = current_state[6]
+    ou_drift = current_state[7]
+
+    # Functions
+    def muV(fe, fi, fe_ext, fi_ext, W, E_leak):
+        return (
+            -W
+            + E_leak * g_L
+            + E_e
+            * Q_e
+            * tau_e
+            * (K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe))
+            + E_i
+            * Q_i
+            * tau_i
+            * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+        ) / (
+            g_L
+            + Q_e
+            * tau_e
+            * (K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe))
+            + Q_i * tau_i * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+        )
+
+    def sigmaV(fe, fi, fe_ext, fi_ext, W, E_leak):
+        return np.sqrt(
+            Q_e**2
+            * tau_e**2
+            * (E_e - muV(fe, fi, fe_ext, fi_ext, W, E_leak)) ** 2
+            * (K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe))
+            / (
+                (
+                    2.0 * tau_e
+                    + 2.0
+                    * C_m
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            K_ext_e * fe_ext
+                            + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+                        )
+                        + Q_i
+                        * tau_i
+                        * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+                    )
+                )
+                * (
+                    g_L
+                    + Q_e
+                    * tau_e
+                    * (
+                        K_ext_e * fe_ext
+                        + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+                    )
+                    + Q_i
+                    * tau_i
+                    * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+                )
+                ** 2
+            )
+            + Q_i**2
+            * tau_i**2
+            * (E_i - muV(fe, fi, fe_ext, fi_ext, W, E_leak)) ** 2
+            * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+            / (
+                (
+                    2.0 * tau_i
+                    + 2.0
+                    * C_m
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            K_ext_e * fe_ext
+                            + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+                        )
+                        + Q_i
+                        * tau_i
+                        * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+                    )
+                )
+                * (
+                    g_L
+                    + Q_e
+                    * tau_e
+                    * (
+                        K_ext_e * fe_ext
+                        + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+                    )
+                    + Q_i
+                    * tau_i
+                    * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+                )
+                ** 2
+            )
+        )
+
+    def T_V(fe, fi, fe_ext, fi_ext, W, E_leak):
+        return (
+            Q_e**2
+            * tau_e**2
+            * (E_e - muV(fe, fi, fe_ext, fi_ext, W, E_leak)) ** 2
+            * (K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe))
+            / (
+                g_L
+                + Q_e
+                * tau_e
+                * (K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe))
+                + Q_i
+                * tau_i
+                * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+            )
+            ** 2
+            + Q_i**2
+            * tau_i**2
+            * (E_i - muV(fe, fi, fe_ext, fi_ext, W, E_leak)) ** 2
+            * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+            / (
+                g_L
+                + Q_e
+                * tau_e
+                * (K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe))
+                + Q_i
+                * tau_i
+                * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+            )
+            ** 2
+        ) / (
+            Q_e**2
+            * tau_e**2
+            * (E_e - muV(fe, fi, fe_ext, fi_ext, W, E_leak)) ** 2
+            * (K_ext_e * fe_ext + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe))
+            / (
+                (
+                    tau_e
+                    + C_m
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            K_ext_e * fe_ext
+                            + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+                        )
+                        + Q_i
+                        * tau_i
+                        * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+                    )
+                )
+                * (
+                    g_L
+                    + Q_e
+                    * tau_e
+                    * (
+                        K_ext_e * fe_ext
+                        + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+                    )
+                    + Q_i
+                    * tau_i
+                    * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+                )
+                ** 2
+            )
+            + Q_i**2
+            * tau_i**2
+            * (E_i - muV(fe, fi, fe_ext, fi_ext, W, E_leak)) ** 2
+            * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+            / (
+                (
+                    tau_i
+                    + C_m
+                    / (
+                        g_L
+                        + Q_e
+                        * tau_e
+                        * (
+                            K_ext_e * fe_ext
+                            + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+                        )
+                        + Q_i
+                        * tau_i
+                        * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+                    )
+                )
+                * (
+                    g_L
+                    + Q_e
+                    * tau_e
+                    * (
+                        K_ext_e * fe_ext
+                        + N_tot * p_connect_e * (1.0 - g) * (1.0e-6 + fe)
+                    )
+                    + Q_i
+                    * tau_i
+                    * (K_ext_i * fi_ext + N_tot * g * p_connect_i * (1.0e-6 + fi))
+                )
+                ** 2
+            )
+        )
+
+    def TF_e(fe, fi, fe_ext, fi_ext, W):
+        return (
+            0.5
+            * scipy.special.erfc(
+                0.707106781186547
+                * (
+                    -muV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                    + 1000.0 * P_e0
+                    + 1000.0
+                    * P_e1
+                    * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_e))
+                    + 1000.0
+                    * P_e2
+                    * (
+                        -0.666666666666667
+                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                    )
+                    + 1000.0
+                    * P_e3
+                    * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) / C_m)
+                    + 1000.0
+                    * P_e4
+                    * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_e)) ** 2
+                    + 1000.0
+                    * P_e5
+                    * (
+                        -0.666666666666667
+                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                    )
+                    ** 2
+                    + 1000.0
+                    * P_e6
+                    * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) / C_m)
+                    ** 2
+                    + 1000.0
+                    * P_e7
+                    * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_e))
+                    * (
+                        -0.666666666666667
+                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                    )
+                    + 1000.0
+                    * P_e8
+                    * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_e))
+                    * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) / C_m)
+                    + 1000.0
+                    * P_e9
+                    * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) / C_m)
+                    * (
+                        -0.666666666666667
+                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                    )
+                )
+                / sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+            )
+            / T_V(fe, fi, fe_ext, fi_ext, W, E_L_e)
+        )
+
+    def TF_i(fe, fi, fe_ext, fi_ext, W):
+        return (
+            0.5
+            * scipy.special.erfc(
+                0.707106781186547
+                * (
+                    -muV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                    + 1000.0 * P_i0
+                    + 1000.0
+                    * P_i1
+                    * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_i))
+                    + 1000.0
+                    * P_i2
+                    * (
+                        -0.666666666666667
+                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                    )
+                    + 1000.0
+                    * P_i3
+                    * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) / C_m)
+                    + 1000.0
+                    * P_i4
+                    * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_i)) ** 2
+                    + 1000.0
+                    * P_i5
+                    * (
+                        -0.666666666666667
+                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                    )
+                    ** 2
+                    + 1000.0
+                    * P_i6
+                    * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) / C_m)
+                    ** 2
+                    + 1000.0
+                    * P_i7
+                    * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_i))
+                    * (
+                        -0.666666666666667
+                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                    )
+                    + 1000.0
+                    * P_i8
+                    * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_i))
+                    * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) / C_m)
+                    + 1000.0
+                    * P_i9
+                    * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) / C_m)
+                    * (
+                        -0.666666666666667
+                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                    )
+                )
+                / sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+            )
+            / T_V(fe, fi, fe_ext, fi_ext, W, E_L_i)
+        )
+
+    # Derived variables
+    E_input_excitatory = np.where(
+        np.less(
+            c_glob
+            + external_input_ex_ex
+            + E * local_coupling
+            + ou_drift * weight_noise,
+            0,
+        ),
+        0.0,
+        c_glob + external_input_ex_ex + E * local_coupling + ou_drift * weight_noise,
+    )
+    E_input_inhibitory = np.where(
+        np.less(
+            external_input_in_ex
+            + E * local_coupling
+            + S_i * c_glob
+            + ou_drift * weight_noise,
+            0,
+        ),
+        0.0,
+        external_input_in_ex
+        + E * local_coupling
+        + S_i * c_glob
+        + ou_drift * weight_noise,
+    )
+    I_input_excitatory = external_input_ex_in + I * local_coupling
+    I_input_inhibitory = external_input_in_in + I * local_coupling
+    TFe = TF_e(E, I, E_input_excitatory, I_input_excitatory, W_e)
+    TFi = TF_i(E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+    d2_fefi_e = (
+        25000000.0
+        * TF_e(1.0e-7 + E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        + 25000000.0
+        * TF_e(-1.0e-7 + E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        - 25000000.0
+        * TF_e(1.0e-7 + E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        - 25000000.0
+        * TF_e(-1.0e-7 + E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+    )
+    d2_fefi_i = (
+        25000000.0
+        * TF_i(1.0e-7 + E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        + 25000000.0
+        * TF_i(-1.0e-7 + E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        - 25000000.0
+        * TF_i(1.0e-7 + E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        - 25000000.0
+        * TF_i(-1.0e-7 + E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+    )
+    d2_fife_e = (
+        25000000.0
+        * TF_e(1.0e-7 + E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        + 25000000.0
+        * TF_e(-1.0e-7 + E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        - 25000000.0
+        * TF_e(1.0e-7 + E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        - 25000000.0
+        * TF_e(-1.0e-7 + E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+    )
+    d2_fife_i = (
+        25000000.0
+        * TF_i(1.0e-7 + E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        + 25000000.0
+        * TF_i(-1.0e-7 + E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        - 25000000.0
+        * TF_i(1.0e-7 + E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        - 25000000.0
+        * TF_i(-1.0e-7 + E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+    )
+    dfe_TFe = 5000.0 * TF_e(
+        1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e
+    ) - 5000.0 * TF_e(-1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e)
+    dfe_TFi = 5000.0 * TF_i(
+        1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i
+    ) - 5000.0 * TF_i(-1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+    dfi_TFe = 5000.0 * TF_e(
+        E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e
+    ) - 5000.0 * TF_e(E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+    dfi_TFi = 5000.0 * TF_i(
+        E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i
+    ) - 5000.0 * TF_i(E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+    muV_e = muV(E, I, E_input_excitatory, I_input_excitatory, W_e, E_L_e)
+    muV_i = muV(E, I, E_input_inhibitory, I_input_inhibitory, W_i, E_L_i)
+    d2_fefe_e = (
+        100000000.0 * TF_e(1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e)
+        + 100000000.0
+        * TF_e(-1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e)
+        - 200000000.0 * TFe
+    )
+    d2_fefe_i = (
+        100000000.0 * TF_i(1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+        + 100000000.0
+        * TF_i(-1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+        - 200000000.0 * TFi
+    )
+    d2_fifi_e = (
+        100000000.0 * TF_e(E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        + 100000000.0
+        * TF_e(E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        - 200000000.0 * TFe
+    )
+    d2_fifi_i = (
+        100000000.0 * TF_i(E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        + 100000000.0
+        * TF_i(E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        - 200000000.0 * TFi
+    )
+
+    # Derivatives
+    dE_dt = (
+        TFe
+        - E
+        + 0.5 * C_ee * d2_fefe_e
+        + 0.5 * C_ei * d2_fefi_e
+        + 0.5 * C_ei * d2_fife_e
+        + 0.5 * C_ii * d2_fifi_e
+    ) / T
+    dI_dt = (
+        TFi
+        - I
+        + 0.5 * C_ee * d2_fefe_i
+        + 0.5 * C_ei * d2_fefi_i
+        + 0.5 * C_ei * d2_fife_i
+        + 0.5 * C_ii * d2_fifi_i
+    ) / T
+    dC_ee_dt = (
+        (TFe - E) ** 2
+        - 2.0 * C_ee
+        + 2.0 * C_ee * dfe_TFe
+        + 2.0 * C_ei * dfi_TFe
+        + TFe * (-TFe + 1.0 / T) / (N_tot * (1.0 - g))
+    ) / T
+    dC_ei_dt = (
+        -2.0 * C_ei
+        + C_ee * dfe_TFe
+        + C_ei * dfe_TFi
+        + C_ei * dfi_TFe
+        + C_ii * dfi_TFi
+        + (TFe - E) * (TFi - I)
+    ) / T
+    dC_ii_dt = (
+        (TFi - I) ** 2
+        - 2.0 * C_ii
+        + 2.0 * C_ei * dfe_TFi
+        + 2.0 * C_ii * dfi_TFi
+        + TFi * (-TFi + 1.0 / T) / (N_tot * g)
+    ) / T
+    dW_e_dt = E * b_e - W_e / tau_w_e + a_e * (muV_e - E_L_e) / tau_w_e
+    dW_i_dt = I * b_i - W_i / tau_w_i + a_i * (muV_i - E_L_i) / tau_w_i
+    dou_drift_dt = -ou_drift / tau_OU
+
+    derivatives = np.array(
+        np.broadcast_arrays(
+            dE_dt, dI_dt, dC_ee_dt, dC_ei_dt, dC_ii_dt, dW_e_dt, dW_i_dt, dou_drift_dt
+        )
+    )
+
+    return derivatives

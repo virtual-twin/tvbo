@@ -2,11 +2,9 @@
 """Migrate all database networks from plural edge labels to singular.
 
 Renames HDF5 groups and YAML sidecar edge labels:
-  weights → weight
-  lengths → length
+  weights → weight lengths → length
 
-Uses Network load/save round-trip: loads each network, renames internal
-arrays and template edge labels, then saves back to the same path.
+Uses Network load/save round-trip: loads each network, renames internal arrays and template edge labels, then saves back to the same path.
 """
 
 from pathlib import Path
@@ -27,20 +25,17 @@ def migrate_network(sidecar: Path) -> bool:
     """Load a network, rename edge labels, and re-save. Returns True if changed."""
     net = load_network(sidecar)
 
-    # Rename in _arrays dict
-    arrays = getattr(net, "_arrays", None) or {}
-    # Also pull from lazy store if arrays empty
-    store = getattr(net, "_store", None)
-    if store is not None:
-        for old in RENAMES:
-            if old not in arrays and old in store.arrays:
-                arrays[old] = store.arrays[old]
-
+    # Rename the resident edge matrices, reading each old name off the companion where it is still lazy.
     changed = False
     for old, new in RENAMES.items():
-        if old in arrays and new not in arrays:
-            arrays[new] = arrays.pop(old)
-            changed = True
+        if net.array(new) is not None:
+            continue
+        value = net.array(old)
+        if value is None:
+            continue
+        net.set_array(new, value)
+        net._resident().pop(f"edges/{old}", None)
+        changed = True
 
     # Rename template edge labels
     for e in net.edges or []:
@@ -51,9 +46,6 @@ def migrate_network(sidecar: Path) -> bool:
 
     if not changed:
         return False
-
-    # Ensure _arrays is set on the object
-    object.__setattr__(net, "_arrays", arrays)
 
     # Re-save
     save_network(net, sidecar)

@@ -1,0 +1,78 @@
+name: IzhikevichCell
+parameters:
+  a:
+    name: a
+    value: 0.02
+  b:
+    name: b
+    value: 0.2
+  c:
+    name: c
+    value: -65.0
+  d:
+    name: d
+    value: 6.0
+  thresh:
+    name: thresh
+    value: 30.0
+  I_amp:
+    name: I_amp
+    value: 14.0
+  pulse_delay:
+    name: pulse_delay
+    value: 20.0
+    unit: ms
+  pulse_duration:
+    name: pulse_duration
+    value: 2000.0
+    unit: ms
+source: 'NeuroML2 example: Ex2_Izh'
+derived_variables:
+  I_ext:
+    name: I_ext
+    equation:
+      rhs: Piecewise((I_amp, (t >= pulse_delay) & (t < pulse_delay + pulse_duration)),
+        (0.0, True))
+      latex: false
+    record: false
+state_variables:
+  v:
+    name: v
+    equation:
+      rhs: 0.04*v**2 + 5*v + 140 - U + I_ext
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -70.0
+  U:
+    name: U
+    equation:
+      rhs: a*(b*v - U)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -14.0
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: false
+events:
+  spike:
+    name: spike
+    event_type: stimulus
+    condition:
+      rhs: v > thresh
+      latex: false
+    affect:
+      rhs: v = c; U = U + d
+      latex: false
+    sampling_rate: 1.0
+    interpolation: linear
+cse: false
+compile: false

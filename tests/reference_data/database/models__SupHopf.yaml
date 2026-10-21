@@ -1,0 +1,97 @@
+name: SupHopf
+iri: tvbo:SupHopf
+parameters:
+  a:
+    name: a
+    definition: Local bifurcation parameter.
+    value: -0.5
+    domain:
+      enforce: none
+      lo: -10.0
+      hi: 10.0
+      step: 0.01
+      log_scale: false
+    description: Local bifurcation parameter
+  omega:
+    name: omega
+    definition: Angular frequency.
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.05
+      hi: 630.0
+      step: 0.01
+      log_scale: false
+    description: Angular frequency
+description: "Supercritical Hopf (SUPH) is an oscillatory/excitable neural mass model\
+  \ that describe the normal form of a supercritical Hopf bifurcation in Cartesian\
+  \ coordinates (Kuznetsov, 2013; Deco et al., 2017). \n\nThis normal form has a supercritical\
+  \ bifurcation at 'a=0' with 'a' the bifurcation parameter in the model. So for 'a\
+  \ < 0', the local dynamics has a stable fixed point and the system corresponds to\
+  \ a damped oscillatory state, whereas for 'a > 0', the local dynamics enters in\
+  \ a stable limit cycle and the system switches to an oscillatory state."
+references:
+- Deco2017
+derived_variables:
+  lc_0:
+    name: lc_0
+    equation:
+      lhs: lc_0
+      rhs: local_coupling*x
+      latex: false
+    record: false
+coupling_inputs:
+  c_glob0:
+    name: c_glob0
+    dimension: 1
+    local: false
+  c_glob1:
+    name: c_glob1
+    dimension: 1
+    local: false
+  local_coupling:
+    name: local_coupling
+    dimension: 1
+    local: true
+state_variables:
+  x:
+    name: x
+    domain:
+      enforce: none
+      lo: -5.0
+      hi: 5.0
+      log_scale: false
+    description: First state-variable of the Supercritical Hopf model
+    equation:
+      lhs: Derivative(x, t)
+      rhs: c_glob0 + lc_0 - omega*y + x*(a - x**2 - y**2)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  y:
+    name: y
+    domain:
+      enforce: none
+      lo: -5.0
+      hi: 5.0
+      log_scale: false
+    description: Second state-variable of the Supercritical Hopf model
+    equation:
+      lhs: Derivative(y, t)
+      rhs: c_glob1 + omega*x + y*(a - x**2 - y**2)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 1
+model_type: generic
+autonomous: true
+cse: false
+compile: false

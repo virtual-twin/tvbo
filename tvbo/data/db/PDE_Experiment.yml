@@ -39,7 +39,7 @@ field_dynamics:
   solver:
     label: "FEM implicit Euler"
     discretization: FEM
-    time_integrator: "implicit Euler"
+    method: "implicit Euler"
     dt: 10
 integration:
   duration: 2000

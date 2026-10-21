@@ -1,0 +1,149 @@
+name: MontbrioPazoRoxin
+iri: tvbo:MontbrioPazoRoxin
+parameters:
+  Delta:
+    name: Delta
+    definition: Mean heterogeneous noise
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 10.0
+      step: 0.01
+      log_scale: false
+    description: Mean heterogeneous noise
+    grounding:
+    - GO:0061669
+  I:
+    name: I
+    definition: External Current
+    value: 0.0
+    domain:
+      enforce: none
+      lo: -10.0
+      hi: 10.0
+      step: 0.01
+      log_scale: false
+    description: External Current
+  J:
+    name: J
+    definition: Mean Synaptic weight.
+    value: 15.0
+    domain:
+      enforce: none
+      lo: -25.0
+      hi: 25.0
+      step: 0.0001
+      log_scale: false
+    description: Mean Synaptic weight
+    grounding:
+    - GO:0042391
+    - GO:0099536
+  cr:
+    name: cr
+    definition: It is the weight on Coupling through variable r.
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.1
+      log_scale: false
+    description: It is the weight on Coupling through variable r
+  cv:
+    name: cv
+    definition: It is the weight on Coupling through variable V.
+    value: 0.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.1
+      log_scale: false
+    description: It is the weight on Coupling through variable V
+  eta:
+    name: eta
+    definition: Constant parameter to scale the rate of feedback from the firing rate
+      variable to itself
+    value: -5.0
+    domain:
+      enforce: none
+      lo: -10.0
+      hi: 10.0
+      step: 0.0001
+      log_scale: false
+    description: Constant parameter to scale the rate of feedback from the firing
+      rate variable to itself
+    grounding:
+    - GO:0099605
+  tau:
+    name: tau
+    definition: Membrane time constant
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.001
+      hi: 15.0
+      step: 0.01
+      log_scale: false
+    description: Membrane time constant
+description: ''
+references:
+- Montbrio2015
+coupling_inputs:
+  c_glob0:
+    name: c_glob0
+    dimension: 1
+    local: false
+  c_glob1:
+    name: c_glob1
+    dimension: 1
+    local: false
+state_variables:
+  V:
+    name: V
+    domain:
+      enforce: none
+      lo: -2.0
+      hi: 1.5
+      log_scale: false
+    equation:
+      lhs: Derivative(V, t)
+      rhs: (I + J*r*tau + V**2 + c_glob0*cr*tau + c_glob1*cv + eta - pi**2*r**2*tau**2)/tau
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  r:
+    name: r
+    domain:
+      enforce: clamp
+      lo: 0.0
+      hi: .inf
+      log_scale: false
+    equation:
+      lhs: Derivative(r, t)
+      rhs: (Delta/(pi*tau) + 2*V*r)/tau
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+    distribution:
+      name: Uniform
+      domain:
+        enforce: none
+        lo: 0.0
+        hi: 2.0
+        log_scale: false
+      axis: space
+number_of_modes: 1
+model_type: mean_field
+autonomous: true
+cse: false
+compile: false

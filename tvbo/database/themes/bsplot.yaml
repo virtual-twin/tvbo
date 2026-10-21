@@ -1,0 +1,11 @@
+# The axis rule of bsplot's house look, the one every TVB-O figure was drawn by before a study could state its own. A figure takes it with `auto_format: true`, a study with `theme: {iri: tvbo:theme/bsplot}`, and either then states only what it changes. It is all rule and no colour: round ticks, an end moved to a tick only where one is near, the two scale-bearing spines stood off the plot and ended on their outer ticks, and a colour bar ticked at its ends.
+tvbo_class: tvbo:Theme
+
+ticks: round
+max_ticks: 4
+axis_ends: near
+end_tick_reach: 0.2
+spine_offset: 0.02
+spine_trim: true
+align_labels: true
+colorbar_ends: true

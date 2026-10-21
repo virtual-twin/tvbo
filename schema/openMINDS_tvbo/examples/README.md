@@ -49,11 +49,11 @@ import json
 import jsonschema
 
 # Load example
-with open('simulationExperiment_jansenrit.jsonld') as f:
+with open("simulationExperiment_jansenrit.jsonld") as f:
     instance = json.load(f)
 
 # Load schema (after resolving $refs)
-with open('../schemas/simulationExperiment.schema.tpl.json') as f:
+with open("../schemas/simulationExperiment.schema.tpl.json") as f:
     schema = json.load(f)
 
 # Validate (note: openMINDS templates need preprocessing)
@@ -69,7 +69,7 @@ from tvbo.datamodel import SimulationExperiment
 from tvbo.export import to_tvb_simulator
 
 # Parse the JSON-LD
-with open('simulationExperiment_jansenrit.jsonld') as f:
+with open("simulationExperiment_jansenrit.jsonld") as f:
     data = json.load(f)
 
 # Convert to TVBO datamodel

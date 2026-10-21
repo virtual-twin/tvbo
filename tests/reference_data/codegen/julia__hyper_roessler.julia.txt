@@ -1,0 +1,36 @@
+function HyperRoessler!(dx, _x, p, t = 0)
+
+    (;a, b, c, d) = p
+
+    x, y, z, w = _x
+
+
+    dx[1] = -y .- z
+    dx[2] = w .+ x .+ a .* y
+    dx[3] = b .+ z .* (x .- c)
+    dx[4] = w .* y .- d .* z
+    dx
+end
+
+# Parameter values
+p = (a = 0.25, b = 3.0, c = 0.5, d = 0.05)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -1.0,
+        0.0,
+        0.5,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(HyperRoessler!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

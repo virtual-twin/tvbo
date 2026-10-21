@@ -1,12 +1,9 @@
 # Copyright © Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2.
 #
-# Registers xarray.Variable, xarray.DataArray, and xarray.Dataset as JAX
-# pytree nodes so they pass through jit, grad, vmap, etc.
+# Registers xarray.Variable, xarray.DataArray, and xarray.Dataset as JAX pytree nodes so they pass through jit, grad, vmap, etc.
 #
-# Adapted from the pytree registration in google-deepmind/xarray_jax
-# (Apache-2.0) and the PyPI xarray-jax package (MIT).  Both ultimately
-# trace back to google-deepmind/graphcast/xarray_jax.py.
+# Adapted from the pytree registration in google-deepmind/xarray_jax (Apache-2.0) and the PyPI xarray-jax package (MIT).  Both ultimately trace back to google-deepmind/graphcast/xarray_jax.py.
 """Register xarray data structures as JAX pytree nodes."""
 
 import collections.abc
@@ -16,19 +13,13 @@ import jax
 import jax.tree_util
 import xarray
 
-
-# ---------------------------------------------------------------------------
-# _HashableCoords – makes coordinate dicts hashable so JAX can treat them
-# as static auxiliary data in pytree flatten/unflatten.
-# ---------------------------------------------------------------------------
+# _HashableCoords – makes coordinate dicts hashable so JAX can treat them as static auxiliary data in pytree flatten/unflatten.
 
 
 class _HashableCoords(collections.abc.Mapping):
     """Hashable wrapper around a dict of xarray Variables (coordinates).
 
-    JAX requires auxiliary pytree data to be hashable.  Standard xarray
-    coordinate dicts are not, so we wrap them here.  When coordinates
-    change between calls to a ``jax.jit``-ed function JAX will re-trace.
+    JAX requires auxiliary pytree data to be hashable.  Standard xarray coordinate dicts are not, so we wrap them here.  When coordinates change between calls to a ``jax.jit``-ed function JAX will re-trace.
     """
 
     __slots__ = ("_variables", "_hash")
@@ -75,9 +66,7 @@ def _maybe_hash_coords(coords):
     return _HashableCoords(coords)
 
 
-# ---------------------------------------------------------------------------
 # xarray.Variable
-# ---------------------------------------------------------------------------
 
 
 def _flatten_variable(v: xarray.Variable):
@@ -100,9 +89,7 @@ def _unflatten_variable(aux, children):
     return var
 
 
-# ---------------------------------------------------------------------------
 # xarray.DataArray
-# ---------------------------------------------------------------------------
 
 
 def _flatten_data_array(da: xarray.DataArray):
@@ -122,9 +109,7 @@ def _unflatten_data_array(aux, children):
     return da
 
 
-# ---------------------------------------------------------------------------
 # xarray.Dataset
-# ---------------------------------------------------------------------------
 
 
 def _flatten_dataset(ds: xarray.Dataset):
@@ -153,11 +138,24 @@ def _unflatten_dataset(aux, children):
     return ds
 
 
-# ---------------------------------------------------------------------------
+def _flatten_datatree(tree):
+    """A tree flattens to its nodes' datasets, keyed by path.
+
+    The paths are the aux data, so unflattening rebuilds the same hierarchy; the datasets are children, so each one's own registration carries the arrays. Without this a ``DataTree`` is one opaque leaf, and a tree handed to ``jit`` or ``vmap`` is traced as a single value rather than as the arrays it holds.
+    """
+    paths = tuple(sorted(node.path for node in tree.subtree))
+    # ``to_dataset(inherit=False)``, not ``.dataset``: the latter hands back a ``DatasetView`` subclass, and the registry matches on exact type, so every node would stay one opaque leaf. ``inherit=False`` keeps a parent's coords out of its children, so a round trip rebuilds the tree it flattened rather than a copy with the coords duplicated down every branch.
+    return tuple(tree[path].to_dataset(inherit=False) for path in paths), paths
+
+
+def _unflatten_datatree(paths, datasets):
+    return xarray.DataTree.from_dict(dict(zip(paths, datasets, strict=True)))
+
+
 # Registration (runs on import)
-# ---------------------------------------------------------------------------
 
 jax.tree_util.register_pytree_node(xarray.Variable, _flatten_variable, _unflatten_variable)
 jax.tree_util.register_static(xarray.IndexVariable)
 jax.tree_util.register_pytree_node(xarray.DataArray, _flatten_data_array, _unflatten_data_array)
 jax.tree_util.register_pytree_node(xarray.Dataset, _flatten_dataset, _unflatten_dataset)
+jax.tree_util.register_pytree_node(xarray.DataTree, _flatten_datatree, _unflatten_datatree)

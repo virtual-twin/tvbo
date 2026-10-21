@@ -1,0 +1,35 @@
+import NaNMath
+function Izhikevich2007Cell!(dx, x, p, t = 0)
+
+    (;C, k, vr, vt, vpeak, a, b, c, d) = p
+
+    v, u = x
+
+
+    I_ext = ifelse(t >= 0.05 && t < 0.25, 1000.0, 0.0)
+
+    dx[1] = (I_ext .- u .+ k .* (v .- vr) .* (v .- vt)) ./ C
+    dx[2] = a .* (-u .+ b .* (v .- vr))
+    dx
+end
+
+# Parameter values
+p = (C = 100.0, k = 0.7, vr = -60.0, vt = -40.0, vpeak = 35.0, a = 0.03, b = -2.0, c = -50.0, d = 100.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -60.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Izhikevich2007Cell!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

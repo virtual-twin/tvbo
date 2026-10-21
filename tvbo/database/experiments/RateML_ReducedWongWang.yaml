@@ -9,17 +9,16 @@
 id: 1
 label: "RateML rwongwang ground truth"
 
-# Linear coupling: c_glob = sum(wij * V_j) * global_coupling
-coupling:
-  name: LinearCoupling
-  parameters: {}
-  incoming_states: [V]
-  pre_expression: {rhs: "V_j"}
-  post_expression: {rhs: "1"}
-
 # Network (small test network)
 network:
   number_of_nodes: 4
+  # Linear coupling: c_glob = sum(wij * V_j) * global_coupling
+  coupling:
+    LinearCoupling:
+      parameters: {}
+      incoming_states: [V]
+      pre_expression: {rhs: "V_j"}
+      post_expression: {rhs: "1"}
   dynamics:
     BalloonWindkessel:
       name: BalloonWindkessel

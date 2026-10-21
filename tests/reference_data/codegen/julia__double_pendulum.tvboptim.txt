@@ -1,0 +1,91 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class DoublePendulum(AbstractDynamics):
+    """DoublePendulum neural mass model."""
+
+    STATE_NAMES = ("theta1", "omega1", "theta2", "omega2")
+    INITIAL_STATE = (1.5707963267948966, 0.0, 0.0, 0.5)
+    AUXILIARY_NAMES = ("phi", "Delta")
+
+    DEFAULT_PARAMS = Bunch(
+        G=10.0,
+        L1=1.0,
+        L2=1.0,
+        M1=1.0,
+        M2=1.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        G = params.G
+        L1 = params.L1
+        L2 = params.L2
+        M1 = params.M1
+        M2 = params.M2
+
+        theta1 = state[0]
+        omega1 = state[1]
+        theta2 = state[2]
+        omega2 = state[3]
+
+        phi = theta2 - theta1
+        Delta = M1 + M2 - M2 * jnp.cos(phi) ** 2
+
+        dtheta1_dt = omega1
+        domega1_dt = (
+            M2
+            * (
+                jnp.cos(phi) * (L1 * omega1**2 * jnp.sin(phi) + G * jnp.sin(theta2))
+                + L2 * omega2**2 * jnp.sin(phi)
+            )
+            - (M1 + M2) * G * jnp.sin(theta1)
+        ) / ((L1 * Delta))
+        dtheta2_dt = omega2
+        domega2_dt = (
+            -M2 * L2 * omega2**2 * jnp.sin(phi) * jnp.cos(phi)
+            + (M1 + M2)
+            * (
+                G * (jnp.sin(theta1) * jnp.cos(phi) - jnp.sin(theta2))
+                - L1 * omega1**2 * jnp.sin(phi)
+            )
+        ) / ((L2 * Delta))
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dtheta1_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dtheta1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(domega1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dtheta2_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(domega2_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(phi), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(Delta), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

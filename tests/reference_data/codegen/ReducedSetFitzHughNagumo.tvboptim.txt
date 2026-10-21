@@ -1,0 +1,167 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class ReducedSetFitzHughNagumo(AbstractDynamics):
+    """ReducedSetFitzHughNagumo neural mass model."""
+
+    STATE_NAMES = (
+        "xi__mode0",
+        "xi__mode1",
+        "xi__mode2",
+        "eta__mode0",
+        "eta__mode1",
+        "eta__mode2",
+        "alpha__mode0",
+        "alpha__mode1",
+        "alpha__mode2",
+        "beta__mode0",
+        "beta__mode1",
+        "beta__mode2",
+    )
+    INITIAL_STATE = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        Aik=jnp.array(
+            [
+                [0.3328165811190223, 0.18525241779532714, 0.3328165811190241],
+                [0.5984537933538554, 0.3331114447027479, 0.5984537933538587],
+                [0.33281658111902046, 0.18525241779532614, 0.33281658111902235],
+            ]
+        ),
+        Bik=jnp.array(
+            [
+                [0.3328165811190223, 0.5984537933538554, 0.33281658111902046],
+                [0.18525241779532714, 0.3331114447027479, 0.18525241779532614],
+                [0.3328165811190241, 0.5984537933538587, 0.33281658111902235],
+            ]
+        ),
+        Cik=jnp.array(
+            [
+                [0.3328165811190223, 0.18525241779532714, 0.3328165811190241],
+                [0.5984537933538554, 0.3331114447027479, 0.5984537933538587],
+                [0.33281658111902046, 0.18525241779532614, 0.33281658111902235],
+            ]
+        ),
+        K11=0.5,
+        K12=0.15,
+        K21=0.15,
+        a=0.45,
+        b=0.9,
+        iU0=jnp.array([1.6668762461300366, 0.9278169186250886, 1.666876246130046]),
+        iU4=jnp.array([0.35990947874643836, 1.1616503426964113, 0.3599094787464342]),
+        iV0=jnp.array([1.6668762461300366, 0.9278169186250886, 1.666876246130046]),
+        iV4=jnp.array([0.35990947874643836, 1.1616503426964113, 0.3599094787464342]),
+        iZU=jnp.array([-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998]),
+        iZV=jnp.array([-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998]),
+        mu=0.0,
+        sigma=0.35,
+        tau=3.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob0": 1,
+        "c_glob1": 1,
+        "local_coupling": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        Aik = params.Aik
+        Bik = params.Bik
+        Cik = params.Cik
+        K11 = params.K11
+        K12 = params.K12
+        K21 = params.K21
+        a = params.a
+        b = params.b
+        iU0 = params.iU0
+        iU4 = params.iU4
+        iV0 = params.iV0
+        iV4 = params.iV4
+        iZU = params.iZU
+        iZV = params.iZV
+        mu = params.mu
+        sigma = params.sigma
+        tau = params.tau
+
+        IE_i = jnp.sqrt(sigma) * (mu * iV0 + sigma * iZV)
+        II_i = jnp.sqrt(sigma) * (mu * iU0 + sigma * iZU)
+        e_i = iV4 / sigma
+        f_i = iU4 / sigma
+        m_i = a * jnp.sqrt(sigma) * iV0
+        n_i = a * jnp.sqrt(sigma) * iU0
+
+        xi = jnp.stack([state[0], state[1], state[2]], axis=-1)
+        eta = jnp.stack([state[3], state[4], state[5]], axis=-1)
+        alpha = jnp.stack([state[6], state[7], state[8]], axis=-1)
+        beta = jnp.stack([state[9], state[10], state[11]], axis=-1)
+
+        c_glob0 = (
+            jnp.moveaxis(coupling.c_glob0, 0, -1)
+            if hasattr(coupling, "c_glob0")
+            else 0.0
+        )
+        c_glob1 = (
+            jnp.moveaxis(coupling.c_glob1, 0, -1)
+            if hasattr(coupling, "c_glob1")
+            else 0.0
+        )
+        local_coupling = (
+            jnp.moveaxis(coupling.local_coupling, 0, -1)
+            if hasattr(coupling, "local_coupling")
+            else 0.0
+        )
+
+        dxi_dt = (
+            tau * (xi - e_i * xi**3 / 3 - eta)
+            + K11 * (jnp.dot(xi, Aik) - xi)
+            - K12 * (jnp.dot(alpha, Bik) - xi)
+            + tau
+            * (IE_i + jnp.sum(c_glob0, axis=-1, keepdims=True) + local_coupling * xi)
+        )
+        deta_dt = (xi - b * eta + m_i) / tau
+        dalpha_dt = (
+            tau * (alpha - f_i * alpha**3 / 3 - beta)
+            + K21 * (jnp.dot(xi, Cik) - alpha)
+            + tau
+            * (II_i + jnp.sum(c_glob0, axis=-1, keepdims=True) + local_coupling * xi)
+        )
+        dbeta_dt = (alpha - b * beta + n_i) / tau
+
+        # Mode fold-back: split each variable's (n_nodes, n_modes) derivative into
+        # its n_modes scalar slots, in the same (variable, mode) order as STATE_NAMES.
+        _mode_ref = jnp.atleast_2d(dxi_dt)
+        derivatives = jnp.concatenate(
+            [
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(dxi_dt), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(deta_dt), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(dalpha_dt), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(dbeta_dt), _mode_ref.shape), -1, 0
+                ),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

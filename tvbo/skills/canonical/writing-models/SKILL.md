@@ -15,6 +15,19 @@ metadata:
 
 A **Dynamics** is the smallest building block: a set of named parameters and state variables governed by ODE equations. It can be written as YAML or constructed directly in Python.
 
+## First: is it already curated? (don't rewrite from a paper)
+
+TVBO ships 100+ curated models. Check before transcribing equations by hand — a match is one `from_db` call and is already unit-checked:
+
+```python
+from tvbo import Dynamics
+
+Dynamics.list_db()  # every curated model name
+dyn = Dynamics.from_db("JansenRit")  # load one
+```
+
+Only write a new `Dynamics` when the catalog has no match. See the `running-simulations` skill for the rest of the discovery API (filtering by `model_type`, `db_overview`, the `tvbo info` CLI) and for finding networks, atlases, coupling, and whole curated experiments the same way.
+
 ## YAML form
 
 ```yaml
@@ -64,11 +77,7 @@ lorenz = Dynamics(
 
 ## Loading a curated model from a source
 
-TVBO components are declarative: a `Dynamics` is either specified inline (as
-above), loaded from YAML, or **pointed at semantically via an `iri`**. The
-IRI's prefix names the source — `tvbo:` for the built-in ontology, but the
-same mechanism is intended to dispatch to other prefixes (e.g. `neuroml:`)
-that resolve from other ontologies / data sources.
+TVBO components are declarative: a `Dynamics` is either specified inline (as above), loaded from YAML, or **pointed at semantically via an `iri`**.
 
 ```python
 # Direct construction (Python API)
@@ -78,9 +87,7 @@ dyn = Dynamics.from_db("ReducedWongWangExcInh")
 dynamics = {"name": "ReducedWongWang", "iri": "tvbo:ReducedWongWangExcInh"}
 ```
 
-A bare name string (`dynamics="ReducedWongWangExcInh"`) is **not** a semantic
-pointer — there's no prefix, so the resolver cannot tell which source to
-query. Always include the `iri`.
+Always include the `iri` — a bare name string is **not** a semantic pointer. See the `running-simulations` skill for how a prefix resolves to a source and for the full sourcing rules (inline vs YAML vs `iri`).
 
 ## Conventions and pitfalls
 
@@ -88,10 +95,10 @@ query. Always include the `iri`.
 - **`rhs` is a SymPy-parseable expression**. Names must match parameters and state variables. Greek letters as full words: `sigma`, not `σ`.
 - **`label`** on a parameter is human-readable metadata (renders in the platform browser). Keep `name` machine-friendly.
 - Parameters carry **values**; state variables carry **equations**. Don't put a `value` on a state variable.
-- **Don't hand-edit `tvbo/datamodel/**`** — that's generated from `schema/*.yaml`. Use the `Dynamics` class.
+- **Define models through the `Dynamics` class or YAML** — never by editing the generated datamodel under `tvbo/datamodel/`.
 - **Trust the slots. Never assign a raw `{}` / `[]` to a LinkML slot — a `JsonObj` in your data is the symptom of mis-configured YAML / a Python object leaking into the schema.** The active datamodel (`tvbo/datamodel/schema.py`) is the jsonasobj2 / `YAMLRoot` dataclass form. Inlined dicts/lists are coerced into typed classes **only in `__post_init__` (i.e. at construction)**. Mutating a slot afterwards does **not** re-run that coercion:
     - **Multivalued slots** (dict- or list-backed: `parameters`, `dynamics`, `coupling`, `nodes`, `edges`, `transforms`, …) → **mutate the existing container in place**: `.update(...)` / `container["X"] = ...` for dict slots, `.append(...)` for list slots. To get a *typed* entry, insert a constructed class: `net.dynamics["X"] = Dynamics(...)`.
-        - ❌ `net.dynamics = {...}` — a raw dict goes through jsonasobj2's `JsonObj.__setattr__`, which wraps it in a bare `JsonObj` (it later breaks `.items()` / `.values()` on round-trip).
+        - ❌ `net.dynamics = {...}` — a raw dict goes through jsonasobj2's `JsonObj.__setattr__`, which wraps it in a bare `JsonObj`. **Silent symptom:** the slot then reads back **empty with no error** — `.items()`/`.keys()` yield nothing, a resolver returns `[]`, `for k, v in slot` doesn't run. Empty-and-silent means you assigned instead of `.update()`-ing (or should have used the constructor).
         - ❌ `net.nodes = [{...}]` — a raw list isn't wrapped in `JsonObj`, but its entries stay **uncoerced plain dicts**, never `Node` instances.
         - ⚠️ `.update({...})` / `["X"] = {...}` avoids the `JsonObj`, but a raw dict still isn't normalized — prefer inserting a constructed class instance.
     - **Single-valued slots** → plain `=` is correct. Assign a scalar directly (`net.number_of_nodes = 76`); for a nested-object slot assign a **constructed LinkML class instance** (`net.coordinate_space = CommonCoordinateSpace(...)`), never a raw `{}` (which becomes a bare `JsonObj`).

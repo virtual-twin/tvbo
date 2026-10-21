@@ -1,0 +1,50 @@
+name: Labyrinth
+description: 'Labyrinth attractor: b = 0 limiting case of Thomas'' cyclically symmetric
+  system,
+
+  producing conservative-like intricate winding trajectories through a trigonometric
+
+  vector field.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: sin(y)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 1.0
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: sin(z)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: sin(x)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: generic
+autonomous: true
+cse: false
+compile: false

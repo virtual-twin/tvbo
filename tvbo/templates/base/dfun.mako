@@ -7,23 +7,29 @@ Signatures:
 </%doc>
 <%!
 import textwrap
-from tvbo.templates.base.utils import get_coupling_terms, get_func_name, get_func_args, np_module, needs_scipy_special
+from tvbo.templates.base.utils import get_coupling_terms, get_func_name, get_func_args, gathered_state_indices, np_module, needs_scipy_special, referenced_parameters
 %>
 
+## The special-function import is gated on the equations actually using it, since emitting it unconditionally is what left `jsp` unused in every JAX module; `model=None` cannot be checked, so it keeps the unconditional form.
 <%def name="imports(model=None, fmt='jax')">
+<% _scipy = needs_scipy_special(model, fmt) if model is not None else True %>\
 % if fmt == 'jax':
 import jax.numpy as jnp
+% if _scipy:
 import jax.scipy as jsp
+% endif
 % else:
 import numpy as np
+% if _scipy:
 import scipy.special
+% endif
 % endif
 </%def>
 
 <%def name="params(model, fmt, source='_p')">
 <%
 render = lambda obj: model.render_equation(obj, format=fmt)
-pnames = [p.name for p in model.parameters.values()]
+pnames = referenced_parameters(model, [p.name for p in model.parameters.values()])
 %>\
 % if source == '_p' and pnames:
 # Parameters
@@ -31,23 +37,23 @@ pnames = [p.name for p in model.parameters.values()]
 ${p} = ${source}.${p}
 % endfor
 % endif
-% for dp in (model.derived_parameters or {}).values():
+% for dp in model.in_dependency_order('derived_parameters').values():
 ${dp.name} = ${render(dp)}
 % endfor
 </%def>
 
 <%def name="coupling(model, var='cX')">
 <%
-_, global_terms, has_local = get_coupling_terms(model)
+_, global_terms, local_terms = get_coupling_terms(model)
 %>\
-% if global_terms or has_local:
+% if global_terms or local_terms:
 # Coupling
 % for i, ct in enumerate(global_terms):
 ${ct} = ${var}[${i}]
 % endfor
-% if has_local:
-local_coupling = 0
-% endif
+% for ct in local_terms:
+${ct} = 0
+% endfor
 % endif
 </%def>
 
@@ -79,7 +85,7 @@ render = lambda obj: model.render_equation(obj, format=fmt)
 % if model.derived_variables:
 
 # Derived variables
-% for dv in (model.derived_variables or {}).values():
+% for dv in model.in_dependency_order('derived_variables').values():
 ${dv.name} = ${render(dv)}
 % endfor
 % endif
@@ -89,7 +95,7 @@ ${dv.name} = ${render(dv)}
 <%
 render = lambda obj: model.render_equation(obj, format=fmt)
 svars = list(model.state_variables.values())
-dvars = list((model.derived_variables or {}).keys())
+dvars = list(model.in_dependency_order('derived_variables'))
 np = np_module(fmt)
 %>\
 # Derivatives
@@ -123,10 +129,14 @@ ${derived(model, fmt)}
 ${derivs(model, fmt, stim, return_aux)}\
 </%def>
 
-<%def name="full_dfun(model, fmt='jax', signature='standard', func_name=None, return_aux=False)">
+<%def name="full_dfun(model, fmt='jax', signature='standard', func_name=None, return_aux=False, coupling_as_argument=False)">
 <%
-_, global_terms, has_local = get_coupling_terms(model)
+_, global_terms, local_terms = get_coupling_terms(model)
 name = get_func_name(model, func_name)
+if coupling_as_argument:
+    gsi = gathered_state_indices(model)
+    if len(global_terms) > len(gsi):
+        raise ValueError(f"{name}: {len(global_terms)} coupling inputs but only {len(gsi)} gathered states to index the coupling vector")
 %>\
 % if signature == 'standard':
 def dfun(current_state, t, cX, _p):
@@ -135,18 +145,29 @@ ${textwrap.indent(capture(body, model, fmt, '_p', True, None, return_aux).strip(
 def ${name}(
     current_state,
     t,
+% if coupling_as_argument:
+    coupling,
+% endif
 % for p in model.parameters.values():
     ${p.name}=${p.value if p.value is not None else 0.0},
 % endfor
+% if not coupling_as_argument:
 % for ct in global_terms:
     ${ct}=0.0,
 % endfor
+% endif
     stimulus=False,
 ):
     stim_t = stimulus(t) if stimulus else 0.0
-% if has_local:
-    local_coupling = 0.0
+% if coupling_as_argument:
+<%doc>The network runtime hands one coupling vector indexed by state variable, so each global input reads the row of the state it is gathered from; without this the body's `c_glob` is unbound and the first step raises NameError.</%doc>\
+% for i, ct in enumerate(global_terms):
+    ${ct} = coupling[${gsi[i]}]
+% endfor
 % endif
+% for ct in local_terms:
+    ${ct} = 0.0
+% endfor
 
 ${textwrap.indent(capture(body, model, fmt, 'kwargs', False, 'stim_t', return_aux).strip(), '    ')}
 % endif

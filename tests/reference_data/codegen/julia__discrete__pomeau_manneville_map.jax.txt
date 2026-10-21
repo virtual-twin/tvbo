@@ -1,0 +1,26 @@
+import jax.numpy as jnp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    z = _p.z
+
+    # State variables
+    x = current_state[0]
+
+    # Derivatives
+    dx_dt = jnp.where(
+        jnp.greater(x, 0.5),
+        -4 * x + 3,
+        jnp.where(
+            jnp.less(x, -0.5),
+            -4 * x - 3,
+            jnp.where(
+                jnp.less_equal(jnp.abs(x), 0.5), x * (1 + jnp.abs(2 * x) ** (z - 1)), 0
+            ),
+        ),
+    )
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dx_dt))
+
+    return derivatives

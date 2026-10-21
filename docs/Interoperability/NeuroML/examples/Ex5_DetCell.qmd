@@ -1,17 +1,16 @@
 ---
 title: "Ex5: Detailed HH Cell"
 description: "Single-compartment HH cell using the full NeuroML cell element with morphology"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: SingleCompHHCell
 
-Same HH dynamics as Ex1, but the reference uses the full `<cell>` element with a
-single-compartment morphology (soma, area ≈ 1000 μm²), biophysical properties,
-and `channelDensity` — the recommended NeuroML format for maximum simulator
-compatibility.
+Same HH dynamics as Ex1, but the reference uses the full `<cell>` element with a single-compartment morphology (soma, area ≈ 1000 μm²), biophysical properties, and `channelDensity` — the recommended NeuroML format for maximum simulator compatibility.
 
-For a single compartment, `channelDensity × area` gives the same total conductance
-as `channelPopulation × singleChannelConductance` in `pointCellCondBased`:
+For a single compartment, `channelDensity × area` gives the same total conductance as `channelPopulation × singleChannelConductance` in `pointCellCondBased`:
 
 | Property | Ex5 (`<cell>`) | Equivalent `pointCellCondBased` |
 |----------|---------|------|
@@ -20,9 +19,7 @@ as `channelPopulation × singleChannelConductance` in `pointCellCondBased`:
 | K | 36 mS/cm² × 10⁻⁵ cm² = 360 nS | 36000 × 10 pS |
 | Leak | 0.3 mS/cm² × 10⁻⁵ cm² = 3 nS | 300 × 10 pS |
 
-TVBO uses `pointCellCondBased` with standard NeuroML ion channels, giving
-numerical identity with the reference to within floating-point precision
-(max diff < 1 μV).
+TVBO uses `pointCellCondBased` with standard NeuroML ion channels, giving numerical identity with the reference to within floating-point precision (max diff < 1 μV).
 
 ---
 
@@ -143,10 +140,7 @@ print(f"Components: {list(exp.dynamics.components.keys())}")
 
 ::: {.callout-note}
 ## Point Cell vs Full Cell
-The reference uses a `<cell>` element with morphology and `channelDensity`, while
-TVBO uses `pointCellCondBased` with `channelPopulation`. For single-compartment cells,
-these are mathematically equivalent — the total conductance is the same. TVBO achieves
-numerical identity with the reference to within floating-point precision (max diff < 1 μV).
+The reference uses a `<cell>` element with morphology and `channelDensity`, while TVBO uses `pointCellCondBased` with `channelPopulation`. For single-compartment cells, these are mathematically equivalent — the total conductance is the same. TVBO achieves numerical identity with the reference to within floating-point precision (max diff < 1 μV).
 :::
 
 ## 2. Render LEMS XML

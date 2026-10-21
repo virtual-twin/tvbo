@@ -1,0 +1,32 @@
+name: WelchPSD
+label: Welch power spectral density
+equation:
+  rhs: welch(x, hann(nperseg), fs, noverlap, nfft, 1)
+  latex: false
+description: Welch's estimate of the power spectral density of a signal along its
+  leading (time) axis, one-sided and scaled as power per unit frequency, with a periodic
+  Hann window and each segment's mean removed, which are the defaults of scipy.signal.welch.
+  Segments of nperseg samples start every nperseg - noverlap samples, a trailing remainder
+  is dropped, each segment is zero-padded to nfft samples, and the segments' periodograms
+  are averaged. The result has nfft // 2 + 1 rows, at the frequencies rfftfreq(nfft,
+  1 / fs), and the signal's trailing axes. nperseg, noverlap and nfft are integers
+  fixed when the code is generated, because they set the shape of the result; they
+  cannot be floats, traced values or the axes of a sweep.
+arguments:
+  x:
+    name: x
+    description: The signal, time on the leading axis.
+  fs:
+    name: fs
+    description: Sampling rate of the signal; the spectrum is per unit of this frequency.
+    unit: Hz
+  nperseg:
+    name: nperseg
+    description: Segment length in samples, an integer.
+  noverlap:
+    name: noverlap
+    description: Number of samples consecutive segments share, an integer.
+  nfft:
+    name: nfft
+    description: FFT length in samples, an integer at least nperseg; a longer one
+      zero-pads each segment.

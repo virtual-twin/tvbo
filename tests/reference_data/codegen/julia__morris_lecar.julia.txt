@@ -1,0 +1,35 @@
+function MorrisLecar!(dx, x, p, t = 0)
+
+    (;I, V3, V1, V2, V4, VCa, VL, VK, gCa, gK, gL, tau) = p
+
+    V, N = x
+
+
+    G = 0.5 .+ 0.5 * tanh((V .- V3) ./ V4)
+    M = 0.5 .+ 0.5 * tanh((V .- V1) ./ V2)
+
+    dx[1] = I .- gL .* (V .- VL) .- M .* gCa .* (V .- VCa) .- N .* gK .* (V .- VK)
+    dx[2] = (G .- N) ./ tau
+    dx
+end
+
+# Parameter values
+p = (I = 0.15, V3 = 0.1, V1 = -0.0, V2 = 0.15, V4 = 0.1, VCa = 1.0, VL = -0.5, VK = -0.7, gCa = 1.2, gK = 2.0, gL = 0.5, tau = 3.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(MorrisLecar!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

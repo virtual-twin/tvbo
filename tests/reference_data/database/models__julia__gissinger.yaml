@@ -1,0 +1,63 @@
+name: Gissinger
+parameters:
+  mu:
+    name: mu
+    value: 0.119
+    description: Growth parameter μ for dipole component Q.
+  nu:
+    name: nu
+    value: 0.1
+    description: Damping parameter ν of D variable.
+  Gamma:
+    name: Gamma
+    value: 0.9
+    description: Constant source term Γ in V equation.
+description: 'Low-order model for geomagnetic field reversals exhibiting chaotic polarity
+  changes.
+
+  Captures interplay between dipole (Q), quadrupole (D) and velocity (V) modes.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- Gissinger2012
+state_variables:
+  Q:
+    name: Q
+    equation:
+      lhs: Derivative(Q, t)
+      rhs: mu*Q - V*D
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 3.0
+  D:
+    name: D
+    equation:
+      lhs: Derivative(D, t)
+      rhs: -nu*D + V*Q
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.5
+  V:
+    name: V
+    equation:
+      lhs: Derivative(V, t)
+      rhs: Gamma - V + Q*D
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 1.5
+number_of_modes: 1
+model_type: generic
+autonomous: true
+cse: false
+compile: false

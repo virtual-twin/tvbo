@@ -3,7 +3,7 @@
 %>
 <%
 if 'experiment' in context.keys():
-    noise = context['experiment'].integration.noise
+    noise = context['experiment'].run_noise
     nsig = 0.5 * context['experiment'].noise_sigma_array**2
 else:
     noise = context['noise']

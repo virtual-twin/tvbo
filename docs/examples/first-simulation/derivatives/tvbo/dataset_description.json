@@ -1,0 +1,11 @@
+{
+  "Name": "A whole-brain simulation",
+  "BIDSVersion": "1.11.1",
+  "DatasetType": "derivative",
+  "GeneratedBy": [
+    {
+      "Name": "tvbo",
+      "Description": "TVB-Ontology simulation result"
+    }
+  ]
+}

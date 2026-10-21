@@ -255,9 +255,9 @@
       }
     ],
 
-    "coupling_terms": [
+    "coupling_inputs": [
       {
-        "@type": "tvbo:Parameter",
+        "@type": "tvbo:CouplingInput",
         "name": "c_in",
         "label": "Coupling input",
         "description": "Long-range coupling input from connected regions"

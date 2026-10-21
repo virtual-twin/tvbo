@@ -208,20 +208,17 @@ derived_variables:
       lhs: J_N_S_e
       rhs: J_N*S_e
       latex: false
-    conditional: false
   coupling:
     equation:
       lhs: coupling
       rhs: G*J_N*(S_e*local_coupling + c_glob)
       latex: false
-    conditional: false
   I_e:
     description: Input current to the excitatory population (Deco et al., 2021).
     equation:
       lhs: I_e
       rhs: I_ext + I_o*W_e + J_N_S_e*w_p - J_i*S_i + coupling
       latex: false
-    conditional: false
     grounding:
     - GO:0098815
   I_i:
@@ -230,7 +227,6 @@ derived_variables:
       lhs: I_i
       rhs: I_o*W_i + J_N_S_e - S_i + coupling*lamda
       latex: false
-    conditional: false
     grounding:
     - GO:0060080
   x_e:
@@ -239,7 +235,6 @@ derived_variables:
       lhs: x_e
       rhs: M_i*(a_e*I_e - b_e)
       latex: false
-    conditional: false
     grounding:
     - GO:0098815
   x_i:
@@ -248,7 +243,6 @@ derived_variables:
       lhs: x_i
       rhs: M_i*(a_i*I_i - b_i)
       latex: false
-    conditional: false
     grounding:
     - GO:0060080
   H_e:
@@ -257,7 +251,6 @@ derived_variables:
       lhs: H_e
       rhs: x_e/(1 - exp(-d_e*x_e))
       latex: false
-    conditional: false
     grounding:
     - GO:0060079
     - GO:0099605
@@ -267,7 +260,6 @@ derived_variables:
       lhs: H_i
       rhs: x_i/(1 - exp(-d_i*x_i))
       latex: false
-    conditional: false
     grounding:
     - GO:0060080
     - GO:0099605

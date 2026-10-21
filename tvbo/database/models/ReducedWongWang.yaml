@@ -103,14 +103,12 @@ derived_variables:
       lhs: x
       rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_glob
       latex: false
-    conditional: false
   H:
     description: Sigmoid input-output function of the synaptic input current, x_RWW, that computes the averaged firing rate of the neurons population (Deco et al., 2013).
     equation:
       lhs: H
       rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
       latex: false
-    conditional: false
     grounding:
     - GO:0099605
 coupling_inputs:

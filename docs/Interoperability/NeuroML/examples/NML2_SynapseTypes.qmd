@@ -1,6 +1,9 @@
 ---
 title: "NML2: Synapse Types"
 description: "All synapse types — expOne, expTwo, alpha, blocking, NMDA"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## NML2_SynapseTypes.nml

@@ -10,5 +10,4 @@ update_expression:
     lhs: X_{t+1}
     rhs: dX0
     latex: false
-  conditional: false
 delayed: true

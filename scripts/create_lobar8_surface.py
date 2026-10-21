@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Create per-hemisphere Lobar8 surface networks from fsaverage DK parcellation.
 
-Uses the Desikan-Killiany (aparc) surface parcellation from templateflow
-on fsaverage 164k to create clean vertex→lobe mappings. Produces two files:
+Uses the Desikan-Killiany (aparc) surface parcellation from templateflow on fsaverage 164k to create clean vertex→lobe mappings. Produces two files:
   - hemi-L: 163,842 vertices, rm values 0-5 (LH cortical lobes)
   - hemi-R: 163,842 vertices, rm values 8-13 (RH cortical lobes)
 
@@ -175,10 +174,10 @@ def build_hemi_surface(hemi_code: str, hemi_prefix: str, parent_network, db_dir:
         number_of_vertices=n_vertices,
         number_of_elements=n_elements,
     )
-    object.__setattr__(surf, "_mesh", mesh)
-    object.__setattr__(surf, "_mesh_vertices", vertices)
-    object.__setattr__(surf, "_mesh_elements", faces)
-    object.__setattr__(surf, "_mesh_normals", normals)
+    surf.mesh = mesh
+    surf.set_array("mesh/vertices", vertices)
+    surf.set_array("mesh/elements", faces)
+    surf.set_array("mesh/normals", normals)
 
     surf.set_node_mapping(
         rm,

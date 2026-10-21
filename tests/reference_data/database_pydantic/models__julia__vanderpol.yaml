@@ -1,0 +1,57 @@
+name: VanDerPolForced
+parameters:
+  mu:
+    name: mu
+    value: 1.5
+    description: Nonlinear damping parameter μ.
+  F:
+    name: F
+    value: 1.2
+    description: Forcing amplitude F.
+  T:
+    name: T
+    value: 10.0
+    description: Forcing period T.
+description: 'The forced van der Pol oscillator features nonlinear (amplitude dependent)
+  damping and
+
+  sinusoidal forcing. The unforced system has a unique attracting relaxation cycle;
+  with
+
+  forcing it displays entrainment, quasi-periodicity or chaos depending on parameters.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- vanderpol1926
+state_variables:
+  x:
+    name: x
+    description: Position variable.
+    equation:
+      lhs: Derivative(x, t)
+      rhs: y
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.5
+  y:
+    name: y
+    description: Velocity variable.
+    equation:
+      lhs: Derivative(y, t)
+      rhs: mu*(1 - x**2)*y - x + F*sin(2*pi*t/T)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: generic
+system_type: continuous
+autonomous: false
+cse: false
+compile: false

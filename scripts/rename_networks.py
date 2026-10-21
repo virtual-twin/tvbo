@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Rename all network files in database/networks/ to match the BIDS BEP017
-naming convention from the tvbo HDF5 format proposal v0.7 (§6.5).
+"""Rename all network files in database/networks/ to match the BIDS BEP017 naming convention from the tvbo HDF5 format proposal v0.7 (§6.5).
 
 Mapping rules:
 - space-<X>  →  tpl-<X>  (these are normative, template-level connectomes)
@@ -25,8 +24,9 @@ Usage:
 
 import re
 import sys
-import yaml
 from pathlib import Path
+
+import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 NET_DIR = ROOT / "database" / "networks"
@@ -53,8 +53,7 @@ def parse_old_name(stem):
     """Parse the old-style filename into entities."""
     entities = {}
 
-    # Handle the weird tpl-tractogram files first
-    # e.g., space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked
+    # Handle the weird tpl-tractogram files first e.g., space-MNI152Nlin2009c_tpl-MghUscHcp32_atlas-DesikanKilliany_desc-ranked
     m = re.match(r"space-(?P<space>[^_]+)_tpl-(?P<tpl>[^_]+)_atlas-(?P<atlas>[^_]+)_desc-(?P<desc>.+)", stem)
     if m:
         entities["space"] = m.group("space")

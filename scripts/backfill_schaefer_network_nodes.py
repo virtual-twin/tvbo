@@ -60,7 +60,7 @@ def update_network_yaml(network_yaml: Path, atlas_dir: Path, overwrite: bool) ->
         raise ValueError(f"Node/entity size mismatch for {network_yaml.name}: {len(nodes)} nodes vs {len(entities)} entities")
 
     changed = False
-    for node, entity in zip(nodes, entities):
+    for node, entity in zip(nodes, entities, strict=True):
         label = entity.get("name")
         center = entity.get("center", {})
         position = {

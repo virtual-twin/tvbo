@@ -193,10 +193,7 @@
             "label": "Intermediate timescale",
             "value": 10.0,
             "unit": "ms"
-          }
-        ],
-
-        "coupling_terms": [
+          },
           {
             "@type": "tvbo:Parameter",
             "name": "Ks",

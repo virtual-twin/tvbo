@@ -1,13 +1,7 @@
-#
-# Module: lems_loader.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""
-This module deals with loading elements from LEMS-generated files.
-"""
+# SPDX-License-Identifier: EUPL-1.2
+
+"""This module deals with loading elements from LEMS-generated files."""
 
 from lems import api as lems
 
@@ -18,10 +12,7 @@ from tvbo.ontology import owl as ontology
 def lems_model_info(model):
     """Extract model metadata from a parsed LEMS model into a plain dictionary.
 
-    Reads the `derivatives` component type of a LEMS model and collects its
-    constants (parameters), state variables, non-integrated (derived)
-    variables, time derivatives, exposures, and any coupling-function
-    component types.
+    Reads the `derivatives` component type of a LEMS model and collects its constants (parameters), state variables, non-integrated (derived) variables, time derivatives, exposures, and any coupling-function component types.
 
     Args:
         model: A parsed LEMS `Model` whose `component_types` include a
@@ -113,11 +104,7 @@ def load_lems_model(lems_file):
 def import_lems_model(lems_file, model_name):
     """Import a LEMS model file as ontology classes and return the created classes.
 
-    Parses the LEMS file, creates a `NeuralMassModel` subclass named
-    `model_name`, and registers its state variables, parameters,
-    non-integrated variables, time derivatives, and coupling functions as
-    ontology subclasses. Mathematical relationships are updated on the
-    resulting model class before it is returned.
+    Parses the LEMS file, creates a `NeuralMassModel` subclass named `model_name`, and registers its state variables, parameters, non-integrated variables, time derivatives, and coupling functions as ontology subclasses. Mathematical relationships are updated on the resulting model class before it is returned.
 
     Args:
         lems_file: Path to the LEMS/XML file to import.
@@ -137,10 +124,7 @@ def import_lems_model(lems_file, model_name):
     def create_onto_subclass(name, base_class, properties, model_class):
         """Create and register an ontology subclass with the given properties.
 
-        Defines a new class named `name` deriving from both `model_class` and
-        `base_class` inside the active ontology, then applies each entry in
-        `properties`: list values are extended onto the property, scalar
-        values are appended.
+        Defines a new class named `name` deriving from both `model_class` and `base_class` inside the active ontology, then applies each entry in `properties`: list values are extended onto the property, scalar values are appended.
 
         Args:
             name: Name of the new ontology class.
@@ -209,8 +193,6 @@ def import_lems_model(lems_file, model_name):
 
     # Adding non-integrated variables as subclasses of the model
     for niv_name, niv_info in data.get("non_integrated_variables", {}).items():
-        # for k, v in niv_info.items():
-        #     print(k, v)
         properties = {
             "label": [niv_name + model_suffix],
             "symbol": niv_name,
@@ -238,7 +220,6 @@ def import_lems_model(lems_file, model_name):
     # Coupling Functions
     for cf_name, cf in data.get("coupling_functions", {}).items():
         cf_name = cf_name + model_suffix.replace("_", "_c")
-        # print(cf_name)
         with onto:
             cf_class = type(
                 cf_name,
@@ -260,7 +241,7 @@ def import_lems_model(lems_file, model_name):
             cparam_class = create_onto_subclass(param_name, onto.Parameter, properties, cf_class)
             cf_class.has_parameter.append(cparam_class)
 
-        for param, value in cf["derived_parameters"].items():
+        for param in cf["derived_parameters"]:
             if len(ontology.onto.search(label=param)) == 1:
                 with ontology.onto:
                     ontology.onto[param].is_a.append(model_class)

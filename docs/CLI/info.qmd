@@ -62,4 +62,4 @@ tvbo info experiment:JR_MEG --json | jq '.explorations'
 ## See also
 
 - [Specs and resolution](specs.qmd)
-- [`tvbo workflow plan`](workflow.qmd) — much richer plan output for HPC sweeps
+- [`tvbo workflow plan`](workflow.qmd): much richer plan output for HPC sweeps

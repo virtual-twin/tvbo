@@ -1,0 +1,39 @@
+function MagneticPendulum!(dx, _x, p, t = 0)
+
+    (;gamma, d, alpha, omega, N) = p
+
+    x, y, vx, vy = _x
+
+
+    sum_gamma_terms_x = gamma .* ((-1 .+ x) ./ (d .^ 2 .+ y .^ 2 .+ (-1 .+ x) .^ 2) .^ (3 // 2) .+ (1 // 2 .+ x) ./ (d .^ 2 .+ (1 // 2 .+ x) .^ 2 .+ (y .+ sqrt(3) / 2) .^ 2) .^ (3 // 2) .+ (1 // 2 .+ x) ./ (d .^ 2 .+ (1 // 2 .+ x) .^ 2 .+ (y .- sqrt(3) / 2) .^ 2) .^ (3 // 2))
+    sum_gamma_terms_y = gamma .* (y ./ (d .^ 2 .+ y .^ 2 .+ (-1 .+ x) .^ 2) .^ (3 // 2) .+ (y .+ sqrt(3) / 2) ./ (d .^ 2 .+ (1 // 2 .+ x) .^ 2 .+ (y .+ sqrt(3) / 2) .^ 2) .^ (3 // 2) .+ (y .- sqrt(3) / 2) ./ (d .^ 2 .+ (1 // 2 .+ x) .^ 2 .+ (y .- sqrt(3) / 2) .^ 2) .^ (3 // 2))
+
+    dx[1] = vx
+    dx[2] = vy
+    dx[3] = -sum_gamma_terms_x .- alpha .* vx .- x .* omega .^ 2
+    dx[4] = -sum_gamma_terms_y .- alpha .* vy .- y .* omega .^ 2
+    dx
+end
+
+# Parameter values
+p = (gamma = 1.0, d = 0.3, alpha = 0.2, omega = 0.5, N = 3)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.7803612880645133,
+        0.6253313812821787,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(MagneticPendulum!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

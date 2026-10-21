@@ -59,13 +59,11 @@ derived_variables:
       lhs: M
       rhs: 0.5*(1 + tanh((V - V1)/V2))
       latex: false
-    conditional: false
   G:
     equation:
       lhs: G
       rhs: 0.5*(1 + tanh((V - V3)/V4))
       latex: false
-    conditional: false
 description: |-
   Two-variable conductance-based neuron model capturing excitability via fast
   calcium and slower potassium dynamics; a simplification of Hodgkin-Huxley

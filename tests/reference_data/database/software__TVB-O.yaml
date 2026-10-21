@@ -1,0 +1,77 @@
+name: TVB-O
+description: The Virtual Brain Ontology — a Python library for knowledge representation,
+  code generation, and simulation of large-scale brain network models. Integrates
+  a LinkML-based ontology with JAX-accelerated numerical backends and interoperates
+  with TVB, PyRates, NEURON, NEST, NeuroML, and NetworkDynamics.jl.
+homepage: https://tvbo.charite.de
+license: EUPL-1.2
+repository: https://github.com/virtual-twin/tvbo
+doi: 10.1101/2025.11.19.689211
+version: 0.3.10
+ecosystem:
+- pypi
+application_category: simulation
+scale:
+- neural_mass
+- network_system
+- neuron
+model_paradigm:
+- neural_mass
+- mean_field
+- dynamic_mean_field
+- conductance_based
+- spiking
+- multiscale
+tool_role:
+- framework
+programming_language:
+- Python
+runtime_platform:
+- JAX
+- NumPy
+operating_system:
+- Linux
+- macOS
+- Windows
+interoperates_with:
+- TVB
+- TVB-Optim
+- PyRates
+- NeuroML
+- NetworkDynamics.jl
+- BifurcationKit.jl
+- DifferentialEquations.jl
+- AUTO-07p
+date_created: '2024-01-01'
+development_status: active
+author:
+- Leon Martin
+- Konstantin Bülau
+- Marius Pille
+- Rico Andre Schmitt
+- Christoph Hüttl
+- Jil M Meier
+- Halgurd Taher
+- Dionysios Perdikis
+- Michael Schirner
+- Petra Ritter
+maintainer:
+- Leon Martin
+- Berlin Institute of Health (BIH) at Charité
+funder:
+- EU Horizon Europe 101147319 (EBRAINS 2.0)
+- EU H2020 945539 (HBP SGA3)
+reference_publication: 10.1101/2025.11.19.689211
+keywords:
+- brain simulation
+- ontology
+- knowledge representation
+- code generation
+- connectome
+- neural mass
+- JAX
+- LinkML
+same_as:
+- https://pypi.org/project/tvbo/
+issue_tracker: https://github.com/virtual-twin/tvbo/issues
+is_accessible_for_free: true

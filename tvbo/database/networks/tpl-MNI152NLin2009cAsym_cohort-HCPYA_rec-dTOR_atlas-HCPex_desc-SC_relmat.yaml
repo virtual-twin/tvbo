@@ -1,7 +1,7 @@
 tvbo_class: tvbo:Network
 schema_version: tvb-datamodel/0.7.0
 label: HCPex (dTOR)
-number_of_nodes: 427
+number_of_nodes: 426
 descriptor: SC
 distance_unit: mm
 time_unit: ms
@@ -21,8 +21,6 @@ parcellation:
 tractogram:
   name: dTOR
 nodes:
-- id: 0
-  label: node_0
 - id: 1
   label: node_1
 - id: 2

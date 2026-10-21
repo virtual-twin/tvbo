@@ -52,13 +52,11 @@ derived_variables:
       lhs: phi
       rhs: theta2 - theta1
       latex: false
-    conditional: false
   Delta:
     equation:
       lhs: Delta
       rhs: (M1 + M2) - M2*cos(phi)**2
       latex: false
-    conditional: false
 description: |-
   Famous chaotic double pendulum (planar) with two point masses connected by
   massless rods. The ordering of variables is [θ₁, ω₁, θ₂, ω₂]. Shows sensitive

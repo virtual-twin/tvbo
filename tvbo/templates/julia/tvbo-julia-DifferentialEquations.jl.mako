@@ -1,53 +1,28 @@
 ## -*- coding: utf-8 -*-
 <%!
-from tvbo.adapters.julia_model import build_model_context
+from tvbo.adapters.julia_model import build_model_context, julia_solve
 %>
 <%
-if 'experiment' in context.keys():
-    model = context['experiment'].dynamics
-    dt = context['experiment'].integration.step_size
-    duration = context['experiment'].integration.duration
-else:
-    model = context['model']
-
-if 'duration' not in context.keys():
-    duration=1000
-if 'dt' not in context.keys():
-    dt = 0.01
+experiment = context.get('experiment', None)
+model = experiment.dynamics if experiment is not None else context['model']
+dt = context.get('dt', experiment.integration.step_size if experiment is not None else 0.01)
+duration = context.get('duration', experiment.integration.duration if experiment is not None else 1000)
 plot = context.get('plot', False)
 fout = context.get('fout', False)
 
 # All metadata→Julia translation is prepared here; the includes only emit syntax.
 mc = build_model_context(model)
+solve = julia_solve(model, experiment.integration if experiment is not None else None, dt)
 %>
-
-## Decide problem type (ODE vs SDE) based on presence of any state variable noise intensity > 0
-<%
-def has_noise(model):
-    # Prefer live state_variables (may include user-added noise) over metadata snapshot
-    for sv in getattr(model, 'state_variables', {}).values():
-        n = getattr(sv, 'noise', None)
-        if n and getattr(getattr(n, 'intensity', None), 'value', None):
-            try:
-                if float(n.intensity.value) > 0:
-                    return True
-            except Exception:
-                pass
-    return False
-%>
-% if has_noise(model):
+% if solve['stochastic']:
 <%include file="/tvbo-julia-SDEProblem.jl.mako" args="model=model, mc=mc, duration=duration" />
 % else:
 <%include file="/tvbo-julia-model.jl.mako" args="mc=mc" />
-<%include file="/tvbo-julia-ODEProblem.jl.mako" args="mc=mc, duration=duration" />
+<%include file="/tvbo-julia-ODEProblem.jl.mako" args="mc=mc, duration=duration, package=solve['package']" />
 % endif
 
 # Solve
-% if has_noise(model):
-sol = solve(prob, EulerHeun(); dt=${dt}, saveat=${dt})
-% else:
-sol = solve(prob, Tsit5(); saveat=${dt})
-% endif
+sol = solve(prob, ${solve['solver']}(); ${solve['kwargs']})
 
 %if plot:
 # Plot the solution

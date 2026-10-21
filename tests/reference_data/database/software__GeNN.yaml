@@ -1,0 +1,47 @@
+name: GeNN
+description: GPU Enhanced Neuronal Networks — a framework for GPU-accelerated spiking
+  neural network simulations using NVIDIA CUDA. Generates optimized GPU kernels from
+  model descriptions.
+homepage: https://genn-team.github.io/genn/
+license: GPL-2.0-only
+repository: https://github.com/genn-team/genn
+doi: 10.1038/s43588-022-00222-7
+application_category: simulation
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+tool_role:
+- simulator
+programming_language:
+- C++
+- Python
+runtime_platform:
+- CUDA
+- OpenCL
+interoperates_with:
+- PyNN
+- Brian2
+- NEURON
+date_created: '2016-01-01'
+development_status: active
+author:
+- Thomas Nowotny
+- James Turner
+maintainer:
+- University of Sussex
+funder:
+- EPSRC
+- EU H2020
+reference_publication: 10.1038/s43588-020-00022-7
+keywords:
+- GPU
+- spiking neural network
+- code generation
+- CUDA
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_017581
+issue_tracker: https://github.com/genn-team/genn/issues
+is_accessible_for_free: true

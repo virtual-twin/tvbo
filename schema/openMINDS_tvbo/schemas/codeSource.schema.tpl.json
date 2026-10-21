@@ -1,0 +1,17 @@
+{
+  "_type": "tvbo:CodeSource",
+  "properties": {
+    "path": {
+      "type": "string"
+    },
+    "git": {
+      "type": "string"
+    },
+    "ref": {
+      "type": "string"
+    },
+    "subdir": {
+      "type": "string"
+    }
+  }
+}

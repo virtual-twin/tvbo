@@ -1,0 +1,38 @@
+import jax.numpy as jnp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    g = _p.g
+    l = _p.l
+    m1 = _p.m1
+    m2 = _p.m2
+
+    # State variables
+    theta = current_state[0]
+    omega = current_state[1]
+    y = current_state[2]
+    v = current_state[3]
+
+    # Derived variables
+    energy = (
+        0.5 * m1 * (v**2 + l**2 * omega**2 + 2 * l * omega * v * jnp.sin(theta))
+        + 0.5 * m2 * v**2
+        + g * y * (m1 + m2)
+        + g * l * m1 * (1 - jnp.cos(theta))
+    )
+
+    # Derivatives
+    dtheta_dt = omega
+    domega_dt = (
+        -g * (m1 + m2) * jnp.sin(theta)
+        - m1 * omega**2 * jnp.cos(theta) * jnp.sin(theta)
+    ) / (l * (m1 + m2) - l * m1 * jnp.cos(theta) ** 2)
+    dy_dt = v
+    dv_dt = g * (m2 - m1 * jnp.sin(theta) ** 2) / (
+        m1 + m2 - m1 * jnp.cos(theta) ** 2
+    ) - l * m1 * omega**2 * jnp.cos(theta) / (m1 + m2 - m1 * jnp.cos(theta) ** 2)
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dtheta_dt, domega_dt, dy_dt, dv_dt))
+
+    return derivatives

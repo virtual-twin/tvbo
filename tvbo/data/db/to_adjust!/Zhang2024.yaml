@@ -76,7 +76,6 @@ simulation_experiments:
 
     integration:
       noise:
-        correlated: false
         gaussian: true
         parameters:
           - label: g

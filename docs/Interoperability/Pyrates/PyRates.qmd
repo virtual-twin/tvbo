@@ -29,7 +29,7 @@ TVBO provides seamless bidirectional integration:
 | Initial values | `initial_value` attribute | `variable(value)` |
 | Parameters | `Parameter` objects | Numeric values |
 | Outputs | `output` | `output` marker |
-| Inputs | `coupling_terms` | `input(value)` marker |
+| Inputs | `coupling_inputs` | `input(value)` marker |
 | Single node | `Dynamics` | `NodeTemplate` |
 | Network | `Network` | `CircuitTemplate` |
 

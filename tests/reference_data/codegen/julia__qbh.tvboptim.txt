@@ -1,0 +1,66 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class QuadrupoleBosonHamiltonian(AbstractDynamics):
+    """QuadrupoleBosonHamiltonian neural mass model."""
+
+    STATE_NAMES = ("q0", "p0", "q2", "p2")
+    INITIAL_STATE = (0.0, -2.5830294658973876, 1.3873470962626937, -4.743416490252585)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        A=1.0,
+        B=0.55,
+        D=0.4,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        A = params.A
+        B = params.B
+        D = params.D
+
+        q0 = state[0]
+        p0 = state[1]
+        q2 = state[2]
+        p2 = state[3]
+
+        dq0_dt = A * p0
+        dp0_dt = (
+            (-A) * q0 - 3 * B * (q2**2 - q0**2) / jnp.sqrt(2) - D * q0 * (q0**2 + q2**2)
+        )
+        dq2_dt = A * p2
+        dp2_dt = (-q2) * (A + 3 * jnp.sqrt(2) * B * q0 + D * (q0**2 + q2**2))
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dq0_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dq0_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dp0_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dq2_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dp2_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

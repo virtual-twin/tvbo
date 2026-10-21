@@ -1,0 +1,145 @@
+label: Simple 3-Node Network Example
+description: Example network with 3 nodes and two different coupling types (excitatory
+  and inhibitory)
+parameters:
+  G:
+    name: G
+    value: 1.0
+  conduction_speed:
+    name: conduction_speed
+    value: 3.0
+    unit: mm_per_ms
+nodes:
+- id: 0
+  label: Node_A
+  record: true
+  size: 1
+  dynamics: Generic2dOscillator
+  position:
+    x: -10.0
+    y: 0.0
+    z: 0.0
+  region: Left Frontal
+  state:
+    V:
+      name: V
+      value: 0.1
+    W:
+      name: W
+      value: 0.0
+- id: 1
+  label: Node_B
+  record: true
+  size: 1
+  dynamics: Generic2dOscillator
+  position:
+    x: 0.0
+    y: 10.0
+    z: 0.0
+  region: Parietal
+  state:
+    V:
+      name: V
+      value: -0.1
+    W:
+      name: W
+      value: 0.0
+- id: 2
+  label: Node_C
+  record: true
+  size: 1
+  dynamics: Generic2dOscillator
+  position:
+    x: 10.0
+    y: 0.0
+    z: 0.0
+  region: Right Frontal
+  state:
+    V:
+      name: V
+      value: 0.0
+    W:
+      name: W
+      value: 0.1
+edges:
+- source: 0
+  target: 1
+  weight: 0.8
+  delay: 2.0
+  distance: 14.14
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  coupling: excitatory
+  directed: false
+  allow_self_connections: true
+- source: 1
+  target: 2
+  weight: 0.9
+  delay: 1.8
+  distance: 14.14
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  coupling: excitatory
+  directed: false
+  allow_self_connections: true
+- source: 2
+  target: 0
+  weight: 0.6
+  delay: 2.5
+  distance: 20.0
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  coupling: inhibitory
+  directed: false
+  allow_self_connections: true
+- source: 1
+  target: 0
+  weight: 0.4
+  delay: 2.2
+  distance: 14.14
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  coupling: inhibitory
+  directed: false
+  allow_self_connections: true
+coupling:
+  excitatory:
+    name: excitatory
+    label: Excitatory Linear Coupling
+    coupling_function:
+      parameters:
+        a:
+          name: a
+          value: 1.0
+      rhs: a * x
+      latex: false
+    sparse: false
+    delayed: true
+    interpolate_delays: false
+    vectorized: false
+    symmetry: directed
+  inhibitory:
+    name: inhibitory
+    label: Inhibitory Sigmoidal Coupling
+    coupling_function:
+      parameters:
+        a:
+          name: a
+          value: 0.5
+        theta:
+          name: theta
+          value: 0.0
+      rhs: -1.0 / (1.0 + exp(-a * (x - theta)))
+      latex: false
+    sparse: false
+    delayed: true
+    interpolate_delays: false
+    vectorized: false
+    symmetry: directed
+graph_representation: auto
+number_of_nodes: 3
+distance_unit: mm

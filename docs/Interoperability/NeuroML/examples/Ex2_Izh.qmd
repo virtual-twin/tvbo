@@ -1,12 +1,14 @@
 ---
 title: "Ex2: Izhikevich"
 description: "Izhikevich 2003 spiking neuron — tonic, bursting, mixed, and class-1 modes"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Izhikevich 2003
 
-The Izhikevich (2003) model is a computationally efficient spiking neuron with
-four firing modes from different parameter sets.
+The Izhikevich (2003) model is a computationally efficient spiking neuron with four firing modes from different parameter sets.
 
 Reference: NeuroML2 LEMS_NML2_Ex2_Izh.xml
 

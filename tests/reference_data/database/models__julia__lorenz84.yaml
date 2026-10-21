@@ -1,0 +1,67 @@
+name: Lorenz84
+parameters:
+  F:
+    name: F
+    value: 6.846
+    description: Baroclinic forcing F.
+  G:
+    name: G
+    value: 1.287
+    description: Annual cycle modulation G.
+  a:
+    name: a
+    value: 0.25
+    description: Linear damping parameter a.
+  b:
+    name: b
+    value: 4.0
+    description: Coupling parameter b.
+description: 'Low-order atmospheric circulation model exhibiting multistability and
+  fractal
+
+  basin boundaries with coexisting attractors under standard parameter set.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- Freire2008
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: -y**2 - z**2 - a*x + a*F
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: x*y - y - b*x*z + G
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: b*x*y + x*z - z
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 1
+model_type: generic
+autonomous: true
+cse: false
+compile: false

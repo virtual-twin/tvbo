@@ -1,0 +1,117 @@
+<!-- report.qmd — the study's whole report, and the only file you edit. It carries NO YAML front matter: the title, format and bibliography live in docs/_quarto.yml, so `quarto render` (run in docs/, no file argument) builds report.pdf from the project's own settings and a second entry can be added later without moving them. -->
+
+```{python}
+#| label: setup
+#| echo: false
+import sys, numpy as np, xarray as xr, yaml, matplotlib.pyplot as plt
+from pathlib import Path
+from tvbo.utils.study_layout import study_path, study_root
+
+ROOT = study_root(Path.cwd())   # every path comes from the layout record, so moving a directory there moves it here
+sys.path.insert(0, str(study_path("code", root=ROOT)))
+SOURCEDATA = study_path("sourcedata", root=ROOT)
+RESULTS = study_path("results", root=ROOT)
+FIGS = study_path("figures", root=ROOT)
+
+from tvbo.utils.report import (
+    analysis_scalar, crossref_div, embed_path, figure_caption, figure_title,
+    figures_ordered, fmt, md_table, open_result, recipe_param, report_figure,
+    result_sidecar, sci, sidecar_value,
+)
+from tvbo.classes.study import SimulationStudy
+
+STUDY = SimulationStudy.from_file("../{study}.yaml")
+EXP = STUDY.get_experiment(<exp_id>)
+
+
+def param(exp_id, name):
+    """A model parameter read from the recipe metadata, so no number below is hand-typed."""
+    return recipe_param(STUDY.get_experiment(exp_id), name)
+
+
+def peak_rate(exp_id):
+    """One study-specific metric, as an example: open the container a run produced, return a number."""
+    ds = open_result(RESULTS, str(exp_id))
+    return None if ds is None else float(ds["r_E"].max())
+
+
+M = dict(
+    K=param(<exp_id>, "K"),
+    # peak=peak_rate("<exp_id>"), tau=analysis_scalar(RESULTS, "<analysis>", "<variable>"), ...
+)
+```
+
+<!-- Every reported number is computed in the chunk above, from the result container or the recipe metadata, and referenced from the prose and the captions as inline `{python} fmt(M["..."])`. No value below this line may be typed by hand: an asserted number and a computed one look identical on the page and only one of them stays true when the study is re-run.
+
+     The structure is a paper (IMRAD), not a walk through the figures: Abstract, Introduction, Methods, Results, Discussion, Conclusion. There is no manual References heading — Quarto appends the bibliography from the `@key` citations and the `bibliography:` set in _quarto.yml. Write mathematics as LaTeX; xelatex drops Unicode. Hold the prose to the writing-reports anti-slop standard before shipping: at most one em-dash per paragraph, no "robust/comprehensive/seamless/leverage/furthermore/moreover/in conclusion" filler, no rule-of-three lists or stacked adjectives, active voice, one idea per sentence. -->
+
+# Abstract {.unnumbered}
+
+<One paragraph: the question, what the study does about it, and what it found. State that the whole study is a single declarative recipe (`{study}.yaml`) whose equations are rendered and run from the same metadata. Every number inline-computed from M. If a result is negative or partial, it belongs here rather than in a footnote.>
+
+# Introduction
+
+<Motivate the question and say what is missing without it. Place the study against the work it builds on, cited inline with `@key` — a bare `@key` renders "Author (Year)", a bracketed `[@key]` renders "(Author, Year)". Close on the scope: which experiments, which regimes, and what the study deliberately does not attempt.>
+
+# Methods
+
+## Model and equations (rendered natively from the recipe)
+
+The model is **generated from the recipe** — the equations and parameters shown are exactly what runs on the backend, not a hand-transcribed copy, so they can be checked one to one against the source they come from. `citeformat="quarto"` makes the render emit the model's own references as inline `@key` citations, resolved by this document's bibliography and merged into the one auto-appended list, which is why the model's citekeys must exist in `references.bib`.
+
+```{python}
+#| output: asis
+#| echo: false
+print(EXP.dynamics.render("markdown", citeformat="quarto"))
+# generate_report(format="markdown", citeformat="quarto") adds the full parameter table; render(..., baseline=EXP.dynamics) prints only a variant's delta.
+```
+
+<Then the non-equation methods, one short subsection each: the experiments and what distinguishes them, the coupling, the network and where its data comes from (point at `sourcedata/README.md` rather than restating it), the analyses, and the backend the study runs on. A `.callout-note` carries a proxy or a caveat that a reader needs at that point rather than at the end.>
+
+# Results
+
+<Open with the computed summary table, then one subsection per figure. Each subsection is a sentence or two on what the panel shows and what it establishes. A result that came out other than expected is stated here with its evidence and interpreted in the Discussion.>
+
+```{python}
+#| label: tbl-summary
+from IPython.display import Markdown
+# Every cell is computed from M or a result container; the verdict column is derived from those values, never asserted beside them.
+rows = [
+    ("<quantity>", fmt(M.get("K"), 0), "<what it establishes>"),
+]
+hdr = "| Quantity | Value | |\n|:--|:--:|:--|\n"
+Markdown(hdr + "\n".join("| " + " | ".join(map(str, r)) + " |" for r in rows))
+```
+
+## Figures
+
+<!-- ONE loop over the recipe's own `figures:` block, never a hand-written list of stems and captions, which drifts from the recipe the moment a figure is added or renamed. Each caption is the figure's own `description:`. `output: asis` prints raw markdown, so the bold lead renders and the description may use LaTeX ($I_0$) — keep it LaTeX and ASCII, never Unicode. -->
+```{python}
+#| output: asis
+for n, fig in enumerate(figures_ordered(STUDY.figures), 1):
+    print(f"### {figure_title(fig)}\n")
+    staged = report_figure(FIGS / f"{fig.name}.png")
+    if staged is None:
+        print(f"::: {{.callout-warning}}\n`{fig.name}.png` is not rendered — "
+              f"run `tvbo run {study}.yaml`.\n:::\n")
+        continue
+    print(f"![**Fig {n}.** {figure_caption(fig)}]({embed_path(staged)})"
+          f"{{#fig-{fig.name.replace('_', '-')} width=100%}}\n")
+```
+
+# Discussion
+
+<Interpret. Lead with the finding that carries the most weight and say why it holds — invariant across seeds, scales or read-outs, rather than a single favourable run. Then whatever came out short, with its mechanism: one modelling fact usually explains several panels at once, so say that instead of listing them as independent failures. Then the limitations a reader has to carry away from this.>
+
+## Limitations
+
+- <A limitation and what it does to the claims above: which results it caps, and which it leaves untouched.>
+- <An input that could not be obtained, or a regime that was not swept, with a pointer to what would close it.>
+
+# Conclusion
+
+<Short: what the study establishes, and what it leaves open. A study that reports what it found and explains what it did not is worth more than one that reports only the half that worked.>
+
+<!-- No References heading here: Quarto appends the bibliography from the `@key` citations and the project `bibliography:` (references.bib in _quarto.yml). A manual heading or a `::: {#refs}` div only adds a second, empty section. Every source you cite — the background work, the data sources, and every citekey the native model render emits — lives in references.bib and is cited inline at least once. -->
+
+<!-- Running the study: `tvbo run {study}.yaml` runs every experiment in dependency order (each `from_experiment` source before its dependents) and then renders the `figures:` block into figures/, and `tvbo figure render {study}.yaml` re-renders the figures alone. The report is built with `quarto render` in docs/. Rendered via LaTeX (xelatex): longtable is what breaks a wide computed table across a page with its header repeated, so keep rendered tables OUT of callouts — LaTeX cannot page-break a longtable inside one and ships each to a page of its own. -->

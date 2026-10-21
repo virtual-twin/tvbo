@@ -1,0 +1,43 @@
+function hhcell_1!(dx, x, p, t = 0)
+
+    (;C, g_Na, g_K, g_L, E_Na, E_K, E_L, thresh, rate_am, midpoint_am, scale_am, rate_bm, midpoint_bm, scale_bm, rate_ah, midpoint_ah, scale_ah, rate_bh, midpoint_bh, scale_bh, rate_an, midpoint_an, scale_an, rate_bn, midpoint_bn, scale_bn, I_syn) = p
+
+    v, m, h, n = x
+
+
+    alpha_h = rate_ah .* exp((v .- midpoint_ah) ./ scale_ah)
+    alpha_m = rate_am .* (v .- midpoint_am) ./ (scale_am .* (1 .- exp((midpoint_am .- v) ./ scale_am)))
+    alpha_n = rate_an .* (v .- midpoint_an) ./ (scale_an .* (1 .- exp((midpoint_an .- v) ./ scale_an)))
+    beta_h = rate_bh ./ (1 .+ exp((midpoint_bh .- v) ./ scale_bh))
+    beta_m = rate_bm .* exp((v .- midpoint_bm) ./ scale_bm)
+    beta_n = rate_bn .* exp((v .- midpoint_bn) ./ scale_bn)
+
+    dx[1] = (I_syn .- g_L .* (v .- E_L) .- g_K .* n .^ 4 .* (v .- E_K) .- g_Na .* h .* m .^ 3 .* (v .- E_Na)) ./ C
+    dx[2] = alpha_m .* (1 .- m) .- beta_m .* m
+    dx[3] = alpha_h .* (1 .- h) .- beta_h .* h
+    dx[4] = alpha_n .* (1 .- n) .- beta_n .* n
+    dx
+end
+
+# Parameter values
+p = (C = 10.0, g_Na = 1200.0, g_K = 360.0, g_L = 3.0, E_Na = 50.0, E_K = -77.0, E_L = -54.3, thresh = 20.0, rate_am = 1.0, midpoint_am = -40.0, scale_am = 10.0, rate_bm = 4.0, midpoint_bm = -65.0, scale_bm = -18.0, rate_ah = 0.07, midpoint_ah = -65.0, scale_ah = -20.0, rate_bh = 1.0, midpoint_bh = -35.0, scale_bh = 10.0, rate_an = 0.1, midpoint_an = -55.0, scale_an = 10.0, rate_bn = 0.125, midpoint_bn = -65.0, scale_bn = -80.0, I_syn = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -65.0,
+        0.05,
+        0.6,
+        0.32,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(hhcell_1!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

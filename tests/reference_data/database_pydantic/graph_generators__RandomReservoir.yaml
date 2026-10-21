@@ -1,0 +1,93 @@
+name: RandomReservoir
+description: 'Sparse random recurrent adjacency with post-hoc spectral-radius rescaling
+  — the canonical Echo State Network substrate (Jaeger 2001). The recurrent reservoir
+  of an ESN is fully described by four numbers: size, sparsity, target spectral radius,
+  and the weight distribution of the non-zero entries.'
+iri: tvbo:RandomReservoir
+directed: false
+parameters:
+  sparsity:
+    name: sparsity
+    description: Fraction of non-zero weights in [0, 1]
+    datatype: float
+  spectral_radius:
+    name: spectral_radius
+    description: Target spectral radius (post-rescaling)
+    datatype: float
+  weight_distribution:
+    name: weight_distribution
+    description: Distribution the non-zero weights are drawn from. Overrides the standard
+      Normal that the `raw` step declares as its default.
+    datatype: Distribution
+procedure:
+  steps:
+    raw:
+      name: raw
+      description: n_nodes x n_nodes matrix drawn from the weight distribution
+      type: sample
+      of: weight_distribution
+      distribution:
+        name: Normal
+        parameters:
+          mean:
+            name: mean
+            value: 0.0
+          std:
+            name: std
+            value: 1.0
+        axis: space
+      comparison: le
+      seed_offset: 0
+    mask:
+      name: mask
+      description: Bernoulli sparsity mask — an edge survives with probability `sparsity`
+      type: stochastic_mask
+      of: sparsity
+      distribution:
+        name: Uniform
+        parameters:
+          lo:
+            name: lo
+            value: 0.0
+          hi:
+            name: hi
+            value: 1.0
+        axis: space
+      comparison: gt
+      seed_offset: 1
+    masked:
+      name: masked
+      type: equation
+      equation:
+        rhs: raw * mask
+        latex: false
+      comparison: le
+      seed_offset: 0
+    rho:
+      name: rho
+      description: Current spectral radius (largest absolute eigenvalue)
+      type: equation
+      equation:
+        rhs: max(abs(eigvals(masked)))
+        latex: false
+      comparison: le
+      seed_offset: 0
+    scale:
+      name: scale
+      description: Rescaling factor onto the target spectral radius
+      type: equation
+      equation:
+        rhs: spectral_radius / rho
+        latex: false
+      comparison: le
+      seed_offset: 0
+  output:
+    weights:
+      name: weights
+      description: Masked draw rescaled to the target spectral radius
+      type: equation
+      equation:
+        rhs: masked * scale
+        latex: false
+      comparison: le
+      seed_offset: 0
