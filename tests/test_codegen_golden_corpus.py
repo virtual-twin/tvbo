@@ -46,11 +46,11 @@ pair into the corpus.
 UNSUPPORTED = {
     f"{name}.tvb": ValueError
     for name in (
-        "julia__duffing",
-        "julia__forced_pendulum",
-        "julia__riddled_basins",
-        "julia__ueda",
-        "julia__vanderpol",
+        "julia__DuffingForced",
+        "julia__ForcedPendulum",
+        "julia__RiddledBasins",
+        "julia__Ueda",
+        "julia__VanDerPolForced",
         "neuroml__HH_Tissue_Q10",
         "neuroml__HodgkinHuxley_Q10",
         "neuroml__IaFCell",
@@ -84,7 +84,7 @@ def _model_paths() -> list[Path]:
 
 
 def _case_id(path: Path, fmt: str) -> str:
-    """Stable, filesystem-safe identifier: ``julia__discrete__tent_map.jax``.
+    """Stable, filesystem-safe identifier: ``julia__discrete__TentMap.jax``.
 
     Built from the path *relative to the model root* so two models sharing a stem in different subdirectories cannot collide onto one reference.
     """

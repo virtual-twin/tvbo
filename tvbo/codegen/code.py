@@ -1448,7 +1448,7 @@ class LEMSPrinter(StrPrinter):
 
         LEMS has no ternary and no `Piecewise`, so each branch becomes `H(cond) * value` and the branches are summed. `Piecewise` is *first match wins*, so a term is only reached when no earlier condition held — hence the `(1 - H(earlier))` factors. The final `True` branch is gated by all of them and nothing else.
 
-        Summing the terms un-gated is correct only when the default is zero and the conditions are mutually exclusive. Otherwise the else-branch is added to whichever branch was taken: `tent_map` evaluated to `mu*x + mu*(1 - x)` on its whole lower arm, and `Hopfield` added its entire un-thresholded term to the thresholded one.
+        Summing the terms un-gated is correct only when the default is zero and the conditions are mutually exclusive. Otherwise the else-branch is added to whichever branch was taken: `TentMap` evaluated to `mu*x + mu*(1 - x)` on its whole lower arm, and `Hopfield` added its entire un-thresholded term to the thresholded one.
 
         A zero default is dropped: it contributes nothing to a sum, and emitting it would append a `(1 - H(…)) * 0` tail to every single-branch expression.
 

@@ -3,7 +3,7 @@
 The golden corpus freezes the text every emitter produces. Text identity is not meaning:
 a `Piecewise` lowered to the wrong arithmetic is frozen just as faithfully as one lowered to the right arithmetic, and stays frozen. This module closes that gap for the one lowering that cannot be read at a glance — LEMS, which has no ternary and no `Piecewise` and must express branch selection as a sum of Heaviside-gated terms.
 
-It caught four shipped models. `tent_map`, `pomeau_manneville_map`, `Hopfield` and `EpileptorCodim3` each emitted their else-branch *un-gated*, so it was added to whichever branch was taken rather than replacing it — the tent map differed from its own definition over 63% of its domain. Two independent defects produced that:
+It caught four shipped models. `TentMap`, `PomeauMannevilleMap`, `Hopfield` and `EpileptorCodim3` each emitted their else-branch *un-gated*, so it was added to whichever branch was taken rather than replacing it — the tent map differed from its own definition over 63% of its domain. Two independent defects produced that:
 
 * `Piecewise` is first-match-wins, so every term after the first is reachable only when no
   earlier condition held. Summing the terms un-gated is correct only when the conditions

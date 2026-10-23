@@ -171,7 +171,7 @@ def model_reads(model, within=None):
 def referenced_parameters(model, names=None, within=None):
     """Which of *names* the model's equations read, in the order given.
 
-    Emitting an unpack for the rest leaves dead bindings; emitting one for too few leaves the body naming something nothing binds. `tent_map` reads `mu` twice from inside a conditional branch, so it is exactly the case a scan of the stored ``rhs`` gets wrong.
+    Emitting an unpack for the rest leaves dead bindings; emitting one for too few leaves the body naming something nothing binds. `TentMap` reads `mu` twice from inside a conditional branch, so it is exactly the case a scan of the stored ``rhs`` gets wrong.
 
     *names* defaults to the model's own parameters. A caller that has already put them in the order it emits — the tvboptim dfun sorts trained parameters ahead of the rest — passes that order in and gets the same order back, minus what nothing reads.
 
