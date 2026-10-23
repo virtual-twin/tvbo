@@ -2,7 +2,7 @@ name: BarabasiAlbert
 description: 'Barabasi-Albert preferential attachment graph: nodes are added one at
   a time and connect to k existing nodes with probability proportional to existing
   node degree. Produces scale-free networks with power-law degree distributions.'
-iri: tvbo:BarabasiAlbert
+iri: tvbo:graph_generators/BarabasiAlbert
 directed: false
 parameters:
   n:

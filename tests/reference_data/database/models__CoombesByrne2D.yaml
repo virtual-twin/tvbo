@@ -1,5 +1,5 @@
 name: CoombesByrne2D
-iri: tvbo:CoombesByrne2D
+iri: tvbo:models/CoombesByrne2D
 parameters:
   Delta:
     name: Delta

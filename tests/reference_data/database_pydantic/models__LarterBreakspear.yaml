@@ -1,5 +1,5 @@
 name: LarterBreakspear
-iri: tvbo:LarterBreakspear
+iri: tvbo:models/LarterBreakspear
 parameters:
   C:
     name: C

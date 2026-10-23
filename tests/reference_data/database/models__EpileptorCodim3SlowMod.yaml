@@ -1,5 +1,5 @@
 name: EpileptorCodim3SlowMod
-iri: tvbo:EpileptorCodim3SlowMod
+iri: tvbo:models/EpileptorCodim3SlowMod
 parameters:
   mu1_Ain:
     name: mu1_Ain

@@ -6,7 +6,7 @@ description: 'BOLD fMRI observation model identical to BOLD_TVB''s HRF+Volterra 
   [stride::stride] output samples, avoiding the full-length FFT. Byte-identical to
   a direct full ''valid'' convolution + subsample; equal to the FFT path to FFT roundoff
   (~1e-12 float64 / ~1e-6 float32); ~70x cheaper with no FFT buffer.'
-iri: tvbo:BOLD_HRF_strided
+iri: tvbo:observation_models/bold_hrf_strided
 parameters:
   TR:
     name: TR

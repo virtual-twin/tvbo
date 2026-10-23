@@ -1,5 +1,5 @@
 name: ReducedWongWangTvboptim
-iri: tvbo:ReducedWongWangTvboptim
+iri: tvbo:models/ReducedWongWangTvboptim
 parameters:
   a:
     name: a

@@ -1,5 +1,5 @@
 name: JansenRit
-iri: tvbo:JansenRit
+iri: tvbo:models/JansenRit
 parameters:
   A:
     name: A

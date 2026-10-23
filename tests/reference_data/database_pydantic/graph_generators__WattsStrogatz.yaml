@@ -2,7 +2,7 @@ name: WattsStrogatz
 description: Watts-Strogatz small-world graph. Starts as a regular ring lattice where
   each node connects to k nearest neighbours, then rewires each edge with probability
   p to a uniformly random target.
-iri: tvbo:WattsStrogatz
+iri: tvbo:graph_generators/WattsStrogatz
 directed: false
 parameters:
   n:

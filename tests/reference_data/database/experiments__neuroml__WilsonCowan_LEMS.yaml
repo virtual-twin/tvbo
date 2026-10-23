@@ -7,7 +7,7 @@ description: 'Export the Wilson-Cowan model from the TVBO database as LEMS XML. 
 label: TVBO WilsonCowan as LEMS
 dynamics:
   name: WilsonCowan
-  iri: tvbo:WilsonCowan
+  iri: tvbo:models/WilsonCowan
   parameters:
     P:
       name: P

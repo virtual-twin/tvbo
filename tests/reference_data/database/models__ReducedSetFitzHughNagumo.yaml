@@ -1,5 +1,5 @@
 name: ReducedSetFitzHughNagumo
-iri: tvbo:ReducedSetFitzHughNagumo
+iri: tvbo:models/ReducedSetFitzHughNagumo
 parameters:
   tau:
     name: tau

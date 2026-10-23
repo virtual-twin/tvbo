@@ -1,5 +1,5 @@
 name: ReducedSetHindmarshRose
-iri: tvbo:ReducedSetHindmarshRose
+iri: tvbo:models/ReducedSetHindmarshRose
 parameters:
   a:
     name: a

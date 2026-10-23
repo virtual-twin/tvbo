@@ -1,5 +1,5 @@
 name: TsodyksMarkram
-iri: tvbo:TsodyksMarkram
+iri: tvbo:models/TsodyksMarkram
 parameters:
   J:
     name: J

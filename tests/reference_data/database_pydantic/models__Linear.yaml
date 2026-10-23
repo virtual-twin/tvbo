@@ -1,5 +1,5 @@
 name: Linear
-iri: tvbo:Linear
+iri: tvbo:models/Linear
 parameters:
   gamma:
     name: gamma

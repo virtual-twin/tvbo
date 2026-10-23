@@ -1,5 +1,5 @@
 name: StefanescuJirsa2D
-iri: tvbo:StefanescuJirsa2D
+iri: tvbo:models/StefanescuJirsa2D
 parameters:
   tau:
     name: tau

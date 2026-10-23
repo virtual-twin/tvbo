@@ -1,5 +1,5 @@
 name: Epileptor
-iri: tvbo:Epileptor
+iri: tvbo:models/Epileptor
 parameters:
   a:
     name: a

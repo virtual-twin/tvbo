@@ -1,5 +1,5 @@
 name: ZerlautAdaptationSecondOrder
-iri: tvbo:ZerlautAdaptationSecondOrder
+iri: tvbo:models/ZerlautAdaptationSecondOrder
 parameters:
   g_L:
     name: g_L

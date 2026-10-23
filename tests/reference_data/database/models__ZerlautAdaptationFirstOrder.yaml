@@ -1,5 +1,5 @@
 name: ZerlautAdaptationFirstOrder
-iri: tvbo:ZerlautAdaptationFirstOrder
+iri: tvbo:models/ZerlautAdaptationFirstOrder
 parameters:
   C_m:
     name: C_m

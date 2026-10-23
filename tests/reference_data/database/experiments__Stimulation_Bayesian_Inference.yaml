@@ -11,7 +11,7 @@ label: Bayesian Inference (Stimulation)
 dynamics:
   name: Generic2dOscillator
   label: Generic 2D Oscillator (quiescent regime)
-  iri: tvbo:Generic2dOscillator
+  iri: tvbo:models/Generic2dOscillator
   parameters:
     I:
       name: I
@@ -253,7 +253,7 @@ network:
     c_lin:
       name: c_lin
       label: Linear coupling
-      iri: tvbo:Linear
+      iri: tvbo:coupling_functions/Linear
       parameters:
         b:
           name: b

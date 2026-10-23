@@ -7,7 +7,7 @@ description: 'Export the Jansen-Rit model from the TVBO database as LEMS XML. 6 
 label: TVBO JansenRit as LEMS
 dynamics:
   name: JansenRit
-  iri: tvbo:JansenRit
+  iri: tvbo:models/JansenRit
   parameters:
     A:
       name: A

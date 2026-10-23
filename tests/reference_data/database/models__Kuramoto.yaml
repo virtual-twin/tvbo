@@ -1,5 +1,5 @@
 name: Kuramoto
-iri: tvbo:Kuramoto
+iri: tvbo:models/Kuramoto
 parameters:
   omega:
     name: omega

@@ -3,7 +3,7 @@ description: 'Sparse random recurrent adjacency with post-hoc spectral-radius re
   — the canonical Echo State Network substrate (Jaeger 2001). The recurrent reservoir
   of an ESN is fully described by four numbers: size, sparsity, target spectral radius,
   and the weight distribution of the non-zero entries.'
-iri: tvbo:RandomReservoir
+iri: tvbo:graph_generators/RandomReservoir
 directed: false
 parameters:
   sparsity:

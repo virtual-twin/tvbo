@@ -1,5 +1,5 @@
 name: DecoBalancedExcInh
-iri: tvbo:DecoBalancedExcInh
+iri: tvbo:models/DecoBalancedExcInh
 parameters:
   G:
     name: G

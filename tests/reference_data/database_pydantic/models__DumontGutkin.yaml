@@ -1,5 +1,5 @@
 name: DumontGutkin
-iri: tvbo:DumontGutkin
+iri: tvbo:models/DumontGutkin
 parameters:
   Delta_e:
     name: Delta_e

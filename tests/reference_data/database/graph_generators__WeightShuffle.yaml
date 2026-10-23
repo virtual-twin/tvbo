@@ -3,7 +3,7 @@ description: 'Derived generator: load a reference adjacency by IRI and permute i
   non-zero entries, holding one structural property fixed. Used for null-model controls
   (e.g. a shuffled SC matrix that keeps the source''s density and weight multiset
   while randomising which edge carries which weight).'
-iri: tvbo:WeightShuffle
+iri: tvbo:graph_generators/WeightShuffle
 directed: false
 parameters:
   source:

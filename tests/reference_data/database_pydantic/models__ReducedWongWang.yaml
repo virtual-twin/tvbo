@@ -1,5 +1,5 @@
 name: ReducedWongWang
-iri: tvbo:ReducedWongWang
+iri: tvbo:models/ReducedWongWang
 parameters:
   I_o:
     name: I_o

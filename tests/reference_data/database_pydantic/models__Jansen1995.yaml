@@ -1,7 +1,7 @@
 name: ModelJansen1995
 has_reference: Jansen1995
 label: Jansen-Rit Neural Mass Model (single column)
-iri: tvbo:ModelJansen1995
+iri: tvbo:models/Jansen1995
 parameters:
   A:
     name: A

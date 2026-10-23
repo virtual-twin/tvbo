@@ -1,5 +1,5 @@
 name: EpileptorCodim3
-iri: tvbo:EpileptorCodim3
+iri: tvbo:models/EpileptorCodim3
 parameters:
   mu1_start:
     name: mu1_start

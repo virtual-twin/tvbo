@@ -1,5 +1,5 @@
 name: Epileptor3DStefanescuMcDonald
-iri: tvbo:Epileptor3DStefanescuMcDonald
+iri: tvbo:models/Epileptor3DStefanescuMcDonald
 parameters:
   N:
     name: N

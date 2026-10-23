@@ -1,5 +1,5 @@
 name: ZetterbergJansen
-iri: tvbo:ZetterbergJansen
+iri: tvbo:models/ZetterbergJansen
 parameters:
   He:
     name: He

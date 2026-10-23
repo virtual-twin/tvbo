@@ -1,6 +1,6 @@
 name: Star
 description: Star graph — one central hub connected to n-1 peripheral nodes.
-iri: tvbo:Star
+iri: tvbo:graph_generators/Star
 directed: false
 parameters:
   n:

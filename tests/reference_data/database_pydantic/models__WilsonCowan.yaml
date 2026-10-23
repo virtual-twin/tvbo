@@ -1,5 +1,5 @@
 name: WilsonCowan
-iri: tvbo:WilsonCowan
+iri: tvbo:models/WilsonCowan
 parameters:
   P:
     name: P

@@ -8,7 +8,7 @@ description: 'Export the full Generic2dOscillator model from the TVBO database a
 label: TVBO Generic2dOscillator as LEMS
 dynamics:
   name: Generic2dOscillator
-  iri: tvbo:Generic2dOscillator
+  iri: tvbo:models/Generic2dOscillator
   parameters:
     I:
       name: I

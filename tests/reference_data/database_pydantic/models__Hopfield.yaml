@@ -1,5 +1,5 @@
 name: Hopfield
-iri: tvbo:Hopfield
+iri: tvbo:models/Hopfield
 parameters:
   tauT:
     name: tauT

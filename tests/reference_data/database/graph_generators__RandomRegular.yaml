@@ -1,6 +1,6 @@
 name: RandomRegular
 description: Random k-regular graph — every node has exactly degree k.
-iri: tvbo:RandomRegular
+iri: tvbo:graph_generators/RandomRegular
 directed: false
 parameters:
   n:
