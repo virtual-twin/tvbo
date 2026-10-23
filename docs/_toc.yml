@@ -24,9 +24,9 @@ website:
                     href: 1-explore/ontology/index.qmd
                     contents:
                       - text: "Specification (Widoco)"
-                        href: 1-explore/ontology/spec/index-en.html
+                        href: https://virtual-twin.github.io/tvbo/ontology/spec/index-en.html
                       - text: "WebVOWL visualisation"
-                        href: 1-explore/ontology/spec/webvowl/index.html#ontology
+                        href: https://virtual-twin.github.io/tvbo/ontology/spec/webvowl/index.html#ontology
               - section: "② SPECIFY"
                 href: 2-specify/index.qmd
                 contents:

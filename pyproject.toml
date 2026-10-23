@@ -178,7 +178,6 @@ exclude = [
     # Volumes only: the parcellation yamls beside them ship, carrying the terminology every node-label crosswalk resolves against.
     "tvbo/database/atlases/**/*.nii.gz",
     "tvbo/data/go-basic.obo",
-    "tvbo/data/ontology/_tvb-o.owl",
     "tvbo/data/NeuroMMSig_abeta_subgraph.dill",
     "tvbo/data/tvb-go/**/*.png",
     "tvbo/**/__pycache__",

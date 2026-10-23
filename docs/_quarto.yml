@@ -26,9 +26,6 @@ project:
     - Developer/*.qmd
     - agents/*.qmd
     - "!_archive/**"
-    - "!1-explore/ontology/spec/**"
-  resources:
-    - 1-explore/ontology/spec/**
   output-dir: _site
 
 # Sidebar configuration lives in _toc.yml (single unified sidebar).
