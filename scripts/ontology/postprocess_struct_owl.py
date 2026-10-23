@@ -184,11 +184,6 @@ def _augment(g: Graph, schema: dict) -> None:
         if not list(g.objects(subj, RDFS.label)):
             g.add((subj, RDFS.label, Literal(lbl)))
 
-    # `tvbo:SoftwarePackage` is declared by us but lacks a label (LinkML emitted only `skos:definition`). Add the human label.
-    sp = TVBO.SoftwarePackage
-    if not list(g.objects(sp, RDFS.label)):
-        g.add((sp, RDFS.label, Literal("Software package")))
-
     # Dedupe `rdfs:label` per subject. ROBOT flags `multiple_labels` even when two labels carry the same lexical form but differ only in language tag (e.g. `"CouplingInput"` vs `"CouplingInput"@en`). For external IRIs we are not the source of truth: keep at most one label, deduplicating deterministically. For TVBO IRIs, prefer the language-tagged variant when it has identical lexical form.
     for subj in set(g.subjects(RDFS.label, None)):
         if not isinstance(subj, URIRef):

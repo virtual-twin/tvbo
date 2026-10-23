@@ -80,18 +80,22 @@ NEUROML_CONTRACTS = tvbo/data/ontology/neuroml_contracts.json
 UNITS_TTL = ontology/tvb-o-units.ttl
 CLINICAL_TTL = ontology/tvb-o-clinical.ttl
 CLINICAL_NMM = ontology/tvb-o-clinical-nmm.ttl
+HEADER_TTL = ontology/tvbo-header.ttl
 MERGED_OUT = ontology/tvbo.owl
 # Packaged copy of the generated ontology that the runtime actually loads
 # (tvbo/ontology/owl.py). Shipped in the wheel via MANIFEST.in.
 RUNTIME_GEN = tvbo/data/ontology/tvbo.owl
 # Deprecated class-based ontology — preserved as a parity reference, no longer loaded.
 RUNTIME_ONTO = tvbo/data/ontology/tvb-o.owl
-WIDOCO_OUT = docs/1-explore/ontology/spec
+# Widoco writes into the rendered site, as docs-deploy.yml does, so run it after `quarto render`.
+WIDOCO_OUT = docs/_site/ontology/spec
 ROBOT ?= robot
 # The release the merged ontology belongs to, so its version IRI names a package anyone can install rather than the day someone ran make; `cut -s` so a line that is not `__version__ = "..."` yields nothing and gen-merged's guard fires instead of stamping the raw line into the IRI.
 PKG_VERSION := $(shell grep -m1 '^__version__' tvbo/__init__.py | cut -s -d'"' -f2)
 # The release tag spells `PKG_VERSION` in semver (`1.0.0rc1` → `v1.0.0-rc.1`): docker's semver tag and the docs image read the tag, PyPI normalises it back to `PKG_VERSION`, and a `-` marks a pre-release everywhere.
 PKG_TAG := v$(shell echo '$(PKG_VERSION)' | sed -E 's/(a|b|rc)([0-9]+)$$/-\1.\2/')
+# The merged ontology's dcterms:modified: the date of the commit it is built from, so rebuilding one commit reproduces it.
+ONTOLOGY_DATE := $(shell git log -1 --format=%cs)
 WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.25
 
 gen-owl:
@@ -145,6 +149,7 @@ gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox gen-neuroml gen-mer
 
 gen-merged: gen-owl gen-abox
 	@test -n "$(PKG_VERSION)" || { echo "PKG_VERSION is empty: could not read __version__ from tvbo/__init__.py, and an unversioned ontology IRI is worse than no build." >&2; exit 1; }
+	@test -n "$(ONTOLOGY_DATE)" || { echo "ONTOLOGY_DATE is empty: git could not date HEAD, and an empty xsd:date in dcterms:modified is worse than no build." >&2; exit 1; }
 	@echo "Merging T-box (struct + axioms) and A-box into a single distributable OWL file (version $(PKG_VERSION))..."
 	@mkdir -p ontology
 	@$(ROBOT) merge \
@@ -161,8 +166,15 @@ gen-merged: gen-owl gen-abox
 		--input $(CLINICAL_NMM) \
 		query --update ontology/fix-punning.ru --update ontology/clinical-postmerge.ru \
 		annotate \
+		--prefix "pav: http://purl.org/pav/" \
+		--prefix "dcterms: http://purl.org/dc/terms/" \
+		--remove-annotations \
+		--annotation-file $(HEADER_TTL) \
 		--ontology-iri "https://w3id.org/tvbo/tvbo.owl" \
 		--version-iri "https://w3id.org/tvbo/$(PKG_VERSION)/tvbo.owl" \
+		--annotation owl:versionInfo "$(PKG_VERSION)" \
+		--annotation pav:version "$(PKG_VERSION)" \
+		--typed-annotation dcterms:modified "$(ONTOLOGY_DATE)" xsd:date \
 		reason --reasoner ELK \
 		--output $(MERGED_OUT)
 	@cp $(MERGED_OUT) $(RUNTIME_GEN)
@@ -211,7 +223,7 @@ gen-widoco: gen-merged
 	@cp $(MERGED_OUT) $(WIDOCO_OUT)/tvbo.owl
 	@cp $(AXIOMS_TTL) $(WIDOCO_OUT)/tvb-o-axioms.ttl
 	@cp $(SHACL_OUT) $(WIDOCO_OUT)/tvb-o.shacl.ttl
-	@echo "✓ Widoco docs written to $(WIDOCO_OUT)/ (served at /ontology/spec/ by Quarto)"
+	@echo "✓ Widoco docs written to $(WIDOCO_OUT)/ (published at /ontology/spec/)"
 
 build:
 	DOCKER_BUILDKIT=1 docker build --secret id=gitlab_token,env=GITLAB_TOKEN -t $(IMAGE_FULL) .

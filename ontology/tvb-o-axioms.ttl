@@ -564,7 +564,7 @@ tvbo:ExcitatoryInhibitorySubpopulations
 # ─────────────────────────────────────────────────────────────────
 #
 
-tvbo:JansenRit
+<https://w3id.org/tvbo/models/JansenRit>
     skos:prefLabel "Jansen-Rit"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;          # cerebral cortex
     tvbo:modelsCellType                CL:0000598, CL:0000099 ;  # pyramidal, interneuron
@@ -581,7 +581,7 @@ tvbo:JansenRit
     tvbo:hasModelFeature               tvbo:SigmoidActivation ;
     tvbo:requiresCoupling              <https://w3id.org/tvbo/coupling_functions/SigmoidalJansenRit> .
 
-tvbo:Epileptor
+<https://w3id.org/tvbo/models/Epileptor>
     rdfs:label "Epileptor"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0002728 ;          # hippocampus (mesial temporal lobe)
     dcterms:subject                    MESH:D004827 ;            # Epilepsy
@@ -596,7 +596,7 @@ tvbo:Epileptor
     tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
     tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
 
-tvbo:ReducedWongWang
+<https://w3id.org/tvbo/models/ReducedWongWang>
     skos:prefLabel "Reduced Wong-Wang"@en ;
     tvbo:modelsCellType                CL:0000598, CL:0000099 ;  # pyramidal, interneuron
     tvbo:modelsNeurotransmitterSystem  GO:0035249,               # glutamatergic
@@ -619,7 +619,7 @@ tvbo:ReducedWongWang
 #
 
 # Reduced Wong-Wang variants — share E/I architecture and cortical scope.
-tvbo:ReducedWongWangExcInh
+<https://w3id.org/tvbo/models/ReducedWongWangExcInh>
     skos:prefLabel "Reduced Wong-Wang (E/I)"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:modelsCellType                CL:0000598, CL:0000099 ;
@@ -631,7 +631,7 @@ tvbo:ReducedWongWangExcInh
     tvbo:hasTimescaleSeparation        false ;
     tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
 
-tvbo:ReducedWongWangFunc
+<https://w3id.org/tvbo/models/ReducedWongWangFunc>
     rdfs:label     "Reduced Wong-Wang (functional)"@en ;
     skos:prefLabel "Reduced Wong-Wang (functional)"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
@@ -640,7 +640,7 @@ tvbo:ReducedWongWangFunc
     tvbo:hasAttractor                  tvbo:FixedPoint ;
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
-tvbo:ReducedWongWangTvboptim
+<https://w3id.org/tvbo/models/ReducedWongWangTvboptim>
     skos:prefLabel "Reduced Wong-Wang (tvboptim)"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:phaseSpaceDimension           1 ;
@@ -649,7 +649,7 @@ tvbo:ReducedWongWangTvboptim
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
 # Jansen-Rit family — 6-D cortical column with sigmoid activation.
-tvbo:Jansen1995
+<https://w3id.org/tvbo/models/Jansen1995>
     rdfs:label     "Jansen 1995"@en ;
     skos:prefLabel "Jansen 1995"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
@@ -664,7 +664,7 @@ tvbo:Jansen1995
     tvbo:hasTimescaleSeparation        false ;
     tvbo:hasModelFeature               tvbo:SigmoidActivation .
 
-tvbo:JansenRit1995
+<https://w3id.org/tvbo/models/JansenRit1995>
     skos:prefLabel "Jansen-Rit 1995"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:phaseSpaceDimension           6 ;
@@ -675,7 +675,7 @@ tvbo:JansenRit1995
     tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
     tvbo:hasModelFeature               tvbo:SigmoidActivation .
 
-tvbo:ZetterbergJansen
+<https://w3id.org/tvbo/models/ZetterbergJansen>
     skos:prefLabel "Zetterberg-Jansen"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:phaseSpaceDimension           6 ;
@@ -687,7 +687,7 @@ tvbo:ZetterbergJansen
     tvbo:hasModelFeature               tvbo:SigmoidActivation .
 
 # Wilson-Cowan — 2-D E/I cortical mean field.
-tvbo:WilsonCowan
+<https://w3id.org/tvbo/models/WilsonCowan>
     skos:prefLabel "Wilson-Cowan"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:modelsCellType                CL:0000598, CL:0000099 ;
@@ -705,7 +705,7 @@ tvbo:WilsonCowan
                                        tvbo:ExcitatoryInhibitorySubpopulations .
 
 # Generic 2-D oscillator (FitzHugh-Nagumo-like normal form).
-tvbo:Generic2dOscillator
+<https://w3id.org/tvbo/models/Generic2dOscillator>
     skos:prefLabel "Generic 2-D oscillator"@en ;
     tvbo:phaseSpaceDimension           2 ;
     tvbo:exhibitsRegime                tvbo:Excitable, tvbo:Oscillatory, tvbo:Bistable ;
@@ -718,7 +718,7 @@ tvbo:Generic2dOscillator
     tvbo:hasTimescaleSeparation        true .
 
 # Generic linear — used as null/baseline reference.
-tvbo:GenericLinear
+<https://w3id.org/tvbo/models/GenericLinear>
     skos:prefLabel "Generic linear"@en ;
     tvbo:phaseSpaceDimension           1 ;
     tvbo:exhibitsRegime                tvbo:Quiescent ;
@@ -727,7 +727,7 @@ tvbo:GenericLinear
     tvbo:hasTimescaleSeparation        false .
 
 # Supercritical Hopf normal form.
-tvbo:SupHopf
+<https://w3id.org/tvbo/models/SupHopf>
     skos:prefLabel "Supercritical Hopf"@en ;
     tvbo:phaseSpaceDimension           2 ;
     tvbo:exhibitsRegime                tvbo:Quiescent, tvbo:Oscillatory ;
@@ -737,7 +737,7 @@ tvbo:SupHopf
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
 # Hopfield-style continuous attractor network.
-tvbo:Hopfield
+<https://w3id.org/tvbo/models/Hopfield>
     skos:prefLabel "Hopfield"@en ;
     tvbo:phaseSpaceDimension           2 ;
     tvbo:exhibitsRegime                tvbo:Multistable ;
@@ -746,7 +746,7 @@ tvbo:Hopfield
     tvbo:hasModelFeature               tvbo:SigmoidActivation .
 
 # Kuramoto phase oscillator (per-node, 1 SV).
-tvbo:Kuramoto
+<https://w3id.org/tvbo/models/Kuramoto>
     skos:prefLabel "Kuramoto"@en ;
     tvbo:phaseSpaceDimension           1 ;
     tvbo:exhibitsRegime                tvbo:Oscillatory ;
@@ -754,7 +754,7 @@ tvbo:Kuramoto
     tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
     tvbo:hasTimescaleSeparation        false .
 
-tvbo:Kuramoto2
+<https://w3id.org/tvbo/models/Kuramoto2>
     rdfs:label     "Kuramoto (extended)"@en ;
     skos:prefLabel "Kuramoto (extended)"@en ;
     tvbo:phaseSpaceDimension           2 ;
@@ -763,7 +763,7 @@ tvbo:Kuramoto2
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
 # Larter-Breakspear — 3-D conductance-based cortical mean field.
-tvbo:LarterBreakspear
+<https://w3id.org/tvbo/models/LarterBreakspear>
     skos:prefLabel "Larter-Breakspear"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:modelsCellType                CL:0000598, CL:0000099 ;
@@ -778,7 +778,7 @@ tvbo:LarterBreakspear
     tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
 
 # Montbrio-Pazo-Roxin — exact mean field of QIF neurons.
-tvbo:MontbrioPazoRoxin
+<https://w3id.org/tvbo/models/MontbrioPazoRoxin>
     skos:prefLabel "Montbrio-Pazo-Roxin"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:phaseSpaceDimension           2 ;
@@ -791,7 +791,7 @@ tvbo:MontbrioPazoRoxin
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
 # Coombes-Byrne — next-generation neural mass (theta-neuron mean field).
-tvbo:CoombesByrne
+<https://w3id.org/tvbo/models/CoombesByrne>
     skos:prefLabel "Coombes-Byrne"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:phaseSpaceDimension           4 ;
@@ -801,7 +801,7 @@ tvbo:CoombesByrne
     tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
-tvbo:CoombesByrne2D
+<https://w3id.org/tvbo/models/CoombesByrne2D>
     skos:prefLabel "Coombes-Byrne 2D"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:phaseSpaceDimension           2 ;
@@ -812,7 +812,7 @@ tvbo:CoombesByrne2D
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
 # Dumont-Gutkin — theta-neuron mean field with synaptic dynamics.
-tvbo:DumontGutkin
+<https://w3id.org/tvbo/models/DumontGutkin>
     skos:prefLabel "Dumont-Gutkin"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:phaseSpaceDimension           8 ;
@@ -824,7 +824,7 @@ tvbo:DumontGutkin
     tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
 
 # Stefanescu-Jirsa reduced HH-like models.
-tvbo:StefanescuJirsa2D
+<https://w3id.org/tvbo/models/StefanescuJirsa2D>
     skos:prefLabel "Stefanescu-Jirsa 2D"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:phaseSpaceDimension           4 ;
@@ -833,7 +833,7 @@ tvbo:StefanescuJirsa2D
     tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
     tvbo:hasTimescaleSeparation        true .
 
-tvbo:StefanescuJirsa3D
+<https://w3id.org/tvbo/models/StefanescuJirsa3D>
     skos:prefLabel "Stefanescu-Jirsa 3D"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:phaseSpaceDimension           6 ;
@@ -843,7 +843,7 @@ tvbo:StefanescuJirsa3D
     tvbo:hasTimescaleSeparation        true .
 
 # Cakan-Obermayer ALN (adaptive linear-nonlinear) cortical mean field.
-tvbo:CakanObermayer
+<https://w3id.org/tvbo/models/CakanObermayer>
     skos:prefLabel "Cakan-Obermayer ALN"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:modelsCellType                CL:0000598, CL:0000099 ;
@@ -858,7 +858,7 @@ tvbo:CakanObermayer
     tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
 
 # Zerlaut adaptive exponential mean field, first-order.
-tvbo:ZerlautAdaptationFirstOrder
+<https://w3id.org/tvbo/models/ZerlautAdaptationFirstOrder>
     skos:prefLabel "Zerlaut (first-order adaptation)"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:modelsCellType                CL:0000598, CL:0000099 ;
@@ -873,7 +873,7 @@ tvbo:ZerlautAdaptationFirstOrder
     tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
 
 # Tsodyks-Markram short-term plasticity.
-tvbo:TsodyksMarkram
+<https://w3id.org/tvbo/models/TsodyksMarkram>
     skos:prefLabel "Tsodyks-Markram"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:modelsNeurotransmitterSystem  GO:0035249 ;
@@ -883,7 +883,7 @@ tvbo:TsodyksMarkram
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
 # Epileptor variants — all model epileptic seizure dynamics.
-tvbo:Epileptor2D
+<https://w3id.org/tvbo/models/Epileptor2D>
     skos:prefLabel "Epileptor 2D"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0002728 ;
     dcterms:subject                    MESH:D004827 ;
@@ -894,7 +894,7 @@ tvbo:Epileptor2D
     tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
-tvbo:Epileptor3DStefanescuMcDonald
+<https://w3id.org/tvbo/models/Epileptor3DStefanescuMcDonald>
     skos:prefLabel "Epileptor 3D (Stefanescu-McDonald)"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0002728 ;
     dcterms:subject                    MESH:D004827 ;
@@ -905,7 +905,7 @@ tvbo:Epileptor3DStefanescuMcDonald
     tvbo:hasTimescaleSeparation        true ;
     tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
 
-tvbo:Epileptor5D
+<https://w3id.org/tvbo/models/Epileptor5D>
     skos:prefLabel "Epileptor 5D"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0002728 ;
     dcterms:subject                    MESH:D004827 ;
@@ -918,7 +918,7 @@ tvbo:Epileptor5D
     tvbo:hasTimescaleSeparation        true ;
     tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
 
-tvbo:EpileptorRestingState
+<https://w3id.org/tvbo/models/EpileptorRestingState>
     skos:prefLabel "Epileptor (resting-state)"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956, UBERON:0002728 ;
     dcterms:subject                    MESH:D004827 ;
@@ -932,7 +932,7 @@ tvbo:EpileptorRestingState
     tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
 
 # Gast-Schmidt-Knosche (synaptic depression / facilitation) variants.
-tvbo:GastSchmidtKnosche_SD
+<https://w3id.org/tvbo/models/GastSchmidtKnosche_SD>
     skos:prefLabel "Gast-Schmidt-Knosche (synaptic depression)"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:modelsNeurotransmitterSystem  GO:0035249 ;
@@ -943,7 +943,7 @@ tvbo:GastSchmidtKnosche_SD
     tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
-tvbo:GastSchmidtKnosche_SF
+<https://w3id.org/tvbo/models/GastSchmidtKnosche_SF>
     skos:prefLabel "Gast-Schmidt-Knosche (synaptic facilitation)"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
     tvbo:modelsNeurotransmitterSystem  GO:0035249 ;
@@ -955,7 +955,7 @@ tvbo:GastSchmidtKnosche_SF
     tvbo:hasStochasticityCharacter     tvbo:Deterministic .
 
 # K-ion exchange model (extracellular potassium dynamics, seizure-like).
-tvbo:KIonEx
+<https://w3id.org/tvbo/models/KIonEx>
     skos:prefLabel "K-ion exchange"@en ;
     tvbo:modelsAnatomicalRegion        UBERON:0000956, UBERON:0002728 ;
     dcterms:subject                    MESH:D004827 ;

@@ -1,0 +1,18 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# The merged ontology's own annotations; `make gen-merged` stamps them over every header its inputs carry and adds the version and date.
+<https://w3id.org/tvbo/tvbo.owl> a owl:Ontology ;
+    dcterms:title "The Virtual Brain Ontology"@en ;
+    rdfs:label "TVB-O" ;
+    dcterms:description "TVB-O, The Virtual Brain Ontology, describes large-scale brain network models and their simulation: neural mass and neural field models with their parameters, state variables and equations, coupling functions, connectomes and brain atlases, integrators and noise, observation models, and the simulation experiments and studies that combine them. Every model, network and experiment curated in the TVB-O database is an individual of the ontology at https://w3id.org/tvbo/<collection>/<name>."@en ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:creator <https://orcid.org/0000-0002-2599-0165>, <https://orcid.org/0000-0002-4643-4782> ;
+    vann:preferredNamespacePrefix "tvbo" ;
+    vann:preferredNamespaceUri "https://w3id.org/tvbo/" ;
+    dcterms:issued "2025-11-20"^^xsd:date ;
+    dcterms:bibliographicCitation "https://doi.org/10.1101/2025.11.19.689211" ;
+    rdfs:seeAlso <https://w3id.org/tvbo/tvb-o-axioms.ttl>, <https://w3id.org/tvbo/tvb-o.shacl.ttl> .

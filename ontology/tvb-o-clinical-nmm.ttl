@@ -4,5 +4,5 @@
 @prefix tvbo: <https://w3id.org/tvbo/> .
 @prefix tvbc: <https://w3id.org/tvbo/clinical/> .
 
-tvbc:study-Yang2015 tvbc:usesNodeDynamics tvbo:ReducedWongWang .
-tvbc:study-Mana2023 tvbc:usesNodeDynamics tvbo:SupHopf .
+tvbc:study-Yang2015 tvbc:usesNodeDynamics <https://w3id.org/tvbo/models/ReducedWongWang> .
+tvbc:study-Mana2023 tvbc:usesNodeDynamics <https://w3id.org/tvbo/models/SupHopf> .

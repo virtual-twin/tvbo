@@ -10,7 +10,7 @@ Each model under `models/` emits:
   - one StateVariable individual per `state_variables[*]`
   - groundings as `tvbo:surrogate_of` object-property links on parameter/state-variable
 
-Every other database folder is emitted by `emit_generic_record` from the folder-to-class mapping in `GENERIC_FOLDER_TYPES`, reusing the same nested emitters.
+Every other database folder is emitted by `emit_generic_record` from the folder-to-class mapping in `GENERIC_FOLDER_TYPES`, reusing the same nested emitters. Every record is minted at `tvbo:<folder>/<file stem>` (`tvbo.data.registry.record_iri`), one filed in a subfolder (`models/julia/`, `experiments/neuroml/`) too.
 """
 
 from __future__ import annotations
@@ -24,10 +24,13 @@ from _bib import load_bib_records, sanitize_citekey
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS, SKOS
 
+from tvbo.data import registry
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DB = ROOT / "tvbo" / "database"
 
 TVBO = Namespace("https://w3id.org/tvbo/")
+TVBO_SW = Namespace("https://w3id.org/tvbo/sw/")
 DCTERMS = Namespace("http://purl.org/dc/terms/")
 OBOINOWL = Namespace("http://www.geneontology.org/formats/oboInOwl#")
 SCHEMA = Namespace("http://schema.org/")
@@ -59,11 +62,9 @@ def safe_local(name: str) -> str:
     return name.replace(" ", "_")
 
 
-def model_iri(model_name: str, slot: str | None = None) -> URIRef:
-    base = TVBO[safe_local(model_name)]
-    if slot is None:
-        return base
-    return URIRef(f"{base}/{safe_local(slot)}")
+def record_iri(folder: str, path: pathlib.Path) -> URIRef:
+    """The individual of the record *path* files in *folder*, at the IRI :func:`tvbo.data.registry.record_iri` gives it."""
+    return expand_curie(registry.record_iri(folder, path))
 
 
 def _study_iri(citekey: str) -> URIRef:
@@ -174,7 +175,7 @@ def emit_model(g: Graph, path: pathlib.Path) -> None:
     if not isinstance(data, dict) or "name" not in data:
         return
     name = data["name"]
-    iri = model_iri(name)
+    iri = record_iri("models", path)
     g.add((iri, RDF.type, OWL.NamedIndividual))
     g.add((iri, RDF.type, TVBO.Dynamics))
     g.add((iri, RDFS.label, Literal(name)))
@@ -204,9 +205,11 @@ GENERIC_FOLDER_TYPES: dict[str, URIRef] = {
     "graph_generators": TVBO.GraphGenerator,
     "integrators": TVBO.Integrator,
     "networks": TVBO.Network,
-    "software": TVBO.SoftwarePackage,
+    "software": TVBO_SW.SimulationTool,
     "experiments": TVBO.SimulationExperiment,
     "continuations": TVBO.Continuation,
+    "functions": TVBO.Function,
+    "themes": TVBO.Theme,
     "observation_models": TVBO.Observation,
     "atlases": ATOM.BrainAtlas,
     "coordinate_spaces": ATOM.CommonCoordinateSpace,
@@ -249,7 +252,7 @@ def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Pa
         if bib:
             data = {**bib, **data}
     label = _record_label(data, path.stem)
-    iri = URIRef(f"{TVBO}{folder}/{safe_local(path.stem)}")
+    iri = record_iri(folder, path)
     g.add((iri, RDF.type, OWL.NamedIndividual))
     # Studies refine their schema.org subtype based on the bibtex entry type.
     if folder == "studies":
@@ -353,10 +356,10 @@ def build_graph() -> Graph:
     _STUDY_BIB.clear()
     _STUDY_BIB.update(load_bib_records())
 
-    for path in sorted((DB / "models").glob("*.yaml")):
+    for path in sorted((DB / "models").rglob("*.yaml")):
         emit_model(g, path)
     for folder, cls_iri in GENERIC_FOLDER_TYPES.items():
-        for path in sorted((DB / folder).glob("*.yaml")):
+        for path in sorted((DB / folder).rglob("*.yaml")):
             emit_generic_record(g, folder, cls_iri, path)
     return g
 

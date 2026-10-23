@@ -1,4 +1,4 @@
-id: https://w3id.org/tvbo/software
+id: https://w3id.org/tvbo/sw
 name: software
 title: TVBO Software Schema
 description: >-
@@ -10,7 +10,7 @@ description: >-
 
 prefixes:
     linkml: https://w3id.org/linkml/
-    tvbo_sw: https://w3id.org/tvbo/software/
+    tvbo_sw: https://w3id.org/tvbo/sw/
     schema: http://schema.org/
     doap: http://usefulinc.com/ns/doap#
     prov: http://www.w3.org/ns/prov#
