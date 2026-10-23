@@ -94,11 +94,11 @@ Three kinds draw the same per-region quantity on three different geometries, and
 b:
   kind: network                     # the graph the model ran on
   layers: [{used: {experiment: 1, output: integration, sel: {variable: V}}}]
-  network: {connectome: tvbo:DesikanKilliany, projection: axial, colormap: magma}
+  network: {connectome: tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat, projection: axial, colormap: magma}
 c:
   kind: surface                     # the same values on a cortical mesh
   layers: [{used: {experiment: 1, output: integration, sel: {variable: V}}}]
-  surface: {atlas: tvbo:atlas/DesikanKilliany, template: fsaverage, hemi: both, view: dorsal}
+  surface: {atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg, template: fsaverage, hemi: both, view: dorsal}
 ```
 
 A `network` panel needs the connectome named — a curated IRI or a path beside the study — because the panel draws the network, not the result; `edge_percentile` (default 92) keeps a dense connectome from drawing as a filled square, and `projection` picks the anatomical plane the region centres flatten onto.
@@ -230,7 +230,7 @@ The other built-in kinds work the same way. A `grid` panel declares its tiling i
 e:
   kind: grid
   grid: {ncols: 3, col_labels: [Initial, Target, Fitted], wspace: 0.05}
-  cell: {kind: volume, volume: {atlas: tvbo:atlas/DesikanKilliany, view: sagittal, colormap: cividis_r}}
+  cell: {kind: volume, volume: {atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg, view: sagittal, colormap: cividis_r}}
 ```
 
 

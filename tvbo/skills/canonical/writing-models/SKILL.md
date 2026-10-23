@@ -84,7 +84,7 @@ TVBO components are declarative: a `Dynamics` is either specified inline (as abo
 dyn = Dynamics.from_db("ReducedWongWangExcInh")
 
 # As a semantic pointer inside a SimulationExperiment dict
-dynamics = {"name": "ReducedWongWang", "iri": "tvbo:ReducedWongWangExcInh"}
+dynamics = {"name": "ReducedWongWang", "iri": "tvbo:models/ReducedWongWangExcInh"}
 ```
 
 Always include the `iri` — a bare name string is **not** a semantic pointer. See the `running-simulations` skill for how a prefix resolves to a source and for the full sourcing rules (inline vs YAML vs `iri`).

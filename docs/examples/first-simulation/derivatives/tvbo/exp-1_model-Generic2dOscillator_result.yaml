@@ -4,7 +4,7 @@ part: main
 label: A whole-brain simulation
 dynamics:
   name: Generic2dOscillator
-  iri: tvbo:Generic2dOscillator
+  iri: tvbo:models/Generic2dOscillator
   parameters:
     I:
       name: I
@@ -264,7 +264,7 @@ network:
   coupling:
     c_glob:
       name: c_glob
-      iri: tvbo:Linear
+      iri: tvbo:coupling_functions/Linear
       parameters:
         b:
           name: b

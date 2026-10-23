@@ -206,10 +206,10 @@ from tvbo import SimulationExperiment
 
 exp = SimulationExperiment(
     label="A whole-brain simulation",
-    dynamics={"iri": "tvbo:Generic2dOscillator", "parameters": {"a": {"value": 2.0}}},
+    dynamics={"iri": "tvbo:models/Generic2dOscillator", "parameters": {"a": {"value": 2.0}}},
     network={
-        "iri": "tvbo:DesikanKilliany",
-        "coupling": {"c_glob": {"iri": "tvbo:Linear", "delayed": True, "incoming_states": ["V"]}},
+        "iri": "tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat",
+        "coupling": {"c_glob": {"iri": "tvbo:coupling_functions/Linear", "delayed": True, "incoming_states": ["V"]}},
     },
     integration={"method": "Heun", "step_size": 0.1, "duration": 800.0},
 )

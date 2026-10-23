@@ -27,7 +27,7 @@ bsplot.style.use("tvbo")
 res = SimulationExperiment.from_string("""
 label: "Visualization demo"
 dynamics:
-  iri: tvbo:Generic2dOscillator
+  iri: tvbo:models/Generic2dOscillator
 network:
   number_of_nodes: 8
 integration:

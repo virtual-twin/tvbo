@@ -1,5 +1,5 @@
 name: Epileptor
-iri: tvbo:Epileptor
+iri: tvbo:models/Epileptor
 model_type: neural_mass
 parameters:
   a:

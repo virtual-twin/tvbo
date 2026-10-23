@@ -1,5 +1,5 @@
 name: EpileptorCodim3
-iri: tvbo:EpileptorCodim3
+iri: tvbo:models/EpileptorCodim3
 model_type: neural_mass
 description: The Epileptor codim 3 model is a neural mass model containing two subsystems acting at different timescales. The fast subsystem (x, y) uses the unfolding of a degenerate Takens-Bogdanov bifurcation of codimension 3; the slow subsystem (z) steers the fast one back and forth along a great arc of a sphere, producing bursting behavior. It reproduces almost all classes of bursting predicted for systems with a planar fast subsystem. The default parameters correspond to Hysteresis-Loop burster class c2s (Saddle-Node at onset, Saddle-Homoclinic at offset, branch N=1, with the stabilising modification for negative dstar).
 references:

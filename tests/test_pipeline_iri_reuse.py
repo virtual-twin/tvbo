@@ -22,7 +22,7 @@ def test_a_step_naming_a_single_step_observation_becomes_that_step():
     data = _expand("""
 name: Demo
 pipeline:
-    - iri: tvbo:observation/temporal_average_tvb
+    - iri: tvbo:observation_models/temporal_average_tvb
 """)
     (step,) = data["pipeline"]
     assert step["equation"]["rhs"] == "window_mean(X, window_size)"
@@ -34,7 +34,7 @@ def test_the_entrys_own_keys_are_merged_over_the_curated_step():
     data = _expand("""
 name: Demo
 pipeline:
-    - iri: tvbo:observation/temporal_average_tvb
+    - iri: tvbo:observation_models/temporal_average_tvb
       name: interim_average
 """)
     (step,) = data["pipeline"]
@@ -46,7 +46,7 @@ def test_a_multi_step_observation_contributes_all_of_its_steps_in_order():
     data = _expand("""
 name: Demo
 pipeline:
-    - iri: tvbo:observation/bold_tvb
+    - iri: tvbo:observation_models/bold_tvb
 """)
     assert [s["name"] for s in data["pipeline"]] == [
         "temporal_average_interim",
@@ -63,7 +63,7 @@ def test_overriding_a_multi_step_reference_raises_rather_than_guessing():
         _expand("""
 name: Demo
 pipeline:
-    - iri: tvbo:observation/bold_tvb
+    - iri: tvbo:observation_models/bold_tvb
       name: whoops
 """)
 
@@ -88,7 +88,7 @@ label: demo experiment
 observations:
     my_average:
         pipeline:
-            - iri: tvbo:observation/temporal_average_tvb
+            - iri: tvbo:observation_models/temporal_average_tvb
 """)
     (step,) = data["observations"]["my_average"]["pipeline"]
     assert step["equation"]["rhs"] == "window_mean(X, window_size)"
@@ -102,7 +102,7 @@ def test_two_recipes_naming_the_same_observation_get_independent_steps():
     doc = """
 name: Demo
 pipeline:
-    - iri: tvbo:observation/temporal_average_tvb
+    - iri: tvbo:observation_models/temporal_average_tvb
 """
     first = _expand(doc)["pipeline"][0]
     first["equation"]["rhs"] = "MUTATED"

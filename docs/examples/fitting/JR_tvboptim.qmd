@@ -18,13 +18,13 @@ The study is three lines, because the experiment itself is curated: it is refere
 
 ```yaml
 experiments:
-    - tvbo:experiment/JR_MEG_FrequencyGradient_Optimization
+    - tvbo:experiments/JR_MEG_FrequencyGradient_Optimization
 ```
 
 A second experiment is declared as the *difference* from the first — the same recipe without its settle, which is what makes the startup transient visible:
 
 ```yaml
-    - iri: tvbo:experiment/JR_MEG_FrequencyGradient_Optimization
+    - iri: tvbo:experiments/JR_MEG_FrequencyGradient_Optimization
       id: 2
       integration: {transient_time: 0.0, duration: 1000.0}
       optimizations: null

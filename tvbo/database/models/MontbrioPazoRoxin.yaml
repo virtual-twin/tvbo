@@ -1,5 +1,5 @@
 name: MontbrioPazoRoxin
-iri: tvbo:MontbrioPazoRoxin
+iri: tvbo:models/MontbrioPazoRoxin
 model_type: mean_field
 parameters:
   Delta:

@@ -409,7 +409,7 @@ def test_the_seeded_recipe_declares_its_class(scaffold):
 
 def test_the_seeded_recipe_names_the_bsplot_theme(scaffold):
     """An un-themed figure draws native axes, so the scaffold states the house look once, where every figure of the study reads it."""
-    assert "theme: {iri: tvbo:theme/bsplot}" in (scaffold / "Demo1999.yaml").read_text()
+    assert "theme: {iri: tvbo:themes/bsplot}" in (scaffold / "Demo1999.yaml").read_text()
 
 
 def test_layout_sync_is_idempotent(scaffold, record):

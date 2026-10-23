@@ -7,7 +7,7 @@ data_file: exp-1_model-Generic2dOscillator_network.h5
 coupling:
   c_glob:
     name: c_glob
-    iri: tvbo:Linear
+    iri: tvbo:coupling_functions/Linear
     parameters:
       b:
         name: b

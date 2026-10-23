@@ -1,5 +1,5 @@
 name: KuramotoModel2
-iri: tvbo:KuramotoModel2
+iri: tvbo:models/Kuramoto2
 model_type: phase_oscillator
 parameters:
   omega:

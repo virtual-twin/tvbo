@@ -400,10 +400,11 @@ def network_file(iri, source_dir=None) -> Path | None:
     for path in places:
         if path.is_file():
             return path if path.suffix.lower() in NETWORK_SIDECARS else None
-    from tvbo.classes.network import Network, _iri_local
+    from tvbo.classes.network import Network
+    from tvbo.data.registry import local_name
 
     curated = Network._resolve_network_iri(str(iri))
-    return Path(curated) if curated and Path(curated).stem.lower() == _iri_local(str(iri)).lower() else None
+    return Path(curated) if curated and Path(curated).stem.lower() == local_name(str(iri)).lower() else None
 
 
 def names_a_network(ref, source_dir=None) -> Path | None:

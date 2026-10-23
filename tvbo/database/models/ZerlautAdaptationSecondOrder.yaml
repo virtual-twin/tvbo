@@ -1,5 +1,5 @@
 name: ZerlautAdaptationSecondOrder
-iri: tvbo:ZerlautAdaptationSecondOrder
+iri: tvbo:models/ZerlautAdaptationSecondOrder
 model_type: mean_field
 # The transfer function references the fluctuation moments (mu_V, sigma_V, T_V)
 # many times, and its 2nd-order dfun evaluates it ~34x via finite differences.

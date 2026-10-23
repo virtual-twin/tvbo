@@ -11,7 +11,7 @@ description: >
 
 dynamics:
   name: WilsonCowan
-  iri: tvbo:WilsonCowan
+  iri: tvbo:models/WilsonCowan
 
 network:
   number_of_nodes: 1

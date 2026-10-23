@@ -1,5 +1,5 @@
 name: EpileptorCodim3SlowMod
-iri: tvbo:EpileptorCodim3SlowMod
+iri: tvbo:models/EpileptorCodim3SlowMod
 model_type: neural_mass
 description: >-
   The Epileptor Codim 3 model with ultra-slow modulation of bursting classes

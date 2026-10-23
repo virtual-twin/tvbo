@@ -33,7 +33,7 @@ def _drawn(monkeypatch, opts):
     monkeypatch.setattr(adapter, "load_layer", lambda _layer: layer)
     fig, ax = plt.subplots()
     adapter.surface_panel(
-        fig, ax, {"opts": {"atlas": "tvbo:atlas/Test", "symmetric": False, **opts}, "layers": [{}], "base_dir": "."}
+        fig, ax, {"opts": {"atlas": "tvbo:atlases/Test", "symmetric": False, **opts}, "layers": [{}], "base_dir": "."}
     )
     plt.close(fig)
     return captured

@@ -947,9 +947,9 @@ def resolve_path(p, base_dir):
 
 
 _SHIPPED_PALETTE = "tvbo-palette"
-"""A style layer spelling ``theme: {iri: tvbo:theme/default}``, kept because it reads well in a list of layers."""
+"""A style layer spelling ``theme: {iri: tvbo:themes/default}``, kept because it reads well in a list of layers."""
 
-_SHIPPED_THEME = "tvbo:theme/default"
+_SHIPPED_THEME = "tvbo:themes/default"
 
 COLOR_OPTS = frozenset(
     {
@@ -1020,7 +1020,7 @@ def _resolve_colors(kw: dict) -> dict:
     return {k: (resolve_color(v) if k in COLOR_OPTS else v) for k, v in kw.items()}
 
 
-_HOUSE_RULE = "tvbo:theme/bsplot"
+_HOUSE_RULE = "tvbo:themes/bsplot"
 """The curated axis rule a figure that asks for one with ``auto_format: true`` is drawn by."""
 
 _FIGURE_LOOK = (

@@ -4,7 +4,7 @@ description: >-
   the canonical Echo State Network substrate (Jaeger 2001). The recurrent
   reservoir of an ESN is fully described by four numbers: size, sparsity,
   target spectral radius, and the weight distribution of the non-zero entries.
-iri: tvbo:RandomReservoir
+iri: tvbo:graph_generators/RandomReservoir
 
 # Neither size nor seed is declared here: `n_nodes` always comes from Network.number_of_nodes and the PRNG seed from the generator's own `seed:` slot, so a parameter for either would be a second source of truth that can disagree with the one that actually takes effect.
 parameters:

@@ -3,13 +3,13 @@
 
 """Named colour roles for figures, so a project's colours live in one file.
 
-A style sheet carries only what matplotlib has an rcParam for. That covers the cycler and the ink, and stops short of the roles a figure actually reasons in: the one colour that means *this is the point*, the neutral that everything unlabelled is drawn in, the hairline grey behind it. Those live here, in the ``theme`` a figure declares (``theme: {iri: tvbo:theme/default}``, or a document of its own), so changing a project's colours is one edit and every panel follows. A colour is never a style layer: ``Figure.style`` carries the looks TVB-O does not own, and the theme is applied over all of them.
+A style sheet carries only what matplotlib has an rcParam for. That covers the cycler and the ink, and stops short of the roles a figure actually reasons in: the one colour that means *this is the point*, the neutral that everything unlabelled is drawn in, the hairline grey behind it. Those live here, in the ``theme`` a figure declares (``theme: {iri: tvbo:themes/default}``, or a document of its own), so changing a project's colours is one edit and every panel follows. A colour is never a style layer: ``Figure.style`` carries the looks TVB-O does not own, and the theme is applied over all of them.
 
 The cycler is ``[base] + palette``: a plot that names no colour comes out in the neutral, and only a panel that means to separate conditions reaches into the hues. ``highlight`` is deliberately outside the cycle, because a colour that is handed to the second line of every plot cannot also mean emphasis.
 
 Continuous scales live here too, under ``colormaps``, so the two kinds of colour move together and a figure never names a colormap of its own: anything categorical takes a hue from ``palette``, anything ordinal or continuous takes a colormap role, and an ordinal scale drawn as discrete swatches samples one with :func:`ramp` rather than picking hues that imply no order.
 
-TVB-O's own colours are :data:`PATH`, the curated ``tvbo:theme/default`` shipped in ``tvbo/database/themes/``, and it is what :data:`DEFAULT` reads and what a project's file falls back to role by role. It is a ``Theme`` in the figure spec (``schema/figure.yaml``), so it validates like any other TVB-O document and so a consumer outside Python — the documentation site's stylesheet, the manuscript's figures — reads those hexes rather than keeping a copy that drifts.
+TVB-O's own colours are :data:`PATH`, the curated ``tvbo:themes/default`` shipped in ``tvbo/database/themes/``, and it is what :data:`DEFAULT` reads and what a project's file falls back to role by role. It is a ``Theme`` in the figure spec (``schema/figure.yaml``), so it validates like any other TVB-O document and so a consumer outside Python — the documentation site's stylesheet, the manuscript's figures — reads those hexes rather than keeping a copy that drifts.
 """
 
 from __future__ import annotations

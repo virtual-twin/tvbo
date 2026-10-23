@@ -89,10 +89,10 @@ Assemble a network model from curated components, referenced by semantic `iri` p
 
 ```python
 exp = SimulationExperiment(
-    dynamics={"iri": "tvbo:ReducedWongWangExcInh"},
-    coupling={"iri": "tvbo:Linear"},
+    dynamics={"iri": "tvbo:models/ReducedWongWangExcInh"},
+    coupling={"iri": "tvbo:coupling_functions/Linear"},
     network={
-        "parcellation": {"atlas": {"iri": "tvbo:DesikanKilliany"}},
+        "parcellation": {"atlas": {"iri": "tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg"}},
         "tractogram": {"iri": "tvbo:dTOR"},
     },
     integration={"method": "Heun", "duration": 10_000},

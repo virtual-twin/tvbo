@@ -1,5 +1,5 @@
 name: ReducedWongWangTvboptim
-iri: tvbo:ReducedWongWangTvboptim
+iri: tvbo:models/ReducedWongWangTvboptim
 model_type: mean_field
 description: >-
   The Reduced Wong-Wang (RWW) model is a biophysically-based neural mass model

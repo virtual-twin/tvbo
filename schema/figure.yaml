@@ -276,7 +276,7 @@ classes:
       style:
         range: string
         multivalued: true
-        description: "Style layers underneath the theme, applied left to right: a registered bsplot style name (`tvbo`, `nature`) or a path to an .mplstyle. This is where a look TVB-O has no field for goes — another project's house style, a journal's sheet, the rcParams of a paper being reproduced. Anything `theme` states wins over all of it. The name 'tvbo-palette' is an alias for `theme: {iri: tvbo:theme/default}`, kept because it reads well in a list."
+        description: "Style layers underneath the theme, applied left to right: a registered bsplot style name (`tvbo`, `nature`) or a path to an .mplstyle. This is where a look TVB-O has no field for goes — another project's house style, a journal's sheet, the rcParams of a paper being reproduced. Anything `theme` states wins over all of it. The name 'tvbo-palette' is an alias for `theme: {iri: tvbo:themes/default}`, kept because it reads well in a list."
       format:
         range: string
         description: "Output format (pdf/svg/png). Unset defers to the renderer default."
@@ -306,7 +306,7 @@ classes:
         description: "Base font size in points (physical: 1 pt = 1/72 inch). The real text size, unchanged by figure size or dpi; set it (or the width) so labels are legible at print size. Unset takes the theme's `font_size`."
       auto_format:
         range: boolean
-        description: "Whether this figure's axes follow a theme's axis rule. `false` leaves every axis exactly as its panels drew it, whatever the study's theme says: no tick re-placed, no limit moved, no spine detached or trimmed, no labels aligned. `true` draws it by the curated `tvbo:theme/bsplot` rule wherever neither its own theme nor its study's states one. Unset follows the theme."
+        description: "Whether this figure's axes follow a theme's axis rule. `false` leaves every axis exactly as its panels drew it, whatever the study's theme says: no tick re-placed, no limit moved, no spine detached or trimmed, no labels aligned. `true` draws it by the curated `tvbo:themes/bsplot` rule wherever neither its own theme nor its study's states one. Unset follows the theme."
       panel_numbers:
         range: boolean
         description: "Draw automatic panel letters (a, b, ...). Unset takes the theme's `panel_numbers`, and draws them where the theme says nothing."
@@ -934,7 +934,7 @@ classes:
         description: "Raw backend passthrough (e.g. linewidth, linestyle); matplotlib implicit until a second backend lands."
 
   Palette:
-    description: "A project's colours, named by role. The colour half of a `Theme`, and a document in its own right for a consumer that wants colours and nothing else (:mod:`tvbo.plot.palette`, the documentation site's stylesheet). A style sheet carries only what matplotlib has an rcParam for, which stops short of the roles a figure reasons in: the one colour that means *this is the point*, the neutral everything unlabelled is drawn in, the hairline behind it. Naming them here is what makes recolouring a project one edit that every panel follows. The cycler is `[base] + palette`, so a plot that names no colour comes out neutral and only a panel meaning to separate conditions reaches into the hues; `highlight` sits outside the cycler, because a colour handed to the second line of every plot cannot also mean emphasis. TVB-O's own is curated at `tvbo:theme/default`, and is the palette in force until a project names one of its own."
+    description: "A project's colours, named by role. The colour half of a `Theme`, and a document in its own right for a consumer that wants colours and nothing else (:mod:`tvbo.plot.palette`, the documentation site's stylesheet). A style sheet carries only what matplotlib has an rcParam for, which stops short of the roles a figure reasons in: the one colour that means *this is the point*, the neutral everything unlabelled is drawn in, the hairline behind it. Naming them here is what makes recolouring a project one edit that every panel follows. The cycler is `[base] + palette`, so a plot that names no colour comes out neutral and only a panel meaning to separate conditions reaches into the hues; `highlight` sits outside the cycler, because a colour handed to the second line of every plot cannot also mean emphasis. TVB-O's own is curated at `tvbo:themes/default`, and is the palette in force until a project names one of its own."
     attributes:
       ink:
         range: string
@@ -961,7 +961,7 @@ classes:
         description: "The continuous scales, so both kinds of colour move together and no figure names a colormap of its own."
 
   Theme:
-    description: "A project's whole look in one declarable object: its colours (inherited from `Palette`), the geometry a style sheet used to own — tick shape, axis weight, line weights, legend, grid, type — and the rule its axes follow: who places the ticks, where an axis ends, which spines are drawn and whether they meet. Declared on a study (`SimulationStudy.theme`) it is the one rule every figure of that study is drawn by; declared on a figure it states only that figure's differences. Either way it beats every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec, where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:theme/default`; a project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means to fix and nothing else."
+    description: "A project's whole look in one declarable object: its colours (inherited from `Palette`), the geometry a style sheet used to own — tick shape, axis weight, line weights, legend, grid, type — and the rule its axes follow: who places the ticks, where an axis ends, which spines are drawn and whether they meet. Declared on a study (`SimulationStudy.theme`) it is the one rule every figure of that study is drawn by; declared on a figure it states only that figure's differences. Either way it beats every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec, where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:themes/default`; a project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means to fix and nothing else."
     is_a: Palette
     mixins:
       - Document
@@ -971,7 +971,7 @@ classes:
       tvbo_class:
         equals_string: "tvbo:Theme"
       iri:
-        description: "The curated theme this one starts from (`tvbo:theme/default`). Its slots are merged under this document's own, so a theme states only its differences."
+        description: "The curated theme this one starts from (`tvbo:themes/default`). Its slots are merged under this document's own, so a theme states only its differences."
     attributes:
       tick_length:
         range: float

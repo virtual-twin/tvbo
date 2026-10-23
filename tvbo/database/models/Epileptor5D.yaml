@@ -1,5 +1,5 @@
 name: Epileptor5D
-iri: tvbo:Epileptor5D
+iri: tvbo:models/Epileptor5D
 model_type: phenomenological
 parameters:
   Iext2:

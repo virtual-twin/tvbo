@@ -1,5 +1,5 @@
 name: ZerlautAdaptationFirstOrder
-iri: tvbo:ZerlautAdaptationFirstOrder
+iri: tvbo:models/ZerlautAdaptationFirstOrder
 model_type: mean_field
 parameters:
   C_m:

@@ -35,11 +35,11 @@ label: "A two-experiment study"
 experiments:
   - id: 1
     label: "Weak coupling"
-    dynamics: &dyn {iri: "tvbo:Generic2dOscillator"}
+    dynamics: &dyn {iri: "tvbo:models/Generic2dOscillator"}
     network: &net
       number_of_nodes: 4
       coupling:
-        c_glob: {iri: "tvbo:Linear", delayed: false, incoming_states: [V]}
+        c_glob: {iri: "tvbo:coupling_functions/Linear", delayed: false, incoming_states: [V]}
     integration: &integ {method: Heun, step_size: 0.1, duration: 300.0}
   - id: 2
     label: "Strong coupling"
@@ -47,7 +47,7 @@ experiments:
     network:
       <<: *net
       coupling:
-        c_glob: {iri: "tvbo:Linear", delayed: false, incoming_states: [V], parameters: {a: 0.5}}
+        c_glob: {iri: "tvbo:coupling_functions/Linear", delayed: false, incoming_states: [V], parameters: {a: 0.5}}
     integration: *integ
 """
 

@@ -88,7 +88,7 @@ class IriEnrichable:
     def _named_entity(self) -> str | None:
         """The entity this record names: the curated key its ``iri`` addresses, else its ``name``.
 
-        Which curated record an ``iri`` addresses is :func:`tvbo.data.registry.curated_key`'s answer, the same one the load-time expansion uses: a scoped ``tvbo:observation/bold_tvb`` names ``bold_tvb``, and a ``result/`` reference or a scope of another class names none.
+        Which curated record an ``iri`` addresses is :func:`tvbo.data.registry.curated_key`'s answer, the same one the load-time expansion uses: a scoped ``tvbo:observation_models/bold_tvb`` names ``bold_tvb``, and a ``result/`` reference or a scope of another class names none.
         """
         from tvbo.data.registry import curated_key
 

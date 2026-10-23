@@ -40,6 +40,9 @@ from . import (
     install as _install_cmd,
 )
 from . import (
+    migrate_iris as _migrate_iris_cmd,
+)
+from . import (
     network as _network_cmd,
 )
 from . import (
@@ -115,6 +118,9 @@ app.command("verify", help="Check a study-of-studies is buildable (completeness 
     _verify_cmd.verify
 )
 app.command("version", help="Print the tvbo version.")(_version_cmd.version)
+app.command("migrate-iris", help="Rewrite curated-record IRIs into their `tvbo:<folder>/<file stem>` form.")(
+    _migrate_iris_cmd.migrate_iris
+)
 app.command("brain", help="Draw a spec dissolving into a cortical surface made of its own characters.")(_brain_cmd.brain)
 
 # Sub-trees (registered as their own Typer apps)

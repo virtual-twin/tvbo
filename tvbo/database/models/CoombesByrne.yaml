@@ -1,5 +1,5 @@
 name: CoombesByrne
-iri: tvbo:CoombesByrne
+iri: tvbo:models/CoombesByrne
 model_type: mean_field
 description: |
   4D model describing the Ott-Antonsen reduction of infinite all-to-all

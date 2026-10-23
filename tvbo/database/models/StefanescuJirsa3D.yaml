@@ -1,5 +1,5 @@
 name: StefanescuJirsa3D
-iri: tvbo:StefanescuJirsa3D
+iri: tvbo:models/StefanescuJirsa3D
 model_type: neural_mass
 description: >-
   Reduced set of Hindmarsh-Rose oscillators (Stefanescu & Jirsa 2008). A

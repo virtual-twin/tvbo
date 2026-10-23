@@ -12,7 +12,7 @@ description: >
 
 dynamics:
   name: JansenRit
-  iri: tvbo:JansenRit
+  iri: tvbo:models/JansenRit
 
 network:
   number_of_nodes: 1

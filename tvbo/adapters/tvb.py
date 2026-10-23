@@ -166,8 +166,14 @@ def tvb_state_variable_boundaries(model):
 
 def _extract_coupling(sim) -> tvbo_datamodel.Coupling:
     """Extract Coupling metadata from a TVB simulator."""
+    from tvbo.data.registry import iri_for
+
     name = type(sim.coupling).__name__
-    coupling = tvbo_datamodel.Coupling(name=name, iri=f"tvbo:{name}")
+    try:
+        iri = iri_for("Coupling", name)
+    except FileNotFoundError:  # a TVB coupling no curated record describes, such as `Kuramoto`
+        iri = None
+    coupling = tvbo_datamodel.Coupling(name=name, iri=iri)
     for k, v in dict(getattr(sim.coupling, "summary_info", lambda: {})()).items():
         if k in {"Type", "title", "gid"}:
             continue

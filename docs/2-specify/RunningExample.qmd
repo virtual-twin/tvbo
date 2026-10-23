@@ -56,7 +56,7 @@ Documented by [The SimulationExperiment](SimulationExperiments.qmd) and [Dynamic
 STAGE1 = """
 label: "A single Jansen-Rit column"
 dynamics:
-  iri: tvbo:JansenRit
+  iri: tvbo:models/JansenRit
 network:
   number_of_nodes: 1
 integration: {method: Heun, step_size: 0.5, duration: 9000.0, transient_time: 1000.0}
@@ -193,13 +193,13 @@ STAGE5 = grow(
     STAGE4,
     "network:\n  number_of_nodes: 1",
     """network:
-  iri: tvbo:DesikanKilliany
+  iri: tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat
   transforms:
     - name: weight
       equation: {rhs: "weight / mean(weight[weight > 0])"}
   coupling:
     c_glob:
-      iri: tvbo:SigmoidalJansenRit
+      iri: tvbo:coupling_functions/SigmoidalJansenRit
       parameters: {a: {value: 25.0}}""",
 )
 
@@ -226,7 +226,7 @@ plt.tight_layout(); plt.show()
 
 **Normalize the connectome.** The Desikan-Killiany matrix holds streamline counts in the hundreds of thousands. Fed in raw they swamp every intrinsic term. The `transforms` block rescales so the mean non-zero weight is $1$, which puts the coupling gain on a scale you can reason about.
 
-**Jansen-Rit needs a saturating coupling function.** `tvbo:SigmoidalJansenRit` bounds each edge's contribution. Substituting `tvbo:Linear` on `y1` makes the drive unbounded, and above a gain of roughly $0.02$ on max-normalized weights the run diverges to `inf` rather than converging on anything.
+**Jansen-Rit needs a saturating coupling function.** `tvbo:coupling_functions/SigmoidalJansenRit` bounds each edge's contribution. Substituting `tvbo:coupling_functions/Linear` on `y1` makes the drive unbounded, and above a gain of roughly $0.02$ on max-normalized weights the run diverges to `inf` rather than converging on anything.
 :::
 
 ## Stage 6 — make it a study

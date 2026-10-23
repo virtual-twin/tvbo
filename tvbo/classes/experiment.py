@@ -36,10 +36,11 @@ from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.behaviour._runtime import Copyable
 from tvbo.classes.coupling import Coupling
 from tvbo.classes.dynamics import Dynamics
-from tvbo.classes.network import Network
+from tvbo.classes.network import Network, _backfill_name_from_iri
 from tvbo.classes.noise import Integrator
 from tvbo.codegen import templater
 from tvbo.data import cohort as _cohort
+from tvbo.data.registry import record_name
 from tvbo.data.types import ExperimentResult, ExplorationResult, SimulationResult, SimulationState, TimeSeries
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.datamodel.dialect import expand_iri
@@ -202,19 +203,9 @@ def _reject_unnamed_members(experiment) -> None:
                 _reject_unnamed(kind, entries)
 
 
-def _iri_local(iri: str) -> str:
-    return iri.split(":", 1)[-1] if ":" in iri else iri
-
-
 def _step_grid(total: float, dt: float) -> np.ndarray:
     """The times ``0, dt, …, total`` a Python run of *total* time units records, both ends included, so the window after the settle holds the ``duration / dt`` samples every other backend records."""
     return dt * np.arange(int(round(total / dt)) + 1)
-
-
-def _backfill_name_from_iri(d):
-    """If d is a dict with iri but no name, inject name from iri's local part."""
-    if isinstance(d, dict) and d.get("iri") and not d.get("name"):
-        d["name"] = _iri_local(d["iri"])
 
 
 class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
@@ -292,7 +283,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                             # Keyed collection: the population key is the identifier, so it stays the `name` (model identity is carried on `iri`).
                             _dv["name"] = _key
 
-        # Expand an iri-referenced dynamics from the curated database before the parent constructor reads it; a parcellation or tractogram only takes its name from the iri.
+        # Expand an iri-referenced dynamics from the curated database before the parent constructor reads it; a parcellation or tractogram only takes its name from the record its iri addresses.
         if isinstance(kwargs.get("dynamics"), dict):
             expand_iri("Dynamics", kwargs["dynamics"])
         net_kw = kwargs.get("network")
@@ -301,8 +292,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             if isinstance(parc, dict):
                 # parcellation: {"iri": "tvbo:X"} → wrap into atlas
                 if parc.get("iri") and not parc.get("atlas"):
-                    parc["atlas"] = {"name": _iri_local(parc["iri"])}
-                _backfill_name_from_iri(parc.get("atlas"))
+                    parc["atlas"] = {"name": record_name(parc["iri"], "BrainAtlas")}
+                _backfill_name_from_iri(parc.get("atlas"), "BrainAtlas")
             _backfill_name_from_iri(net_kw.get("tractogram"))
             kwargs["network"] = Network(**net_kw)
 

@@ -5,7 +5,7 @@ aliases:
   - /phases/explore.html
 ---
 
-Most of a brain-network experiment has been written before. TVB-O ships a curated knowledge base — dynamical systems, connectomes, atlases, stimulation protocols and whole published studies — and every entry has an IRI you can point at. Exploring first is what keeps a specification three lines long instead of three hundred, and it is why two experiments that reference `tvbo:Generic2dOscillator` are comparable by construction rather than by inspection.
+Most of a brain-network experiment has been written before. TVB-O ships a curated knowledge base — dynamical systems, connectomes, atlases, stimulation protocols and whole published studies — and every entry has an IRI you can point at. Exploring first is what keeps a specification three lines long instead of three hundred, and it is why two experiments that reference `tvbo:models/Generic2dOscillator` are comparable by construction rather than by inspection.
 
 This step ends when you know which curated entities your experiment will reuse and which parts you genuinely have to write yourself.
 

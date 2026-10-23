@@ -221,7 +221,7 @@ def test_a_figure_no_theme_speaks_about_follows_no_axis_rule():
 
 def test_auto_format_true_asks_for_the_curated_house_rule_and_false_switches_every_rule_off():
     assert _rule(dm.Figure(name="f", auto_format=True)) == HOUSE
-    study = dm.Theme(iri="tvbo:theme/bsplot")
+    study = dm.Theme(iri="tvbo:themes/bsplot")
     assert _rule(bsplot.adopt_theme(dm.Figure(name="f"), study)) == HOUSE, "unset follows the study"
     assert _rule(bsplot.adopt_theme(dm.Figure(name="f", auto_format=False, spine_offset=0.05), study)) == {}, (
         "and false leaves the axes as drawn, whoever stated the rule"
@@ -230,7 +230,7 @@ def test_auto_format_true_asks_for_the_curated_house_rule_and_false_switches_eve
 
 def test_each_layer_states_only_what_it_changes_and_the_nearer_one_wins():
     study = dm.Theme(
-        iri="tvbo:theme/bsplot",
+        iri="tvbo:themes/bsplot",
         ticks="native",
         spines="open",
         font_size=7,
@@ -364,7 +364,7 @@ def test_a_study_with_no_theme_draws_its_axes_as_the_backend_places_them(tmp_pat
 
 
 def test_a_study_states_its_rule_once_in_a_theme_file_and_every_figure_follows_it(tmp_path):
-    theme = "iri: tvbo:theme/bsplot\nfont_size: 7\npanel_number_case: upper\npanel_number_format: '({})'\nlegend_loc: lower right\nformat: pdf\n"
+    theme = "iri: tvbo:themes/bsplot\nfont_size: 7\npanel_number_case: upper\npanel_number_format: '({})'\nlegend_loc: lower right\nformat: pdf\n"
     figure, drawn, axes = _render(_study(tmp_path, theme), tmp_path)
     assert axes["a"].get_xlim() == (0, 10) and axes["a"].get_xticks().tolist() == [0, 5, 10]
     assert axes["a"].spines["left"].get_position() == ("axes", -0.02) and axes["a"].spines["left"].get_bounds() == (
@@ -384,7 +384,7 @@ def test_a_study_states_its_rule_once_in_a_theme_file_and_every_figure_follows_i
 
 
 def test_a_figure_overrides_its_studys_rule_without_restating_it(tmp_path):
-    theme = "iri: tvbo:theme/bsplot\n"
+    theme = "iri: tvbo:themes/bsplot\n"
     figure = "    spines: box\n    theme: {axis_ends: ticks, colorbar_ends: false, colorbar_outline: true}\n"
     _, drawn, axes = _render(_study(tmp_path, theme, figure), tmp_path)
     assert axes["a"].get_ylim() == (-0.02, 0.02), "both ends on a tick, as this one figure asks"

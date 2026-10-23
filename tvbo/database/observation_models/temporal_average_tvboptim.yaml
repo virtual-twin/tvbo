@@ -2,7 +2,7 @@
 
 name: TemporalAverage_tvboptim
 label: Temporal Average (tvboptim windowing)
-iri: tvbo:TemporalAverage_tvboptim
+iri: tvbo:observation_models/temporal_average_tvboptim
 description: >-
     Running temporal mean over non-overlapping windows of `period`, windowed as tvboptim's
     TemporalAverage windows them: the first window covers integration steps 1..istep. Use

@@ -7,7 +7,7 @@ description: >-
 
 dynamics:
   name: JansenRit1995
-  iri: tvbo:JansenRit1995
+  iri: tvbo:models/JansenRit1995
 
 continuations:
   eq_in_p:

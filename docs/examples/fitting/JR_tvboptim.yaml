@@ -8,10 +8,10 @@ description: >-
   Fits the region-specific Jansen-Rit time constants a and b so that each region's simulated peak frequency matches a target gradient running from visual cortex (11 Hz) to the most distant association areas (7 Hz). The target is not supplied to the fit: it is derived from the connectome's own tract lengths to bilateral lateral occipital cortex, so the whole experiment is reproducible from this recipe and the curated database alone.
 
 experiments:
-    - tvbo:experiment/JR_MEG_FrequencyGradient_Optimization
+    - tvbo:experiments/JR_MEG_FrequencyGradient_Optimization
 
       # The same curated experiment without its settle: the approach from the initial state is what the fitted run deliberately discards.
-    - iri: tvbo:experiment/JR_MEG_FrequencyGradient_Optimization
+    - iri: tvbo:experiments/JR_MEG_FrequencyGradient_Optimization
       id: 2
       label: "Startup transient"
       description: "The network's approach to its limit cycle, before the settle is cut away."
@@ -147,7 +147,7 @@ figures:
               cell:
                   kind: volume
                   volume:
-                      atlas: tvbo:atlas/DesikanKilliany
+                      atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg
                       view: sagittal
                       colormap: cividis_r
                       vmin: 6.5
@@ -164,7 +164,7 @@ figures:
               layers:
                   - used: {experiment: 1, output: integration__target_peak_frequencies}
               surface:
-                  atlas: tvbo:atlas/DesikanKilliany
+                  atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg
                   template: fsaverage
                   hemi: both
                   view: dorsal
@@ -180,7 +180,7 @@ figures:
               layers:
                   - used: {experiment: 1, output: optimization__spectral_gradient_fit__observation__peak_frequencies}
               surface:
-                  atlas: tvbo:atlas/DesikanKilliany
+                  atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg
                   template: fsaverage
                   hemi: both
                   view: dorsal

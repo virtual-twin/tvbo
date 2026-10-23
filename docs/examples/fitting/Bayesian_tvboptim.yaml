@@ -13,7 +13,7 @@ description: >-
   fitted to the same numbers and this recipe reproduces them.
 
 experiments:
-    - tvbo:experiment/Stimulation_Bayesian_Inference
+    - tvbo:experiments/Stimulation_Bayesian_Inference
 
 figures:
     - name: bayesian_recovery

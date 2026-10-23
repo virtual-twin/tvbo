@@ -88,19 +88,63 @@ def test_the_curated_record_still_loads_as_itself():
 @pytest.mark.backend_core
 @GENERATED_FORMS
 def test_a_scoped_iri_expands_and_names_the_record_it_addresses(model):
-    """``tvbo:observation/bold_tvb`` addresses ``bold_tvb`` among the observations, not a record called ``observation/bold_tvb``."""
-    scoped, unscoped = (model.Observation(iri=iri, source=["S_e"]) for iri in ("tvbo:observation/bold_tvb", "tvbo:BOLD_TVB"))
+    """``tvbo:observation_models/bold_tvb`` addresses ``bold_tvb`` among the observations, not a record called ``observation_models/bold_tvb``."""
+    scoped, unscoped = (
+        model.Observation(iri=iri, source=["S_e"]) for iri in ("tvbo:observation_models/bold_tvb", "tvbo:BOLD_TVB")
+    )
 
     assert scoped.name == unscoped.name == "BOLD_TVB"
     assert len(scoped.pipeline) == len(unscoped.pipeline) > 0
 
 
 @pytest.mark.backend_core
-def test_an_iri_addresses_a_record_by_its_scope():
+def test_an_iri_addresses_a_record_by_its_folder():
     from tvbo.data.registry import curated_key
 
-    assert curated_key("tvbo:observation/bold_tvb", "Observation") == "bold_tvb"
+    assert curated_key("tvbo:observation_models/bold_tvb", "Observation") == "bold_tvb"
     assert curated_key("tvbo:BOLD_TVB", "Observation") == "BOLD_TVB"
     assert curated_key("ReducedWongWang", "Dynamics") == "ReducedWongWang"
-    assert curated_key("tvbo:coupling/Linear", "Observation") is None, "a scope of another class addresses no observation"
+    assert curated_key("tvbo:coupling_functions/Linear", "Coupling") == "Linear"
+    assert curated_key("tvbo:models/Linear", "Coupling") is None, "a record in another folder is not this class's"
+    assert curated_key("tvbo:coupling_functions/Linear", "Observation") is None, (
+        "a scope of another class addresses no observation"
+    )
     assert curated_key("tvbo:result/exp-1", "Observation") is None, "a run's output is not a curated record"
+
+
+@pytest.mark.backend_core
+def test_a_record_iri_ends_in_its_file_stem():
+    """A record answers to its ``name:`` and to its stem in any case, but its IRI is the stem it is filed under, in its folder however deep."""
+    from tvbo.data.registry import iri_for
+
+    assert iri_for("Dynamics", "ModelJansen1995") == "tvbo:models/Jansen1995"
+    assert iri_for("Observation", "BOLD_TVB") == "tvbo:observation_models/bold_tvb"
+    assert iri_for("Dynamics", "HodgkinHuxley") == "tvbo:models/HodgkinHuxley", "a model filed in models/julia/"
+    with pytest.raises(FileNotFoundError):
+        iri_for("Coupling", "Kuramoto")
+
+
+@pytest.mark.backend_core
+def test_a_singular_scope_still_resolves_and_names_its_folder_form():
+    from tvbo.data.registry import curated_key, local_name
+
+    with pytest.warns(FutureWarning, match="tvbo:observation_models/bold_tvb"):
+        assert curated_key("tvbo:observation/bold_tvb", "Observation") == "bold_tvb"
+    with pytest.warns(FutureWarning, match="tvbo:themes/default"):
+        assert local_name("tvbo:theme/default") == "default"
+
+
+@pytest.mark.backend_core
+def test_a_study_schema_term_written_in_full_is_not_a_retired_scope():
+    from tvbo.data.registry import iri_target
+
+    assert iri_target("https://w3id.org/tvbo/study/StudyLayout") is None, "the study module's namespace is no folder"
+
+
+@pytest.mark.backend_core
+def test_a_network_iri_scoped_to_another_folder_resolves_no_network():
+    from tvbo.classes.network import Network
+
+    assert Network._resolve_network_iri("tvbo:networks/none") is None
+    assert Network._resolve_network_iri("tvbo:atlases/DesikanKilliany") is None, "an atlas is not a network"
+    assert Network._resolve_network_iri("tvbo:DesikanKilliany") is not None

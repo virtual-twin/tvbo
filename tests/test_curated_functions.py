@@ -1,6 +1,6 @@
 """The curated functions in ``tvbo/database/functions/``, each named by ``iri`` and checked against the library a reader would reach for.
 
-A study's statistic is declared by naming one of these, so the definition lives once in the database and every study that names it computes the same quantity. Each is loaded through ``tvbo:function/<name>``, rendered for jax and numpy, executed in float64, and compared with scipy or numpy.
+A study's statistic is declared by naming one of these, so the definition lives once in the database and every study that names it computes the same quantity. Each is loaded through ``tvbo:functions/<name>``, rendered for jax and numpy, executed in float64, and compared with scipy or numpy.
 """
 
 import numpy as np
@@ -16,12 +16,12 @@ FORMATS = ["jax", "numpy"]
 
 
 def _curated(name, fmt):
-    """The callable of ``tvbo:function/<name>`` for *fmt*, in float64."""
+    """The callable of ``tvbo:functions/<name>`` for *fmt*, in float64."""
     if fmt == "jax":
         import jax
 
         jax.config.update("jax_enable_x64", True)
-    return Function.from_string(f"iri: tvbo:function/{name}").to_callable(format=fmt)
+    return Function.from_string(f"iri: tvbo:functions/{name}").to_callable(format=fmt)
 
 
 @pytest.fixture(scope="module")
@@ -30,13 +30,13 @@ def rng():
 
 
 def test_every_curated_function_resolves_by_iri():
-    """Each file in the folder is addressable as ``tvbo:function/<name>`` and carries an equation."""
+    """Each file in the folder is addressable as ``tvbo:functions/<name>`` and carries an equation."""
     from tvbo.data.registry import database_dir
 
     names = sorted(path.stem for path in database_dir("Function").glob("*.yaml"))
     assert names == ["FCCorrelation", "SetCosine", "SetMean", "SoftPeakFrequency", "WelchPSD"]
     for name in names:
-        function = Function.from_string(f"iri: tvbo:function/{name}")
+        function = Function.from_string(f"iri: tvbo:functions/{name}")
         assert function.name == name and function.equation.rhs
 
 

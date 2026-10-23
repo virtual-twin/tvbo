@@ -1,5 +1,5 @@
 name: ZetterbergJansen
-iri: tvbo:ZetterbergJansen
+iri: tvbo:models/ZetterbergJansen
 model_type: neural_mass
 parameters:
   He:

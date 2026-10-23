@@ -18,7 +18,7 @@ The study is one line, because the experiment is curated: it is referenced by IR
 
 ```yaml
 experiments:
-    - tvbo:experiment/Stimulation_Bayesian_Inference
+    - tvbo:experiments/Stimulation_Bayesian_Inference
 ```
 
 ## The recording is declared, not synthesised

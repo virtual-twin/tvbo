@@ -40,8 +40,8 @@ The layers, weakest first, each stating only what it changes:
 
 | Layer | Where it is written |
 |---|---|
-| TVB-O's shipped theme | `tvbo:theme/default`: the colours, and an unboxed legend. It states no axis rule. |
-| The house axis rule | `tvbo:theme/bsplot`, taken only by a figure that says `auto_format: true` and only where no theme states a rule. |
+| TVB-O's shipped theme | `tvbo:themes/default`: the colours, and an unboxed legend. It states no axis rule. |
+| The house axis rule | `tvbo:themes/bsplot`, taken only by a figure that says `auto_format: true` and only where no theme states a rule. |
 | The study's theme | `theme:` on the study. The curated theme it names by `iri` sits underneath its own statements. |
 | The figure's theme | `theme:` on the figure, for what this one figure draws differently. |
 | The figure's own fields | `font_size`, `dpi`, `spines` and the others in the table below. |
@@ -49,7 +49,7 @@ The layers, weakest first, each stating only what it changes:
 A figure that must be left exactly as its panels drew it says `auto_format: false`: no tick is re-placed, no limit moved, no spine detached or trimmed, whatever the study's theme says.
 
 ::: {.callout-important}
-A study with no theme follows no axis rule. Its axes carry the backend's own ticks, limits and spines. Earlier versions passed every figure through bsplot's format pass unless it said `auto_format: false`; a study that relied on that states `theme: {iri: tvbo:theme/bsplot}` once and keeps the look.
+A study with no theme follows no axis rule. Its axes carry the backend's own ticks, limits and spines. Earlier versions passed every figure through bsplot's format pass unless it said `auto_format: false`; a study that relied on that states `theme: {iri: tvbo:themes/bsplot}` once and keeps the look.
 :::
 
 ## What the figure records
@@ -95,7 +95,7 @@ A theme is one object carrying a project's whole look. Start from a curated one 
 
 ```yaml
 theme:
-  iri: tvbo:theme/bsplot
+  iri: tvbo:themes/bsplot
   highlight: "#e4572e"
   tick_length: 3
   axis_width: 0.8
@@ -190,7 +190,7 @@ How an axis is drawn is four statements, and a theme that makes none of them lea
 
 What a panel declares always stands. Its `xticks`, `yticks`, `nbins`, limits, a logarithmic scale, the extent of an image and the ticks a custom drawer fixed are never re-placed, whatever the rule says. Panels on a shared scale (`share_x`, `share_y`) are placed from their common extent, so they stay on one scale. A boxed frame ignores `spine_offset` and `spine_trim`, since moving two sides of a closed box opens it.
 
-The rule TVB-O's own figures use is curated as `tvbo:theme/bsplot`: round ticks, `near` ends, spines stood off by 0.02 and trimmed, labels aligned, colour bars ticked at their ends. `tvbo.plot.axis_rule.place(fig, rule)` and `frame(fig, rule)` apply a rule to any matplotlib figure, for plotting code outside a spec.
+The rule TVB-O's own figures use is curated as `tvbo:themes/bsplot`: round ticks, `near` ends, spines stood off by 0.02 and trimmed, labels aligned, colour bars ticked at their ends. `tvbo.plot.axis_rule.place(fig, rule)` and `frame(fig, rule)` apply a rule to any matplotlib figure, for plotting code outside a spec.
 
 ### The geometry a sheet used to own
 
@@ -256,7 +256,7 @@ So is the rest of the panel's frame — its labels, limits, scales and shape —
 |---|---|
 | `tvbo`, `nature` | A registered bsplot style: the house look in one word. |
 | `style/study.mplstyle` | A study's own matplotlib defaults, for anything the spec has no field for. |
-| `tvbo-palette` | An alias for `theme: {iri: tvbo:theme/default}`, kept because it reads well in a list. |
+| `tvbo-palette` | An alias for `theme: {iri: tvbo:themes/default}`, kept because it reads well in a list. |
 
 **Whatever the theme states beats every layer, always.** That is the whole point of separating them: a figure's look can be read off its own spec instead of reconstructed from the sheets underneath it, and a sheet cannot quietly reintroduce a colour cycle the project has replaced.
 

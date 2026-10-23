@@ -566,7 +566,7 @@ REFUSED = {
         "draws one value per connection",
     ),
     "a used reference beside a draw": (
-        _node('{value: 0.5, used: {iri: "tvbo:network/none", output: k}, ' + _uniform(0.0, 2.0) + "}"),
+        _node('{value: 0.5, used: {iri: "tvbo:networks/none", output: k}, ' + _uniform(0.0, 2.0) + "}"),
         "'k'.*also declares a `used` reference",
     ),
     "a measure read from another experiment beside a draw": (
@@ -581,7 +581,7 @@ REFUSED = {
         "'m'.*its equation reads 'k', whose value on the network comes from per-node values on the network's nodes",
     ),
     "an equation reading a used reference": (
-        _edge(SCALED.replace("s: {value: 0.75}", 's: {value: 0.75, used: {iri: "tvbo:network/none", output: s}}')),
+        _edge(SCALED.replace("s: {value: 0.75}", 's: {value: 0.75, used: {iri: "tvbo:networks/none", output: s}}')),
         "'w'.*its equation reads 's', whose value on the network comes from a `used` reference",
     ),
     "a normal start with a domain": (

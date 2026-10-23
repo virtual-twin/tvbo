@@ -1,5 +1,5 @@
 name: SupHopf
-iri: tvbo:SupHopf
+iri: tvbo:models/SupHopf
 model_type: generic
 parameters:
   a:

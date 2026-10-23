@@ -1646,7 +1646,7 @@ def _assert_kernel_on_decimated_grid(
 ) -> None:
     """Require a streamed BOLD's decimated signal and its HRF kernel to be sampled on one grid.
 
-    The reducer convolves the signal decimated to every ``ds_steps * dt`` with the kernel sample by sample, so a kernel sampled on any other spacing is the response stretched or compressed in time, with nothing raised. It happens when an experiment's own function shadows the helper of the same name an ``iri``-referenced observation model brings, since the model's ``downsample_period`` still sets the decimation: a study's 1 ms ``hrf_kernel`` under ``tvbo:BOLD_HRF_strided``'s 4 ms grid stretched the response fourfold. Compared to 1%, so a ``linspace`` kernel whose ``n`` counts both ends of its support (20000 ms over 5000 samples is 4.0008 ms) still matches its intended grid.
+    The reducer convolves the signal decimated to every ``ds_steps * dt`` with the kernel sample by sample, so a kernel sampled on any other spacing is the response stretched or compressed in time, with nothing raised. It happens when an experiment's own function shadows the helper of the same name an ``iri``-referenced observation model brings, since the model's ``downsample_period`` still sets the decimation: a study's 1 ms ``hrf_kernel`` under ``tvbo:observation_models/bold_hrf_strided``'s 4 ms grid stretched the response fourfold. Compared to 1%, so a ``linspace`` kernel whose ``n`` counts both ends of its support (20000 ms over 5000 samples is 4.0008 ms) still matches its intended grid.
     """
     span = kernel_time_range(step_name, step_arguments, fns)
     if span is None or not dt:

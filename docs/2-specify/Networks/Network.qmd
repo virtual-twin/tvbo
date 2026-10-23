@@ -300,7 +300,7 @@ A network that reads its connectivity from a source (an `iri`, a `data_file`, a 
 
 ```yaml
 network:
-  iri: tvbo:tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat
+  iri: tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat
   nodes:
     ctx-lh-precuneus:
       parameters:

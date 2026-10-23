@@ -94,7 +94,7 @@ print("accepted coupling inputs :", list(jr.coupling_inputs))
 JR = """
 label: "Jansen-Rit, one region"
 dynamics:
-  iri: tvbo:JansenRit
+  iri: tvbo:models/JansenRit
 network:
   number_of_nodes: 1
 integration:
@@ -133,15 +133,15 @@ A brain network model is the same specification with two additions: a **connecto
 WHOLE_BRAIN = """
 label: "Whole-brain simulation"
 dynamics:
-  iri: tvbo:Generic2dOscillator
+  iri: tvbo:models/Generic2dOscillator
 network:
-  iri: tvbo:DesikanKilliany          # 87-region connectome from the database
+  iri: tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat          # 87-region connectome from the database
   transforms:
     - name: weight
       equation: {rhs: "weight / mean(weight[weight > 0])"}    # normalize: mean non-zero weight -> 1
   coupling:
     c_glob:                                    # key = the model's coupling input
-      iri: tvbo:Linear
+      iri: tvbo:coupling_functions/Linear
       delayed: false
       incoming_states: [V]
 integration:

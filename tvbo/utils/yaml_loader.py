@@ -476,7 +476,7 @@ def _anchor_paths(obj: Any, origin: Path) -> Any:
 def _expand_curated_experiments(data: Any) -> Any:
     """Replace a study's curated-experiment IRI references with the documents they name.
 
-    ``experiments: [tvbo:experiment/<name>]`` loads that experiment out of the database in place, with its relative paths anchored at the database directory it came from. A path reference cannot do this job: ``!include`` splices a document without rebasing the paths inside it, so an experiment included out of the database resolves its own ``network.bids_dir`` against the including study and loads the wrong root. The IRI carries no path of its own, so the database resolves it against the database.
+    ``experiments: [tvbo:experiments/<name>]`` loads that experiment out of the database in place, with its relative paths anchored at the database directory it came from. A path reference cannot do this job: ``!include`` splices a document without rebasing the paths inside it, so an experiment included out of the database resolves its own ``network.bids_dir`` against the including study and loads the wrong root. The IRI carries no path of its own, so the database resolves it against the database.
 
     An entry may also be a mapping carrying ``iri:`` plus its own keys, which are merged over the curated document: a variant of a curated experiment — the same model run without its settle, or with one parameter moved — is then declared as the difference from it rather than as a second copy that can drift. Merging is recursive over mappings, and a null drops the curated key outright (``optimizations: null`` for a variant that only simulates).
 
@@ -529,7 +529,7 @@ def _load_curated(iri: str) -> dict:
 def _expand_pipeline_references(data: Any) -> Any:
     """Splice the steps of the curated observation a ``pipeline`` entry names by ``iri``.
 
-    A pipeline step that carries ``iri: tvbo:observation/<name>`` is that observation's pipeline, written once and reused: the BOLD variants differ only in their hemodynamic kernel, and repeating the interim average, the convolution and the output stride in each is how five copies of one pipeline come to drift apart. The entry's own keys are merged over the referenced step, so a reuse states only what differs from it, and a null drops a curated key outright.
+    A pipeline step that carries ``iri: tvbo:observation_models/<name>`` is that observation's pipeline, written once and reused: the BOLD variants differ only in their hemodynamic kernel, and repeating the interim average, the convolution and the output stride in each is how five copies of one pipeline come to drift apart. The entry's own keys are merged over the referenced step, so a reuse states only what differs from it, and a null drops a curated key outright.
 
     Splicing rather than gap-filling because the target is a list: an observation whose pipeline is several steps contributes all of them, in order. Overriding keys is therefore only meaningful against a single step, and naming a multi-step observation while also overriding raises rather than guessing which step the override was meant for.
 

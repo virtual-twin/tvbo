@@ -10,16 +10,16 @@ experiments:
     - id: 1
       label: "A whole-brain simulation"
       dynamics:
-          iri: tvbo:Generic2dOscillator
+          iri: tvbo:models/Generic2dOscillator
           parameters: { a: 2.0 } # TVB's limit-cycle setting for this model; the rest stays default
       network:
-          iri: tvbo:DesikanKilliany
+          iri: tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat
           transforms:
               - name: weight
                 equation: { rhs: "weight / mean(weight[weight > 0])" }
           coupling:
               c_glob:
-                  iri: tvbo:Linear
+                  iri: tvbo:coupling_functions/Linear
                   delayed: true
                   incoming_states: [V]
                   parameters: { a: 0.05 }
@@ -46,7 +46,7 @@ figures:
                         output: integration
                         sel: { variable: V }
               network:
-                  connectome: tvbo:DesikanKilliany
+                  connectome: tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat
                   projection: axial
                   colormap: magma
           b:
@@ -59,7 +59,7 @@ figures:
                         sel: { variable: V }
 
               surface:
-                  atlas: tvbo:atlas/DesikanKilliany
+                  atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg
                   template: fsaverage
                   hemi: both
                   view: dorsal

@@ -30,7 +30,7 @@ _cfg_jax()
 
 
 from tvbo.behaviour._runtime import RuntimeAttributes
-from tvbo.data.registry import database_dir
+from tvbo.data.registry import curated_key, database_dir, local_name, record_name
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.utils import edge_param, keyed_items, normalize_params, to_dict, transform_target
 from tvbo.utils.source import current_source_dir
@@ -552,13 +552,8 @@ def _network_ref_string(net: "Network") -> str:
     )
 
 
-def _iri_local(iri: str) -> str:
-    """Local part of a CURIE/IRI: the text after the first ``prefix:``."""
-    return iri.split(":", 1)[-1] if ":" in iri else iri
-
-
-def _backfill_name_from_iri(obj: Any, nested_key: str | None = None) -> None:
-    """If ``obj`` (or ``obj[nested_key]``) is a dict with ``iri`` but no ``name``, derive ``name`` from the IRI's local part. Mutates in place."""
+def _backfill_name_from_iri(obj: Any, cls_name: str | None = None, nested_key: str | None = None) -> None:
+    """If ``obj`` (or ``obj[nested_key]``) is a dict with ``iri`` but no ``name``, set ``name`` to the :func:`~tvbo.data.registry.record_name` of the curated *cls_name* record the IRI addresses. Mutates in place."""
     if obj is None:
         return
     target = obj
@@ -571,7 +566,7 @@ def _backfill_name_from_iri(obj: Any, nested_key: str | None = None) -> None:
     iri = target.get("iri")
     if not iri:
         return
-    target["name"] = _iri_local(iri)
+    target["name"] = record_name(iri, cls_name)
 
 
 @register_pytree
@@ -625,7 +620,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             kwargs.pop("number_of_regions", None)
 
         # Derive name from iri where missing (so the dataclass post-init doesn't raise MissingRequiredField on iri-only construction).
-        _backfill_name_from_iri(kwargs.get("parcellation"), nested_key="atlas")
+        _backfill_name_from_iri(kwargs.get("parcellation"), "BrainAtlas", nested_key="atlas")
         _backfill_name_from_iri(kwargs.get("tractogram"))
 
         # An `edge_matrix_files` matrix is a source: it loads beside layer entries and routes, and not beside a listed graph.
@@ -891,9 +886,11 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _resolve_network_iri(iri: str) -> str | None:
         """Resolve a curated-network IRI to its YAML sidecar path.
 
-        Strips an optional ``tvbo:`` (or any ``prefix:``) and resolves the local name against the network registry. Returns the absolute sidecar path, or ``None`` when the IRI does not match a curated network (so the caller can fall back to treating it as a plain reference string).
+        Resolves the network the IRI addresses (:func:`tvbo.data.registry.curated_key`: an unscoped name or a ``networks/`` one, while a scope of another folder addresses none) against the network registry. Returns the absolute sidecar path, or ``None`` when the IRI does not match a curated network (so the caller can fall back to treating it as a plain reference string).
         """
-        local = _iri_local(iri)
+        local = curated_key(iri, "Network")
+        if local is None:
+            return None
         try:
             from tvbo.data.registry import resolve as registry_resolve
 
@@ -1240,7 +1237,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             if not atlas_name:
                 iri = atlas.get("iri") if isinstance(atlas, dict) else getattr(atlas, "iri", None)
                 if iri:
-                    atlas_name = iri.split(":", 1)[-1] if ":" in iri else iri
+                    atlas_name = record_name(iri, "BrainAtlas")
         if not atlas_name:
             return  # No atlas → nothing to resolve.
 
@@ -1251,7 +1248,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             if not trk_name:
                 iri = tractogram.get("iri") if isinstance(tractogram, dict) else getattr(tractogram, "iri", None)
                 if iri:
-                    trk_name = iri.split(":", 1)[-1] if ":" in iri else iri
+                    trk_name = local_name(iri)
         trk_name = trk_name or "dTOR"
 
         # Optional BIDS disambiguation (seg-, scale-) when the same atlas is published at multiple resolutions or segmentations.

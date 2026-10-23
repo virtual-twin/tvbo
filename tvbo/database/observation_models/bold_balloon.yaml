@@ -18,7 +18,7 @@
 
 name: BOLD_Balloon
 label: BOLD (Balloon-Windkessel)
-iri: tvbo:BOLD_Balloon
+iri: tvbo:observation_models/bold_balloon
 description: >-
     BOLD fMRI observation model using the Balloon-Windkessel hemodynamic ODE,
     co-integrated with the model rather than applied to a stored trajectory.

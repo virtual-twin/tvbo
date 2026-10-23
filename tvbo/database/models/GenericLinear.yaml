@@ -1,5 +1,5 @@
 name: GenericLinear
-iri: tvbo:GenericLinear
+iri: tvbo:models/GenericLinear
 model_type: generic
 parameters:
   gamma:

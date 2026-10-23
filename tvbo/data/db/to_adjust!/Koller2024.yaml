@@ -11,7 +11,7 @@ simulation_experiments:
     model:
       label: Kuramoto
       modified: no
-      iri: http://www.thevirtualbrain.org/tvb-o/ReducedWongWang
+      iri: https://w3id.org/tvbo/models/ReducedWongWang
       parameters:
         - label: omega
           value: 0.0628318530717959

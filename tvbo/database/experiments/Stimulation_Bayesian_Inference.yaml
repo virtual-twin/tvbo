@@ -14,7 +14,7 @@ description: >
 
 dynamics:
   name: Generic2dOscillator
-  iri: tvbo:Generic2dOscillator
+  iri: tvbo:models/Generic2dOscillator
   label: "Generic 2D Oscillator (quiescent regime)"
   # The reference's DYNAMICS_PARAMS and I=0.1; g, alpha, beta and gamma are TVB's defaults.
   parameters:
@@ -48,7 +48,7 @@ network:
   coupling:
     c_lin:
       label: "Linear coupling"
-      iri: tvbo:Linear
+      iri: tvbo:coupling_functions/Linear
       delayed: false
       parameters:
         G: {value: 0.0, description: "No inter-node coupling (single node)"}

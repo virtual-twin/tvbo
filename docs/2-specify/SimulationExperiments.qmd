@@ -61,11 +61,11 @@ TVBO is **declarative about where information comes from**. Every component in a
 ```{python}
 from tvbo import SimulationExperiment
 exp = SimulationExperiment(
-    dynamics={"name": "ReducedWongWang", "iri": "tvbo:ReducedWongWangExcInh"},
+    dynamics={"name": "ReducedWongWang", "iri": "tvbo:models/ReducedWongWangExcInh"},
     network={
-        "parcellation": {"iri": "tvbo:DesikanKilliany"},
+        "parcellation": {"iri": "tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg"},
         "tractogram": {"iri": "tvbo:dTOR"},
-        "coupling": {"Linear": {"iri": "tvbo:Linear"}},
+        "coupling": {"Linear": {"iri": "tvbo:coupling_functions/Linear"}},
     },
     integration={"method": "Heun", "duration": 10_000, "noise": None},
 )

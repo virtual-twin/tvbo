@@ -1,5 +1,5 @@
 name: StefanescuJirsa2D
-iri: tvbo:StefanescuJirsa2D
+iri: tvbo:models/StefanescuJirsa2D
 model_type: neural_mass
 description: >-
   Reduced set of FitzHugh-Nagumo oscillators (Stefanescu & Jirsa 2008). A

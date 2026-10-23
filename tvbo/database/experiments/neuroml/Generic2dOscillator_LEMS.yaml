@@ -13,7 +13,7 @@ description: >
 
 dynamics:
   name: Generic2dOscillator
-  iri: tvbo:Generic2dOscillator
+  iri: tvbo:models/Generic2dOscillator
 
 network:
   number_of_nodes: 1

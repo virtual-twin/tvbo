@@ -24,7 +24,7 @@
 
 name: BOLD_HRF_strided
 label: BOLD (First Order Volterra, strided convolution)
-iri: tvbo:BOLD_HRF_strided
+iri: tvbo:observation_models/bold_hrf_strided
 description: >-
     BOLD fMRI observation model identical to BOLD_TVB's HRF+Volterra forward model,
     but with the HRF convolution and TR subsampling fused into a single strided

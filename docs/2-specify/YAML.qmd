@@ -257,7 +257,7 @@ Anchors are file-local: a fragment is readable on its own and cannot capture nam
 *TVB-O.* Rather than writing a component out, point at a curated entry:
 
 ```yaml
-dynamics: {iri: "tvbo:JansenRit"}
+dynamics: {iri: "tvbo:models/JansenRit"}
 ```
 
 Fields alongside `iri` override the sourced ones, which is the usual way to take a curated model and change one parameter. See [Specs and resolution](../CLI/specs.qmd) for the accepted forms.
@@ -277,7 +277,7 @@ Fields alongside `iri` override the sourced ones, which is the usual way to take
 | `x: &base {...}` … `y: *base` | reuse the value verbatim | YAML |
 | `y: {<<: *base, k: v}` | reuse, overriding `k` | YAML (TVB-O restores it on LinkML's loader) |
 | `dynamics: !include m.yaml` | splice another file in | TVB-O |
-| `dynamics: {iri: "tvbo:JansenRit"}` | source from the curated database | TVB-O |
+| `dynamics: {iri: "tvbo:models/JansenRit"}` | source from the curated database | TVB-O |
 | the same key twice | an error | LinkML |
 | `a: &v 0.42` … `b: *v` | a constant stated once | YAML |
 | `equation: >-` | a folded multi-line scalar | YAML |

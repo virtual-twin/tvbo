@@ -1,5 +1,5 @@
 name: EpileptorRestingState
-iri: tvbo:EpileptorRestingState
+iri: tvbo:models/EpileptorRestingState
 model_type: phenomenological
 parameters:
   I_rs:

@@ -12,7 +12,7 @@ description: >
 
 dynamics:
   name: Epileptor2D
-  iri: tvbo:Epileptor2D
+  iri: tvbo:models/Epileptor2D
 
 network:
   number_of_nodes: 1
