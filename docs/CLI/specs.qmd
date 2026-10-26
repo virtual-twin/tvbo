@@ -57,6 +57,6 @@ tvbo info JR_MEG_FrequencyGradient_Optimization
 
 ## Errors you may see
 
-- `No such file: <path>` — the path does not exist on disk.
-- `Unknown CURIE prefix 'xyz'. Known: atlas, continuation, …` — the prefix is misspelled.
-- `HTTP transport not yet implemented (C2). Pull the file locally first: <url>` — the HTTP transport milestone is pending.
+- `No such file: <path>`: the path does not exist on disk.
+- `Unknown CURIE prefix 'xyz'. Known: atlas, continuation, …`: the prefix is misspelled.
+- `HTTP transport not yet implemented (C2). Pull the file locally first: <url>`: the HTTP transport milestone is pending.

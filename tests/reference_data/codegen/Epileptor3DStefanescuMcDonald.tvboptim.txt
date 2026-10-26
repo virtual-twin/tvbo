@@ -1,0 +1,64 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class Epileptor3DStefanescuMcDonald(AbstractDynamics):
+    """Epileptor3DStefanescuMcDonald neural mass model."""
+
+    STATE_NAMES = ("x1", "z")
+    INITIAL_STATE = (-1.5, 3.0)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        N=1.0,
+        tau_z=2857.0,
+        x_0=-1.6,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        N = params.N
+        tau_z = params.tau_z
+        x_0 = params.x_0
+
+        x1 = state[0]
+        z = state[1]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+
+        dx1_dt = N * (x1 - x1**3 / 3 - z + c_glob)
+        dz_dt = (4 * (x1 - x_0) - z) / tau_z
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx1_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dz_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

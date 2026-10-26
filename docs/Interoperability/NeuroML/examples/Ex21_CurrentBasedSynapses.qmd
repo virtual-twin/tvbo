@@ -1,13 +1,14 @@
 ---
 title: "Ex21: Current-Based Synapses"
 description: "Current-based (as opposed to conductance-based) synaptic models"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Current-Based Synapses
 
-Current-based synapses inject a fixed current waveform (alpha kernel) on spike arrival,
-independent of membrane voltage. Uses `iafRefCell` (IaF with refractory period) and
-`alphaCurrentSynapse` with `spikeArray` input.
+Current-based synapses inject a fixed current waveform (alpha kernel) on spike arrival, independent of membrane voltage. Uses `iafRefCell` (IaF with refractory period) and `alphaCurrentSynapse` with `spikeArray` input.
 
 Reference: NeuroML2 LEMS_NML2_Ex21_CurrentBasedSynapses.xml
 

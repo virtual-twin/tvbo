@@ -1,5 +1,5 @@
 name: ReducedSetFitzHughNagumo
-iri: tvbo:ReducedSetFitzHughNagumo
+iri: tvbo:models/ReducedSetFitzHughNagumo
 model_type: neural_mass
 description: Reduced set of FitzHugh-Nagumo oscillators (Stefanescu & Jirsa 2008); 3 modes coupled via mode-mixing matrices with Gaussian-quadrature coefficients recomputed from mu/sigma.
 references:

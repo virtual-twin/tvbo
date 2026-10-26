@@ -50,6 +50,11 @@
     "equation_type": {
       "type": "string"
     },
+    "evict_equation": {
+      "_linkedTypes": [
+        "tvbo:Equation"
+      ]
+    },
     "equation_order": {
       "type": "integer"
     },

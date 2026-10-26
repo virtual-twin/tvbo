@@ -13,6 +13,9 @@
     "accelerator": {
       "type": "string"
     },
+    "backend": {
+      "type": "string"
+    },
     "batch_size": {
       "type": "integer"
     },
@@ -21,6 +24,9 @@
     },
     "find_fixpoint": {
       "type": "boolean"
+    },
+    "system_size": {
+      "type": "number"
     }
   }
 }

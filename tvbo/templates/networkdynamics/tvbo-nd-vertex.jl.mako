@@ -6,69 +6,43 @@ Generates:
   - f!(dx, x, esum, p, t): node-local dynamics
   - VertexModel constructor with symbolic state/param names
 
-Supports multi-dimensional coupling: when multiple state variables are
-marked coupling_variable=true, the vertex outputs all of them via g=1:n_out
-and esum has dimension n_out.
+The vertex outputs the states the coupling transmits, the StateMask of layout['mask'], and receives esum, the sum of its edges' outputs, with outdim components. Each global coupling input is the coupling's post-expression applied once to its component of esum, with the post-expression's parameters carried by the vertex under their coupling_split symbols; the global inputs past outdim, and a local input, which the connectome does not drive, are zero. A vertex that holds its input per step (coupling_evaluation: per_step) reads esum off its layout['held'] parameters, which a callback sets at the start of every step.
 
-Context: model (Dynamics instance)
+Context: model (Dynamics instance), outdim (components of esum), split (coupling_split of the coupling on the edges, or None), layout (NetworkDynamicsAdapter.vertex_layout)
 </%doc>
-<%page args="model, all_couplings=None, outdim=None"/>
+<%page args="model, outdim, layout, split=None"/>
 <%!
 from tvbo.codegen import render_expression
+from tvbo.templates.base.utils import get_coupling_terms
 %>
 <%
 sv_names = list(model.state_variables.keys())
 param_names = list(model.parameters.keys())
-ct_names = list(model.coupling_terms.keys()) if model.coupling_terms else []
-dv_names = list(model.derived_variables.keys()) if model.derived_variables else []
-dp_names = list(model.derived_parameters.keys()) if model.derived_parameters else []
+ct_names = list(model.coupling_inputs.keys()) if model.coupling_inputs else []
+dv_names = list(model.in_dependency_order('derived_variables').keys()) if model.derived_variables else []
+dp_names = list(model.in_dependency_order('derived_parameters').keys()) if model.derived_parameters else []
 n_sv = len(sv_names)
-
-# Determine output dimension: coupling variables → vertex output
-# If coupling_variable is marked, only those are output; otherwise all state vars
-coupling_vars = [name for name, sv in model.state_variables.items()
-                 if getattr(sv, 'coupling_variable', False)]
-n_out = len(coupling_vars) if coupling_vars else n_sv
-
-# Edge output dimension: how many values esum actually contains.
-# This must match the edge model's outsym length.
-# Global coupling terms (excluding 'local_coupling') map to esum.
-# If outdim not provided, compute from n_out.
-global_ct_names = [ct for ct in ct_names if ct != 'local_coupling']
-if outdim is None:
-    outdim = n_out
-# Only the first `outdim` global coupling terms read from esum;
-# the rest (and local_coupling) are zero.
-esum_ct_names = global_ct_names[:outdim]
-
-# Determine output dimension: coupling variables → vertex output
-# If coupling_variable is marked, only those are output; otherwise all state vars
-coupling_vars = [name for name, sv in model.state_variables.items()
-                 if getattr(sv, 'coupling_variable', False)]
-n_out = len(coupling_vars) if coupling_vars else n_sv
-
-# Compute StateMask range: indices (1-based) of coupling variables in state vector
-if coupling_vars:
-    cvar_indices = [i + 1 for i, name in enumerate(sv_names) if name in coupling_vars]
-    # Check if indices are contiguous for StateMask(start:end)
-    g_start = cvar_indices[0]
-    g_end = cvar_indices[-1]
-else:
-    g_start = 1
-    g_end = n_sv
-
-# Compute insym from coupling outsym (if multi-dimensional coupling)
-insym = None
-if all_couplings and len(ct_names) > 1:
-    # Get the default coupling's outsym
-    default_coupling = next(iter(all_couplings.values())) if all_couplings else None
-    if default_coupling and getattr(default_coupling, 'outsym', None):
-        insym = list(default_coupling.outsym)
+n_out = len(layout['outputs'])
+esum_ct_names = get_coupling_terms(model)[1][:outdim]
+insym = layout['insym']
+held = layout['held']
 
 # All symbol names the parser must recognize (prevents omega0 → omega*0 etc.)
 all_symbols = sv_names + param_names + ct_names + dv_names + dp_names
 func_names = {str(fname): str(fname) for fname in (getattr(model, 'functions', None) or {}).keys()}
 juliacode = lambda expr: render_expression(expr, format='julia', parameters=all_symbols, user_functions=func_names)
+
+# Multi-dim esum is broadcast when there is a single coupling term, n_out > 1, and every SV equation is just that term
+use_broadcast = (
+    len(ct_names) == 1 and n_out > 1
+    and all(str(sv.equation.rhs).strip() == ct_names[0]
+            for sv in model.state_variables.values())
+)
+# The post-expression and its parameters reach only a vertex that reads esum
+post = split if split is not None and split['post'] is not None and (use_broadcast or esum_ct_names) else None
+post_parameters = post['post_parameters'] if post else []
+post_syms = [sym for _, sym, _ in post_parameters]
+f_params = param_names + post_syms + held
 %>
 
 ## ── Node dynamics (f!) ──────────────────────────────────────────────────────
@@ -77,8 +51,8 @@ juliacode = lambda expr: render_expression(expr, format='julia', parameters=all_
 # In that case, rename the argument to '_x' to avoid collision
 arg_x = '_x' if 'x' in sv_names else 'x'
 %>
-% if param_names:
-function ${model.name}_f!(dx, ${arg_x}, esum, (${", ".join(param_names)},), t)
+% if f_params:
+function ${model.name}_f!(dx, ${arg_x}, esum, (${", ".join(f_params)},), t)
 % else:
 function ${model.name}_f!(dx, ${arg_x}, esum, p, t)
 % endif
@@ -88,27 +62,21 @@ function ${model.name}_f!(dx, ${arg_x}, esum, p, t)
 % elif n_sv == 1:
     ${sv_names[0]} = ${arg_x}[1]
 % endif
+% if held:
+    esum = (${", ".join(held)},)
+% endif
 
-<%
-    # Check if multi-dim esum can use broadcasting: single coupling term,
-    # n_out > 1, and every SV equation is just the coupling term name
-    use_broadcast = (
-        len(ct_names) == 1 and n_out > 1
-        and all(str(sv.equation.rhs).strip() == ct_names[0]
-                for sv in model.state_variables.values())
-    )
-%>\
     % if use_broadcast:
-    ## Multi-dim coupling: all SVs = coupling term → broadcast esum directly
-    dx .= esum
+    ## Multi-dim coupling: all SVs = coupling term → broadcast the (post-applied) esum directly
+    dx .= ${summed('esum', post, post_syms, dotted=True)}
     % else:
     ## Coupling terms: map edge outputs to named coupling variables
     % for ct in ct_names:
     % if ct in esum_ct_names:
     % if len(esum_ct_names) == 1:
-    ${ct} = esum[1]
+    ${ct} = ${summed('esum[1]', post, post_syms)}
     % else:
-    ${ct} = esum[${esum_ct_names.index(ct) + 1}]
+    ${ct} = ${summed(f'esum[{esum_ct_names.index(ct) + 1}]', post, post_syms)}
     % endif
     % else:
     ${ct} = 0.0
@@ -122,17 +90,16 @@ function ${model.name}_f!(dx, ${arg_x}, esum, p, t)
 %>
     ${fname}(${", ".join(fargs)}) = ${fbody}
     % endfor
-    % for dp in (model.derived_parameters or {}).values():
+    % for dp in model.in_dependency_order('derived_parameters').values():
     ${dp.name} = ${juliacode(dp.equation.rhs)}
     % endfor
-    % for dv in (model.derived_variables or {}).values():
-    % if getattr(dv, 'conditional', False) and getattr(dv, 'cases', None):
+    % for dv in model.in_dependency_order('derived_variables').values():
+    % if getattr(dv.equation, 'conditionals', None):
 <%
-    cases = list(dv.cases)
     parts = []
-    for case in cases:
+    for case in dv.equation.conditionals:
         cond_str = str(case.condition).strip()
-        eq_rhs = juliacode(case.equation.rhs)
+        eq_rhs = juliacode(case.expression)
         if cond_str.lower() == 'true':
             parts.append(eq_rhs)
         else:
@@ -160,13 +127,24 @@ end
 ## ── VertexModel ─────────────────────────────────────────────────────────────
 vertex_${model.name} = VertexModel(;
     f = ${model.name}_f!,
-    g = StateMask(${g_start}:${g_end}),
+    g = StateMask(${layout['mask']}),
     sym = [${", ".join(f':{sv}' for sv in sv_names)}],
-% if param_names:
-    psym = [${", ".join(f':{p} => {model.parameters[p].value}' for p in param_names)}],
+% if f_params:
+    psym = [${", ".join([f':{p} => {model.parameters[p].value}' for p in param_names] + [f':{sym} => {value}' for _, sym, value in post_parameters] + [f':{h} => 0.0' for h in held])}],
 % endif
 % if insym:
     insym = [${", ".join(f':{s}' for s in insym)}],
 % endif
     name = :${model.name},
 )
+<%def name="summed(x, post, post_syms, dotted=False)">\
+## The coupling input from summed edge input x: the post-expression's function applied once, broadcast over esum when dotted, or x itself where the post-expression is the identity.
+<% dot = '.' if dotted else '' %>\
+% if post is None:
+${x}\
+% elif post_syms:
+${post['post_function']}${dot}(${x}, ${'Ref(' if dotted else ''}(${", ".join(post_syms)},)${')' if dotted else ''})\
+% else:
+${post['post_function']}${dot}(${x})\
+% endif
+</%def>

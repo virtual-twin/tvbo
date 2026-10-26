@@ -1,0 +1,29 @@
+# TVB's windowing. The name stays `TemporalAverage` because recipes reference it, so the FILE says which of the two conventions this is; temporal_average_tvboptim.yaml is the other, and the fidelity test measures the difference.
+
+name: TemporalAverage
+label: Temporal Average
+description: >-
+    Running temporal mean over non-overlapping windows of `period`, windowed exactly as TVB's
+    TemporalAverage monitor windows: the first window covers integration steps 0..istep-1, and
+    `istep` is TVB's own `iround(period / dt)`. Verified against TVB's own monitor
+    driven through its `sample()` loop.
+
+period: 0.9765625  # ms (~1024 Hz default)
+
+class_reference:
+    name: TemporalAverage
+    module: tvb.simulator.monitors
+
+pipeline:
+    - name: temporal_average
+      output: averaged
+      equation:
+          rhs: "window_mean(X, window_size)"
+          parameters:
+              window_size:
+                  equation: {rhs: "iround(period / dt)"}
+                  description: "Integration steps per averaging window, so the window tracks the grid the experiment declares rather than the one this file was written on."
+      arguments:
+          window_size:
+              description: "Integration steps per averaging window. Its value is declared on the equation parameter of the same name; a backend that has not yet been migrated to read that still derives it here."
+      apply_on_dimension: time

@@ -1,0 +1,48 @@
+name: Neo
+description: A Python package for representing electrophysiology data in a common
+  object model independently of the data source. Core I/O library for the NeuralEnsemble
+  ecosystem.
+homepage: https://neo.readthedocs.io
+license: BSD-3-Clause
+repository: https://github.com/NeuralEnsemble/python-neo
+doi: 10.3389/fninf.2014.00010
+ecosystem:
+- pypi
+application_category: data
+scale:
+- neuron
+- network_system
+model_paradigm:
+- data_standard
+tool_role:
+- specification_language
+programming_language:
+- Python
+runtime_platform:
+- Python
+interoperates_with:
+- Elephant
+- NEST
+- Brian2
+- NWB
+- SpikeInterface
+date_created: '2010-01-01'
+development_status: active
+author:
+- Andrew Davison
+- Samuel Garcia
+maintainer:
+- NeuralEnsemble
+funder:
+- CNRS
+- EU HBP
+reference_publication: 10.3389/fninf.2014.00010
+keywords:
+- electrophysiology I/O
+- data model
+- Python
+- file formats
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_000634
+issue_tracker: https://github.com/NeuralEnsemble/python-neo/issues
+is_accessible_for_free: true

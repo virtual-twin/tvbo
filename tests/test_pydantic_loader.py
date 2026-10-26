@@ -1,22 +1,17 @@
 """Validate the Pydantic loader (``tvbo.utils.pydantic_loader``).
 
-This is the *strict* validation path (``extra="forbid"``) used by the TVBO
-platform's experiment builder to guarantee every assembled experiment is a
-valid TVBO object before download/save. It complements
-``test_database_validation.py`` (lenient LinkML JSON-schema, ``closed=False``).
+This is the *strict* validation path (``extra="forbid"``) used by the TVBO platform's experiment builder to guarantee every assembled experiment is a valid TVBO object before download/save. It complements ``test_database_validation.py`` (lenient LinkML JSON-schema, ``closed=False``).
 
-The loader normalizes TVBO's human-friendly keyed-dict YAML (where a dict key
-is the member's ``name``) into the shape the Pydantic models expect, then
-validates. We assert that:
+The loader normalizes TVBO's human-friendly keyed-dict YAML (where a dict key is the member's ``name``) into the shape the Pydantic models expect, then validates. We assert that:
 
 * every ground-truth file in the experiment-building categories validates,
 * a full experiment round-trips (load -> dump -> load),
 * genuinely invalid input is rejected (it is a real validator, not a coercer),
 * keyed-dict key-injection and file-envelope stripping behave as designed.
 
-A small number of fringe classes whose generated Pydantic models lag the LinkML
-schema are tracked as ``xfail`` (see ``todo.md`` in the platform repo).
+A small number of fringe classes whose generated Pydantic models lag the LinkML schema are tracked as ``xfail``.
 """
+
 from pathlib import Path
 
 import pytest
@@ -26,8 +21,7 @@ from tvbo.utils import pydantic_loader as pl
 REPO = Path(__file__).resolve().parents[1]
 DB = REPO / "tvbo" / "database"
 
-# Registry subdirectory -> target Pydantic class. These are the categories the
-# experiment builder assembles from; all are expected to validate strictly.
+# Registry subdirectory -> target Pydantic class. These are the categories the experiment builder assembles from; all are expected to validate strictly.
 CORE_TARGETS = {
     "models": "Dynamics",
     "networks": "Network",
@@ -39,11 +33,7 @@ CORE_TARGETS = {
     "continuations": "Continuation",
 }
 
-# The NeuroML import staging area (database/models/neuroml/) holds raw
-# auto-converted NeuroML files that are not yet mapped onto the tvbo schema
-# (e.g. null coupling_inputs, a NeuroML-only `components` slot). They are not
-# curated building blocks and are not used to assemble experiments, so they are
-# out of scope for strict schema validation. See the platform todo.md.
+# Raw auto-converted NeuroML files are not curated building blocks, so strict validation skips them.
 EXCLUDE_DIRS = ("/neuroml/",)
 
 EXPERIMENTS_DIR = DB / "experiments"
@@ -82,8 +72,8 @@ def test_experiment_round_trips():
     dumped = pl.dump(exp)
     reloaded = pl.loads(dumped, "SimulationExperiment")
     assert reloaded.id == exp.id
-    assert set((reloaded.observations or {})) == set((exp.observations or {}))
-    assert set((reloaded.functions or {})) == set((exp.functions or {}))
+    assert set(reloaded.observations or {}) == set(exp.observations or {})
+    assert set(reloaded.functions or {}) == set(exp.functions or {})
 
 
 def test_keyed_dict_keys_are_injected_as_name():
@@ -103,8 +93,7 @@ dynamics:
 
 
 def test_list_form_collections_are_coerced_to_keyed_dicts():
-    # Odoo many2many export and JS builder collectors emit lists; the loader
-    # coerces them into the schema's keyed-dict form using each member's name.
+    # Odoo many2many export and JS builder collectors emit lists; the loader coerces them into the schema's keyed-dict form using each member's name.
     yaml_text = """
 id: 5
 label: ListForm
@@ -124,8 +113,7 @@ observations:
 
 
 def test_scalar_list_text_blob_is_split():
-    # Odoo stores list[str] slots (e.g. references) as a newline/bulleted Text
-    # blob; the loader splits it back into a list.
+    # Odoo stores list[str] slots (e.g. references) as a newline/bulleted Text blob; the loader splits it back into a list.
     yaml_text = """
 id: 9
 label: Refs
@@ -155,8 +143,8 @@ label: Envelope
 @pytest.mark.parametrize(
     "payload",
     [
-        {"label": "no id"},                       # missing required id
-        {"id": 1, "totally_bogus_key": 123},      # extra forbidden
+        {"label": "no id"},  # missing required id
+        {"id": 1, "totally_bogus_key": 123},  # extra forbidden
         {"id": 1, "dynamics": ["not", "a", "model"]},  # wrong nested type
     ],
 )

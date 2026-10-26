@@ -1,0 +1,4199 @@
+name: hcpmmp1
+coordinateSpace: fsLR
+terminology:
+  label: Glasser2016-MRTrix
+  entities:
+    L_V1:
+      name: L_V1
+      lookupLabel: 1
+      center:
+        x: -11.487024245135908
+        y: -81.52272141567923
+        z: 1.6652394862084567
+      alternateName:
+      - L_V1_ROI
+      - L.V1
+      - ctx-lh-V1
+    L_MST:
+      name: L_MST
+      lookupLabel: 2
+      center:
+        x: -43.708630966813594
+        y: -68.77240282868686
+        z: 7.232939922646301
+      alternateName:
+      - L_MST_ROI
+      - L.MST
+      - ctx-lh-MST
+    L_V6:
+      name: L_V6
+      lookupLabel: 3
+      center:
+        x: -12.989169543249565
+        y: -77.50446674279999
+        z: 29.401838085107634
+      alternateName:
+      - L_V6_ROI
+      - L.V6
+      - ctx-lh-V6
+    L_V2:
+      name: L_V2
+      lookupLabel: 4
+      center:
+        x: -10.701198652025571
+        y: -81.90086490464711
+        z: 4.141142493038648
+      alternateName:
+      - L_V2_ROI
+      - L.V2
+      - ctx-lh-V2
+    L_V3:
+      name: L_V3
+      lookupLabel: 5
+      center:
+        x: -16.650089994028697
+        y: -86.64934214923078
+        z: 6.021596126258373
+      alternateName:
+      - L_V3_ROI
+      - L.V3
+      - ctx-lh-V3
+    L_V4:
+      name: L_V4
+      lookupLabel: 6
+      center:
+        x: -27.193623740917428
+        y: -84.16494487857554
+        z: -2.582164966622548
+      alternateName:
+      - L_V4_ROI
+      - L.V4
+      - ctx-lh-V4
+    L_V8:
+      name: L_V8
+      lookupLabel: 7
+      center:
+        x: -30.447026194358358
+        y: -74.27185354427415
+        z: -12.842503333578305
+      alternateName:
+      - L_V8_ROI
+      - L.V8
+      - ctx-lh-V8
+    L_4:
+      name: L_4
+      lookupLabel: 8
+      center:
+        x: -26.80164807146866
+        y: -19.467257019332184
+        z: 54.08310250474386
+      alternateName:
+      - L_4_ROI
+      - L.4
+      - ctx-lh-4
+    L_3b:
+      name: L_3b
+      lookupLabel: 9
+      center:
+        x: -37.01233264876575
+        y: -23.630290375353983
+        z: 52.14854028083722
+      alternateName:
+      - L_3b_ROI
+      - L.3b
+      - ctx-lh-3b
+    L_FEF:
+      name: L_FEF
+      lookupLabel: 10
+      center:
+        x: -38.07611735973483
+        y: -3.8350376789671143
+        z: 50.8534608978072
+      alternateName:
+      - L_FEF_ROI
+      - L.FEF
+      - ctx-lh-FEF
+    L_PEF:
+      name: L_PEF
+      lookupLabel: 11
+      center:
+        x: -45.712614112430145
+        y: 0.3842179167808758
+        z: 38.03825828764174
+      alternateName:
+      - L_PEF_ROI
+      - L.PEF
+      - ctx-lh-PEF
+    L_55b:
+      name: L_55b
+      lookupLabel: 12
+      center:
+        x: -44.740280474149266
+        y: -0.04782728342196116
+        z: 46.72358093261719
+      alternateName:
+      - L_55b_ROI
+      - L.55b
+      - ctx-lh-55b
+    L_V3A:
+      name: L_V3A
+      lookupLabel: 13
+      center:
+        x: -15.932657282873494
+        y: -88.35262520897467
+        z: 25.815392803672133
+      alternateName:
+      - L_V3A_ROI
+      - L.V3A
+      - ctx-lh-V3A
+    L_RSC:
+      name: L_RSC
+      lookupLabel: 14
+      center:
+        x: -4.749055371465277
+        y: -35.157712000806185
+        z: 21.230490139310394
+      alternateName:
+      - L_RSC_ROI
+      - L.RSC
+      - ctx-lh-RSC
+    L_POS2:
+      name: L_POS2
+      lookupLabel: 15
+      center:
+        x: -9.226499462127686
+        y: -69.57340383911132
+        z: 36.82636929321289
+      alternateName:
+      - L_POS2_ROI
+      - L.POS2
+      - ctx-lh-POS2
+    L_V7:
+      name: L_V7
+      lookupLabel: 16
+      center:
+        x: -21.953557014465332
+        y: -82.154484835538
+        z: 30.52562800320712
+      alternateName:
+      - L_V7_ROI
+      - L.V7
+      - ctx-lh-V7
+    L_IPS1:
+      name: L_IPS1
+      lookupLabel: 17
+      center:
+        x: -22.18291226139775
+        y: -72.70909988968461
+        z: 37.90399455317745
+      alternateName:
+      - L_IPS1_ROI
+      - L.IPS1
+      - ctx-lh-IPS1
+    L_FFC:
+      name: L_FFC
+      lookupLabel: 18
+      center:
+        x: -39.87095323777357
+        y: -58.77111973036204
+        z: -16.471302916672055
+      alternateName:
+      - L_FFC_ROI
+      - L.FFC
+      - ctx-lh-FFC
+    L_V3B:
+      name: L_V3B
+      lookupLabel: 19
+      center:
+        x: -26.643265142069236
+        y: -81.17359815325055
+        z: 20.45219659186029
+      alternateName:
+      - L_V3B_ROI
+      - L.V3B
+      - ctx-lh-V3B
+    L_LO1:
+      name: L_LO1
+      lookupLabel: 20
+      center:
+        x: -37.406145147375156
+        y: -84.25164980501742
+        z: 5.744283392622664
+      alternateName:
+      - L_LO1_ROI
+      - L.LO1
+      - ctx-lh-LO1
+    L_LO2:
+      name: L_LO2
+      lookupLabel: 21
+      center:
+        x: -40.873469866239105
+        y: -83.4913426912748
+        z: -2.9143477603793144
+      alternateName:
+      - L_LO2_ROI
+      - L.LO2
+      - ctx-lh-LO2
+    L_PIT:
+      name: L_PIT
+      lookupLabel: 22
+      center:
+        x: -38.24920377423686
+        y: -81.59404631583921
+        z: -11.237151407426403
+      alternateName:
+      - L_PIT_ROI
+      - L.PIT
+      - ctx-lh-PIT
+    L_MT:
+      name: L_MT
+      lookupLabel: 23
+      center:
+        x: -44.487077713012695
+        y: -73.82252844448747
+        z: 9.669756009660919
+      alternateName:
+      - L_MT_ROI
+      - L.MT
+      - ctx-lh-MT
+    L_A1:
+      name: L_A1
+      lookupLabel: 24
+      center:
+        x: -42.00829909683822
+        y: -24.634824282163148
+        z: 9.890347988574536
+      alternateName:
+      - L_A1_ROI
+      - L.A1
+      - ctx-lh-A1
+    L_PSL:
+      name: L_PSL
+      lookupLabel: 25
+      center:
+        x: -55.131745016648
+        y: -43.95287011737472
+        z: 23.61201364716138
+      alternateName:
+      - L_PSL_ROI
+      - L.PSL
+      - ctx-lh-PSL
+    L_SFL:
+      name: L_SFL
+      lookupLabel: 26
+      center:
+        x: -7.793191827310098
+        y: 12.805926069375632
+        z: 62.69717056686814
+      alternateName:
+      - L_SFL_ROI
+      - L.SFL
+      - ctx-lh-SFL
+    L_PCV:
+      name: L_PCV
+      lookupLabel: 27
+      center:
+        x: -6.314645118829681
+        y: -52.40018021188131
+        z: 50.03812666637142
+      alternateName:
+      - L_PCV_ROI
+      - L.PCV
+      - ctx-lh-PCV
+    L_STV:
+      name: L_STV
+      lookupLabel: 28
+      center:
+        x: -57.46047127765158
+        y: -47.333728237428524
+        z: 17.284588834513787
+      alternateName:
+      - L_STV_ROI
+      - L.STV
+      - ctx-lh-STV
+    L_7Pm:
+      name: L_7Pm
+      lookupLabel: 29
+      center:
+        x: -6.5232155525938
+        y: -65.50901847190045
+        z: 50.794106016767785
+      alternateName:
+      - L_7Pm_ROI
+      - L.7Pm
+      - ctx-lh-7Pm
+    L_7m:
+      name: L_7m
+      lookupLabel: 30
+      center:
+        x: -4.570386285048265
+        y: -61.8729493361253
+        z: 36.73295332101675
+      alternateName:
+      - L_7m_ROI
+      - L.7m
+      - ctx-lh-7m
+    L_POS1:
+      name: L_POS1
+      lookupLabel: 31
+      center:
+        x: -10.431356207529705
+        y: -57.55506084865994
+        z: 13.394508402082655
+      alternateName:
+      - L_POS1_ROI
+      - L.POS1
+      - ctx-lh-POS1
+    L_23d:
+      name: L_23d
+      lookupLabel: 32
+      center:
+        x: -2.246369657693086
+        y: -20.462676295527704
+        z: 37.039067138860254
+      alternateName:
+      - L_23d_ROI
+      - L.23d
+      - ctx-lh-23d
+    L_v23ab:
+      name: L_v23ab
+      lookupLabel: 33
+      center:
+        x: -4.8847156133916645
+        y: -54.13877683215671
+        z: 20.307269003656174
+      alternateName:
+      - L_v23ab_ROI
+      - L.v23ab
+      - ctx-lh-v23ab
+    L_d23ab:
+      name: L_d23ab
+      lookupLabel: 34
+      center:
+        x: -3.157839309085499
+        y: -38.805971362374045
+        z: 31.400716109709307
+      alternateName:
+      - L_d23ab_ROI
+      - L.d23ab
+      - ctx-lh-d23ab
+    L_31pv:
+      name: L_31pv
+      lookupLabel: 35
+      center:
+        x: -8.281663142213034
+        y: -46.576016382339894
+        z: 32.30380096785519
+      alternateName:
+      - L_31pv_ROI
+      - L.31pv
+      - ctx-lh-31pv
+    L_5m:
+      name: L_5m
+      lookupLabel: 36
+      center:
+        x: -6.294843765241759
+        y: -39.6850130217416
+        z: 62.77258082798549
+      alternateName:
+      - L_5m_ROI
+      - L.5m
+      - ctx-lh-5m
+    L_5mv:
+      name: L_5mv
+      lookupLabel: 37
+      center:
+        x: -12.301117080668504
+        y: -39.32116681243737
+        z: 50.248422412972175
+      alternateName:
+      - L_5mv_ROI
+      - L.5mv
+      - ctx-lh-5mv
+    L_23c:
+      name: L_23c
+      lookupLabel: 38
+      center:
+        x: -9.719287197285718
+        y: -29.919722203855162
+        z: 42.14790851294749
+      alternateName:
+      - L_23c_ROI
+      - L.23c
+      - ctx-lh-23c
+    L_5L:
+      name: L_5L
+      lookupLabel: 39
+      center:
+        x: -12.082471619261073
+        y: -44.59772254051046
+        z: 67.62531875042205
+      alternateName:
+      - L_5L_ROI
+      - L.5L
+      - ctx-lh-5L
+    L_24dd:
+      name: L_24dd
+      lookupLabel: 40
+      center:
+        x: -7.534132959596779
+        y: -17.50483426384862
+        z: 48.60225658673342
+      alternateName:
+      - L_24dd_ROI
+      - L.24dd
+      - ctx-lh-24dd
+    L_24dv:
+      name: L_24dv
+      lookupLabel: 41
+      center:
+        x: -8.07547739042458
+        y: -3.4992986861352167
+        z: 43.430786782122674
+      alternateName:
+      - L_24dv_ROI
+      - L.24dv
+      - ctx-lh-24dv
+    L_7AL:
+      name: L_7AL
+      lookupLabel: 42
+      center:
+        x: -19.638466713475246
+        y: -51.41361848045798
+        z: 64.4288246865366
+      alternateName:
+      - L_7AL_ROI
+      - L.7AL
+      - ctx-lh-7AL
+    L_SCEF:
+      name: L_SCEF
+      lookupLabel: 43
+      center:
+        x: -5.944972869797881
+        y: 2.008891370789758
+        z: 56.96028308210702
+      alternateName:
+      - L_SCEF_ROI
+      - L.SCEF
+      - ctx-lh-SCEF
+    L_6ma:
+      name: L_6ma
+      lookupLabel: 44
+      center:
+        x: -16.17199671402406
+        y: 3.616339324605311
+        z: 65.51264462846049
+      alternateName:
+      - L_6ma_ROI
+      - L.6ma
+      - ctx-lh-6ma
+    L_7Am:
+      name: L_7Am
+      lookupLabel: 45
+      center:
+        x: -9.964258608909754
+        y: -57.62787740047161
+        z: 59.76247244614821
+      alternateName:
+      - L_7Am_ROI
+      - L.7Am
+      - ctx-lh-7Am
+    L_7PL:
+      name: L_7PL
+      lookupLabel: 46
+      center:
+        x: -13.755571404683222
+        y: -68.5428654778864
+        z: 53.76303690487577
+      alternateName:
+      - L_7PL_ROI
+      - L.7PL
+      - ctx-lh-7PL
+    L_7PC:
+      name: L_7PC
+      lookupLabel: 47
+      center:
+        x: -31.68026253772758
+        y: -48.905360751681854
+        z: 58.318565725583085
+      alternateName:
+      - L_7PC_ROI
+      - L.7PC
+      - ctx-lh-7PC
+    L_LIPv:
+      name: L_LIPv
+      lookupLabel: 48
+      center:
+        x: -27.968169476435733
+        y: -55.673946615365836
+        z: 53.16326067997859
+      alternateName:
+      - L_LIPv_ROI
+      - L.LIPv
+      - ctx-lh-LIPv
+    L_VIP:
+      name: L_VIP
+      lookupLabel: 49
+      center:
+        x: -21.065173617724714
+        y: -61.03113322422422
+        z: 58.84246375642974
+      alternateName:
+      - L_VIP_ROI
+      - L.VIP
+      - ctx-lh-VIP
+    L_MIP:
+      name: L_MIP
+      lookupLabel: 50
+      center:
+        x: -22.97986130144611
+        y: -65.07028486143868
+        z: 47.75516298881867
+      alternateName:
+      - L_MIP_ROI
+      - L.MIP
+      - ctx-lh-MIP
+    L_1:
+      name: L_1
+      lookupLabel: 51
+      center:
+        x: -44.99406235711533
+        y: -25.26447804491419
+        z: 52.28417283816825
+      alternateName:
+      - L_1_ROI
+      - L.1
+      - ctx-lh-1
+    L_2:
+      name: L_2
+      lookupLabel: 52
+      center:
+        x: -35.85923728876413
+        y: -34.79662050685816
+        z: 52.59838957238281
+      alternateName:
+      - L_2_ROI
+      - L.2
+      - ctx-lh-2
+    L_3a:
+      name: L_3a
+      lookupLabel: 53
+      center:
+        x: -34.61215442282255
+        y: -21.273250019354897
+        z: 42.91038736124508
+      alternateName:
+      - L_3a_ROI
+      - L.3a
+      - ctx-lh-3a
+    L_6d:
+      name: L_6d
+      lookupLabel: 54
+      center:
+        x: -32.019136936633615
+        y: -13.248388293501618
+        z: 62.93524870934424
+      alternateName:
+      - L_6d_ROI
+      - L.6d
+      - ctx-lh-6d
+    L_6mp:
+      name: L_6mp
+      lookupLabel: 55
+      center:
+        x: -13.178267144417578
+        y: -12.89730576212092
+        z: 67.90331760672636
+      alternateName:
+      - L_6mp_ROI
+      - L.6mp
+      - ctx-lh-6mp
+    L_6v:
+      name: L_6v
+      lookupLabel: 56
+      center:
+        x: -55.78598722570083
+        y: 1.9273603511207245
+        z: 31.741996406106388
+      alternateName:
+      - L_6v_ROI
+      - L.6v
+      - ctx-lh-6v
+    L_p24pr:
+      name: L_p24pr
+      lookupLabel: 57
+      center:
+        x: -3.016844363860142
+        y: -3.6742317941453724
+        z: 38.39621428501459
+      alternateName:
+      - L_p24pr_ROI
+      - L.p24pr
+      - ctx-lh-p24pr
+    L_33pr:
+      name: L_33pr
+      lookupLabel: 58
+      center:
+        x: -2.4529532757672396
+        y: 3.4810056359930472
+        z: 30.824544594504616
+      alternateName:
+      - L_33pr_ROI
+      - L.33pr
+      - ctx-lh-33pr
+    L_a24pr:
+      name: L_a24pr
+      lookupLabel: 59
+      center:
+        x: -4.861023423519541
+        y: 17.02016953711814
+        z: 30.49199775939292
+      alternateName:
+      - L_a24pr_ROI
+      - L.a24pr
+      - ctx-lh-a24pr
+    L_p32pr:
+      name: L_p32pr
+      lookupLabel: 60
+      center:
+        x: -7.944926694142732
+        y: 12.770538036771816
+        z: 38.95744047919623
+      alternateName:
+      - L_p32pr_ROI
+      - L.p32pr
+      - ctx-lh-p32pr
+    L_a24:
+      name: L_a24
+      lookupLabel: 61
+      center:
+        x: -5.293720939424303
+        y: 39.98370808495416
+        z: -1.3455480782522096
+      alternateName:
+      - L_a24_ROI
+      - L.a24
+      - ctx-lh-a24
+    L_d32:
+      name: L_d32
+      lookupLabel: 62
+      center:
+        x: -7.476387917995453
+        y: 40.810546747843425
+        z: 23.844012411435447
+      alternateName:
+      - L_d32_ROI
+      - L.d32
+      - ctx-lh-d32
+    L_8BM:
+      name: L_8BM
+      lookupLabel: 63
+      center:
+        x: -4.998804936463806
+        y: 28.796051551555767
+        z: 45.45054389690531
+      alternateName:
+      - L_8BM_ROI
+      - L.8BM
+      - ctx-lh-8BM
+    L_p32:
+      name: L_p32
+      lookupLabel: 64
+      center:
+        x: -8.697414639020208
+        y: 50.56010937931562
+        z: 0.7890496208059667
+      alternateName:
+      - L_p32_ROI
+      - L.p32
+      - ctx-lh-p32
+    L_10r:
+      name: L_10r
+      lookupLabel: 65
+      center:
+        x: -7.1560912284445255
+        y: 51.027204026567176
+        z: -7.1505292124570685
+      alternateName:
+      - L_10r_ROI
+      - L.10r
+      - ctx-lh-10r
+    L_47m:
+      name: L_47m
+      lookupLabel: 66
+      center:
+        x: -33.39477103611208
+        y: 32.27223644616469
+        z: -13.494946821680609
+      alternateName:
+      - L_47m_ROI
+      - L.47m
+      - ctx-lh-47m
+    L_8Av:
+      name: L_8Av
+      lookupLabel: 67
+      center:
+        x: -35.150322334251214
+        y: 16.796924758796116
+        z: 48.08051785032953
+      alternateName:
+      - L_8Av_ROI
+      - L.8Av
+      - ctx-lh-8Av
+    L_8Ad:
+      name: L_8Ad
+      lookupLabel: 68
+      center:
+        x: -22.172611823751907
+        y: 27.39477963486979
+        z: 43.56033512777533
+      alternateName:
+      - L_8Ad_ROI
+      - L.8Ad
+      - ctx-lh-8Ad
+    L_9m:
+      name: L_9m
+      lookupLabel: 69
+      center:
+        x: -6.852485848340121
+        y: 51.735275976007635
+        z: 23.86151678605513
+      alternateName:
+      - L_9m_ROI
+      - L.9m
+      - ctx-lh-9m
+    L_8BL:
+      name: L_8BL
+      lookupLabel: 70
+      center:
+        x: -10.791811557795038
+        y: 33.14545649092719
+        z: 52.727493336658604
+      alternateName:
+      - L_8BL_ROI
+      - L.8BL
+      - ctx-lh-8BL
+    L_9p:
+      name: L_9p
+      lookupLabel: 71
+      center:
+        x: -16.882291793823242
+        y: 44.696042119240275
+        z: 37.3410955416102
+      alternateName:
+      - L_9p_ROI
+      - L.9p
+      - ctx-lh-9p
+    L_10d:
+      name: L_10d
+      lookupLabel: 72
+      center:
+        x: -11.35738712198594
+        y: 63.94518484477124
+        z: 10.272300156113369
+      alternateName:
+      - L_10d_ROI
+      - L.10d
+      - ctx-lh-10d
+    L_8C:
+      name: L_8C
+      lookupLabel: 73
+      center:
+        x: -40.67096684971672
+        y: 14.289337453211328
+        z: 37.14681886606179
+      alternateName:
+      - L_8C_ROI
+      - L.8C
+      - ctx-lh-8C
+    L_44:
+      name: L_44
+      lookupLabel: 74
+      center:
+        x: -50.00577674152182
+        y: 17.00864695816589
+        z: 11.430600588270229
+      alternateName:
+      - L_44_ROI
+      - L.44
+      - ctx-lh-44
+    L_45:
+      name: L_45
+      lookupLabel: 75
+      center:
+        x: -48.13628988265991
+        y: 28.404393339157103
+        z: 3.6856850467808546
+      alternateName:
+      - L_45_ROI
+      - L.45
+      - ctx-lh-45
+    L_47l:
+      name: L_47l
+      lookupLabel: 76
+      center:
+        x: -44.03127920100119
+        y: 29.574532939269478
+        z: -9.79660417970303
+      alternateName:
+      - L_47l_ROI
+      - L.47l
+      - ctx-lh-47l
+    L_a47r:
+      name: L_a47r
+      lookupLabel: 77
+      center:
+        x: -38.901465069163926
+        y: 46.43099535595287
+        z: -9.695235635238616
+      alternateName:
+      - L_a47r_ROI
+      - L.a47r
+      - ctx-lh-a47r
+    L_6r:
+      name: L_6r
+      lookupLabel: 78
+      center:
+        x: -50.675393301593374
+        y: 6.996837459319879
+        z: 18.07648356394334
+      alternateName:
+      - L_6r_ROI
+      - L.6r
+      - ctx-lh-6r
+    L_IFJa:
+      name: L_IFJa
+      lookupLabel: 79
+      center:
+        x: -42.337710033763535
+        y: 13.25206283005801
+        z: 25.61473729393699
+      alternateName:
+      - L_IFJa_ROI
+      - L.IFJa
+      - ctx-lh-IFJa
+    L_IFJp:
+      name: L_IFJp
+      lookupLabel: 80
+      center:
+        x: -40.90098041227494
+        y: 5.483844313128241
+        z: 29.983087166972545
+      alternateName:
+      - L_IFJp_ROI
+      - L.IFJp
+      - ctx-lh-IFJp
+    L_IFSp:
+      name: L_IFSp
+      lookupLabel: 81
+      center:
+        x: -43.95518008482109
+        y: 22.435604613961527
+        z: 21.718506600092915
+      alternateName:
+      - L_IFSp_ROI
+      - L.IFSp
+      - ctx-lh-IFSp
+    L_IFSa:
+      name: L_IFSa
+      lookupLabel: 82
+      center:
+        x: -42.91781285124005
+        y: 34.47522219771859
+        z: 13.271186102861128
+      alternateName:
+      - L_IFSa_ROI
+      - L.IFSa
+      - ctx-lh-IFSa
+    L_p9-46v:
+      name: L_p9-46v
+      lookupLabel: 83
+      center:
+        x: -41.661245077848434
+        y: 28.724027782678604
+        z: 27.793056711554527
+      alternateName:
+      - L_p9-46v_ROI
+      - L.p9-46v
+      - ctx-lh-p9-46v
+    L_46:
+      name: L_46
+      lookupLabel: 84
+      center:
+        x: -34.57581878268103
+        y: 36.463314298173074
+        z: 29.12572759977529
+      alternateName:
+      - L_46_ROI
+      - L.46
+      - ctx-lh-46
+    L_a9-46v:
+      name: L_a9-46v
+      lookupLabel: 85
+      center:
+        x: -35.826419270227824
+        y: 50.19491362193274
+        z: 9.512138329801106
+      alternateName:
+      - L_a9-46v_ROI
+      - L.a9-46v
+      - ctx-lh-a9-46v
+    L_9-46d:
+      name: L_9-46d
+      lookupLabel: 86
+      center:
+        x: -27.462691446368613
+        y: 45.44631938005654
+        z: 23.57292366027832
+      alternateName:
+      - L_9-46d_ROI
+      - L.9-46d
+      - ctx-lh-9-46d
+    L_9a:
+      name: L_9a
+      lookupLabel: 87
+      center:
+        x: -17.54504421688863
+        y: 54.87528739070261
+        z: 25.03325771811782
+      alternateName:
+      - L_9a_ROI
+      - L.9a
+      - ctx-lh-9a
+    L_10v:
+      name: L_10v
+      lookupLabel: 88
+      center:
+        x: -4.659026447095369
+        y: 52.93989372253418
+        z: -14.898900628089905
+      alternateName:
+      - L_10v_ROI
+      - L.10v
+      - ctx-lh-10v
+    L_a10p:
+      name: L_a10p
+      lookupLabel: 89
+      center:
+        x: -26.12384420122419
+        y: 57.19627111525762
+        z: -2.020525505371569
+      alternateName:
+      - L_a10p_ROI
+      - L.a10p
+      - ctx-lh-a10p
+    L_10pp:
+      name: L_10pp
+      lookupLabel: 90
+      center:
+        x: -14.108452791916697
+        y: 61.846309581555815
+        z: -10.577203702926635
+      alternateName:
+      - L_10pp_ROI
+      - L.10pp
+      - ctx-lh-10pp
+    L_11l:
+      name: L_11l
+      lookupLabel: 91
+      center:
+        x: -25.35140936795403
+        y: 47.47546068079331
+        z: -13.104628675124225
+      alternateName:
+      - L_11l_ROI
+      - L.11l
+      - ctx-lh-11l
+    L_13l:
+      name: L_13l
+      lookupLabel: 92
+      center:
+        x: -22.301666830340004
+        y: 27.631795565287273
+        z: -17.973395632882404
+      alternateName:
+      - L_13l_ROI
+      - L.13l
+      - ctx-lh-13l
+    L_OFC:
+      name: L_OFC
+      lookupLabel: 93
+      center:
+        x: -10.281187922489352
+        y: 32.4940002894983
+        z: -22.012787353701707
+      alternateName:
+      - L_OFC_ROI
+      - L.OFC
+      - ctx-lh-OFC
+    L_47s:
+      name: L_47s
+      lookupLabel: 94
+      center:
+        x: -29.788987921065644
+        y: 19.097835965517188
+        z: -18.340502314206933
+      alternateName:
+      - L_47s_ROI
+      - L.47s
+      - ctx-lh-47s
+    L_LIPd:
+      name: L_LIPd
+      lookupLabel: 95
+      center:
+        x: -29.96174569563432
+        y: -55.08579770483152
+        z: 45.88999607587102
+      alternateName:
+      - L_LIPd_ROI
+      - L.LIPd
+      - ctx-lh-LIPd
+    L_6a:
+      name: L_6a
+      lookupLabel: 96
+      center:
+        x: -24.209398598141142
+        y: -1.9431510913405672
+        z: 55.669927798377145
+      alternateName:
+      - L_6a_ROI
+      - L.6a
+      - ctx-lh-6a
+    L_i6-8:
+      name: L_i6-8
+      lookupLabel: 97
+      center:
+        x: -29.081395415372626
+        y: 9.97599062392878
+        z: 53.5381943902304
+      alternateName:
+      - L_i6-8_ROI
+      - L.i6-8
+      - ctx-lh-i6-8
+    L_s6-8:
+      name: L_s6-8
+      lookupLabel: 98
+      center:
+        x: -19.117602556402034
+        y: 19.552570048245517
+        z: 56.194749520041725
+      alternateName:
+      - L_s6-8_ROI
+      - L.s6-8
+      - ctx-lh-s6-8
+    L_43:
+      name: L_43
+      lookupLabel: 99
+      center:
+        x: -56.117294765654066
+        y: -1.0346735511862097
+        z: 9.933843879472642
+      alternateName:
+      - L_43_ROI
+      - L.43
+      - ctx-lh-43
+    L_OP4:
+      name: L_OP4
+      lookupLabel: 100
+      center:
+        x: -55.90255422412225
+        y: -13.377463266534626
+        z: 15.42991568907252
+      alternateName:
+      - L_OP4_ROI
+      - L.OP4
+      - ctx-lh-OP4
+    L_OP1:
+      name: L_OP1
+      lookupLabel: 101
+      center:
+        x: -46.10846633911133
+        y: -22.91540059690122
+        z: 18.41739419301351
+      alternateName:
+      - L_OP1_ROI
+      - L.OP1
+      - ctx-lh-OP1
+    L_OP2-3:
+      name: L_OP2-3
+      lookupLabel: 102
+      center:
+        x: -37.79538437322522
+        y: -17.807097732598056
+        z: 17.54122905866474
+      alternateName:
+      - L_OP2-3_ROI
+      - L.OP2-3
+      - ctx-lh-OP2-3
+    L_52:
+      name: L_52
+      lookupLabel: 103
+      center:
+        x: -38.58838340971205
+        y: -21.482542567782932
+        z: 0.900144557779034
+      alternateName:
+      - L_52_ROI
+      - L.52
+      - ctx-lh-52
+    L_RI:
+      name: L_RI
+      lookupLabel: 104
+      center:
+        x: -38.57803045133265
+        y: -32.89007773980862
+        z: 17.50813053410228
+      alternateName:
+      - L_RI_ROI
+      - L.RI
+      - ctx-lh-RI
+    L_PFcm:
+      name: L_PFcm
+      lookupLabel: 105
+      center:
+        x: -50.133971643811876
+        y: -32.049659044687985
+        z: 21.45773944417939
+      alternateName:
+      - L_PFcm_ROI
+      - L.PFcm
+      - ctx-lh-PFcm
+    L_PoI2:
+      name: L_PoI2
+      lookupLabel: 106
+      center:
+        x: -39.030006977341934
+        y: -2.746464307865371
+        z: -2.4908247033122533
+      alternateName:
+      - L_PoI2_ROI
+      - L.PoI2
+      - ctx-lh-PoI2
+    L_TA2:
+      name: L_TA2
+      lookupLabel: 107
+      center:
+        x: -51.56611697774538
+        y: 0.9041074117199636
+        z: -4.871173746378856
+      alternateName:
+      - L_TA2_ROI
+      - L.TA2
+      - ctx-lh-TA2
+    L_FOP4:
+      name: L_FOP4
+      lookupLabel: 108
+      center:
+        x: -38.37792793836462
+        y: 13.417212593939997
+        z: 6.4588874127149305
+      alternateName:
+      - L_FOP4_ROI
+      - L.FOP4
+      - ctx-lh-FOP4
+    L_MI:
+      name: L_MI
+      lookupLabel: 109
+      center:
+        x: -37.119262890938
+        y: 8.99254909902811
+        z: 0.2826868996151492
+      alternateName:
+      - L_MI_ROI
+      - L.MI
+      - ctx-lh-MI
+    L_Pir:
+      name: L_Pir
+      lookupLabel: 110
+      center:
+        x: -29.969726224099436
+        y: 4.060860167587957
+        z: -17.74210544299054
+      alternateName:
+      - L_Pir_ROI
+      - L.Pir
+      - ctx-lh-Pir
+    L_AVI:
+      name: L_AVI
+      lookupLabel: 111
+      center:
+        x: -31.076123600914364
+        y: 22.9261595105368
+        z: -4.529801582533215
+      alternateName:
+      - L_AVI_ROI
+      - L.AVI
+      - ctx-lh-AVI
+    L_AAIC:
+      name: L_AAIC
+      lookupLabel: 112
+      center:
+        x: -32.97808356034128
+        y: 11.214594458278857
+        z: -12.59369498804996
+      alternateName:
+      - L_AAIC_ROI
+      - L.AAIC
+      - ctx-lh-AAIC
+    L_FOP1:
+      name: L_FOP1
+      lookupLabel: 113
+      center:
+        x: -48.2218514251709
+        y: 1.321477847993374
+        z: 5.1428205990791325
+      alternateName:
+      - L_FOP1_ROI
+      - L.FOP1
+      - ctx-lh-FOP1
+    L_FOP3:
+      name: L_FOP3
+      lookupLabel: 114
+      center:
+        x: -35.39946869441441
+        y: 3.4492553467197076
+        z: 11.28693943931943
+      alternateName:
+      - L_FOP3_ROI
+      - L.FOP3
+      - ctx-lh-FOP3
+    L_FOP2:
+      name: L_FOP2
+      lookupLabel: 115
+      center:
+        x: -40.475590852590706
+        y: -4.475875324999484
+        z: 13.622881274956923
+      alternateName:
+      - L_FOP2_ROI
+      - L.FOP2
+      - ctx-lh-FOP2
+    L_PFt:
+      name: L_PFt
+      lookupLabel: 116
+      center:
+        x: -52.872305728227666
+        y: -27.851188239073142
+        z: 38.21181350121131
+      alternateName:
+      - L_PFt_ROI
+      - L.PFt
+      - ctx-lh-PFt
+    L_AIP:
+      name: L_AIP
+      lookupLabel: 117
+      center:
+        x: -38.491014813913885
+        y: -41.624169173749905
+        z: 44.68578949715327
+      alternateName:
+      - L_AIP_ROI
+      - L.AIP
+      - ctx-lh-AIP
+    L_EC:
+      name: L_EC
+      lookupLabel: 118
+      center:
+        x: -21.064142138458962
+        y: -14.518609185551488
+        z: -28.17796221444773
+      alternateName:
+      - L_EC_ROI
+      - L.EC
+      - ctx-lh-EC
+    L_PreS:
+      name: L_PreS
+      lookupLabel: 119
+      center:
+        x: -15.658618417176061
+        y: -33.66702913488232
+        z: -9.05452209329174
+      alternateName:
+      - L_PreS_ROI
+      - L.PreS
+      - ctx-lh-PreS
+    L_H:
+      name: L_H
+      lookupLabel: 120
+      center:
+        x: -26.80906678883303
+        y: -25.592985691430744
+        z: -14.298871011852961
+      alternateName:
+      - L_H_ROI
+      - L.H
+      - ctx-lh-H
+    L_ProS:
+      name: L_ProS
+      lookupLabel: 121
+      center:
+        x: -16.95909727483556
+        y: -50.0791305873705
+        z: 0.49280972017542174
+      alternateName:
+      - L_ProS_ROI
+      - L.ProS
+      - ctx-lh-ProS
+    L_PeEc:
+      name: L_PeEc
+      lookupLabel: 122
+      center:
+        x: -29.136162800691565
+        y: -9.216742035054734
+        z: -32.930371062609616
+      alternateName:
+      - L_PeEc_ROI
+      - L.PeEc
+      - ctx-lh-PeEc
+    L_STGa:
+      name: L_STGa
+      lookupLabel: 123
+      center:
+        x: -51.293109358402724
+        y: 10.127596604196649
+        z: -15.565091635051527
+      alternateName:
+      - L_STGa_ROI
+      - L.STGa
+      - ctx-lh-STGa
+    L_PBelt:
+      name: L_PBelt
+      lookupLabel: 124
+      center:
+        x: -52.47011568488144
+        y: -26.457150476734814
+        z: 8.950220148737838
+      alternateName:
+      - L_PBelt_ROI
+      - L.PBelt
+      - ctx-lh-PBelt
+    L_A5:
+      name: L_A5
+      lookupLabel: 125
+      center:
+        x: -59.572697598001234
+        y: -17.43162714568493
+        z: -0.7459272891654215
+      alternateName:
+      - L_A5_ROI
+      - L.A5
+      - ctx-lh-A5
+    L_PHA1:
+      name: L_PHA1
+      lookupLabel: 126
+      center:
+        x: -20.45787242606834
+        y: -36.37998833479705
+        z: -14.525018762659144
+      alternateName:
+      - L_PHA1_ROI
+      - L.PHA1
+      - ctx-lh-PHA1
+    L_PHA3:
+      name: L_PHA3
+      lookupLabel: 127
+      center:
+        x: -31.278369172414145
+        y: -38.273081111907956
+        z: -15.12053675254186
+      alternateName:
+      - L_PHA3_ROI
+      - L.PHA3
+      - ctx-lh-PHA3
+    L_STSda:
+      name: L_STSda
+      lookupLabel: 128
+      center:
+        x: -52.33355793526502
+        y: -7.03518554241192
+        z: -11.551709931071212
+      alternateName:
+      - L_STSda_ROI
+      - L.STSda
+      - ctx-lh-STSda
+    L_STSdp:
+      name: L_STSdp
+      lookupLabel: 129
+      center:
+        x: -52.91700102456251
+        y: -33.22180233289249
+        z: 0.85380911319774
+      alternateName:
+      - L_STSdp_ROI
+      - L.STSdp
+      - ctx-lh-STSdp
+    L_STSvp:
+      name: L_STSvp
+      lookupLabel: 130
+      center:
+        x: -55.91768934176518
+        y: -33.74427667947916
+        z: -3.7319100975381354
+      alternateName:
+      - L_STSvp_ROI
+      - L.STSvp
+      - ctx-lh-STSvp
+    L_TGd:
+      name: L_TGd
+      lookupLabel: 131
+      center:
+        x: -39.31482202356512
+        y: 9.547429985326657
+        z: -31.939031794881135
+      alternateName:
+      - L_TGd_ROI
+      - L.TGd
+      - ctx-lh-TGd
+    L_TE1a:
+      name: L_TE1a
+      lookupLabel: 132
+      center:
+        x: -58.77524723545198
+        y: -9.826747813171917
+        z: -20.566701004582068
+      alternateName:
+      - L_TE1a_ROI
+      - L.TE1a
+      - ctx-lh-TE1a
+    L_TE1p:
+      name: L_TE1p
+      lookupLabel: 133
+      center:
+        x: -58.28683915659159
+        y: -46.76773635479582
+        z: -9.990456428136207
+      alternateName:
+      - L_TE1p_ROI
+      - L.TE1p
+      - ctx-lh-TE1p
+    L_TE2a:
+      name: L_TE2a
+      lookupLabel: 134
+      center:
+        x: -54.79831096965805
+        y: -22.27189348714625
+        z: -26.372268495823555
+      alternateName:
+      - L_TE2a_ROI
+      - L.TE2a
+      - ctx-lh-TE2a
+    L_TF:
+      name: L_TF
+      lookupLabel: 135
+      center:
+        x: -41.50283156214534
+        y: -22.032957302557456
+        z: -27.30161239005424
+      alternateName:
+      - L_TF_ROI
+      - L.TF
+      - ctx-lh-TF
+    L_TE2p:
+      name: L_TE2p
+      lookupLabel: 136
+      center:
+        x: -46.955217071533205
+        y: -45.45696176147461
+        z: -18.20537018585205
+      alternateName:
+      - L_TE2p_ROI
+      - L.TE2p
+      - ctx-lh-TE2p
+    L_PHT:
+      name: L_PHT
+      lookupLabel: 137
+      center:
+        x: -55.1577159336635
+        y: -57.56703305506444
+        z: 0.597610105484069
+      alternateName:
+      - L_PHT_ROI
+      - L.PHT
+      - ctx-lh-PHT
+    L_PH:
+      name: L_PH
+      lookupLabel: 138
+      center:
+        x: -44.83793043348524
+        y: -64.05354853312174
+        z: -7.9176495679219565
+      alternateName:
+      - L_PH_ROI
+      - L.PH
+      - ctx-lh-PH
+    L_TPOJ1:
+      name: L_TPOJ1
+      lookupLabel: 139
+      center:
+        x: -52.977524414905524
+        y: -47.395643350169145
+        z: 9.905012602305543
+      alternateName:
+      - L_TPOJ1_ROI
+      - L.TPOJ1
+      - ctx-lh-TPOJ1
+    L_TPOJ2:
+      name: L_TPOJ2
+      lookupLabel: 140
+      center:
+        x: -48.416947609339005
+        y: -59.919537959954674
+        z: 11.443115029579554
+      alternateName:
+      - L_TPOJ2_ROI
+      - L.TPOJ2
+      - ctx-lh-TPOJ2
+    L_TPOJ3:
+      name: L_TPOJ3
+      lookupLabel: 141
+      center:
+        x: -43.16559514545259
+        y: -70.06834261757987
+        z: 17.803065583819436
+      alternateName:
+      - L_TPOJ3_ROI
+      - L.TPOJ3
+      - ctx-lh-TPOJ3
+    L_DVT:
+      name: L_DVT
+      lookupLabel: 142
+      center:
+        x: -16.631476099176925
+        y: -69.81457966057829
+        z: 30.026487520498822
+      alternateName:
+      - L_DVT_ROI
+      - L.DVT
+      - ctx-lh-DVT
+    L_PGp:
+      name: L_PGp
+      lookupLabel: 143
+      center:
+        x: -37.69492750102971
+        y: -81.25287067646883
+        z: 24.07291706889665
+      alternateName:
+      - L_PGp_ROI
+      - L.PGp
+      - ctx-lh-PGp
+    L_IP2:
+      name: L_IP2
+      lookupLabel: 144
+      center:
+        x: -39.32669930506234
+        y: -49.12891551701709
+        z: 43.220493181787354
+      alternateName:
+      - L_IP2_ROI
+      - L.IP2
+      - ctx-lh-IP2
+    L_IP1:
+      name: L_IP1
+      lookupLabel: 145
+      center:
+        x: -30.49193224831233
+        y: -65.54190596323164
+        z: 42.522390698629714
+      alternateName:
+      - L_IP1_ROI
+      - L.IP1
+      - ctx-lh-IP1
+    L_IP0:
+      name: L_IP0
+      lookupLabel: 146
+      center:
+        x: -29.104865780583136
+        y: -75.68109653614185
+        z: 29.428473737504746
+      alternateName:
+      - L_IP0_ROI
+      - L.IP0
+      - ctx-lh-IP0
+    L_PFop:
+      name: L_PFop
+      lookupLabel: 147
+      center:
+        x: -59.234377927000416
+        y: -22.578591592656743
+        z: 26.37221666252088
+      alternateName:
+      - L_PFop_ROI
+      - L.PFop
+      - ctx-lh-PFop
+    L_PF:
+      name: L_PF
+      lookupLabel: 148
+      center:
+        x: -56.70945651556856
+        y: -37.17350467046102
+        z: 34.18991296009351
+      alternateName:
+      - L_PF_ROI
+      - L.PF
+      - ctx-lh-PF
+    L_PFm:
+      name: L_PFm
+      lookupLabel: 149
+      center:
+        x: -48.260066843688605
+        y: -53.588933716120096
+        z: 41.28070733495686
+      alternateName:
+      - L_PFm_ROI
+      - L.PFm
+      - ctx-lh-PFm
+    L_PGi:
+      name: L_PGi
+      lookupLabel: 150
+      center:
+        x: -47.452233212493184
+        y: -59.73557804018952
+        z: 23.99086148018061
+      alternateName:
+      - L_PGi_ROI
+      - L.PGi
+      - ctx-lh-PGi
+    L_PGs:
+      name: L_PGs
+      lookupLabel: 151
+      center:
+        x: -40.284831043931305
+        y: -70.76326446533203
+        z: 37.570413370601464
+      alternateName:
+      - L_PGs_ROI
+      - L.PGs
+      - ctx-lh-PGs
+    L_V6A:
+      name: L_V6A
+      lookupLabel: 152
+      center:
+        x: -17.56239095026133
+        y: -82.148578254544
+        z: 40.238843956772165
+      alternateName:
+      - L_V6A_ROI
+      - L.V6A
+      - ctx-lh-V6A
+    L_VMV1:
+      name: L_VMV1
+      lookupLabel: 153
+      center:
+        x: -19.58193920959126
+        y: -53.323918082497336
+        z: -6.824151001193306
+      alternateName:
+      - L_VMV1_ROI
+      - L.VMV1
+      - ctx-lh-VMV1
+    L_VMV3:
+      name: L_VMV3
+      lookupLabel: 154
+      center:
+        x: -27.132865258625575
+        y: -60.373261656079976
+        z: -9.341709426471166
+      alternateName:
+      - L_VMV3_ROI
+      - L.VMV3
+      - ctx-lh-VMV3
+    L_PHA2:
+      name: L_PHA2
+      lookupLabel: 155
+      center:
+        x: -29.325217190910788
+        y: -35.57005189446842
+        z: -14.321378918255077
+      alternateName:
+      - L_PHA2_ROI
+      - L.PHA2
+      - ctx-lh-PHA2
+    L_V4t:
+      name: L_V4t
+      lookupLabel: 156
+      center:
+        x: -43.87011191958473
+        y: -78.8267693292527
+        z: 1.6721710442077546
+      alternateName:
+      - L_V4t_ROI
+      - L.V4t
+      - ctx-lh-V4t
+    L_FST:
+      name: L_FST
+      lookupLabel: 157
+      center:
+        x: -45.82073538643973
+        y: -67.5390002581538
+        z: 1.5343320380364145
+      alternateName:
+      - L_FST_ROI
+      - L.FST
+      - ctx-lh-FST
+    L_V3CD:
+      name: L_V3CD
+      lookupLabel: 158
+      center:
+        x: -33.489969280787875
+        y: -85.7650626046317
+        z: 13.901480790546962
+      alternateName:
+      - L_V3CD_ROI
+      - L.V3CD
+      - ctx-lh-V3CD
+    L_LO3:
+      name: L_LO3
+      lookupLabel: 159
+      center:
+        x: -42.013035202026366
+        y: -79.05540936787924
+        z: 11.717932351430257
+      alternateName:
+      - L_LO3_ROI
+      - L.LO3
+      - ctx-lh-LO3
+    L_VMV2:
+      name: L_VMV2
+      lookupLabel: 160
+      center:
+        x: -26.65258963211723
+        y: -53.283762226934016
+        z: -6.717811988747639
+      alternateName:
+      - L_VMV2_ROI
+      - L.VMV2
+      - ctx-lh-VMV2
+    L_31pd:
+      name: L_31pd
+      lookupLabel: 161
+      center:
+        x: -9.582253946198357
+        y: -50.806812639589666
+        z: 37.27444465072067
+      alternateName:
+      - L_31pd_ROI
+      - L.31pd
+      - ctx-lh-31pd
+    L_31a:
+      name: L_31a
+      lookupLabel: 162
+      center:
+        x: -5.542698599398136
+        y: -38.664435029029846
+        z: 41.35021251440048
+      alternateName:
+      - L_31a_ROI
+      - L.31a
+      - ctx-lh-31a
+    L_VVC:
+      name: L_VVC
+      lookupLabel: 163
+      center:
+        x: -30.930475764804417
+        y: -52.30719169737801
+        z: -16.887037171257866
+      alternateName:
+      - L_VVC_ROI
+      - L.VVC
+      - ctx-lh-VVC
+    L_25:
+      name: L_25
+      lookupLabel: 164
+      center:
+        x: -4.212208964607933
+        y: 20.909185270829635
+        z: -13.431645185297185
+      alternateName:
+      - L_25_ROI
+      - L.25
+      - ctx-lh-25
+    L_s32:
+      name: L_s32
+      lookupLabel: 165
+      center:
+        x: -6.267824049349184
+        y: 34.72725299552635
+        z: -12.4364338627568
+      alternateName:
+      - L_s32_ROI
+      - L.s32
+      - ctx-lh-s32
+    L_pOFC:
+      name: L_pOFC
+      lookupLabel: 166
+      center:
+        x: -13.403537236727201
+        y: 10.974810410768558
+        z: -18.5819663756933
+      alternateName:
+      - L_pOFC_ROI
+      - L.pOFC
+      - ctx-lh-pOFC
+    L_PoI1:
+      name: L_PoI1
+      lookupLabel: 167
+      center:
+        x: -38.49463663472758
+        y: -12.401998734319365
+        z: -3.733673338856935
+      alternateName:
+      - L_PoI1_ROI
+      - L.PoI1
+      - ctx-lh-PoI1
+    L_Ig:
+      name: L_Ig
+      lookupLabel: 168
+      center:
+        x: -36.26850803081806
+        y: -12.019585624107947
+        z: 13.24336515573355
+      alternateName:
+      - L_Ig_ROI
+      - L.Ig
+      - ctx-lh-Ig
+    L_FOP5:
+      name: L_FOP5
+      lookupLabel: 169
+      center:
+        x: -35.98994285472925
+        y: 26.101599928261578
+        z: 3.895336681302043
+      alternateName:
+      - L_FOP5_ROI
+      - L.FOP5
+      - ctx-lh-FOP5
+    L_p10p:
+      name: L_p10p
+      lookupLabel: 170
+      center:
+        x: -22.25774997364391
+        y: 58.340767392245205
+        z: 7.376375818523494
+      alternateName:
+      - L_p10p_ROI
+      - L.p10p
+      - ctx-lh-p10p
+    L_p47r:
+      name: L_p47r
+      lookupLabel: 171
+      center:
+        x: -42.22624227242876
+        y: 43.56808273552
+        z: 1.9529625553377838
+      alternateName:
+      - L_p47r_ROI
+      - L.p47r
+      - ctx-lh-p47r
+    L_TGv:
+      name: L_TGv
+      lookupLabel: 172
+      center:
+        x: -41.19600865378309
+        y: -2.2052637818477936
+        z: -41.37758391650755
+      alternateName:
+      - L_TGv_ROI
+      - L.TGv
+      - ctx-lh-TGv
+    L_MBelt:
+      name: L_MBelt
+      lookupLabel: 173
+      center:
+        x: -45.999117882697135
+        y: -15.471672938420223
+        z: 2.86634155354657
+      alternateName:
+      - L_MBelt_ROI
+      - L.MBelt
+      - ctx-lh-MBelt
+    L_LBelt:
+      name: L_LBelt
+      lookupLabel: 174
+      center:
+        x: -43.17430942936947
+        y: -30.160859534614964
+        z: 9.716208941058108
+      alternateName:
+      - L_LBelt_ROI
+      - L.LBelt
+      - ctx-lh-LBelt
+    L_A4:
+      name: L_A4
+      lookupLabel: 175
+      center:
+        x: -60.616306435828115
+        y: -24.466420285842
+        z: 7.553825091986059
+      alternateName:
+      - L_A4_ROI
+      - L.A4
+      - ctx-lh-A4
+    L_STSva:
+      name: L_STSva
+      lookupLabel: 176
+      center:
+        x: -52.890283007954444
+        y: -10.212817892778752
+        z: -15.140266906383426
+      alternateName:
+      - L_STSva_ROI
+      - L.STSva
+      - ctx-lh-STSva
+    L_TE1m:
+      name: L_TE1m
+      lookupLabel: 177
+      center:
+        x: -60.77192355137245
+        y: -29.16009974012188
+        z: -14.510736128863167
+      alternateName:
+      - L_TE1m_ROI
+      - L.TE1m
+      - ctx-lh-TE1m
+    L_PI:
+      name: L_PI
+      lookupLabel: 178
+      center:
+        x: -43.677541087223936
+        y: -3.0965329340444163
+        z: -13.03848703641158
+      alternateName:
+      - L_PI_ROI
+      - L.PI
+      - ctx-lh-PI
+    L_a32pr:
+      name: L_a32pr
+      lookupLabel: 179
+      center:
+        x: -7.638443399220705
+        y: 28.80025364458561
+        z: 29.653342500329018
+      alternateName:
+      - L_a32pr_ROI
+      - L.a32pr
+      - ctx-lh-a32pr
+    L_p24:
+      name: L_p24
+      lookupLabel: 180
+      center:
+        x: -5.4162255114522475
+        y: 36.61770120160333
+        z: 15.46290527541062
+      alternateName:
+      - L_p24_ROI
+      - L.p24
+      - ctx-lh-p24
+    R_V1:
+      name: R_V1
+      lookupLabel: 181
+      center:
+        x: 14.32048495812519
+        y: -78.0349657962707
+        z: 3.6449292891847
+      alternateName:
+      - R_V1_ROI
+      - R.V1
+      - ctx-rh-V1
+    R_MST:
+      name: R_MST
+      lookupLabel: 182
+      center:
+        x: 45.38908029857435
+        y: -63.922361725255065
+        z: 5.521988667155567
+      alternateName:
+      - R_MST_ROI
+      - R.MST
+      - ctx-rh-MST
+    R_V6:
+      name: R_V6
+      lookupLabel: 183
+      center:
+        x: 17.413979010853343
+        y: -75.20177912518261
+        z: 31.573091553478704
+      alternateName:
+      - R_V6_ROI
+      - R.V6
+      - ctx-rh-V6
+    R_V2:
+      name: R_V2
+      lookupLabel: 184
+      center:
+        x: 13.039374601424434
+        y: -78.50263601928305
+        z: 5.592148463813566
+      alternateName:
+      - R_V2_ROI
+      - R.V2
+      - ctx-rh-V2
+    R_V3:
+      name: R_V3
+      lookupLabel: 185
+      center:
+        x: 20.693204133586168
+        y: -86.4340131908054
+        z: 8.48587024963383
+      alternateName:
+      - R_V3_ROI
+      - R.V3
+      - ctx-rh-V3
+    R_V4:
+      name: R_V4
+      lookupLabel: 186
+      center:
+        x: 29.688888053894043
+        y: -81.14169722239177
+        z: -1.1860399230321248
+      alternateName:
+      - R_V4_ROI
+      - R.V4
+      - ctx-rh-V4
+    R_V8:
+      name: R_V8
+      lookupLabel: 187
+      center:
+        x: 31.510111689567566
+        y: -73.0487300157547
+        z: -11.890723064541817
+      alternateName:
+      - R_V8_ROI
+      - R.V8
+      - ctx-rh-V8
+    R_4:
+      name: R_4
+      lookupLabel: 188
+      center:
+        x: 28.002756963247133
+        y: -17.877323504118824
+        z: 54.75026962138988
+      alternateName:
+      - R_4_ROI
+      - R.4
+      - ctx-rh-4
+    R_3b:
+      name: R_3b
+      lookupLabel: 189
+      center:
+        x: 36.80605460839811
+        y: -22.03077152259046
+        z: 52.838304461439805
+      alternateName:
+      - R_3b_ROI
+      - R.3b
+      - ctx-rh-3b
+    R_FEF:
+      name: R_FEF
+      lookupLabel: 190
+      center:
+        x: 41.632333915326846
+        y: -1.8455113730926325
+        z: 50.06670155871514
+      alternateName:
+      - R_FEF_ROI
+      - R.FEF
+      - ctx-rh-FEF
+    R_PEF:
+      name: R_PEF
+      lookupLabel: 191
+      center:
+        x: 46.41738795186137
+        y: 3.7708448132315833
+        z: 35.50311090657999
+      alternateName:
+      - R_PEF_ROI
+      - R.PEF
+      - ctx-rh-PEF
+    R_55b:
+      name: R_55b
+      lookupLabel: 192
+      center:
+        x: 47.611226019458236
+        y: 2.208414466546796
+        z: 44.17540462886062
+      alternateName:
+      - R_55b_ROI
+      - R.55b
+      - ctx-rh-55b
+    R_V3A:
+      name: R_V3A
+      lookupLabel: 193
+      center:
+        x: 20.751606123788015
+        y: -85.77028510684059
+        z: 28.197972615559895
+      alternateName:
+      - R_V3A_ROI
+      - R.V3A
+      - ctx-rh-V3A
+    R_RSC:
+      name: R_RSC
+      lookupLabel: 194
+      center:
+        x: 6.069615516827736
+        y: -34.48253684642511
+        z: 21.618624243385348
+      alternateName:
+      - R_RSC_ROI
+      - R.RSC
+      - ctx-rh-RSC
+    R_POS2:
+      name: R_POS2
+      lookupLabel: 195
+      center:
+        x: 12.412603731155395
+        y: -68.34740098571777
+        z: 38.55138479614258
+      alternateName:
+      - R_POS2_ROI
+      - R.POS2
+      - ctx-rh-POS2
+    R_V7:
+      name: R_V7
+      lookupLabel: 196
+      center:
+        x: 27.6042605082194
+        y: -79.09785834418403
+        z: 33.49690195719401
+      alternateName:
+      - R_V7_ROI
+      - R.V7
+      - ctx-rh-V7
+    R_IPS1:
+      name: R_IPS1
+      lookupLabel: 197
+      center:
+        x: 26.870574985538518
+        y: -70.26962445233319
+        z: 38.966499105230106
+      alternateName:
+      - R_IPS1_ROI
+      - R.IPS1
+      - ctx-rh-IPS1
+    R_FFC:
+      name: R_FFC
+      lookupLabel: 198
+      center:
+        x: 40.91027155893291
+        y: -55.15740546494901
+        z: -17.055883961523364
+      alternateName:
+      - R_FFC_ROI
+      - R.FFC
+      - ctx-rh-FFC
+    R_V3B:
+      name: R_V3B
+      lookupLabel: 199
+      center:
+        x: 30.81053532639595
+        y: -76.25925654581148
+        z: 22.518341900551157
+      alternateName:
+      - R_V3B_ROI
+      - R.V3B
+      - ctx-rh-V3B
+    R_LO1:
+      name: R_LO1
+      lookupLabel: 200
+      center:
+        x: 40.59041178503702
+        y: -79.75232714275981
+        z: 5.106737706550332
+      alternateName:
+      - R_LO1_ROI
+      - R.LO1
+      - ctx-rh-LO1
+    R_LO2:
+      name: R_LO2
+      lookupLabel: 201
+      center:
+        x: 44.052646021689135
+        y: -79.59351447320753
+        z: -3.8189476969982348
+      alternateName:
+      - R_LO2_ROI
+      - R.LO2
+      - ctx-rh-LO2
+    R_PIT:
+      name: R_PIT
+      lookupLabel: 202
+      center:
+        x: 40.08886349585749
+        y: -79.92535055837324
+        z: -10.73013928628737
+      alternateName:
+      - R_PIT_ROI
+      - R.PIT
+      - ctx-rh-PIT
+    R_MT:
+      name: R_MT
+      lookupLabel: 203
+      center:
+        x: 46.71953210376558
+        y: -68.31346611749558
+        z: 8.701072709900993
+      alternateName:
+      - R_MT_ROI
+      - R.MT
+      - ctx-rh-MT
+    R_A1:
+      name: R_A1
+      lookupLabel: 204
+      center:
+        x: 44.82460663535378
+        y: -21.485467867417768
+        z: 9.6917868383003
+      alternateName:
+      - R_A1_ROI
+      - R.A1
+      - ctx-rh-A1
+    R_PSL:
+      name: R_PSL
+      lookupLabel: 205
+      center:
+        x: 60.5479103742327
+        y: -37.29743258884975
+        z: 24.56709769112723
+      alternateName:
+      - R_PSL_ROI
+      - R.PSL
+      - ctx-rh-PSL
+    R_SFL:
+      name: R_SFL
+      lookupLabel: 206
+      center:
+        x: 8.950706345694405
+        y: 16.108060588355826
+        z: 62.307814077168956
+      alternateName:
+      - R_SFL_ROI
+      - R.SFL
+      - ctx-rh-SFL
+    R_PCV:
+      name: R_PCV
+      lookupLabel: 207
+      center:
+        x: 7.1203472032779604
+        y: -52.51475273690573
+        z: 50.12597512035835
+      alternateName:
+      - R_PCV_ROI
+      - R.PCV
+      - ctx-rh-PCV
+    R_STV:
+      name: R_STV
+      lookupLabel: 208
+      center:
+        x: 56.46154609886376
+        y: -42.42638636924125
+        z: 19.76158778087513
+      alternateName:
+      - R_STV_ROI
+      - R.STV
+      - ctx-rh-STV
+    R_7Pm:
+      name: R_7Pm
+      lookupLabel: 209
+      center:
+        x: 8.089263265331587
+        y: -65.75785505771637
+        z: 51.60105907917023
+      alternateName:
+      - R_7Pm_ROI
+      - R.7Pm
+      - ctx-rh-7Pm
+    R_7m:
+      name: R_7m
+      lookupLabel: 210
+      center:
+        x: 5.566309526231554
+        y: -61.7536730448405
+        z: 36.66325297885471
+      alternateName:
+      - R_7m_ROI
+      - R.7m
+      - ctx-rh-7m
+    R_POS1:
+      name: R_POS1
+      lookupLabel: 211
+      center:
+        x: 12.758147799743796
+        y: -55.29321215287695
+        z: 14.477252670054165
+      alternateName:
+      - R_POS1_ROI
+      - R.POS1
+      - ctx-rh-POS1
+    R_23d:
+      name: R_23d
+      lookupLabel: 212
+      center:
+        x: 3.492768515527776
+        y: -22.056558406458493
+        z: 36.94962771592942
+      alternateName:
+      - R_23d_ROI
+      - R.23d
+      - ctx-rh-23d
+    R_v23ab:
+      name: R_v23ab
+      lookupLabel: 213
+      center:
+        x: 5.3689746478708775
+        y: -52.20234475484708
+        z: 20.51245020657051
+      alternateName:
+      - R_v23ab_ROI
+      - R.v23ab
+      - ctx-rh-v23ab
+    R_d23ab:
+      name: R_d23ab
+      lookupLabel: 214
+      center:
+        x: 4.29824587639342
+        y: -37.351194016476896
+        z: 32.6684450190118
+      alternateName:
+      - R_d23ab_ROI
+      - R.d23ab
+      - ctx-rh-d23ab
+    R_31pv:
+      name: R_31pv
+      lookupLabel: 215
+      center:
+        x: 8.9142154959945
+        y: -46.27060166779939
+        z: 32.543386115684164
+      alternateName:
+      - R_31pv_ROI
+      - R.31pv
+      - ctx-rh-31pv
+    R_5m:
+      name: R_5m
+      lookupLabel: 216
+      center:
+        x: 7.217766223769439
+        y: -38.25457595524035
+        z: 64.48610825287669
+      alternateName:
+      - R_5m_ROI
+      - R.5m
+      - ctx-rh-5m
+    R_5mv:
+      name: R_5mv
+      lookupLabel: 217
+      center:
+        x: 12.031650148738514
+        y: -39.21173615022139
+        z: 52.28137059645219
+      alternateName:
+      - R_5mv_ROI
+      - R.5mv
+      - ctx-rh-5mv
+    R_23c:
+      name: R_23c
+      lookupLabel: 218
+      center:
+        x: 10.396566141050544
+        y: -30.19651174368025
+        z: 42.69866707954265
+      alternateName:
+      - R_23c_ROI
+      - R.23c
+      - ctx-rh-23c
+    R_5L:
+      name: R_5L
+      lookupLabel: 219
+      center:
+        x: 13.711139465951678
+        y: -43.48727935945927
+        z: 69.62707769326147
+      alternateName:
+      - R_5L_ROI
+      - R.5L
+      - ctx-rh-5L
+    R_24dd:
+      name: R_24dd
+      lookupLabel: 220
+      center:
+        x: 7.99782137332424
+        y: -16.103861351782875
+        z: 50.35773045016873
+      alternateName:
+      - R_24dd_ROI
+      - R.24dd
+      - ctx-rh-24dd
+    R_24dv:
+      name: R_24dv
+      lookupLabel: 221
+      center:
+        x: 8.588829350319637
+        y: -3.559253771792338
+        z: 44.45701458195972
+      alternateName:
+      - R_24dv_ROI
+      - R.24dv
+      - ctx-rh-24dv
+    R_7AL:
+      name: R_7AL
+      lookupLabel: 222
+      center:
+        x: 20.376960737262657
+        y: -49.383043825983286
+        z: 65.2020134383333
+      alternateName:
+      - R_7AL_ROI
+      - R.7AL
+      - ctx-rh-7AL
+    R_SCEF:
+      name: R_SCEF
+      lookupLabel: 223
+      center:
+        x: 6.71929024414695
+        y: 3.5216601581066613
+        z: 58.19248209345526
+      alternateName:
+      - R_SCEF_ROI
+      - R.SCEF
+      - ctx-rh-SCEF
+    R_6ma:
+      name: R_6ma
+      lookupLabel: 224
+      center:
+        x: 17.185741310484673
+        y: 4.077074194834991
+        z: 65.65610151884088
+      alternateName:
+      - R_6ma_ROI
+      - R.6ma
+      - ctx-rh-6ma
+    R_7Am:
+      name: R_7Am
+      lookupLabel: 225
+      center:
+        x: 10.62783868215522
+        y: -57.49202940415363
+        z: 60.435580039510924
+      alternateName:
+      - R_7Am_ROI
+      - R.7Am
+      - ctx-rh-7Am
+    R_7PL:
+      name: R_7PL
+      lookupLabel: 226
+      center:
+        x: 15.47906546159224
+        y: -67.83811980408508
+        z: 55.09252706750647
+      alternateName:
+      - R_7PL_ROI
+      - R.7PL
+      - ctx-rh-7PL
+    R_7PC:
+      name: R_7PC
+      lookupLabel: 227
+      center:
+        x: 32.11860128324859
+        y: -45.874093717458294
+        z: 59.78455109498939
+      alternateName:
+      - R_7PC_ROI
+      - R.7PC
+      - ctx-rh-7PC
+    R_LIPv:
+      name: R_LIPv
+      lookupLabel: 228
+      center:
+        x: 28.76160293430477
+        y: -54.695831868555636
+        z: 53.51271716031161
+      alternateName:
+      - R_LIPv_ROI
+      - R.LIPv
+      - ctx-rh-LIPv
+    R_VIP:
+      name: R_VIP
+      lookupLabel: 229
+      center:
+        x: 21.36625081998808
+        y: -59.09761373846381
+        z: 60.36322609153954
+      alternateName:
+      - R_VIP_ROI
+      - R.VIP
+      - ctx-rh-VIP
+    R_MIP:
+      name: R_MIP
+      lookupLabel: 230
+      center:
+        x: 25.48400944603814
+        y: -64.16113323635525
+        z: 48.51314735412598
+      alternateName:
+      - R_MIP_ROI
+      - R.MIP
+      - ctx-rh-MIP
+    R_1:
+      name: R_1
+      lookupLabel: 231
+      center:
+        x: 45.8859428731046
+        y: -22.027599008200397
+        z: 52.6713775171482
+      alternateName:
+      - R_1_ROI
+      - R.1
+      - ctx-rh-1
+    R_2:
+      name: R_2
+      lookupLabel: 232
+      center:
+        x: 37.68897643761757
+        y: -30.918577377612774
+        z: 51.97643845814925
+      alternateName:
+      - R_2_ROI
+      - R.2
+      - ctx-rh-2
+    R_3a:
+      name: R_3a
+      lookupLabel: 233
+      center:
+        x: 35.50208858698606
+        y: -19.054586332291365
+        z: 43.1299065053463
+      alternateName:
+      - R_3a_ROI
+      - R.3a
+      - ctx-rh-3a
+    R_6d:
+      name: R_6d
+      lookupLabel: 234
+      center:
+        x: 34.5491744480776
+        y: -11.679200295651897
+        z: 61.648450358530106
+      alternateName:
+      - R_6d_ROI
+      - R.6d
+      - ctx-rh-6d
+    R_6mp:
+      name: R_6mp
+      lookupLabel: 235
+      center:
+        x: 14.844625019229477
+        y: -11.664991518821859
+        z: 67.68925617884526
+      alternateName:
+      - R_6mp_ROI
+      - R.6mp
+      - ctx-rh-6mp
+    R_6v:
+      name: R_6v
+      lookupLabel: 236
+      center:
+        x: 57.68758421677809
+        y: 4.716828979933873
+        z: 29.497369130452473
+      alternateName:
+      - R_6v_ROI
+      - R.6v
+      - ctx-rh-6v
+    R_p24pr:
+      name: R_p24pr
+      lookupLabel: 237
+      center:
+        x: 4.251958295055058
+        y: -2.38057475538074
+        z: 38.85659313201904
+      alternateName:
+      - R_p24pr_ROI
+      - R.p24pr
+      - ctx-rh-p24pr
+    R_33pr:
+      name: R_33pr
+      lookupLabel: 238
+      center:
+        x: 3.845837167104085
+        y: 5.88032891365389
+        z: 29.635189056396484
+      alternateName:
+      - R_33pr_ROI
+      - R.33pr
+      - ctx-rh-33pr
+    R_a24pr:
+      name: R_a24pr
+      lookupLabel: 239
+      center:
+        x: 4.512113584662384
+        y: 16.837603676993893
+        z: 31.802343512481112
+      alternateName:
+      - R_a24pr_ROI
+      - R.a24pr
+      - ctx-rh-a24pr
+    R_p32pr:
+      name: R_p32pr
+      lookupLabel: 240
+      center:
+        x: 8.840131873669831
+        y: 12.837999357693437
+        z: 39.68435627481212
+      alternateName:
+      - R_p32pr_ROI
+      - R.p32pr
+      - ctx-rh-p32pr
+    R_a24:
+      name: R_a24
+      lookupLabel: 241
+      center:
+        x: 5.955654275126573
+        y: 38.44258955048352
+        z: -1.164535727351904
+      alternateName:
+      - R_a24_ROI
+      - R.a24
+      - ctx-rh-a24
+    R_d32:
+      name: R_d32
+      lookupLabel: 242
+      center:
+        x: 8.81309371653611
+        y: 39.2668541543852
+        z: 24.237399977397143
+      alternateName:
+      - R_d32_ROI
+      - R.d32
+      - ctx-rh-d32
+    R_8BM:
+      name: R_8BM
+      lookupLabel: 243
+      center:
+        x: 5.912960752759661
+        y: 28.28014730181013
+        z: 46.290491333007814
+      alternateName:
+      - R_8BM_ROI
+      - R.8BM
+      - ctx-rh-8BM
+    R_p32:
+      name: R_p32
+      lookupLabel: 244
+      center:
+        x: 9.091343813603467
+        y: 49.043232115188445
+        z: -0.5227826723626049
+      alternateName:
+      - R_p32_ROI
+      - R.p32
+      - ctx-rh-p32
+    R_10r:
+      name: R_10r
+      lookupLabel: 245
+      center:
+        x: 7.074921955933442
+        y: 50.07781472077241
+        z: -8.4970564946935
+      alternateName:
+      - R_10r_ROI
+      - R.10r
+      - ctx-rh-10r
+    R_47m:
+      name: R_47m
+      lookupLabel: 246
+      center:
+        x: 33.25273041646989
+        y: 34.12472315303615
+        z: -12.50046953607778
+      alternateName:
+      - R_47m_ROI
+      - R.47m
+      - ctx-rh-47m
+    R_8Av:
+      name: R_8Av
+      lookupLabel: 247
+      center:
+        x: 37.57689815097385
+        y: 17.934853099970425
+        z: 46.53958844908194
+      alternateName:
+      - R_8Av_ROI
+      - R.8Av
+      - ctx-rh-8Av
+    R_8Ad:
+      name: R_8Ad
+      lookupLabel: 248
+      center:
+        x: 23.851864068577978
+        y: 28.458148309875234
+        z: 44.24771585823602
+      alternateName:
+      - R_8Ad_ROI
+      - R.8Ad
+      - ctx-rh-8Ad
+    R_9m:
+      name: R_9m
+      lookupLabel: 249
+      center:
+        x: 7.6873686994825094
+        y: 51.94842311314174
+        z: 20.718936359075677
+      alternateName:
+      - R_9m_ROI
+      - R.9m
+      - ctx-rh-9m
+    R_8BL:
+      name: R_8BL
+      lookupLabel: 250
+      center:
+        x: 12.55803952217102
+        y: 38.522096403021564
+        z: 48.551259753578584
+      alternateName:
+      - R_8BL_ROI
+      - R.8BL
+      - ctx-rh-8BL
+    R_9p:
+      name: R_9p
+      lookupLabel: 251
+      center:
+        x: 19.101109921353533
+        y: 47.541017958261435
+        z: 34.50266041801971
+      alternateName:
+      - R_9p_ROI
+      - R.9p
+      - ctx-rh-9p
+    R_10d:
+      name: R_10d
+      lookupLabel: 252
+      center:
+        x: 10.287887254003751
+        y: 64.82052505622475
+        z: 6.6696937329183195
+      alternateName:
+      - R_10d_ROI
+      - R.10d
+      - ctx-rh-10d
+    R_8C:
+      name: R_8C
+      lookupLabel: 253
+      center:
+        x: 41.442863872512376
+        y: 16.45861593882243
+        z: 35.86293996018147
+      alternateName:
+      - R_8C_ROI
+      - R.8C
+      - ctx-rh-8C
+    R_44:
+      name: R_44
+      lookupLabel: 254
+      center:
+        x: 51.3760347563645
+        y: 19.31969433488517
+        z: 10.992084799963852
+      alternateName:
+      - R_44_ROI
+      - R.44
+      - ctx-rh-44
+    R_45:
+      name: R_45
+      lookupLabel: 255
+      center:
+        x: 51.05306594283493
+        y: 29.394874869452583
+        z: 4.013868468558347
+      alternateName:
+      - R_45_ROI
+      - R.45
+      - ctx-rh-45
+    R_47l:
+      name: R_47l
+      lookupLabel: 256
+      center:
+        x: 45.53409271240234
+        y: 33.513471089238706
+        z: -11.065257184401803
+      alternateName:
+      - R_47l_ROI
+      - R.47l
+      - ctx-rh-47l
+    R_a47r:
+      name: R_a47r
+      lookupLabel: 257
+      center:
+        x: 36.989404766038916
+        y: 51.1059767405192
+        z: -6.523639069934344
+      alternateName:
+      - R_a47r_ROI
+      - R.a47r
+      - ctx-rh-a47r
+    R_6r:
+      name: R_6r
+      lookupLabel: 258
+      center:
+        x: 51.864776132677896
+        y: 9.554368401661572
+        z: 16.61366439226859
+      alternateName:
+      - R_6r_ROI
+      - R.6r
+      - ctx-rh-6r
+    R_IFJa:
+      name: R_IFJa
+      lookupLabel: 259
+      center:
+        x: 43.95005426527579
+        y: 16.081716694409334
+        z: 25.35704405096513
+      alternateName:
+      - R_IFJa_ROI
+      - R.IFJa
+      - ctx-rh-IFJa
+    R_IFJp:
+      name: R_IFJp
+      lookupLabel: 260
+      center:
+        x: 41.909831334674166
+        y: 8.342166915772454
+        z: 29.05520172724648
+      alternateName:
+      - R_IFJp_ROI
+      - R.IFJp
+      - ctx-rh-IFJp
+    R_IFSp:
+      name: R_IFSp
+      lookupLabel: 261
+      center:
+        x: 45.64771580516844
+        y: 26.537290013822396
+        z: 20.529443489877803
+      alternateName:
+      - R_IFSp_ROI
+      - R.IFSp
+      - ctx-rh-IFSp
+    R_IFSa:
+      name: R_IFSa
+      lookupLabel: 262
+      center:
+        x: 45.197453596653084
+        y: 38.30368587298271
+        z: 8.083420944710573
+      alternateName:
+      - R_IFSa_ROI
+      - R.IFSa
+      - ctx-rh-IFSa
+    R_p9-46v:
+      name: R_p9-46v
+      lookupLabel: 263
+      center:
+        x: 43.01795552712119
+        y: 32.55009448857597
+        z: 25.816694644274634
+      alternateName:
+      - R_p9-46v_ROI
+      - R.p9-46v
+      - ctx-rh-p9-46v
+    R_46:
+      name: R_46
+      lookupLabel: 264
+      center:
+        x: 34.41463337023072
+        y: 37.314973642796645
+        z: 29.862515704621995
+      alternateName:
+      - R_46_ROI
+      - R.46
+      - ctx-rh-46
+    R_a9-46v:
+      name: R_a9-46v
+      lookupLabel: 265
+      center:
+        x: 37.70989829615543
+        y: 49.78471547176964
+        z: 10.405018861670243
+      alternateName:
+      - R_a9-46v_ROI
+      - R.a9-46v
+      - ctx-rh-a9-46v
+    R_9-46d:
+      name: R_9-46d
+      lookupLabel: 266
+      center:
+        x: 27.93692041879677
+        y: 48.03337553706035
+        z: 23.2098266264521
+      alternateName:
+      - R_9-46d_ROI
+      - R.9-46d
+      - ctx-rh-9-46d
+    R_9a:
+      name: R_9a
+      lookupLabel: 267
+      center:
+        x: 17.25865385914577
+        y: 59.1763575896052
+        z: 21.32286028097604
+      alternateName:
+      - R_9a_ROI
+      - R.9a
+      - ctx-rh-9a
+    R_10v:
+      name: R_10v
+      lookupLabel: 268
+      center:
+        x: 5.022389864435001
+        y: 53.63968125168158
+        z: -14.238080131764315
+      alternateName:
+      - R_10v_ROI
+      - R.10v
+      - ctx-rh-10v
+    R_a10p:
+      name: R_a10p
+      lookupLabel: 269
+      center:
+        x: 23.332853397852936
+        y: 59.693181319975515
+        z: -6.0332093205250485
+      alternateName:
+      - R_a10p_ROI
+      - R.a10p
+      - ctx-rh-a10p
+    R_10pp:
+      name: R_10pp
+      lookupLabel: 270
+      center:
+        x: 13.38253598411878
+        y: 61.633861780166626
+        z: -13.253080965330204
+      alternateName:
+      - R_10pp_ROI
+      - R.10pp
+      - ctx-rh-10pp
+    R_11l:
+      name: R_11l
+      lookupLabel: 271
+      center:
+        x: 26.16069170384625
+        y: 48.005803376241445
+        z: -13.767975096609078
+      alternateName:
+      - R_11l_ROI
+      - R.11l
+      - ctx-rh-11l
+    R_13l:
+      name: R_13l
+      lookupLabel: 272
+      center:
+        x: 23.109848720271412
+        y: 30.348252249927057
+        z: -16.29630508655455
+      alternateName:
+      - R_13l_ROI
+      - R.13l
+      - ctx-rh-13l
+    R_OFC:
+      name: R_OFC
+      lookupLabel: 273
+      center:
+        x: 10.399632086130707
+        y: 33.09675182537599
+        z: -21.957922371951017
+      alternateName:
+      - R_OFC_ROI
+      - R.OFC
+      - ctx-rh-OFC
+    R_47s:
+      name: R_47s
+      lookupLabel: 274
+      center:
+        x: 30.474761205176783
+        y: 21.79667427768446
+        z: -17.619323710872703
+      alternateName:
+      - R_47s_ROI
+      - R.47s
+      - ctx-rh-47s
+    R_LIPd:
+      name: R_LIPd
+      lookupLabel: 275
+      center:
+        x: 32.65266537984212
+        y: -53.69520497639974
+        z: 46.36264887491862
+      alternateName:
+      - R_LIPd_ROI
+      - R.LIPd
+      - ctx-rh-LIPd
+    R_6a:
+      name: R_6a
+      lookupLabel: 276
+      center:
+        x: 26.67976988733342
+        y: -0.42561647004776176
+        z: 54.65752568427792
+      alternateName:
+      - R_6a_ROI
+      - R.6a
+      - ctx-rh-6a
+    R_i6-8:
+      name: R_i6-8
+      lookupLabel: 277
+      center:
+        x: 33.08819052185675
+        y: 10.406583212842845
+        z: 53.28360640400588
+      alternateName:
+      - R_i6-8_ROI
+      - R.i6-8
+      - ctx-rh-i6-8
+    R_s6-8:
+      name: R_s6-8
+      lookupLabel: 278
+      center:
+        x: 20.529679187508517
+        y: 19.419279020886087
+        z: 57.02199257251828
+      alternateName:
+      - R_s6-8_ROI
+      - R.s6-8
+      - ctx-rh-s6-8
+    R_43:
+      name: R_43
+      lookupLabel: 279
+      center:
+        x: 56.72374928792318
+        y: 0.5363347432955548
+        z: 10.27653273123282
+      alternateName:
+      - R_43_ROI
+      - R.43
+      - ctx-rh-43
+    R_OP4:
+      name: R_OP4
+      lookupLabel: 280
+      center:
+        x: 56.18677117990893
+        y: -10.600125215219897
+        z: 14.841712259691816
+      alternateName:
+      - R_OP4_ROI
+      - R.OP4
+      - ctx-rh-OP4
+    R_OP1:
+      name: R_OP1
+      lookupLabel: 281
+      center:
+        x: 45.93788184290347
+        y: -19.21183739537778
+        z: 18.303590981856637
+      alternateName:
+      - R_OP1_ROI
+      - R.OP1
+      - ctx-rh-OP1
+    R_OP2-3:
+      name: R_OP2-3
+      lookupLabel: 282
+      center:
+        x: 38.26796884646361
+        y: -16.0230772193821
+        z: 18.60395806411217
+      alternateName:
+      - R_OP2-3_ROI
+      - R.OP2-3
+      - ctx-rh-OP2-3
+    R_52:
+      name: R_52
+      lookupLabel: 283
+      center:
+        x: 39.95986837710974
+        y: -19.49268022573219
+        z: 0.9861784482655941
+      alternateName:
+      - R_52_ROI
+      - R.52
+      - ctx-rh-52
+    R_RI:
+      name: R_RI
+      lookupLabel: 284
+      center:
+        x: 43.03552074592655
+        y: -29.425549667422512
+        z: 17.691824382092772
+      alternateName:
+      - R_RI_ROI
+      - R.RI
+      - ctx-rh-RI
+    R_PFcm:
+      name: R_PFcm
+      lookupLabel: 285
+      center:
+        x: 51.15648080991662
+        y: -27.66811227798462
+        z: 23.205603205639385
+      alternateName:
+      - R_PFcm_ROI
+      - R.PFcm
+      - ctx-rh-PFcm
+    R_PoI2:
+      name: R_PoI2
+      lookupLabel: 286
+      center:
+        x: 39.55848081721816
+        y: -1.049291384774585
+        z: -2.8757502036927223
+      alternateName:
+      - R_PoI2_ROI
+      - R.PoI2
+      - ctx-rh-PoI2
+    R_TA2:
+      name: R_TA2
+      lookupLabel: 287
+      center:
+        x: 51.38917235640792
+        y: 1.003843619043494
+        z: -5.421428804059286
+      alternateName:
+      - R_TA2_ROI
+      - R.TA2
+      - ctx-rh-TA2
+    R_FOP4:
+      name: R_FOP4
+      lookupLabel: 288
+      center:
+        x: 38.281501256502594
+        y: 15.979540977722559
+        z: 6.832403077624547
+      alternateName:
+      - R_FOP4_ROI
+      - R.FOP4
+      - ctx-rh-FOP4
+    R_MI:
+      name: R_MI
+      lookupLabel: 289
+      center:
+        x: 39.20421375738126
+        y: 9.547066241224236
+        z: -0.2315494814696156
+      alternateName:
+      - R_MI_ROI
+      - R.MI
+      - ctx-rh-MI
+    R_Pir:
+      name: R_Pir
+      lookupLabel: 290
+      center:
+        x: 31.370559063054582
+        y: 6.186866025634224
+        z: -17.61142389423351
+      alternateName:
+      - R_Pir_ROI
+      - R.Pir
+      - ctx-rh-Pir
+    R_AVI:
+      name: R_AVI
+      lookupLabel: 291
+      center:
+        x: 33.84615154266358
+        y: 23.730280494689943
+        z: -4.397948097785314
+      alternateName:
+      - R_AVI_ROI
+      - R.AVI
+      - ctx-rh-AVI
+    R_AAIC:
+      name: R_AAIC
+      lookupLabel: 292
+      center:
+        x: 34.59211821783157
+        y: 13.059937870691693
+        z: -12.576510278005449
+      alternateName:
+      - R_AAIC_ROI
+      - R.AAIC
+      - ctx-rh-AAIC
+    R_FOP1:
+      name: R_FOP1
+      lookupLabel: 293
+      center:
+        x: 47.394721178941325
+        y: 4.543823833091998
+        z: 5.324391029565267
+      alternateName:
+      - R_FOP1_ROI
+      - R.FOP1
+      - ctx-rh-FOP1
+    R_FOP3:
+      name: R_FOP3
+      lookupLabel: 294
+      center:
+        x: 36.067222137451175
+        y: 6.611371421813965
+        z: 10.467517197926838
+      alternateName:
+      - R_FOP3_ROI
+      - R.FOP3
+      - ctx-rh-FOP3
+    R_FOP2:
+      name: R_FOP2
+      lookupLabel: 295
+      center:
+        x: 40.8309488961863
+        y: -1.4465658176083898
+        z: 13.722856177840121
+      alternateName:
+      - R_FOP2_ROI
+      - R.FOP2
+      - ctx-rh-FOP2
+    R_PFt:
+      name: R_PFt
+      lookupLabel: 296
+      center:
+        x: 55.20109903997708
+        y: -22.937882625994906
+        z: 39.54155273635153
+      alternateName:
+      - R_PFt_ROI
+      - R.PFt
+      - ctx-rh-PFt
+    R_AIP:
+      name: R_AIP
+      lookupLabel: 297
+      center:
+        x: 39.265230770059674
+        y: -38.971699470458326
+        z: 45.80634430219542
+      alternateName:
+      - R_AIP_ROI
+      - R.AIP
+      - ctx-rh-AIP
+    R_EC:
+      name: R_EC
+      lookupLabel: 298
+      center:
+        x: 21.607267756794773
+        y: -14.024607081745947
+        z: -27.887807846069336
+      alternateName:
+      - R_EC_ROI
+      - R.EC
+      - ctx-rh-EC
+    R_PreS:
+      name: R_PreS
+      lookupLabel: 299
+      center:
+        x: 17.968257418751012
+        y: -32.604778052787104
+        z: -7.964314780534195
+      alternateName:
+      - R_PreS_ROI
+      - R.PreS
+      - ctx-rh-PreS
+    R_H:
+      name: R_H
+      lookupLabel: 300
+      center:
+        x: 29.308245438795822
+        y: -21.687150400418503
+        z: -16.515483358301797
+      alternateName:
+      - R_H_ROI
+      - R.H
+      - ctx-rh-H
+    R_ProS:
+      name: R_ProS
+      lookupLabel: 301
+      center:
+        x: 19.392680842177313
+        y: -46.89693253022388
+        z: 0.280042217498211
+      alternateName:
+      - R_ProS_ROI
+      - R.ProS
+      - ctx-rh-ProS
+    R_PeEc:
+      name: R_PeEc
+      lookupLabel: 302
+      center:
+        x: 29.397756503178524
+        y: -7.664072153230126
+        z: -33.54325814124866
+      alternateName:
+      - R_PeEc_ROI
+      - R.PeEc
+      - ctx-rh-PeEc
+    R_STGa:
+      name: R_STGa
+      lookupLabel: 303
+      center:
+        x: 51.43447359402975
+        y: 13.222658594449362
+        z: -16.822579721609753
+      alternateName:
+      - R_STGa_ROI
+      - R.STGa
+      - ctx-rh-STGa
+    R_PBelt:
+      name: R_PBelt
+      lookupLabel: 304
+      center:
+        x: 58.20018263657888
+        y: -19.322674920161564
+        z: 8.396792906026045
+      alternateName:
+      - R_PBelt_ROI
+      - R.PBelt
+      - ctx-rh-PBelt
+    R_A5:
+      name: R_A5
+      lookupLabel: 305
+      center:
+        x: 60.00860589952325
+        y: -17.310471019852702
+        z: -0.6502182070942755
+      alternateName:
+      - R_A5_ROI
+      - R.A5
+      - ctx-rh-A5
+    R_PHA1:
+      name: R_PHA1
+      lookupLabel: 306
+      center:
+        x: 21.88242278780256
+        y: -33.119175621441435
+        z: -15.874784878322057
+      alternateName:
+      - R_PHA1_ROI
+      - R.PHA1
+      - ctx-rh-PHA1
+    R_PHA3:
+      name: R_PHA3
+      lookupLabel: 307
+      center:
+        x: 32.65258198906393
+        y: -37.082030397302965
+        z: -14.412322644626393
+      alternateName:
+      - R_PHA3_ROI
+      - R.PHA3
+      - ctx-rh-PHA3
+    R_STSda:
+      name: R_STSda
+      lookupLabel: 308
+      center:
+        x: 51.816418607184225
+        y: -3.0738448820849684
+        z: -15.219324411229884
+      alternateName:
+      - R_STSda_ROI
+      - R.STSda
+      - ctx-rh-STSda
+    R_STSdp:
+      name: R_STSdp
+      lookupLabel: 309
+      center:
+        x: 50.03227680751255
+        y: -27.436482661111015
+        z: -2.2805715768110186
+      alternateName:
+      - R_STSdp_ROI
+      - R.STSdp
+      - ctx-rh-STSdp
+    R_STSvp:
+      name: R_STSvp
+      lookupLabel: 310
+      center:
+        x: 59.1289477316749
+        y: -30.44592929360093
+        z: -3.735502142570173
+      alternateName:
+      - R_STSvp_ROI
+      - R.STSvp
+      - ctx-rh-STSvp
+    R_TGd:
+      name: R_TGd
+      lookupLabel: 311
+      center:
+        x: 39.9517802325162
+        y: 11.795777028827576
+        z: -31.723849013661653
+      alternateName:
+      - R_TGd_ROI
+      - R.TGd
+      - ctx-rh-TGd
+    R_TE1a:
+      name: R_TE1a
+      lookupLabel: 312
+      center:
+        x: 60.48610414777483
+        y: -6.856360456205549
+        z: -21.139998572213308
+      alternateName:
+      - R_TE1a_ROI
+      - R.TE1a
+      - ctx-rh-TE1a
+    R_TE1p:
+      name: R_TE1p
+      lookupLabel: 313
+      center:
+        x: 59.91156756983394
+        y: -43.589154471338325
+        z: -9.628106574041654
+      alternateName:
+      - R_TE1p_ROI
+      - R.TE1p
+      - ctx-rh-TE1p
+    R_TE2a:
+      name: R_TE2a
+      lookupLabel: 314
+      center:
+        x: 55.127170795180895
+        y: -18.488692323947625
+        z: -27.304748104464622
+      alternateName:
+      - R_TE2a_ROI
+      - R.TE2a
+      - ctx-rh-TE2a
+    R_TF:
+      name: R_TF
+      lookupLabel: 315
+      center:
+        x: 42.23414478972316
+        y: -21.437320646767418
+        z: -27.251205005584815
+      alternateName:
+      - R_TF_ROI
+      - R.TF
+      - ctx-rh-TF
+    R_TE2p:
+      name: R_TE2p
+      lookupLabel: 316
+      center:
+        x: 48.588262597445784
+        y: -43.74361106609476
+        z: -17.624433451685412
+      alternateName:
+      - R_TE2p_ROI
+      - R.TE2p
+      - ctx-rh-TE2p
+    R_PHT:
+      name: R_PHT
+      lookupLabel: 317
+      center:
+        x: 57.151271189539884
+        y: -52.93765432184393
+        z: -0.7541287769832887
+      alternateName:
+      - R_PHT_ROI
+      - R.PHT
+      - ctx-rh-PHT
+    R_PH:
+      name: R_PH
+      lookupLabel: 318
+      center:
+        x: 47.428744471350385
+        y: -61.20141712454863
+        z: -9.05263194788334
+      alternateName:
+      - R_PH_ROI
+      - R.PH
+      - ctx-rh-PH
+    R_TPOJ1:
+      name: R_TPOJ1
+      lookupLabel: 319
+      center:
+        x: 53.53805756488633
+        y: -42.23382858636002
+        z: 10.241872600433402
+      alternateName:
+      - R_TPOJ1_ROI
+      - R.TPOJ1
+      - ctx-rh-TPOJ1
+    R_TPOJ2:
+      name: R_TPOJ2
+      lookupLabel: 320
+      center:
+        x: 51.62555726591524
+        y: -55.46570013619803
+        z: 8.961815405558873
+      alternateName:
+      - R_TPOJ2_ROI
+      - R.TPOJ2
+      - ctx-rh-TPOJ2
+    R_TPOJ3:
+      name: R_TPOJ3
+      lookupLabel: 321
+      center:
+        x: 45.53728730051141
+        y: -63.10348109195107
+        z: 16.415340222810443
+      alternateName:
+      - R_TPOJ3_ROI
+      - R.TPOJ3
+      - ctx-rh-TPOJ3
+    R_DVT:
+      name: R_DVT
+      lookupLabel: 322
+      center:
+        x: 20.363654591487006
+        y: -66.35280280480018
+        z: 30.08858773158147
+      alternateName:
+      - R_DVT_ROI
+      - R.DVT
+      - ctx-rh-DVT
+    R_PGp:
+      name: R_PGp
+      lookupLabel: 323
+      center:
+        x: 42.77300352208755
+        y: -75.43798728394353
+        z: 23.80144121132645
+      alternateName:
+      - R_PGp_ROI
+      - R.PGp
+      - ctx-rh-PGp
+    R_IP2:
+      name: R_IP2
+      lookupLabel: 324
+      center:
+        x: 42.915377293158016
+        y: -44.22929125969563
+        z: 44.39993601107816
+      alternateName:
+      - R_IP2_ROI
+      - R.IP2
+      - ctx-rh-IP2
+    R_IP1:
+      name: R_IP1
+      lookupLabel: 325
+      center:
+        x: 35.8493474193455
+        y: -62.69348317569064
+        z: 42.6145251559228
+      alternateName:
+      - R_IP1_ROI
+      - R.IP1
+      - ctx-rh-IP1
+    R_IP0:
+      name: R_IP0
+      lookupLabel: 326
+      center:
+        x: 34.402738029078435
+        y: -72.06562941701789
+        z: 30.139266967773438
+      alternateName:
+      - R_IP0_ROI
+      - R.IP0
+      - ctx-rh-IP0
+    R_PFop:
+      name: R_PFop
+      lookupLabel: 327
+      center:
+        x: 60.27229786534463
+        y: -18.343022260358257
+        z: 26.441635562527566
+      alternateName:
+      - R_PFop_ROI
+      - R.PFop
+      - ctx-rh-PFop
+    R_PF:
+      name: R_PF
+      lookupLabel: 328
+      center:
+        x: 58.538730730898386
+        y: -31.424469820824367
+        z: 35.69625394836107
+      alternateName:
+      - R_PF_ROI
+      - R.PF
+      - ctx-rh-PF
+    R_PFm:
+      name: R_PFm
+      lookupLabel: 329
+      center:
+        x: 51.34022590005474
+        y: -47.95570540377542
+        z: 40.499361787378916
+      alternateName:
+      - R_PFm_ROI
+      - R.PFm
+      - ctx-rh-PFm
+    R_PGi:
+      name: R_PGi
+      lookupLabel: 330
+      center:
+        x: 50.51982935290754
+        y: -56.307767245750526
+        z: 24.732683740813158
+      alternateName:
+      - R_PGi_ROI
+      - R.PGi
+      - ctx-rh-PGi
+    R_PGs:
+      name: R_PGs
+      lookupLabel: 331
+      center:
+        x: 45.34694209851717
+        y: -64.98809964120673
+        z: 37.45076963433809
+      alternateName:
+      - R_PGs_ROI
+      - R.PGs
+      - ctx-rh-PGs
+    R_V6A:
+      name: R_V6A
+      lookupLabel: 332
+      center:
+        x: 22.11158890419818
+        y: -78.54290706553358
+        z: 42.8071097515999
+      alternateName:
+      - R_V6A_ROI
+      - R.V6A
+      - ctx-rh-V6A
+    R_VMV1:
+      name: R_VMV1
+      lookupLabel: 333
+      center:
+        x: 19.030475835884566
+        y: -52.90223187471913
+        z: -7.495994572090892
+      alternateName:
+      - R_VMV1_ROI
+      - R.VMV1
+      - ctx-rh-VMV1
+    R_VMV3:
+      name: R_VMV3
+      lookupLabel: 334
+      center:
+        x: 28.813950522471284
+        y: -58.67058964098914
+        z: -9.70288019665217
+      alternateName:
+      - R_VMV3_ROI
+      - R.VMV3
+      - ctx-rh-VMV3
+    R_PHA2:
+      name: R_PHA2
+      lookupLabel: 335
+      center:
+        x: 30.338829447011477
+        y: -32.58778109315966
+        z: -15.690894986762375
+      alternateName:
+      - R_PHA2_ROI
+      - R.PHA2
+      - ctx-rh-PHA2
+    R_V4t:
+      name: R_V4t
+      lookupLabel: 336
+      center:
+        x: 46.30578350490994
+        y: -73.96246660020617
+        z: 0.0853328246002396
+      alternateName:
+      - R_V4t_ROI
+      - R.V4t
+      - ctx-rh-V4t
+    R_FST:
+      name: R_FST
+      lookupLabel: 337
+      center:
+        x: 48.06399323104264
+        y: -62.804304940359934
+        z: -0.8620928260074421
+      alternateName:
+      - R_FST_ROI
+      - R.FST
+      - ctx-rh-FST
+    R_V3CD:
+      name: R_V3CD
+      lookupLabel: 338
+      center:
+        x: 36.30593497843682
+        y: -81.0364768112762
+        z: 15.180996206742298
+      alternateName:
+      - R_V3CD_ROI
+      - R.V3CD
+      - ctx-rh-V3CD
+    R_LO3:
+      name: R_LO3
+      lookupLabel: 339
+      center:
+        x: 45.22222648033729
+        y: -73.85534456693209
+        z: 10.822435467059796
+      alternateName:
+      - R_LO3_ROI
+      - R.LO3
+      - ctx-rh-LO3
+    R_VMV2:
+      name: R_VMV2
+      lookupLabel: 340
+      center:
+        x: 27.921180081654743
+        y: -51.65151513340962
+        z: -7.1452865198434115
+      alternateName:
+      - R_VMV2_ROI
+      - R.VMV2
+      - ctx-rh-VMV2
+    R_31pd:
+      name: R_31pd
+      lookupLabel: 341
+      center:
+        x: 10.406462375028633
+        y: -51.417829113242064
+        z: 38.0486814710829
+      alternateName:
+      - R_31pd_ROI
+      - R.31pd
+      - ctx-rh-31pd
+    R_31a:
+      name: R_31a
+      lookupLabel: 342
+      center:
+        x: 7.839706626203325
+        y: -40.94468545913696
+        z: 40.260771645439995
+      alternateName:
+      - R_31a_ROI
+      - R.31a
+      - ctx-rh-31a
+    R_VVC:
+      name: R_VVC
+      lookupLabel: 343
+      center:
+        x: 31.20385242277576
+        y: -46.89880886385518
+        z: -17.599128730835453
+      alternateName:
+      - R_VVC_ROI
+      - R.VVC
+      - ctx-rh-VVC
+    R_25:
+      name: R_25
+      lookupLabel: 344
+      center:
+        x: 3.7454996378191057
+        y: 19.767631476925267
+        z: -12.666187740141346
+      alternateName:
+      - R_25_ROI
+      - R.25
+      - ctx-rh-25
+    R_s32:
+      name: R_s32
+      lookupLabel: 345
+      center:
+        x: 5.286605142630064
+        y: 35.05596340619601
+        z: -12.844635706681471
+      alternateName:
+      - R_s32_ROI
+      - R.s32
+      - ctx-rh-s32
+    R_pOFC:
+      name: R_pOFC
+      lookupLabel: 346
+      center:
+        x: 14.392459117760092
+        y: 11.062404159772194
+        z: -17.918774831092964
+      alternateName:
+      - R_pOFC_ROI
+      - R.pOFC
+      - ctx-rh-pOFC
+    R_PoI1:
+      name: R_PoI1
+      lookupLabel: 347
+      center:
+        x: 39.11244063582157
+        y: -8.73454883802065
+        z: -6.241819388501666
+      alternateName:
+      - R_PoI1_ROI
+      - R.PoI1
+      - ctx-rh-PoI1
+    R_Ig:
+      name: R_Ig
+      lookupLabel: 348
+      center:
+        x: 37.53656408863683
+        y: -11.348812051357761
+        z: 12.988111442135226
+      alternateName:
+      - R_Ig_ROI
+      - R.Ig
+      - ctx-rh-Ig
+    R_FOP5:
+      name: R_FOP5
+      lookupLabel: 349
+      center:
+        x: 40.044211901151215
+        y: 26.737594054295467
+        z: 3.5282102026260245
+      alternateName:
+      - R_FOP5_ROI
+      - R.FOP5
+      - ctx-rh-FOP5
+    R_p10p:
+      name: R_p10p
+      lookupLabel: 350
+      center:
+        x: 25.015569802877064
+        y: 58.06161383036021
+        z: 5.667104912412076
+      alternateName:
+      - R_p10p_ROI
+      - R.p10p
+      - ctx-rh-p10p
+    R_p47r:
+      name: R_p47r
+      lookupLabel: 351
+      center:
+        x: 43.680331802368165
+        y: 45.15007305145264
+        z: -1.982652996480465
+      alternateName:
+      - R_p47r_ROI
+      - R.p47r
+      - ctx-rh-p47r
+    R_TGv:
+      name: R_TGv
+      lookupLabel: 352
+      center:
+        x: 39.81375255281963
+        y: -0.8098806381107323
+        z: -42.00871688600571
+      alternateName:
+      - R_TGv_ROI
+      - R.TGv
+      - ctx-rh-TGv
+    R_MBelt:
+      name: R_MBelt
+      lookupLabel: 353
+      center:
+        x: 46.358190561930336
+        y: -15.036448917388917
+        z: 4.143054173092048
+      alternateName:
+      - R_MBelt_ROI
+      - R.MBelt
+      - ctx-rh-MBelt
+    R_LBelt:
+      name: R_LBelt
+      lookupLabel: 354
+      center:
+        x: 50.269362595502066
+        y: -24.461847024805405
+        z: 10.317046816208784
+      alternateName:
+      - R_LBelt_ROI
+      - R.LBelt
+      - ctx-rh-LBelt
+    R_A4:
+      name: R_A4
+      lookupLabel: 355
+      center:
+        x: 63.4354511199788
+        y: -20.248703727110186
+        z: 7.242050769793637
+      alternateName:
+      - R_A4_ROI
+      - R.A4
+      - ctx-rh-A4
+    R_STSva:
+      name: R_STSva
+      lookupLabel: 356
+      center:
+        x: 54.9336508291739
+        y: -9.776927374763254
+        z: -15.514914571503063
+      alternateName:
+      - R_STSva_ROI
+      - R.STSva
+      - ctx-rh-STSva
+    R_TE1m:
+      name: R_TE1m
+      lookupLabel: 357
+      center:
+        x: 62.64489277073594
+        y: -26.7652467352445
+        z: -14.41499192597436
+      alternateName:
+      - R_TE1m_ROI
+      - R.TE1m
+      - ctx-rh-TE1m
+    R_PI:
+      name: R_PI
+      lookupLabel: 358
+      center:
+        x: 44.199112088661494
+        y: -0.91359021268257
+        z: -13.837087969141683
+      alternateName:
+      - R_PI_ROI
+      - R.PI
+      - ctx-rh-PI
+    R_a32pr:
+      name: R_a32pr
+      lookupLabel: 359
+      center:
+        x: 8.804195163756843
+        y: 27.59854313707727
+        z: 30.76464634992945
+      alternateName:
+      - R_a32pr_ROI
+      - R.a32pr
+      - ctx-rh-a32pr
+    R_p24:
+      name: R_p24
+      lookupLabel: 360
+      center:
+        x: 5.470969497340999
+        y: 34.44484742047035
+        z: 16.320318483326535
+      alternateName:
+      - R_p24_ROI
+      - R.p24
+      - ctx-rh-p24
+    L_Cerebellum:
+      name: L_Cerebellum
+      lookupLabel: 361
+      center:
+        x: -23.136984728441842
+        y: -61.75978872430819
+        z: -36.55207256860719
+      alternateName:
+      - CEREBELLUM_LEFT
+      - Left-Cerebellum-Cortex
+      - Left_Cerebellum_Cortex
+      - lh-Cerebellum-Cortex
+      - L_Cerebellum-Cortex
+    L_Thalamus:
+      name: L_Thalamus
+      lookupLabel: 362
+      center:
+        x: -10.599378881987578
+        y: -19.12888198757764
+        z: 5.996894409937888
+      alternateName:
+      - THALAMUS_LEFT
+      - Left-Thalamus-Proper
+      - Left_Thalamus_Proper
+      - lh-Thalamus-Proper
+      - L_Thalamus-Proper
+    L_Caudate:
+      name: L_Caudate
+      lookupLabel: 363
+      center:
+        x: -12.64010989010989
+        y: 7.818681318681318
+        z: 10.082417582417582
+      alternateName:
+      - CAUDATE_LEFT
+      - Left-Caudate
+      - Left_Caudate
+      - lh-Caudate
+    L_Putamen:
+      name: L_Putamen
+      lookupLabel: 364
+      center:
+        x: -26.016981132075472
+        y: -0.045283018867924525
+        z: -0.9679245283018868
+      alternateName:
+      - PUTAMEN_LEFT
+      - Left-Putamen
+      - Left_Putamen
+      - lh-Putamen
+    L_Pallidum:
+      name: L_Pallidum
+      lookupLabel: 365
+      center:
+        x: -19.286195286195287
+        y: -4.404040404040404
+        z: -2.0673400673400675
+      alternateName:
+      - PALLIDUM_LEFT
+      - Left-Pallidum
+      - Left_Pallidum
+      - lh-Pallidum
+    L_Hippocampus:
+      name: L_Hippocampus
+      lookupLabel: 366
+      center:
+        x: -24.680628272251308
+        y: -22.630890052356023
+        z: -14.086387434554974
+      alternateName:
+      - HIPPOCAMPUS_LEFT
+      - Left-Hippocampus
+      - Left_Hippocampus
+      - lh-Hippocampus
+    L_Amygdala:
+      name: L_Amygdala
+      lookupLabel: 367
+      center:
+        x: -23.047619047619047
+        y: -4.5777777777777775
+        z: -20.025396825396825
+      alternateName:
+      - AMYGDALA_LEFT
+      - Left-Amygdala
+      - Left_Amygdala
+      - lh-Amygdala
+    L_Accumbens:
+      name: L_Accumbens
+      lookupLabel: 368
+      center:
+        x: -7.288888888888889
+        y: 9.481481481481481
+        z: -8.414814814814815
+      alternateName:
+      - ACCUMBENS_LEFT
+      - Left-Accumbens-area
+      - Left_Accumbens_area
+      - lh-Accumbens-area
+      - L_Accumbens-area
+    L_VentralDC:
+      name: L_VentralDC
+      lookupLabel: 369
+      center:
+        x: -10.059490084985836
+        y: -15.05099150141643
+        z: -10.44759206798867
+      alternateName:
+      - DIENCEPHALON_VENTRAL_LEFT
+      - Left-VentralDC
+      - Left_VentralDC
+      - lh-VentralDC
+    R_Cerebellum:
+      name: R_Cerebellum
+      lookupLabel: 370
+      center:
+        x: 23.64304461942257
+        y: -61.5430883639545
+        z: -36.58486439195101
+      alternateName:
+      - CEREBELLUM_RIGHT
+      - Right-Cerebellum-Cortex
+      - Right_Cerebellum_Cortex
+      - rh-Cerebellum-Cortex
+      - R_Cerebellum-Cortex
+    R_Thalamus:
+      name: R_Thalamus
+      lookupLabel: 371
+      center:
+        x: 11.512820512820513
+        y: -18.040064102564102
+        z: 6.3076923076923075
+      alternateName:
+      - THALAMUS_RIGHT
+      - Right-Thalamus-Proper
+      - Right_Thalamus_Proper
+      - rh-Thalamus-Proper
+      - R_Thalamus-Proper
+    R_Caudate:
+      name: R_Caudate
+      lookupLabel: 372
+      center:
+        x: 13.435761589403974
+        y: 8.88476821192053
+        z: 10.328476821192053
+      alternateName:
+      - CAUDATE_RIGHT
+      - Right-Caudate
+      - Right_Caudate
+      - rh-Caudate
+    R_Putamen:
+      name: R_Putamen
+      lookupLabel: 373
+      center:
+        x: 26.297029702970296
+        y: 1.7702970297029703
+        z: -1.0316831683168317
+      alternateName:
+      - PUTAMEN_RIGHT
+      - Right-Putamen
+      - Right_Putamen
+      - rh-Putamen
+    R_Pallidum:
+      name: R_Pallidum
+      lookupLabel: 374
+      center:
+        x: 20.06923076923077
+        y: -3.523076923076923
+        z: -1.7076923076923076
+      alternateName:
+      - PALLIDUM_RIGHT
+      - Right-Pallidum
+      - Right_Pallidum
+      - rh-Pallidum
+    R_Hippocampus:
+      name: R_Hippocampus
+      lookupLabel: 375
+      center:
+        x: 26.30691823899371
+        y: -21.486792452830187
+        z: -13.906918238993711
+      alternateName:
+      - HIPPOCAMPUS_RIGHT
+      - Right-Hippocampus
+      - Right_Hippocampus
+      - rh-Hippocampus
+    R_Amygdala:
+      name: R_Amygdala
+      lookupLabel: 376
+      center:
+        x: 23.879518072289155
+        y: -3.566265060240964
+        z: -20.0
+      alternateName:
+      - AMYGDALA_RIGHT
+      - Right-Amygdala
+      - Right_Amygdala
+      - rh-Amygdala
+    R_Accumbens:
+      name: R_Accumbens
+      lookupLabel: 377
+      center:
+        x: 8.085714285714285
+        y: 10.542857142857143
+        z: -8.057142857142857
+      alternateName:
+      - ACCUMBENS_RIGHT
+      - Right-Accumbens-area
+      - Right_Accumbens_area
+      - rh-Accumbens-area
+      - R_Accumbens-area
+    R_VentralDC:
+      name: R_VentralDC
+      lookupLabel: 378
+      center:
+        x: 11.176966292134832
+        y: -14.418539325842696
+        z: -10.123595505617978
+      alternateName:
+      - DIENCEPHALON_VENTRAL_RIGHT
+      - Right-VentralDC
+      - Right_VentralDC
+      - rh-VentralDC
+    Brain-Stem:
+      name: Brain-Stem
+      lookupLabel: 379
+      center:
+        x: 0.41589861751152074
+        y: -30.247119815668203
+        z: -32.798963133640555
+      alternateName:
+      - BRAIN_STEM
+      - Brainstem
+      - BrainStem
+      - brain-stem

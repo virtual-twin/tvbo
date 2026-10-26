@@ -1,0 +1,33 @@
+name: LogisticMap
+parameters:
+  r:
+    name: r
+    value: 4.0
+    description: Logistic growth rate r.
+description: 'One-dimensional logistic map x_{n+1} = r x_n (1 - x_n), archetypal model
+  for routes to chaos
+
+  via period-doubling. Default r=4.0 yields fully developed chaos.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+references:
+- May1976
+- Feigenbaum1978
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      rhs: r*x*(1 - x)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.4
+number_of_modes: 1
+model_type: generic
+system_type: discrete
+autonomous: true
+cse: false
+compile: false

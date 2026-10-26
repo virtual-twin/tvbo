@@ -1,0 +1,36 @@
+function GastSchmidtKnosche_SF!(dx, x, p, t = 0)
+
+    (;Delta, I, J, alpha, cr, cv, eta, tau_A, tau, c_glob0, c_glob1) = p
+
+    A, B, V, r = x
+
+
+    dx[1] = B ./ tau_A
+    dx[2] = (-A .- 2 * B .+ alpha .* r) ./ tau_A
+    dx[3] = (I .+ eta .+ V .^ 2 .- A .+ c_glob0 .* cr .+ c_glob1 .* cv .+ J .* r .* tau .- pi ^ 2 * r .^ 2 .* tau .^ 2) ./ tau
+    dx[4] = (2 * V .* r .+ Delta ./ (pi * tau)) ./ tau
+    dx
+end
+
+# Parameter values
+p = (Delta = 2.0, I = 0.0, J = 21.2132, alpha = 10.0, cr = 1.0, cv = 0.0, eta = 1.0, tau_A = 10.0, tau = 1.0, c_glob0 = 0.0, c_glob1 = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(GastSchmidtKnosche_SF!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

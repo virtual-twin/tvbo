@@ -1,0 +1,32 @@
+function LotkaVolterraPredPrey!(dx, _x, p, t = 0)
+
+    (;alpha, beta, delta, gamma) = p
+
+    x, y = _x
+
+
+    dx[1] = alpha .* x .- beta .* x .* y
+    dx[2] = -gamma .* y .+ delta .* x .* y
+    dx
+end
+
+# Parameter values
+p = (alpha = 1.5, beta = 1.0, delta = 1.0, gamma = 3.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        10.0,
+        5.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(LotkaVolterraPredPrey!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

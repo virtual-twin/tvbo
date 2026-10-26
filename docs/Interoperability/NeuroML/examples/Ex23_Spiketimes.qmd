@@ -1,12 +1,14 @@
 ---
 title: "Ex23: Spike Times"
 description: "Recording spike times from a mixed IaF / PyNN / HH network with Poisson inputs"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Spike Time Recording
 
-Demonstrates `<EventOutputFile>` — recording discrete spike events from a
-three-population network driven by `poissonFiringSynapse` sources.
+Demonstrates `<EventOutputFile>` — recording discrete spike events from a three-population network driven by `poissonFiringSynapse` sources.
 
 ---
 

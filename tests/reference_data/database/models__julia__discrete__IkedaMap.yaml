@@ -1,0 +1,64 @@
+name: IkedaMap
+parameters:
+  a:
+    name: a
+    value: 1.0
+    description: Constant bias a.
+  b:
+    name: b
+    value: 1.0
+    description: Linear scaling b.
+  c:
+    name: c
+    value: 0.4
+    description: Phase offset c.
+  d:
+    name: d
+    value: 6.0
+    description: Phase nonlinearity scale d.
+description: 'Ikeda map modeling light propagation in a ring cavity with nonlinear
+  phase; exhibits
+
+  rich strange attractors.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+references:
+- Skiadas2008
+derived_variables:
+  theta:
+    name: theta
+    equation:
+      lhs: theta
+      rhs: c - d/(1 + x**2 + y**2)
+      latex: false
+    record: false
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      rhs: a + b*(x*cos(theta) - y*sin(theta))
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 1.0
+  y:
+    name: y
+    equation:
+      lhs: y_next
+      rhs: b*(x*sin(theta) + y*cos(theta))
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 1.0
+number_of_modes: 1
+model_type: generic
+system_type: discrete
+autonomous: true
+cse: false
+compile: false

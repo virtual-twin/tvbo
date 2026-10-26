@@ -1,0 +1,68 @@
+name: UlamRing4
+parameters:
+  eps:
+    name: eps
+    value: 0.6
+    description: Unidirectional coupling ε on a 4-node ring.
+description: 'Four unidirectionally coupled quadratic maps on a ring using the classic
+  Ulam map
+
+  f(x)=2 - x^2 as local dynamics; higher N can be constructed analogously.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+references:
+- Ulam1960s
+state_variables:
+  x0:
+    name: x0
+    equation:
+      lhs: x0_next
+      rhs: 2 - (eps*x3 + (1 - eps)*x0)**2
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.5403023058681398
+  x1:
+    name: x1
+    equation:
+      lhs: x1_next
+      rhs: 2 - (eps*x0 + (1 - eps)*x1)**2
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.8414709848078965
+  x2:
+    name: x2
+    equation:
+      lhs: x2_next
+      rhs: 2 - (eps*x1 + (1 - eps)*x2)**2
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -0.4161468365471424
+  x3:
+    name: x3
+    equation:
+      lhs: x3_next
+      rhs: 2 - (eps*x2 + (1 - eps)*x3)**2
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -0.9899924966004454
+number_of_modes: 1
+model_type: generic
+system_type: discrete
+autonomous: true
+cse: false
+compile: false

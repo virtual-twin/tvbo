@@ -1,17 +1,36 @@
-# Pre-commit hooks for TVBO.
-#
-# Closes plan.md row 1 / §11.1 item 2: every commit that touches a YAML file in
-# `tvbo/database/` (or the LinkML schema) re-runs `tests/test_database_validation.py`
-# to catch schema-violating database entries before they land. Mirrors the
-# `database-validation` job in `.github/workflows/ci.yml` so local commits and
-# CI agree.
-#
-# Install once with: `pre-commit install`
-# Run manually with: `pre-commit run --all-files`
+# Install once with `pre-commit install`; run over everything with `pre-commit run --all-files`.
 
 repos:
   - repo: local
     hooks:
+      - id: ruff-check
+        name: ruff (lint)
+        entry: ruff check --force-exclude
+        language: system
+        types: [python]
+        require_serial: false
+
+      - id: ruff-format
+        name: ruff (format)
+        entry: ruff format --force-exclude
+        language: system
+        types: [python]
+
+      - id: check-prose
+        name: Comment and docstring prose (no formatter fixes these)
+        entry: python scripts/check_prose.py
+        language: system
+        types: [python]
+
+      # Templates and config still carry a backlog, so there the comment rule is diff-only.
+      - id: check-prose-diff
+        name: No stacked '#' blocks added to templates or config
+        entry: python scripts/check_prose.py --diff
+        language: system
+        pass_filenames: false
+        # `files` alone: `types_or` is ANDed with it, and mako and julia have no identify tag.
+        files: \.(py|mako|ya?ml|toml|jl|sh)$
+
       - id: database-validation
         name: Validate tvbo/database/*.yaml against LinkML schema
         entry: pytest tests/test_database_validation.py -q --no-header
@@ -19,3 +38,18 @@ repos:
         pass_filenames: false
         files: '^(tvbo/database/.*\.ya?ml|schema/tvbo_datamodel\.yaml|tests/test_database_validation\.py)$'
         stages: [pre-commit]
+
+      - id: style-contracts
+        name: Style contracts — generated code, and the comment convention
+        entry: pytest tests/test_codegen_style_contract.py tests/test_comment_style.py -q --no-header -p no:randomly
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      # A folded alias read as an attribute returns its default forever, and silently.
+      - id: no-folded-alias-reads
+        name: No source reads a slot alias the dialect folds away
+        entry: pytest tests/test_no_folded_alias_reads.py -q --no-header -p no:randomly
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

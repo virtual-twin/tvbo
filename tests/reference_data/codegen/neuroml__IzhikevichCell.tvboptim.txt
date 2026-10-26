@@ -1,0 +1,84 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class IzhikevichCell(AbstractDynamics):
+    """IzhikevichCell neural mass model."""
+
+    STATE_NAMES = ("v", "U")
+    INITIAL_STATE = (-70.0, -14.0)
+    AUXILIARY_NAMES = ("I_ext",)
+
+    DEFAULT_PARAMS = Bunch(
+        I_amp=14.0,
+        a=0.02,
+        b=0.2,
+        c=-65.0,
+        d=6.0,
+        pulse_delay=20.0,
+        pulse_duration=2000.0,
+        thresh=30.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        I_amp = params.I_amp
+        a = params.a
+        b = params.b
+        pulse_delay = params.pulse_delay
+        pulse_duration = params.pulse_duration
+
+        v = state[0]
+        U = state[1]
+
+        I_ext = jnp.where(
+            jnp.all(
+                jnp.asarray(
+                    [
+                        jnp.less_equal(pulse_delay, t),
+                        jnp.less(t, pulse_delay + pulse_duration),
+                    ]
+                ),
+                axis=0,
+            ),
+            I_amp,
+            0.0,
+        )
+
+        dv_dt = 0.04 * v**2 + 5 * v + 140 - U + I_ext
+        dU_dt = a * (b * v - U)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dv_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dv_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dU_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(I_ext), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

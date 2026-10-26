@@ -10,7 +10,7 @@ simulation_experiments:
       modified: yes
       derived_from:
         label: ReducedWongWangExcInh
-      iri: http://www.thevirtualbrain.org/tvb-o/ReducedWongWangExcInh
+      iri: https://w3id.org/tvbo/models/ReducedWongWangExcInh
       parameters:
         - label: a_E
           value: 310
@@ -76,7 +76,6 @@ simulation_experiments:
 
     integration:
       noise:
-        correlated: false
         gaussian: true
         parameters:
           - label: g

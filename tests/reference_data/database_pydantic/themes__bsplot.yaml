@@ -1,0 +1,8 @@
+ticks: round
+max_ticks: 4
+axis_ends: near
+end_tick_reach: 0.2
+spine_offset: 0.02
+spine_trim: true
+align_labels: true
+colorbar_ends: true

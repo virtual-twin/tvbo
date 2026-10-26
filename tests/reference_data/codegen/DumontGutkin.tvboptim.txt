@@ -1,0 +1,118 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class DumontGutkin(AbstractDynamics):
+    """DumontGutkin neural mass model."""
+
+    STATE_NAMES = ("V_e", "V_i", "r_e", "r_i", "s_ee", "s_ei", "s_ie", "s_ii")
+    INITIAL_STATE = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        Delta_e=1.0,
+        Delta_i=1.0,
+        Gamma=5.0,
+        I_e=0.0,
+        I_i=0.0,
+        J_ee=0.0,
+        J_ei=10.0,
+        J_ie=0.0,
+        J_ii=15.0,
+        eta_e=-5.0,
+        eta_i=-5.0,
+        tau_e=10.0,
+        tau_i=10.0,
+        tau_s=1.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        Delta_e = params.Delta_e
+        Delta_i = params.Delta_i
+        Gamma = params.Gamma
+        I_e = params.I_e
+        I_i = params.I_i
+        J_ee = params.J_ee
+        J_ei = params.J_ei
+        J_ie = params.J_ie
+        J_ii = params.J_ii
+        eta_e = params.eta_e
+        eta_i = params.eta_i
+        tau_e = params.tau_e
+        tau_i = params.tau_i
+        tau_s = params.tau_s
+
+        V_e = state[0]
+        V_i = state[1]
+        r_e = state[2]
+        r_i = state[3]
+        s_ee = state[4]
+        s_ei = state[5]
+        s_ie = state[6]
+        s_ii = state[7]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+
+        dV_e_dt = (
+            I_e
+            + V_e**2
+            + eta_e
+            - jnp.pi**2 * r_e**2 * tau_e**2
+            + s_ee * tau_e
+            - s_ei * tau_e
+        ) / tau_e
+        dV_i_dt = (
+            I_i
+            + V_i**2
+            + eta_i
+            - jnp.pi**2 * r_i**2 * tau_i**2
+            + s_ie * tau_i
+            - s_ii * tau_i
+        ) / tau_i
+        dr_e_dt = (Delta_e / ((jnp.pi * tau_e)) + 2 * V_e * r_e) / tau_e
+        dr_i_dt = (Delta_i / ((jnp.pi * tau_i)) + 2 * V_i * r_i) / tau_i
+        ds_ee_dt = (J_ee * r_e + c_glob - s_ee) / tau_s
+        ds_ei_dt = (J_ei * r_i - s_ei) / tau_s
+        ds_ie_dt = (Gamma * c_glob + J_ie * r_e - s_ie) / tau_s
+        ds_ii_dt = (J_ii * r_i - s_ii) / tau_s
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dV_e_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dV_e_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dV_i_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dr_e_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dr_i_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(ds_ee_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(ds_ei_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(ds_ie_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(ds_ii_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

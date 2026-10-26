@@ -3,12 +3,9 @@ title: "Maintainer guide"
 subtitle: "Adding, editing, and rendering TVBO skills"
 ---
 
-This page is for people contributing to the TVBO codebase: how the skill
-system is laid out internally, how to add a new skill, and how to keep
-the adapter files in sync.
+This page is for people contributing to the TVBO codebase: how the skill system is laid out internally, how to add a new skill, and how to keep the adapter files in sync.
 
-If you're a *user* of TVBO, you want [Installing & tuning](installing-skills.qmd)
-instead.
+If you're a *user* of TVBO, you want [Installing & tuning](installing-skills.qmd) instead.
 
 ## Repository layout
 
@@ -33,7 +30,8 @@ tvbo/                                # repo root
             ├── overview/SKILL.md
             ├── writing-models/SKILL.md
             ├── running-simulations/SKILL.md
-            └── platform/SKILL.md
+            ├── platform/SKILL.md
+            └── replicating-studies/  # SKILL.md + assets/ (templates, skeleton)
 ```
 
 ## The pipeline
@@ -50,8 +48,7 @@ tvbo/                                # repo root
           └──► render_prompt()          ─► stdout (raw API)
 ```
 
-All renderers live in `tvbo/skills/_render.py`. They're pure functions
-of the `Skill` dataclass — easy to test and easy to extend.
+All renderers live in `tvbo/skills/_render.py`. They're pure functions of the `Skill` dataclass — easy to test and easy to extend.
 
 ## Adding a new skill
 
@@ -63,9 +60,7 @@ of the `Skill` dataclass — easy to test and easy to extend.
 | `user` | `tvbo/skills/canonical/<name>/SKILL.md` | Yes — `pip install tvbo` ships it |
 | `both` | `tvbo/skills/canonical/<name>/SKILL.md` | Yes |
 
-Rule of thumb: if a *user* who only ever calls `pip install tvbo` (no
-clone) could benefit, it's a `user` skill. If it's about the TVBO source
-tree itself, it's `maintainer`.
+Rule of thumb: if a *user* who only ever calls `pip install tvbo` (no clone) could benefit, it's a `user` skill. If it's about the TVBO source tree itself, it's `maintainer`.
 
 ### 2. Write the canonical `SKILL.md`
 
@@ -90,13 +85,9 @@ the skill fires.
 
 Guidelines:
 
-- **Body should be self-contained.** The assistant won't have access to
-  the rest of the repo unless you point it there.
-- **Capture non-obvious rules.** Things an LLM would predictably get
-  wrong without this skill. Generic style advice is in `writing-code`
-  already.
-- **Cite file paths and line ranges.** They survive better than vague
-  references like "the codegen module".
+- **Body should be self-contained.** The assistant won't have access to the rest of the repo unless you point it there.
+- **Capture non-obvious rules.** Things an LLM would predictably get wrong without this skill. Generic style advice is in `writing-code` already.
+- **Cite file paths and line ranges.** They survive better than vague references like "the codegen module".
 
 ### 3. Sync
 
@@ -108,6 +99,7 @@ This:
 
 - Parses every canonical `SKILL.md` from both roots.
 - Writes `.claude/skills/<name>/SKILL.md` for every skill.
+- Mirrors each skill's `assets/` dir, if it has one, next to that `.claude/skills/<name>/SKILL.md`.
 - Writes `.github/instructions/<name>.instructions.md` for every
   *maintainer-tagged* skill.
 - Regenerates the skills-index region of `AGENTS.md`.
@@ -115,7 +107,7 @@ This:
 Output:
 
 ```
-synced 11 skills → 19 files
+synced 12 skills → 20 files
 ```
 
 ### 4. Verify
@@ -124,13 +116,11 @@ synced 11 skills → 19 files
 tvbo skills sync --check   # CI guard — fails if any adapter file would change
 ```
 
-If you see drift output, something downstream of canonical was
-hand-edited. Re-sync to fix.
+If you see drift output, something downstream of canonical was hand-edited. Re-sync to fix.
 
 ## Editing an existing skill
 
-**Always** edit the canonical source under `skills/<name>/SKILL.md` or
-`tvbo/skills/canonical/<name>/SKILL.md`. Then `tvbo skills sync`.
+**Always** edit the canonical source under `skills/<name>/SKILL.md` or `tvbo/skills/canonical/<name>/SKILL.md`. Then `tvbo skills sync`.
 
 Do **not** edit the adapter outputs:
 
@@ -139,29 +129,40 @@ Do **not** edit the adapter outputs:
 
 Sync will overwrite them. Edits there are silently lost.
 
+## Bundling assets with a skill
+
+A canonical skill may ship an `assets/` directory beside its `SKILL.md` — templates, helper scripts, or a skeleton tree the skill instructs the assistant to copy:
+
+```
+tvbo/skills/canonical/<name>/
+├── SKILL.md
+└── assets/
+    ├── report.qmd.tmpl
+    └── skeleton/...
+```
+
+`sync` and `install` mirror `assets/` next to the rendered `SKILL.md`, but
+**only for the directory-shaped `claude-code` target** (the flat Cursor / Copilot / prompt outputs carry the body alone). `uninstall` removes it and `sync --check` diffs the tree. Assets ship in the wheel through the same `tvbo/skills/canonical/**` inclusion as `SKILL.md` — no extra packaging config.
+
+Syntax-check an asset `.py` with `ast.parse` (writes nothing), **not**
+`py_compile` — the latter drops a `__pycache__/*.pyc` under the canonical source. Sync ignores bytecode when mirroring, but keep the source clean.
+
 ## Releasing the wheel
 
-`tvbo/skills/canonical/**` is bundled by the standard
-`tool.hatch.build.targets.wheel` config — no extra `force-include`
-needed. Sanity check before a release:
+`tvbo/skills/canonical/**` is bundled by the standard `tool.hatch.build.targets.wheel` config — no extra `force-include` needed. Sanity check before a release:
 
 ```bash
 hatch build
 unzip -l dist/tvbo-*.whl | grep skills/canonical
 ```
 
-You should see all four user `SKILL.md` files inside the wheel.
+You should see all five user `SKILL.md` files inside the wheel, plus any `assets/` a skill ships (e.g. `replicating-studies/assets/...`).
 
 ## Versioning the marker
 
-User-installed skills carry `tvbo-version: X.Y.Z` in their frontmatter
-(stamped at install time, not at build). This is purely informational
-today — `uninstall` doesn't filter by version; it removes any file with
-`managed-by: tvbo`.
+User-installed skills carry `tvbo-version: X.Y.Z` in their frontmatter (stamped at install time, not at build). This is purely informational today — `uninstall` doesn't filter by version; it removes any file with `managed-by: tvbo`.
 
-When we eventually need a migration path (e.g. a renamed skill), we can
-add version comparison to `install`. For now the marker just helps
-debug "where did this skill on my machine come from?".
+When we eventually need a migration path (e.g. a renamed skill), we can add version comparison to `install`. For now the marker just helps debug "where did this skill on my machine come from?".
 
 ## Adding a new render target
 
@@ -173,24 +174,16 @@ Want to support Aider, Continue.dev, OpenCode, Codex CLI, or some new tool?
 3. Wire it into `_render_target()` and `_target_path()` switch cases.
 4. Update the [Installing & tuning](installing-skills.qmd) doc.
 
-Each adapter is ~10 lines of code. The hardest part is reading the
-target tool's docs to figure out its exact frontmatter convention.
+Each adapter is ~10 lines of code. The hardest part is reading the target tool's docs to figure out its exact frontmatter convention.
 
 ## Why this architecture?
 
 Earlier the repo had three places to edit every rule:
-`skills/git.md`, `.claude/skills/git/SKILL.md`, and
-`.github/instructions/git.instructions.md`. Same content, three formats,
-three sources of drift. The canonical-source + renderer design replaces
-that with **one source, N renderings**:
+`skills/git.md`, `.claude/skills/git/SKILL.md`, and `.github/instructions/git.instructions.md`. Same content, three formats, three sources of drift. The canonical-source + renderer design replaces that with **one source, N renderings**:
 
 - Editing is one file.
 - Sync runs in milliseconds.
 - New tools require a new renderer, not a new copy of every skill.
-- Build-time rendering for maintainer-side (so a fresh clone has working
-  Claude/Cursor/Copilot configs without running anything), install-time
-  rendering for user-side (so the wheel doesn't have to ship pre-rendered
-  per-target trees that bloat with every new adapter).
+- Build-time rendering for maintainer-side (so a fresh clone has working Claude/Cursor/Copilot configs without running anything), install-time rendering for user-side (so the wheel doesn't have to ship pre-rendered per-target trees that bloat with every new adapter).
 
-See also: [Skill reference](skills-reference.qmd) ·
-[`AGENTS.md`](agents-md.qmd)
+See also: [Skill reference](skills-reference.qmd) · [`AGENTS.md`](agents-md.qmd)

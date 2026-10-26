@@ -1,6 +1,9 @@
 ---
 title: "Ex26: Connection Weights"
 description: "Weighted chemical, electrical, continuous connections and weighted inputs"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Weighted Connections
@@ -12,8 +15,7 @@ Demonstrates all weight-bearing connection types in NeuroML2:
 - **Continuous**: `<continuousConnectionInstanceW>` (weight=1/0.5/2)
 - **Inputs**: `<inputList>/<inputW>` (weight=1/0.5/2)
 
-3 pre-synaptic HH cells receive weighted current injection;
-9 post-synaptic HH cells receive synaptic input via different projection types.
+3 pre-synaptic HH cells receive weighted current injection; 9 post-synaptic HH cells receive synaptic input via different projection types.
 
 ---
 

@@ -1,0 +1,43 @@
+name: pyNeuroML
+description: Python API and command-line tools for NeuroML/LEMS model creation, validation,
+  visualization, and simulation via jNeuroML and direct simulator backends.
+homepage: https://docs.neuroml.org/Userdocs/Software/pyNeuroML.html
+license: LGPL-3.0-only
+repository: https://github.com/NeuroML/pyNeuroML
+ecosystem:
+- pypi
+application_category: specification
+scale:
+- channel
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- conductance_based
+- spiking
+tool_role:
+- workflow_framework
+programming_language:
+- Python
+runtime_platform:
+- Python
+interoperates_with:
+- NeuroML
+- LEMS
+- jNeuroML
+- NEURON
+- NEST
+date_created: '2016-01-01'
+development_status: active
+author:
+- Padraig Gleeson
+maintainer:
+- Padraig Gleeson
+reference_publication: 10.1098/rstb.2017.0380
+keywords:
+- NeuroML
+- Python API
+- model analysis
+- visualization
+issue_tracker: https://github.com/NeuroML/pyNeuroML/issues
+is_accessible_for_free: true

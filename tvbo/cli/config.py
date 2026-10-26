@@ -1,11 +1,11 @@
 """``tvbo config`` — view CLI configuration (full impl in C2)."""
+
 from __future__ import annotations
 
 import os
 from pathlib import Path
 
 import typer
-
 
 app = typer.Typer(name="config", no_args_is_help=True)
 

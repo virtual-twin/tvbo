@@ -1,5 +1,5 @@
 name: GastSchmidtKnosche_SD
-iri: tvbo:GastSchmidtKnosche_SD
+iri: tvbo:models/GastSchmidtKnosche_SD
 model_type: neural_mass
 parameters:
   Delta:

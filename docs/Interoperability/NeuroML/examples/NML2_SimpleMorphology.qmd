@@ -1,6 +1,9 @@
 ---
 title: "NML2: Simple Morphology"
 description: "Cell morphology definitions with segments and segment groups"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## NML2_SimpleMorphology.nml
@@ -29,9 +32,7 @@ for line in text.split('\n'):
 
 ## TVBO Representation
 
-TVBO represents point neurons — morphology is abstracted away into a single
-compartment.  The dynamics (HH, IaF, etc.) are the same regardless of spatial
-extent.
+TVBO represents point neurons — morphology is abstracted away into a single compartment.  The dynamics (HH, IaF, etc.) are the same regardless of spatial extent.
 
 ```{python}
 from tvbo import SimulationExperiment

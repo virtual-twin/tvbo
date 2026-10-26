@@ -1,0 +1,29 @@
+name: Open Source Brain
+description: A platform for sharing and collaboratively developing computational neuroscience
+  models in standardized formats, primarily NeuroML.
+homepage: https://www.opensourcebrain.org
+license: LGPL-3.0-only
+repository: https://github.com/OpenSourceBrain
+application_category: repository
+scale:
+- channel
+- neuron
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- model_repository
+programming_language:
+- Python
+- Java
+runtime_platform:
+- browser
+interoperates_with:
+- NeuroML
+- NEURON
+- jNeuroML
+development_status: active
+maintainer:
+- Padraig Gleeson
+- Silver Lab, UCL
+is_accessible_for_free: true

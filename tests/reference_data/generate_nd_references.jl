@@ -1,25 +1,13 @@
 #!/usr/bin/env julia
 """
-Generate HDF5 reference data from original NetworkDynamics.jl tutorials.
+Generate HDF5 reference data from the original NetworkDynamics.jl tutorials, which tests/test_networkdynamics_comparison.py compares TVBO's generated code against.
 
-Run this script once to create reference .h5 files that pytest uses for
-numerical comparison against TVBO-generated results.
+The files go to the directory ENV["TVBO_ND_REFERENCE_DIR"] names, else beside this script. The test module runs this script through juliacall in its own session, in the Julia environment tvbo/juliapkg.json declares, so a run compares against references the same NetworkDynamics.jl computed. Standalone:
 
-Usage:
-    julia --project=@. generate_nd_references.jl
+    julia --project=<the tvbo Julia environment> tests/reference_data/generate_nd_references.jl
 
-Time grids use solve(...; saveat=dt) matching each YAML's step_size so
-that TVBO-generated code produces time-series on the exact same grid.
+Time grids use solve(...; saveat=dt) matching each YAML's step_size, so that TVBO-generated code produces time series on the same grid.
 """
-
-using Pkg
-for pkg in ["NetworkDynamics", "Graphs", "OrdinaryDiffEqTsit5",
-            "OrdinaryDiffEqSDIRK", "SimpleWeightedGraphs", "StableRNGs",
-            "HDF5", "DelimitedFiles", "DiffEqCallbacks"]
-    if !haskey(Pkg.project().dependencies, pkg)
-        Pkg.add(pkg)
-    end
-end
 
 using Graphs
 using NetworkDynamics
@@ -30,7 +18,14 @@ using StableRNGs
 using HDF5
 using DelimitedFiles
 
-outdir = @__DIR__
+outdir = get(ENV, "TVBO_ND_REFERENCE_DIR", @__DIR__)
+
+"Write the vertex and state name of each entry of `nw`'s flat state, in the order `uflat` and the solution hold them: vertex by vertex within each batch of identical vertex models."
+function write_state_labels(f, nw)
+    syms = NetworkDynamics.SII.variable_symbols(nw)
+    f["state_vertex"] = [s.compidx for s in syms]
+    f["state_symbol"] = [String(s.subidx) for s in syms]
+end
 
 # =============================================================================
 # Example 1: Network Diffusion (Getting Started — 1D part)
@@ -58,6 +53,7 @@ x0_diff = randn(StableRNG(1), N_diff)
 sol_diff = solve(ODEProblem(nd_diff, x0_diff, (0.0, 2.0)), Tsit5(); saveat=0.01)
 
 h5open(joinpath(outdir, "diffusion_reference.h5"), "w") do f
+    write_state_labels(f, nd_diff)
     f["t"] = Array(sol_diff.t)
     f["u"] = Array(sol_diff)
     f["x0"] = x0_diff
@@ -96,6 +92,7 @@ x0_kur = collect(1:N_kur) ./ N_kur; x0_kur .-= sum(x0_kur) ./ N_kur
 sol_kur = solve(ODEProblem(nw_kur, x0_kur, (0.0, 10.0), pflat(p_kur)), Tsit5(); saveat=0.05)
 
 h5open(joinpath(outdir, "kuramoto_reference.h5"), "w") do f
+    write_state_labels(f, nw_kur)
     f["t"] = Array(sol_kur.t); f["u"] = Array(sol_kur)
     f["x0"] = x0_kur; f["omega0"] = ω_kur
     f["adjacency"] = Matrix(Float64.(adjacency_matrix(g_kur)))
@@ -143,6 +140,7 @@ sol_fhn = solve(ODEProblem(fhn_network, x0_fhn, (0.0, 200.0), pflat(p_fhn)),
 
 N_fhn = nv(g_directed_fhn)
 h5open(joinpath(outdir, "fitzhugh_nagumo_reference.h5"), "w") do f
+    write_state_labels(f, fhn_network)
     f["t"] = Array(sol_fhn.t); f["u"] = Array(sol_fhn)
     f["x0"] = x0_fhn; f["edge_weights"] = edge_weights_fhn
     f["adjacency"] = Matrix(Float64.(adjacency_matrix(g_directed_fhn)))
@@ -170,6 +168,7 @@ x0_2 = collect(vec(transpose([randn(rng_diff2, N_diff2) .^ 2 randn(rng_diff2, N_
 sol_2 = solve(ODEProblem(nd_2, x0_2, (0.0, 3.0)), Tsit5(); saveat=0.01)
 
 h5open(joinpath(outdir, "diffusion_2d_reference.h5"), "w") do f
+    write_state_labels(f, nd_2)
     f["t"] = Array(sol_2.t); f["u"] = Array(sol_2)
     f["x0"] = x0_2
     f["adjacency"] = Matrix(Float64.(adjacency_matrix(g_diff2)))
@@ -229,6 +228,7 @@ sol_het = solve(ODEProblem(nw_het, uflat(state_het), (0.0, 10.0), pflat(state_he
                 Tsit5(); saveat=0.05)
 
 h5open(joinpath(outdir, "heterogeneous_kuramoto_reference.h5"), "w") do f
+    write_state_labels(f, nw_het)
     f["t"] = Array(sol_het.t); f["u"] = Array(sol_het)
     f["x0"] = uflat(state_het); f["omega0"] = ω_het
     f["adjacency"] = Matrix(Float64.(adjacency_matrix(g_het)))
@@ -299,6 +299,7 @@ sol_cf = solve(prob_cf, Tsit5(); saveat=0.01)
 
 N_cf = nv(g_cf)
 h5open(joinpath(outdir, "cascading_failure_reference.h5"), "w") do f
+    write_state_labels(f, nw_cf)
     f["t"] = Array(sol_cf.t); f["u"] = Array(sol_cf)
     f["x0"] = uflat(s_cf)
     f["adjacency"] = Matrix(Float64.(adjacency_matrix(g_cf)))
@@ -398,9 +399,12 @@ prob_tr = ODEProblem(nw_tr, s_tr, (0.0, 12.0))
 sol_tr = solve(prob_tr, Tsit5(); saveat=0.01)
 
 h5open(joinpath(outdir, "stress_on_truss_reference.h5"), "w") do f
+    write_state_labels(f, nw_tr)
     f["t"] = Array(sol_tr.t); f["u"] = Array(sol_tr)
     f["x0"] = uflat(s_tr)
     f["adjacency"] = Matrix(Float64.(adjacency_matrix(g_tr)))
+    f["edges"] = [[src(e), dst(e)] for e in edges(g_tr)] |> x -> reduce(hcat, x)
+    f["L"] = [s_tr.p.e[i, :L] for i in 1:ne(g_tr)]
     attrs(f)["N"] = nv(g_tr); attrs(f)["n_sv_free"] = 4; attrs(f)["n_fixed"] = length(fixed_tr)
     attrs(f)["dt"] = 0.01; attrs(f)["duration"] = 12.0
 end

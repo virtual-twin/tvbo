@@ -2,9 +2,9 @@
 
 import pytest
 
-from tvbo.classes.experiment import SimulationExperiment
+from tests.functional.simulation_backends_shared import _HAVE_TVBOPTIM, MODEL_FILES, MODEL_IDS
 from tvbo.classes.dynamics import Dynamics
-from tests.functional.simulation_backends_shared import MODEL_FILES, MODEL_IDS, _HAVE_TVBOPTIM
+from tvbo.classes.experiment import SimulationExperiment
 
 
 @pytest.mark.backend_tvboptim

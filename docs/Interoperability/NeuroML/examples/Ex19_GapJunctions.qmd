@@ -1,12 +1,14 @@
 ---
 title: "Ex19: Gap Junctions"
 description: "Electrical synapses (gap junctions) between integrate-and-fire cells"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Gap Junctions
 
-Two iafCells connected by a gap junction (electrical synapse), each driven by a
-separate pulseGenerator at different times. Demonstrates bidirectional current flow.
+Two iafCells connected by a gap junction (electrical synapse), each driven by a separate pulseGenerator at different times. Demonstrates bidirectional current flow.
 
 Reference: NeuroML2 LEMS_NML2_Ex19_GapJunctions.xml
 

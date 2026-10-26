@@ -1,0 +1,455 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class EpileptorCodim3SlowMod(Model):
+
+    mu1_Ain = NArray(
+        label=r":math:`mu1_Ain`",
+        default=np.array([0.05494]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter mu1 at the initial point at bursting offset.""",
+    )
+    mu2_Ain = NArray(
+        label=r":math:`mu2_Ain`",
+        default=np.array([0.2731]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter mu2 at the initial point at bursting offset.""",
+    )
+    nu_Ain = NArray(
+        label=r":math:`nu_Ain`",
+        default=np.array([0.287]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter nu at the initial point at bursting offset.""",
+    )
+    mu1_Bin = NArray(
+        label=r":math:`mu1_Bin`",
+        default=np.array([-0.0461]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter mu1 at the initial point at bursting onset.""",
+    )
+    mu2_Bin = NArray(
+        label=r":math:`mu2_Bin`",
+        default=np.array([0.243]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter mu2 at the initial point at bursting onset.""",
+    )
+    nu_Bin = NArray(
+        label=r":math:`nu_Bin`",
+        default=np.array([0.3144]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter nu at the initial point at bursting onset.""",
+    )
+    mu1_Aend = NArray(
+        label=r":math:`mu1_Aend`",
+        default=np.array([0.06485]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter mu1 at the final point at bursting offset.""",
+    )
+    mu2_Aend = NArray(
+        label=r":math:`mu2_Aend`",
+        default=np.array([0.07337]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter mu2 at the final point at bursting offset.""",
+    )
+    nu_Aend = NArray(
+        label=r":math:`nu_Aend`",
+        default=np.array([-0.3878]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter nu at the final point at bursting offset.""",
+    )
+    mu1_Bend = NArray(
+        label=r":math:`mu1_Bend`",
+        default=np.array([0.03676]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter mu1 at the final point at bursting onset.""",
+    )
+    mu2_Bend = NArray(
+        label=r":math:`mu2_Bend`",
+        default=np.array([-0.02792]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter mu2 at the final point at bursting onset.""",
+    )
+    nu_Bend = NArray(
+        label=r":math:`nu_Bend`",
+        default=np.array([-0.3973]),
+        domain=Range(lo=-1.0, hi=1.0, step=1.0),
+        doc="""The bifurcation parameter nu at the final point at bursting onset.""",
+    )
+    b = NArray(
+        label=r":math:`b`",
+        default=np.array([1.0]),
+        doc="""Unfolding type of the degenerate Takens-Bogdanov bifurcation, default is a focus type.""",
+    )
+    R = NArray(
+        label=r":math:`R`",
+        default=np.array([0.4]),
+        domain=Range(lo=0.0, hi=2.5, step=1.0),
+        doc="""Radius in unfolding.""",
+    )
+    c = NArray(
+        label=r":math:`c`",
+        default=np.array([0.002]),
+        domain=Range(lo=0.0, hi=0.01, step=1.0),
+        doc="""Speed of the slow variable.""",
+    )
+    cA = NArray(
+        label=r":math:`cA`",
+        default=np.array([0.0001]),
+        domain=Range(lo=0.0, hi=0.001, step=1.0),
+        doc="""Speed of the ultra-slow transition of the initial point.""",
+    )
+    cB = NArray(
+        label=r":math:`cB`",
+        default=np.array([0.00012]),
+        domain=Range(lo=0.0, hi=0.001, step=1.0),
+        doc="""Speed of the ultra-slow transition of the final point.""",
+    )
+    dstar = NArray(
+        label=r":math:`dstar`",
+        default=np.array([0.3]),
+        domain=Range(lo=-0.1, hi=0.5, step=1.0),
+        doc="""Threshold for the inversion of the slow variable.""",
+    )
+    Ks = NArray(
+        label=r":math:`Ks`",
+        default=np.array([0.0]),
+        doc="""Slow permittivity coupling strength, the default is no coupling.""",
+    )
+    modification = NArray(
+        label=r":math:`modification`",
+        default=np.array([1.0]),
+        doc="""Toggle the +0.1*(z-0.5)^7 stabilising term in z_dot: >0 (True, default) includes it, 0 (False) omits it.""",
+    )
+
+    _nvar = 5
+    state_variables = ["x", "y", "z", "uA", "uB"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "x": np.array([0.4, 0.6]),
+            "y": np.array([-0.1, 0.1]),
+            "z": np.array([0.0, 0.1]),
+            "uA": np.array([0.0, 0.0]),
+            "uB": np.array([0.0, 0.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("x", "y", "z", "uA", "uB"),
+        default=("x", "z"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "mu1_Ain",
+            "mu2_Ain",
+            "nu_Ain",
+            "mu1_Bin",
+            "mu2_Bin",
+            "nu_Bin",
+            "mu1_Aend",
+            "mu2_Aend",
+            "nu_Aend",
+            "mu1_Bend",
+            "mu2_Bend",
+            "nu_Bend",
+            "b",
+            "R",
+            "c",
+            "cA",
+            "cB",
+            "dstar",
+            "Ks",
+            "modification",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "x": "-y",
+            "y": "x**3 - mu1 - mu2*x - y*(nu + x**2 + b*x)",
+            "z": "-c*(np.sqrt(y**2 + (x - xs)**2) - dstar + Ks*c_glob + np.where(np.greater(modification, 0), (1/10)*(-1/2 + z)**7, 0))",
+            "uA": "cA",
+            "uB": "cB",
+        },
+    )
+
+    cvar = np.array([0], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_glob"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def update_derived_parameters(self):
+
+        mu1_Ain = self.mu1_Ain
+        mu2_Ain = self.mu2_Ain
+        nu_Ain = self.nu_Ain
+        mu1_Bin = self.mu1_Bin
+        mu2_Bin = self.mu2_Bin
+        nu_Bin = self.nu_Bin
+        mu1_Aend = self.mu1_Aend
+        mu2_Aend = self.mu2_Aend
+        nu_Aend = self.nu_Aend
+        mu1_Bend = self.mu1_Bend
+        mu2_Bend = self.mu2_Bend
+        nu_Bend = self.nu_Bend
+        b = self.b
+        R = self.R
+        c = self.c
+        cA = self.cA
+        cB = self.cB
+        dstar = self.dstar
+        Ks = self.Ks
+        modification = self.modification
+
+        self.G0 = G0 = mu2_Ain / np.sqrt(mu1_Ain**2 + mu2_Ain**2 + nu_Ain**2)
+        self.G1 = G1 = -mu1_Ain / np.sqrt(mu1_Ain**2 + mu2_Ain**2 + nu_Ain**2)
+        self.G2 = G2 = nu_Ain / np.sqrt(mu1_Ain**2 + mu2_Ain**2 + nu_Ain**2)
+        self.H0 = H0 = (
+            mu1_Ain * (mu1_Ain * mu2_Aend - mu1_Aend * mu2_Ain)
+            + nu_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+        ) / np.sqrt(
+            (
+                mu1_Ain * (mu1_Ain * mu2_Aend - mu1_Aend * mu2_Ain)
+                + nu_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                mu2_Ain * (mu1_Ain * mu2_Aend - mu1_Aend * mu2_Ain)
+                - nu_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                -mu1_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+                - mu2_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+        )
+        self.H1 = H1 = (
+            mu2_Ain * (mu1_Ain * mu2_Aend - mu1_Aend * mu2_Ain)
+            - nu_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+        ) / np.sqrt(
+            (
+                mu1_Ain * (mu1_Ain * mu2_Aend - mu1_Aend * mu2_Ain)
+                + nu_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                mu2_Ain * (mu1_Ain * mu2_Aend - mu1_Aend * mu2_Ain)
+                - nu_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                -mu1_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+                - mu2_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+        )
+        self.H2 = H2 = (
+            -mu1_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+            - mu2_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+        ) / np.sqrt(
+            (
+                mu1_Ain * (mu1_Ain * mu2_Aend - mu1_Aend * mu2_Ain)
+                + nu_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                mu2_Ain * (mu1_Ain * mu2_Aend - mu1_Aend * mu2_Ain)
+                - nu_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+            )
+            ** 2
+            + (
+                -mu1_Ain * (mu1_Aend * nu_Ain - mu1_Ain * nu_Aend)
+                - mu2_Ain * (mu2_Aend * nu_Ain - mu2_Ain * nu_Aend)
+            )
+            ** 2
+        )
+        self.L0 = L0 = mu2_Bin / np.sqrt(mu1_Bin**2 + mu2_Bin**2 + nu_Bin**2)
+        self.L1 = L1 = -mu1_Bin / np.sqrt(mu1_Bin**2 + mu2_Bin**2 + nu_Bin**2)
+        self.L2 = L2 = nu_Bin / np.sqrt(mu1_Bin**2 + mu2_Bin**2 + nu_Bin**2)
+        self.M0 = M0 = (
+            mu1_Bin * (mu1_Bin * mu2_Bend - mu1_Bend * mu2_Bin)
+            + nu_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+        ) / np.sqrt(
+            (
+                mu1_Bin * (mu1_Bin * mu2_Bend - mu1_Bend * mu2_Bin)
+                + nu_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                mu2_Bin * (mu1_Bin * mu2_Bend - mu1_Bend * mu2_Bin)
+                - nu_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                -mu1_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+                - mu2_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+        )
+        self.M1 = M1 = (
+            mu2_Bin * (mu1_Bin * mu2_Bend - mu1_Bend * mu2_Bin)
+            - nu_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+        ) / np.sqrt(
+            (
+                mu1_Bin * (mu1_Bin * mu2_Bend - mu1_Bend * mu2_Bin)
+                + nu_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                mu2_Bin * (mu1_Bin * mu2_Bend - mu1_Bend * mu2_Bin)
+                - nu_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                -mu1_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+                - mu2_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+        )
+        self.M2 = M2 = (
+            -mu1_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+            - mu2_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+        ) / np.sqrt(
+            (
+                mu1_Bin * (mu1_Bin * mu2_Bend - mu1_Bend * mu2_Bin)
+                + nu_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                mu2_Bin * (mu1_Bin * mu2_Bend - mu1_Bend * mu2_Bin)
+                - nu_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+            )
+            ** 2
+            + (
+                -mu1_Bin * (mu1_Bend * nu_Bin - mu1_Bin * nu_Bend)
+                - mu2_Bin * (mu2_Bend * nu_Bin - mu2_Bin * nu_Bend)
+            )
+            ** 2
+        )
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        x = state_variables[0, :]
+        y = state_variables[1, :]
+        z = state_variables[2, :]
+        uA = state_variables[3, :]
+        uB = state_variables[4, :]
+
+        mu1_Ain = self.mu1_Ain
+        mu2_Ain = self.mu2_Ain
+        nu_Ain = self.nu_Ain
+        mu1_Bin = self.mu1_Bin
+        mu2_Bin = self.mu2_Bin
+        nu_Bin = self.nu_Bin
+        mu1_Aend = self.mu1_Aend
+        mu2_Aend = self.mu2_Aend
+        nu_Aend = self.nu_Aend
+        mu1_Bend = self.mu1_Bend
+        mu2_Bend = self.mu2_Bend
+        nu_Bend = self.nu_Bend
+        b = self.b
+        R = self.R
+        c = self.c
+        cA = self.cA
+        cB = self.cB
+        dstar = self.dstar
+        Ks = self.Ks
+        modification = self.modification
+
+        G0 = self.G0
+        G1 = self.G1
+        G2 = self.G2
+        H0 = self.H0
+        H1 = self.H1
+        H2 = self.H2
+        L0 = self.L0
+        L1 = self.L1
+        L2 = self.L2
+        M0 = self.M0
+        M1 = self.M1
+        M2 = self.M2
+
+        # Coupling Terms (from coupling array)
+        c_glob = coupling[0, :]
+
+        # Derived Variables
+        self.A0 = A0 = R * (G0 * np.cos(uA) + H0 * np.sin(uA))
+        self.A1 = A1 = R * (G1 * np.cos(uA) + H1 * np.sin(uA))
+        self.A2 = A2 = R * (G2 * np.cos(uA) + H2 * np.sin(uA))
+        self.B0 = B0 = R * (L0 * np.cos(uB) + M0 * np.sin(uB))
+        self.B1 = B1 = R * (L1 * np.cos(uB) + M1 * np.sin(uB))
+        self.B2 = B2 = R * (L2 * np.cos(uB) + M2 * np.sin(uB))
+        self.C0 = C0 = A1 * B2 - A2 * B1
+        self.C1 = C1 = A2 * B0 - A0 * B2
+        self.C2 = C2 = A0 * B1 - A1 * B0
+        self.normA = normA = np.sqrt(A0**2 + A1**2 + A2**2)
+        self.E0 = E0 = A0 / normA
+        self.E1 = E1 = A1 / normA
+        self.E2 = E2 = A2 / normA
+        self.Fx0 = Fx0 = A2 * C1 - A1 * C2
+        self.Fx1 = Fx1 = A0 * C2 - A2 * C0
+        self.Fx2 = Fx2 = A1 * C0 - A0 * C1
+        self.normF = normF = np.sqrt(Fx0**2 + Fx1**2 + Fx2**2)
+        self.F0 = F0 = Fx0 / normF
+        self.F1 = F1 = Fx1 / normF
+        self.F2 = F2 = Fx2 / normF
+        self.mu1 = mu1 = -R * (E1 * np.cos(z) + F1 * np.sin(z))
+        self.mu2 = mu2 = R * (E0 * np.cos(z) + F0 * np.sin(z))
+        self.nu = nu = R * (E2 * np.cos(z) + F2 * np.sin(z))
+        self.disc = disc = -1 / 27 * mu2**3 + (1 / 4) * mu1**2
+        self.sqdisc = sqdisc = np.sqrt(abs(disc))
+        self.xs = xs = np.where(
+            np.greater_equal(disc, 0),
+            abs(sqdisc + (1 / 2) * mu1) ** (1 / 3)
+            * np.cos((1 / 3) * np.arctan2(0, sqdisc + (1 / 2) * mu1))
+            + abs((1 / 2) * mu1 - sqdisc) ** (1 / 3)
+            * np.cos((1 / 3) * np.arctan2(0, (1 / 2) * mu1 - sqdisc)),
+            (sqdisc**2 + (1 / 4) * mu1**2) ** (1 / 6)
+            * np.cos((1 / 3) * np.arctan2(sqdisc, (1 / 2) * mu1))
+            + (sqdisc**2 + (1 / 4) * mu1**2) ** (1 / 6)
+            * np.cos((1 / 3) * np.arctan2(-sqdisc, (1 / 2) * mu1)),
+        )
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(-y),  # x
+            np.asarray(x**3 - mu1 - mu2 * x - y * (nu + x**2 + b * x)),  # y
+            np.asarray(
+                -c
+                * (
+                    np.sqrt(y**2 + (x - xs) ** 2)
+                    - dstar
+                    + Ks * c_glob
+                    + np.where(
+                        np.greater(modification, 0), (1 / 10) * (-1 / 2 + z) ** 7, 0
+                    )
+                )
+            ),  # z
+            np.asarray(cA),  # uA
+            np.asarray(cB),  # uB
+        )
+        return np.array(_derivs)

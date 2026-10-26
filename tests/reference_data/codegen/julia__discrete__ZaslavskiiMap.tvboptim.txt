@@ -1,0 +1,67 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class ZaslavskiiMap(AbstractDynamics):
+    """ZaslavskiiMap neural mass model."""
+
+    STATE_NAMES = ("x", "y")
+    INITIAL_STATE = (0.1, 0.2)
+    AUXILIARY_NAMES = ("mu",)
+
+    DEFAULT_PARAMS = Bunch(
+        eps=5.0,
+        nu=0.2,
+        r=2.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        eps = params.eps
+        nu = params.nu
+        r = params.r
+
+        x = state[0]
+        y = state[1]
+
+        mu = (1 - jnp.exp(-r)) / r
+
+        dx_dt = jnp.mod(
+            x + nu * (1 + mu * y) + eps * mu * nu * jnp.cos(2 * jnp.pi * x), 1
+        )
+        dy_dt = jnp.exp(-r) * (y + eps * jnp.cos(2 * jnp.pi * x))
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(mu), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

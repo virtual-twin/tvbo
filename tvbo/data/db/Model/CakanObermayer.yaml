@@ -140,7 +140,7 @@ state_variables:
   r_E:
     description: "Firing rate of the excitatory population"
     equation:
-      rhs: "F_E(μ_E, σ, I_bar)"
+      rhs: "F_E(μ_E, σ)"
 
   r_I:
     description: "Firing rate of the inhibitory population"

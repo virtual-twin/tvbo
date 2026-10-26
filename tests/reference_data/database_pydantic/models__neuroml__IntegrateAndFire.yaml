@@ -1,0 +1,45 @@
+name: IntegrateAndFire
+parameters:
+  leakReversal:
+    name: leakReversal
+    value: -50.0
+  tau:
+    name: tau
+    value: 30.0
+  thresh:
+    name: thresh
+    value: -55.0
+  reset:
+    name: reset
+    value: -70.0
+source: 'NeuroML2 example: Ex0_IaF'
+state_variables:
+  v:
+    name: v
+    equation:
+      rhs: (leakReversal - v) / tau
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -50.0
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: true
+events:
+  spike:
+    name: spike
+    event_type: stimulus
+    condition:
+      rhs: v > thresh
+      latex: false
+    affect:
+      rhs: v = reset
+      latex: false
+    sampling_rate: 1.0
+    interpolation: linear
+cse: false
+compile: false

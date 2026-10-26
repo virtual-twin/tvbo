@@ -1,0 +1,37 @@
+import NaNMath
+function Epileptor2D!(dx, x, p, t = 0)
+
+    (;Iext, Ks, Kvf, a, b, c, d, modification, r, slope, tt, x0, c_glob, local_coupling) = p
+
+    x1, z = x
+
+
+    x1cond = ifelse(x1 < 0, a .* x1 .^ 2 .+ x1 .* (d .- b), -slope .- 0.6 * (-4.0 .+ z) .^ 2 .+ d .* x1)
+    zcond = ifelse(z < 0, -0.1 * z .^ 7, 0)
+    h = ifelse(modification > 0, x0 .+ 3.0 ./ (1.0 .+ 0.00673794699908547 * exp(-10.0 * x1)), zcond .- 4 * x0 .+ 4 * x1)
+
+    dx[1] = tt .* (Iext .+ c .- z .+ Kvf .* c_glob .+ local_coupling .* x1 .- x1 .* x1cond)
+    dx[2] = r .* tt .* (h .- z .+ Ks .* c_glob)
+    dx
+end
+
+# Parameter values
+p = (Iext = 3.1, Ks = 0.0, Kvf = 0.0, a = 1.0, b = 3.0, c = 1.0, d = 5.0, modification = 0.0, r = 0.00035, slope = 0.0, tt = 1.0, x0 = -1.6, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Epileptor2D!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

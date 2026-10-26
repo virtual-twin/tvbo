@@ -5,13 +5,13 @@ import tempfile
 
 import pytest
 
-from tvbo.classes.experiment import SimulationExperiment
-from tvbo.classes.dynamics import Dynamics
 from tests.functional.simulation_backends_shared import (
     DATABASE_MODELS_DIR,
     MODEL_FILES,
     MODEL_IDS,
 )
+from tvbo.classes.dynamics import Dynamics
+from tvbo.classes.experiment import SimulationExperiment
 
 
 class TestSimulationBackendsCore:
@@ -37,8 +37,7 @@ class TestSimulationBackendsCore:
         assert exp.dynamics is not None
         assert exp.integration is not None
         if model.coupling_inputs:
-            # Coupling resolution is deferred to configure(); the canonical
-            # location is network.coupling (mirrored to exp.coupling there).
+            # Coupling resolution is deferred to configure(); the canonical location is network.coupling (mirrored to exp.coupling there).
             exp.configure()
             assert exp.network.coupling, "network.coupling should be populated"
             assert exp.coupling is not None

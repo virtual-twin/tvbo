@@ -1,0 +1,13 @@
+name: MNI152NLin2009cAsym
+abbreviation: MNI152NLin2009cAsym
+alternateName:
+- tpl-MNI152NLin2009cAsym
+- MNI152_2009c_asym
+description: 'Nonlinear 6th-generation MNI152 average, 2009c release, asymmetric variant
+  (Fonov et al., 2011). Default template space for fMRIPrep and many modern BIDS pipelines.
+  TemplateFlow id: `tpl-MNI152NLin2009cAsym`.'
+anatomicalAxesOrientation: RAS
+axesOrigin: anterior commissure
+nativeUnit: mm
+defaultImage:
+- tpl-MNI152NLin2009cAsym_res-01_T1w.nii.gz

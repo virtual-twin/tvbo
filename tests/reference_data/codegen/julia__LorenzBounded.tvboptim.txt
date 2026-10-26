@@ -1,0 +1,70 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class LorenzBounded(AbstractDynamics):
+    """LorenzBounded neural mass model."""
+
+    STATE_NAMES = ("X", "Y", "Z")
+    INITIAL_STATE = (-13.284881, -12.444334, 34.188198)
+    AUXILIARY_NAMES = ("f",)
+
+    DEFAULT_PARAMS = Bunch(
+        beta=2.667,
+        r=64.0,
+        rho=28.0,
+        sigma=10.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        beta = params.beta
+        r = params.r
+        rho = params.rho
+        sigma = params.sigma
+
+        X = state[0]
+        Y = state[1]
+        Z = state[2]
+
+        f = 1 - (X**2 + Y**2 + Z**2) / r**2
+
+        dX_dt = sigma * (Y - X) * f
+        dY_dt = (X * (rho - Z) - Y) * f
+        dZ_dt = (X * Y - beta * Z) * f
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dX_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dX_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dY_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dZ_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(f), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

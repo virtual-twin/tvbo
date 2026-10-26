@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
 """Migrate CSV connectomes to HDF5+YAML format.
 
-Reads CSV weight/length pairs from tvbo/data/tvbo_data/connectome/,
-creates HDF5 companion + updated YAML sidecar in database/networks/.
+Reads CSV weight/length pairs from tvbo/data/tvbo_data/connectome/, creates HDF5 companion + updated YAML sidecar in database/networks/.
 
 Usage:
     python scripts/migrate_csv_to_hdf5.py [--dry-run]
 """
 
 import sys
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+
 from tvbo import database_path
 
 ROOT = Path(__file__).resolve().parent.parent
 CSV_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "connectome"
 NETWORK_DIR = database_path / "networks"
-
-# Map existing YAML sidecars to their CSV sources
-# Parse sidecar filenames to find matching CSV files
 
 
 def find_csv_pairs(csv_dir: Path) -> dict:
@@ -39,7 +37,8 @@ def find_csv_pairs(csv_dir: Path) -> dict:
 def migrate_one(base_name: str, csv_paths: dict, out_dir: Path, dry_run: bool = False):
     """Convert one CSV pair to HDF5+YAML."""
     import h5py
-    from tvbo.data.matrix_io import write_matrix, auto_format
+
+    from tvbo.data.matrix_io import auto_format, write_matrix
 
     weights_csv = csv_paths["weights"]
     lengths_csv = csv_paths.get("lengths")

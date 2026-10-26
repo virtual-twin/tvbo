@@ -1,0 +1,125 @@
+import jax.numpy as jnp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    mu1_start = _p.mu1_start
+    mu2_start = _p.mu2_start
+    nu_start = _p.nu_start
+    mu1_stop = _p.mu1_stop
+    mu2_stop = _p.mu2_stop
+    nu_stop = _p.nu_stop
+    b = _p.b
+    R = _p.R
+    c = _p.c
+    dstar = _p.dstar
+    Ks = _p.Ks
+    modification = _p.modification
+
+    # Coupling
+    c_glob = cX[0]
+
+    # State variables
+    x = current_state[0]
+    y = current_state[1]
+    z = current_state[2]
+
+    # Derived variables
+    E0 = mu2_start / jnp.sqrt(mu1_start**2 + mu2_start**2 + nu_start**2)
+    E1 = -mu1_start / jnp.sqrt(mu1_start**2 + mu2_start**2 + nu_start**2)
+    E2 = nu_start / jnp.sqrt(mu1_start**2 + mu2_start**2 + nu_start**2)
+    F0 = (
+        mu1_start * (mu1_start * mu2_stop - mu1_stop * mu2_start)
+        + nu_start * (mu2_stop * nu_start - mu2_start * nu_stop)
+    ) / jnp.sqrt(
+        (
+            mu1_start * (mu1_start * mu2_stop - mu1_stop * mu2_start)
+            + nu_start * (mu2_stop * nu_start - mu2_start * nu_stop)
+        )
+        ** 2
+        + (
+            mu2_start * (mu1_start * mu2_stop - mu1_stop * mu2_start)
+            - nu_start * (mu1_stop * nu_start - mu1_start * nu_stop)
+        )
+        ** 2
+        + (
+            -mu1_start * (mu1_stop * nu_start - mu1_start * nu_stop)
+            - mu2_start * (mu2_stop * nu_start - mu2_start * nu_stop)
+        )
+        ** 2
+    )
+    F1 = (
+        mu2_start * (mu1_start * mu2_stop - mu1_stop * mu2_start)
+        - nu_start * (mu1_stop * nu_start - mu1_start * nu_stop)
+    ) / jnp.sqrt(
+        (
+            mu1_start * (mu1_start * mu2_stop - mu1_stop * mu2_start)
+            + nu_start * (mu2_stop * nu_start - mu2_start * nu_stop)
+        )
+        ** 2
+        + (
+            mu2_start * (mu1_start * mu2_stop - mu1_stop * mu2_start)
+            - nu_start * (mu1_stop * nu_start - mu1_start * nu_stop)
+        )
+        ** 2
+        + (
+            -mu1_start * (mu1_stop * nu_start - mu1_start * nu_stop)
+            - mu2_start * (mu2_stop * nu_start - mu2_start * nu_stop)
+        )
+        ** 2
+    )
+    F2 = (
+        -mu1_start * (mu1_stop * nu_start - mu1_start * nu_stop)
+        - mu2_start * (mu2_stop * nu_start - mu2_start * nu_stop)
+    ) / jnp.sqrt(
+        (
+            mu1_start * (mu1_start * mu2_stop - mu1_stop * mu2_start)
+            + nu_start * (mu2_stop * nu_start - mu2_start * nu_stop)
+        )
+        ** 2
+        + (
+            mu2_start * (mu1_start * mu2_stop - mu1_stop * mu2_start)
+            - nu_start * (mu1_stop * nu_start - mu1_start * nu_stop)
+        )
+        ** 2
+        + (
+            -mu1_start * (mu1_stop * nu_start - mu1_start * nu_stop)
+            - mu2_start * (mu2_stop * nu_start - mu2_start * nu_stop)
+        )
+        ** 2
+    )
+    mu1 = -R * (E1 * jnp.cos(z) + F1 * jnp.sin(z))
+    mu2 = R * (E0 * jnp.cos(z) + F0 * jnp.sin(z))
+    nu = R * (E2 * jnp.cos(z) + F2 * jnp.sin(z))
+    cardano_a = (1 / 2) * mu1
+    cardano_d = -1 / 27 * mu2**3 + (1 / 4) * mu1**2
+    xs = jnp.where(
+        jnp.less(cardano_d, 0),
+        2
+        * (cardano_a**2 - cardano_d) ** (1 / 6)
+        * jnp.cos((1 / 3) * jnp.arctan2(jnp.sqrt(-cardano_d), cardano_a)),
+        jnp.where(
+            jnp.greater_equal(cardano_a + jnp.sqrt(cardano_d), 0),
+            (cardano_a + jnp.sqrt(cardano_d)) ** (1 / 3),
+            (1 / 2) * abs(cardano_a + jnp.sqrt(cardano_d)) ** (1 / 3),
+        )
+        + jnp.where(
+            jnp.greater_equal(cardano_a - jnp.sqrt(cardano_d), 0),
+            (cardano_a - jnp.sqrt(cardano_d)) ** (1 / 3),
+            (1 / 2) * abs(cardano_a - jnp.sqrt(cardano_d)) ** (1 / 3),
+        ),
+    )
+
+    # Derivatives
+    dx_dt = -y
+    dy_dt = x**3 - mu1 - mu2 * x - y * (nu + x**2 + b * x)
+    dz_dt = -c * (
+        jnp.sqrt(y**2 + (x - xs) ** 2)
+        - dstar
+        + Ks * c_glob
+        + jnp.where(jnp.greater(modification, 0), (1 / 10) * (-1 / 2 + z) ** 7, 0)
+    )
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dx_dt, dy_dt, dz_dt))
+
+    return derivatives

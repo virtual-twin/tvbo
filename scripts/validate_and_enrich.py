@@ -20,8 +20,8 @@ ATLAS_DSEG_MAP = {
     "DesikanKillianyranked": "tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg.yaml",
     "Destrieux": "tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_dseg.yaml",
     "Destrieuxranked": "tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_dseg.yaml",
-    "hcpmmp1": "tpl-MNI152NLin2009b_atlas-hcpmmp1_desc-ordered_dseg.yaml",
-    "hcpmmp1ordered": "tpl-MNI152NLin2009b_atlas-hcpmmp1_desc-ordered_dseg.yaml",
+    "hcpmmp1": "tpl-fsLR_atlas-hcpmmp1_desc-ordered_dseg.yaml",
+    "hcpmmp1ordered": "tpl-fsLR_atlas-hcpmmp1_desc-ordered_dseg.yaml",
     "Yeo17": "space-MNI152_atlas-Yeo17_res-1_dseg.yaml",
 }
 
@@ -31,8 +31,8 @@ ATLAS_CENTERS_MAP = {
     "DesikanKillianyranked": "tpl-MNI152Nlin2009c_atlas-DesikanKilliany_desc-ranked_centers.txt",
     "Destrieux": "tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_centers.txt",
     "Destrieuxranked": "tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_centers.txt",
-    "hcpmmp1": "tpl-MNI152NLin2009b_atlas-hcpmmp1_desc-ordered_centers.txt",
-    "hcpmmp1ordered": "tpl-MNI152NLin2009b_atlas-hcpmmp1_desc-ordered_centers.txt",
+    "hcpmmp1": "tpl-fsLR_atlas-hcpmmp1_desc-ordered_centers.txt",
+    "hcpmmp1ordered": "tpl-fsLR_atlas-hcpmmp1_desc-ordered_centers.txt",
 }
 
 

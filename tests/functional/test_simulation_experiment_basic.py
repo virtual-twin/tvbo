@@ -1,8 +1,8 @@
 """Test minimal SimulationExperiment assembly without running full simulation."""
 
-from tvbo.ontology import owl as ontology
 from tvbo.classes.dynamics import Dynamics
 from tvbo.classes.experiment import SimulationExperiment
+from tvbo.ontology import owl as ontology
 
 
 def test_simulation_experiment_auto_components():

@@ -1,0 +1,24 @@
+import jax.numpy as jnp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    Delta = _p.Delta
+    eta = _p.eta
+    k = _p.k
+    v_syn = _p.v_syn
+
+    # Coupling
+    c_glob = cX[0]
+
+    # State variables
+    V = current_state[0]
+    r = current_state[1]
+
+    # Derivatives
+    dV_dt = c_glob + eta + V**2 - jnp.pi**2 * r**2 + jnp.pi * k * r * (v_syn - V)
+    dr_dt = Delta / jnp.pi + 2 * V * r - jnp.pi * k * r**2
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dV_dt, dr_dt))
+
+    return derivatives

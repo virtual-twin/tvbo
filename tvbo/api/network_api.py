@@ -8,12 +8,9 @@ Endpoints:
 See §12.8 of the tvbo HDF5 format proposal v0.7.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, Response
-
-from linkml_runtime.dumpers import yaml_dumper, json_dumper
+from linkml_runtime.dumpers import json_dumper, yaml_dumper
 
 from tvbo.data.registry import database_dir
 
@@ -42,7 +39,7 @@ def _index_networks() -> dict:
     return networks
 
 
-_NETWORKS: Optional[dict] = None
+_NETWORKS: dict | None = None
 
 
 def _get_networks() -> dict:
@@ -54,8 +51,8 @@ def _get_networks() -> dict:
 
 @router.get("")
 def list_networks(
-    atlas: Optional[str] = Query(None),
-    tractogram: Optional[str] = Query(None),
+    atlas: str | None = Query(None),
+    tractogram: str | None = Query(None),
 ):
     """List available normative connectivity networks."""
     result = []

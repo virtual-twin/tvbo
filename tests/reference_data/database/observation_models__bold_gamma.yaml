@@ -1,0 +1,89 @@
+name: BOLD_Gamma
+label: BOLD (Gamma HRF)
+description: BOLD fMRI observation model using a Gamma-shaped hemodynamic response
+  function. Provides a simpler, unimodal HRF shape.
+parameters:
+  TR:
+    name: TR
+    value: 2000.0
+    unit: ms
+imaging_modality: BOLD
+reconcile: by_label
+pipeline:
+- equation:
+    rhs: window_mean(X, stepsize)
+    latex: false
+  name: temporal_average_interim
+  output: interim_averaged
+  apply_on_dimension: time
+  arguments:
+    stepsize:
+      name: stepsize
+      description: Interim averaging window in integration steps. Resolved from the
+        integration dt (= stock_dt / dt), not a raw-grid literal.
+- acronym: HRF
+  equation:
+    parameters:
+      mean:
+        name: mean
+        value: 3.0
+        unit: s
+      var:
+        name: var
+        value: 1.5
+    rhs: ((var / mean**2) * t)**(var / mean) * exp(-(var / mean) * t) / abs(t)
+    latex: false
+  name: hemodynamic_response
+  output: hrf_kernel
+  arguments:
+    duration:
+      name: duration
+      value: 20
+      unit: s
+    stock_dt:
+      name: stock_dt
+      value: 0.004
+      unit: s
+  time_range:
+    enforce: none
+    lo: 0
+    hi: duration
+    step: stock_dt
+    log_scale: false
+- name: convolve
+  callable:
+    name: fftconvolve
+    module: scipy.signal
+  input: temporal_average_interim
+  output: convolved
+  arguments:
+    in2:
+      name: in2
+      value: hrf_kernel
+    mode:
+      name: mode
+      value: same
+- equation:
+    rhs: subsample(X, start, stepsize)
+    latex: false
+  name: subsample_to_period
+  input: convolve
+  output: Bold
+  apply_on_dimension: time
+  arguments:
+    start:
+      name: start
+      description: Index of first output sample (resolved to stepsize - 1) so the
+        first sample aligns with TVB's step % istep == 0 emission.
+    stepsize:
+      name: stepsize
+      description: Interim samples per output sample. Resolved from the integration
+        dt (= (TR / dt) / interim_istep), not a raw-grid literal.
+class_reference:
+  name: Bold
+  module: tvb.simulator.monitors
+  constructor_args:
+  - name: hrf_kernel
+    value: Gamma
+  - name: hrf_length
+    value: 20000.0

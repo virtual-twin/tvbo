@@ -20,9 +20,9 @@ All other template variables from tvbo.adapters.neuroml.build_lems_context().
 
   <!-- ════════════════════════════════════════════════════════════════
        Simulation
-       length=${duration}${time_scale}   step=${dt}${time_scale}
+       length=${length}${time_scale}   step=${dt}${time_scale}
        ════════════════════════════════════════════════════════════════ -->
-  <Simulation id="${sim_id}" length="${duration}${time_scale}" step="${dt}${time_scale}" target="net">
+  <Simulation id="${sim_id}" length="${length}${time_scale}" step="${dt}${time_scale}" target="net">
 
     <OutputFile id="of1" fileName="results/${dyn_id}.dat">
 <%
