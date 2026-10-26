@@ -217,9 +217,11 @@ gen-widoco: gen-merged
 		-rewriteAll \
 		-webVowl \
 		-includeAnnotationProperties \
+		-ignoreIndividuals \
 		-getOntologyMetadata \
 		-uniteSections \
 		-lang en
+	@mv $(WIDOCO_OUT)/doc/* $(WIDOCO_OUT)/ && rmdir $(WIDOCO_OUT)/doc
 	@cp $(MERGED_OUT) $(WIDOCO_OUT)/tvbo.owl
 	@cp $(AXIOMS_TTL) $(WIDOCO_OUT)/tvb-o-axioms.ttl
 	@cp $(SHACL_OUT) $(WIDOCO_OUT)/tvb-o.shacl.ttl

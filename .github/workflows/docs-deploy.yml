@@ -166,9 +166,12 @@ jobs:
                       -webVowl \
                       -licensius \
                       -includeAnnotationProperties \
+                      -ignoreIndividuals \
                       -getOntologyMetadata \
                       -uniteSections \
                       -lang en
+                  mv docs/_site/ontology/spec/doc/* docs/_site/ontology/spec/
+                  rmdir docs/_site/ontology/spec/doc
                   # Bundle downloadable artefacts alongside the spec.
                   cp ontology/tvbo.owl            docs/_site/ontology/spec/tvbo.owl
                   cp ontology/tvb-o-axioms.ttl    docs/_site/ontology/spec/tvb-o-axioms.ttl
