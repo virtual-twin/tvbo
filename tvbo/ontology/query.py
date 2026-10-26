@@ -118,51 +118,24 @@ def flatten_list(nested_list: list[Any]) -> list[Any]:
     return flat_list
 
 
-def sparql_query(query_string: str, flatten_result: bool = True, world: Any = None) -> list[Any]:
+def sparql_query(query_string: str, flatten_result: bool = True, world: Any = None, params: tuple[Any, ...] = ()) -> list[Any]:
     """Run a SPARQL query against an ontology world and collect the results.
 
     Undefined entities are tolerated (`error_on_undefined_entities=False`) so that optional clauses referencing annotation properties absent from the generated ontology match nothing instead of raising.
 
     Args:
         query_string: The SPARQL query to execute.
-        flatten_result: If `True`, recursively flatten the result rows into a
-            single flat list; otherwise return the raw rows.
-        world: An owlready2 `World` to query. Defaults to the global runtime
-            ontology's world when `None`.
+        flatten_result: If `True`, recursively flatten the result rows into a single flat list; otherwise return the raw rows.
+        world: An owlready2 `World` to query. Defaults to the global runtime ontology's world when `None`.
+        params: Values bound to the query's `??1`, `??2`, … placeholders, so that text such as a search term is passed as data and never parsed as SPARQL.
 
     Returns:
-        The query results, flattened into a single list when `flatten_result`
-        is `True`, otherwise the raw list of result rows.
+        The query results, flattened into a single list when `flatten_result` is `True`, otherwise the raw list of result rows.
     """
     # An optional clause may name a property the generated ontology lacks; that matches nothing.
     world = world if world is not None else ontology.onto.world
-    res: list[Any] = list(world.sparql(query_string, error_on_undefined_entities=False))
+    res: list[Any] = list(world.sparql(query_string, params, error_on_undefined_entities=False))
     return flatten_list(res) if flatten_result else res
-
-
-def _search_by_label(label: str) -> list[Any]:
-    """Search for a term in the ontology.
-
-    Args:
-        label: string with term to be searched
-
-    Returns:
-        list: list of all nodes containing the search term in their label/definition.
-    """
-    sparql_string = f"""
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX owl: <http://www.w3.org/2002/07/owl#>
-    PREFIX tvbo: <https://w3id.org/tvbo/>
-
-    SELECT ?class
-    WHERE {{
-        ?class a owl:Class ;
-            rdfs:label ?label .
-        FILTER (str(?label) = "{label}")
-    }}
-    """
-    print(sparql_string)
-    return sparql_query(sparql_string)
 
 
 def get_class_relationships(class_iri: str | Any) -> list[tuple[Any, Any]]:
@@ -231,56 +204,22 @@ def instance_class_relationship(subject_iri: str, predicate: str = "prov:used") 
     )
 
 
-def _label_search(label: str) -> list[Any]:
-    label.replace("$", "")
-    sparql_string = f"""
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX owl: <http://www.w3.org/2002/07/owl#>
-    PREFIX tvbo: <https://w3id.org/tvbo/>
+def build_filter(field: str, exact: bool, case_sensitive: bool) -> str:
+    """Build a single SPARQL `FILTER` clause matching a variable against the search term bound to `??1`.
 
-    SELECT ?subject
-    WHERE {{
-    ?subject a owl:Class .
-    OPTIONAL {{ ?subject rdfs:label ?label . }}
-    OPTIONAL {{ ?subject tvbo:synonym ?synonym . }}
-    OPTIONAL {{ ?subject tvbo:acronym ?acronym . }}
-    OPTIONAL {{ ?subject tvbo:symbol ?symbol . }}
-
-    FILTER (
-        (BOUND(?label) && CONTAINS(LCASE(?label), "{label.lower()}")) ||
-        (BOUND(?synonym) && LCASE(?synonym) = "{label.lower()}") ||
-        (BOUND(?acronym) && CONTAINS(LCASE(?acronym), "{label.lower()}")) ||
-        (BOUND(?symbol) && LCASE(?symbol) = "{label.lower().replace("$", "")}")
-    )
-    }}
-    """
-    return sparql_query(sparql_string)
-
-
-def build_filter(label: str, field: str, exact: bool, case_sensitive: bool) -> str:
-    """Build a single SPARQL `FILTER` clause matching a variable against a label.
-
-    The clause guards the variable with `BOUND` and compares it to `label` using either equality (exact) or `CONTAINS` (substring), optionally lowercasing both sides for case-insensitive matching.
+    The clause guards the variable with `BOUND` and compares it to the term using either equality (exact) or `CONTAINS` (substring), lowercasing the variable for case-insensitive matching, in which case the bound term must be lowercase too.
 
     Args:
-        label: The search term to match against.
         field: Name of the SPARQL variable (without the leading `?`) to test.
         exact: If `True`, require an exact match; otherwise match a substring.
-        case_sensitive: If `False`, compare using `LCASE` on both operands.
+        case_sensitive: If `False`, compare the variable through `LCASE`.
 
     Returns:
         A SPARQL boolean expression suitable for use inside a `FILTER`.
     """
-    if case_sensitive:
-        if exact:
-            return f'(BOUND(?{field}) && ?{field} = "{label}")'
-        else:
-            return f'(BOUND(?{field}) && CONTAINS(?{field}, "{label}"))'
-    else:
-        if exact:
-            return f'(BOUND(?{field}) && LCASE(?{field}) = "{label.lower()}")'
-        else:
-            return f'(BOUND(?{field}) && CONTAINS(LCASE(?{field}), "{label.lower()}"))'
+    value = f"?{field}" if case_sensitive else f"LCASE(?{field})"
+    test = f"{value} = ??1" if exact else f"CONTAINS({value}, ??1)"
+    return f"(BOUND(?{field}) && {test})"
 
 
 def label_search(
@@ -301,23 +240,17 @@ def label_search(
 
     Args:
         label: The term to search for.
-        include: Extra annotation fields to match on. Bare names are prefixed
-            with `tvbo:`; values containing `:` are used as-is.
-        exact_match: Field name, list of field names, or `"all"` for which
-            matching must be exact rather than substring-based.
+        include: Extra annotation fields to match on. Bare names are prefixed with `tvbo:`; values containing `:` are used as-is.
+        exact_match: Field name, list of field names, or `"all"` for which matching must be exact rather than substring-based.
         case_sensitive: Whether comparisons are case sensitive.
-        root_class: If given, keep only results that are descendants of this
-            class (an entity or a label string resolved via `search_one`).
-        greek_to_latin: If `True`, transliterate Greek letters in `label` to
-            their Latin names before searching.
+        root_class: If given, keep only results that are descendants of this class (an entity or a label string resolved via `search_one`).
+        greek_to_latin: If `True`, transliterate Greek letters in `label` to their Latin names before searching.
         ignore_underscore: If `True`, strip underscores from `label`.
-        types: The RDF types to restrict subjects to (e.g. `owl:Class`,
-            `owl:NamedIndividual`).
+        types: The RDF types to restrict subjects to (e.g. `owl:Class`, `owl:NamedIndividual`).
         onto: The ontology to query. Defaults to the global runtime ontology.
 
     Returns:
-        A de-duplicated list of matching ontology entities, optionally filtered
-        to descendants of `root_class`.
+        A de-duplicated list of matching ontology entities, optionally filtered to descendants of `root_class`.
     """
     if types is None:
         types = ["owl:Class", "owl:NamedIndividual"]
@@ -341,7 +274,6 @@ def label_search(
         optional_clauses.append(f"OPTIONAL {{ ?subject {field} ?{field_name} . }}")
         filters.append(
             build_filter(
-                label,
                 field_name,
                 "all" in exact_match or field_name in exact_match,
                 case_sensitive,
@@ -379,7 +311,7 @@ WHERE {{
 }}
     """
     onto = onto if onto is not None else ontology.onto
-    results = list(set(sparql_query(sparql_string, world=onto.world)))
+    results = list(set(sparql_query(sparql_string, world=onto.world, params=(label if case_sensitive else label.lower(),))))
     if root_class:
         if isinstance(root_class, str):
             root_class = onto.search_one(label=root_class)
