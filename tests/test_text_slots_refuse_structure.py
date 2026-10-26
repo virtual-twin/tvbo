@@ -3,6 +3,7 @@
 The generated dataclasses coerced a non-``str`` value in a text slot with ``str()``, so a Figure spec that wrote ``xlabel: {value: ...}`` rendered the axis label ``JsonObj(value=...)`` and a recipe that wrote ``source: {BOLD: ...}`` named a state variable nobody declared, with nothing raised on either construction path the CLI uses.
 """
 
+import importlib.util
 from pathlib import Path
 
 import numpy as np
@@ -22,6 +23,12 @@ from tvbo.datamodel.schema import (
     StateVariableName,
     SystemType,
 )
+
+_spec = importlib.util.spec_from_file_location("hatch_build", Path(__file__).resolve().parents[1] / "hatch_build.py")
+hatch_build = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(hatch_build)
+
+UNION = "        for _coerce in (lambda: UnitEnum(value), lambda: str(value)):"
 
 
 def _panel(xlabel):
@@ -89,3 +96,54 @@ def test_the_generated_datamodel_routes_every_text_coercion():
     assert "else str(v) for v in self." not in source
     assert "lambda: str(value)" not in source
     assert source.count("_text_value(self, ") > 500
+
+
+def _generated(*lines: str) -> str:
+    """A generated module holding one text coercion of each form LinkML writes, followed by *lines*."""
+    return "\n".join(
+        [
+            '"""Generated."""',
+            'metamodel_version = "1.7.0"',
+            "class Panel:",
+            "    def __post_init__(self):",
+            "        self.xlabel = str(self.xlabel)",
+            "        self.source = [v if isinstance(v, str) else str(v) for v in self.source]",
+            "        value = self.unit",
+            UNION,
+            *lines,
+        ]
+    )
+
+
+@pytest.mark.parametrize("call", ["str(value)", "str(v)", "str(self.name)"])
+def test_a_text_call_that_coerces_no_slot_passes_the_build(call):
+    """A helper LinkML generates may call ``str()`` on a name a coercion also uses; it coerces no slot, so the build routes the three coercions and keeps the helper as it is."""
+    code = hatch_build._with_strict_text(_generated("    def _describe(self, value, v):", f"        return {call}"))
+    assert f"        return {call}" in code
+    assert 'lambda: str(_text_value(self, "unit", value))' in code
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        _generated("        self.label = str(self.label)  # a comment LinkML now writes"),
+        _generated(
+            "        self.tags = [v if isinstance(v, str) else str(v) for v in self.tags]  # a comment LinkML now writes"
+        ),
+        _generated(
+            "        value = self.kind",
+            "        # a line LinkML now writes between",
+            "        for _coerce in (lambda: str(value),):",
+        ),
+        _generated().replace(UNION, "        self.unit = str(value)"),
+    ],
+    ids=[
+        "a single-valued coercion left unrouted",
+        "a multivalued coercion left unrouted",
+        "a candidate lambda left unrouted",
+        "any_of re-spelt without candidate lambdas",
+    ],
+)
+def test_a_text_coercion_that_escapes_the_check_fails_the_build(code):
+    with pytest.raises(RuntimeError, match=r"update hatch_build\._with_strict_text"):
+        hatch_build._with_strict_text(code)

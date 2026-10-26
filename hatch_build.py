@@ -328,7 +328,7 @@ def _text_types(code: str) -> set[str]:
 def _with_strict_text(code: str) -> str:
     """Route every generated text coercion through :func:`tvbo.datamodel.text_slots.text_value`.
 
-    LinkML writes ``self.X = T(self.X)`` for a single-valued text slot, ``self.X = [v if isinstance(v, T) else T(v) for v in self.X]`` for a multivalued one, and ``lambda: T(value)`` for the text branch of a single-valued ``any_of``, whose candidates it tries in order after ``value = self.X``; ``T`` is ``str`` or an identifier type descended from ``extended_str``. Each becomes ``T(_text_value(self, "X", ...))``, so a structured value raises instead of being stored as its ``str()``. In an ``any_of`` the raise moves on to the next candidate, so a mapping reaches a class branch (``aggregation: {...}`` builds its ``Function``) and is refused, naming the slot, only when no candidate takes it. An output in which the single-valued or multivalued form matches nothing, or in which a coercion survives unrouted, is refused: a LinkML upgrade that re-spells them would otherwise ship a datamodel without the check.
+    LinkML writes ``self.X = T(self.X)`` for a single-valued text slot, ``self.X = [v if isinstance(v, T) else T(v) for v in self.X]`` for a multivalued one, and ``lambda: T(value)`` for the text branch of a single-valued ``any_of``, whose candidates it tries in order after ``value = self.X``; ``T`` is ``str`` or an identifier type descended from ``extended_str``. Each becomes ``T(_text_value(self, "X", ...))``, so a structured value raises instead of being stored as its ``str()``. In an ``any_of`` the raise moves on to the next candidate, so a mapping reaches a class branch (``aggregation: {...}`` builds its ``Function``) and is refused, naming the slot, only when no candidate takes it. An output in which the single-valued, multivalued or ``any_of`` form matches nothing, or in which a coercion of one of those three forms survives unrouted, is refused: a LinkML upgrade that re-spells them would otherwise ship a datamodel without the check. A ``T(...)`` call of any other form, such as a helper's ``str(value)``, coerces no slot and passes.
     """
     types = "|".join(sorted(_text_types(code), key=len, reverse=True))
     scalar = re.compile(rf"^([ \t]+self\.(\w+) = )({types})\(self\.\2\)$", re.M)
@@ -337,16 +337,15 @@ def _with_strict_text(code: str) -> str:
     branch = re.compile(rf"lambda: ({types})\(value\)")
     code, n_scalar = scalar.subn(lambda m: f'{m[1]}{m[3]}(_text_value(self, "{m[2]}", self.{m[2]}))', code)
     code, n_items = items.subn(lambda m: f'{m[1]}{m[3]}(_text_value(self, "{m[2]}", v)){m[4]}', code)
-    code = union.sub(
+    code, n_union = union.subn(
         lambda m: m[1] + branch.sub(lambda b: f'lambda: {b[1]}(_text_value(self, "{m[2]}", value))', m[3]) + m[4], code
     )
-    unrouted = re.findall(rf"^.*\b(?:{types})\((?:self\.\w+|v|value)\).*$", code, flags=re.M)
+    coercion = rf"self\.\w+ = (?:{types})\(self\.\w+\)|else (?:{types})\(v\) for v in self\.|lambda: (?:{types})\(value\)"
+    unrouted = re.findall(rf"^.*(?:{coercion}).*$", code, flags=re.M)
     anchor = '\nmetamodel_version = "'
-    if not n_scalar or not n_items or unrouted or anchor not in code:
+    if not n_scalar or not n_items or not n_union or unrouted or anchor not in code:
         raise RuntimeError(
-            f"Routed {n_scalar} single-valued and {n_items} multivalued text coercions through text_value, left "
-            f"{len(unrouted)} unrouted (first: {unrouted[:1]}), and found the import anchor: {anchor in code}. LinkML's "
-            "Python generator has changed its output; update hatch_build._with_strict_text so a mapping in a text slot still raises."
+            f"Routed {n_scalar} single-valued and {n_items} multivalued text coercions and the candidates of {n_union} any_of slots through text_value, left {len(unrouted)} unrouted (first: {unrouted[:1]}), and found the import anchor: {anchor in code}. LinkML's Python generator has changed its output; update hatch_build._with_strict_text so a mapping in a text slot still raises."
         )
     return code.replace(anchor, "\nfrom tvbo.datamodel.text_slots import text_value as _text_value\n" + anchor, 1)
 
