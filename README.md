@@ -90,10 +90,9 @@ Assemble a network model from curated components, referenced by semantic `iri` p
 ```python
 exp = SimulationExperiment(
     dynamics={"iri": "tvbo:models/ReducedWongWangExcInh"},
-    coupling={"iri": "tvbo:coupling_functions/Linear"},
     network={
-        "parcellation": {"atlas": {"iri": "tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg"}},
-        "tractogram": {"iri": "tvbo:dTOR"},
+        "iri": "tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat",
+        "coupling": {"c_glob": {"iri": "tvbo:coupling_functions/Linear"}},
     },
     integration={"method": "Heun", "duration": 10_000},
 )
@@ -193,10 +192,7 @@ The `knowledge` extra needs a manual install:
 pip install git+https://github.com/neurommsig/neurommsig-knowledge.git
 ```
 
-The `auto7p` extra (bifurcation continuation, pulled in by `pyrates`) installs
-the `pycobi` wrapper, but the AUTO-07p engine is a Fortran program that is not on
-PyPI: build it separately, set `AUTO_DIR`, and link its `python/` front-end onto
-your environment. See [Installation → AUTO-07p continuation](https://virtual-twin.github.io/tvbo/installation.html#auto-07p-continuation-auto7p).
+The `auto7p` extra (bifurcation continuation, pulled in by `pyrates`) installs the `pycobi` wrapper, but the AUTO-07p engine is a Fortran program that is not on PyPI: build it separately, set `AUTO_DIR`, and link its `python/` front-end onto your environment. See [Installation → AUTO-07p continuation](https://virtual-twin.github.io/tvbo/installation.html#auto-07p-continuation-auto7p).
 
 ## Citation
 
