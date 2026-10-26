@@ -1,6 +1,6 @@
 """A curated record's IRI and a schema term's IRI never share a path, and every record IRI written anywhere is a term.
 
-Every curated record is ``https://w3id.org/tvbo/<folder>/<file stem>`` (:func:`tvbo.data.registry.record_iri`), its folder the database folder it is filed in. Every schema term sits at the root or under its module's namespace (``study/``, ``dbs/``, ``sw/``, ``units/``, ...). The two stay apart only while no folder is also a module's namespace. The hand-written ontology stays attached to the records, and a spec's IRI dereferences once w3id redirects it, only while each names a record by the IRI the A-box mints for it.
+Every curated record is ``https://w3id.org/tvbo/<folder>/<file stem>`` (:func:`tvbo.data.registry.record_iri`), its folder the database folder it is filed in. Every schema term sits at the root or under its module's namespace (``study/``, ``dbs/``, ``sw/``, ``units/``, ...). The two stay apart only while no folder is also a module's namespace. The hand-written ontology stays attached to the records, and a spec's IRI dereferences once w3id redirects it, only while each names a record by the IRI the A-box mints for it. A ``name:`` or stem written in another case finds its record only while no other record of its folder is spelled the same in some case.
 """
 
 from __future__ import annotations
@@ -117,6 +117,21 @@ def test_every_record_iri_a_spec_writes_is_a_term(abox_subjects: set[str]):
         if f"{registry.NAMESPACE}{folder}/{local}" not in abox_subjects
     )
     assert not dangling, "record IRIs that name no term:\n" + "\n".join(dangling)
+
+
+@pytest.mark.parametrize("folder", sorted(registry._IRI_SCOPES))
+def test_no_two_records_of_a_folder_differ_only_by_case(folder: str):
+    """:func:`~tvbo.data.registry.resolve` matches a ``name:`` or stem in any case and returns the first record that matches, so each case-folded spelling must belong to one record."""
+    spellings: dict[str, dict[str, Path]] = {}
+    for name, path in registry._build_name_index(registry.DATABASE_ROOT / folder).items():
+        for local in {name, path.stem}:
+            spellings.setdefault(local.lower(), {})[local] = path
+    clashes = sorted(
+        sorted(f"{local} ({path.relative_to(registry.DATABASE_ROOT)})" for local, path in found.items())
+        for found in spellings.values()
+        if len(set(found.values())) > 1
+    )
+    assert not clashes, f"{folder}/ records whose names differ only by case: {clashes}"
 
 
 def test_no_folder_is_a_schema_module_namespace():
