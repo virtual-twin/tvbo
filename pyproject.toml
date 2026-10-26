@@ -37,8 +37,8 @@ dependencies = [
     # Symbolic
     "sympy>=1.13.0",
 
-    # Visualization — floor tracks the declarative Figure renderer in tvbo/adapters/bsplot.py.
-    "bsplot>=0.0.10",
+    # Visualization
+    "bsplot>=0.0.12",
     "networkx>=3.4.2",
     "pydot>=3.0.3",
 
