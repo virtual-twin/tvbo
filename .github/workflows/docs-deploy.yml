@@ -172,6 +172,7 @@ jobs:
                       -lang en
                   mv docs/_site/ontology/spec/doc/* docs/_site/ontology/spec/
                   rmdir docs/_site/ontology/spec/doc
+                  python3 scripts/ontology/widoco_term_links.py docs/_site/ontology/spec/index-en.html
                   # Bundle downloadable artefacts alongside the spec.
                   cp ontology/tvbo.owl            docs/_site/ontology/spec/tvbo.owl
                   cp ontology/tvb-o-axioms.ttl    docs/_site/ontology/spec/tvb-o-axioms.ttl
