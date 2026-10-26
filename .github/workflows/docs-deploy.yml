@@ -151,7 +151,7 @@ jobs:
             # Widoco runs on the host — inside the container it would need Docker-in-Docker — and overlays spec/ onto the already-built _site.
             - name: Generate Widoco specification (W3C-style HTML + WebVOWL)
               env:
-                  WIDOCO_IMAGE: ghcr.io/dgarijo/widoco:v1.4.25
+                  WIDOCO_IMAGE: ghcr.io/dgarijo/widoco:v1.4.26
               run: |
                   set -euxo pipefail
                   mkdir -p docs/_site/ontology/spec

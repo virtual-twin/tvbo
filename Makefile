@@ -96,7 +96,7 @@ PKG_VERSION := $(shell grep -m1 '^__version__' tvbo/__init__.py | cut -s -d'"' -
 PKG_TAG := v$(shell echo '$(PKG_VERSION)' | sed -E 's/(a|b|rc)([0-9]+)$$/-\1.\2/')
 # The merged ontology's dcterms:modified: the date of the commit it is built from, so rebuilding one commit reproduces it.
 ONTOLOGY_DATE := $(shell git log -1 --format=%cs)
-WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.25
+WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.26
 
 gen-owl:
 	@echo "Generating OWL ontology from LinkML schema..."
