@@ -115,7 +115,7 @@ auto7p = ["pycobi>=0.8.0", "meson>=1.4.0", "ninja>=1.11.0"]
 pyrates = ["pyrates>=1.0.0", "networkx<=3.5", "tvbo[auto7p]"]
 
 # Julia integration
-julia = ["juliacall>=0.9.20"]
+julia = ["juliacall>=0.9.37"]
 
 # API server
 api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]

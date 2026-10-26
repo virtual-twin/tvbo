@@ -2597,19 +2597,19 @@ wheels = [
 
 [[package]]
 name = "juliacall"
-version = "0.9.31"
+version = "0.9.37"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "juliapkg" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/4a/39d774d53281ada1ccaac599646637e779192e688808228e8943a2b0ca77/juliacall-0.9.31.tar.gz", hash = "sha256:2b5c6abdde0b34d14ef2874e3cb82547700a142fdd8376d96f310b44efb412c2", size = 495355, upload-time = "2025-12-17T13:17:45.66Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/8e/bf4fdb7bcb077747ba0031bea51023e559476c0ab7fc8ba8ea0d59a608eb/juliacall-0.9.37.tar.gz", hash = "sha256:246db2ec648cd50dcd446d02323e0b187949a2ab50e06e32fe6db1a4323eba75", size = 502805, upload-time = "2026-10-19T19:03:30.597Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/14/1d/d6d77bd84c5261a5cbcb17e5000527d0f895e512545bd442caf28a7e3336/juliacall-0.9.31-py3-none-any.whl", hash = "sha256:171dd97489a855336558c49fea2eb26dcbeb1ddb1344acaddf99fff2a5a1b9ad", size = 12260, upload-time = "2025-12-17T13:17:42.677Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/fc/97ba79312c411bb25e31ea460b7080b2da932c884086967e5d06ddf80107/juliacall-0.9.37-py3-none-any.whl", hash = "sha256:e8413f2081e77c04a4ba379bdb93620c0753bd7bc335127773c318ce3526b1b9", size = 12774, upload-time = "2026-10-19T19:03:29.144Z" },
 ]
 
 [[package]]
 name = "juliapkg"
-version = "0.1.23"
+version = "0.1.27"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "filelock" },
@@ -2617,9 +2617,9 @@ dependencies = [
     { name = "tomli" },
     { name = "tomlkit" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4a/c9/827f4575c3bed01255ed646bb4dc4cade483a6710d7869d2fadb2f549c59/juliapkg-0.1.23.tar.gz", hash = "sha256:b61cc55a9d6c99643b22915920c614cfd28e70ca1dadf72f7ee2327d36e66477", size = 23434, upload-time = "2026-02-16T11:34:35.758Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/cb/e1bdfe4e8ad365532f560a39c87a70a9ef40464d82226bbc022654d54243/juliapkg-0.1.27.tar.gz", hash = "sha256:89cbdc56030f3de82c26bc84e2c0e99740675b6c14a746585522b84f52c47e08", size = 26018, upload-time = "2026-09-19T13:03:33.308Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/86/9d/1f4495bf047e61e904a69242941aca04ad3c7453639d9019c5d8facb3862/juliapkg-0.1.23-py3-none-any.whl", hash = "sha256:195eb0986d83c7e4df7781290d1158e5dd8809dada634ff2e8196ea16608f1a0", size = 21890, upload-time = "2026-02-16T11:34:34.481Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/fc/019ecccb5ed710aa38ae4173facf0bb411d855d2d137ad29ec31c16342da/juliapkg-0.1.27-py3-none-any.whl", hash = "sha256:c2f6c53a65a4f4a1c124db8400ad48c9f142b2def67b2db86703f0cedc42c150", size = 23087, upload-time = "2026-09-19T13:03:31.648Z" },
 ]
 
 [[package]]
@@ -7413,8 +7413,8 @@ requires-dist = [
     { name = "jax", specifier = ">=0.4.29" },
     { name = "jax", marker = "platform_machine == 'x86_64' and sys_platform == 'darwin'", specifier = "<0.5.0" },
     { name = "jsonschema", specifier = ">=4.0.0" },
-    { name = "juliacall", marker = "extra == 'all'", specifier = ">=0.9.20" },
-    { name = "juliacall", marker = "extra == 'julia'", specifier = ">=0.9.20" },
+    { name = "juliacall", marker = "extra == 'all'", specifier = ">=0.9.37" },
+    { name = "juliacall", marker = "extra == 'julia'", specifier = ">=0.9.37" },
     { name = "jupyter", marker = "extra == 'all'" },
     { name = "jupyter", marker = "extra == 'docs'" },
     { name = "librosa", marker = "extra == 'all'", specifier = ">=0.10.2" },
