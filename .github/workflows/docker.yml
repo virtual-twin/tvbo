@@ -201,6 +201,12 @@ jobs:
           fi
           "${UV_BIN}" pip install --system -e . --no-deps
           "${UV_BIN}" pip install --system pytest-xdist pytest-timeout
+      - name: Pre-warm Julia (resolve + precompile declared packages)
+        if: matrix.shard == 'julia'
+        # Resolution and precompilation for the linked checkout run here, outside the per-test timeout, as in the native Julia job; otherwise the first test pays for them.
+        run: |
+          python -c "import juliapkg; juliapkg.resolve(force=True)"
+          python -c "import tvbo, juliacall; juliacall.Main.seval('using NetworkDynamics, OrdinaryDiffEq'); print('Julia depot ready')"
       - name: Run shard "${{ matrix.shard }}"
         run: |
           pytest -x -v --tb=short \

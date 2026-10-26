@@ -119,13 +119,9 @@ def _canonicalize_unit_slot(cls):
 
 
 def _open_unit_slot_classes():
-    """Generated classes declaring the shared open ``unit`` slot.
+    """Generated classes whose ``unit`` holds a unit written as text: the shared open slot, annotated ``str | UnitEnum | None``, and a class's own string-ranged ``unit``, annotated ``str | None``.
 
-    Read off the generated annotation rather than listed by hand, so a class that
-    gains the slot later is covered without anyone remembering to add it.
-    ``ToolUnit.unit`` is a class-scoped key and is annotated as such, which keeps
-    it out: it names a unit in a *tool's* vocabulary, where ``mM`` and
-    ``mol_per_m3`` are separate entries answering different questions.
+    Read off the generated annotation rather than listed by hand, so a class that gains the slot later is covered without anyone remembering to add it. ``ToolUnit.unit`` is a class-scoped key and is annotated as such, which keeps it out: it names a unit in a *tool's* vocabulary, where ``mM`` and ``mol_per_m3`` are separate entries answering different questions.
     """
     import dataclasses
     import typing
@@ -138,7 +134,8 @@ def _open_unit_slot_classes():
         if obj.__module__ != _schema.__name__:
             continue
         for field in dataclasses.fields(obj):
-            if field.name == "unit" and field.type == (str | None):
+            names = {getattr(a, "__forward_arg__", getattr(a, "__name__", None)) for a in typing.get_args(field.type)}
+            if field.name == "unit" and "str" in names and names <= {"str", "UnitEnum", "NoneType"}:
                 yield obj
 
 

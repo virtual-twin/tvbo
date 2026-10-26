@@ -11,7 +11,17 @@ import sympy
 from jsonasobj2 import JsonObj
 
 import tvbo.datamodel.schema as schema
-from tvbo.datamodel.schema import Dynamics, Equation, Observation, Panel, Parameter, StateVariableName, SystemType
+from tvbo.datamodel.schema import (
+    Coupling,
+    Dynamics,
+    Equation,
+    Function,
+    Observation,
+    Panel,
+    Parameter,
+    StateVariableName,
+    SystemType,
+)
 
 
 def _panel(xlabel):
@@ -37,6 +47,17 @@ def test_a_record_in_a_text_slot_is_refused():
 def test_each_item_of_a_multivalued_text_slot_is_checked():
     with pytest.raises(TypeError, match=r"Observation\.source takes text, but was given the dict"):
         Observation(name="bold", source=["x", {"BOLD": 1}])
+
+
+def test_the_text_branch_of_a_union_slot_is_checked():
+    with pytest.raises(ValueError, match=r"from JsonObj\(value='ms'\) for slot unit"):
+        Parameter(name="a", unit={"value": "ms"})
+
+
+def test_a_mapping_in_a_union_slot_whose_text_branch_comes_first_builds_its_record():
+    aggregation = Coupling(name="c", aggregation={"name": "mean"}).aggregation
+    assert isinstance(aggregation, Function) and aggregation.name == "mean"
+    assert Coupling(name="c", aggregation="mean").aggregation == "mean"
 
 
 def test_an_identifier_slot_is_checked_too():
@@ -66,4 +87,5 @@ def test_the_generated_datamodel_routes_every_text_coercion():
     source = Path(schema.__file__).read_text(encoding="utf-8")
     assert "self.label = str(self.label)" not in source
     assert "else str(v) for v in self." not in source
+    assert "lambda: str(value)" not in source
     assert source.count("_text_value(self, ") > 500
