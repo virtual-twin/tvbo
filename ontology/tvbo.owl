@@ -27,7 +27,7 @@
         <terms:description xml:lang="en">TVB-O, The Virtual Brain Ontology, describes large-scale brain network models and their simulation: neural mass and neural field models with their parameters, state variables and equations, coupling functions, connectomes and brain atlases, integrators and noise, observation models, and the simulation experiments and studies that combine them. Every model, network and experiment curated in the TVB-O database is an individual of the ontology at https://w3id.org/tvbo/&lt;collection&gt;/&lt;name&gt;.</terms:description>
         <terms:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2025-11-20</terms:issued>
         <terms:license rdf:resource="https://creativecommons.org/licenses/by/4.0/"/>
-        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-10-21</terms:modified>
+        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-10-30</terms:modified>
         <terms:title xml:lang="en">The Virtual Brain Ontology</terms:title>
         <pav:version>0.9.0rc1</pav:version>
         <vann:preferredNamespacePrefix>tvbo</vann:preferredNamespacePrefix>
@@ -55436,11 +55436,11 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid4992">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid4993">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     
 
@@ -56543,11 +56543,11 @@ bursts separated by quiescent phases.</terms:description>
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid4999">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid5000">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -57516,11 +57516,11 @@ Note:
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid5002">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid5003">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -79787,31 +79787,14 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
-    <!-- https://w3id.org/tvbo/studies/Bo-Cheng2008 -->
-
-    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Bo-Cheng2008">
-        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>2008</terms:issued>
-        <terms:title>A hyperchaotic attractor coined from chaotic L&quot;u system</terms:title>
-        <schema:author>Bo-Cheng, B.</schema:author>
-        <schema:author>Zhong, L.</schema:author>
-        <schema:isPartOf>Chinese Physics Letters</schema:isPartOf>
-        <schema:issueNumber>7</schema:issueNumber>
-        <schema:pagination>2396</schema:pagination>
-        <schema:volumeNumber>25</schema:volumeNumber>
-        <rdfs:label>Bo-Cheng2008</rdfs:label>
-    </owl:NamedIndividual>
-    
-
-
     <!-- https://w3id.org/tvbo/studies/BoCheng2008 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/BoCheng2008">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>2008</terms:issued>
-        <terms:title>A hyperchaotic attractor coined from chaotic L&quot;u system</terms:title>
-        <schema:author>Bo-Cheng, B.</schema:author>
-        <schema:author>Zhong, L.</schema:author>
+        <terms:title>A hyperchaotic attractor coined from chaotic L\&quot;u system</terms:title>
+        <schema:author>Bao, Bo-Cheng</schema:author>
+        <schema:author>Liu, Zhong</schema:author>
         <schema:identifier>10.1088/0256-307x/25/7/018</schema:identifier>
         <schema:isPartOf>Chinese Physics Letters</schema:isPartOf>
         <schema:issueNumber>7</schema:issueNumber>
@@ -79931,6 +79914,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>Bursting types and stable domains of Rulkov neuron network with mean field coupling</terms:title>
         <schema:author>Cao, H.</schema:author>
         <schema:author>Wu, Y.</schema:author>
+        <schema:identifier>10.1142/s0218127413300413</schema:identifier>
         <schema:isPartOf>International Journal of Bifurcation and Chaos</schema:isPartOf>
         <schema:pagination>1330041</schema:pagination>
         <schema:volumeNumber>23</schema:volumeNumber>
@@ -79944,11 +79928,12 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Chen2006">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>2006</terms:issued>
-        <terms:title>Generating hyperchaotic L&quot;u attractor via state feedback control</terms:title>
+        <terms:title>Generating hyperchaotic L\&quot;u attractor via state feedback control</terms:title>
         <schema:author>Chen, A.</schema:author>
-        <schema:author>L&quot;u, J.</schema:author>
+        <schema:author>L\&quot;u, J.</schema:author>
         <schema:author>Lu, J.</schema:author>
         <schema:author>Yu, S.</schema:author>
+        <schema:identifier>10.1016/j.physa.2005.09.039</schema:identifier>
         <schema:isPartOf>Physica A: Statistical Mechanics and its Applications</schema:isPartOf>
         <schema:pagination>103--110</schema:pagination>
         <schema:volumeNumber>364</schema:volumeNumber>
@@ -79977,7 +79962,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>1992</terms:issued>
         <terms:title>The Genesis of Chua&apos;s Circuit</terms:title>
         <schema:author>Chua, Leon O.</schema:author>
-        <schema:isPartOf>Archiv f&quot;ur Elektronik und &quot;Ubertragungstechnik</schema:isPartOf>
+        <schema:isPartOf>Archiv f\&quot;ur Elektronik und \&quot;Ubertragungstechnik</schema:isPartOf>
         <schema:pagination>250--257</schema:pagination>
         <schema:volumeNumber>46</schema:volumeNumber>
         <rdfs:label>Chua1992</rdfs:label>
@@ -79992,6 +79977,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>2007</terms:issued>
         <terms:title>Chua circuit</terms:title>
         <schema:author>Chua, Leon O.</schema:author>
+        <schema:identifier>10.4249/scholarpedia.1488</schema:identifier>
         <schema:isPartOf>Scholarpedia</schema:isPartOf>
         <schema:issueNumber>10</schema:issueNumber>
         <schema:pagination>1488</schema:pagination>
@@ -80111,6 +80097,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Deco, Gustavo</schema:author>
         <schema:author>Kringelbach, Morten L.</schema:author>
         <schema:author>others</schema:author>
+        <schema:identifier>10.1038/s41598-017-03073-5</schema:identifier>
         <schema:isPartOf>Scientific Reports</schema:isPartOf>
         <schema:pagination>3095</schema:pagination>
         <schema:volumeNumber>7</schema:volumeNumber>
@@ -80148,7 +80135,7 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Duffing1918">
         <rdf:type rdf:resource="http://schema.org/Book"/>
         <terms:issued>1918</terms:issued>
-        <terms:title>Erzwungene Schwingungen bei ver&quot;anderlicher Eigenfrequenz und ihre technische Bedeutung</terms:title>
+        <terms:title>Erzwungene Schwingungen bei ver\&quot;anderlicher Eigenfrequenz und ihre technische Bedeutung</terms:title>
         <schema:author>Duffing, Georg</schema:author>
         <schema:publisher>Vieweg+Teubner</schema:publisher>
         <rdfs:label>Duffing1918</rdfs:label>
@@ -80192,6 +80179,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>Mathematical Foundations of Neuroscience</terms:title>
         <schema:author>Ermentrout, G. Bard</schema:author>
         <schema:author>Terman, David H.</schema:author>
+        <schema:identifier>10.1007/978-0-387-87708-2</schema:identifier>
         <schema:publisher>Springer</schema:publisher>
         <rdfs:label>Ermentrout2010</rdfs:label>
     </owl:NamedIndividual>
@@ -80251,6 +80239,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>Multistability, phase diagrams, and intransitivity in the Lorenz-84 low-order atmospheric circulation model</terms:title>
         <schema:author>Freire, Jos\&apos;e G.</schema:author>
         <schema:author>others</schema:author>
+        <schema:identifier>10.1063/1.2953589</schema:identifier>
         <schema:isPartOf>Chaos</schema:isPartOf>
         <schema:pagination>033121</schema:pagination>
         <schema:volumeNumber>18</schema:volumeNumber>
@@ -80268,6 +80257,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Ermentrout, G. Bard</schema:author>
         <schema:author>Gal\&apos;an, R. F.</schema:author>
         <schema:author>Urban, N. N.</schema:author>
+        <schema:identifier>10.1152/jn.00563.2007</schema:identifier>
         <schema:isPartOf>Journal of Neurophysiology</schema:isPartOf>
         <rdfs:label>Galan2008</rdfs:label>
     </owl:NamedIndividual>
@@ -80316,6 +80306,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>McDonald, S. W.</schema:author>
         <schema:author>Ott, Edward</schema:author>
         <schema:author>Yorke, James A.</schema:author>
+        <schema:identifier>10.1016/0375-9601(83)90945-3</schema:identifier>
         <schema:isPartOf>Physics Letters A</schema:isPartOf>
         <schema:issueNumber>9</schema:issueNumber>
         <schema:pagination>373--375</schema:pagination>
@@ -80365,6 +80356,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields</terms:title>
         <schema:author>Guckenheimer, John</schema:author>
         <schema:author>Holmes, Philip</schema:author>
+        <schema:identifier>10.1007/978-1-4612-1140-2</schema:identifier>
         <schema:publisher>Springer</schema:publisher>
         <schema:volumeNumber>42</schema:volumeNumber>
         <rdfs:label>GuckenheimerHolmes1983</rdfs:label>
@@ -80456,6 +80448,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>A model of neuronal bursting using three coupled first order differential equations</terms:title>
         <schema:author>Hindmarsh, J. L.</schema:author>
         <schema:author>Rose, R. M.</schema:author>
+        <schema:identifier>10.1098/rspb.1984.0024</schema:identifier>
         <schema:isPartOf>Proceedings of the Royal Society of London. Series B, Biological Sciences</schema:isPartOf>
         <schema:pagination>87--102</schema:pagination>
         <schema:volumeNumber>221</schema:volumeNumber>
@@ -80505,6 +80498,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>1982</terms:issued>
         <terms:title>Neural networks and physical systems with emergent collective computational abilities</terms:title>
         <schema:author>Hopfield, John J.</schema:author>
+        <schema:identifier>10.1073/pnas.79.8.2554</schema:identifier>
         <schema:isPartOf>Proceedings of the National Academy of Sciences</schema:isPartOf>
         <rdfs:label>Hopfield1982</rdfs:label>
     </owl:NamedIndividual>
@@ -80518,6 +80512,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>1984</terms:issued>
         <terms:title>Neurons with graded response have collective computational properties like those of two-state neurons</terms:title>
         <schema:author>Hopfield, John J.</schema:author>
+        <schema:identifier>10.1073/pnas.81.10.3088</schema:identifier>
         <schema:isPartOf>Proceedings of the National Academy of Sciences</schema:isPartOf>
         <rdfs:label>Hopfield1984</rdfs:label>
     </owl:NamedIndividual>
@@ -80531,6 +80526,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>2006</terms:issued>
         <terms:title>Predator-prey model</terms:title>
         <schema:author>Hoppensteadt, Frank</schema:author>
+        <schema:identifier>10.4249/scholarpedia.1563</schema:identifier>
         <schema:isPartOf>Scholarpedia</schema:isPartOf>
         <schema:issueNumber>10</schema:issueNumber>
         <schema:pagination>1563</schema:pagination>
@@ -80548,6 +80544,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>Fundamental Unpredictability in Multispecies Competition</terms:title>
         <schema:author>Huisman, Johan</schema:author>
         <schema:author>Weissing, Franz J.</schema:author>
+        <schema:identifier>10.1086/319929</schema:identifier>
         <schema:isPartOf>The American Naturalist</schema:isPartOf>
         <schema:issueNumber>5</schema:issueNumber>
         <schema:volumeNumber>157</schema:volumeNumber>
@@ -80565,6 +80562,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Gondal, M. A.</schema:author>
         <schema:author>Hussain, A.</schema:author>
         <schema:author>Hussain, I.</schema:author>
+        <schema:identifier>10.1007/s13319-014-0031-6</schema:identifier>
         <schema:isPartOf>3D Research</schema:isPartOf>
         <schema:pagination>1--6</schema:pagination>
         <schema:volumeNumber>6</schema:volumeNumber>
@@ -80664,6 +80662,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>2007</terms:issued>
         <terms:title>Van der Pol Oscillator</terms:title>
         <schema:author>Kanamaru, Takashi</schema:author>
+        <schema:identifier>10.4249/scholarpedia.2202</schema:identifier>
         <schema:isPartOf>Scholarpedia</schema:isPartOf>
         <schema:issueNumber>1</schema:issueNumber>
         <schema:pagination>2202</schema:pagination>
@@ -80706,6 +80705,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>1975</terms:issued>
         <terms:title>Self-entrainment of a Population of Coupled Nonlinear Oscillators</terms:title>
         <schema:author>Kuramoto, Yoshiki</schema:author>
+        <schema:identifier>10.1007/bfb0013365</schema:identifier>
         <schema:isPartOf>International Symposium on Mathematical Problems in Theoretical Physics</schema:isPartOf>
         <schema:volumeNumber>39</schema:volumeNumber>
         <rdfs:label>Kuramoto1975</rdfs:label>
@@ -80756,7 +80756,8 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>2007</terms:issued>
         <terms:title>Hyperchaos</terms:title>
         <schema:author>Letellier, Christophe</schema:author>
-        <schema:author>R&quot;ossler, Otto E.</schema:author>
+        <schema:author>R\&quot;ossler, Otto E.</schema:author>
+        <schema:identifier>10.4249/scholarpedia.1936</schema:identifier>
         <schema:isPartOf>Scholarpedia</schema:isPartOf>
         <schema:issueNumber>8</schema:issueNumber>
         <schema:pagination>1936</schema:pagination>
@@ -80774,6 +80775,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>A novel four-wing strange attractor born in bistability</terms:title>
         <schema:author>Li, Chunbiao</schema:author>
         <schema:author>et al.</schema:author>
+        <schema:identifier>10.1587/elex.12.20141116</schema:identifier>
         <schema:isPartOf>IEICE Electronics Express</schema:isPartOf>
         <schema:issueNumber>4</schema:issueNumber>
         <schema:volumeNumber>12</schema:volumeNumber>
@@ -80819,6 +80821,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>1980</terms:issued>
         <terms:title>Intermittency, self-similarity and 1/f spectrum in dissipative dynamical systems</terms:title>
         <schema:author>Manneville, Paul</schema:author>
+        <schema:identifier>10.1051/jphys:0198000410110123500</schema:identifier>
         <schema:isPartOf>Journal de Physique</schema:isPartOf>
         <schema:issueNumber>11</schema:issueNumber>
         <schema:pagination>1235--1243</schema:pagination>
@@ -80932,6 +80935,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Montbri\&apos;o, Ernest</schema:author>
         <schema:author>Paz\&apos;o, Diego</schema:author>
         <schema:author>Roxin, Alex</schema:author>
+        <schema:identifier>10.1103/physrevx.5.021028</schema:identifier>
         <schema:isPartOf>Physical Review X</schema:isPartOf>
         <rdfs:label>Montbrio2015</rdfs:label>
     </owl:NamedIndividual>
@@ -80946,6 +80950,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>Voltage oscillations in the barnacle giant muscle fiber</terms:title>
         <schema:author>Lecar, H.</schema:author>
         <schema:author>Morris, C.</schema:author>
+        <schema:identifier>10.1016/s0006-3495(81)84782-0</schema:identifier>
         <schema:isPartOf>Biophysical Journal</schema:isPartOf>
         <schema:url>https://www.cell.com/biophysj/pdf/S0006-3495(81)84782-0.pdf</schema:url>
         <rdfs:label>MorrisLecar1981</rdfs:label>
@@ -80977,9 +80982,10 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Ott2002">
         <rdf:type rdf:resource="http://schema.org/Book"/>
-        <terms:issued>2010</terms:issued>
+        <terms:issued>2002</terms:issued>
         <terms:title>Chaos in Dynamical Systems</terms:title>
         <schema:author>Ott, Edward</schema:author>
+        <schema:identifier>10.1017/cbo9780511803260</schema:identifier>
         <schema:publisher>Cambridge University Press</schema:publisher>
         <rdfs:label>Ott2002</rdfs:label>
     </owl:NamedIndividual>
@@ -80989,14 +80995,20 @@ to a task-appropriate range (e.g. omega in Hz).
     <!-- https://w3id.org/tvbo/studies/OttRiddled2014 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/OttRiddled2014">
-        <rdf:type rdf:resource="http://schema.org/CreativeWork"/>
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>1994</terms:issued>
         <terms:title>The transition to chaotic attractors with riddled basins</terms:title>
         <schema:author>Alexander, J. C.</schema:author>
         <schema:author>Kan, I.</schema:author>
         <schema:author>Ott, Edward</schema:author>
         <schema:author>Sommerer, J. C.</schema:author>
         <schema:author>Yorke, James A.</schema:author>
+        <schema:identifier>10.1016/0167-2789(94)90047-7</schema:identifier>
+        <schema:isPartOf>Physica D: Nonlinear Phenomena</schema:isPartOf>
+        <schema:issueNumber>4</schema:issueNumber>
+        <schema:pagination>384--410</schema:pagination>
         <schema:url>http://yorke.umd.edu/Yorke\\_papers\\_most\\_cited\\_and\\_post2000/1994\\_04\\_Ott\\_Alexander\\_Kan\\_Sommerer\\_PhysicaD\\_riddled\\%20basins.pdf</schema:url>
+        <schema:volumeNumber>76</schema:volumeNumber>
         <rdfs:label>OttRiddled2014</rdfs:label>
     </owl:NamedIndividual>
     
@@ -81007,9 +81019,10 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Pang2011">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>2011</terms:issued>
-        <terms:title>A new hyperchaotic system from the L&quot;u system and its control</terms:title>
+        <terms:title>A new hyperchaotic system from the L\&quot;u system and its control</terms:title>
         <schema:author>Liu, Y.</schema:author>
         <schema:author>Pang, S.</schema:author>
+        <schema:identifier>10.1016/j.cam.2010.11.029</schema:identifier>
         <schema:isPartOf>Journal of Computational and Applied Mathematics</schema:isPartOf>
         <schema:issueNumber>8</schema:issueNumber>
         <schema:pagination>2775--2789</schema:pagination>
@@ -81067,6 +81080,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Qi, G.</schema:author>
         <schema:author>van Wyk, B. J.</schema:author>
         <schema:author>van Wyk, M. A.</schema:author>
+        <schema:identifier>10.1016/j.physleta.2007.10.082</schema:identifier>
         <schema:isPartOf>Physics Letters A</schema:isPartOf>
         <schema:issueNumber>2</schema:issueNumber>
         <schema:pagination>124--136</schema:pagination>
@@ -81115,7 +81129,8 @@ to a task-appropriate range (e.g. omega in Hz).
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
         <terms:issued>1979</terms:issued>
         <terms:title>An equation for hyperchaos</terms:title>
-        <schema:author>R&quot;ossler, Otto E.</schema:author>
+        <schema:author>R\&quot;ossler, Otto E.</schema:author>
+        <schema:identifier>10.1016/0375-9601(79)90150-6</schema:identifier>
         <schema:isPartOf>Physics Letters A</schema:isPartOf>
         <schema:issueNumber>2--3</schema:issueNumber>
         <schema:pagination>155--157</schema:pagination>
@@ -81152,6 +81167,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Rulkov, Nikolai F.</schema:author>
         <schema:author>Sushchik, M. M.</schema:author>
         <schema:author>Tsimring, L. S.</schema:author>
+        <schema:identifier>10.1103/physrevlett.86.183</schema:identifier>
         <schema:isPartOf>Physical Review Letters</schema:isPartOf>
         <schema:pagination>183</schema:pagination>
         <schema:volumeNumber>86</schema:volumeNumber>
@@ -81167,6 +81183,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>2002</terms:issued>
         <terms:title>Modeling of spiking-bursting neural behavior using two-dimensional map</terms:title>
         <schema:author>Rulkov, Nikolai F.</schema:author>
+        <schema:identifier>10.1103/physreve.65.041922</schema:identifier>
         <schema:isPartOf>Physical Review E</schema:isPartOf>
         <schema:pagination>041922</schema:pagination>
         <schema:volumeNumber>65</schema:volumeNumber>
@@ -81219,6 +81236,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>2014</terms:issued>
         <terms:title>Simplest Chaotic Flows with Involutional Symmetries</terms:title>
         <schema:author>Sprott, J. C.</schema:author>
+        <schema:identifier>10.1142/s0218127414500096</schema:identifier>
         <schema:isPartOf>International Journal of Bifurcation and Chaos</schema:isPartOf>
         <schema:pagination>1450009</schema:pagination>
         <schema:volumeNumber>24</schema:volumeNumber>
@@ -81265,6 +81283,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>Classifying and quantifying basins of attraction</terms:title>
         <schema:author>Sprott, J. C.</schema:author>
         <schema:author>Xiong, A.</schema:author>
+        <schema:identifier>10.1063/1.4927643</schema:identifier>
         <schema:isPartOf>Chaos: An Interdisciplinary Journal of Nonlinear Science</schema:isPartOf>
         <schema:issueNumber>8</schema:issueNumber>
         <schema:pagination>083101</schema:pagination>
@@ -81279,7 +81298,7 @@ to a task-appropriate range (e.g. omega in Hz).
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Stankevich2012">
         <rdf:type rdf:resource="http://schema.org/CreativeWork"/>
         <terms:issued>2012</terms:issued>
-        <terms:title>Hyperchaotic dynamics in a R&quot;ossler-like system</terms:title>
+        <terms:title>Hyperchaotic dynamics in a R\&quot;ossler-like system</terms:title>
         <schema:author>Stankevich, N. V.</schema:author>
         <rdfs:label>Stankevich2012</rdfs:label>
     </owl:NamedIndividual>
@@ -81316,6 +81335,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>1961</terms:issued>
         <terms:title>Thermohaline convection with two stable regimes of flow</terms:title>
         <schema:author>Stommel, Henry</schema:author>
+        <schema:identifier>10.1111/j.2153-3490.1961.tb00079.x</schema:identifier>
         <schema:isPartOf>Tellus</schema:isPartOf>
         <schema:issueNumber>2</schema:issueNumber>
         <schema:volumeNumber>13</schema:volumeNumber>
@@ -81372,6 +81392,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>1999</terms:issued>
         <terms:title>Deterministic chaos seen in terms of feedback circuits: Analysis, synthesis, \\\&amp; biological applications</terms:title>
         <schema:author>Thomas, Ren\&apos;e</schema:author>
+        <schema:identifier>10.1142/s0218127499001383</schema:identifier>
         <schema:isPartOf>International Journal of Bifurcation and Chaos</schema:isPartOf>
         <schema:issueNumber>10</schema:issueNumber>
         <schema:pagination>1889--1905</schema:pagination>
@@ -81428,6 +81449,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Abbott, Tyler A.</schema:author>
         <schema:author>Griffiths, David J.</schema:author>
         <schema:author>Tufillaro, Nicholas B.</schema:author>
+        <schema:identifier>10.1119/1.13791</schema:identifier>
         <schema:isPartOf>American Journal of Physics</schema:isPartOf>
         <schema:issueNumber>10</schema:issueNumber>
         <schema:pagination>895--903</schema:pagination>
@@ -81457,9 +81479,10 @@ to a task-appropriate range (e.g. omega in Hz).
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Ueda1961">
         <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
-        <terms:issued>1961</terms:issued>
+        <terms:issued>1979</terms:issued>
         <terms:title>Randomly Transitional Phenomena in the System Governed by Duffing&apos;s Equation</terms:title>
         <schema:author>Ueda, Yoshisuke</schema:author>
+        <schema:identifier>10.1007/bf01011512</schema:identifier>
         <schema:isPartOf>Journal of Statistical Physics</schema:isPartOf>
         <rdfs:label>Ueda1961</rdfs:label>
     </owl:NamedIndividual>
@@ -81500,6 +81523,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>A hyperchaos generated from Lorenz system</terms:title>
         <schema:author>Wang, M.</schema:author>
         <schema:author>Wang, X.</schema:author>
+        <schema:identifier>10.1016/j.physa.2008.02.020</schema:identifier>
         <schema:isPartOf>Physica A: Statistical Mechanics and its Applications</schema:isPartOf>
         <schema:issueNumber>14</schema:issueNumber>
         <schema:pagination>3751--3758</schema:pagination>
@@ -81520,6 +81544,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Wang, Z.</schema:author>
         <schema:author>van Wyk, B. J.</schema:author>
         <schema:author>van Wyk, M. A.</schema:author>
+        <schema:identifier>10.1590/s0103-97332009000500007</schema:identifier>
         <schema:isPartOf>Brazilian Journal of Physics</schema:isPartOf>
         <schema:pagination>547--553</schema:pagination>
         <schema:volumeNumber>39</schema:volumeNumber>
@@ -81548,6 +81573,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>Excitatory and inhibitory interactions in localized populations of model neurons</terms:title>
         <schema:author>Cowan, Jack D.</schema:author>
         <schema:author>Wilson, Hugh R.</schema:author>
+        <schema:identifier>10.1016/s0006-3495(72)86068-5</schema:identifier>
         <schema:isPartOf>Biophysical Journal</schema:isPartOf>
         <rdfs:label>Wilson1972</rdfs:label>
     </owl:NamedIndividual>
@@ -81562,6 +81588,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:title>A mathematical theory of the functional dynamics of cortical and thalamic nervous tissue</terms:title>
         <schema:author>Cowan, Jack D.</schema:author>
         <schema:author>Wilson, Hugh R.</schema:author>
+        <schema:identifier>10.1007/bf00288786</schema:identifier>
         <schema:isPartOf>Biological Cybernetics</schema:isPartOf>
         <rdfs:label>Wilson1973</rdfs:label>
     </owl:NamedIndividual>
@@ -81597,6 +81624,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:author>Sagdeev, R. Z.</schema:author>
         <schema:author>Usikov, D. A.</schema:author>
         <schema:author>Zaslavskii, G. M.</schema:author>
+        <schema:identifier>10.1016/0375-9601(78)90195-0</schema:identifier>
         <schema:isPartOf>Physics Letters A</schema:isPartOf>
         <schema:issueNumber>3</schema:issueNumber>
         <schema:pagination>145--147</schema:pagination>
@@ -81668,6 +81696,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <terms:issued>1926</terms:issued>
         <terms:title>On relaxation-oscillations</terms:title>
         <schema:author>van der Pol, B.</schema:author>
+        <schema:identifier>10.1080/14786442608564127</schema:identifier>
         <schema:isPartOf>The London, Edinburgh, and Dublin Philosophical Magazine and Journal of Science</schema:isPartOf>
         <schema:issueNumber>11</schema:issueNumber>
         <schema:pagination>978--992</schema:pagination>
@@ -81752,14 +81781,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E-1L0I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/HZ"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoA"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoA"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/HZ"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Hertz per nanoampere (neural gain)</rdfs:comment>
@@ -82213,14 +82242,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E0L0I0M1H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloGM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloGM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Kilogram per second</rdfs:comment>
@@ -82451,14 +82480,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E0L1I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Millimetre per millisecond (= m/s)</rdfs:comment>
@@ -82532,6 +82561,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A1E-1L-1I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
+            </rdf:Description>
+        </qudt:hasFactorUnit>
+        <qudt:hasFactorUnit>
+            <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MOL"/>
             </rdf:Description>
@@ -82539,19 +82574,13 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/A"/>
-            </rdf:Description>
-        </qudt:hasFactorUnit>
-        <qudt:hasFactorUnit>
-            <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Mole per metre per ampere per second (concentration-current coupling)</rdfs:comment>
@@ -82943,14 +82972,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E0L0I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/RAD"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/RAD"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Radian per millisecond</rdfs:comment>
@@ -83027,14 +83056,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E1L-2I0M0H0T0D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroA"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroA"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Microampere per square centimetre (current density)</rdfs:comment>
@@ -83051,14 +83080,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E2L-4I0M-1H0T4D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroFARAD"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroFARAD"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Microfarad per square centimetre (specific capacitance)</rdfs:comment>
@@ -83133,16 +83162,16 @@ to a task-appropriate range (e.g. omega in Hz).
         <rdfs:label>year</rdfs:label>
     </owl:NamedIndividual>
     <rdf:Description>
-        <xsd:pattern>tvbo:Theme</xsd:pattern>
-    </rdf:Description>
-    <rdf:Description>
-        <xsd:pattern>tvbo:Network</xsd:pattern>
+        <xsd:pattern>tvbo:ExperimentResultSidecar</xsd:pattern>
     </rdf:Description>
     <rdf:Description>
         <xsd:pattern>tvbo:Phenotype</xsd:pattern>
     </rdf:Description>
     <rdf:Description>
-        <xsd:pattern>tvbo:ExperimentResultSidecar</xsd:pattern>
+        <xsd:pattern>tvbo:Theme</xsd:pattern>
+    </rdf:Description>
+    <rdf:Description>
+        <xsd:pattern>tvbo:Network</xsd:pattern>
     </rdf:Description>
     
 
