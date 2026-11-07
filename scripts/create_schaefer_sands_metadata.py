@@ -15,9 +15,9 @@ from pathlib import Path
 from urllib.request import urlopen
 
 import yaml
-from linkml_runtime.loaders import yaml_loader
 
 from tvbo.datamodel import tvbo_datamodel
+from tvbo.utils import yaml_loader
 
 ROOT = Path(__file__).resolve().parent.parent
 # Atlases are consolidated under tvbo/database/atlases (the runtime SoT).

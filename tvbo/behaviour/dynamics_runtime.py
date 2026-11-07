@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from sympy import Eq, Symbol
 
-from tvbo.behaviour._runtime import Catalogued, Copyable
+from tvbo.behaviour._runtime import Catalogued, Copyable, _dm
 
 if TYPE_CHECKING:
     import owlready2
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class _Lazy:
     """A module imported on first attribute access.
 
-    This mixin is a base of the generated `Dynamics`, so whatever it imports at module scope is paid for by every ``import tvbo.datamodel.schema`` — including the JAX and codegen processes that never plot or query the ontology. The tvbo half would also close an import cycle, since the schema module is what imports this one.
+    This mixin is a base of the generated `Dynamics`, so whatever it imports at module scope is paid for by every ``import tvbo.datamodel`` — including the JAX and codegen processes that never plot or query the ontology. The tvbo half would also close an import cycle, since the generated module is what imports this one.
     """
 
     def __init__(self, name: str):
@@ -308,25 +308,6 @@ class DynamicsRuntime(Catalogued, Copyable):
         """
         return ontology.search_in_model(search_str, self.ontology, **kwargs)
 
-    @property
-    def _peer(self):
-        """The generated module a member of this record has to be built in.
-
-        See [`peer_module`](../datamodel/dialect.qmd#peer_module): the builders serve both generated forms, and the strict Pydantic models reject a LinkML dataclass where they want their own peer.
-        """
-        from tvbo.datamodel.dialect import peer_module
-
-        return peer_module(self)
-
-    def _collection(self, slot: str) -> dict:
-        """*slot*'s mapping, created if this form left it unset.
-
-        The LinkML dataclass defaults a keyed collection to an empty mapping and the Pydantic model defaults it to ``None``, so a builder that assumed the first raised ``'NoneType' object does not support item assignment`` on the second. Members are added by mutating the mapping, never by reassigning the slot.
-        """
-        if getattr(self, slot, None) is None:
-            setattr(self, slot, {})
-        return getattr(self, slot)
-
     def _sequence(self, slot: str) -> list:
         """*slot*'s list, created if this form left it unset.
 
@@ -338,21 +319,21 @@ class DynamicsRuntime(Catalogued, Copyable):
 
     def _coerce_range(self, domain):
         """Accept None | Range | (lo, hi[, step]) | {lo, hi[, step, enforce]} → Range."""
-        if domain is None or isinstance(domain, self._peer.Range):
+        if domain is None or isinstance(domain, _dm().Range):
             return domain
         if isinstance(domain, dict):
             kw = {k: v for k, v in domain.items() if k in ("lo", "hi", "step", "enforce") and v is not None}
             for k in ("lo", "hi", "step"):
                 if k in kw:
                     kw[k] = float(kw[k])
-            return self._peer.Range(**kw) if kw else None
+            return _dm().Range(**kw) if kw else None
         if isinstance(domain, (list, tuple)):
             if len(domain) == 2:
                 lo, hi = domain
-                return self._peer.Range(lo=float(lo), hi=float(hi))
+                return _dm().Range(lo=float(lo), hi=float(hi))
             if len(domain) == 3:
                 lo, hi, step = domain
-                return self._peer.Range(lo=float(lo), hi=float(hi), step=float(step))
+                return _dm().Range(lo=float(lo), hi=float(hi), step=float(step))
         return domain
 
     def _coerce_equation(self, expr, lhs: str | None = None):
@@ -362,18 +343,14 @@ class DynamicsRuntime(Catalogued, Copyable):
         - a(Y - X) -> a*(Y - X) when 'a' is not a known function
         - XY -> X*Y, cZ -> c*Z, 2X -> 2*X, X2 -> X*2
 
-        An Equation of the *other* generated form is rebuilt rather than passed through:
-        the strict Pydantic models reject a LinkML dataclass on assignment.
         """
-        if isinstance(expr, self._peer.Equation):
+        if isinstance(expr, _dm().Equation):
             return expr
-        if hasattr(expr, "model_dump"):
-            return self._peer.Equation(**expr.model_dump())
         if hasattr(expr, "rhs") and not isinstance(expr, Eq):
-            return self._peer.Equation(lhs=getattr(expr, "lhs", lhs), rhs=expr.rhs)
+            return _dm().Equation(lhs=getattr(expr, "lhs", lhs), rhs=expr.rhs)
         if isinstance(expr, Eq):
-            return self._peer.Equation(lhs=str(expr.lhs), rhs=str(expr.rhs))
-        return self._peer.Equation(lhs=lhs, rhs=expr)
+            return _dm().Equation(lhs=str(expr.lhs), rhs=str(expr.rhs))
+        return _dm().Equation(lhs=lhs, rhs=expr)
 
     # Parameters
     def add_parameter(
@@ -402,7 +379,7 @@ class DynamicsRuntime(Catalogued, Copyable):
             `self`, to allow fluent chaining.
         """
         rng = self._coerce_range(domain)
-        self._collection("parameters")[str(name)] = self._peer.Parameter(
+        self.parameters[str(name)] = _dm().Parameter(
             name=str(name),
             value=value,
             unit=unit,
@@ -434,15 +411,15 @@ class DynamicsRuntime(Catalogued, Copyable):
             all_eqs.extend(eqs.get(key, []) or [])
 
         # Known non-parameter entities: states, derived vars, output transforms, derived parameters, function arguments, and 't'
-        nonparam_known = set(map(str, self._collection("state_variables")))
-        nonparam_known |= set(map(str, self._collection("derived_variables")))
+        nonparam_known = set(map(str, self.state_variables))
+        nonparam_known |= set(map(str, self.derived_variables))
         nonparam_known |= set(map(str, self.output or []))  # output is list of strings
-        nonparam_known |= set(map(str, self._collection("derived_parameters")))
-        for f in self._collection("functions").values():
+        nonparam_known |= set(map(str, self.derived_parameters))
+        for f in self.functions.values():
             nonparam_known |= {str(name) for name in f.arguments}
         nonparam_known.add("t")
 
-        parameters = self._collection("parameters")
+        parameters = self.parameters
         # If any existing parameters clash with known entities, remove them (they were falsely inferred earlier)
         to_remove = [pname for pname in list(parameters) if str(pname) in nonparam_known]
         for pname in to_remove:
@@ -464,7 +441,7 @@ class DynamicsRuntime(Catalogued, Copyable):
             if s in known:
                 continue
             if overwrite or s not in self.parameters:
-                self._collection("parameters")[s] = self._peer.Parameter(name=s, value=float(default_value))
+                self.parameters[s] = _dm().Parameter(name=s, value=float(default_value))
                 added.append(s)
 
         return added
@@ -513,7 +490,7 @@ class DynamicsRuntime(Catalogued, Copyable):
             self._coerce_range(domain),
             self._coerce_range(boundaries) if boundaries is not None else None,
         )
-        self._collection("state_variables")[str(name)] = self._peer.StateVariable(
+        self.state_variables[str(name)] = _dm().StateVariable(
             name=str(name),
             equation=eq,
             description=description,
@@ -557,12 +534,12 @@ class DynamicsRuntime(Catalogued, Copyable):
         Returns:
             `self`, to allow fluent chaining.
         """
-        eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else self._peer.Equation(lhs=str(name))
+        eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else _dm().Equation(lhs=str(name))
         if conditionals:
             eq.conditionals = [
-                self._peer.ConditionalBlock(condition=str(cond), expression=str(expr)) for expr, cond in conditionals
+                _dm().ConditionalBlock(condition=str(cond), expression=str(expr)) for expr, cond in conditionals
             ]
-        self._collection("derived_variables")[str(name)] = self._peer.DerivedVariable(
+        self.derived_variables[str(name)] = _dm().DerivedVariable(
             name=str(name),
             equation=eq,
             unit=unit,
@@ -600,14 +577,13 @@ class DynamicsRuntime(Catalogued, Copyable):
         # Normalize arguments into a dict[str, Parameter]
         if isinstance(arguments, dict):
             args_dict = {
-                str(k): (v if isinstance(v, self._peer.Parameter) else self._peer.Parameter(name=str(k)))
-                for k, v in arguments.items()
+                str(k): (v if isinstance(v, _dm().Parameter) else _dm().Parameter(name=str(k))) for k, v in arguments.items()
             }
         else:
             args = list(arguments) if isinstance(arguments, (list, tuple)) else []
-            args_dict = {str(a): self._peer.Parameter(name=str(a)) for a in args}
+            args_dict = {str(a): _dm().Parameter(name=str(a)) for a in args}
         eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else None
-        self._collection("functions")[str(name)] = self._peer.Function(
+        self.functions[str(name)] = _dm().Function(
             name=str(name),
             equation=eq,
             arguments=args_dict,
@@ -641,14 +617,14 @@ class DynamicsRuntime(Catalogued, Copyable):
             `self`, to allow fluent chaining.
         """
         key = str(name)
-        self._collection("coupling_inputs")[key] = self._peer.CouplingInput(
+        self.coupling_inputs[key] = _dm().CouplingInput(
             name=key,
             description=description,
             dimension=dimension,
             keys=keys or [],
         )
         # Keep parameters clean: remove any parameter with same name
-        parameters = self._collection("parameters")
+        parameters = self.parameters
         if key in parameters:
             del parameters[key]
 
@@ -666,7 +642,7 @@ class DynamicsRuntime(Catalogued, Copyable):
         name_str = str(name)
         # Create derived variable with the equation
         eq = self._coerce_equation(expression, lhs=name_str) if expression is not None else None
-        self._collection("derived_variables")[name_str] = self._peer.DerivedVariable(
+        self.derived_variables[name_str] = _dm().DerivedVariable(
             name=name_str, equation=eq, unit=unit, description=description
         )
         # Add reference to output list
@@ -699,7 +675,7 @@ class DynamicsRuntime(Catalogued, Copyable):
             `self`, to allow fluent chaining.
         """
         eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else None
-        self._collection("derived_parameters")[str(name)] = self._peer.DerivedParameter(
+        self.derived_parameters[str(name)] = _dm().DerivedParameter(
             name=str(name),
             equation=eq,
             unit=unit,
@@ -1651,10 +1627,8 @@ class DynamicsRuntime(Catalogued, Copyable):
             param_map = {k: Symbol(str(k) + "_stim") for k in params.keys()}
             params = {param_map[k]: v for k, v in params.items()}
             eq = eq.subs(param_map)
-            self.derived_variables.update(
-                {"stim_t": self._peer.DerivedVariable(name="stim_t", equation=self._peer.Equation(rhs=eq))}
-            )
-            self.parameters.update({str(k): self._peer.Parameter(name=str(k), value=v) for k, v in params.items()})
+            self.derived_variables.update({"stim_t": _dm().DerivedVariable(name="stim_t", equation=_dm().Equation(rhs=eq))})
+            self.parameters.update({str(k): _dm().Parameter(name=str(k), value=v) for k, v in params.items()})
 
     def find_periodic_orbits(self, f):
         """Find sibling periodic-orbit output files for a run.

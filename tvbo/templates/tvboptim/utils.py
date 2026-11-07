@@ -66,7 +66,7 @@ def data_source_arrays(experiment: Any) -> dict:
 
     A ``data_source`` naming a Network YAML is a projection: an EEG/MEG gain, a sensor array, any matrix that links the simulated nodes to something else. Each entry records the path and the edge to read, never the numbers -- the generated module loads them once at run time, so the array is a traced constant inside the observable instead of a file the pipeline opens per cell. Paths stay as declared and are resolved against the spec directory at run time, which is what lets the same module run from the study and from an emitted kit whose ``spec/`` holds the frozen companion.
 
-    Returns ``{key: {"path": str, "edge": str, "observation": str}}``. Keyed by edge label, so two observations projecting through the same gain share one bound array; two naming the same edge of *different* networks are a name collision the pipeline reference ``data_source.<key>`` cannot resolve, and raise here rather than binding whichever came last. The collection is read through :func:`tvbo.utils.keyed_items`, since an assigned ``observations`` slot is a ``JsonObj`` whose plain iteration yields its keys, not its members.
+    Returns ``{key: {"path": str, "edge": str, "observation": str}}``. Keyed by edge label, so two observations projecting through the same gain share one bound array; two naming the same edge of *different* networks are a name collision the pipeline reference ``data_source.<key>`` cannot resolve, and raise here rather than binding whichever came last. The collection is read through :func:`tvbo.utils.keyed_items`, so either spelling of it is read.
     """
     out: dict[str, dict] = {}
     for name, obs in keyed_items(getattr(experiment, "observations", None), "observations"):
@@ -90,7 +90,7 @@ def data_source_arrays(experiment: Any) -> dict:
 def has_host_pipeline(observations: Any) -> bool:
     """True when any of *observations* reaches a host callable in its pipeline.
 
-    The collection is read through :func:`tvbo.utils.keyed_items`, which knows every shape a keyed slot takes: a ``JsonObj`` (what an assigned slot holds) has no ``.values()`` and iterates its *keys*, so reading it directly answered "no host stage" for a pipeline full of them and the observable was jitted.
+    The collection is read through :func:`tvbo.utils.keyed_items`, so either spelling of it is read.
     """
     return any(
         pipeline_stage_is_host(stage)

@@ -5,7 +5,7 @@ Only schema fields are ever stored; everything derived from the ontology is a pr
 
 Population from the ontology is NOT done at construction. It is :meth:`IntegratorBehaviour.enrich`, called explicitly and idempotent, so that resolving an integrator against the ontology stays an act the caller asks for rather than the cost of naming one. The wrapper this replaces called it from ``__init__``, which meant it ran for a directly constructed integrator and not for a loaded one; the loaded path compensated with its own call, and that call is now the only one.
 
-A mixin *can* hook construction — see :mod:`tvbo.behaviour` on ``__post_init__``, which :class:`CouplingBehaviour` uses. This one deliberately does not.
+A mixin *can* hook construction — see :mod:`tvbo.behaviour` on validators and ``model_post_init``. This one deliberately does not.
 """
 
 from __future__ import annotations

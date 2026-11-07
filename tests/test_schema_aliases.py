@@ -1,8 +1,6 @@
 """Schema-declared ``aliases:`` work at load time, and only where they apply.
 
-LinkML ``aliases:`` are metadata — its loaders key on the canonical slot name — so a declared alias is inert and raises ``unexpected keyword argument`` unless something resolves it. Resolution happens in each generated class's ``__init__`` (``hatch_build._alias_support``), where the kwargs are known to belong to that class: no document traversal, and a free-form key can never be mistaken for a slot.
-
-The strict pydantic models (``extra='forbid'``) cannot fold in ``__init__``, so ``pydantic_loader`` folds the aliases in ``_inject`` from the same ``_SLOT_ALIASES`` table. Without that the validator rejects documents the dataclass loader accepts — the two paths must agree.
+LinkML ``aliases:`` are metadata — its generators key on the canonical slot name — so a declared alias is inert and the strict models refuse it unless something resolves it. Resolution happens in each generated class's ``mode="before"`` validator (``tvbo.datamodel.dialect``), where the keys are known to belong to that class: no document traversal, and a free-form key can never be mistaken for a slot.
 """
 
 import pytest
@@ -191,27 +189,25 @@ def test_conflicting_alias_and_canonical_keeps_the_canonical():
     assert exp.integration.step_size == 0.01
 
 
-# ── the same dialect folds on the pydantic validation path ────────────
+# ── the same dialect folds on the generated class, whichever class a document names ────────────
 
 
 def _pyd(yaml_text, target="SimulationExperiment"):
-    """Load *yaml_text* through the strict pydantic models.
+    """Load *yaml_text* as the class *target* names."""
+    from tvbo import datamodel
+    from tvbo.utils import yaml_loader
 
-    The dataclasses fold the dialect in ``__init__``; the pydantic models (``extra='forbid'``) fold it in a ``mode="before"`` validator. Both call the one implementation in ``tvbo.datamodel.dialect``, so the validator cannot reject a document the dataclass loader accepts. It could before: the two paths carried separate copies, and the pydantic copy had the aliases but not the scalar shortcuts.
-    """
-    from tvbo.utils import pydantic_loader
-
-    return pydantic_loader.loads(yaml_text, target_class=target)
+    return yaml_loader.loads(yaml_text, target_class=getattr(datamodel, target))
 
 
-def test_pydantic_loader_accepts_dt_righthandside_and_number_of_regions():
+def test_a_named_class_accepts_dt_righthandside_and_number_of_regions():
     exp = _pyd(_BASE + "integration: {dt: 0.05}\nnetwork: {number_of_regions: 1, nodes: [{id: 0}]}\n")
     assert exp.integration.step_size == 0.05
     assert exp.network.number_of_nodes == 1
 
 
-def test_pydantic_loader_folds_are_class_scoped():
-    """Same scoping as the dataclass path: ``Edge`` folds ``source_variable`` / ``target_variable``, a stimulus ``Event`` keeps ``target_variable`` canonical."""
+def test_folds_are_class_scoped():
+    """``Edge`` folds ``source_variable`` / ``target_variable``, a stimulus ``Event`` keeps ``target_variable`` canonical."""
     exp = _pyd(
         _BASE + "network: {number_of_nodes: 2, edges: [{source: 0, target: 1, "
         "source_variable: V, target_variable: W}]}\n"
@@ -221,29 +217,26 @@ def test_pydantic_loader_folds_are_class_scoped():
     assert exp.events["s"].target_variable == "y0"
 
 
-def test_pydantic_loader_conflict_keeps_the_canonical():
+def test_a_conflict_keeps_the_canonical():
     with pytest.warns(UserWarning, match="both 'dt' and its canonical"):
         exp = _pyd(_BASE + "integration: {dt: 0.05, step_size: 0.01}")
     assert exp.integration.step_size == 0.01
 
 
-def test_pydantic_validator_folds_every_alias_the_dataclass_loader_does():
-    """Parity guard: every ``SLOT_ALIASES`` entry the dataclass path folds is also folded on the pydantic path, so the validator never rejects a loader-valid key."""
-    from tvbo.utils import pydantic_loader
+def test_the_dialect_folds_every_declared_alias():
+    """Every ``SLOT_ALIASES`` entry folds, so the validator never rejects a declared alias."""
+    from tvbo.datamodel.dialect import normalize
 
     for cls, amap in SLOT_ALIASES.items():
         for alias, canonical in amap.items():
-            folded = pydantic_loader.normalize({alias: "x"}, cls)
+            folded = normalize(cls, {alias: "x"})
             assert alias not in folded and canonical in folded, (cls, alias, canonical)
 
 
-def test_pydantic_lifts_every_scalar_shortcut_the_dataclass_loader_does():
-    """Parity guard for the other half of the dialect.
-
-    The aliases had this guard and stayed in step; the scalar shortcuts had none and silently diverged — they were applied only on the dataclass path, so ``omega: 0.0628`` loaded through one entry point and was rejected by the other.
-    """
-    from tvbo.datamodel import pydantic as dm
-    from tvbo.utils import pydantic_loader
+def test_the_dialect_lifts_every_scalar_shortcut():
+    """The other half of the dialect: ``omega: 0.0628`` is a Parameter of that value, for every slot the schema marks."""
+    from tvbo import datamodel as dm
+    from tvbo.datamodel.dialect import normalize
 
     for cls, lifts in SCALAR_SHORTCUTS.items():
         if getattr(dm, cls, None) is None:
@@ -251,21 +244,12 @@ def test_pydantic_lifts_every_scalar_shortcut_the_dataclass_loader_does():
         for slot, (target, multivalued, _keyed) in lifts.items():
             if multivalued:
                 continue  # collections lift per member; covered by the keyed-dict tests
-            assert pydantic_loader.normalize({slot: "x"}, cls)[slot] == {target: "x"}, (
-                cls,
-                slot,
-                target,
-            )
+            assert normalize(cls, {slot: "x"})[slot] == {target: "x"}, (cls, slot, target)
 
 
-def test_a_bare_scalar_lifts_on_both_paths():
+def test_a_bare_scalar_lifts_from_a_document():
     """The dialect the README leads with: ``omega: 0.0628`` is a Parameter of that value."""
-    from tvbo.datamodel import schema
-    from tvbo.utils import yaml_loader
-
-    src = "name: probe\nparameters: {omega: 0.0628}\n"
-    assert yaml_loader.loads(src, schema.Dynamics).parameters["omega"].value == 0.0628
-    assert _pyd(src, "Dynamics").parameters["omega"].value == 0.0628
+    assert _pyd("name: probe\nparameters: {omega: 0.0628}\n", "Dynamics").parameters["omega"].value == 0.0628
 
 
 def test_the_model_validator_folds_the_dialect_without_the_loader():
@@ -273,7 +257,7 @@ def test_the_model_validator_folds_the_dialect_without_the_loader():
 
     This is what lets the platform hand a raw dict straight to a generated model.
     """
-    from tvbo.datamodel.pydantic import Equation, Solver
+    from tvbo.datamodel import Equation, Solver
 
     assert Solver.model_validate({"dt": 0.01}).step_size == 0.01
     equation = Equation.model_validate({"lefthandside": "x", "righthandside": "y"})

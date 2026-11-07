@@ -14,16 +14,15 @@ The page runs from the basics to the parts you only need on larger recipes. If y
 
 ### Where each idiom comes from
 
-TVB-O is a [LinkML](https://linkml.io) schema loaded with `linkml-runtime`, plus a
-few conveniences of its own. Knowing which is which tells you what survives if you consume the datamodel with plain LinkML tooling:
+TVB-O is a [LinkML](https://linkml.io) schema whose records tvbo builds as the Pydantic models generated from it, plus a few conveniences of its own. Knowing which is which tells you what survives if you consume the datamodel with plain LinkML tooling:
 
 | Idiom | Origin | Plain LinkML? |
 |---|---|---|
 | Mappings, lists, scalars | YAML | yes |
 | `&anchor` / `*reference` | YAML | yes |
-| `<<:` merge keys | YAML | **no**. LinkML's loader rejects the tag; TVB-O restores it |
+| `<<:` merge keys | YAML | yes |
 | Keyed collections `{name: {...}}` | LinkML (`inlined_as_dict`) | yes |
-| Duplicate key is an error | LinkML (`DupCheckYamlLoader`) | yes |
+| Duplicate key is an error | TVB-O | yes |
 | Scalar for a keyed member (`omega: 0.0628`) | LinkML *specifies* it (`inlined_as_simple_dict`) | **no**. Unimplemented in `linkml-runtime`; TVB-O implements it |
 | Scalar for a single object (`equation: "x+2"`) | TVB-O | no |
 | Slot aliases (`dt`, `number_of_regions`) | LinkML *declares* `aliases:`, but treats them as documentation | **no**. TVB-O resolves them |
@@ -31,7 +30,7 @@ few conveniences of its own. Knowing which is which tells you what survives if y
 | `iri:` sourcing | TVB-O | no |
 | `distribution: {lo, hi}`, `boundaries:` | TVB-O | no |
 
-Two of these are resolved in the **generated classes** rather than in the loader, namely slot aliases and the scalar shortcuts, so they keep working even if you load the datamodel with `linkml_runtime` directly, or construct objects in Python.
+Slot aliases, the scalar shortcuts, keyed collections and `iri:` sourcing are resolved in the **generated classes** rather than in the loader, so they keep working when you construct objects in Python or validate a mapping directly.
 
 ## The basics {#basics}
 
@@ -99,7 +98,7 @@ The long form is always available. Reach for it as soon as you need a sibling fi
 
 The schema marks the stand-in slot with LinkML's own `simple_dict_value` annotation, so `Parameter.value` and `Equation.rhs` carry it and every slot ranged on those classes picks it up, including `Event.condition`, `Event.affect` and `Stimulus.equation`.
 
-LinkML specifies this for *keyed collections* (`inlined_as_simple_dict`) but `linkml-runtime`'s dataclass loader does not implement it, so TVB-O does. TVB-O also extends it to **single-valued** slots (`equation: "x+2"`), which the LinkML spec does not cover.
+LinkML specifies this for *keyed collections* (`inlined_as_simple_dict`) but its generators do not implement it, so TVB-O does. TVB-O also extends it to **single-valued** slots (`equation: "x+2"`), which the LinkML spec does not cover.
 :::
 
 Two more in the same spirit, both TVB-O:
@@ -188,7 +187,7 @@ Two things to know:
 * The anchor must sit on a value the schema accepts: a slot, or a list entry. An invented top-level key (`base: &base {…}` beside `dynamics:`) is read as a slot of the document and rejected.
 * The merge is **shallow**. An explicit `parameters:` replaces the anchor's whole block rather than merging into it key by key.
 
-Merge keys are ordinary YAML, but LinkML's loader rejects the `<<` tag; TVB-O's loader restores the standard behaviour, keeping LinkML's duplicate-key check for keys you wrote twice yourself.
+Merge keys are ordinary YAML; TVB-O's loader keeps the duplicate-key check for keys you wrote twice yourself.
 
 Several anchors can be merged at once with `<<: [*a, *b]`, earlier ones winning.
 
@@ -275,7 +274,7 @@ Fields alongside `iri` override the sourced ones, which is the usual way to take
 | `boundaries: {lo: 0, hi: 1}` | `domain` **with** `enforce: clamp` | TVB-O |
 | `domain: {lo: 0, hi: 1}` | descriptive range, no clamping | LinkML |
 | `x: &base {...}` … `y: *base` | reuse the value verbatim | YAML |
-| `y: {<<: *base, k: v}` | reuse, overriding `k` | YAML (TVB-O restores it on LinkML's loader) |
+| `y: {<<: *base, k: v}` | reuse, overriding `k` | YAML |
 | `dynamics: !include m.yaml` | splice another file in | TVB-O |
 | `dynamics: {iri: "tvbo:models/JansenRit"}` | source from the curated database | TVB-O |
 | the same key twice | an error | LinkML |

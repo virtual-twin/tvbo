@@ -10,11 +10,8 @@ import re
 import numpy as np
 import pytest
 
-import tvbo.datamodel.pydantic as pydantic_model
-import tvbo.datamodel.schema as dataclass_model
-from tvbo import Network, SimulationExperiment
+from tvbo import Network, SimulationExperiment, datamodel
 from tvbo.multiscale import _project_weights
-from tvbo.utils import pydantic_loader
 
 RETIRED = {
     "inner_coupling": ({"name": "Inner"}, "write the coupling on the subnetwork"),
@@ -50,19 +47,19 @@ def test_a_retired_coupling_slot_is_refused_naming_where_it_is_written_now(slot)
     value, instead = RETIRED[slot]
     message = rf"Coupling\.{slot} was retired in tvbo 0\.9\.0: {instead}"
     with pytest.raises(ValueError, match=message):
-        dataclass_model.Coupling(name="Linear", **{slot: value})
+        datamodel.Coupling(name="Linear", **{slot: value})
     with pytest.raises(ValueError, match=message):
         SimulationExperiment.from_string(SPEC.format(slot=slot, value=repr(value) if isinstance(value, str) else value))
     with pytest.raises(ValueError, match=message):
-        pydantic_loader.validate({"name": "Linear", slot: value}, "Coupling")
+        datamodel.Coupling.model_validate({"name": "Linear", slot: value})
 
 
-def test_the_region_mapping_class_is_gone_from_both_datamodels():
-    assert not hasattr(dataclass_model, "RegionMapping") and not hasattr(pydantic_model, "RegionMapping")
+def test_the_region_mapping_class_is_gone_from_the_datamodel():
+    assert not hasattr(datamodel, "RegionMapping")
 
 
 def test_an_observation_keeps_its_aggregation():
-    assert dataclass_model.Observation(name="mean_x", source=["x"], aggregation="mean").aggregation == "mean"
+    assert datamodel.Observation(name="mean_x", source=["x"], aggregation="mean").aggregation == "mean"
 
 
 PARENT_PATHS = [("..", "parent"), ("../..", "parent/parent")]

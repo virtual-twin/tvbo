@@ -1,6 +1,6 @@
 """TVB-O Data Model.
 
-Generated from the LinkML schema. `tvbo.datamodel.pydantic` is the runtime form and this package re-exports it; `tvbo.datamodel.schema`, the LinkML dataclass form, is generated beside it until gen-python is retired.
+Generated from the LinkML schema as `tvbo.datamodel.pydantic`, which this package re-exports.
 
 Usage:
     from tvbo.datamodel import Dynamics, Parameter, Equation

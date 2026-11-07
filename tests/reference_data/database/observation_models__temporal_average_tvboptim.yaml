@@ -7,7 +7,8 @@ iri: tvbo:observation_models/temporal_average_tvboptim
 period: 0.9765625
 reconcile: by_label
 pipeline:
-- equation:
+- name: temporal_average_tvboptim
+  equation:
     parameters:
       window_size:
         name: window_size
@@ -20,7 +21,6 @@ pipeline:
     rhs: window_mean(slice_axis(X, 0, 1, 1 + window_size * floor((shape(X, 0) - 1)
       / window_size)), window_size)
     latex: false
-  name: temporal_average_tvboptim
   output: averaged
   apply_on_dimension: time
   arguments:

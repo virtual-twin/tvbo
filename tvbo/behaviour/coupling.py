@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from tvbo.behaviour._runtime import Catalogued
+from tvbo.behaviour._runtime import Catalogued, _dm
 
 
 def event_parameters(experiment) -> set[str]:
@@ -321,9 +321,7 @@ class CouplingBehaviour(Catalogued):
 
     def _default_post_expression(self, scaling):
         """The post-expression of a coupling that declares none, ``K * gx`` for its global scaling *scaling* (:meth:`global_scaling`) and ``gx`` for none."""
-        from tvbo.datamodel.dialect import peer_module
-
-        return peer_module(self).Equation(rhs=f"{scaling} * gx" if scaling else "gx")
+        return _dm().Equation(rhs=f"{scaling} * gx" if scaling else "gx")
 
     def refuse_unread(self, read_by_events):
         """Refuse the coupling when one of its parameters is read by nothing, and return it.

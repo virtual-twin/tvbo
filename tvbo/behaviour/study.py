@@ -172,7 +172,6 @@ class SimulationStudyBehaviour(Catalogued):
         study._source_file = str(Path(filepath).resolve())
         register_recipe_code_paths(study._source_file, getattr(study, "code_source", None))
         raw_experiments = {e.get("id"): e for e in (raw.get("experiments") or []) if isinstance(e, dict)}
-        # a plain dict, past the JsonObj setattr that would wrap it
         object.__setattr__(study, "_raw_experiments", raw_experiments)
         _wire_nested(study, raw)
         hand_down_theme(study)

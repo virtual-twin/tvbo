@@ -1,6 +1,6 @@
-"""Generate the LinkML datamodel and materialize the authored records — build hook *and* standalone script.
+"""Generate the datamodel and materialize the authored records — build hook *and* standalone script.
 
-``tvbo/datamodel/schema.py`` and ``tvbo/datamodel/pydantic.py`` are pure artifacts generated from ``schema/tvbo_datamodel.yaml`` (and its imports). They are **not** tracked in git (see ``.gitignore``): every wheel / sdist / editable build regenerates them here, so they can neither conflict during merges nor drift out of sync with the schema. Consequently ``linkml`` (the heavy generator toolkit) is a *build-time* only dependency (``[build-system].requires``); importing the generated classes needs just the lightweight ``linkml-runtime``.
+``tvbo/datamodel/pydantic.py``, ``tvbo/datamodel/dialect_tables.py`` and the JSON Schema beside them are pure artifacts generated from ``schema/tvbo_datamodel.yaml`` (and its imports). They are **not** tracked in git (see ``.gitignore``): every wheel / sdist / editable build regenerates them here, so they can neither conflict during merges nor drift out of sync with the schema. Consequently ``linkml`` (the heavy generator toolkit) is a *build-time* only dependency (``[build-system].requires``); importing the generated classes needs only ``pydantic``.
 
 It also copies the instance documents authored beside the schema (``schema/study_layout.yaml``, the ground truth for the study directory layout) into the package tree, so the runtime resolves them at one import-relative path whether tvbo was installed from a wheel or editable.
 
@@ -8,7 +8,7 @@ This single file is used two ways so from-source and build-time codegen are byte
   * as a **hatchling build hook** (wheel / sdist / editable builds), and
   * as a **plain script** (``python hatch_build.py``) — the ``gen-linkml`` Makefile target, i.e. the entry point for a from-source checkout without an install.
 
-Determinism: the Python generator emits a ``# Generation date:`` header line — we strip it so the generated modules are byte-reproducible across builds.
+Determinism: a generator emits a ``# Generation date:`` header line — we strip it so the generated modules are byte-reproducible across builds.
 """
 
 from __future__ import annotations
@@ -22,8 +22,8 @@ _NONDETERMINISTIC_PREFIX = "# Generation date:"
 def generate_datamodel(root: str | Path) -> None:
     """Write the generated datamodel from ``schema/tvbo_datamodel.yaml``.
 
-    * ``tvbo/datamodel/schema.py``                  — LinkML Python dataclasses,
-    * ``tvbo/datamodel/pydantic.py``                — Pydantic models,
+    * ``tvbo/datamodel/pydantic.py``                — Pydantic models, the dialect folded in and behaviour attached,
+    * ``tvbo/datamodel/dialect_tables.py``          — the dialect tables read off the schema,
     * ``tvbo/datamodel/tvbo_datamodel.schema.json`` — JSON Schema for the ``tvbo validate`` CLI (checked with the lightweight ``jsonschema`` lib, so validation needs no runtime ``linkml``).
     """
     # Imported lazily so this module is importable without `linkml` (the heavy, build-time-only generator) — e.g. when hatchling merely inspects the hook.
@@ -46,10 +46,6 @@ def generate_datamodel(root: str | Path) -> None:
     mixins = _mixins(root, schema)
     _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed, lists, defaults, units))
     _write(
-        out_dir / "schema.py",
-        _with_strict_text(_with_behaviour(_python_generator(schema).serialize(), mixins)) + _INSTALL_DIALECT,
-    )
-    _write(
         out_dir / "pydantic.py",
         _with_dialect_and_behaviour(_with_empty_collections(PydanticGenerator(str(schema)).serialize()), mixins),
     )
@@ -66,23 +62,6 @@ def generate_datamodel(root: str | Path) -> None:
     (out_dir / "tvbo_datamodel.schema.json").write_text(json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _python_generator(schema: Path):
-    """LinkML's ``PythonGenerator``, reading a union that has an unconstrained (``linkml:Any``) branch as unconstrained.
-
-    The generator turns a single-valued ``any_of`` into one coercion per branch, guarded by ``isinstance(value, (<branch types>,))``. A branch ranged over a ``linkml:Any`` class, stated or inherited by a branch that states no range (the ``array: {}`` branch of ``value``), puts ``typing.Any`` in that tuple, and the class then raises ``TypeError`` the first time it is built. Every value already matches such a union, so the slot is generated as its unconstrained range alone: no coercion and no check.
-    """
-    from linkml.generators.pythongen import PythonGenerator
-
-    class _Generator(PythonGenerator):
-        def _boolean_combinator_branch_slots(self, slot, branches):
-            classes = self.schema.classes
-            if any((r := b.range or slot.range) in classes and self.is_class_unconstrained(classes[r]) for b in branches):
-                return None
-            return super()._boolean_combinator_branch_slots(slot, branches)
-
-    return _Generator(str(schema))
-
-
 # `boundaries` also implies `enforce: clamp`; yaml_loader._fold_one_state_variable_domain owns it.
 _SEMANTIC_ALIASES = ("range", "boundaries")
 
@@ -90,11 +69,11 @@ _SEMANTIC_ALIASES = ("range", "boundaries")
 def _dialect_tables(schema: Path) -> tuple[dict, dict, dict, dict, dict, dict]:
     """``(scalar shortcuts, slot aliases, keyed collections, list slots, slot defaults, unit slots)`` — the dialect, read off the schema.
 
-    LinkML treats ``aliases:`` as documentation — its loaders key on the canonical slot name, so a declared alias is inert and raises ``unexpected keyword argument``. Each class's ``__init__`` already receives exactly its own slots, which makes it the one place where an alias can be resolved without guessing whether a mapping is an instance or a keyed collection, and without a free-form key (a parameter named ``dt``) ever being mistaken for a slot. Every construction path — the LinkML loaders, ``cls(**data)``, nested and inlined members, subclasses — goes through it.
+    LinkML treats ``aliases:`` as documentation — its generators key on the canonical slot name, so a declared alias is inert and the strict models refuse it as an unknown field. The model's ``mode="before"`` validator receives exactly the class's own slots, which makes it the one place where an alias can be resolved without guessing whether a mapping is an instance or a keyed collection, and without a free-form key (a parameter named ``dt``) ever being mistaken for a slot. Every construction path — the loaders, ``cls(**data)``, nested and inlined members, subclasses — goes through it.
 
-    It also applies LinkML's ``simple_dict_value`` annotation, which marks the slot a bare scalar stands for: ``omega: 0.0628`` means ``{value: 0.0628}`` and ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed collections (``inlined_as_simple_dict``) but ``linkml_runtime``'s dataclass loader does not implement it, so it is applied here — and extended to single-valued inlined slots, which the spec does not cover. Reference slots are skipped: their scalar is the target's *identifier*, not a value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``). Inlined-ness is asked of the schema (``is_inlined``) rather than read off ``slot.inlined``, because a class-ranged slot whose range has an identifier is a reference by default while leaving ``inlined`` unset — six such slots were being wrapped, and since the wrapper then had to fit a string-ranged slot it landed as the literal ``"JsonObj(value='x')"``.
+    It also applies LinkML's ``simple_dict_value`` annotation, which marks the slot a bare scalar stands for: ``omega: 0.0628`` means ``{value: 0.0628}`` and ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed collections (``inlined_as_simple_dict``) but its Pydantic generator does not implement it, so it is applied here — and extended to single-valued inlined slots, which the spec does not cover. Reference slots are skipped: their scalar is the target's *identifier*, not a value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``). Inlined-ness is asked of the schema (``is_inlined``) rather than read off ``slot.inlined``, because a class-ranged slot whose range has an identifier is a reference by default while leaving ``inlined`` unset.
 
-    It records each keyed collection's identifier slot, so a member written under its key can be given the name the key already states, and every other multivalued slot, whose one member may be written bare (``output: x``, or a ``nodes`` mapping that spells one node's own fields): LinkML's dataclasses wrap such a value in the list themselves, and the Pydantic models refuse it, so the dialect wraps it for both. The generated dataclasses do that themselves in ``__post_init__``; the generated Pydantic models do not, and a curated entry spelled the way this project requires — ``TR: {value: 720.0}``, no redundant inner ``name`` — was accepted by one form and rejected by the other.
+    It records each keyed collection's identifier slot, so a member written under its key can be given the name the key already states (``TR: {value: 720.0}``, no redundant inner ``name``), and every other multivalued slot, whose one member may be written bare (``output: x``, or a ``nodes`` mapping that spells one node's own fields) and is wrapped in the list the model expects.
 
     Last, it reads ``annotations.default``: the default of a slot whose range is a class. LinkML's ``ifabsent`` is processed only for type and enum ranges, so a slot that must accept an integer or a word (``n_parallel: 8`` or ``auto``) needs the class base range ``ScalarValue`` to validate natively, and can then state its default only this way. A slot declaring both is refused, so a default has one home.
 
@@ -188,10 +167,7 @@ def _dialect_tables(schema: Path) -> tuple[dict, dict, dict, dict, dict, dict]:
 
 
 def _render_dialect_tables(shortcuts: dict, aliases: dict, keyed: dict, lists: dict, defaults: dict, units: dict) -> str:
-    """The dialect tables as their own module.
-
-    Kept apart from ``schema.py`` so the Pydantic models can read them without importing the dataclasses: that import is the coupling the migration exists to remove, and it would be a cycle once ``schema.py`` installs the dialect from the same place.
-    """
+    """The dialect tables as their own module, which :mod:`tvbo.datamodel.dialect` reads and the generated models import, so neither imports the other."""
     return f'''"""Generated dialect tables — see :mod:`tvbo.datamodel.dialect`.
 
 ``SCALAR_SHORTCUTS`` maps ``{{class: {{slot: (slot the bare scalar stands for, multivalued, keyed)}}}}``, from ``annotations.simple_dict_value`` on each range class.
@@ -215,14 +191,6 @@ SLOT_DEFAULTS = {defaults!r}
 UNIT_SLOTS = {units!r}
 '''
 
-
-#: Appended to the generated ``schema.py``; the dataclasses fold the dialect in ``__init__``.
-_INSTALL_DIALECT = """
-
-from tvbo.datamodel.dialect import install_on_dataclasses as _install_dialect
-
-_install_dialect(globals())
-"""
 
 #: Attached to every class the schema gives an ``iri``; see :mod:`tvbo.behaviour._enrich`.
 _ENRICHABLE_MIXIN = "tvbo.behaviour._enrich.IriEnrichable"
@@ -297,9 +265,9 @@ def _inject_bases(code: str, additions: dict[str, list[str]]) -> str:
 
 
 def _with_empty_collections(code: str) -> str:
-    """Default every multivalued slot of the generated models to an empty container, as the dataclasses do.
+    """Default every multivalued slot of the generated models to an empty container.
 
-    LinkML's Pydantic generator writes ``Optional[list[X]] = Field(default=None`` and ``Optional[dict[str, X]] = Field(default=None`` for a multivalued slot, so a record's collections are ``None`` until something is put in them and every reader has to ask first. The dataclasses default the same slots to ``empty_list()`` and ``empty_dict()``, and the behaviour written against them adds members in place. Both generated forms therefore take the empty container, which the dumpers leave out of the record exactly as they leave out ``None``. A generator output in which neither form occurs is refused, since a datamodel without the defaults would then ship unnoticed.
+    LinkML's Pydantic generator writes ``Optional[list[X]] = Field(default=None`` and ``Optional[dict[str, X]] = Field(default=None`` for a multivalued slot, so a record's collections would be ``None`` until something is put in them and every reader would have to ask first. With the empty container as the default, behaviour adds members in place, and the dumpers leave an empty collection out of the record exactly as they leave out ``None``. A generator output in which neither spelling occurs is refused, since a datamodel without the defaults would then ship unnoticed.
     """
     collection = re.compile(r"^(    \w+: Optional\[(dict|list)\[.*\]\] = Field\()default=None,", re.M)
     code, n = collection.subn(lambda m: f"{m[1]}default_factory={m[2]},", code)
@@ -311,24 +279,44 @@ def _with_empty_collections(code: str) -> str:
 
 
 #: Prepended to ``pydantic.py`` as ``ConfiguredBaseModel``'s base, folding before validation.
-_DIALECT_BASE = '''from pydantic import model_validator as _model_validator
+_DIALECT_BASE = '''from contextvars import ContextVar as _ContextVar
 
+from pydantic import model_validator as _model_validator
+
+from tvbo.datamodel.dialect import fold_slot as _fold_slot
 from tvbo.datamodel.dialect import normalize as _normalize_dialect
+
+_ASSIGNING = _ContextVar("_ASSIGNING", default=False)
+"""Whether the next dialect validator to run is the one Pydantic calls on the record being assigned to."""
 
 
 class _DialectBase(BaseModel):
-    """Accepts the TVBO dialect — declared aliases and bare-scalar shortcuts.
+    """Accepts the TVBO dialect — declared aliases and bare-scalar shortcuts — when a model is constructed and when one of its slots is assigned.
 
-    Runs before validation, once per constructed model, so Pydantic's own recursion
-    reaches every nested member; the validator only ever handles its own level.
+    The validator runs before validation, once per constructed model, so Pydantic's own recursion reaches every nested member; it only ever handles its own level. Pydantic validates an assignment against the value assigned, not against the mapping the validator returns, so ``__setattr__`` folds that value first. On an assignment Pydantic hands the validator the whole record and keeps the mapping it returns as the record's other slots, unvalidated, so there the validator only checks the record and returns it as it was: folding it again would merge the curated entry its ``iri`` names back over slots already built, as raw mappings.
+
+    A number in a text slot is read as its text, as YAML reads a recipe's unquoted identifier ``7``; a mapping or a list there is refused.
     """
+
+    model_config = ConfigDict(coerce_numbers_to_str=True)
 
     @_model_validator(mode="before")
     @classmethod
     def _fold_tvbo_dialect(cls, data):
-        if isinstance(data, dict):
-            return _normalize_dialect(cls.__name__, dict(data))
-        return data
+        if not isinstance(data, dict):
+            return data
+        assigning = _ASSIGNING.get()
+        _ASSIGNING.set(False)
+        folded = _normalize_dialect(cls.__name__, dict(data))
+        return data if assigning else folded
+
+    def __setattr__(self, name, value):
+        value = _fold_slot(type(self).__name__, name, value)
+        token = _ASSIGNING.set(True)
+        try:
+            super().__setattr__(name, value)
+        finally:
+            _ASSIGNING.reset(token)
 
 
 '''
@@ -345,51 +333,6 @@ def _mixin_imports(mixins: dict[str, list[str]]) -> str:
 def _mixin_bases(mixins: dict[str, list[str]]) -> dict[str, list[str]]:
     """``{class: mixin class names}`` — the dotted paths reduced to what a base is written as."""
     return {cls: [path.rsplit(".", 1)[1] for path in paths] for cls, paths in mixins.items()}
-
-
-def _with_behaviour(code: str, mixins: dict[str, list[str]]) -> str:
-    """Give each annotated dataclass its mixins.
-
-    Both generated forms take the same mixins, so behaviour reaches an object whether it came from LinkML's loader (a dataclass) or from Pydantic validation. Without this the dataclasses would lose every helper the moment it moved out of a runtime subclass, since that is still what the loaders construct.
-    """
-    if not mixins:
-        return code
-    code = code.replace('metamodel_version = "', _mixin_imports(mixins) + '\nmetamodel_version = "', 1)
-    return _inject_bases(code, _mixin_bases(mixins))
-
-
-def _text_types(code: str) -> set[str]:
-    """``str`` and every generated identifier type descended from ``extended_str``, whose coercions ``str()`` their value."""
-    bases = dict(re.findall(r"^class (\w+)\((\w+)\):", code, flags=re.M))
-    found = {"str", "extended_str"}
-    while more := {name for name, base in bases.items() if base in found} - found:
-        found |= more
-    return found - {"extended_str"}
-
-
-def _with_strict_text(code: str) -> str:
-    """Route every generated text coercion through :func:`tvbo.datamodel.text_slots.text_value`.
-
-    LinkML writes ``self.X = T(self.X)`` for a single-valued text slot, ``self.X = [v if isinstance(v, T) else T(v) for v in self.X]`` for a multivalued one, and ``lambda: T(value)`` for the text branch of a single-valued ``any_of``, whose candidates it tries in order after ``value = self.X``; ``T`` is ``str`` or an identifier type descended from ``extended_str``. Each becomes ``T(_text_value(self, "X", ...))``, so a structured value raises instead of being stored as its ``str()``. In an ``any_of`` the raise moves on to the next candidate, so a mapping reaches any class branch after the text one and is refused, naming the slot, only when no candidate takes it (``n_parallel: {value: 4}``). An output in which the single-valued, multivalued or ``any_of`` form matches nothing, or in which a coercion of one of those three forms survives unrouted, is refused: a LinkML upgrade that re-spells them would otherwise ship a datamodel without the check. A ``T(...)`` call of any other form, such as a helper's ``str(value)``, coerces no slot and passes.
-    """
-    types = "|".join(sorted(_text_types(code), key=len, reverse=True))
-    scalar = re.compile(rf"^([ \t]+self\.(\w+) = )({types})\(self\.\2\)$", re.M)
-    items = re.compile(rf"^([ \t]+self\.(\w+) = \[v if isinstance\(v, ({types})\) else )\3\(v\)( for v in self\.\2\])$", re.M)
-    union = re.compile(r"^([ \t]+value = self\.(\w+)\n[ \t]+for _coerce in \()(.*)(\):)$", re.M)
-    branch = re.compile(rf"lambda: ({types})\(value\)")
-    code, n_scalar = scalar.subn(lambda m: f'{m[1]}{m[3]}(_text_value(self, "{m[2]}", self.{m[2]}))', code)
-    code, n_items = items.subn(lambda m: f'{m[1]}{m[3]}(_text_value(self, "{m[2]}", v)){m[4]}', code)
-    code, n_union = union.subn(
-        lambda m: m[1] + branch.sub(lambda b: f'lambda: {b[1]}(_text_value(self, "{m[2]}", value))', m[3]) + m[4], code
-    )
-    coercion = rf"self\.\w+ = (?:{types})\(self\.\w+\)|else (?:{types})\(v\) for v in self\.|lambda: (?:{types})\(value\)"
-    unrouted = re.findall(rf"^.*(?:{coercion}).*$", code, flags=re.M)
-    anchor = '\nmetamodel_version = "'
-    if not n_scalar or not n_items or not n_union or unrouted or anchor not in code:
-        raise RuntimeError(
-            f"Routed {n_scalar} single-valued and {n_items} multivalued text coercions and the candidates of {n_union} any_of slots through text_value, left {len(unrouted)} unrouted (first: {unrouted[:1]}), and found the import anchor: {anchor in code}. LinkML's Python generator has changed its output; update hatch_build._with_strict_text so a mapping in a text slot still raises."
-        )
-    return code.replace(anchor, "\nfrom tvbo.datamodel.text_slots import text_value as _text_value\n" + anchor, 1)
 
 
 def _with_dialect_and_behaviour(code: str, mixins: dict[str, list[str]]) -> str:

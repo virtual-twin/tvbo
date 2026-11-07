@@ -22,7 +22,7 @@ from tvbo.behaviour._runtime import Catalogued
 
 
 class FunctionBehaviour(Catalogued):
-    """Everything a declared function does, on both generated forms."""
+    """Everything a declared function does."""
 
     @classmethod
     def from_python(cls, function_instance, **kwargs):
@@ -154,7 +154,7 @@ class FunctionBehaviour(Catalogued):
 
     @property
     def argument_names(self) -> list[str]:
-        """The names of this function's formal arguments in declared order — empty on either generated form when it declares none, which is ``{}`` on one and ``None`` on the other."""
+        """The names of this function's formal arguments in declared order."""
         from tvbo.utils import keyed_items
 
         return [str(name) for name, _ in keyed_items(getattr(self, "arguments", None), "arguments")]

@@ -7,7 +7,8 @@ description: 'Running temporal mean over non-overlapping windows of `period`, wi
 period: 0.9765625
 reconcile: by_label
 pipeline:
-- equation:
+- name: temporal_average
+  equation:
     parameters:
       window_size:
         name: window_size
@@ -19,7 +20,6 @@ pipeline:
           latex: false
     rhs: window_mean(X, window_size)
     latex: false
-  name: temporal_average
   output: averaged
   apply_on_dimension: time
   arguments:

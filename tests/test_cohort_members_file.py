@@ -9,7 +9,7 @@ import pytest
 import yaml
 
 from tvbo.data import cohort
-from tvbo.datamodel.schema import Dataset
+from tvbo.datamodel import Dataset
 from tvbo.utils import to_dict, yaml_loader
 
 IDS = ["s03", "s01", "s07"]
@@ -27,13 +27,11 @@ def test_typed_members_are_returned_in_declared_order(tmp_path):
 
 def test_a_typed_cohort_dumps_its_keys_in_the_order_it_had_while_members_was_required():
     """``members`` stays ahead of ``label`` and ``description`` in a dumped cohort, so a recipe that types its lists dumps to the bytes it dumped to before the file and rule slots."""
-    import json
-
-    from linkml_runtime.dumpers import json_dumper
+    from tvbo.utils import to_dict
 
     typed = {"cohort_id": "finished", "label": "Finished", "description": "Every finished subject.", "members": ["s03", "s01"]}
     dataset = Dataset(dataset_id="toy_sc", cohorts=[typed])
-    dumped = json.loads(json_dumper.dumps(dataset))["cohorts"]["finished"]
+    dumped = to_dict(dataset)["cohorts"]["finished"]
     assert list(dumped) == ["cohort_id", "members", "label", "description"]
 
 

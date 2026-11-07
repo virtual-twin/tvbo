@@ -1,9 +1,4 @@
 name: windowed_fc
-state:
-- count
-- mean
-- comoment
-emit: zero_diagonal(comoment / outer(sqrt(diag(comoment)), sqrt(diag(comoment))))
 description: 'Windowed Pearson-correlation functional connectivity as a mean-centred
   streaming co-moment: Welford `add` update, exact reverse-Welford `evict` downdate,
   two-pass `resync`, and a zero-diagonal Pearson `emit`. Byte-identical to compute_fc,
@@ -13,6 +8,10 @@ replaces:
 backends:
 - tvboptim
 emit_kind: window
+state:
+- count
+- mean
+- comoment
 add:
 - target: delta
   expression: v - mean
@@ -49,3 +48,4 @@ resync_masked:
   expression: (x - mean) * m
 - target: comoment
   expression: matmul(transpose(xc), xc)
+emit: zero_diagonal(comoment / outer(sqrt(diag(comoment)), sqrt(diag(comoment))))

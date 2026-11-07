@@ -1,6 +1,6 @@
 """A coupling the network declares must reach every backend that renders one.
 
-Coupling belongs to the network, so ``SimulationExperiment`` has no coupling slot and ``experiment.coupling`` is a read of ``network.coupling`` — the first member, which is what a backend expressing a single coupling renders. The collection arrives as a plain dict when the experiment is constructed and as a ``JsonObj`` once the slot is assigned, so the read goes through ``keyed_items``; reading the assigned shape with ``.values()`` raised, and a backend that lost its coupling emits code with none at all while the TVB export substitutes ``Linear``.
+Coupling belongs to the network, so ``SimulationExperiment`` has no coupling slot and ``experiment.coupling`` is a read of ``network.coupling`` — the first member, which is what a backend expressing a single coupling renders. The read goes through ``keyed_items``, so either spelling of the collection is read; a backend that lost its coupling emits code with none at all while the TVB export substitutes ``Linear``.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ def test_the_property_reads_the_network():
 
 
 def test_an_assigned_coupling_collection_is_still_readable():
-    """Assigning the slot rewraps it as a ``JsonObj``, which has no ``.values()``."""
+    """Assigning the slot validates the mapping back into the same collection."""
     exp = _experiment(True)
     exp.network.coupling = exp.network.coupling
 

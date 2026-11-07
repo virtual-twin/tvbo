@@ -577,18 +577,7 @@ def get_pipeline_output_key(obs_name):
     return None
 
 # === Exploration metadata ===
-# Schema: experiment.explorations is a multivalued dict, but users sometimes
-# assign a single Exploration / list directly (which clobbers the container
-# with a JsonObj that has no .values()). Coerce defensively.
-_expl = experiment.explorations
-if not _expl:
-    exploration_list = []
-elif hasattr(_expl, 'values') and callable(_expl.values):
-    exploration_list = list(_expl.values())
-elif isinstance(_expl, (list, tuple)):
-    exploration_list = list(_expl)
-else:
-    exploration_list = [_expl]
+exploration_list = list((experiment.explorations or {}).values())
 has_explorations = len(exploration_list) > 0
 
 # Parse explorations - uses schema ifabsent defaults
@@ -788,11 +777,7 @@ for expl in exploration_list:
                 if isinstance(_av, str) and 'observations.' in _av:
                     _arg_strs.append("%s=_bov(%r)" % (str(_an), _av.split('observations.', 1)[1]))
                 else:
-                    try:
-                        _lit = repr(_json.loads(_json.dumps(_av)))   # coerce JsonObj -> plain literal
-                    except Exception:
-                        _lit = repr(_av)
-                    _arg_strs.append("%s=%s" % (str(_an), _lit))
+                    _arg_strs.append("%s=%r" % (str(_an), _av))
             exploration_builder_modules.add(_bc.module)
             exp_info['axes'].append({
                 'name': pname,

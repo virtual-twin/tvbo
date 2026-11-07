@@ -16,7 +16,7 @@ The TVBO datamodel is defined in **LinkML** YAML in `schema/` and *generated* in
 ## What is canonical
 
 - `schema/common.yaml`, `schema/SANDS.yaml`, `schema/openMINDS_tvbo/**` — hand-written LinkML definitions.
-- `tvbo/datamodel/pydantic.py`, `tvbo/datamodel/schema.py`, `tvbo/datamodel/tvbo_datamodel.schema.json`
+- `tvbo/datamodel/pydantic.py`, `tvbo/datamodel/dialect_tables.py`, `tvbo/datamodel/tvbo_datamodel.schema.json`
   — **generated** at build time by `hatch_build.py` and **gitignored**. Do not edit.
 
 `pyproject.toml` makes this explicit:

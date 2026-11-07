@@ -14,12 +14,12 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from tvbo.behaviour._runtime import RuntimeAttributes
+from tvbo.behaviour._runtime import _dm
 from tvbo.utils.pytree import Pytree, static_spec
 
 
-class NoiseBehaviour(RuntimeAttributes, Pytree):
-    """Everything a declared noise process does, on both generated forms.
+class NoiseBehaviour(Pytree):
+    """Everything a declared noise process does.
 
     A JAX leaf as well as a record: a runtime per-state ``sigma_vec`` is the one child, so a sweep can `vmap` over it while the declared spec stays static metadata.
     """
@@ -84,10 +84,8 @@ class NoiseBehaviour(RuntimeAttributes, Pytree):
         standard = self.STANDARD_EQUATIONS.get(self.canonical_type)
         if standard is None:
             return None
-        from tvbo.datamodel.dialect import peer_module
-
         lhs, rhs = standard
-        return peer_module(self).Equation(lhs=lhs, rhs=rhs)
+        return _dm().Equation(lhs=lhs, rhs=rhs)
 
     @property
     def symbolic(self):

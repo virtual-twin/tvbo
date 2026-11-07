@@ -15,7 +15,7 @@ from scipy import sparse
 
 from tvbo import Network, SimulationExperiment
 from tvbo.classes.network import NETWORK_DIR
-from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo import datamodel as tvbo_datamodel
 from tvbo.utils.study_layout import is_network_companion
 
 W = np.array([[0.0, 2 / 7, 5 / 7], [2 / 7, 0.0, 9 / 7], [5 / 7, 9 / 7, 0.0]])

@@ -235,6 +235,7 @@ dynamics:
   - H_e
   - H_i
   number_of_modes: 1
+  system_type: continuous
   autonomous: true
   cse: false
   compile: false

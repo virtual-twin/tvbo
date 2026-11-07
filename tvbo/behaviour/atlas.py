@@ -14,7 +14,7 @@ import os
 
 import numpy as np
 
-from tvbo.behaviour._runtime import Catalogued, RuntimeAttributes
+from tvbo.behaviour._runtime import Catalogued, _dm
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ WHOLEBRAIN = "wholebrain"
 """The atlas a record names when it names none: one region and no files, so nothing is ever read for it."""
 
 
-class BrainAtlasBehaviour(Catalogued, RuntimeAttributes):
+class BrainAtlasBehaviour(Catalogued):
     """A brain atlas record, with the properties its own data files answer.
 
     SANDS entities are stored in ``self.terminology.entities`` — a schema-native ``dict[ParcellationEntityName, ParcellationEntity]`` produced by the loader (the ``entities`` slot uses ``inlined: true`` in the SANDS schema).
@@ -60,13 +60,6 @@ class BrainAtlasBehaviour(Catalogued, RuntimeAttributes):
     def metadata(self):
         """Return this atlas itself as its LinkML metadata object."""
         return self
-
-    @property
-    def _peer(self):
-        """The generated module this record's members are built in."""
-        from tvbo.datamodel.dialect import peer_module
-
-        return peer_module(self)
 
     @property
     def _entities(self) -> dict:
@@ -128,14 +121,14 @@ class BrainAtlasBehaviour(Catalogued, RuntimeAttributes):
             return
         metadata_file = self.metadata_file
         if metadata_file is not None:
-            loaded = yaml_loader.load(metadata_file, self._peer.BrainAtlas)
+            loaded = yaml_loader.load(metadata_file, _dm().BrainAtlas)
             if getattr(loaded, "coordinateSpace", None) is not None:
                 self.coordinateSpace = loaded.coordinateSpace
             if getattr(loaded, "terminology", None) is not None:
                 self.terminology = loaded.terminology
             self._fill_centers_from_companion(metadata_file.replace("_dseg.yaml", "_centers.txt"))
         elif getattr(self, "terminology", None) is None:
-            self.terminology = self._peer.ParcellationTerminology(label="empty")
+            self.terminology = _dm().ParcellationTerminology(label="empty")
         object.__setattr__(self, "_metadata_loaded", True)
 
     def _fill_centers_from_companion(self, centers_file: str) -> None:
@@ -166,7 +159,7 @@ class BrainAtlasBehaviour(Catalogued, RuntimeAttributes):
 
     def _coordinate(self, xyz):
         """A ``Coordinate`` member from an ``(x, y, z)`` triple."""
-        return self._peer.Coordinate(x=float(xyz[0]), y=float(xyz[1]), z=float(xyz[2]))
+        return _dm().Coordinate(x=float(xyz[0]), y=float(xyz[1]), z=float(xyz[2]))
 
     @staticmethod
     def _center_of(entity) -> tuple[float, float, float]:
@@ -201,11 +194,11 @@ class BrainAtlasBehaviour(Catalogued, RuntimeAttributes):
         lookup_ids = np.unique(vol.get_fdata())
         lookup_ids = sorted(lookup_ids[lookup_ids != 0])
         if self.terminology is None:
-            self.terminology = self._peer.ParcellationTerminology(label="original")
+            self.terminology = _dm().ParcellationTerminology(label="original")
         if not isinstance(self.terminology.entities, dict):
             self.terminology.entities = {}
         for idx in lookup_ids:
-            self.terminology.entities[str(int(idx))] = self._peer.ParcellationEntity(name=str(int(idx)), lookupLabel=int(idx))
+            self.terminology.entities[str(int(idx))] = _dm().ParcellationEntity(name=str(int(idx)), lookupLabel=int(idx))
         return self.terminology
 
     @property

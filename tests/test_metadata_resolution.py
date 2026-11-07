@@ -151,35 +151,16 @@ def test_coupling_explicit_name_preserved():
 def test_a_coupling_assigned_as_a_mapping_is_still_read():
     """`network.coupling = {...}` and `network.coupling[k] = v` mean the same network.
 
-    Assigning a mapping to a keyed multivalued slot leaves a `JsonObj` on the generated dataclass, and a `JsonObj` has neither `.values()` nor `.items()` — so every reader goes through `network_couplings`, which is what keeps a recipe from meaning one thing when it was built and another when it was assigned.
+    Every reader goes through `network_couplings`, which is what keeps a recipe from meaning one thing when it was built and another when it was assigned.
     """
     from tvbo.classes.coupling import Coupling
-    from tvbo.datamodel import schema
+    from tvbo.datamodel import Network
     from tvbo.utils import network_couplings
 
     built = Coupling(iri="tvbo:Sigmoidal")
-    assigned = schema.Network(number_of_nodes=2)
+    assigned = Network(number_of_nodes=2)
     assigned.coupling = {"Sigmoidal": built}
-    mutated = schema.Network(number_of_nodes=2)
+    mutated = Network(number_of_nodes=2)
     mutated.coupling["Sigmoidal"] = built
 
     assert list(network_couplings(assigned)) == list(network_couplings(mutated)) == ["Sigmoidal"]
-
-
-@pytest.mark.parametrize("curie", ["tvbo:Linear", "tvbo:Sigmoidal", "tvbo:SigmoidalJansenRit"])
-def test_both_generated_forms_resolve_an_iri_the_same_way(curie):
-    """One YAML cannot mean two different couplings depending on which loader read it.
-
-    The behaviour is attached to both generated forms, but they do not share a construction hook — the dataclasses call ``__post_init__``, the Pydantic models ``model_post_init``. With only the first, everything loaded through ``tvbo.utils.pydantic_loader`` came back as a bare default ``Linear``, unpopulated, with no error to say so.
-    """
-    from tvbo.datamodel import pydantic as pdm
-    from tvbo.datamodel import schema
-
-    dataclass_form = schema.Coupling(iri=curie)
-    pydantic_form = pdm.Coupling(iri=curie)
-
-    assert dataclass_form.name == pydantic_form.name
-    assert str(dataclass_form.pre_expression.rhs) == str(pydantic_form.pre_expression.rhs)
-    assert str(dataclass_form.post_expression.rhs) == str(pydantic_form.post_expression.rhs)
-    assert list(dataclass_form.parameters) == list(pydantic_form.parameters)
-    assert [p.value for p in dataclass_form.parameters.values()] == [p.value for p in pydantic_form.parameters.values()]

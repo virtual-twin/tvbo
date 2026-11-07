@@ -21,7 +21,7 @@ from pydantic import model_validator
 
 from tvbo import _configure_jax_backend as _cfg_jax
 from tvbo import templates
-from tvbo.behaviour._runtime import Copyable, YamlDocument
+from tvbo.behaviour._runtime import Copyable, YamlDocument, _dm
 from tvbo.behaviour.network import drawing_from
 from tvbo.data import cohort as _cohort
 from tvbo.log import ensure_configured
@@ -38,13 +38,6 @@ except ImportError:
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult, TimeSeries
     from tvbo.datamodel import SimulationExperiment
-
-
-def _dm():
-    """The generated datamodel, imported when first needed: the generated module imports this one, so this one cannot import it at module scope."""
-    from tvbo import datamodel
-
-    return datamodel
 
 
 sessionid = 1
@@ -134,7 +127,7 @@ definition or a binding, so the key belongs to TVBO's grammar rather than to pro
 """
 
 DYNAMICS_NAMED_COLLECTIONS = {"functions": "function", "events": "event"}
-"""The same, for the slots a `_dm().Dynamics` carries. See `_reject_unnamed_members`."""
+"""The same, for the slots a `Dynamics` carries. See `_reject_unnamed_members`."""
 
 
 def _reject_unnamed(kind: str, entries) -> None:
@@ -668,7 +661,7 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
         return Noise()
 
     def __str__(self):
-        """The label, else ``SimulationExperiment<id>``, as a plain `str`: the label is LinkML's `extended_str`, which pytest-xdist cannot serialize when a failure report shows this experiment as an argument."""
+        """The label, else ``SimulationExperiment<id>``."""
         return str(self.label) if self.label else f"SimulationExperiment{self.id}"
 
     def __repr__(self):
@@ -1248,7 +1241,7 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
         return [*([own] if own is not None else []), *as_list(getattr(self, "_study_datasets", None))]
 
     def declared_references(self) -> list:
-        """Every ``used:`` reference this experiment reads from outside itself, in the order a plan records them: the sourced parameters of the dynamics and of each coupling, the events' parameters (a stimulus recording), the exploration builders' arguments, then the network's layers and transform arguments (:meth:`_dm().Network.declared_references`).
+        """Every ``used:`` reference this experiment reads from outside itself, in the order a plan records them: the sourced parameters of the dynamics and of each coupling, the events' parameters (a stimulus recording), the exploration builders' arguments, then the network's layers and transform arguments (:meth:`Network.declared_references`).
 
         A local reference (:func:`tvbo.data.dataref.is_local_ref`) names one of this experiment's own outputs and is left out. A plan's ordering edges, the per-subject fan-out, a kit's bundle and the cohorts a kit carries are all read from this one list, so a reference counts in each wherever it is declared.
         """
@@ -2641,12 +2634,9 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
         if is_mapping:
             dynamics["events"] = {str(n): {"name": str(n)} for n in names if n}
             return
-        # A multivalued slot is coerced at construction only, so insert constructed Events into the container it already holds; assigning one would leave a bare JsonObj whose entries are never Events (writing-models: "Trust the slots").
-        from tvbo.datamodel import Event
-
         for n in names:
             if n:
-                dynamics.events[str(n)] = Event(name=str(n))
+                dynamics.events[str(n)] = _dm().Event(name=str(n))
 
     def _resolve_events(self) -> None:
         """Lower declarative stimulus/stimulation Event fields into the form the (shared) tvboptim codegen already consumes — done in Python at load time, exactly like graph-generator resolution, so no template change is needed and a sampled ``weight_distribution`` goes through the same printer-backed sampler a graph generator's `sample` step does.

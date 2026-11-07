@@ -2688,8 +2688,6 @@ website:
                         href: api/datamodel/dialect_tables.qmd
                       - text: "Pydantic"
                         href: api/datamodel/pydantic.qmd
-                      - text: "Schema"
-                        href: api/datamodel/schema.qmd
                   - section: "Export"
                     href: api/export/index.qmd
                     contents:
@@ -2821,8 +2819,6 @@ website:
                         href: api/utils/auto.qmd
                       - text: "Figure Compare"
                         href: api/utils/figure_compare.qmd
-                      - text: "Pydantic Loader"
-                        href: api/utils/pydantic_loader.qmd
                       - text: "Pytree"
                         href: api/utils/pytree.qmd
                       - text: "Report"

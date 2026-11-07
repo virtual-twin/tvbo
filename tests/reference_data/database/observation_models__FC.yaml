@@ -16,10 +16,10 @@ parameters:
 period: 720.0
 reconcile: by_label
 pipeline:
-- equation:
+- name: bandpass_filter
+  equation:
     rhs: bandpass(X, low_freq, high_freq, fs)
     latex: false
-  name: bandpass_filter
   callable:
     name: butter
     module: scipy.signal
@@ -40,10 +40,10 @@ pipeline:
       name: order
       description: Filter order
       value: 2
-- equation:
+- name: zscore
+  equation:
     rhs: (X - mean(X)) / std(X)
     latex: false
-  name: zscore
   callable:
     name: zscore
     module: scipy.stats
@@ -55,10 +55,10 @@ pipeline:
       name: axis
       description: Normalize along time axis
       value: 0
-- equation:
+- name: correlation
+  equation:
     rhs: corrcoef(transpose(X))
     latex: false
-  name: correlation
   callable:
     name: corrcoef
     module: numpy
@@ -69,7 +69,8 @@ pipeline:
       name: rowvar
       description: Each column represents a variable (region)
       value: false
-- equation:
+- name: fisher_z_transform
+  equation:
     parameters:
       clip_value:
         name: clip_value
@@ -77,7 +78,6 @@ pipeline:
         description: Clip correlations to avoid infinity at r=±1
     rhs: arctanh(X)
     latex: false
-  name: fisher_z_transform
   callable:
     name: arctanh
     module: numpy

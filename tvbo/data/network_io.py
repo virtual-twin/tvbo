@@ -5,7 +5,7 @@ Supported companion formats:
   .zarr/        — Zarr (cloud-native, S3-compatible)
   .csv          — CSV (one file per array, each named on the sidecar record of what it holds)
 
-Sidecars are parsed and built by tvbo's own loader (:func:`tvbo.utils.yaml_loader.load_as_dict` + :func:`~tvbo.utils.yaml_loader.construct`), the one SimulationExperiment and SimulationStudy load through, so a sidecar may use ``!include``, ``<<:`` merge keys and anchors, and construction goes through the schema's constructor classes. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
+Sidecars are parsed and built by tvbo's own loader (:func:`tvbo.utils.yaml_loader.load_as_dict` + :func:`~tvbo.utils.yaml_loader.construct`), the one SimulationExperiment and SimulationStudy load through, so a sidecar may use ``!include``, ``<<:`` merge keys and anchors, and construction goes through the generated classes. Never use raw yaml.safe_load → cls(**dict).
 
 See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
@@ -20,9 +20,8 @@ from pathlib import Path
 
 import numpy as np
 import yaml as _yaml
-from linkml_runtime.dumpers import yaml_dumper
-from linkml_runtime.loaders import yaml_loader
 
+from tvbo.utils import to_dict
 from tvbo.utils import yaml_loader as tvbo_yaml_loader
 
 SCHEMA_VERSION = "tvb-datamodel/0.7.0"
@@ -119,12 +118,7 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
         grp.attrs["tvbo_class"] = "tvbo:Matrix"
         for attr in ("directed", "unit"):
             if attr in m:
-                # Cast to native Python types — LinkML extended_str and extended_bool are not directly serializable by h5py.
-                val = m[attr]
-                if isinstance(val, bool):
-                    grp.attrs[attr] = val
-                else:
-                    grp.attrs[attr] = str(val)
+                grp.attrs[attr] = m[attr]
         write_matrix(grp, matrix, fmt=str(fmt), dtype=dtype)
 
         # HDF5 dimension scales for a dense layer's labelled axes (§12.2); a sparse layer's data holds its stored entries, not its axes
@@ -225,37 +219,16 @@ def _v07_postprocess(meta: dict) -> dict:
     return ordered
 
 
-def _purify(obj):
-    """Recursively convert LinkML extended types to plain Python types.
-
-    yaml_loader.load_as_dict returns extended_str, extended_int, extended_bool etc. which yaml.dump serializes with Python tags.
-    """
-    if isinstance(obj, dict):
-        return {_purify(k): _purify(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_purify(v) for v in obj]
-    if isinstance(obj, bool):
-        return bool(obj)
-    if isinstance(obj, int):
-        return int(obj)
-    if isinstance(obj, float):
-        return float(obj)
-    if isinstance(obj, str):
-        return str(obj)
-    return obj
-
-
 def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_file: str = None, links: dict = None):
     """Write a strict v0.7-compliant YAML or JSON sidecar.
 
-    Dumps the network via LinkML, post-processes to v0.7 form, and writes with controlled key ordering.
+    Dumps the network as its record, post-processes to v0.7 form, and writes with controlled key ordering.
 
     The sidecar names *data_file*, the companion this save wrote, and the network is left naming the files it was read from, so a record of it written after the save, such as an experiment's export, reads back as one written before. A ``data_file``-backed connectome is materialised — its arrays live in the companion file — so the directives that only rebuild them from a source, ``bids_dir`` and ``graph_generator``, are dropped and a reload uses the companion. ``parcellation`` and ``tractogram`` are kept: they state which atlas this network's node labels belong to, which is what a ``by_label`` crosswalk resolves against, and which tractography the connectome was reconstructed from. Keeping them is safe because ``load_network`` defers connectivity until the companion store is attached and ``data_file`` precedes both in ``Network._resolve``, so a reload never rebuilds from the atlas.
 
     *links* names the CSVs of a CSV save on the records of what they hold, and every save takes the CSV links a network read from CSVs carries off its records first (:func:`_place_links`).
     """
-    meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
-    meta = _purify(meta)
+    meta = to_dict(network)
     if data_file:
         meta["data_file"] = data_file
         for _directive in ("bids_dir", "graph_generator"):
@@ -828,7 +801,7 @@ def _load_mesh(network):
 def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: str = "yaml"):
     """Save a tvbo Network as sidecar + binary companion.
 
-    Uses LinkML yaml_dumper or json_dumper for schema-valid sidecar output — no manual field unpacking or yaml.dump() calls.
+    The sidecar is the network's own record (`to_dict`), so it is schema-valid without any manual field unpacking.
 
     The generic keys `weight` and `length` that `from_matrix` and a parcellation produce are two of arbitrarily many edge attributes a sidecar may bundle (`weight_NMF_*`, `fc`, `local_connectivity`), so each is saved under the edge the network declares for it. The resident `weight` is saved under the edge `primary_weight` names, unless the network holds that edge already, and stays `weight` without one. The resident `length` is saved under the sidecar's tract-length edge (`tractLength`), unless a template edge is named `length`, so a directly-named `length` edge is never renamed away; with neither it stays `length`, which the loader resolves directly.
 
@@ -868,8 +841,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
         carried = _carry_through(network)
     arrays.update(network.edge_arrays() if hasattr(network, "edge_arrays") else {})
 
-    # Network._items() hides _cached_* attrs, so yaml_dumper works directly
-    meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
+    meta = to_dict(network)
 
     # Save the generic `weight`/`length` keys under the edges the network declares for them — see this function's docstring.
     primary = str(network.primary_weight or "weight")

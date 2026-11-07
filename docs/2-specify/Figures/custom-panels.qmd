@@ -78,7 +78,7 @@ The three pieces form one loop: the decorator, `code_modules`, and the import th
 
 ```python
 from tvbo.adapters import bsplot
-from tvbo.datamodel import schema as dm
+from tvbo import datamodel as dm
 
 # The study module (my_study/code/figures.py) is on the path, but not yet imported.
 assert "demo_panel" not in bsplot.CUSTOM_PANELS          # core TVBO does not know it

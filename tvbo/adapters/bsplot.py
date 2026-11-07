@@ -12,6 +12,7 @@ import itertools
 import re
 from contextlib import contextmanager
 from contextvars import ContextVar
+from enum import Enum
 from pathlib import Path
 
 from tvbo.adapters.base import dense_matrix
@@ -49,14 +50,11 @@ def register_transform(name):
 def _enum_value(value):
     """The plain string behind a schema enum member, or *value* unchanged when it is already one (or None).
 
-    The two loaders disagree on what an enum slot holds: the pydantic model (``use_enum_values``) gives the plain string, the LinkML runtime gives a permissible-value object carrying ``.text``. A value the template embeds by ``repr()`` must be collapsed here first — ``repr()`` of a permissible value is its whole constructor call, which lands in the emitted script as a ``NameError``. A value the adapter only compares or looks up needs no collapsing, since ``str()`` of a permissible value is already its text.
+    A value the template embeds by ``repr()`` must be collapsed here first — ``repr()`` of an enum member is its whole constructor call, which lands in the emitted script as a ``NameError``.
     """
     if value is None:
         return None
-    for attr in ("text", "value"):
-        if hasattr(value, attr):
-            return str(getattr(value, attr))
-    return str(value)
+    return str(value.value) if isinstance(value, Enum) else str(value)
 
 
 def _style_dpi(entries, fallback: int = 200) -> int:
@@ -1435,16 +1433,14 @@ def _style_entries(figure, base_dir, styles=None) -> list:
 
 
 def _plain(value):
-    """*value* as plain Python, whatever LinkML flavor wrapped it.
+    """*value* as plain Python: an enum member as its text, a record as the mapping of its public attributes.
 
-    A structured opt — a colour key, a group spec — arrives as a JsonObj whose ``repr`` is ``JsonObj(...)``. The emitted script embeds opts by ``repr``, so anything that is not already a builtin becomes a NameError at render time rather than a value. One conversion at the boundary, so no consumer has to unwrap the datamodel's representation itself.
+    The emitted script embeds opts by ``repr``, so anything that is not already a builtin becomes a NameError at render time rather than a value. One conversion at the boundary, so no consumer has to unwrap the datamodel's representation itself.
     """
     if isinstance(value, (str, bytes)) or value is None:
         return value
-    if _is_enum(value):
-        return _enum_value(
-            value
-        )  # an enum member is an object with attributes too, and flattened like a record it comes out as `{}`
+    if isinstance(value, Enum):
+        return _enum_value(value)
     if isinstance(value, dict):
         return {k: _plain(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
@@ -1452,15 +1448,6 @@ def _plain(value):
     if hasattr(value, "__dict__") and not isinstance(value, (int, float, bool)):
         return {k: _plain(v) for k, v in vars(value).items() if not k.startswith("_")}
     return value
-
-
-def _is_enum(value) -> bool:
-    """Whether *value* is a schema enum member, in either datamodel flavor, rather than a structured record."""
-    from enum import Enum
-
-    from linkml_runtime.utils.enumerations import EnumDefinitionImpl
-
-    return isinstance(value, (Enum, EnumDefinitionImpl))
 
 
 def _arg_dict(coll) -> dict:

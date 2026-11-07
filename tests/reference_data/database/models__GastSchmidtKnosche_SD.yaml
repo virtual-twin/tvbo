@@ -205,6 +205,7 @@ state_variables:
       axis: space
 number_of_modes: 1
 model_type: neural_mass
+system_type: continuous
 autonomous: true
 cse: false
 compile: false

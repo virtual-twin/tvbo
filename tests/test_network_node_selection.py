@@ -20,8 +20,7 @@ pytest.importorskip("jax")
 from tvbo import Network, SimulationExperiment  # noqa: E402
 from tvbo.data import matrix_io  # noqa: E402
 from tvbo.data.matrix_io import write_matrix  # noqa: E402
-from tvbo.datamodel import pydantic as pydantic_model  # noqa: E402
-from tvbo.datamodel.schema import Dataset  # noqa: E402
+from tvbo.datamodel import Dataset  # noqa: E402
 from tvbo.run.study import rebuild_invalidated  # noqa: E402
 
 LABELS = ["A", "B", "C", "D"]
@@ -776,8 +775,11 @@ def test_a_kit_carries_the_selected_network(stored, tmp_path):
     assert experiment.network.node_labels == ["A", "C", "D"], "the experiment's own network is as it was after the freeze"
 
 
-def test_both_generated_forms_hold_the_slot():
-    record = pydantic_model.Network(node_selection={"keep": ["A"]})
+def test_the_record_holds_the_slot():
+    from tvbo.utils.source import as_written
+
+    with as_written():
+        record = Network(node_selection={"keep": ["A"]})
     assert record.node_selection.keep == ["A"] and record.node_selection.applied is None
     with pytest.raises(pydantic.ValidationError, match="keeps"):
-        pydantic_model.Network(node_selection={"keeps": ["A"]})
+        Network(node_selection={"keeps": ["A"]})

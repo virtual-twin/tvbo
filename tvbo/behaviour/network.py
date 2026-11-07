@@ -24,7 +24,7 @@ from matplotlib.figure import Figure
 from pydantic import model_validator
 
 from tvbo import _configure_jax_backend as _cfg_jax
-from tvbo.behaviour._runtime import RuntimeAttributes, YamlDocument
+from tvbo.behaviour._runtime import YamlDocument, _dm
 from tvbo.data.matrix_io import csv_link_slots, declared_arrays, is_csv, named_entries
 from tvbo.data.registry import (
     carries,
@@ -49,13 +49,6 @@ _cfg_jax()
 
 if TYPE_CHECKING:
     from tvbo.datamodel import Matrix, Network
-
-
-def _dm():
-    """The generated datamodel, imported when first needed: the generated module imports this one, so this one cannot import it at module scope."""
-    from tvbo import datamodel
-
-    return datamodel
 
 
 NETWORK_DIR = database_dir("Network")
@@ -749,7 +742,7 @@ def _backfill_name_from_iri(obj: Any, cls_name: str | None = None, nested_key: s
     target["name"] = record_name(iri, cls_name)
 
 
-class NetworkBehaviour(RuntimeAttributes, YamlDocument, Pytree):
+class NetworkBehaviour(YamlDocument, Pytree):
     """A brain network: parcellation, connectome, per-node dynamics, and coupling.
 
     The spatial substrate of a `SimulationExperiment`. A `Network` ties an atlas/parcellation to a tractogram (structural connectivity matrix + optional path lengths) and, optionally, per-node `Dynamics` overrides and node-level coupling parameters.
@@ -824,7 +817,7 @@ class NetworkBehaviour(RuntimeAttributes, YamlDocument, Pytree):
     def settle(self, source_dir: str | Path | None = None) -> None:
         """Give this network what it runs with, from what it declares; idempotent, and a no-op once resolved.
 
-        ``number_of_nodes`` and the nodes list are made to agree, a count alone making up placeholder nodes; an ``edge_matrix_files`` matrix fixes the count and loads as the weight layer; a network declaring no ``conduction_speed`` takes the default; the connectivity is materialised by `_resolve` against *source_dir*, the directory of the recipe being loaded when none is given, which also applies the nodes declared by ``label``; and a network with no nodes, no count and no source is a single node, a runtime default the record itself never states.
+        ``number_of_nodes`` and the nodes list are made to agree, a count alone making up placeholder nodes; an ``edge_matrix_files`` matrix fixes the count and loads as the weight layer; a network declaring no ``conduction_speed`` takes the default; the connectivity is materialised by `_resolve` against *source_dir*, the directory of the recipe being loaded when none is given, which also applies the nodes declared by ``label``; and a network with no nodes, no count and no source is a single node, a runtime default the record itself never states. A network a loader read with a companion attached takes that single node before resolving, so a sidecar that lists no node beside a companion storing more is refused as listing none. The count the network states beside its source, unless it lists its own nodes, is kept as the number of the source's nodes it keeps (`_keep_stated_count`).
         """
         if getattr(self, "_resolved", False):
             return
@@ -833,6 +826,8 @@ class NetworkBehaviour(RuntimeAttributes, YamlDocument, Pytree):
         object.__setattr__(self, "_stated_count", None if declares_its_nodes else self.number_of_nodes or None)
         weights = self._weights_from_edge_matrix_files()
         self._sync_node_count()
+        if getattr(self, "_store", None) is not None and not self.nodes and not self.number_of_nodes:
+            self._one_placeholder_node()
         if weights is not None and not self._declares_layer(self.edges, "weight"):
             self.set_matrix("weight", weights)
         _ensure_conduction_speed(self)
@@ -841,10 +836,14 @@ class NetworkBehaviour(RuntimeAttributes, YamlDocument, Pytree):
             object.__setattr__(self, "_source_dir", source_dir)
         self._resolve(source_dir=source_dir)
         if not self.nodes and not self.number_of_nodes:
-            self.number_of_nodes = 1
-            self.nodes = [_dm().Node(id=0, label="node_0")]
-            object.__setattr__(self, "_placeholder_nodes", True)
-            object.__setattr__(self, "_count_set", 1)
+            self._one_placeholder_node()
+
+    def _one_placeholder_node(self) -> None:
+        """Make this network, which lists no node and states no count, the one-node network a run can still use, its node a placeholder."""
+        self.number_of_nodes = 1
+        self.nodes = [_dm().Node(id=0, label="node_0")]
+        object.__setattr__(self, "_placeholder_nodes", True)
+        object.__setattr__(self, "_count_set", 1)
 
     def _nodes_declared_by_label(self) -> bool:
         """Whether the ``nodes`` list is keyed by ``label`` rather than being the graph.

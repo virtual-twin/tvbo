@@ -7,7 +7,7 @@
 #
 """The public import location for ``SimulationTool``.
 
-The class is the generated one; what it does lives in :mod:`tvbo.behaviour.software`, attached to both generated forms, so a tool entry answers the same questions whether it came from LinkML's loader or from Pydantic validation.
+The class is the generated one; what it does lives in :mod:`tvbo.behaviour.software`, attached to the generated class, so a tool entry answers the same questions however it was built.
 
 Usage
 -----

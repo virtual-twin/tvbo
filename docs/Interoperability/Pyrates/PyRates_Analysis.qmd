@@ -28,7 +28,7 @@ Explore how the damping parameter μ affects oscillation behaviour.
 
 ```{python}
 from tvbo import Dynamics, SimulationExperiment
-from tvbo.datamodel.schema import Exploration, ExplorationAxis, Range
+from tvbo.datamodel import Exploration, ExplorationAxis, Range
 from IPython.display import Markdown, display
 
 # Van der Pol oscillator
@@ -278,7 +278,7 @@ TVBO's `explorations` declaration maps directly to PyRates `grid_search()`:
 
 ```python
 from tvbo import Dynamics, SimulationExperiment
-from tvbo.datamodel.schema import Exploration, ExplorationAxis, Range
+from tvbo.datamodel import Exploration, ExplorationAxis, Range
 
 exp = SimulationExperiment(dynamics=model)
 exp.integration.duration = T

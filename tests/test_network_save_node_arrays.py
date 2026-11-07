@@ -18,7 +18,7 @@ import yaml
 
 from tvbo import Network
 from tvbo.data import network_io
-from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo import datamodel as tvbo_datamodel
 
 FORMATS = ["h5", "zarr", "csv"]
 W = np.array([[0.0, 0.5, 0.25], [0.5, 0.0, 0.75], [0.25, 0.75, 0.0]])

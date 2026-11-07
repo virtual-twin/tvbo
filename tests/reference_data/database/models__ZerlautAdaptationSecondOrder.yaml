@@ -1135,6 +1135,7 @@ functions:
       W:
         name: W
 model_type: mean_field
+system_type: continuous
 autonomous: true
 cse: true
 compile: false

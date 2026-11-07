@@ -77,10 +77,10 @@ class TestCurrentImportPaths:
         ("tvbo.classes.atlas", "Atlas"),
         ("tvbo.data.types", "TimeSeries"),
         ("tvbo.datamodel", "tvbo_datamodel"),
-        ("tvbo.datamodel.schema", "Dynamics"),
-        ("tvbo.datamodel.schema", "Parameter"),
-        ("tvbo.datamodel.schema", "Network"),
-        ("tvbo.datamodel.schema", "Equation"),
+        ("tvbo.datamodel", "Dynamics"),
+        ("tvbo.datamodel", "Parameter"),
+        ("tvbo.datamodel", "Network"),
+        ("tvbo.datamodel", "Equation"),
         ("tvbo.datamodel.pydantic", "Dynamics"),
     ]
 

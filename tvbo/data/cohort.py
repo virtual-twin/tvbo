@@ -18,6 +18,9 @@ from tvbo.utils import as_list, keyed_items
 
 BIDS_ENTITY_SHORT_KEYS = {
     "template": "tpl",
+    "subject": "sub",
+    "session": "ses",
+    "space": "space",
     "cohort": "cohort",
     "reconstruction": "rec",
     "segmentation": "seg",
@@ -205,7 +208,7 @@ def _read_listing(path: Path) -> dict:
     """
     import copy
 
-    from tvbo.datamodel.schema import Dataset
+    from tvbo.datamodel import Dataset
 
     suffix = path.suffix.lower()
     if suffix in RECORD_SUFFIXES:

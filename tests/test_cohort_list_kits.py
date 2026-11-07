@@ -86,8 +86,8 @@ def test_a_kit_carries_each_list_as_a_file_and_its_spec_states_none(root, tmp_pa
     assert sorted(p.name for p in (out / "data/toy_fc").iterdir()) == ["sub-01", "sub-04"]
     assert frozen["dataset"].get("subjects") in (None, {}, [])
     assert frozen["dataset"]["subjects_file"] == "dataset-toy_fc_subjects.yaml"
-    (carried,) = frozen["dataset"]["cohorts"]
-    assert carried["cohort_id"] == "four" and carried["members_file"] == "cohort-four_members.txt"
+    ((cohort_id, carried),) = frozen["dataset"]["cohorts"].items()
+    assert cohort_id == "four" and carried["members_file"] == "cohort-four_members.txt"
     assert "members" not in carried and "rule" not in carried
     assert "the 2 of its 4 members the experiment reads" in carried["description"]
     stated = "group 1 of the 2 equal_count groups of 'score' in scores.tsv" if "rule" in cohort else "listed in four.txt"
@@ -120,7 +120,7 @@ def test_typed_lists_are_frozen_typed_as_before(root, tmp_path):
     analysis_io.run_analyses(_analyses(), study_path("results", root=tmp_path), datasets=[_dataset(root)])
     _, frozen, path = _frozen_kit(_fan_out_experiment(root, tmp_path), tmp_path / "kit")
     assert list(frozen["dataset"]["subjects"]) == ["04", "01"] and "subjects_file" not in frozen["dataset"]
-    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"]] == [("four", ["04", "01"])]
+    assert [(cohort_id, c["members"]) for cohort_id, c in frozen["dataset"]["cohorts"].items()] == [("four", ["04", "01"])]
     assert sorted(p.name for p in path.parent.iterdir()) == ["experiment.yaml", "network.h5", "network.yaml"]
 
 
@@ -138,7 +138,7 @@ def test_a_plan_names_a_subject_file_that_is_missing(tmp_path):
 def test_a_cohort_analysis_digest_follows_a_list_in_a_file(root, tmp_path):
     """The staleness digest of an analysis over a cohort is taken from the members the file gives, so a grown list marks its aggregate for a re-run."""
     from tvbo.data.study_manifest import _analysis_fingerprint
-    from tvbo.datamodel.schema import Dataset
+    from tvbo.datamodel import Dataset
 
     listing = tmp_path / "four.txt"
     listing.write_text("".join(f"{m}\n" for m in MEMBERS[:3]))

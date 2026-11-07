@@ -1284,6 +1284,15 @@ classes:
             template:
                 range: string
                 description: "BIDS tpl- entity, a TemplateFlow identifier (e.g., MNI152NLin6Asym, MNI152NLin2009cAsym, fsLR)"
+            subject:
+                range: string
+                description: "BIDS sub- entity, the subject a subject-level connectome is reconstructed for (e.g., 01)"
+            session:
+                range: string
+                description: "BIDS ses- entity, the session of a subject-level connectome (e.g., 1)"
+            space:
+                range: string
+                description: "BIDS space- entity, the template a subject-level connectome's coordinates are in (e.g., MNI152NLin2009cAsym)"
             cohort:
                 range: string
                 description: "BIDS cohort- entity (e.g., HCPYA, PPMI85)"
@@ -2985,11 +2994,7 @@ classes:
                 range: string
                 required: true
                 key: true
-                # `key: true` drives dict-keying in the generated Python/JSON-Schema
-                # loaders. The pydantic loader keys off a `name`/`id` identifier by
-                # convention, so it also needs this explicit marker to inject the
-                # collection key into `parameter` (LinkML consumes `key`/`identifier`
-                # and omits them from the emitted metadata). See utils/pydantic_loader.
+                # LinkML drops `key` from the emitted metadata, so `collection_key` tells `dialect.identifier_field` that this slot holds the collection key.
                 annotations:
                     collection_key: true
                 description: >-

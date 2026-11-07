@@ -13,7 +13,7 @@ import xarray as xr
 
 from tvbo import Function
 from tvbo.data import analysis_io
-from tvbo.datamodel.schema import Analysis
+from tvbo.datamodel import Analysis
 
 GROUPINGS = ["equal_width", "equal_count"]
 
@@ -498,14 +498,11 @@ def test_an_analysis_written_by_iri_takes_the_function_and_states_only_its_argum
     assert Analysis(name="plain", iri="tvbo:functions/GroupedCorrelation").arguments["grouping"].value == "equal_width"
 
 
-def test_every_invocation_expands_a_function_iri_in_both_generated_forms():
-    from tvbo.datamodel.schema import FunctionCall
-    from tvbo.utils import pydantic_loader
+def test_every_invocation_expands_a_function_iri():
+    from tvbo.datamodel import FunctionCall
 
     assert FunctionCall(iri="tvbo:functions/SetMean").equation.rhs == "sum(values * membership) / sum(membership)"
-    validated = pydantic_loader.validate(
-        {"name": "counted", "iri": "tvbo:functions/Histogram", "arguments": {"n_bins": 40}}, "Analysis"
-    )
+    validated = Analysis.model_validate({"name": "counted", "iri": "tvbo:functions/Histogram", "arguments": {"n_bins": 40}})
     assert (validated.name, validated.callable.module, validated.callable.name) == (
         "counted",
         "tvbo.analysis.statistics",
@@ -515,8 +512,7 @@ def test_every_invocation_expands_a_function_iri_in_both_generated_forms():
 
 
 def test_an_unscoped_iri_names_the_function_by_its_local_name():
-    from tvbo.datamodel.schema import FunctionCall
-    from tvbo.utils import pydantic_loader
+    from tvbo.datamodel import FunctionCall
 
     scoped = Analysis(name="by_score", iri="tvbo:functions/GroupedCorrelation", arguments={"n_groups": 20})
     for iri in ("tvbo:GroupedCorrelation", "GroupedCorrelation"):
@@ -525,7 +521,7 @@ def test_an_unscoped_iri_names_the_function_by_its_local_name():
         assert (unscoped.callable.module, unscoped.callable.name) == ("tvbo.analysis.statistics", "grouped_correlation")
         assert unscoped.arguments["grouping"].value == "equal_width" and unscoped.arguments["n_groups"].value == 20
     assert FunctionCall(iri="tvbo:SetMean").equation.rhs == FunctionCall(iri="tvbo:functions/SetMean").equation.rhs
-    validated = pydantic_loader.validate({"name": "counted", "iri": "tvbo:Histogram", "arguments": {"n_bins": 40}}, "Analysis")
+    validated = Analysis.model_validate({"name": "counted", "iri": "tvbo:Histogram", "arguments": {"n_bins": 40}})
     assert (validated.callable.name, validated.arguments["n_bins"].value) == ("histogram", 40)
 
 
@@ -538,7 +534,7 @@ def _with_future_warnings(build):
 
 
 def test_every_other_spelling_the_registry_reads_names_the_same_function_and_a_retired_scope_warns_once():
-    from tvbo.datamodel.schema import FunctionCall
+    from tvbo.datamodel import FunctionCall
 
     canonical = Analysis(name="by_score", iri="tvbo:functions/GroupedCorrelation", arguments={"n_groups": 20})
     singular, said = _with_future_warnings(
@@ -574,8 +570,7 @@ def test_migrate_iris_writes_an_analysis_that_names_a_function_in_the_folder_for
 
 
 def test_an_iri_naming_no_curated_function_is_refused_where_nothing_else_would_run():
-    from tvbo.datamodel.schema import FunctionCall
-    from tvbo.utils import pydantic_loader
+    from tvbo.datamodel import FunctionCall
 
     with pytest.raises(ValueError, match="holds no Function called 'NoSuchStatistic'"):
         Analysis(name="typo", iri="tvbo:functions/NoSuchStatistic")
@@ -585,7 +580,7 @@ def test_an_iri_naming_no_curated_function_is_refused_where_nothing_else_would_r
             with pytest.raises(ValueError, match=re.escape(said)):
                 invocation(name="typo", iri=iri, arguments={"n_groups": 20})
     with pytest.raises(ValueError, match="names 'tvbo:NoSuchStatistic', which matched no curated function"):
-        pydantic_loader.validate({"name": "typo", "iri": "tvbo:NoSuchStatistic"}, "Analysis")
+        Analysis.model_validate({"name": "typo", "iri": "tvbo:NoSuchStatistic"})
     solve = Analysis(iri="tvbo:LyapunovAnalysis", type="lyapunov")
     assert (solve.name, solve.iri, solve.type, solve.callable, solve.equation) == (
         "LyapunovAnalysis",
@@ -597,7 +592,7 @@ def test_an_iri_naming_no_curated_function_is_refused_where_nothing_else_would_r
 
 
 def test_an_unscoped_iri_naming_no_function_beside_a_form_of_ones_own_merges_nothing_and_that_form_runs(tmp_path, rng):
-    from tvbo.datamodel.schema import FunctionCall
+    from tvbo.datamodel import FunctionCall
 
     values = xr.DataArray(rng.uniform(-1, 1, 60), dims=["item"], coords={"item": np.arange(60)})
     _seed(tmp_path, "values", values)
@@ -630,7 +625,7 @@ def test_naming_a_callable_function_beside_an_equation_of_ones_own_is_refused(ir
 
 
 def test_naming_an_equation_function_beside_a_callable_of_ones_own_is_refused():
-    from tvbo.datamodel.schema import FunctionCall
+    from tvbo.datamodel import FunctionCall
 
     own = {"name": "pearsonr", "module": "scipy.stats"}
     for invocation in (Analysis, FunctionCall):

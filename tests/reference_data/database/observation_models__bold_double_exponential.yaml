@@ -10,10 +10,10 @@ parameters:
 imaging_modality: BOLD
 reconcile: by_label
 pipeline:
-- equation:
+- name: temporal_average_interim
+  equation:
     rhs: window_mean(X, stepsize)
     latex: false
-  name: temporal_average_interim
   output: interim_averaged
   apply_on_dimension: time
   arguments:
@@ -21,7 +21,8 @@ pipeline:
       name: stepsize
       description: Interim averaging window in integration steps. Resolved from the
         integration dt (= stock_dt / dt), not a raw-grid literal.
-- acronym: HRF
+- name: hemodynamic_response
+  acronym: HRF
   equation:
     parameters:
       A1:
@@ -40,7 +41,6 @@ pipeline:
         unit: s
     rhs: A1 * exp(-t / tau_1) + A2 * exp(-t / tau_2)
     latex: false
-  name: hemodynamic_response
   output: hrf_kernel
   arguments:
     duration:
@@ -70,10 +70,10 @@ pipeline:
     mode:
       name: mode
       value: same
-- equation:
+- name: subsample_to_period
+  equation:
     rhs: subsample(X, start, stepsize)
     latex: false
-  name: subsample_to_period
   input: convolve
   output: Bold
   apply_on_dimension: time
