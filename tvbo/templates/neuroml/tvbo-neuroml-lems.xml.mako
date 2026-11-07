@@ -24,7 +24,7 @@ into the Mako namespace.
 
 Variables available: dyn, dyn_id, params, svs, dvs, events,
   coupling_inputs, coupling_params, coupling_pre_rhs, coupling_post_rhs,
-  coupling_global, sv_names_set, n_nodes, dt, length, settle_constant,
+  sv_names_set, n_nodes, dt, length, settle_constant,
   lems_expr (callable), _parse_piecewise (callable), lems_dim (callable),
   max_output_nodes (int), sim_id, time_scale, safe_id
 </%doc>

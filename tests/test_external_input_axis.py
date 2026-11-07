@@ -39,7 +39,7 @@ network:
     c_lin:
       iri: tvbo:Linear
       delayed: false
-      parameters: {G: {value: 0.0}}
+      parameters: {a: {value: 0.0}}
       incoming_states: [V]
 integration:
   method: Heun

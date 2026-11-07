@@ -47,7 +47,7 @@ IDS = [40, 10, 30, 20]
 """Node ids that are not positions: row ``k`` is the node declared ``k``-th."""
 
 
-def _experiment(network, execution=None, **integration):
+def _experiment(network, execution=None, events=None, **integration):
     spec = {
         "dynamics": DYNAMICS,
         "network": network,
@@ -55,6 +55,8 @@ def _experiment(network, execution=None, **integration):
     }
     if execution:
         spec["execution"] = execution
+    if events:
+        spec["events"] = events
     return SimulationExperiment(**spec)
 
 
@@ -291,6 +293,7 @@ def test_a_coupling_declaring_both_weight_names_raises():
             **WDIFF["WDiff"],
             "name": "Both",
             "parameters": {**WDIFF["WDiff"]["parameters"], "weight": {"name": "weight", "value": 1.0}},
+            "pre_expression": {"rhs": "w * weight * K * (x_j - x_i)"},
         }
     }
     with pytest.raises(NotImplementedError, match="declares both `w` and `weight`"):
@@ -322,6 +325,17 @@ def test_the_post_expression_is_applied_once_at_the_node():
 
 
 def test_a_parameter_both_expressions_read_is_on_the_edge_and_the_node():
+    """``G``, which both expressions read, is on the edge and the node; ``limit``, which only an edge event reads, is on the edge for its callback."""
+    trip = {
+        "trip": {
+            "event_type": "continuous",
+            "condition": {"rhs": "t - p[:limit]"},
+            "condition_parameters": ["limit"],
+            "affect": {"rhs": "p[:limit] = 0"},
+            "affect_parameters": ["limit"],
+            "target_component": "all_edges",
+        }
+    }
     both = {
         "Both": {
             "name": "Both",
@@ -335,7 +349,7 @@ def test_a_parameter_both_expressions_read_is_on_the_edge_and_the_node():
             "post_expression": {"rhs": "G * gx + c0"},
         }
     }
-    code = _experiment(_probe_digraph_edges(coupling=both)).render_code(format="networkdynamics")
+    code = _experiment(_probe_digraph_edges(coupling=both), events=trip).render_code(format="networkdynamics")
 
     assert "psym = [:G => 0.5, :limit => 2.0, :w => 1.0]," in _block(code, "edge_Both = EdgeModel(")
     assert ":Both_G => 0.5, :Both_c0 => 0.1, :held_coupling => 0.0]" in _block(

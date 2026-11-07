@@ -116,14 +116,14 @@ The final `<Case>` with no `condition` is the default fallback — equivalent to
 
 ## 4. Coupling
 
-For a whole-brain experiment, TVBO's `Coupling` metadata (pre-expression, post-expression, global coupling constant) is exported as a dedicated LEMS `ComponentType`:
+For a whole-brain experiment, TVBO's `Coupling` metadata (pre-expression, post-expression and parameters) is exported as a dedicated LEMS `ComponentType`. The post-expression applies the coupling's declared global scaling, the default one included, so the sum `gx` carries no factor of its own:
 
 ```xml
 <ComponentType name="Coupling">
-  <Parameter name="global_coupling" dimension="none"/>
+  <Parameter name="a" dimension="none"/>
   <Dynamics>
     <DerivedVariable name="pre"  dimension="none" value="V_j"/>
-    <DerivedVariable name="gx"   dimension="none" value="global_coupling * pre"/>
+    <DerivedVariable name="gx"   dimension="none" value="pre"/>
     <DerivedVariable name="post" dimension="none" value="a * gx"/>
     <DerivedParameter name="c_pop0" value="post"/>
   </Dynamics>

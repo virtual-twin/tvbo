@@ -83,7 +83,8 @@ SAMPLED_K = "{value: 0.5, heterogeneous: true, distribution: {name: Uniform, dom
 MATRIX = 'heterogeneous: true, shape: "(n_nodes, n_nodes)"'
 CONSTANT_W = f"        w: {{value: 1.0, {MATRIX}}}"
 SAMPLED_W = f"        w: {{value: 1.0, {MATRIX}, distribution: {{name: Uniform, domain: {{lo: 0.0, hi: 2.0}}}}}}"
-TIED = f'        u: {{value: 0.0, {MATRIX}, distribution: {{name: Uniform, domain: {{lo: -1.0, hi: 1.0}}}}}}\n        p: {{equation: {{rhs: "1 + u"}}, {MATRIX}}}\n        q: {{equation: {{rhs: "1 - u"}}, {MATRIX}}}'
+TIED_P = f'        u: {{value: 0.0, {MATRIX}, distribution: {{name: Uniform, domain: {{lo: -1.0, hi: 1.0}}}}}}\n        p: {{equation: {{rhs: "1 + u"}}, {MATRIX}}}'
+TIED = TIED_P + f'\n        q: {{equation: {{rhs: "1 - u"}}, {MATRIX}}}'
 PAIR_OF_ONES = f"        p: {{value: 1.0, {MATRIX}}}\n        q: {{value: 1.0, {MATRIX}}}"
 PER_TRIAL_K = SAMPLED_K.replace("hi: 2.0}}", "hi: 2.0}, axis: trial}")
 PER_TRIAL_W = SAMPLED_W.replace("hi: 2.0}}", "hi: 2.0}, axis: trial}")
@@ -137,7 +138,7 @@ def test_two_parameters_start_from_one_draw(tmp_path):
     """With p = 1 + u and q = 1 - u from one draw u per connection, p + q is 2 on every connection while p alone is not 1."""
     both_ones = _final(tmp_path, EDGE.format(parameters=PAIR_OF_ONES, pre="x_j * (p + q)", seed=1), "ones")
     tied_sum = _final(tmp_path, EDGE.format(parameters=TIED, pre="x_j * (p + q)", seed=1), "sum")
-    tied_p = _final(tmp_path, EDGE.format(parameters=TIED, pre="x_j * p * 2", seed=1), "p")
+    tied_p = _final(tmp_path, EDGE.format(parameters=TIED_P, pre="x_j * p * 2", seed=1), "p")
     np.testing.assert_allclose(
         tied_sum, both_ones, rtol=1e-6, err_msg="p + q is not 2 on every connection: the two starts do not share one draw"
     )
@@ -511,7 +512,7 @@ REFUSED = {
         "'k'.*per-node values on the network's nodes",
     ),
     "an equation reading an undeclared name": (
-        _edge(SCALED.replace("2 * s", "2 * z")),
+        _edge(SCALED.replace("2 * s", "2 * s * z")),
         "'w'.*reads z, which coupling 'LinearCoupling' does not declare",
     ),
     "an equation reading a parameter without a value": (
@@ -524,6 +525,10 @@ REFUSED = {
             pre="x_j * p * q",
         ),
         "reads itself through p -> q -> p",
+    ),
+    "an equation reading itself": (
+        _edge(f'        p: {{equation: {{rhs: "p + 1"}}, {MATRIX}}}', pre="x_j * p"),
+        "reads itself through p -> p",
     ),
     "an equation narrower than what it reads": (
         _edge(

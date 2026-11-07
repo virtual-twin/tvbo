@@ -54,7 +54,7 @@ network:
         a: {value: 0.01}
         N: {value: 1.0}
         wLRE: {value: 1.0, free: true, heterogeneous: true, shape: "(n_nodes, n_nodes)", measure: wLRE}
-      pre_expression: {rhs: "sin(theta_j - theta_i)"}
+      pre_expression: {rhs: "wLRE * sin(theta_j - theta_i)"}
       post_expression: {rhs: "a * gx / N"}
       incoming_states: [theta]
       local_states: [theta]
