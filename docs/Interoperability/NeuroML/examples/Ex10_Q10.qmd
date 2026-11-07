@@ -1,12 +1,14 @@
 ---
 title: "Ex10: Q10 Temperature Dependence"
 description: "Temperature scaling of ion channel rates via Q10 coefficient"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Q10 Temperature Dependence
 
-Demonstrates how ion channel rate constants scale with temperature using
-the Q10 coefficient: $k(T) = k(T_{\text{ref}}) \cdot Q_{10}^{(T - T_{\text{ref}})/10}$.
+Demonstrates how ion channel rate constants scale with temperature using the Q10 coefficient: $k(T) = k(T_{\text{ref}}) \cdot Q_{10}^{(T - T_{\text{ref}})/10}$.
 
 At network temperature $T = 22°C$ with $T_{\text{ref}} = 32°C$ and $Q_{10} = 3$:
 

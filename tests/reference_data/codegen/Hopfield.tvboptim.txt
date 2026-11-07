@@ -1,0 +1,70 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class Hopfield(AbstractDynamics):
+    """Hopfield neural mass model."""
+
+    STATE_NAMES = ("theta", "x")
+    INITIAL_STATE = (0.1, 0.1)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        dynamic=0.0,
+        tauT=5.0,
+        taux=1.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob0": 1,
+        "c_glob1": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        dynamic = params.dynamic
+        tauT = params.tauT
+        taux = params.taux
+
+        theta = state[0]
+        x = state[1]
+
+        c_glob0 = (
+            jnp.atleast_1d(coupling.c_glob0)[0] if hasattr(coupling, "c_glob0") else 0.0
+        )
+        c_glob1 = (
+            jnp.atleast_1d(coupling.c_glob1)[0] if hasattr(coupling, "c_glob1") else 0.0
+        )
+
+        dtheta_dt = jnp.where(
+            jnp.greater(dynamic, 0), (c_glob1 - theta) / tauT, (c_glob0 - x) / taux
+        )
+        dx_dt = (c_glob0 - x) / taux
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dtheta_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dtheta_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

@@ -1,5 +1,6 @@
 name: IzhikevichBurst
 model_type: spiking
+autonomous: false
 source: 'NeuroML2 example: Ex2_Izh'
 parameters:
   a:

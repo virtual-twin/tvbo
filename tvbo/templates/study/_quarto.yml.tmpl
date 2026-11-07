@@ -1,0 +1,31 @@
+# Seeded as docs/_quarto.yml: every format setting lives here, so report.qmd stays one editable file with no front matter, and xelatex gets the longtable setup a wide computed table needs.
+project:
+  type: default
+  render:
+    - report.qmd
+title: "{study}"
+subtitle: "*<what the study establishes>*, specified as a single declarative tvbo recipe"
+format:
+  pdf:
+    output-file: report.pdf
+    pdf-engine: xelatex
+    documentclass: scrartcl
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    colorlinks: true
+    fig-width: 7
+    fig-pos: "H"
+    geometry:
+      - margin=2cm
+    include-in-header:
+      text: |
+        \usepackage{etoolbox}
+        \usepackage{ragged2e}
+        \AtBeginEnvironment{longtable}{\small\RaggedRight}
+callout-icon: false
+bibliography: references.bib
+jupyter: python3
+execute:
+  echo: false
+  warning: false

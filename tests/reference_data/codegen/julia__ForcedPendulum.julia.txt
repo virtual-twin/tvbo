@@ -1,0 +1,32 @@
+function ForcedPendulum!(dx, _x, p, t = 0)
+
+    (;omega, f, d) = p
+
+    x, v = _x
+
+
+    dx[1] = v
+    dx[2] = -sin(x) .+ f .* cos(omega .* t) .- d .* v
+    dx
+end
+
+# Parameter values
+p = (omega = 2.2, f = 27.0, d = 0.2)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.25,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ForcedPendulum!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

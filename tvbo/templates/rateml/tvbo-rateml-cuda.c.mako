@@ -10,20 +10,18 @@
 Context Variables:
 - model: Dynamics instance (required)
 - experiment: SimulationExperiment (optional)
-- coupling: Coupling instance (optional)
 - swept_params: list of parameter names to sweep (optional, defaults to global_speed, global_coupling)
 
 Output:
 - CUDA kernel for parallel brain network simulation
 </%doc>
 <%
-from tvbo.templates.rateml.utils import (
-    cuda_code, has_boundaries, get_initial_value,
-    get_domain_str, get_boundary_str
-)
+from tvbo.templates.base.utils import get_coupling_terms, get_func_name
+from tvbo.templates.rateml.utils import cuda_code, get_boundary_str
+from tvbo.utils import initial_value
 
-# Model name
-model_name = model.name.replace(' ', '').replace('-', '')
+# Model name: the one sanitized identifier.
+model_name = get_func_name(model)
 
 # State variables
 state_vars = list(model.state_variables.items())
@@ -33,13 +31,15 @@ n_states = len(state_vars)
 params = list(model.parameters.items()) if model.parameters else []
 
 # Derived parameters (computed from other params)
-derived_params = list(model.derived_parameters.items()) if model.derived_parameters else []
+derived_params = list(model.in_dependency_order('derived_parameters').items()) if model.derived_parameters else []
 
 # Derived variables (intermediate calculations)
-derived_vars = list(model.derived_variables.items()) if model.derived_variables else []
+derived_vars = list(model.in_dependency_order('derived_variables').items()) if model.derived_variables else []
 
-# Coupling terms
-coupling_terms = list(model.coupling_terms.keys()) if model.coupling_terms else ['c_glob']
+# All inputs are declared and zeroed; only the global ones accumulate from the connectome.
+_all_ct, _global_ct, _local_ct = get_coupling_terms(model)
+coupling_terms = _all_ct or ['c_glob']
+global_coupling_terms = _global_ct or coupling_terms
 
 # Swept parameters (for parameter space exploration)
 if 'swept_params' not in context.keys():
@@ -86,7 +86,7 @@ __device__ float wrap_it_${sv_name}(float ${sv_name})
 % endif
 % endfor
 
-__global__ void ${model_name}(
+extern "C" __global__ void ${model_name}(
     // Config
     unsigned int i_step, unsigned int n_node, unsigned int nh, unsigned int n_step, unsigned int n_work_items,
     float dt, float * __restrict__ weights, float * __restrict__ lengths,
@@ -98,7 +98,7 @@ __global__ void ${model_name}(
 )
 {
     // Work id & size
-    const unsigned int id = (gridDim.x * blockDim.x * threadIdx.y) + threadIdx.x;
+    const unsigned int id = (blockIdx.x * blockDim.x) + threadIdx.x;
     const unsigned int size = n_work_items;
 
 #define params(i_par) (params_pwi[(size * (i_par)) + id])
@@ -132,7 +132,7 @@ __global__ void ${model_name}(
 
     // State variable declarations
     % for sv_name, sv in state_vars:
-    float ${sv_name} = ${get_initial_value(sv)}f;
+    float ${sv_name} = ${initial_value(sv)}f;
     % endfor
 
     // Derivative declarations
@@ -154,12 +154,14 @@ __global__ void ${model_name}(
     float dij = 0.0f;
     float wij = 0.0f;
 
-    // Initialize observables
+    // Seed the ring from the declared initial values — the time loop reads it back at t == i_step.
     for (unsigned int i_node = 0; i_node < n_node; i_node++)
     {
         tavg(i_node) = 0.0f;
         if (i_step == 0) {
-            state(i_step, i_node) = 0.0f;
+            % for i, (sv_name, sv) in enumerate(state_vars):
+            state(i_step, i_node + ${i} * n_node) = ${sv_name};
+            % endfor
         }
     }
 
@@ -207,7 +209,7 @@ __global__ void ${model_name}(
                 % endfor
 
                 // Accumulate coupling (linear coupling: c_pop0 += wij * S_j)
-                % for ct in coupling_terms:
+                % for ct in global_coupling_terms:
                 ${ct} += wij * global_coupling * ${state_vars[0][0]}_j;
                 % endfor
             }
@@ -261,7 +263,7 @@ __global__ void ${model_name}(
 #undef tavg
 } // kernel ${model_name}
 <%
-# Check for BOLD observation and find associated dynamics in experiment.dynamics
+# Check for BOLD observation and find its hemodynamic model among the network's dynamics
 bold_obs = None
 bold_model = None
 if 'experiment' in context.keys() and experiment:
@@ -272,9 +274,9 @@ if 'experiment' in context.keys() and experiment:
             if modality and str(modality) == 'BOLD':
                 bold_obs = obs_val
                 break
-    # Look for hemodynamic model in experiment.dynamics
-    dyn_dict = getattr(experiment, 'dynamics', None)
-    if dyn_dict:
+    # `experiment.dynamics` is the ONE model this kernel integrates, not a library.
+    dyn_dict = getattr(getattr(experiment, 'network', None), 'dynamics', None) or {}
+    if hasattr(dyn_dict, 'items'):
         for dyn_name, dyn in dyn_dict.items():
             if 'balloon' in dyn_name.lower() or 'bold' in dyn_name.lower() or 'windkessel' in dyn_name.lower():
                 bold_model = dyn
@@ -285,8 +287,8 @@ if 'experiment' in context.keys() and experiment:
 # Extract from dynamics metadata - use names exactly as defined
 bold_params = dict(bold_model.parameters.items()) if bold_model.parameters else {}
 bold_states = list(bold_model.state_variables.items()) if bold_model.state_variables else []
-bold_derived_params = dict(bold_model.derived_parameters.items()) if bold_model.derived_parameters else {}
-bold_derived_vars = list(bold_model.derived_variables.items()) if bold_model.derived_variables else []
+bold_derived_params = dict(bold_model.in_dependency_order('derived_parameters').items()) if bold_model.derived_parameters else {}
+bold_derived_vars = list(bold_model.in_dependency_order('derived_variables').items()) if bold_model.derived_variables else []
 
 def get_bold_param_val(name, default):
     p = bold_params.get(name)
@@ -309,7 +311,7 @@ def get_bold_param_val(name, default):
 #define ${dp_name} (${cuda_code(dp.equation)})
 % endfor
 
-__global__ void bold_update(int n_node, float dt,
+extern "C" __global__ void bold_update(int n_node, float dt,
             // bold_state.shape = (${len(bold_states)}, n_nodes, n_threads)
             float * __restrict__ bold_state,
             // neural_state.shape = (n_nodes, n_threads)
@@ -317,7 +319,7 @@ __global__ void bold_update(int n_node, float dt,
             // out.shape = (n_nodes, n_threads)
             float * __restrict__ out)
 {
-    const unsigned int it = (gridDim.x * blockDim.x * threadIdx.y) + threadIdx.x;
+    const unsigned int it = (blockIdx.x * blockDim.x) + threadIdx.x;
     const unsigned int nt = blockDim.x * blockDim.y * gridDim.x * gridDim.y;
 
     int var_stride = n_node * nt;

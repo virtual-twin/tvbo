@@ -1,0 +1,147 @@
+name: LEMS
+description: Low Entropy Model Specification — an XML-based language for defining
+  the structure and dynamics of hierarchically structured models of biological systems.
+  Foundation for NeuroML2.
+homepage: https://lems.github.io/LEMS/
+license: MIT
+repository: https://github.com/LEMS/jLEMS
+application_category: specification
+scale:
+- channel
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- model_description
+tool_role:
+- specification_language
+programming_language:
+- XML
+- Java
+runtime_platform:
+- JVM
+interoperates_with:
+- NeuroML
+date_created: '2012-01-01'
+development_status: active
+author:
+- Robert Cannon
+- Padraig Gleeson
+maintainer:
+- NeuroML Editorial Board
+reference_publication: 10.3389/fninf.2014.00079
+keywords:
+- model exchange
+- XML
+- dynamics specification
+- simulator-neutral
+issue_tracker: https://github.com/LEMS/jLEMS/issues
+is_accessible_for_free: true
+codegen_format: neuroml
+units:
+  s:
+    unit: s
+    dimension: time
+    symbol: s
+  ms:
+    unit: ms
+    dimension: time
+    symbol: ms
+  us:
+    unit: us
+    dimension: time
+    symbol: us
+  per_s:
+    unit: per_s
+    dimension: per_time
+    symbol: per_s
+  per_ms:
+    unit: per_ms
+    dimension: per_time
+    symbol: per_ms
+  Hz:
+    unit: Hz
+    dimension: per_time
+    symbol: per_s
+  kHz:
+    unit: kHz
+    dimension: per_time
+    symbol: per_ms
+  rad_per_s:
+    unit: rad_per_s
+    dimension: per_time
+  rad_per_ms:
+    unit: rad_per_ms
+    dimension: per_time
+  V:
+    unit: V
+    dimension: voltage
+    symbol: V
+  mV:
+    unit: mV
+    dimension: voltage
+    symbol: mV
+  A:
+    unit: A
+    dimension: current
+    symbol: A
+  nA:
+    unit: nA
+    dimension: current
+    symbol: nA
+  pA:
+    unit: pA
+    dimension: current
+    symbol: pA
+  uA:
+    unit: uA
+    symbol: uA
+  pF:
+    unit: pF
+    dimension: capacitance
+    symbol: pF
+  nF:
+    unit: nF
+    dimension: capacitance
+    symbol: nF
+  uF:
+    unit: uF
+    symbol: uF
+  nS:
+    unit: nS
+    dimension: conductance
+    symbol: nS
+  uS:
+    unit: uS
+    dimension: conductance
+    symbol: uS
+  mS:
+    unit: mS
+    symbol: mS
+  pS:
+    unit: pS
+    symbol: pS
+  kohm:
+    unit: kohm
+    symbol: kohm
+  Mohm:
+    unit: Mohm
+    symbol: Mohm
+  mol_per_m3:
+    unit: mol_per_m3
+    dimension: concentration
+  mmol_per_m3:
+    unit: mmol_per_m3
+    dimension: concentration
+  mM:
+    unit: mM
+    symbol: mM
+  M:
+    unit: M
+    symbol: M
+  degC:
+    unit: degC
+    symbol: degC
+  K:
+    unit: K
+    symbol: K

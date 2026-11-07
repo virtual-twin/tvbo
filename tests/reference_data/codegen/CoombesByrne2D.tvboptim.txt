@@ -1,0 +1,66 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class CoombesByrne2D(AbstractDynamics):
+    """CoombesByrne2D neural mass model."""
+
+    STATE_NAMES = ("V", "r")
+    INITIAL_STATE = (0.1, 0.1)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        Delta=1.0,
+        eta=2.0,
+        k=1.0,
+        v_syn=-4.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        Delta = params.Delta
+        eta = params.eta
+        k = params.k
+        v_syn = params.v_syn
+
+        V = state[0]
+        r = state[1]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+
+        dV_dt = V**2 + c_glob + eta + jnp.pi * k * r * (-V + v_syn) - jnp.pi**2 * r**2
+        dr_dt = Delta / jnp.pi + 2 * V * r - jnp.pi * k * r**2
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dV_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dV_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dr_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

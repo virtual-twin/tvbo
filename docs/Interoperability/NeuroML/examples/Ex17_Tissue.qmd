@@ -1,12 +1,14 @@
 ---
 title: "Ex17: Tissue Simulation"
 description: "HH cell with Q10 temperature scaling in a tissue that changes temperature"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Tissue with Varying Temperature
 
-Demonstrates `tissueWithVaryingTemperature` — an HH cell with Q10-scaled gating
-rates inside a tissue that changes temperature from 22°C to 16°C at $t=500\,\text{ms}$.
+Demonstrates `tissueWithVaryingTemperature` — an HH cell with Q10-scaled gating rates inside a tissue that changes temperature from 22°C to 16°C at $t=500\,\text{ms}$.
 
 $$C\frac{dv}{dt} = -g_{Na}m^3h(v - E_{Na}) - g_K n^4(v - E_K) - g_L(v - E_L) + I_{\text{ext}}$$
 

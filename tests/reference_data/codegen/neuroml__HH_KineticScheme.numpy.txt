@@ -1,0 +1,11 @@
+import numpy as np
+
+
+def dfun(current_state, t, cX, _p):
+    # State variables
+
+    # Derivatives
+
+    derivatives = np.array(np.broadcast_arrays())
+
+    return derivatives

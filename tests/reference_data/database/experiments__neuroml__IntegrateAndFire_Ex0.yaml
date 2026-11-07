@@ -1,0 +1,76 @@
+id: 903
+part: main
+description: 'Reproduces NeuroML2 LEMS canonical example 0, iafTauCell variant. Single
+  leaky integrate-and-fire cell with spike/reset event. No external input — fires
+  rhythmically because leakReversal > thresh. Simulated for 300ms at 0.005ms step.
+
+  '
+label: 'NeuroML Ex0: Integrate-and-Fire (tau variant)'
+dynamics:
+  name: IntegrateAndFire
+  parameters:
+    leakReversal:
+      name: leakReversal
+      value: -50.0
+      description: Leak reversal potential
+    tau:
+      name: tau
+      value: 30.0
+      description: Membrane time constant
+    thresh:
+      name: thresh
+      value: -55.0
+      description: Spike threshold
+    reset:
+      name: reset
+      value: -70.0
+      description: Reset potential after spike
+  description: 'Leaky integrate-and-fire cell matching NeuroML2 iafTauCell.
+
+    '
+  state_variables:
+    v:
+      name: v
+      equation:
+        rhs: (leakReversal - v) / tau
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: -50.0
+  number_of_modes: 1
+  autonomous: true
+  events:
+    spike:
+      name: spike
+      event_type: stimulus
+      condition:
+        rhs: v > thresh
+        latex: false
+      affect:
+        rhs: v = reset
+        latex: false
+      sampling_rate: 1.0
+      interpolation: linear
+  cse: false
+  compile: false
+integration:
+  method: euler
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.005
+  time_unit: ms
+  duration: 300.0
+  transient_time: 0.0
+  block_size: 1000
+  noise_draw: fused
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  graph_representation: auto
+  number_of_nodes: 1
+  distance_unit: mm

@@ -45,6 +45,11 @@
         "tvbo:Integrator"
       ]
     },
+    "initial_state": {
+      "_embeddedTypes": [
+        "tvbo:InitialState"
+      ]
+    },
     "connectivity": {
       "_embeddedTypes": [
         "tvbo:Network"
@@ -147,6 +152,11 @@
     },
     "dataset": {
       "type": "string"
+    },
+    "workflow": {
+      "_embeddedTypes": [
+        "tvbo:WorkflowConfig"
+      ]
     }
   }
 }

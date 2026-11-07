@@ -17,7 +17,11 @@ pipeline:
       output: subsampled
       equation:
           rhs: "subsample(X, step)"
+          parameters:
+              step:
+                  equation: {rhs: "iround(period / dt)"}
+                  description: "Integration steps between recorded samples, so the decimation tracks the grid the experiment declares rather than the one this file was written on."
       arguments:
           step:
-              description: "Decimation factor = period / dt"
+              description: "Decimation factor. Its value is declared on the equation parameter of the same name; a backend that has not yet been migrated to read that still derives it here."
       apply_on_dimension: time

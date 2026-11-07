@@ -2,7 +2,7 @@ name: ErdosRenyi
 description: >-
   Erdos-Renyi random graph G(n, p). Each of the n*(n-1)/2 possible undirected
   edges is independently included with probability p.
-iri: tvbo:ErdosRenyi
+iri: tvbo:graph_generators/ErdosRenyi
 
 parameters:
   n: { datatype: integer, description: "Number of nodes" }

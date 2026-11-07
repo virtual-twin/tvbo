@@ -15,14 +15,12 @@ u0 = [
 # Define time span
 tspan = (0.0, ${duration})
 
-# Construct per-state sigma vector directly from state variable noise definitions
+## Per-state sigma through the shared reader, so every declared spelling — `parameters.sigma`, `intensity`, `parameters.nsig` — means here what it means on the other backends.
+<%! from tvbo.utils import noise_sigma %>\
+# Per-state noise standard deviation (diagonal diffusion)
 sigma_vec = [
     % for sv in model.state_variables.values():
-    % if getattr(sv, 'noise', None) and getattr(getattr(sv, 'noise', None), 'intensity', None) and getattr(getattr(sv.noise, 'intensity', None), 'value', None) is not None:
-    ${float(sv.noise.intensity.value)}, # ${sv.name}
-    % else:
-    0.0, # ${sv.name}
-    % endif
+    ${float(noise_sigma(getattr(sv, 'noise', None)) or 0.0)}, # ${sv.name}
     % endfor
 ]
 

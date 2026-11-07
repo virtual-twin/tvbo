@@ -56,4 +56,4 @@ ani = ts.animate("u", format="dots")
 ani.save("fitzhugh_nagumo.gif", writer="pillow", fps=20)
 ```
 
-![](fitzhugh_nagumo.gif)
+![Coupled FitzHugh-Nagumo oscillators on a network, each node alternating between its excitable rest state and a spike.](fitzhugh_nagumo.gif)

@@ -1,0 +1,248 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class DecoBalancedExcInh(Model):
+
+    G = NArray(
+        label=r":math:`G`",
+        default=np.array([2.0]),
+        domain=Range(lo=0.0, hi=10.0, step=0.01),
+        doc="""Global coupling scaling""",
+    )
+    I_ext = NArray(
+        label=r":math:`I_ext`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=1.0, step=0.001),
+        doc="""External stimulation parameter for evoked potential simulated activity applied to the excitatory population firing rate IE (Deco et al""",
+    )
+    I_o = NArray(
+        label=r":math:`I_o`",
+        default=np.array([0.382]),
+        domain=Range(lo=0.0, hi=1.0, step=0.001),
+        doc="""Effective external input parameter to the excitatory E and inhibitory I population (Deco et al""",
+    )
+    J_N = NArray(
+        label=r":math:`J_N`",
+        default=np.array([0.15]),
+        domain=Range(lo=0.001, hi=0.5, step=0.001),
+        doc="""Excitatory synaptic coupling parameter (Deco et al""",
+    )
+    J_i = NArray(
+        label=r":math:`J_i`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.001, hi=2.0, step=0.001),
+        doc="""Local feedback inhibitory synaptic coupling to the excitatory population firing rate IE (Deco et al""",
+    )
+    M_i = NArray(
+        label=r":math:`M_i`",
+        default=np.array([1.0]),
+        domain=Range(lo=1.0, hi=10.0, step=0.01),
+        doc="""Effective gain within a region. Scales the excitatory and inhibitory input currents derived from the regional transcriptional landscape (Deco et al., 2021).""",
+    )
+    W_e = NArray(
+        label=r":math:`W_e`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.0, hi=2.0, step=0.01),
+        doc="""Excitatory population external input scaling weight""",
+    )
+    W_i = NArray(
+        label=r":math:`W_i`",
+        default=np.array([0.7]),
+        domain=Range(lo=0.0, hi=1.0, step=0.01),
+        doc="""Inhibitory population external input scaling weight""",
+    )
+    a_e = NArray(
+        label=r":math:`a_e`",
+        default=np.array([310.0]),
+        domain=Range(lo=0.0, hi=500.0, step=1.0),
+        doc="""Slope (or gain) parameter of the sigmoid function HE_RWW_EI (Deco et al""",
+    )
+    a_i = NArray(
+        label=r":math:`a_i`",
+        default=np.array([615.0]),
+        domain=Range(lo=0.0, hi=1000.0, step=1.0),
+        doc="""Slope (or gain) parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al""",
+    )
+    b_e = NArray(
+        label=r":math:`b_e`",
+        default=np.array([125.0]),
+        domain=Range(lo=0.0, hi=200.0, step=1.0),
+        doc="""Shift parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al""",
+    )
+    b_i = NArray(
+        label=r":math:`b_i`",
+        default=np.array([177.0]),
+        domain=Range(lo=0.0, hi=200.0, step=1.0),
+        doc="""Shift parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al""",
+    )
+    d_e = NArray(
+        label=r":math:`d_e`",
+        default=np.array([0.16]),
+        domain=Range(lo=0.0, hi=0.2, step=0.001),
+        doc="""Scaling parameter of the sigmoid function HE_RWW_EI of the excitatory population (Deco et al""",
+    )
+    d_i = NArray(
+        label=r":math:`d_i`",
+        default=np.array([0.087]),
+        domain=Range(lo=0.0, hi=0.2, step=0.001),
+        doc="""Scaling parameter of the sigmoid function HI_RWW_EI of the inhibitory population (Deco et al""",
+    )
+    gamma_e = NArray(
+        label=r":math:`gamma_e`",
+        default=np.array([0.000641]),
+        domain=Range(lo=0.0, hi=0.001, step=1e-05),
+        doc="""Excitatory population kinetic parameter""",
+    )
+    gamma_i = NArray(
+        label=r":math:`gamma_i`",
+        default=np.array([0.001]),
+        domain=Range(lo=0.0, hi=0.002, step=1e-05),
+        doc="""Inhibitory population kinetic parameter""",
+    )
+    lamda = NArray(
+        label=r":math:`lamda`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=1.0, step=0.01),
+        doc="""Inhibitory global coupling scaling""",
+    )
+    tau_e = NArray(
+        label=r":math:`tau_e`",
+        default=np.array([100.0]),
+        domain=Range(lo=50.0, hi=150.0, step=1.0),
+        doc="""Kinetic parameter  that represents the decay times for NMDA synapses (Deco et al""",
+    )
+    tau_i = NArray(
+        label=r":math:`tau_i`",
+        default=np.array([10.0]),
+        domain=Range(lo=5.0, hi=100.0, step=1.0),
+        doc="""Kinetic parameter that represents the decay times for inhibitory GABA synapses (Deco et al""",
+    )
+    w_p = NArray(
+        label=r":math:`w_p`",
+        default=np.array([1.4]),
+        domain=Range(lo=0.0, hi=2.0, step=0.01),
+        doc="""Excitatory population recurrence weight""",
+    )
+
+    _nvar = 2
+    state_variables = ["S_e", "S_i"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={"S_e": np.array([0.0, 1.0]), "S_i": np.array([0.0, 1.0])},
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    state_variable_boundaries = Final(
+        label="State Variable boundaries [lo, hi]",
+        default={"S_e": np.array([0.0, 1.0]), "S_i": np.array([0.0, 1.0])},
+        doc="""State variable boundaries for phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("S_e", "S_i"),
+        default=("S_e", "S_i"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "G",
+            "I_ext",
+            "I_o",
+            "J_N",
+            "J_i",
+            "M_i",
+            "W_e",
+            "W_i",
+            "a_e",
+            "a_i",
+            "b_e",
+            "b_i",
+            "d_e",
+            "d_i",
+            "gamma_e",
+            "gamma_i",
+            "lamda",
+            "tau_e",
+            "tau_i",
+            "w_p",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "S_e": "-S_e/tau_e + H_e*gamma_e*(1 - S_e)",
+            "S_i": "H_i*gamma_i - S_i/tau_i",
+        },
+    )
+
+    cvar = np.array([0], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_glob"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        S_e = state_variables[0, :]
+        S_i = state_variables[1, :]
+
+        G = self.G
+        I_ext = self.I_ext
+        I_o = self.I_o
+        J_N = self.J_N
+        J_i = self.J_i
+        M_i = self.M_i
+        W_e = self.W_e
+        W_i = self.W_i
+        a_e = self.a_e
+        a_i = self.a_i
+        b_e = self.b_e
+        b_i = self.b_i
+        d_e = self.d_e
+        d_i = self.d_i
+        gamma_e = self.gamma_e
+        gamma_i = self.gamma_i
+        lamda = self.lamda
+        tau_e = self.tau_e
+        tau_i = self.tau_i
+        w_p = self.w_p
+
+        # Coupling Terms (from coupling array)
+        c_glob = coupling[0, :]
+
+        # Derived Variables
+        self.J_N_S_e = J_N_S_e = J_N * S_e
+        self.coupling = coupling = G * J_N * (c_glob + S_e * local_coupling)
+        self.I_e = I_e = I_ext + coupling + I_o * W_e + J_N_S_e * w_p - J_i * S_i
+        self.I_i = I_i = J_N_S_e - S_i + I_o * W_i + coupling * lamda
+        self.x_e = x_e = M_i * (-b_e + I_e * a_e)
+        self.x_i = x_i = M_i * (-b_i + I_i * a_i)
+        self.H_e = H_e = x_e / (1 - np.exp(-d_e * x_e))
+        self.H_i = H_i = x_i / (1 - np.exp(-d_i * x_i))
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(-S_e / tau_e + H_e * gamma_e * (1 - S_e)),  # S_e
+            np.asarray(H_i * gamma_i - S_i / tau_i),  # S_i
+        )
+        return np.array(_derivs)

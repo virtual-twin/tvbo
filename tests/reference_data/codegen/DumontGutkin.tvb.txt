@@ -1,0 +1,239 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class DumontGutkin(Model):
+
+    Delta_e = NArray(
+        label=r":math:`Delta_e`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.0, hi=10.0, step=0.01),
+        doc="""Half-width of heterogeneous noise distribution over excitatory population""",
+    )
+    Delta_i = NArray(
+        label=r":math:`Delta_i`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.0, hi=10.0, step=0.01),
+        doc="""Half-width of heterogeneous noise distribution over inhibitory population""",
+    )
+    Gamma = NArray(
+        label=r":math:`Gamma`",
+        default=np.array([5.0]),
+        domain=Range(lo=0.0, hi=10.0, step=0.1),
+        doc="""Ratio of excitatory VS inhibitory global couplings G_ie/G_ee """,
+    )
+    I_e = NArray(
+        label=r":math:`I_e`",
+        default=np.array([0.0]),
+        domain=Range(lo=-10.0, hi=10.0, step=0.01),
+        doc="""External homogeneous current on excitatory population""",
+    )
+    I_i = NArray(
+        label=r":math:`I_i`",
+        default=np.array([0.0]),
+        domain=Range(lo=-10.0, hi=10.0, step=0.01),
+        doc="""External current on inhibitory population""",
+    )
+    J_ee = NArray(
+        label=r":math:`J_ee`",
+        default=np.array([0.0]),
+        domain=Range(lo=-25.0, hi=25.0, step=0.0001),
+        doc="""Synaptic weight e-->e""",
+    )
+    J_ei = NArray(
+        label=r":math:`J_ei`",
+        default=np.array([10.0]),
+        domain=Range(lo=-25.0, hi=25.0, step=0.0001),
+        doc="""Synaptic weight i-->e""",
+    )
+    J_ie = NArray(
+        label=r":math:`J_ie`",
+        default=np.array([0.0]),
+        domain=Range(lo=-25.0, hi=25.0, step=0.0001),
+        doc="""Synaptic weight e-->i""",
+    )
+    J_ii = NArray(
+        label=r":math:`J_ii`",
+        default=np.array([15.0]),
+        domain=Range(lo=-25.0, hi=25.0, step=0.0001),
+        doc="""Synaptic weight i-->i""",
+    )
+    eta_e = NArray(
+        label=r":math:`eta_e`",
+        default=np.array([-5.0]),
+        domain=Range(lo=-10.0, hi=10.0, step=0.0001),
+        doc="""Mean heterogeneous current on excitatory population""",
+    )
+    eta_i = NArray(
+        label=r":math:`eta_i`",
+        default=np.array([-5.0]),
+        domain=Range(lo=-10.0, hi=10.0, step=0.0001),
+        doc="""Mean heterogeneous current on inhibitory population""",
+    )
+    tau_e = NArray(
+        label=r":math:`tau_e`",
+        default=np.array([10.0]),
+        domain=Range(lo=0.0, hi=15.0, step=0.01),
+        doc="""Characteristic time of excitatory population""",
+    )
+    tau_i = NArray(
+        label=r":math:`tau_i`",
+        default=np.array([10.0]),
+        domain=Range(lo=0.0, hi=15.0, step=0.01),
+        doc="""Characteristic time of inhibitory population""",
+    )
+    tau_s = NArray(
+        label=r":math:`tau_s`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.0, hi=15.0, step=0.01),
+        doc="""Synaptic time constant""",
+    )
+
+    _nvar = 8
+    state_variables = ["V_e", "V_i", "r_e", "r_i", "s_ee", "s_ei", "s_ie", "s_ii"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "V_e": np.array([-2.0, 1.5]),
+            "V_i": np.array([-2.0, 1.5]),
+            "r_e": np.array([0.0, 2.0]),
+            "r_i": np.array([0.0, 2.0]),
+            "s_ee": np.array([-1.0, 1.0]),
+            "s_ei": np.array([-1.0, 1.0]),
+            "s_ie": np.array([-1.0, 1.0]),
+            "s_ii": np.array([-1.0, 1.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    state_variable_boundaries = Final(
+        label="State Variable boundaries [lo, hi]",
+        default={"r_e": np.array([0.0, np.inf]), "r_i": np.array([0.0, np.inf])},
+        doc="""State variable boundaries for phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("V_e", "V_i", "r_e", "r_i", "s_ee", "s_ei", "s_ie", "s_ii"),
+        default=("V_e", "V_i", "r_e", "r_i", "s_ee", "s_ei", "s_ie", "s_ii"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "Delta_e",
+            "Delta_i",
+            "Gamma",
+            "I_e",
+            "I_i",
+            "J_ee",
+            "J_ei",
+            "J_ie",
+            "J_ii",
+            "eta_e",
+            "eta_i",
+            "tau_e",
+            "tau_i",
+            "tau_s",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "V_e": "(I_e + eta_e + V_e**2 + s_ee*tau_e - s_ei*tau_e - np.pi**2*r_e**2*tau_e**2)/tau_e",
+            "V_i": "(I_i + eta_i + V_i**2 + s_ie*tau_i - s_ii*tau_i - np.pi**2*r_i**2*tau_i**2)/tau_i",
+            "r_e": "(2*V_e*r_e + Delta_e/(np.pi*tau_e))/tau_e",
+            "r_i": "(2*V_i*r_i + Delta_i/(np.pi*tau_i))/tau_i",
+            "s_ee": "(c_glob - s_ee + J_ee*r_e)/tau_s",
+            "s_ei": "(-s_ei + J_ei*r_i)/tau_s",
+            "s_ie": "(-s_ie + Gamma*c_glob + J_ie*r_e)/tau_s",
+            "s_ii": "(-s_ii + J_ii*r_i)/tau_s",
+        },
+    )
+
+    cvar = np.array([0, 1, 2, 3], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_glob"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        V_e = state_variables[0, :]
+        V_i = state_variables[1, :]
+        r_e = state_variables[2, :]
+        r_i = state_variables[3, :]
+        s_ee = state_variables[4, :]
+        s_ei = state_variables[5, :]
+        s_ie = state_variables[6, :]
+        s_ii = state_variables[7, :]
+
+        Delta_e = self.Delta_e
+        Delta_i = self.Delta_i
+        Gamma = self.Gamma
+        I_e = self.I_e
+        I_i = self.I_i
+        J_ee = self.J_ee
+        J_ei = self.J_ei
+        J_ie = self.J_ie
+        J_ii = self.J_ii
+        eta_e = self.eta_e
+        eta_i = self.eta_i
+        tau_e = self.tau_e
+        tau_i = self.tau_i
+        tau_s = self.tau_s
+
+        # Coupling Terms (from coupling array)
+        c_glob = coupling[0, :]
+
+        # Derived Variables
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(
+                (
+                    I_e
+                    + eta_e
+                    + V_e**2
+                    + s_ee * tau_e
+                    - s_ei * tau_e
+                    - np.pi**2 * r_e**2 * tau_e**2
+                )
+                / tau_e
+            ),  # V_e
+            np.asarray(
+                (
+                    I_i
+                    + eta_i
+                    + V_i**2
+                    + s_ie * tau_i
+                    - s_ii * tau_i
+                    - np.pi**2 * r_i**2 * tau_i**2
+                )
+                / tau_i
+            ),  # V_i
+            np.asarray((2 * V_e * r_e + Delta_e / (np.pi * tau_e)) / tau_e),  # r_e
+            np.asarray((2 * V_i * r_i + Delta_i / (np.pi * tau_i)) / tau_i),  # r_i
+            np.asarray((c_glob - s_ee + J_ee * r_e) / tau_s),  # s_ee
+            np.asarray((-s_ei + J_ei * r_i) / tau_s),  # s_ei
+            np.asarray((-s_ie + Gamma * c_glob + J_ie * r_e) / tau_s),  # s_ie
+            np.asarray((-s_ii + J_ii * r_i) / tau_s),  # s_ii
+        )
+        return np.array(_derivs)

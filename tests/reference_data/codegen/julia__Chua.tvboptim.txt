@@ -1,0 +1,70 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class Chua(AbstractDynamics):
+    """Chua neural mass model."""
+
+    STATE_NAMES = ("x", "y", "z")
+    INITIAL_STATE = (0.7, 0.0, 0.0)
+    AUXILIARY_NAMES = ("h_x",)
+
+    DEFAULT_PARAMS = Bunch(
+        a=15.6,
+        b=25.58,
+        m0=-1.1428571428571428,
+        m1=-0.7142857142857143,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        a = params.a
+        b = params.b
+        m0 = params.m0
+        m1 = params.m1
+
+        x = state[0]
+        y = state[1]
+        z = state[2]
+
+        h_x = m1 * x + 0.5 * (m0 - m1) * (jnp.abs(x + 1) - jnp.abs(x - 1))
+
+        dx_dt = a * (y - x - h_x)
+        dy_dt = x - y + z
+        dz_dt = (-b) * y
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dz_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(h_x), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

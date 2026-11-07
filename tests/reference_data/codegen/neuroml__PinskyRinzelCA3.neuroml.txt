@@ -1,0 +1,191 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: PinskyRinzelCA3
+       Generated from TVBO Dynamics: PinskyRinzelCA3
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="PinskyRinzelCA3">
+
+    <!-- Parameters -->
+    <Parameter name="iSoma" dimension="none"/>
+    <Parameter name="iDend" dimension="none"/>
+    <Parameter name="gLs" dimension="none"/>
+    <Parameter name="gLd" dimension="none"/>
+    <Parameter name="gNa" dimension="none"/>
+    <Parameter name="gKdr" dimension="none"/>
+    <Parameter name="gCa" dimension="none"/>
+    <Parameter name="gKahp" dimension="none"/>
+    <Parameter name="gKC" dimension="none"/>
+    <Parameter name="gc" dimension="none"/>
+    <Parameter name="eNa" dimension="none"/>
+    <Parameter name="eCa" dimension="none"/>
+    <Parameter name="eK" dimension="none"/>
+    <Parameter name="eL" dimension="none"/>
+    <Parameter name="pp" dimension="none"/>
+    <Parameter name="cm" dimension="none"/>
+    <!-- Coupling inputs -->
+    <!-- Initial condition parameters -->
+    <Parameter name="Vs_0" dimension="none"/>
+    <Parameter name="Vd_0" dimension="none"/>
+    <Parameter name="Cad_0" dimension="none"/>
+    <Parameter name="hs_0" dimension="none"/>
+    <Parameter name="ns_0" dimension="none"/>
+    <Parameter name="sd_0" dimension="none"/>
+    <Parameter name="cd_0" dimension="none"/>
+    <Parameter name="qd_0" dimension="none"/>
+    <Parameter name="Si_0" dimension="none"/>
+    <Parameter name="Wi_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="Vs" dimension="none"/>
+    <Exposure name="Vd" dimension="none"/>
+    <Exposure name="Cad" dimension="none"/>
+    <Exposure name="hs" dimension="none"/>
+    <Exposure name="ns" dimension="none"/>
+    <Exposure name="sd" dimension="none"/>
+    <Exposure name="cd" dimension="none"/>
+    <Exposure name="qd" dimension="none"/>
+    <Exposure name="Si" dimension="none"/>
+    <Exposure name="Wi" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="Vs" dimension="none" exposure="Vs"/>
+      <StateVariable name="Vd" dimension="none" exposure="Vd"/>
+      <StateVariable name="Cad" dimension="none" exposure="Cad"/>
+      <StateVariable name="hs" dimension="none" exposure="hs"/>
+      <StateVariable name="ns" dimension="none" exposure="ns"/>
+      <StateVariable name="sd" dimension="none" exposure="sd"/>
+      <StateVariable name="cd" dimension="none" exposure="cd"/>
+      <StateVariable name="qd" dimension="none" exposure="qd"/>
+      <StateVariable name="Si" dimension="none" exposure="Si"/>
+      <StateVariable name="Wi" dimension="none" exposure="Wi"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="ICa_d" dimension="none" value="gCa*sd^2*(Vd - eCa)"/>
+      <ConditionalDerivedVariable name="alpha_cd" dimension="none">
+        <Case condition="Vd .lt. -10.0" value="0.684443445486297*exp(0.0538720538720539*Vd)"/>
+        <Case value="0.275729683468338*exp(-0.037037037037037*Vd)"/>
+      </ConditionalDerivedVariable>
+      <DerivedVariable name="alpha_hs" dimension="none" value="0.0117416385561416*exp(-0.0555555555555556*Vs)"/>
+      <DerivedVariable name="alpha_ms" dimension="none" value="(-15.008 - 0.32*Vs)/(-1.0 + 8.08904403605717e-6*exp(-0.25*Vs))"/>
+      <DerivedVariable name="alpha_ns" dimension="none" value="(-0.3984 - 0.016*Vs)/(-1.0 + 0.00687406255749625*exp(-0.2*Vs))"/>
+      <ConditionalDerivedVariable name="alpha_qd" dimension="none">
+        <Case condition="2.0e-5*Cad .geq. 0.01" value="0.0100000000000000"/>
+        <Case value="2.0e-5*Cad"/>
+      </ConditionalDerivedVariable>
+      <DerivedVariable name="alpha_sd" dimension="none" value="1.6/(1.0 + 1.43332941456034*exp(-0.072*Vd))"/>
+      <DerivedVariable name="beta_hs" dimension="none" value="4.0/(1.0 + 0.0183156388887342*exp(-0.2*Vs))"/>
+      <DerivedVariable name="beta_ms" dimension="none" value="(5.572 + 0.28*Vs)/(-1.0 + 53.5170342274912*exp(0.2*Vs))"/>
+      <DerivedVariable name="beta_ns" dimension="none" value="0.0919698602928606*exp(-0.025*Vs)"/>
+      <DerivedVariable name="beta_sd" dimension="none" value="(0.178 + 0.02*Vd)/(-1.0 + 5.92985641859115*exp(0.2*Vd))"/>
+      <ConditionalDerivedVariable name="chi_d" dimension="none">
+        <Case condition="0.004*Cad .geq. 1.0" value="1.00000000000000"/>
+        <Case value="0.004*Cad"/>
+      </ConditionalDerivedVariable>
+      <ConditionalDerivedVariable name="beta_cd" dimension="none">
+        <Case condition="Vd .lt. -10.0" value="-alpha_cd + 0.275729683468338*exp(-0.037037037037037*Vd)"/>
+        <Case value="0.0"/>
+      </ConditionalDerivedVariable>
+      <DerivedVariable name="minf_s" dimension="none" value="alpha_ms/(alpha_ms + beta_ms)"/>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="Vs" value="((iSoma/pp - gLs*(Vs - eL) + gc*(Vd - Vs)/pp - gKdr*ns*(Vs - eK) - gNa*hs*minf_s^2*(Vs - eNa))/cm) / SEC"/>
+      <TimeDerivative variable="Vd" value="((-ICa_d + iDend/(1.0 - pp) - gLd*(Vd - eL) + gc*(Vs - Vd)/(1.0 - pp) - gKahp*qd*(Vd - eK) - cd*chi_d*gKC*(Vd - eK))/cm) / SEC"/>
+      <TimeDerivative variable="Cad" value="(-0.13*ICa_d - 0.075*Cad) / SEC"/>
+      <TimeDerivative variable="hs" value="(alpha_hs - hs*(alpha_hs + beta_hs)) / SEC"/>
+      <TimeDerivative variable="ns" value="(alpha_ns - ns*(alpha_ns + beta_ns)) / SEC"/>
+      <TimeDerivative variable="sd" value="(alpha_sd - sd*(alpha_sd + beta_sd)) / SEC"/>
+      <TimeDerivative variable="cd" value="(alpha_cd - cd*(alpha_cd + beta_cd)) / SEC"/>
+      <TimeDerivative variable="qd" value="(alpha_qd - qd*(0.001 + alpha_qd)) / SEC"/>
+      <TimeDerivative variable="Si" value="(-0.00666666666666667*Si) / SEC"/>
+      <TimeDerivative variable="Wi" value="(-0.5*Wi) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="Vs" value="Vs_0"/>
+        <StateAssignment variable="Vd" value="Vd_0"/>
+        <StateAssignment variable="Cad" value="Cad_0"/>
+        <StateAssignment variable="hs" value="hs_0"/>
+        <StateAssignment variable="ns" value="ns_0"/>
+        <StateAssignment variable="sd" value="sd_0"/>
+        <StateAssignment variable="cd" value="cd_0"/>
+        <StateAssignment variable="qd" value="qd_0"/>
+        <StateAssignment variable="Si" value="Si_0"/>
+        <StateAssignment variable="Wi" value="Wi_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="PinskyRinzelCA3_inst" type="PinskyRinzelCA3" iSoma="0.75" iDend="0.0" gLs="0.1" gLd="0.1" gNa="30.0" gKdr="15.0" gCa="10.0" gKahp="0.8" gKC="15.0" gc="2.1" eNa="60.0" eCa="80.0" eK="-75.0" eL="-60.0" pp="0.5" cm="3.0" Vs_0="-60.0" Vd_0="-60.0" Cad_0="0.0" hs_0="0.999" ns_0="0.001" sd_0="0.009" cd_0="0.007" qd_0="0.0" Si_0="0.0" Wi_0="0.0"/>
+
+
+
+</Lems>

@@ -11,12 +11,10 @@ intermediate_expressions:
       lhs: X1
       rhs: X + dX0 * dt + noise + stimulus * dt
       latex: false
-    conditional: false
 update_expression:
   name: dX
   equation:
     lhs: X_{t+1}
     rhs: (dX0 + dX1) * (dt / 2)
     latex: false
-  conditional: false
 delayed: true

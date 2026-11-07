@@ -1,6 +1,6 @@
 name: Cycle
 description: "Cycle graph C_n — nodes arranged in a ring, each connected to its 2 neighbours."
-iri: tvbo:Cycle
+iri: tvbo:graph_generators/Cycle
 
 parameters:
   n: { datatype: integer, description: "Number of nodes" }

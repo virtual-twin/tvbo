@@ -1,0 +1,8 @@
+name: SetMean
+label: Mean over a node set
+description: The mean of a per-node value over a set of nodes, the set given as a per-node membership that is 1 for a member and 0 otherwise, or a non-negative weight. For a 0/1 membership it is the plain mean over the members; for weights it is the weighted mean.
+arguments:
+  values: {description: 'One value per node.'}
+  membership: {description: 'One membership per node, in the same order: 1 for a member and 0 otherwise, or a non-negative weight.'}
+equation:
+  rhs: sum(values * membership) / sum(membership)

@@ -1,0 +1,61 @@
+name: FitzHughNagumo
+parameters:
+  a:
+    name: a
+    value: 3.0
+    description: Excitability scaling parameter a.
+  b:
+    name: b
+    value: 0.2
+    description: Recovery nullcline parameter b.
+  epsilon:
+    name: epsilon
+    value: 0.01
+    description: Time-scale separation ε.
+  I:
+    name: I
+    value: 0.0
+    description: External input current I.
+description: 'Famous excitable system which emulates the firing of a neuron, reducing
+  the biophysical
+
+  Hodgkin-Huxley description to two variables while preserving excitability and recovery
+
+  dynamics. Captures threshold behavior, refractoriness and sustained spiking under
+  drive.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- FitzHughNagumo
+state_variables:
+  v:
+    name: v
+    description: Activator / membrane potential proxy.
+    equation:
+      lhs: Derivative(v, t)
+      rhs: a*v*(v - b)*(1 - v) - w + I
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.5
+  w:
+    name: w
+    description: Recovery variable.
+    equation:
+      lhs: Derivative(w, t)
+      rhs: epsilon*(v - w)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.5
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

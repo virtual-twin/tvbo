@@ -5,7 +5,7 @@ subtitle: "Replicating BifurcationKit.jl COModel.jl example"
 
 ## Overview
 
-This example replicates [COModel.jl](https://github.com/bifurcationkit/BifurcationKit.jl/blob/main/examples/COModel.jl) from BifurcationKit.jl, modeling catalytic CO oxidation on a platinum surface.
+This example replicates [COModel.jl](https://github.com/bifurcationkit/BifurcationKit.jl/blob/master/examples/COModel.jl) from BifurcationKit.jl, modeling catalytic CO oxidation on a platinum surface.
 
 The model has three state variables:
 - **x**: CO surface coverage

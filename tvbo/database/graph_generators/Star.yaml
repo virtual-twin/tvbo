@@ -1,6 +1,6 @@
 name: Star
 description: "Star graph — one central hub connected to n-1 peripheral nodes."
-iri: tvbo:Star
+iri: tvbo:graph_generators/Star
 
 parameters:
   n: { datatype: integer, description: "Number of nodes (1 hub + n-1 leaves)" }

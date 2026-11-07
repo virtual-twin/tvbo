@@ -1,5 +1,5 @@
 name: TsodyksMarkram
-iri: tvbo:TsodyksMarkram
+iri: tvbo:models/TsodyksMarkram
 model_type: neural_mass
 description: >-
   Tsodyks-Markram mean-field model of short-term synaptic plasticity.

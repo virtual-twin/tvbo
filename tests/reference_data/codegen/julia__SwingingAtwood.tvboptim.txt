@@ -1,0 +1,83 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class SwingingAtwood(AbstractDynamics):
+    """SwingingAtwood neural mass model."""
+
+    STATE_NAMES = ("theta", "omega", "y", "v")
+    INITIAL_STATE = (0.3, 0.0, 0.0, 0.0)
+    AUXILIARY_NAMES = ("energy",)
+
+    DEFAULT_PARAMS = Bunch(
+        g=9.81,
+        l=1.0,
+        m1=1.0,
+        m2=3.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        g = params.g
+        l = params.l
+        m1 = params.m1
+        m2 = params.m2
+
+        theta = state[0]
+        omega = state[1]
+        y = state[2]
+        v = state[3]
+
+        energy = (
+            0.5 * m1 * (l**2 * omega**2 + v**2 + 2 * l * v * omega * jnp.sin(theta))
+            + 0.5 * m2 * v**2
+            + m1 * g * l * (1 - jnp.cos(theta))
+            + (m1 + m2) * g * y
+        )
+
+        dtheta_dt = omega
+        domega_dt = (
+            -(m1 + m2) * g * jnp.sin(theta)
+            - m1 * omega**2 * jnp.sin(theta) * jnp.cos(theta)
+        ) / ((m1 + m2) * l - m1 * l * jnp.cos(theta) ** 2)
+        dy_dt = v
+        dv_dt = (m2 - m1 * jnp.sin(theta) ** 2) * g / (
+            m1 + m2 - m1 * jnp.cos(theta) ** 2
+        ) - m1 * l * omega**2 * jnp.cos(theta) / (m1 + m2 - m1 * jnp.cos(theta) ** 2)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dtheta_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dtheta_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(domega_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dv_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(energy), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

@@ -1,0 +1,247 @@
+---
+title: "Unit-Aware Computations"
+description: "How TVBO handles physical units across simulation components"
+jupyter: python3
+# Redirect the pre-restructure URL so existing links keep resolving.
+aliases:
+  - /Models/UnitValidation.html
+  - /Usage/UnitValidation.html
+---
+
+TVBO uses [SymPy's units system](https://docs.sympy.org/latest/modules/physics/units/index.html)
+to handle physical units automatically. This enables correct unit conversions across different components of a simulation experiment.
+
+## Overview
+
+Physical quantities appear throughout simulations:
+
+| Component | Quantities with Units |
+|-----------|----------------------|
+| **Network** | distances (`distance_unit`), delays (`time_unit`), conduction speed |
+| **Integrator** | step size, duration, transient time — all in `time_unit` |
+| **Dynamics** | time constants, frequencies (per-`Parameter` `unit`) |
+| **Monitors** | sampling period, frequencies |
+
+This notebook demonstrates unit handling, starting with Networks.
+
+---
+
+## 1. Network Units
+
+Networks have two unit attributes that define the coordinate system:
+
+- `distance_unit`: Unit for edge distances/lengths (default: `"mm"`)
+- `time_unit`: Default time unit for delays (default: `"ms"`)
+
+```{python}
+import numpy as np
+from tvbo import Network
+from tvbo.datamodel import Parameter
+
+# Simple 3-node network
+W = np.array([[0, 0.5, 0.3],
+              [0.2, 0, 0.4],
+              [0.1, 0.6, 0]])
+L = np.array([[0, 50, 80],
+              [50, 0, 30],
+              [80, 30, 0]])  # distances
+
+# Default units: mm and ms
+net = Network.from_matrix(W, lengths=L)
+print(f"Distance unit: {net.distance_unit}")
+print(f"Time unit: {net.time_unit}")
+```
+
+### 1.1 Computing Delays
+
+The `calculate_delays()` method calculates transmission delays from distances and conduction speed:
+
+$$\text{delay} = \frac{\text{distance}}{\text{speed}}$$
+
+Units are handled automatically via SymPy:
+
+```{python}
+# Set conduction speed (with units)
+net.conduction_speed = Parameter(name="v", value=3.0, unit="mm/ms")
+
+# Compute delays (uses network's time_unit by default)
+delays = net.calculate_delays()
+print(f"Delays (ms):\n{np.round(delays, 2)}")
+```
+
+### 1.2 Mixed Units
+
+TVBO correctly handles mixed units. The conduction speed unit doesn't need to match the network's distance/time units:
+
+```{python}
+# Speed in m/s, distances in mm, output in ms
+net.conduction_speed = Parameter(name="v", value=3.0, unit="m/s")
+delays = net.calculate_delays()
+print(f"With speed in m/s:\n{np.round(delays, 2)}")
+```
+
+```{python}
+# Override output unit
+delays_seconds = net.calculate_delays(output_unit="s")
+print(f"Delays in seconds:\n{delays_seconds}")
+```
+
+### 1.3 Custom Network Units
+
+Create networks with non-default units:
+
+```{python}
+# Network with distances in meters and time in seconds
+net_si = Network.from_matrix(
+    W,
+    lengths=L / 1000,  # Convert mm to m
+    distance_unit="m",
+    time_unit="s"
+)
+net_si.conduction_speed = Parameter(name="v", value=3.0, unit="m/s")
+
+delays_si = net_si.calculate_delays()
+print(f"SI units - delays in seconds:\n{delays_si}")
+```
+
+### 1.4 Supported Units
+
+Any unit recognized by SymPy can be used:
+
+| Category | Examples |
+|----------|----------|
+| Length | `mm`, `m`, `cm`, `km`, `um` (micrometer) |
+| Time | `ms`, `s`, `us` (microsecond), `minute`, `hour` |
+| Speed | `m/s`, `mm/ms`, `km/hour`, etc. |
+
+```{python}
+# Example: centimeters and microseconds
+net_micro = Network.from_matrix(
+    W,
+    lengths=L * 10,  # mm to 0.1mm scale
+    distance_unit="cm",
+    time_unit="us"
+)
+net_micro.conduction_speed = Parameter(name="v", value=3000.0, unit="m/s")
+
+delays_us = net_micro.calculate_delays()
+print(f"Delays in microseconds:\n{np.round(delays_us, 2)}")
+```
+
+### 1.5 Edge-Level Parameters with Units
+
+Individual edges can have parameters with units via the `parameters` slot:
+
+```{python}
+from tvbo.datamodel import Edge, Node
+
+# Create network with explicit edges
+nodes = [
+    Node(id=0, label="A"),
+    Node(id=1, label="B"),
+    Node(id=2, label="C"),
+]
+
+edges = [
+    Edge(
+        source=0, target=1,
+        parameters=[
+            Parameter(name="weight", value=0.5),
+            Parameter(name="distance", value=50.0, unit="mm"),
+            Parameter(name="delay", value=16.67, unit="ms"),
+        ]
+    ),
+    Edge(
+        source=1, target=2,
+        parameters=[
+            Parameter(name="weight", value=0.8),
+            Parameter(name="distance", value=30.0, unit="mm"),
+        ]
+    ),
+]
+
+net_explicit = Network(nodes=nodes, edges=edges)
+print(f"Number of edges: {len(net_explicit.edges)}")
+
+# Access edge parameters
+for edge in net_explicit.edges:
+    print(f"  Edge {edge.source}→{edge.target}:")
+    for p in edge.parameters.values():
+        unit_str = f" {p.unit}" if p.unit else ""
+        print(f"    {p.name}: {p.value}{unit_str}")
+```
+
+---
+
+## 2. Integrator Units
+
+The integrator sets its time unit with `time_unit` — the same spelling the network uses. One `step_size`, one `duration`, and one `transient_time` are all read in that unit.
+
+Leaving it unset means *undeclared*, not `ms`: the slot stays `None` so that an integrator can inherit the unit declared one scope out. `time_unit_of` is the single reader that resolves a scope's declaration, falling back to `ms` only when nothing anywhere declared one.
+
+```{python}
+from tvbo.datamodel import Integrator
+from tvbo.utils.units import time_unit_of
+
+# Undeclared: the slot is None, and the resolver supplies the ms fallback
+integ_ms = Integrator(method="heun", step_size=0.1, duration=1000.0)
+print(f"Declared: {integ_ms.time_unit} -> resolved: {time_unit_of(integ_ms)}")
+
+# Same run written in seconds
+integ_s = Integrator(
+    method="heun",
+    step_size=0.0001,   # 0.1 ms
+    time_unit="s",      # step_size / duration / transient_time now in seconds
+    duration=1.0,       # 1 second
+)
+print(f"Explicit: {time_unit_of(integ_s)}")
+
+# `time_scale` is accepted as a synonym on input
+integ_alias = Integrator(method="heun", step_size=0.1, time_scale="us")
+print(f"Via time_scale synonym: {time_unit_of(integ_alias)}")
+```
+
+Accepted values are `s`, `ms`, and `us` — the [`UnitEnum`](../../datamodel/enums/UnitEnum.qmd) time units. `time_scale` is accepted as a synonym for `time_unit` on input, and `dt` as a synonym for `step_size`; a synonym is read back under the canonical name. See [Integrators](../Integrators/index.qmd) for methods, noise, and coupling-stage options.
+
+Keep the integrator's `time_unit` consistent with the network's (section 1) unless you deliberately mix scales.
+
+---
+
+## 3. Dynamics Units (Coming Soon)
+
+Time constants and frequencies in dynamics models will be unit-aware:
+
+```python
+# Future API example
+from tvbo.datamodel import Parameter
+
+tau = Parameter(name="tau", value=10.0, unit="ms")  # time constant
+omega = Parameter(name="omega", value=10.0, unit="Hz")  # frequency
+```
+
+---
+
+## 4. Monitor Units (Coming Soon)
+
+Sampling periods and frequencies will support units:
+
+```python
+# Future API example
+from tvbo.datamodel import Monitor
+
+monitor = Monitor(
+    name="BOLD",
+    period=2.0,
+    period_unit="s",  # TR in seconds
+)
+```
+
+---
+
+## Summary
+
+- Set `distance_unit` and `time_unit` on networks to define the unit system
+- `calculate_delays()` automatically converts between units using SymPy
+- Set the integrator's `time_unit` (`s` / `ms` / `us`) to choose the time unit for `step_size`, `duration`, and `transient_time`
+- Edge and model parameters can include a `unit` for documentation and validation
+- Any SymPy-recognized unit string works (no hardcoded mappings)

@@ -1,0 +1,64 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class HenonHeiles(AbstractDynamics):
+    """HenonHeiles neural mass model."""
+
+    STATE_NAMES = ("x", "y", "px", "py")
+    INITIAL_STATE = (0.0, -0.25, 0.42081, 0.0)
+    AUXILIARY_NAMES = ("H",)
+
+    DEFAULT_PARAMS = Bunch()
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+
+        x = state[0]
+        y = state[1]
+        px = state[2]
+        py = state[3]
+
+        H = 0.5 * (px**2 + py**2) + 0.5 * (x**2 + y**2) + x**2 * y - y**3 / 3
+
+        dx_dt = px
+        dy_dt = py
+        dpx_dt = -x - 2 * x * y
+        dpy_dt = -y - (x**2 - y**2)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dpx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dpy_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(H), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

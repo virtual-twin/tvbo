@@ -1,5 +1,5 @@
 name: Epileptor3DStefanescuMcDonald
-iri: tvbo:Epileptor3DStefanescuMcDonald
+iri: tvbo:models/Epileptor3DStefanescuMcDonald
 model_type: neural_mass
 description: >-
   Stefanescu-McDonald reduced 3D Epileptor variant migrated as a placeholder

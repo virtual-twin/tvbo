@@ -1,6 +1,18 @@
 {
   "_type": "tvbo:Integrator",
   "properties": {
+    "method": {
+      "type": "string"
+    },
+    "abs_tol": {
+      "type": "number"
+    },
+    "rel_tol": {
+      "type": "number"
+    },
+    "step_size": {
+      "type": "number"
+    },
     "time_scale": {
       "type": "string"
     },
@@ -20,12 +32,6 @@
     },
     "description": {
       "type": "string"
-    },
-    "method": {
-      "type": "string"
-    },
-    "step_size": {
-      "type": "number"
     },
     "steps": {
       "type": "integer"
@@ -72,6 +78,9 @@
       "_embeddedTypes": [
         "tvbo:Differentiation"
       ]
+    },
+    "coupling_evaluation": {
+      "type": "string"
     }
   }
 }

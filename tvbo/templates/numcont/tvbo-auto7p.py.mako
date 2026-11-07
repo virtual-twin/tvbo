@@ -1,28 +1,13 @@
 <%
-import re
-from tvbo.codegen.code import render_equation as render_eq
-from tvbo.classes.equation import _clash1
 model = context['model']
-params = model.parameters.values()
+replace = context['replace']
+coupling_zero = context['coupling_zero']
 
-# Collect all symbol names so the parser recognizes them as Symbols
-sv_names = list(model.state_variables.keys())
-param_names = list(model.parameters.keys())
-ct_names = list(model.coupling_terms.keys()) if model.coupling_terms else []
-dv_names = list(model.derived_variables.keys()) if model.derived_variables else []
-dp_names = list(model.derived_parameters.keys()) if model.derived_parameters else []
-all_symbols = sv_names + param_names + ct_names + dv_names + dp_names
-
-# For single-node bifurcation analysis, all coupling inputs must be zeroed
-# out (they are otherwise undeclared Fortran identifiers). Use coupling_inputs
-# (canonical) and fall back to coupling_terms (deprecated) for old models.
-ci_names = list(model.coupling_inputs.keys()) if model.coupling_inputs else []
-coupling_zero = list({*ci_names, *ct_names})
-
-replace = {
-    p.name: (p.name + 'low' if p.name[0].islower() and p.name in [n.name.lower() for n in params if n.name != p.name] else p.name)
-    for p in params
-}
+# Fortran has no closures, so model functions such as Sigm are inlined into every right-hand side.
+render_eq = lambda obj: model.render_equation(obj, format='fortran', inline_functions=True, replace=replace, remove=coupling_zero)
+jacobian = context['jacobian']
+from tvbo.codegen.code import render_equation
+render_entry = lambda expr: render_equation(expr, format='fortran', replace=replace)
 %>
 SUBROUTINE FUNC(NDIM, U, ICP, PAR, IJAC, F, DFDU, DFDP)
 
@@ -30,13 +15,13 @@ SUBROUTINE FUNC(NDIM, U, ICP, PAR, IJAC, F, DFDU, DFDP)
 
     INTEGER NDIM, IJAC, ICP(*)
     DOUBLE PRECISION U(NDIM), PAR(*), F(NDIM), DFDU(*), DFDP(*)
-    DOUBLE PRECISION ${",".join([sv.name for sv in model.state_variables.values()])}
+    DOUBLE PRECISION ${",".join([replace[sv.name] for sv in model.state_variables.values()])}
     DOUBLE PRECISION ${", ".join([f"{replace[p.name]}" for p in model.parameters.values()])}
 % if model.derived_parameters:
-    DOUBLE PRECISION ${", ".join([f"{dp.name}" for dp in model.derived_parameters.values()])}
+    DOUBLE PRECISION ${", ".join([replace[dp.name] for dp in model.in_dependency_order('derived_parameters').values()])}
 % endif
 % if model.derived_variables:
-    DOUBLE PRECISION ${", ".join([f"{k}" for k in model.derived_variables.keys()])}
+    DOUBLE PRECISION ${", ".join([replace[k] for k in model.in_dependency_order('derived_variables').keys()])}
 % endif
 
     % for i, p in enumerate(model.parameters.values()):
@@ -44,24 +29,33 @@ SUBROUTINE FUNC(NDIM, U, ICP, PAR, IJAC, F, DFDU, DFDP)
     % endfor
 
 % if model.derived_parameters:
-    % for dp in model.derived_parameters.values():
-    ${dp.name} = ${render_eq(dp.equation, format='fortran', replace=replace, parameters=all_symbols)}
+    % for dp in model.in_dependency_order('derived_parameters').values():
+    ${replace[dp.name]} = ${render_eq(dp)}
     % endfor
 % endif
 
     % for i, sv in enumerate(model.state_variables.values()):
-    ${sv.name} = U(${i+1})
+    ${replace[sv.name]} = U(${i+1})
     % endfor
 
 % if model.derived_variables:
-    % for k,v in model.derived_variables.items():
-    ${k} = ${render_eq(v.equation, user_functions={f:f for f in model.functions.keys()}, format='fortran', replace=replace, parameters=all_symbols, remove=coupling_zero)}
+    % for k,v in model.in_dependency_order('derived_variables').items():
+    ${replace[k]} = ${render_eq(v)}
     % endfor
 % endif
 
     % for i, sv in enumerate(model.state_variables.values()):
-    F(${i+1}) = ${render_eq(sv.equation, user_functions={f:f for f in model.functions.keys()}, format='fortran', replace=replace, parameters=all_symbols, remove=coupling_zero)}
+    F(${i+1}) = ${render_eq(sv)}
     % endfor
+% if jacobian:
+
+    IF (IJAC == 0) RETURN
+
+    DFDU(1:NDIM*NDIM) = 0.0d0
+    % for (i, j), entry in jacobian.items():
+    DFDU(${i+1} + ${j}*NDIM) = ${render_entry(entry)}
+    % endfor
+% endif
 
 END SUBROUTINE FUNC
 

@@ -8,45 +8,37 @@ https://github.com/netneurolab/hansen_receptors/tree/main/data/schaefer
 Available matrices
 ------------------
 Only scale-100 (100×100) SC and FC matrices are distributed with the paper.
-Coordinate files exist for 100, 200, and 400 parcels but SC/FC connectomes
-are only provided at scale-100.
+Coordinate files exist for 100, 200, and 400 parcels but SC/FC connectomes are only provided at scale-100.
 
 SC reconstruction
 -----------------
-DWI pre-processed with MRtrix3. Fiber orientation distributions from
-multi-shell multi-tissue constrained spherical deconvolution (MSMT-CSD).
+DWI pre-processed with MRtrix3. Fiber orientation distributions from multi-shell multi-tissue constrained spherical deconvolution (MSMT-CSD).
 Probabilistic streamline tractography + SIFT2 weight optimization.
-Group-consensus binary network preserving density and edge-length
-distributions of individual connectomes. Edge weights: mean log-transformed
-streamline count of non-zero edges across participants, scaled to [0, 1].
+Group-consensus binary network preserving density and edge-length distributions of individual connectomes. Edge weights: mean log-transformed streamline count of non-zero edges across participants, scaled to [0, 1].
 
 FC reconstruction
 -----------------
-HCP 3T resting-state fMRI pre-processed with HCP pipeline (gradient
-non-linearity correction, head-motion correction, distortion correction,
-ICA-FIX denoising). Time series parcellated to Schaefer parcels.
-FC = Pearson correlation between pairs of regional time series, averaged
-across all participants and scans.
+HCP 3T resting-state fMRI pre-processed with HCP pipeline (gradient non-linearity correction, head-motion correction, distortion correction, ICA-FIX denoising). Time series parcellated to Schaefer parcels.
+FC = Pearson correlation between pairs of regional time series, averaged across all participants and scans.
 
 Reference
 ---------
-Hansen JY, Shafiei G, Markello RD, Smart K, Cox SML, Wu Y, Diez I,
-Schirner M, Wirsich J, Bhatt DL, Misic B. (2022). Mapping neurotransmitter
-systems to the structural and functional organization of the human neocortex.
+Hansen JY, Shafiei G, Markello RD, Smart K, Cox SML, Wu Y, Diez I, Schirner M, Wirsich J, Bhatt DL, Misic B. (2022). Mapping neurotransmitter systems to the structural and functional organization of the human neocortex.
 Nature Neuroscience, 25, 1569–1581.
 https://doi.org/10.1038/s41593-022-01186-3
 """
 
-import numpy as np
-import h5py
-import yaml
 from datetime import date
 from pathlib import Path
+
+import h5py
+import numpy as np
+import yaml
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
 HANSEN_DIR = Path("/Users/leonmartin_bih/work_data/toolboxes/hansen_receptors/data/schaefer")
-ATLAS_DIR = Path("/Users/leonmartin_bih/tools/tvbo/tvbo/data/tvbo_data/atlas")
+ATLAS_DIR = Path("/Users/leonmartin_bih/tools/tvbo/tvbo/database/atlases")
 OUT_DIR = Path("/Users/leonmartin_bih/tools/tvbo/tvbo/database/networks")
 
 # ── Provenance strings (verbatim, schema-compliant) ────────────────────────────
@@ -148,7 +140,6 @@ def build_parent_index(labels):
 
 def create_network(seg="7Networks", scale=100):
     """Build and write the SC+FC multi-graph network."""
-
     # --- load labels / atlas centers (authoritative CBIG order) ---
     labels, atlas_centers = load_atlas_entities(seg, scale)
     n = len(labels)

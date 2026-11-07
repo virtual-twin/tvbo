@@ -1,0 +1,41 @@
+function LarterBreakspear!(dx, x, p, t = 0)
+
+    (;C, I_ext, Q_Vmax, Q_Zmax, T_Ca, T_K, T_Na, V_Ca, V_K, V_L, V_Na, V_T, Z_T, a_ee, a_ei, a_ie, a_ne, a_ni, b, delta_Ca, delta_K, delta_Na, delta_V, delta_Z, g_Ca, g_K, g_L, g_Na, phi, r_NMDA, t_scale, tau_K, c_glob, local_coupling) = p
+
+    V, W, Z = x
+
+
+    Q_V = 0.5 * Q_Vmax .* (1 .+ tanh((V .- V_T) ./ delta_V))
+    Q_Z = 0.5 * Q_Zmax .* (1 .+ tanh((Z .- Z_T) ./ delta_Z))
+    m_Ca = 0.5 .+ 0.5 * tanh((V .- T_Ca) ./ delta_Ca)
+    m_K = 0.5 .+ 0.5 * tanh((V .- T_K) ./ delta_K)
+    m_Na = 0.5 .+ 0.5 * tanh((V .- T_Na) ./ delta_Na)
+    lc_0 = Q_V .* local_coupling
+
+    dx[1] = t_scale .* (I_ext .* a_ne .- g_L .* (V .- V_L) .- (V .- V_Na) .* (g_Na .* m_Na .+ C .* a_ee .* c_glob .+ a_ee .* (1.0 .- C) .* (Q_V .+ lc_0)) .+ m_Ca .* (V .- V_Ca) .* (-g_Ca .- C .* a_ee .* c_glob .* r_NMDA .- a_ee .* r_NMDA .* (1.0 .- C) .* (Q_V .+ lc_0)) .- Q_Z .* Z .* a_ie .- W .* g_K .* (V .- V_K))
+    dx[2] = phi .* t_scale .* (m_K .- W) ./ tau_K
+    dx[3] = b .* t_scale .* (I_ext .* a_ni .+ Q_V .* V .* a_ei)
+    dx
+end
+
+# Parameter values
+p = (C = 0.1, I_ext = 0.3, Q_Vmax = 1.0, Q_Zmax = 1.0, T_Ca = -0.01, T_K = 0.0, T_Na = 0.3, V_Ca = 1.0, V_K = -0.7, V_L = -0.5, V_Na = 0.53, V_T = 0.0, Z_T = 0.0, a_ee = 0.4, a_ei = 2.0, a_ie = 2.0, a_ne = 1.0, a_ni = 0.4, b = 0.1, delta_Ca = 0.15, delta_K = 0.3, delta_Na = 0.15, delta_V = 0.65, delta_Z = 0.7, g_Ca = 1.1, g_K = 2.0, g_L = 0.5, g_Na = 6.7, phi = 0.7, r_NMDA = 0.25, t_scale = 1.0, tau_K = 1.0, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(LarterBreakspear!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

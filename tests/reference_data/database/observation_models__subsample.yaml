@@ -1,0 +1,31 @@
+name: SubSample
+label: Temporal Decimation
+description: Temporal decimation of selected state variables. Records every N-th integration
+  step without any averaging or smoothing.
+period: 0.9765625
+reconcile: by_label
+pipeline:
+- equation:
+    parameters:
+      step:
+        name: step
+        description: Integration steps between recorded samples, so the decimation
+          tracks the grid the experiment declares rather than the one this file was
+          written on.
+        equation:
+          rhs: iround(period / dt)
+          latex: false
+    rhs: subsample(X, step)
+    latex: false
+  name: subsample
+  output: subsampled
+  apply_on_dimension: time
+  arguments:
+    step:
+      name: step
+      description: Decimation factor. Its value is declared on the equation parameter
+        of the same name; a backend that has not yet been migrated to read that still
+        derives it here.
+class_reference:
+  name: SubSample
+  module: tvb.simulator.monitors

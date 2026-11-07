@@ -1,3 +1,6 @@
+<%!
+from tvbo.utils import initial_value as _initial_value
+%>\
 ## -*- coding: utf-8 -*-
 <%doc>
 Shared fragment: LEMS ComponentType + Coupling + Component instances
@@ -54,6 +57,9 @@ All template variables are injected by the calling template's render context
     <Constant name="SEC" dimension="time" value="1s"/>
 % endif
 % endif
+% if settle_constant:
+    <Constant name="SETTLE" dimension="time" value="${settle_constant}"/>
+% endif
 
     <!-- Exposures (one per state variable) -->
 % for sv_name, sv in svs.items():
@@ -77,7 +83,7 @@ All template variables are injected by the calling template's render context
 % for dv_name, dv in dvs.items():
 <%
   eq = getattr(dv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
   dv_dim = _dim(getattr(dv, 'unit', None))
   pw_cases = _parse_piecewise(rhs) if rhs else None
 %>\
@@ -117,7 +123,7 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if all_dimensioned:
@@ -138,7 +144,7 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs and sv_name not in regime_data['reset_vars']:
 % if all_dimensioned:
@@ -166,7 +172,7 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if all_dimensioned:
@@ -214,22 +220,16 @@ All template variables are injected by the calling template's render context
 % if n_nodes > 1:
   <!-- ════════════════════════════════════════════════════════════════
        Coupling ComponentType
-       Provides pre/post expressions + global coupling parameter.
-       The DerivedVariable ${coupling_output_name} is the coupling input consumed
-       by the dynamics ComponentType's coupling_inputs.
+       Provides the pre/post expressions and the coupling's parameters. The DerivedVariable ${coupling_output_name} is the coupling input consumed by the dynamics ComponentType's coupling_inputs.
        ════════════════════════════════════════════════════════════════ -->
   <ComponentType name="Coupling">
-    <Parameter name="global_coupling" dimension="none"/>
 % for pname, p in coupling_params.items():
-<% pname_str = str(pname) %>\
-% if pname_str != "global_coupling":
-    <Parameter name="${pname_str}" dimension="${_dim(getattr(p, 'unit', None))}"/>
-% endif
+    <Parameter name="${str(pname)}" dimension="${_dim(getattr(p, 'unit', None))}"/>
 % endfor
     <Dynamics>
       <DerivedVariable name="pre"  dimension="none" value="${lems_expr(coupling_pre_rhs)}"/>
-      <DerivedVariable name="gx"   dimension="none" value="global_coupling * pre"/>
-      <DerivedVariable name="post" dimension="none" value="${lems_expr(coupling_post_rhs) if coupling_post_rhs != 'global_coupling * pre' else 'gx'}"/>
+      <DerivedVariable name="gx"   dimension="none" value="pre"/>
+      <DerivedVariable name="post" dimension="none" value="${lems_expr(coupling_post_rhs)}"/>
       <DerivedVariable name="${coupling_output_name}" dimension="none" value="post"/>
     </Dynamics>
   </ComponentType>
@@ -253,19 +253,16 @@ All template variables are injected by the calling template's render context
 % endif
 % endfor
 % for sv_name, sv in svs.items():
-<% iv = getattr(sv, 'initial_value', None) %>\
+<% iv = _initial_value(sv) %>\
 <% sv_unit = lems_sym(getattr(sv, 'unit', None)) %>\
  ${sv_name}_0="${iv if iv is not None else 0.0}${(' ' + sv_unit) if sv_unit else ''}"\
 % endfor
 />
 
 % if n_nodes > 1:
-  <Component id="coupling" type="Coupling" global_coupling="${coupling_global}"\
+  <Component id="coupling" type="Coupling"\
 % for pname, p in coupling_params.items():
-<% pname_str = str(pname) %>\
-% if pname_str != "global_coupling":
- ${pname_str}="${getattr(p, 'value', 0)}"\
-% endif
+ ${str(pname)}="${getattr(p, 'value', 0)}"\
 % endfor
 />
 % endif

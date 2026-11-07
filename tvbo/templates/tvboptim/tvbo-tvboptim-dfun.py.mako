@@ -16,7 +16,10 @@ Output:
 <%
 import textwrap
 from tvbo.codegen import render_expression
-from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout
+from tvbo.codegen.templater import entry_point_name
+from tvbo.templates.base.utils import referenced_parameters, samples_over_time
+from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout, resolve_distribution
+from tvbo.utils import initial_value as _initial_value
 
 # Get model from context
 if 'experiment' in context.keys():
@@ -28,6 +31,11 @@ else:
     _experiment_ctx = None
     model = context['model']
     _exp_functions = {}
+
+# A distribution's own seed overrides execution.random_seed, which defaults to 0.
+_exec_ctx = getattr(_experiment_ctx, 'execution', None)
+_rs = getattr(_exec_ctx, 'random_seed', None) if _exec_ctx is not None else None
+_random_seed = int(_rs) if _rs is not None else 0
 
 # Collect user-defined functions from model.functions and experiment.functions
 # These are functions defined in YAML that need to be recognized by the code printer.
@@ -51,7 +59,7 @@ jaxcode_obj = lambda obj: model.render_equation(obj, format='jax', preserve_orde
 n_modes, state_names, var_slots = get_mode_layout(model)
 var_names = list(model.state_variables.keys())
 _init_value = {
-    sv_name: (float(sv.initial_value) if sv.initial_value is not None else 0.0)
+    sv_name: _initial_value(sv)
     for sv_name, sv in model.state_variables.items()
 }
 initial_state = [_init_value[v] for v in var_names for _ in range(n_modes)]
@@ -62,13 +70,13 @@ initial_state = [_init_value[v] for v in var_names for _ in range(n_modes)]
 #     observing an auxiliary does not require also adding it to model.output).
 # all_aux_names = every derived variable defined by the model (the AUXILIARY_NAMES tuple).
 # requested_aux = subset that the solver should record (extends VARIABLES_OF_INTEREST).
-all_aux_names = list(model.derived_variables.keys()) if model.derived_variables else []
+all_aux_names = list(model.in_dependency_order('derived_variables').keys()) if model.derived_variables else []
 _, requested_aux, recorded_var_names = get_recorded_variable_names(model, _experiment_ctx)
 aux_names = all_aux_names
 
 # Extract parameter info using shared utility
 param_names, param_defaults, param_shapes = get_param_info(model.parameters)
-derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
+derived_param_names = [p.name for p in model.in_dependency_order('derived_parameters').values()] if model.derived_parameters else []
 
 # Detect parameters with distribution.axis == 'time' — these are stochastic
 # time-varying inputs pre-generated as arrays and indexed per integration step.
@@ -81,20 +89,16 @@ if 'experiment' in context.keys():
 else:
     _stoch_dt = 0.001  # fallback for standalone dfun rendering
 _stoch_inv_dt = 1.0 / _stoch_dt
+# The settle a scan of this experiment may run before t = 0, which is where the pre-generated draws start; zero when the dynamics render on their own.
+_stoch_settle = float((context.get('settle') or {}).get('transient_time', 0.0) or 0.0)
 for pname in param_names:
     p_obj = (model.parameters[pname] if pname in model.parameters else None) if model.parameters else None
     if p_obj and getattr(p_obj, 'distribution', None):
         dist = p_obj.distribution
-        axis = str(getattr(dist, 'axis', 'space'))
-        if axis == 'time' or 'time' in axis:
-            domain = getattr(dist, 'domain', None)
-            dist_name = str(getattr(dist, 'name', 'Uniform')).lower()
+        if samples_over_time(dist):
             stochastic_params[pname] = {
-                'dist': dist_name,
-                'lo': float(getattr(domain, 'lo', 0)) if domain else 0.0,
-                'hi': float(getattr(domain, 'hi', 1)) if domain else 1.0,
+                **resolve_distribution(dist, _random_seed),
                 'default': float(p_obj.value) if p_obj.value is not None else 0.0,
-                'seed': int(getattr(dist, 'seed', None) or 42),
                 'shape': str(getattr(p_obj, 'shape', '')) if getattr(p_obj, 'shape', None) else '',
             }
             continue
@@ -123,12 +127,8 @@ if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
         keys = getattr(ci, 'keys', None)
         if keys:
             coupling_keys[ci_name] = list(keys)
-elif hasattr(model, 'coupling_terms') and model.coupling_terms:
-    # Deprecated fallback: use coupling_terms with dimension 1 each
-    for ct_name in model.coupling_terms.keys():
-        coupling_inputs_dict[ct_name] = 1
 
-class_name = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
+class_name = entry_point_name(model, 'tvboptim')
 
 # Build EXTERNAL_INPUTS from experiment.events (stimulus-type events)
 # Each stimulus event name → dimension 1 (scalar signal per node)
@@ -139,6 +139,10 @@ if 'experiment' in context.keys():
         ev_type = str(getattr(ev, 'event_type', 'stimulus'))
         if ('stimul' in ev_type) or (ev_type in ('continuous', 'discrete')):
             external_inputs_dict[str(ev.name)] = 1
+
+# An event named after a model symbol binds that symbol, which is how a drive reaches an equation that already carries an input term (Deco's `I_external`). An event named after a STATE VARIABLE is a current injected into that state, so it is bound under a private name and added to the state's derivative — binding it plainly would rebind the state itself and silently integrate a different model.
+injected_states = {name for name in external_inputs_dict if name in set(var_names)}
+external_local = {name: ('_ext_' + name if name in injected_states else name) for name in external_inputs_dict}
 %>
 
 class ${class_name}(AbstractDynamics):
@@ -189,16 +193,21 @@ class ${class_name}(AbstractDynamics):
         coupling: Bunch,
         external: Bunch,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        % for name in param_names:
+        % for name in referenced_parameters(model, param_names):
         ${name} = params.${name}
         % endfor
         % for sp_name, sp_info in stochastic_params.items():
+        % if _stoch_settle:
+        # ${sp_name} ~ ${sp_info['dist'].capitalize()}(${sp_info['lo']}, ${sp_info['hi']}), one pre-generated array over the settle and the measured window, indexed by step from the settle's start at t = ${-_stoch_settle}; rounded, because a step time on a grid that starts off zero lands a hair under its index about one time in ten
+        ${sp_name} = params._stoch_${sp_name}[jnp.int32(jnp.clip(jnp.round((t + ${_stoch_settle}) * ${_stoch_inv_dt}), 0, params._stoch_${sp_name}.shape[0] - 1))]
+        % else:
         # ${sp_name} ~ ${sp_info['dist'].capitalize()}(${sp_info['lo']}, ${sp_info['hi']}), pre-generated array indexed per step
         ${sp_name} = params._stoch_${sp_name}[jnp.int32(jnp.clip(t * ${_stoch_inv_dt}, 0, params._stoch_${sp_name}.shape[0] - 1))]
+        % endif
         % endfor
 
         % if derived_param_names:
-        % for dp in model.derived_parameters.values():
+        % for dp in model.in_dependency_order('derived_parameters').values():
         ${dp.name} = ${jaxcode_obj(dp)}
         % endfor
         % endif
@@ -228,14 +237,15 @@ class ${class_name}(AbstractDynamics):
         ${key_name} = coupling.${ci_name}[${idx}] if hasattr(coupling, '${ci_name}') else 0.0
         % endfor
         % elif ci_dim == 1:
-        ${ci_name} = coupling.${ci_name}[0] if hasattr(coupling, '${ci_name}') else 0.0
+        ## An unsatisfied coupling input arrives as a scalar, so atleast_1d makes it indexable and is a no-op for a real array.
+        ${ci_name} = jnp.atleast_1d(coupling.${ci_name})[0] if hasattr(coupling, '${ci_name}') else 0.0
         % else:
         ${ci_name} = coupling.${ci_name} if hasattr(coupling, '${ci_name}') else jnp.zeros(${ci_dim})
         % endif
         % endfor
 
         % for ei_name in external_inputs_dict:
-        ${ei_name} = external.${ei_name}[0] if hasattr(external, '${ei_name}') else 0.0
+        ${external_local[ei_name]} = jnp.atleast_1d(external.${ei_name})[0] if hasattr(external, '${ei_name}') else 0.0
         % endfor
 
         % if model.functions:
@@ -249,13 +259,13 @@ ${_fdef}
         % endif
 
         % if model.derived_variables:
-        % for dv in model.derived_variables.values():
+        % for dv in model.in_dependency_order('derived_variables').values():
         ${dv.name} = ${jaxcode_obj(dv)}
         % endfor
         % endif
 
         % for sv in model.state_variables.values():
-        d${sv.name}_dt = ${jaxcode_obj(sv)}
+        d${sv.name}_dt = ${jaxcode_obj(sv)}${' + ' + external_local[sv.name] if sv.name in injected_states else ''}
         % endfor
 
         % if n_modes > 1:

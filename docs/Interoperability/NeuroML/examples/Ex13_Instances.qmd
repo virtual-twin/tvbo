@@ -1,12 +1,14 @@
 ---
 title: "Ex13: Population Instances"
 description: "Instance-based population with explicit cell placement — 3 iafCells, 2 projections, pulse input"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Instance-Based Network
 
-Three iafCell instances with explicit 3D placement. Cell 0 receives a pulse input
-and connects to cells 1 and 2 via two different expOneSynapse connections.
+Three iafCell instances with explicit 3D placement. Cell 0 receives a pulse input and connects to cells 1 and 2 via two different expOneSynapse connections.
 
 Reference: `NML2_InstanceBasedNetwork.nml`
 

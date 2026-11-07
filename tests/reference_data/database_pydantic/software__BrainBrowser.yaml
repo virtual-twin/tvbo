@@ -1,0 +1,35 @@
+name: BrainBrowser
+description: A set of JavaScript visualization tools for rendering brain surfaces,
+  volumes, and connectivity data in the browser using WebGL.
+homepage: https://brainbrowser.cbrain.mcgill.ca
+license: MIT
+repository: https://github.com/aces/brainbrowser
+application_category: visualization
+scale:
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- visualization_tool
+programming_language:
+- JavaScript
+runtime_platform:
+- browser
+- WebGL
+interoperates_with:
+- neuroimaging formats
+date_created: '2012-01-01'
+development_status: inactive
+author:
+- Tarek Bhatt
+- Alan Evans
+maintainer:
+- ACElab, McGill University
+funder:
+- McGill University
+keywords:
+- 3D brain viewer
+- web-based
+- surface
+- volume
+is_accessible_for_free: true

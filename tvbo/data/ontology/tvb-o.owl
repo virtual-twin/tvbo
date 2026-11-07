@@ -47800,7 +47800,7 @@ cluster’s seed vertex.</skos:definition>
         <dc:title>How local excitation-inhibition ratio impacts the whole brain dynamics</dc:title>
         <rdfs:label>DPA_2014</rdfs:label>
         <PMID rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">24899711</PMID>
-        <author>Deco Gustavo, Ponce Alvarez Adrian, Patric Hagmann, Gian Luca Romani, Dante Mantini, and Maurizio Corbetta</author>
+        <author>Deco, Gustavo and Ponce-Alvarez, Adrián and Hagmann, Patric and Romani, Gian Luca and Mantini, Dante and Corbetta, Maurizio</author>
         <doi rdf:resource="https://doi.org/10.1523/jneurosci.5068-13.2014"/>
         <identifier>000214</identifier>
     </owl:NamedIndividual>

@@ -1,0 +1,50 @@
+name: Bug report
+description: Something TVBO does is wrong, or stops working.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Two things make a TVBO bug reproducible: **the recipe** and **the backend**. A traceback without the YAML that produced it usually cannot be acted on.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you got, and what you expected instead.
+      placeholder: |
+        `tvbo run Jansen1995.yaml --experiment exp_3` exits with …
+        I expected the alpha-band peak at ~10 Hz; the output is flat.
+    validations: {required: true}
+  - type: textarea
+    id: recipe
+    attributes:
+      label: Recipe
+      description: The smallest YAML that reproduces it, or a link to it in the database. Trim it as far as it still fails.
+      render: yaml
+    validations: {required: true}
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend
+      options: [tvboptim (JAX), TVB, PyRates, Julia, NetworkDynamics.jl, Brian2, NeuroML, none — this is a CLI or schema bug, other]
+    validations: {required: true}
+  - type: textarea
+    id: output
+    attributes:
+      label: Traceback or output
+      render: text
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: "Paste the output of `tvbo --version` and `python -VV`. Note if you are in a container or on a cluster."
+      render: text
+    validations: {required: true}
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I am on the latest release, or I state the version above.
+          required: true
+        - label: The generated datamodel is current (`pip install -e .` after switching branches regenerates `tvbo/datamodel/`).

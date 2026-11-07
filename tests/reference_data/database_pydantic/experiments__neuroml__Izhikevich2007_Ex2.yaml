@@ -1,0 +1,101 @@
+id: 904
+part: main
+description: 'Reproduces NeuroML2 LEMS canonical example 2, izhikevichCell (2003).
+  Tonic spiking variant simulated for 200ms at 0.005ms step. Uses constant I_ext=14
+  (original has pulseGeneratorDL with 20ms delay).
+
+  '
+label: 'NeuroML Ex2: Izhikevich (tonic spiking)'
+dynamics:
+  name: IzhikevichCell
+  parameters:
+    v0:
+      name: v0
+      value: -70.0
+      description: Initial membrane potential (mV)
+    thresh:
+      name: thresh
+      value: 30.0
+      description: Spike threshold (mV)
+    a:
+      name: a
+      value: 0.02
+      description: Time scale of recovery variable U
+    b:
+      name: b
+      value: 0.2
+      description: Sensitivity of U to subthreshold fluctuations of v
+    c:
+      name: c
+      value: -65.0
+      description: After-spike reset value of v
+    d:
+      name: d
+      value: 6.0
+      description: After-spike increase to U
+    I_ext:
+      name: I_ext
+      value: 14.0
+      description: External input current (dimensionless, from pulseGeneratorDL)
+  description: 'Izhikevich 2003 model matching NeuroML2 izhikevichCell ComponentType.
+    See http://www.izhikevich.org/publications/spikes.htm
+
+    '
+  state_variables:
+    v:
+      name: v
+      equation:
+        rhs: 0.04*v**2 + 5*v + 140 - U + I_ext
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: -70.0
+    U:
+      name: U
+      equation:
+        rhs: a*(b*v - U)
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: -14.0
+  number_of_modes: 1
+  system_type: continuous
+  autonomous: true
+  events:
+    spike:
+      name: spike
+      event_type: stimulus
+      condition:
+        rhs: v > thresh
+        latex: false
+      affect:
+        rhs: v = c; U = U + d
+        latex: false
+      sampling_rate: 1.0
+      interpolation: linear
+  cse: false
+  compile: false
+integration:
+  method: euler
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.005
+  time_unit: ms
+  duration: 200.0
+  transient_time: 0.0
+  block_size: 1000
+  noise_draw: fused
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  graph_representation: auto
+  number_of_nodes: 1
+  distance_unit: mm

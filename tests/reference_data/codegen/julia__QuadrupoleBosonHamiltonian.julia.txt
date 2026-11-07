@@ -1,0 +1,36 @@
+function QuadrupoleBosonHamiltonian!(dx, x, p, t = 0)
+
+    (;A, B, D) = p
+
+    q0, p0, q2, p2 = x
+
+
+    dx[1] = A .* p0
+    dx[2] = -A .* q0 .- D .* q0 .* (q0 .^ 2 .+ q2 .^ 2) .- 3 // 2 * B .* sqrt(2) * (q2 .^ 2 .- q0 .^ 2)
+    dx[3] = A .* p2
+    dx[4] = -q2 .* (A .+ D .* (q0 .^ 2 .+ q2 .^ 2) .+ 3 * B .* q0 .* sqrt(2))
+    dx
+end
+
+# Parameter values
+p = (A = 1.0, B = 0.55, D = 0.4)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.0,
+        -2.5830294658973876,
+        1.3873470962626937,
+        -4.743416490252585,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(QuadrupoleBosonHamiltonian!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

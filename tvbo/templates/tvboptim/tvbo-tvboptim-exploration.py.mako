@@ -13,6 +13,7 @@ Output:
 </%doc>
 <%
 from tvbo.utils import as_list
+from tvbo.templates.tvboptim.utils import normalize_n_parallel
 
 # Get experiment info
 model = experiment.dynamics
@@ -35,7 +36,8 @@ for expl in exploration_list:
         'name': getattr(expl, 'name', 'exploration'),
         'label': getattr(expl, 'label', ''),
         'mode': getattr(expl, 'mode', 'product'),
-        'n_parallel': getattr(expl, 'n_parallel', 8),
+        # 'auto' resolves to min(grid.N, cap) at runtime; an explicit int passes through as tvboptim's n_vmap.
+        'n_parallel': normalize_n_parallel(expl),
         'axes': [],
     }
     axes_list = as_list(getattr(expl, 'space', None))
@@ -64,6 +66,7 @@ import jax.numpy as jnp
 
 from tvboptim.types import Space, GridAxis
 from tvboptim.execution import ParallelExecution
+from tvbo.templates.tvboptim.callbacks import resolve_exploration_n_pmap, resolve_exploration_n_vmap, stack_grid_cells   # n_parallel → vmap width and replica count; grid cells → one stacked pytree
 
 % for expl in explorations:
 <%
@@ -84,11 +87,11 @@ def setup_${expl['name']}_grid(state):
     return Space(grid_state, mode="${expl['mode']}")
 
 
-def run_${expl['name']}_exploration(state, observable_fn, n_pmap: int = ${expl['n_parallel']}):
+def run_${expl['name']}_exploration(state, observable_fn):
     """Run ${expl['name']} parameter exploration."""
     grid = setup_${expl['name']}_grid(state)
-    exec = ParallelExecution(observable_fn, grid, n_pmap=n_pmap)
-    results = exec.run()
-    return grid, jnp.stack(results)
+    _n_vmap = resolve_exploration_n_vmap(${repr(expl['n_parallel'])}, grid.N, observable_fn, state)
+    exec = ParallelExecution(observable_fn, grid, n_pmap=resolve_exploration_n_pmap(grid.N, _n_vmap), n_vmap=_n_vmap)
+    return grid, stack_grid_cells(exec.run())
 
 % endfor

@@ -1,0 +1,117 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class JansenRit(AbstractDynamics):
+    """JansenRit neural mass model."""
+
+    STATE_NAMES = ("y0", "y1", "y2", "y3", "y4", "y5")
+    INITIAL_STATE = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
+    AUXILIARY_NAMES = ("sigma_y0_1", "sigma_y0_3", "sigma_y1_y2")
+
+    DEFAULT_PARAMS = Bunch(
+        A=3.25,
+        B=22.0,
+        J=135.0,
+        a=0.1,
+        a_1=1.0,
+        a_2=0.8,
+        a_3=0.25,
+        a_4=0.25,
+        b=0.05,
+        mu=0.22,
+        nu_max=0.0025,
+        r=0.56,
+        v0=5.52,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+        "local_coupling": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        A = params.A
+        B = params.B
+        J = params.J
+        a = params.a
+        a_1 = params.a_1
+        a_2 = params.a_2
+        a_3 = params.a_3
+        a_4 = params.a_4
+        b = params.b
+        mu = params.mu
+        nu_max = params.nu_max
+        r = params.r
+        v0 = params.v0
+
+        y0 = state[0]
+        y1 = state[1]
+        y2 = state[2]
+        y3 = state[3]
+        y4 = state[4]
+        y5 = state[5]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+        local_coupling = (
+            jnp.atleast_1d(coupling.local_coupling)[0]
+            if hasattr(coupling, "local_coupling")
+            else 0.0
+        )
+
+        sigma_y0_1 = 2.0 * nu_max / (jnp.exp(r * ((-J) * a_1 * y0 + v0)) + 1.0)
+        sigma_y0_3 = 2.0 * nu_max / (jnp.exp(r * ((-J) * a_3 * y0 + v0)) + 1.0)
+        sigma_y1_y2 = 2.0 * nu_max / (jnp.exp(r * (v0 - y1 + y2)) + 1.0)
+
+        dy0_dt = y3
+        dy1_dt = y4
+        dy2_dt = y5
+        dy3_dt = A * a * sigma_y1_y2 - a**2 * y0 - 2.0 * a * y3
+        dy4_dt = (
+            A * a * (J * a_2 * sigma_y0_1 + c_glob + local_coupling * (y1 - y2) + mu)
+            - a**2 * y1
+            - 2.0 * a * y4
+        )
+        dy5_dt = B * J * a_4 * b * sigma_y0_3 - b**2 * y2 - 2.0 * b * y5
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dy0_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dy0_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy2_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy3_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy4_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy5_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(sigma_y0_1), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(sigma_y0_3), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(sigma_y1_y2), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

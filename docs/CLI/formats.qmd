@@ -38,11 +38,13 @@ The following ship with `tvbo` (the registry is populated at first import of `tv
 | `tvboptim` | `.py` | tvboptim Python script (runnable) | alias: `tvb-optim` |
 | `jax` | `.py` | JAX Python script (runnable) | alias: `autodiff` |
 | `pde` | `.py` | PDE-FEM Python script (runnable) | aliases: `pde-fem`, `pde-python` |
+| `brian2` | `.py` | Brian2 Python script (spiking) | alias: `brian` |
 | `julia` | `.jl` | DifferentialEquations.jl script | aliases: `diffeq`, `differentialequations` |
 | `networkdynamics` | `.jl` | NetworkDynamics.jl script | aliases: `nd`, `networkdynamics.jl` |
 | `modelingtoolkit` | `.jl` | ModelingToolkit.jl script | aliases: `mtk`, `modelingtoolkit.jl` |
 | `bifurcationkit` | `.jl` | BifurcationKit.jl script | aliases: `bifurcationkit.jl`, `bifurcation`, `bifurcation-julia` |
-| `pyrates-bifurcation` | `.py` | PyRates / AUTO-07p bifurcation | aliases: `pyrates-bif`, `pycobi`, `auto`, `auto-07p` |
+| `pyrates-bifurcation` | `.py` | PyRates / AUTO-07p bifurcation | aliases: `pyrates-bif`, `pycobi`, `bifurcation-pyrates` |
+| `numcont` | `.f90` | AUTO-07p model (Fortran) | aliases: `auto`, `auto-07p`, `auto07p`, `bifurcation-auto7p`, `bifurcation-numcont` |
 | `rateml` | `.py` | RateML Python (Numba gufunc) | alias: `rateml-python` |
 | `rateml-cuda` | `.c` | RateML CUDA kernel | alias: `cuda` |
 | `rateml-driver` | `.py` | RateML PyCUDA driver | |

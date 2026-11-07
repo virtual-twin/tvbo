@@ -1,16 +1,16 @@
 ---
 title: "NML2: Single-Compartment HH Cell"
 description: "Full NeuroML cell element with morphology, biophysics, and channel populations"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## NML2_SingleCompHHCell.nml
 
-The recommended way to define a HH cell in NeuroML2: using the `<cell>` element
-with explicit morphology (segment), membrane properties (channel densities),
-and intracellular properties.
+The recommended way to define a HH cell in NeuroML2: using the `<cell>` element with explicit morphology (segment), membrane properties (channel densities), and intracellular properties.
 
-This is the canonical example for compatibility with multi-simulator export
-(NEURON, Brian2, NEST) via pyNeuroML.
+This is the canonical example for compatibility with multi-simulator export (NEURON, Brian2, NEST) via pyNeuroML.
 
 ```{python}
 
@@ -33,12 +33,9 @@ for line in text.split('\n'):
 
 ## TVBO Equivalent
 
-See [Ex1_HH.qmd](Ex1_HH.qmd) and [Ex5_DetCell.qmd](Ex5_DetCell.qmd) for the
-equivalent TVBO HH model with numerical comparison.
+See [Ex1_HH.qmd](Ex1_HH.qmd) and [Ex5_DetCell.qmd](Ex5_DetCell.qmd) for the equivalent TVBO HH model with numerical comparison.
 
-The key difference: NeuroML's `<cell>` format separates morphology, channels,
-and biophysics into composable elements. TVBO's `Dynamics` flattens everything
-into a single ODE system.
+The key difference: NeuroML's `<cell>` format separates morphology, channels, and biophysics into composable elements. TVBO's `Dynamics` flattens everything into a single ODE system.
 
 | NeuroML | TVBO |
 |---------|------|

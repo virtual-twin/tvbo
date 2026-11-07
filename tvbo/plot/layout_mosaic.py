@@ -1,10 +1,6 @@
-#
-# Module: layout_mosaic.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Reusable subplot_mosaic helpers for declarative panel layouts."""
 
 from __future__ import annotations
@@ -50,7 +46,7 @@ def prepare_mosaic(layout=None, panels=None, fig=None, axes=None, figsize=None, 
     subplot_kwargs : dict | None
         Forwarded to ``subplot_mosaic`` when axes are created.
 
-    Returns
+    Returns:
     -------
     tuple
         ``(figure, axes_mapping, created_axes)``.

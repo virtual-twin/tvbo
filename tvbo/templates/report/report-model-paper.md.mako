@@ -1,55 +1,23 @@
 <%
-from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
+from sympy import latex, Symbol
 from tvbo.utils import report
 
 derivative_notation = context.get('derivative_notation', 'd')
 
-def _dot_lhs(deriv, mul_symbol='dot'):
-    try:
-        t = Symbol("t")
-        order = sum(1 for v in deriv.variables if v == t)
-        base = deriv.expr
-        base_latex = latex(base, mul_symbol=mul_symbol)
-        if order == 1:
-            return f"\\dot{{{base_latex}}}"
-        if order == 2:
-            return f"\\ddot{{{base_latex}}}"
-        if order == 3:
-            return f"\\dddot{{{base_latex}}}"
-        return f"\\frac{{d^{order}}}{{d t^{order}}} {base_latex}"
-    except Exception:
-        return latex(deriv, mul_symbol=mul_symbol)
-
-def latex_equation(eq, mul_symbol='dot'):
-    if derivative_notation == 'dot' and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
-        lhs = _dot_lhs(eq.lhs, mul_symbol=mul_symbol)
-        rhs = latex(eq.rhs, mul_symbol=mul_symbol)
-        return f"{lhs} = {rhs}"
-    return latex(eq, mul_symbol=mul_symbol)
+def latex_equation(eq):
+    return report.equation_latex(eq, derivative_notation, None, 'dot')
 
 def format_aligned_equations(equations):
-    lines = [latex_equation(eq, mul_symbol='dot').replace('=', '&=') for eq in equations]
+    lines = [latex_equation(eq).replace('=', '&=') for eq in equations]
     joined = ' \\\\\n'.join(lines)
     return f"$$\n\\begin{{aligned}}\n{joined}\n\\end{{aligned}}\n$$"
 
-state_equations = [eq for k, eq in model.get_equations().items() if k in model.state_variables]
-
-derived_variables = [eq for k, eq in model.get_equations().items() if k in model.derived_variables]
-
-if isinstance(model.output, list):
-    output = [eq for k, eq in model.get_equations().items() if k in model.output]
-else:
-    output = [
-        Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-        for p in model.output.values()
-    ]
-
-derived_parameters = [
-    Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.derived_parameters.values()
-]
-
-functions = [Eq(Function(f.name)(*[Symbol(arg) for arg in f.arguments.keys()]), sympify(f.equation.rhs, strict=False)) for f in model.functions.values()]
+_equations = report.model_equation_groups(model)
+state_equations = _equations['state']
+derived_variables = _equations['derived']
+derived_parameters = _equations['derived_parameters']
+functions = _equations['functions']
+output = _equations['output']
 
 rows = "\n".join([
     f"${latex(Symbol(p.name))}$ & {p.value} & {p.unit if p.unit else '1'} & {p.definition or p.description} \\\\"

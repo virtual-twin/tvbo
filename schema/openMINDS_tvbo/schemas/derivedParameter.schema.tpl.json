@@ -5,8 +5,30 @@
       "type": "string",
       "_instruction": "Enter the name."
     },
+    "label": {
+      "type": "string"
+    },
     "symbol": {
       "type": "string"
+    },
+    "definition": {
+      "type": "string"
+    },
+    "value": {
+      "_linkedTypes": [
+        "tvbo:ScalarValue"
+      ]
+    },
+    "default": {
+      "type": "string"
+    },
+    "domain": {
+      "_linkedTypes": [
+        "tvbo:Range"
+      ]
+    },
+    "reported_optimum": {
+      "type": "number"
     },
     "description": {
       "type": "string"
@@ -18,6 +40,67 @@
     },
     "unit": {
       "type": "string"
+    },
+    "grounding": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "comment": {
+      "type": "string"
+    },
+    "heterogeneous": {
+      "type": "boolean"
+    },
+    "distribution": {
+      "_embeddedTypes": [
+        "tvbo:Distribution"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "measure": {
+      "type": "string"
+    },
+    "producer": {
+      "_embeddedTypes": [
+        "tvbo:FunctionCall"
+      ]
+    },
+    "used": {
+      "type": "string"
+    },
+    "free": {
+      "type": "boolean"
+    },
+    "shape": {
+      "type": "string"
+    },
+    "explored_values": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "number"
+      }
+    },
+    "element_domains": {
+      "_embeddedTypes": [
+        "tvbo:Range"
+      ],
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "datatype": {
+      "type": "string"
+    },
+    "required": {
+      "type": "boolean"
     }
   }
 }

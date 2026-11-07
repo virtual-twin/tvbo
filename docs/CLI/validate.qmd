@@ -78,5 +78,5 @@ tvbo validate omex ./bundle.omex
 
 ## See also
 
-- [`tvbo info`](info.qmd) — inspect without validating
+- [`tvbo info`](info.qmd): inspect without validating
 - [Standards roadmap](../Interoperability/index.qmd)

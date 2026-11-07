@@ -58,14 +58,6 @@
       "minItems": 1,
       "uniqueItems": true
     },
-    "coupling_terms": {
-      "_embeddedTypes": [
-        "tvbo:Parameter"
-      ],
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true
-    },
     "coupling_inputs": {
       "_embeddedTypes": [
         "tvbo:CouplingInput"

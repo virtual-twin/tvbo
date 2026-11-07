@@ -47,10 +47,14 @@ The code generation pipeline:
 
 1. **YAML → Python objects**: `SimulationExperiment.from_file()` parses the YAML into `Dynamics`, `Coupling`, `Network`, and `Integrator` instances
 2. **[Mako](https://www.makotemplates.org/) templates**: The `networkdynamics` format uses three composable templates:
-   - `tvbo-nd-vertex.jl.mako` — generates the vertex function `f!` and `VertexModel`
-   - `tvbo-nd-edge.jl.mako` — generates the edge function `g!` and `EdgeModel`
-   - `tvbo-nd-experiment.jl.mako` — orchestrates the full script (imports, graph, solve, plot)
+   - `tvbo-nd-vertex.jl.mako`: generates the vertex function `f!` and `VertexModel`
+   - `tvbo-nd-edge.jl.mako`: generates the edge function `g!` and `EdgeModel`
+   - `tvbo-nd-experiment.jl.mako`: orchestrates the full script (imports, graph, solve, plot)
 3. **Symbolic rendering**: Equations from the YAML are rendered to Julia syntax via `JuliaPrinter`
+
+Node *i* receives `post(sum_j w_ij * pre(x_i, x_j))`, the coupling every tvbo backend integrates. Each edge `j → i` evaluates the pre-expression over the states the coupling transmits and multiplies it by its connectome weight, which sits on an edge parameter `w`, or `weight` where the coupling declares a `w` of its own, so a declared `w` keeps its declared value inside the pre-expression. The vertex applies the post-expression once, to the sum of its incoming edges. Names in the expressions resolve as on the other backends: `x_j[k]` is the source's `k`-th transmitted state, `<state>_j` and `<state>_i` a named state of the source and target, and the whole expression `local_states` or `incoming_states` the one state the coupling declares, read at the source.
+
+The examples declare `coupling_evaluation: per_stage`, the scheme the tutorials integrate. Under the schema's default, `per_step`, a multi-stage method holds each vertex's summed input across the stages of a step: the vertex reads it off `held_*` parameters that a callback sets at the start of every step, as TVB and tvboptim's native solvers hold the coupling. A fixpoint search (`execution.find_fixpoint`) needs `per_stage`. See [Coupling across integrator stages](../../2-specify/Integrators/index.qmd#coupling-across-integrator-stages).
 
 For standalone (non-network) systems, see the [ModelingToolkit.jl backend](../ModelingToolkit.jl/index.qmd).
 
@@ -102,7 +106,7 @@ end
 
 ## GraphGenerator
 
-Networks can be constructed from a `graph_generator` specification instead of explicit edge lists or matrix files. The `GraphGenerator` schema maps to backend-specific graph constructors (Graphs.jl for Julia, NetworkX for Python).
+Networks can be constructed from a `graph_generator` specification instead of explicit edge lists or matrix files. A curated library generator is built in Python, by the `networkx` binding its entry declares, drawn with the generator's `seed` (0 where it gives none), and reaches NetworkDynamics.jl as the edges of that graph, so the script integrates a graph Python chose and can name edge by edge. The script calls no Graphs.jl generator: a random generator's draw is networkx's, which is not the graph Graphs.jl draws from the same parameters, so the diffusion examples integrate another Barabási–Albert graph than the tutorial's `barabasi_albert(20, 4; seed=1)`.
 
 ### Schema
 
@@ -116,19 +120,20 @@ network:
       k: { name: k, value: 4 }
 ```
 
-The `type` field is a free string; values from `StandardGraphType` get automatic backend mapping. The number of nodes is always taken from `network.number_of_nodes`.
+The `type` names a curated generator entry. The number of nodes is always taken from `network.number_of_nodes`. Every edge of the generated graph has weight 1, and an undirected graph is both directions of each edge, whose two directions an edge event trips together.
 
 ### Supported Graph Types
 
-| Type | Julia (Graphs.jl) | Parameters | Description |
+| Type | Python (networkx) | Parameters | Description |
 |------|-------------------|------------|-------------|
-| `BarabasiAlbert` | `barabasi_albert(n, k)` | `k` (edges per new node) | Scale-free network |
-| `WattsStrogatz` | `watts_strogatz(n, k, p)` | `k` (neighbors), `p` (rewiring prob.) | Small-world network |
-| `ErdosRenyi` | `erdos_renyi(n, p)` | `p` (edge probability) | Random graph |
+| `BarabasiAlbert` | `barabasi_albert_graph(n, k)` | `k` (edges per new node) | Scale-free network |
+| `WattsStrogatz` | `watts_strogatz_graph(n, k, p)` | `k` (neighbors), `p` (rewiring prob.) | Small-world network |
+| `ErdosRenyi` | `erdos_renyi_graph(n, p)` | `p` (edge probability), or `density_from` (a network whose connection density is `p`) | Random graph |
 | `Complete` | `complete_graph(n)` | — | Fully connected |
 | `Cycle` | `cycle_graph(n)` | — | Ring |
-| `Star` | `star_graph(n)` | — | Hub-and-spoke |
-| `RandomRegular` | `random_regular_graph(n, k)` | `k` (degree) | Regular random graph |
+| `RandomRegular` | `random_regular_graph(k, n)` | `k` (degree) | Regular random graph |
+
+`Star` is refused: its binding, `star_graph(n)`, builds a hub and `n` leaves, one node more than the network declares.
 
 ### Alternative: Edge Matrix Files
 
@@ -141,7 +146,7 @@ network:
     - Norm_G_DTI.txt
 ```
 
-This loads the matrix via `readdlm()` and constructs a `SimpleWeightedDiGraph` with per-edge weights.
+The matrix is read when the network loads, target-by-source like every tvbo connectome matrix (`W[i, j]` is the edge j → i), and reaches NetworkDynamics.jl as the edges of a `SimpleDiGraph` with their weights. A file written row = source, the way Graphs.jl reads it, declares a `transpose` weight transform, as the FitzHugh–Nagumo example does.
 
 ## Graph Results and Animation
 
@@ -178,9 +183,11 @@ ani.save("diffusion.gif", writer="pillow", fps=20)
 | `dynamics.parameters` | `psym = [:a => 0.5, ...]` | vertex |
 | `network.coupling.*.pre_expression` | `g!(e_dst, v_src, v_dst, p, t)` | edge |
 | `network.coupling.*.parameters` | `psym = [:K => 3.0, ...]` | edge |
-| `network.edges` | `SimpleDiGraph` / `complete_graph` | experiment |
+| `network.edges`, `graph_generator`, a weight matrix | `SimpleDiGraph`, from its listed edges or the weight matrix's nonzero entries | experiment |
 | `integration` | `ODEProblem` + `solve(prob, Tsit5())` | experiment |
+| `integration` with noise on a state variable | `SDEProblem` + `solve(prob, EM())` for Euler, `EulerHeun()` for Heun, or a StochasticDiffEq.jl solver the recipe names; any other canonical method is refused | experiment |
+| `integration.coupling_evaluation: per_step` | `held_*` vertex parameters, set by a `DiscreteCallback` | vertex, experiment |
 
 ::: {.callout-tip}
-The distribution-based IC and parameter sampling described above is specific to the NetworkDynamics.jl (Julia) backend. For the Python/tvboptim backend, see [Initial Conditions & Initial State](../../Usage/InitialConditions.qmd) — which covers `state:` per-node overrides, `Exploration(n_trials=N)` sampling, and transient warm-up.
+The distribution-based IC and parameter sampling described above is specific to the NetworkDynamics.jl (Julia) backend. For the Python/tvboptim backend, see [Initial Conditions & Initial State](../../2-specify/Models/InitialConditions.qmd) — which covers `state:` per-node overrides, `Exploration(n_trials=N)` sampling, and transient warm-up.
 :::

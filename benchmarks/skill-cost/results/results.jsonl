@@ -1,0 +1,1 @@
+{"harness": "claude", "model": "sonnet", "condition": "explicit", "rep": 0, "success": true, "processed_tokens": 183372, "output_tokens": 960, "tool_calls": 4, "wall_seconds": 32.5, "cost_usd": 0.15372059999999999, "num_turns": 6, "subtype": "success", "detail": "shape=(40960, 2, 3)"}

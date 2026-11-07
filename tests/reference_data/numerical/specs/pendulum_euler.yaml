@@ -1,0 +1,20 @@
+label: pendulum_euler
+description: Deterministic two-state ODE, Euler. Baseline for integrator arithmetic.
+dynamics:
+  name: PendulumSystem
+  parameters:
+    c: {value: 0.001}
+    omega0: {value: 0.01}
+    L: {value: 1.0}
+  state_variables:
+    theta: {initial_value: 1.0, equation: {rhs: omega}}
+    omega: {initial_value: 0.0, equation: {rhs: -c*omega - omega0**2 * sin(theta)}}
+  derived_variables:
+    x: {equation: {rhs: L * sin(theta)}}
+  output: [theta, omega, x]
+integration:
+  method: Euler
+  step_size: 0.1
+  duration: 50
+execution:
+  random_seed: 0

@@ -1,12 +1,14 @@
 ---
 title: "Ex14: PyNN Cells"
 description: "Full PyNN network — 7 cell types, 4 targets, 2 spike sources, 4 projections"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: PyNN Cell Types Network
 
-NeuroML2 includes PyNN-compatible cell types.  This example creates the full
-`netAll` network from LEMS_NML2_Ex14_PyNN.xml:
+NeuroML2 includes PyNN-compatible cell types.  This example creates the full `netAll` network from LEMS_NML2_Ex14_PyNN.xml:
 
 - 7 PyNN cell populations (IF_curr_alpha, IF_curr_exp, IF_cond_alpha,
   IF_cond_exp, EIF_cond_exp_isfa_ista, EIF_cond_alpha_isfa_ista, HH_cond_exp)

@@ -1,0 +1,53 @@
+name: Brian2
+description: A simulator for spiking neural networks. Equations are specified in standard
+  mathematical notation, and Brian2 automatically generates efficient C++ code for
+  numerical integration.
+homepage: https://brian2.readthedocs.io
+license: CeCILL-2.1
+repository: https://github.com/brian-team/brian2
+doi: 10.7554/eLife.47314
+ecosystem:
+- pypi
+application_category: simulation
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+tool_role:
+- simulator
+programming_language:
+- Python
+- C++
+runtime_platform:
+- C++ standalone
+- Python
+- OpenMP
+interoperates_with:
+- PyNN
+- NeuroML
+- Brian2GeNN
+date_created: '2014-01-01'
+development_status: active
+author:
+- Marcel Stimberg
+- Dan Goodman
+- Romain Brette
+maintainer:
+- Marcel Stimberg
+- Dan Goodman
+funder:
+- ANR
+- CNRS
+reference_publication: 10.7554/eLife.47314
+keywords:
+- spiking neural network
+- equation-based
+- code generation
+- C++ standalone
+same_as:
+- https://www.wikidata.org/entity/Q19845440
+- https://scicrunch.org/resolver/RRID:SCR_002998
+issue_tracker: https://github.com/brian-team/brian2/issues
+is_accessible_for_free: true

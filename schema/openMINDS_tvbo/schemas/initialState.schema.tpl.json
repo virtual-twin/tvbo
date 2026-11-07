@@ -23,6 +23,16 @@
     },
     "source_point": {
       "type": "string"
+    },
+    "source_experiment": {
+      "_linkedTypes": [
+        "tvbo:SimulationExperiment"
+      ]
+    },
+    "ramp": {
+      "_embeddedTypes": [
+        "tvbo:ExplorationAxis"
+      ]
     }
   }
 }

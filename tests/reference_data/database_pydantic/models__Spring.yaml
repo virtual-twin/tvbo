@@ -1,0 +1,62 @@
+name: Spring
+parameters:
+  k:
+    name: k
+    value: 0.0001
+    description: Spring stiffness constant
+    unit: N_per_m
+  m:
+    name: m
+    value: 1.0
+    description: Mass of the oscillating body
+    unit: kg
+description: 'A mass $m$ on a spring with stiffness $k$ — a simple linear dynamical
+  system.
+
+  Two state variables $(x, v)$, two parameters $(k, m)$, perpetual oscillation at
+  $\omega = \sqrt{k/m}$.
+
+  '
+derived_parameters:
+  omega:
+    name: omega
+    description: Natural frequency of oscillation
+    equation:
+      lhs: omega
+      rhs: sqrt(k/m)
+      latex: false
+    unit: rad_per_s
+state_variables:
+  x:
+    name: x
+    description: Displacement from equilibrium
+    equation:
+      lhs: Derivative(x, t)
+      rhs: v
+      latex: false
+    unit: m
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 2.0
+  v:
+    name: v
+    description: Velocity
+    equation:
+      lhs: Derivative(v, t)
+      rhs: -omega**2 * x
+      latex: false
+    unit: m_per_s
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

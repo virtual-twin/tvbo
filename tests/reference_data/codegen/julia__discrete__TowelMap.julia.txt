@@ -1,0 +1,34 @@
+function TowelMap!(dx, _x, p, t = 0)
+
+    (;b,) = p
+
+    x, y, z = _x
+
+
+    dx[1] = -(1 .- 2 * z) .* (0.0175 .+ 0.05 * y) .+ 3.8 * x .* (1 .- x)
+    dx[2] = (1 .- 1.9 * x) .* (-0.1 .+ 0.1 * (1 .- 2 * z) .* (0.35 .+ y))
+    dx[3] = b .* y .+ 3.78 * z .* (1 .- z)
+    dx
+end
+
+# Parameter values
+p = (b = 0.2,)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.085,
+        -0.121,
+        0.075,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(TowelMap!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

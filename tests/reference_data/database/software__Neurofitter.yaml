@@ -1,0 +1,33 @@
+name: Neurofitter
+description: A parameter optimization tool for neuroscience models. Uses evolutionary
+  algorithms to fit model parameters to experimental electrophysiology data.
+license: GPL-2.0-only
+repository: https://github.com/ModelDBRepository/64261
+application_category: optimization
+scale:
+- neuron
+- network_system
+model_paradigm:
+- spiking
+tool_role:
+- optimization_framework
+programming_language:
+- C++
+runtime_platform:
+- MPI
+interoperates_with:
+- NEURON
+- GENESIS
+date_created: '2007-01-01'
+development_status: inactive
+author:
+- Werner Van Geit
+- Erik De Schutter
+maintainer:
+- Werner Van Geit
+reference_publication: 10.3389/fninf.2007.00001
+keywords:
+- parameter estimation
+- evolutionary algorithm
+- fitting
+is_accessible_for_free: true

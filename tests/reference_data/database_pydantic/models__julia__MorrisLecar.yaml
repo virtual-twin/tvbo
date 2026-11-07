@@ -1,0 +1,105 @@
+name: MorrisLecar
+parameters:
+  I:
+    name: I
+    value: 0.15
+    description: Applied current I.
+  V3:
+    name: V3
+    value: 0.1
+    description: Half-activation parameter V3.
+  V1:
+    name: V1
+    value: -0.0
+    description: Half-activation parameter V1.
+  V2:
+    name: V2
+    value: 0.15
+    description: Slope factor V2.
+  V4:
+    name: V4
+    value: 0.1
+    description: Slope factor V4.
+  VCa:
+    name: VCa
+    value: 1.0
+    description: Calcium reversal potential.
+  VL:
+    name: VL
+    value: -0.5
+    description: Leak reversal potential.
+  VK:
+    name: VK
+    value: -0.7
+    description: Potassium reversal potential.
+  gCa:
+    name: gCa
+    value: 1.2
+    description: Calcium conductance.
+  gK:
+    name: gK
+    value: 2.0
+    description: Potassium conductance.
+  gL:
+    name: gL
+    value: 0.5
+    description: Leak conductance.
+  tau:
+    name: tau
+    value: 3.0
+    description: Recovery time constant τ.
+description: 'Two-variable conductance-based neuron model capturing excitability via
+  fast
+
+  calcium and slower potassium dynamics; a simplification of Hodgkin-Huxley
+
+  retaining rich bifurcation structure.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- MorrisLecar1981
+derived_variables:
+  M:
+    name: M
+    equation:
+      lhs: M
+      rhs: 0.5*(1 + tanh((V - V1)/V2))
+      latex: false
+    record: false
+  G:
+    name: G
+    equation:
+      lhs: G
+      rhs: 0.5*(1 + tanh((V - V3)/V4))
+      latex: false
+    record: false
+state_variables:
+  V:
+    name: V
+    equation:
+      lhs: Derivative(V, t)
+      rhs: -gCa*M*(V - VCa) - gK*N*(V - VK) - gL*(V - VL) + I
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  N:
+    name: N
+    equation:
+      lhs: Derivative(N, t)
+      rhs: ( -N + G ) / tau
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

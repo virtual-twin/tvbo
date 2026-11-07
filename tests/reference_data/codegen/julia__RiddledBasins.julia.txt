@@ -1,0 +1,36 @@
+function RiddledBasins!(dx, _x, p, t = 0)
+
+    (;gamma, xbar, f0, omega, x0, y0) = p
+
+    x, y, vx, vy = _x
+
+
+    dx[1] = vx
+    dx[2] = vy
+    dx[3] = -y .^ 2 .- gamma .* vx .+ 4 * x .* (1 .- x .^ 2) .+ f0 .* x0 .* sin(omega .* t)
+    dx[4] = -gamma .* vy .- 2 * y .* (x .+ xbar) .+ f0 .* y0 .* sin(omega .* t)
+    dx
+end
+
+# Parameter values
+p = (gamma = 0.05, xbar = 1.9, f0 = 2.3, omega = 3.5, x0 = 1.0, y0 = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.5,
+        0.6,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(RiddledBasins!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

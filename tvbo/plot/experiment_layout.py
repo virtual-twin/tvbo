@@ -1,19 +1,15 @@
-#
-# Module: experiment_layout.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Declarative and auto-configured layout composition for Experiment plotting."""
 
 from __future__ import annotations
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from tvbo.plot.layout_mosaic import prepare_mosaic, finish_panel
 from tvbo.plot.dynamics_layout import render_dynamics_panel
+from tvbo.plot.layout_mosaic import finish_panel, prepare_mosaic
 
 
 def _freeze_config(value):
@@ -44,7 +40,9 @@ def _plot_exploration_timeseries_overlay(exploration, panel, ax):
     axis_info = exploration.axes[0] if exploration.axes else None
     values = None
     if axis_info is not None:
-        values = axis_info.get("explored_values") if isinstance(axis_info, dict) else getattr(axis_info, "explored_values", None)
+        values = (
+            axis_info.get("explored_values") if isinstance(axis_info, dict) else getattr(axis_info, "explored_values", None)
+        )
     if values is None:
         values = np.arange(exploration.results.shape[0])
 
@@ -57,10 +55,21 @@ def _plot_exploration_timeseries_overlay(exploration, panel, ax):
     label_fmt = panel.get("label_fmt", "{value:.2f}")
     component = int(panel.get("component", 0))
 
+    results = exploration.results
+    lead_dim = results.dims[0] if hasattr(results, "dims") and results.dims else None
     for idx, value in enumerate(values):
-        data = np.asarray(exploration.results[idx]).squeeze()
-        if data.ndim > 1:
-            data = data[:, component]
+        # Select the run by its named leading dim (the swept parameter, trial, or flat point) rather than by position, so a change in layout cannot quietly read the wrong slice.
+        if lead_dim:
+            run = results.isel({lead_dim: idx})
+            # Variable is selected by name; do not also index it positionally.
+            if "variable" in run.dims:
+                run = run.isel(variable=component)
+            data = np.asarray(run).squeeze()
+        else:
+            # Unlabelled fallback: variable lives on axis 1, selected positionally.
+            data = np.asarray(results[idx]).squeeze()
+            if data.ndim > 1:
+                data = data[:, component]
         line_kwargs = dict(plot_kwargs)
         line_kwargs.setdefault("alpha", panel.get("alpha", 0.8))
         line_kwargs.setdefault("linewidth", panel.get("lw", 1.0))
@@ -96,10 +105,11 @@ def _auto_experiment_panels(result):
         return chr(ord("a") + len(panels))
 
     has_integration = result.integration is not None
-    ts_explorations = {
-        name: expl for name, expl in result.explorations.items()
-        if getattr(expl, "is_timeseries", False)
-    } if result.explorations else {}
+    ts_explorations = (
+        {name: expl for name, expl in result.explorations.items() if getattr(expl, "is_timeseries", False)}
+        if result.explorations
+        else {}
+    )
     default_voi = None
     if ts_explorations:
         first_exploration = next(iter(ts_explorations.values()))
@@ -146,7 +156,7 @@ def _auto_experiment_panels(result):
             }
 
     if result.explorations:
-        for name, exploration in result.explorations.items():
+        for name in result.explorations:
             if name in ts_explorations:
                 continue
             key = _next_key()

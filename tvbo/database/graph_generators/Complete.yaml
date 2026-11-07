@@ -1,6 +1,6 @@
 name: Complete
 description: "Complete graph K_n — every node connected to every other node."
-iri: tvbo:Complete
+iri: tvbo:graph_generators/Complete
 
 parameters:
   n: { datatype: integer, description: "Number of nodes" }

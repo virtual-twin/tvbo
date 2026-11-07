@@ -1,0 +1,70 @@
+name: Roessler
+parameters:
+  a:
+    name: a
+    value: 0.2
+    description: Linear dissipation parameter in y equation.
+  b:
+    name: b
+    value: 0.2
+    description: Constant drive term in z equation.
+  c:
+    name: c
+    value: 5.7
+    description: Z-scaling parameter setting folding scale.
+description: 'This three-dimensional continuous system is due to Rössler [^Roessler1976].
+  It is a
+
+  system that by design behaves similarly to the Lorenz system and displays a strange
+
+  attractor. However, it is easier to analyze qualitatively, as for example the attractor
+
+  is composed of a single manifold. Default values are the same as the original paper.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- Roessler1976
+state_variables:
+  x:
+    name: x
+    description: First state variable of the Rössler system.
+    equation:
+      lhs: Derivative(x, t)
+      rhs: -y - z
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 1.0
+  y:
+    name: y
+    description: Second state variable.
+    equation:
+      lhs: Derivative(y, t)
+      rhs: x + a*y
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -2.0
+  z:
+    name: z
+    description: Third state variable producing spiral funnel.
+    equation:
+      lhs: Derivative(z, t)
+      rhs: b + z*(x - c)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 1
+model_type: generic
+autonomous: true
+cse: false
+compile: false

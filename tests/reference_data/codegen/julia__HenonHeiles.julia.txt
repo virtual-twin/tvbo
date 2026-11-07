@@ -1,0 +1,38 @@
+function HenonHeiles!(dx, _x, p, t = 0)
+
+    (;) = p
+
+    x, y, px, py = _x
+
+
+    H = -y .^ 3 / 3 .+ 0.5 * px .^ 2 .+ 0.5 * py .^ 2 .+ 0.5 * x .^ 2 .+ 0.5 * y .^ 2 .+ y .* x .^ 2
+
+    dx[1] = px
+    dx[2] = py
+    dx[3] = -x .- 2 * x .* y
+    dx[4] = y .^ 2 .- y .- x .^ 2
+    dx
+end
+
+# Parameter values
+p = ()
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.0,
+        -0.25,
+        0.42081,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(HenonHeiles!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

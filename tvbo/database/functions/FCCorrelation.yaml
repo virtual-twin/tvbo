@@ -1,0 +1,8 @@
+name: FCCorrelation
+label: Functional connectivity agreement
+description: The Pearson correlation between the off-diagonal upper triangles of two functional connectivity matrices, the usual measure of how well a simulated FC matches an empirical one. The diagonal is left out because every correlation matrix carries the same unit diagonal, and the lower triangle because it mirrors the upper, so neither adds agreement.
+arguments:
+  fc1: {description: 'A functional connectivity matrix, nodes by nodes.'}
+  fc2: {description: 'The matrix it is compared with, over the same nodes in the same order.'}
+equation:
+  rhs: pearson(upper_triangle(fc1, 1), upper_triangle(fc2, 1))

@@ -1,5 +1,5 @@
 name: Generic2dOscillator
-iri: tvbo:Generic2dOscillator
+iri: tvbo:models/Generic2dOscillator
 model_type: generic
 parameters:
   I:

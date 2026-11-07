@@ -1,0 +1,13 @@
+<!-- manuscript.qmd — the collection's document. It carries no YAML front matter: the title, format and bibliography live in docs/_quarto.yml. Each section is a file under sections/, so a section can be edited without touching the others and the order is stated in one place. -->
+
+<!-- Every number the prose quotes is read from the results manifest as `{{< meta results.<key> >}}`, which `tvbo run` emits from the `results:` block of the recipe. The seam matters: the manifest is committed, so this document renders in a checkout with no run containers, and a key the run cannot resolve fails the run rather than printing a stale value here. No number below may be typed by hand. -->
+
+{{< include sections/_introduction.qmd >}}
+
+{{< include sections/_methods.qmd >}}
+
+{{< include sections/_results.qmd >}}
+
+{{< include sections/_discussion.qmd >}}
+
+<!-- No References heading: Quarto appends the bibliography from the `@key` citations and the project `bibliography:`. Write mathematics as LaTeX; xelatex drops Unicode. -->

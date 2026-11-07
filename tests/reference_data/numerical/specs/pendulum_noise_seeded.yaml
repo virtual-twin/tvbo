@@ -1,0 +1,24 @@
+label: pendulum_noise_seeded
+description: >-
+  Stochastic integration with a pinned seed. Catches a change in noise sampling,
+  seed threading or solver wrapping that leaves the drift arithmetic untouched.
+dynamics:
+  name: PendulumSystem
+  parameters:
+    c: {value: 0.001}
+    omega0: {value: 0.01}
+    L: {value: 1.0}
+  state_variables:
+    theta: {initial_value: 1.0, equation: {rhs: omega}}
+    omega: {initial_value: 0.0, equation: {rhs: -c*omega - omega0**2 * sin(theta)}}
+  output: [theta, omega]
+integration:
+  method: Heun
+  step_size: 0.1
+  duration: 50
+  noise:
+    additive: true
+    parameters:
+      sigma: {value: 0.01}
+execution:
+  random_seed: 42

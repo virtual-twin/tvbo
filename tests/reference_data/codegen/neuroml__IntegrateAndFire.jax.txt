@@ -1,0 +1,17 @@
+import jax.numpy as jnp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    leakReversal = _p.leakReversal
+    tau = _p.tau
+
+    # State variables
+    v = current_state[0]
+
+    # Derivatives
+    dv_dt = (leakReversal - v) / tau
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dv_dt))
+
+    return derivatives

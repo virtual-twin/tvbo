@@ -1,0 +1,50 @@
+name: HenonMap
+parameters:
+  a:
+    name: a
+    value: 1.4
+    description: Quadratic nonlinearity coefficient a.
+  b:
+    name: b
+    value: 0.3
+    description: Linear contraction coefficient b.
+description: 'The Hénon map is a two-dimensional discrete-time dynamical system exhibiting
+  a strange
+
+  attractor for the default parameters a=1.4, b=0.3. It serves as a simple model for
+
+  chaotic dynamics in smooth invertible maps.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+references:
+- Henon1976
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      rhs: 1 - a*x**2 + y
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y:
+    name: y
+    equation:
+      lhs: y_next
+      rhs: b*x
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: generic
+system_type: discrete
+autonomous: true
+cse: false
+compile: false

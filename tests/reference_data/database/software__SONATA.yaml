@@ -1,0 +1,44 @@
+name: SONATA
+description: Scalable Open Network Architecture ToolKit and Application — a data format
+  specification for storing large-scale neural network models and simulation results.
+  Joint Allen Institute / Blue Brain standard.
+homepage: https://github.com/AllenInstitute/sonata/blob/master/docs/SONATA_DEVELOPER_GUIDE.md
+license: BSD-3-Clause
+repository: https://github.com/AllenInstitute/sonata
+application_category: specification
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- specification_language
+programming_language:
+- Python
+runtime_platform:
+- backend-dependent
+interoperates_with:
+- NEST
+- NEURON
+- Arbor
+- NetPyNE
+date_created: '2019-01-01'
+development_status: active
+author:
+- Kael Dai
+- Sergey Bhatt
+maintainer:
+- Allen Institute for Brain Science
+- Blue Brain Project
+funder:
+- Allen Institute for Brain Science
+- EPFL Blue Brain Project
+reference_publication: 10.1371/journal.pcbi.1007696
+keywords:
+- data format
+- network model
+- HDF5
+- circuit
+issue_tracker: https://github.com/AllenInstitute/sonata/issues
+is_accessible_for_free: true

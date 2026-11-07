@@ -1,0 +1,21 @@
+name: eq_in_a
+label: Equilibrium branch in a
+description: Continue the equilibrium branch of the Generic2dOscillator as parameter
+  a is varied. Detect Hopf bifurcations and continue periodic orbits from all Hopf
+  points.
+dynamics: Generic2dOscillator
+free_parameters:
+- name: a
+  domain:
+    enforce: none
+    lo: -20
+    hi: 20
+    log_scale: false
+max_steps: 400
+algorithm: PALC
+branches:
+  po_from_hopf:
+    name: po_from_hopf
+    source_point: hopf:all
+    bothside: true
+bothside: true

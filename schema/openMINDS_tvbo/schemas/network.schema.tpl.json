@@ -18,6 +18,11 @@
       "minItems": 1,
       "uniqueItems": true
     },
+    "provenance": {
+      "_embeddedTypes": [
+        "tvbo:Provenance"
+      ]
+    },
     "nodes": {
       "_embeddedTypes": [
         "tvbo:Node"
@@ -44,6 +49,9 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true
+    },
+    "graph_representation": {
+      "type": "string"
     },
     "dynamics": {
       "_embeddedTypes": [
@@ -123,11 +131,6 @@
       "items": {
         "type": "string"
       }
-    },
-    "provenance": {
-      "_embeddedTypes": [
-        "tvbo:Provenance"
-      ]
     },
     "parent_network": {
       "type": "string"

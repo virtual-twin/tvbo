@@ -1,5 +1,5 @@
 name: DumontGutkin
-iri: tvbo:DumontGutkin
+iri: tvbo:models/DumontGutkin
 model_type: mean_field
 parameters:
   Delta_e:

@@ -1,0 +1,54 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class StandardMap(AbstractDynamics):
+    """StandardMap neural mass model."""
+
+    STATE_NAMES = ("theta", "p")
+    INITIAL_STATE = (0.001245, 0.00875)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        k=0.971635,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        k = params.k
+
+        theta = state[0]
+        p = state[1]
+
+        dtheta_dt = jnp.mod(p + theta + k * jnp.sin(theta), 2 * jnp.pi)
+        dp_dt = jnp.mod(p + k * jnp.sin(theta), 2 * jnp.pi)
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dtheta_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dtheta_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dp_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries
