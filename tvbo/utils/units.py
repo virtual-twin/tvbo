@@ -765,6 +765,18 @@ _DISPLAY_SYMBOLS = {
 }
 
 
+def unit_to_ucum(unit):
+    """The UCUM code of a curated unit, as its vendored QUDT record states it, or ``None`` when the unit is uncurated or QUDT gives it none.
+
+    >>> unit_to_ucum("ms")
+    'ms'
+    >>> unit_to_ucum("year")
+    'a'
+    """
+    facts = unit_facts(unit)
+    return facts["ucum_code"] if facts else None
+
+
 def unit_to_symbol(unit):
     """Return the conventional display symbol for a UnitEnum value.
 

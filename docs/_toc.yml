@@ -881,8 +881,6 @@ website:
                         href: datamodel/slots/comparison.qmd
                       - text: "compile"
                         href: datamodel/slots/compile.qmd
-                      - text: "concept_iri"
-                        href: datamodel/slots/concept_iri.qmd
                       - text: "condition"
                         href: datamodel/slots/condition.qmd
                       - text: "condition_parameters"
