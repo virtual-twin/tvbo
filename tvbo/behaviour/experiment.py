@@ -211,18 +211,28 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
     See the [Simulation experiments](/2-specify/SimulationExperiments.qmd) page for the full constructor surface and the [`running-simulations`](../../../skills/running-simulations/SKILL.md) skill for backend choices.
     """
 
+    @model_validator(mode="wrap")
+    @classmethod
+    def _mint_id(cls, data, handler):
+        """Mint the ``id`` the schema requires for a record stating none, from the process-wide counter, and leave it out of `model_fields_set`: a minted id is not a written slot, so a save omits it and a reload mints afresh, while an id the author wrote stays written."""
+        global sessionid
+
+        minted = isinstance(data, dict) and data.get("id") is None
+        if minted:
+            data = {**data, "id": sessionid}
+            sessionid += 1
+        record = handler(data)
+        if minted:
+            record.__pydantic_fields_set__.discard("id")
+        return record
+
     @model_validator(mode="before")
     @classmethod
     def _spellings(cls, data):
-        """What an experiment's own constructor reads before the dialect: an ``id`` is minted for a record stating none, since the schema requires one, and the ``dynamics`` mapping takes the conveniences every load path applies to a model and the curated record its ``iri`` names."""
-        global sessionid
-
+        """What an experiment's own constructor reads before the dialect: the ``dynamics`` mapping takes the conveniences every load path applies to a model and the curated record its ``iri`` names."""
         if not isinstance(data, dict):
             return data
         data = dict(data)
-        if data.get("id") is None:
-            data["id"] = sessionid
-            sessionid += 1
         if isinstance(data.get("dynamics"), dict):
             from tvbo.classes.dynamics import _resolve_dynamics_aliases
             from tvbo.datamodel.dialect import expand_iri
@@ -2516,7 +2526,10 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
         if isinstance(emf, dict):
             refs += [v for v in emf.values() if isinstance(v, str)]
         elif isinstance(emf, list):
-            refs += [v for v in emf if isinstance(v, str)]
+            for v in emf:
+                path = v.get("path") if isinstance(v, dict) else v
+                if isinstance(path, str) and path:
+                    refs.append(path)
         refs += [link["file"] for link in csv_links(meta).values()]
         return [sidecar.parent / r for r in dict.fromkeys(refs)]
 

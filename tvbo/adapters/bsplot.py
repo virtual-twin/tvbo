@@ -356,7 +356,9 @@ def surface_panel(fig, ax, ctx):
     elif layers:
         values = _vertex_values(load_layer(layers[0]), len(verts))
         if opts.get("mask"):
-            grey = ~_np.loadtxt(str(resolve_path(opts["mask"], base))).astype(bool)
+            from tvbo.data.array_formats import read_array
+
+            grey = ~read_array(resolve_path(opts["mask"], base), dims=("vertex",)).values.astype(bool)
             if grey.shape != (len(verts),):
                 raise ValueError(
                     f"surface panel: mask {opts['mask']!r} has shape {grey.shape} but the mesh "

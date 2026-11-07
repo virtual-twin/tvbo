@@ -15,6 +15,8 @@ from pathlib import Path
 
 import numpy as np
 
+from tvbo.data.array_formats import CANONICAL_EDGE_DIMS, read_array
+
 TCK2CONNECTOME = "tck2connectome"
 
 
@@ -159,8 +161,8 @@ def connectome_from_tractogram(
             extra_args=extra_args,
         )
 
-        weights = np.atleast_2d(np.loadtxt(weights_csv, delimiter=","))
-        lengths = np.atleast_2d(np.loadtxt(lengths_csv, delimiter=","))
+        weights = read_array(weights_csv, dims=CANONICAL_EDGE_DIMS).values
+        lengths = read_array(lengths_csv, dims=CANONICAL_EDGE_DIMS).values
         if assignments_out is not None and assignments_csv is not None:
             shutil.copyfile(assignments_csv, assignments_out)
 

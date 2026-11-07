@@ -7,6 +7,7 @@ All TVB ↔ tvbo conversion logic lives here:
 - :func:`from_tvb_simulator` — full Simulator → SimulationExperiment
 - :func:`from_tvb` — Connectivity → Network
 - :func:`from_tvb_zip` — connectivity ZIP file → Network
+- :func:`from_tvb_h5` — connectivity HDF5 file → Network
 - :func:`from_tvb_surface` — Connectivity + Surface + RegionMapping → Network pair
 
 **Export (tvbo → TVB)**
@@ -18,12 +19,15 @@ All TVB ↔ tvbo conversion logic lives here:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from tvbo import datamodel as tvbo_datamodel
 from tvbo.adapters.base import dense_matrix, edge_needs, require_edge_attributes
+
+if TYPE_CHECKING:
+    from tvbo.classes.network import Network
 
 
 def _to_scalar(val):
@@ -703,15 +707,14 @@ def from_tvb_zip(zip_path):
     Network
         Network instance with loaded arrays ready for ``save()``.
     """
-    import io
     import zipfile
 
-    from tvbo.classes.network import Network
+    from tvbo.data.array_formats import CANONICAL_EDGE_DIMS, read_array
 
     zip_path = Path(zip_path)
     with zipfile.ZipFile(zip_path, "r") as zf:
-        weights = np.loadtxt(io.BytesIO(zf.read("weights.txt")))
-        lengths = np.loadtxt(io.BytesIO(zf.read("tract_lengths.txt")))
+        weights = read_array(zf.open("weights.txt"), format="text", dims=CANONICAL_EDGE_DIMS).values
+        lengths = read_array(zf.open("tract_lengths.txt"), format="text", dims=CANONICAL_EDGE_DIMS).values
         centres_raw = zf.read("centres.txt").decode()
 
     labels, coords = [], []
@@ -719,24 +722,44 @@ def from_tvb_zip(zip_path):
         parts = line.split()
         labels.append(parts[0])
         coords.append([float(x) for x in parts[1:4]])
+    return _network_from_arrays(weights, lengths, labels, np.asarray(coords, dtype="float64"), label=zip_path.stem)
 
-    n = weights.shape[0]
-    nodes = [
-        tvbo_datamodel.Node(
-            id=i,
-            label=labels[i],
-            position=tvbo_datamodel.Coordinate(
-                x=float(coords[i][0]),
-                y=float(coords[i][1]),
-                z=float(coords[i][2]),
-            ),
-        )
-        for i in range(n)
-    ]
-    net = Network(nodes=nodes, edges=[], number_of_nodes=n)
-    net.set_matrix("weight", weights)
-    net.set_matrix("length", lengths)
-    net.label = zip_path.stem
+
+def from_tvb_h5(h5_path) -> Network:
+    """Import a TVB connectivity HDF5 file into a tvbo Network.
+
+    TVB's file holds ``weights``, ``tract_lengths``, ``centres`` and ``region_labels`` datasets and optionally ``cortical``, ``areas`` and ``hemispheres``; its matrices are receiver-row like tvbo's, so they are declared `CANONICAL_EDGE_DIMS` as read.
+    """
+    from tvbo.data.array_formats import CANONICAL_EDGE_DIMS, declare, open_store
+
+    h5_path = Path(h5_path)
+    store = open_store(h5_path)
+    with store:
+        held = set(store.keys())
+        missing = sorted({"weights", "tract_lengths", "centres", "region_labels"} - held)
+        if missing:
+            raise ValueError(f"{h5_path} is not a TVB connectivity file: it holds no {missing} dataset(s).")
+        weights = declare(store.read("weights"), CANONICAL_EDGE_DIMS, f"{h5_path}:weights").values
+        lengths = declare(store.read("tract_lengths"), CANONICAL_EDGE_DIMS, f"{h5_path}:tract_lengths").values
+        centres = np.asarray(store.read("centres"), dtype="float64")
+        labels = [v.decode() if isinstance(v, bytes) else str(v) for v in store.read("region_labels")]
+        per_node = {name: store.read(key) for name, key in _TVB_NODE_ARRAYS.items() if key in held}
+    return _network_from_arrays(weights, lengths, labels, centres, label=h5_path.stem, node_parameters=per_node)
+
+
+_TVB_NODE_ARRAYS = {"cortical": "cortical", "area": "areas", "hemisphere": "hemispheres"}
+"""The per-node arrays a TVB connectivity may carry, by the node parameter they become."""
+
+
+def _network_from_arrays(weights, lengths, labels, centres, *, label: str, node_parameters: dict | None = None) -> Network:
+    """A region Network from TVB's arrays (`Network.from_matrix`), each node at its centre with any per-node TVB array as a node parameter."""
+    from tvbo.classes.network import Network
+
+    net = Network.from_matrix(weights, lengths, labels=[str(name) for name in labels], label=label)
+    for i, node in enumerate(net.nodes):
+        node.position = tvbo_datamodel.Coordinate(x=float(centres[i, 0]), y=float(centres[i, 1]), z=float(centres[i, 2]))
+        for name, values in (node_parameters or {}).items():
+            node.parameters[name] = tvbo_datamodel.Parameter(name=name, value=float(values[i]))
     net.descriptor = "SC"
     return net
 
@@ -756,48 +779,23 @@ def from_tvb(connectivity):
     Network
         Network instance with arrays loaded, ready for ``save()``.
     """
-    from tvbo.classes.network import Network
-
     conn = connectivity
     weights = np.asarray(conn.weights, dtype="float64")
     lengths = np.asarray(conn.tract_lengths, dtype="float64")
-    centres = np.asarray(conn.centres, dtype="float64")
-    labels = list(conn.region_labels)
     n = weights.shape[0]
-
-    nodes = []
-    for i in range(n):
-        node = tvbo_datamodel.Node(
-            id=i,
-            label=str(labels[i]),
-            position=tvbo_datamodel.Coordinate(
-                x=float(centres[i, 0]),
-                y=float(centres[i, 1]),
-                z=float(centres[i, 2]),
-            ),
-        )
-        if conn.cortical is not None and len(conn.cortical) == n:
-            node.parameters["cortical"] = tvbo_datamodel.Parameter(
-                name="cortical",
-                value=float(conn.cortical[i]),
-            )
-        if conn.areas is not None and len(conn.areas) == n:
-            node.parameters["area"] = tvbo_datamodel.Parameter(
-                name="area",
-                value=float(conn.areas[i]),
-            )
-        if conn.hemispheres is not None and len(conn.hemispheres) == n:
-            node.parameters["hemisphere"] = tvbo_datamodel.Parameter(
-                name="hemisphere",
-                value=float(conn.hemispheres[i]),
-            )
-        nodes.append(node)
-
-    net = Network(nodes=nodes, edges=[], number_of_nodes=n)
-    net.set_matrix("weight", weights)
-    net.set_matrix("length", lengths)
-    net.label = getattr(conn, "title", None) or "TVB Connectivity"
-    net.descriptor = "SC"
+    per_node = {
+        name: values
+        for name, key in _TVB_NODE_ARRAYS.items()
+        if (values := getattr(conn, key, None)) is not None and len(values) == n
+    }
+    net = _network_from_arrays(
+        weights,
+        lengths,
+        list(conn.region_labels),
+        np.asarray(conn.centres, dtype="float64"),
+        label=getattr(conn, "title", None) or "TVB Connectivity",
+        node_parameters=per_node,
+    )
 
     if conn.orientations is not None and len(conn.orientations) == n:
         object.__setattr__(net, "_orientations", np.asarray(conn.orientations))

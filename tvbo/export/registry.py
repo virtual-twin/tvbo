@@ -44,7 +44,7 @@ class ExportFormat:
     label: str
     extension: str
     media_type: str
-    renderer: Renderer
+    renderer: Renderer | None = None
     aliases: tuple[str, ...] = ()
     supports_with_data: bool = False
     description: str = ""
@@ -145,6 +145,8 @@ def render(experiment, fmt_key: str, **kwargs) -> str:
     All three happen here rather than in each renderer so that every backend — including the ones that render through an adapter and never touch the template helpers — is held to the same house style. Pruning precedes formatting because it edits statements and black only edits layout. See :mod:`tvbo.codegen.prune` and :mod:`tvbo.codegen.style`.
     """
     fmt = resolve(fmt_key)
+    if fmt.renderer is None:
+        raise ValueError(f"Export format {fmt.key!r} is import-only; it has no renderer.")
     if fmt.parameter_starts is not None:
         from tvbo.multiscale import lower
 
@@ -183,6 +185,55 @@ def resolve_by_extension(suffix: str) -> ExportFormat:
         keys_ = sorted({f.key for f in matches})
         raise ValueError(f"Suffix {suffix!r} is ambiguous — claimed by: {', '.join(keys_)}. Pass an explicit format.")
     return matches[0]
+
+
+@dataclass(frozen=True)
+class ArrayFormat:
+    """A file format arrays are read from: the suffixes that name it, the factory that opens a store on a file (`tvbo.data.array_formats`), and whether tvbo writes companions in it."""
+
+    key: str
+    extensions: tuple[str, ...]
+    store: Callable[..., Any]
+    writes: bool = False
+
+
+_ARRAY_FORMATS: dict[str, ArrayFormat] = {}
+
+
+def register_array_format(fmt: ArrayFormat) -> ArrayFormat:
+    """Register *fmt* under its key; a key or suffix already taken by another format raises."""
+    taken = _ARRAY_FORMATS.get(fmt.key)
+    if taken is not None and taken is not fmt:
+        raise ValueError(f"Array format key {fmt.key!r} is already registered.")
+    for other in _ARRAY_FORMATS.values():
+        if other.key != fmt.key and set(other.extensions) & set(fmt.extensions):
+            raise ValueError(f"Array format {fmt.key!r} claims a suffix {other.key!r} already claims.")
+    _ARRAY_FORMATS[fmt.key] = fmt
+    return fmt
+
+
+def resolve_array_format(key: str) -> ArrayFormat:
+    """The array format registered under *key*."""
+    try:
+        return _ARRAY_FORMATS[key]
+    except KeyError:
+        raise ValueError(f"No array format registered as {key!r}; known: {sorted(_ARRAY_FORMATS)}.") from None
+
+
+def array_format_for(path: str | Path) -> ArrayFormat:
+    """The array format a file's suffix names; a suffix-less directory holding a Zarr marker is Zarr.
+
+    Raises ``ValueError`` for a suffix no format claims, naming the suffixes that are claimed.
+    """
+    path = Path(path)
+    suffix = path.suffix.lower()
+    if not suffix and path.is_dir() and any((path / marker).exists() for marker in ("zarr.json", ".zgroup")):
+        suffix = ".zarr"
+    for fmt in _ARRAY_FORMATS.values():
+        if suffix in fmt.extensions:
+            return fmt
+    known = sorted(e for f in _ARRAY_FORMATS.values() for e in f.extensions)
+    raise ValueError(f"{path} is not an array file tvbo reads: no array format claims {suffix!r} (known: {known}).")
 
 
 def load(fmt_key: str, path: str | Path, **kwargs) -> Any:

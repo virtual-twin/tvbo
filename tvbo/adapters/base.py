@@ -570,8 +570,10 @@ class BaseAdapter:
         """
         if listed_edges and len(listed_edges) <= threshold:
             return None
+        from tvbo.data.array_formats import sender_row
+
         W = dense_matrix(getattr(self.experiment, "network", None), "weight")
-        return W.T if W is not None and W.size > 1 else None
+        return sender_row(W) if W is not None and W.size > 1 else None
 
     # ── Integration ──────────────────────────────────────────────────────
 

@@ -65,12 +65,7 @@ SENSOR_PATTERNS = [
 
 
 def _write_dimension_labels(dataset, meta: dict, column_labels: list[str]):
-    """Attach HDF5 dimension scales to a dense matrix dataset, and nothing to a Zarr array, which has no dimension scales.
-
-    dim-0 (rows) is labelled from the parent Network's node labels.
-    dim-1 (columns) is labelled from the edge's ``dimension_labels``.
-    Scale datasets are created inside the same group as *dataset*.
-    """
+    """Attach HDF5 dimension scales to a dense matrix dataset, and nothing to a Zarr array, which has no dimension scales: dim 0 (rows) is labelled from the parent Network's node labels and dim 1 (columns) from the edge's ``dimension_labels``, the scale datasets created inside the same group as *dataset*."""
     import h5py
 
     if not isinstance(dataset, h5py.Dataset):
@@ -623,20 +618,11 @@ def read_embedded_metadata(path) -> dict | None:
 
     ``None`` covers every "this is not a self-describing binary" case — a YAML/JSON sidecar path, a companion written without the attribute, an unreadable or non-JSON payload — so callers can treat it as a plain feature probe.
     """
-    path = Path(path)
-    ext = path.suffix.lower()
-    raw = None
+    store = _companion_store(path)
+    if store is None:
+        return None
     try:
-        if ext in (".h5", ".hdf5"):
-            import h5py
-
-            with h5py.File(path, "r") as f:
-                raw = f.attrs.get(EMBEDDED_METADATA_ATTR)
-        # The suffix is tested first: a sidecar path must not pay a stat() to learn it is not a zarr directory, and load_network probes every load.
-        elif ext == ".zarr" or (ext == "" and path.is_dir() and (path / ".zgroup").exists()):
-            import zarr
-
-            raw = zarr.open(str(path), mode="r").attrs.get(EMBEDDED_METADATA_ATTR)
+        raw = store.attrs().get(EMBEDDED_METADATA_ATTR)
     except (ImportError, OSError, KeyError):
         # Missing backend, or a corrupt/foreign file: "not self-describing", not an error.
         return None
@@ -663,18 +649,25 @@ def write_embedded_metadata(companion_path, meta: dict) -> None:
     companion_path = Path(companion_path)
     payload = {k: v for k, v in meta.items() if k != "data_file"}
     blob = json.dumps(payload, sort_keys=False)
-    ext = companion_path.suffix.lower()
-    if ext in (".h5", ".hdf5"):
-        import h5py
-
-        with h5py.File(companion_path, "a") as f:
-            f.attrs[EMBEDDED_METADATA_ATTR] = blob
-    elif ext == ".zarr" or companion_path.is_dir():
-        import zarr
-
-        zarr.open(str(companion_path), mode="a").attrs[EMBEDDED_METADATA_ATTR] = blob
-    else:
+    store = _companion_store(companion_path, mode="a")
+    if store is None:
         raise ValueError(f"cannot embed metadata in {companion_path.suffix!r} companion")
+    with store.open() as f:
+        f.attrs[EMBEDDED_METADATA_ATTR] = blob
+
+
+def _companion_store(path, mode: str = "r"):
+    """The store on ``path``, or ``None`` for a path in no array format, which a sidecar path is; a write mode on a format tvbo does not write is refused by name."""
+    from tvbo.export.registry import _ARRAY_FORMATS, array_format_for
+
+    try:
+        fmt = array_format_for(path)
+    except ValueError:
+        return None
+    if mode != "r" and not fmt.writes:
+        written = [f.key for f in _ARRAY_FORMATS.values() if f.writes] + ["csv"]  # CSV companions are written per array
+        raise ValueError(f"tvbo writes {', '.join(written[:-1])} and {written[-1]} companions, not {fmt.key!r} ({path}).")
+    return fmt.store(path, mode=mode)
 
 
 def load_declared_network(path):
@@ -816,7 +809,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     yaml_path : str or Path
         Output path for sidecar (extension overridden by sidecar_format).
     binary_format : str
-        "h5" (default), "zarr", or "csv".
+        "h5" (default) or "zarr", the companion suffixes whose format tvbo writes (`ArrayFormat.writes`), or "csv", a CSV for each array.
     sidecar_format : str
         "yaml" (default) or "json".
     """
@@ -882,21 +875,12 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
         meta["_sidecar_name"] = sidecar_path.name
         data_file, links = companion.name, None
 
-        if binary_format in ("h5", "hdf5"):
-            import h5py
-
-            with h5py.File(companion, "w") as f:
-                _write_companion(f, network, meta, arrays, edge_params, carried)
-
-        elif binary_format == "zarr":
-            import zarr
-
-            z = zarr.open(str(companion), mode="w")
-            _write_companion(z, network, meta, arrays, edge_params, carried)
-
-        elif binary_format == "csv":
+        if binary_format == "csv":
             links = _write_csv_arrays(network, sidecar_path, staging, meta, arrays, edge_params, carried)
             data_file = next(link["file"] for link in links.values())
+        else:
+            with _companion_store(companion, mode="w").open() as f:
+                _write_companion(f, network, meta, arrays, edge_params, carried)
 
         meta.pop("_sidecar_name", None)
         # Write v0.7-compliant sidecar

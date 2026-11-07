@@ -75,7 +75,9 @@ def test_from_file_resolves_edge_matrix_files_against_the_recipe_not_the_cwd(tmp
     _write_matrix(tmp_path / "data" / "w.csv")
     recipe = tmp_path / "exp.yaml"
     recipe.write_text(
-        "id: 1\nlabel: e\n" + _DYNAMICS.replace("\n    ", "\n") + "network:\n  edge_matrix_files: [data/w.csv]\n"
+        "id: 1\nlabel: e\n"
+        + _DYNAMICS.replace("\n    ", "\n")
+        + "network:\n  edge_matrix_files: [{path: data/w.csv, dims: [target, source]}]\n"
     )
     elsewhere = tmp_path / "elsewhere"
     elsewhere.mkdir()
@@ -97,7 +99,9 @@ def test_a_study_materialises_its_experiment_against_the_study_file(tmp_path, mo
     _write_matrix(tmp_path / "data" / "w.csv")
     spec = tmp_path / "study.yaml"
     spec.write_text(
-        "key: T\nexperiments:\n  - id: 1\n    label: e\n" + _DYNAMICS + "    network:\n      edge_matrix_files: [data/w.csv]\n"
+        "key: T\nexperiments:\n  - id: 1\n    label: e\n"
+        + _DYNAMICS
+        + "    network:\n      edge_matrix_files: [{path: data/w.csv, dims: [target, source]}]\n"
     )
     elsewhere = tmp_path / "elsewhere"
     elsewhere.mkdir()

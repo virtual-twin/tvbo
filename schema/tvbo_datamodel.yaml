@@ -1473,6 +1473,10 @@ classes:
             edge_matrix_files:
                 range: File
                 multivalued: true
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    The one weight matrix this network reads: a File with a path relative to the recipe, its `dims` and its `delimiter`; a bare path is read as a File with that path. A File declaring no dims must hold a symmetric matrix; a directed one declares them.
 
             graph_generator:
                 range: GraphGenerator
@@ -1609,9 +1613,14 @@ classes:
 
     File:
         class_uri: tvbo:File
+        description: A file a record points to by path, with what a reader needs that the path does not state.
         slots:
             - name
             - description
+        slot_usage:
+            name:
+                identifier: false
+                required: false
         attributes:
             type:
                 range: string
@@ -1619,6 +1628,14 @@ classes:
                 range: string
             extension:
                 range: string
+            dims:
+                range: string
+                multivalued: true
+                description: >-
+                    Axis names of the array the file holds, outermost first, declared and never inferred from the shape. An edge matrix is ``[target, source]`` when a row is the receiving node and ``[source, target]`` when a row is the sending node; either is transposed by name onto tvbo's receiver-row convention. A square matrix with no dims declared is accepted only when it is symmetric, where the orientation cannot matter.
+            delimiter:
+                range: string
+                description: "The column delimiter of a text file when it is not the one its suffix means: `,` for .csv, a tab for .tsv, any whitespace for .txt."
 
     Reference:
         class_uri: tvbo:Reference

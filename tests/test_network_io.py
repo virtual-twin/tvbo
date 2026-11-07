@@ -371,6 +371,7 @@ class TestLazyArrayStore:
         """A ``.zarr`` directory answers what an HDF5 companion does: names and headers with no value read, one edge and its parameters on access in their stored format, per-node datasets by path, and one handle held across a ``with`` block."""
         zarr = pytest.importorskip("zarr")
         from tvbo.data import matrix_io
+        from tvbo.data.array_formats import ZarrStore
         from tvbo.data.matrix_io import LazyArrayStore
         from tvbo.data.network_io import _write_edges
 
@@ -384,9 +385,9 @@ class TestLazyArrayStore:
         root.create_group("nodes").create_array("coordinates", data=coordinates)
 
         reads, opens = [], []
-        read_values, open_handle = matrix_io._read_values, LazyArrayStore._open_handle
+        read_values, open_handle = matrix_io._read_values, ZarrStore._open_handle
         monkeypatch.setattr(matrix_io, "_read_values", lambda dataset: reads.append(dataset) or read_values(dataset))
-        monkeypatch.setattr(LazyArrayStore, "_open_handle", lambda self: opens.append(1) or open_handle(self))
+        monkeypatch.setattr(ZarrStore, "_open_handle", lambda self: opens.append(1) or open_handle(self))
 
         store = LazyArrayStore(path, meta)
         assert "weight" in store and store.names == ["weight"]
@@ -687,7 +688,8 @@ class TestBEP017Export:
         from tvbo import Network
         from tvbo.cli.validate import _entity_problems
 
-        m = np.array([[0.0, 2.0, 0.5], [3.0, 0.0, 1.0], [0.25, 4.0, 0.0]])
+        # A relmat states no orientation, so it reads back only when symmetric.
+        m = np.array([[0.0, 2.0, 0.5], [2.0, 0.0, 4.0], [0.5, 4.0, 0.0]])
         net = Network(number_of_nodes=3)
         for name, matrix in (("weight", m), ("sc_binary", (m > 0) * 1.0), ("streamlineCount", 10 * m), ("fc", m / 3)):
             net.set_matrix(name, held(matrix))

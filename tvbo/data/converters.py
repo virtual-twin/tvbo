@@ -190,4 +190,4 @@ def to_bep017(network, output_dir):
 
 
 # Backward-compatible re-exports; the converters now live in tvbo.adapters.tvb.
-from tvbo.adapters.tvb import from_tvb, from_tvb_surface, from_tvb_zip  # noqa: F401, E402
+from tvbo.adapters.tvb import from_tvb, from_tvb_h5, from_tvb_surface, from_tvb_zip  # noqa: F401, E402

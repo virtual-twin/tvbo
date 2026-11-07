@@ -9,7 +9,7 @@ import warnings
 from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Optional, Union
 
 import jax.numpy as jnp
 import jax.scipy as jsp
@@ -567,6 +567,69 @@ def _bids_measure_units(bids_dir, measures) -> dict:
     return units
 
 
+class _BidsRead(NamedTuple):
+    """What a BEP017 directory holds for a network, read once for `Network.from_bids` and `Network.load_from_bids`."""
+
+    atlas: str | None
+    labels: list[str] | None
+    structural: list[str]
+    weights: np.ndarray | None
+    lengths: np.ndarray | None
+    observations: dict
+    measure_units: dict
+
+
+def _read_bids(bids_dir: Path, atlas, structural_measures, observational_measures, primary_weight=None) -> _BidsRead:
+    """The atlas a BEP017 directory's filenames name, its node labels, the first structural measure as weights and the second as lengths (the folder's own when none are named, the weights being the measure *primary_weight* names, :func:`_discover_bids_measures`), and every observational measure, each relmat read through `tvbo.data.array_formats.read_array`.
+
+    A relmat states no orientation, so each matrix is read undeclared and is accepted only when symmetric.
+    """
+    from tvbo.data.array_formats import read_array
+
+    structural = (
+        list(structural_measures) if structural_measures is not None else _discover_bids_measures(bids_dir, primary_weight)
+    )
+    observational = list(observational_measures or [])
+    relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(bids_dir.glob("*_relmat.tsv"))
+    if not relmat_files:
+        raise ValueError(f"No BEP017 relmat files found in {bids_dir}")
+    if atlas is None:
+        atlas = next((f.name.split("atlas-")[1].split("_")[0] for f in relmat_files if "atlas-" in f.name), None)
+
+    def measure(name):
+        matches = list(bids_dir.glob(f"*meas-{name}_relmat*.tsv"))
+        return read_array(matches[0]).values if matches else None
+
+    read = [measure(name) for name in structural]
+    labels = None
+    nodeindices = list(bids_dir.glob(f"*atlas-{atlas}*_nodeindices.tsv"))
+    if nodeindices:
+        df = pd.read_csv(nodeindices[0], sep="\t")
+        if "label" in df.columns:
+            labels = df["label"].tolist()
+    observations = {name: data for name in observational if (data := measure(name)) is not None}
+    return _BidsRead(
+        atlas,
+        labels,
+        structural,
+        read[0] if read else None,
+        read[1] if len(read) > 1 else None,
+        observations,
+        _bids_measure_units(bids_dir, [*structural, *observational]),
+    )
+
+
+def _parcellation_spec(atlas: str) -> dict:
+    """The parcellation an atlas name alone states: labelled by the name, over the atlas of that name."""
+    return {"label": atlas, "atlas": {"name": atlas}}
+
+
+def _name_atlas(network, atlas: str | None) -> None:
+    """Record the atlas a BIDS connectome was read with as its parcellation, once the network holds the nodes read, so centres resolve from the atlas's entities by label; given at construction, a parcellation would resolve that atlas's normative connectome in place of the files read."""
+    if atlas and network.parcellation is None:
+        network.parcellation = _parcellation_spec(atlas)
+
+
 def _declared_length_unit(measure_units: dict, length_measure) -> str | None:
     """The length measure's declared unit, if it really is a length.
 
@@ -790,7 +853,9 @@ class NetworkBehaviour(YamlDocument, Pytree):
                 raise ValueError(_two_sources(f"`iri: {iri}`", f"`{beside}: {data[beside]}`"))
             data["data_file"] = path
         if isinstance(data.get("parcellation"), str):
-            data["parcellation"] = {"label": data["parcellation"], "atlas": {"name": data["parcellation"]}}
+            data["parcellation"] = _parcellation_spec(data["parcellation"])
+        if isinstance(data.get("edge_matrix_files"), list):
+            data["edge_matrix_files"] = [{"path": e} if isinstance(e, str) else e for e in data["edge_matrix_files"]]
         if isinstance(data.get("parcellation"), dict):
             parc = data["parcellation"] = dict(data["parcellation"])
             if parc.get("iri") and not parc.get("atlas"):
@@ -2211,7 +2276,7 @@ class NetworkBehaviour(YamlDocument, Pytree):
     ) -> "Network":
         """Create a Network from BEP017-compliant BIDS connectivity data.
 
-        Loads structural connectivity (weights, lengths) and optionally observational targets (FC) from a BIDS derivatives directory using the BEP017 relationship matrix format.
+        Loads structural connectivity (weights, lengths) and optionally observational targets (FC) from a BIDS derivatives directory using the BEP017 relationship matrix format (`_read_bids`).
 
         Parameters
         ----------
@@ -2251,115 +2316,36 @@ class NetworkBehaviour(YamlDocument, Pytree):
         print(network.matrix("weight").shape)  # (84, 84)
         ```
         """
-        from pathlib import Path
-
         bids_dir = Path(bids_dir)
-
-        if structural_measures is None:
-            structural_measures = _discover_bids_measures(bids_dir, kwargs.get("primary_weight"))
-        if observational_measures is None:
-            observational_measures = []
-
-        # Find relmat files
-        relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(bids_dir.glob("*_relmat.tsv"))
-
-        if not relmat_files:
-            raise ValueError(f"No BEP017 relmat files found in {bids_dir}")
-
-        # Parse atlas from filenames if not specified
-        if atlas is None:
-            for f in relmat_files:
-                if "atlas-" in f.name:
-                    atlas = f.name.split("atlas-")[1].split("_")[0]
-                    break
-
-        # Load nodeindices file for labels
-        nodeindices_files = list(bids_dir.glob(f"*atlas-{atlas}*_nodeindices.tsv"))
-        labels = None
-        if nodeindices_files:
-            df = pd.read_csv(nodeindices_files[0], sep="\t")
-            if "label" in df.columns:
-                labels = df["label"].tolist()
-
-        # Helper to load a measure
-        def load_measure(measure: str) -> np.ndarray | None:
-            """Load a single BEP017 measure matrix by name, or None if absent."""
-            pattern = f"*meas-{measure}_relmat*.tsv"
-            matches = list(bids_dir.glob(pattern))
-            if not matches:
-                return None
-            # Load TSV (dense format - no header, tab-separated)
-            return np.loadtxt(matches[0], delimiter="\t")
-
-        measure_units = _bids_measure_units(bids_dir, [*structural_measures, *observational_measures])
-
-        # Load structural measures
-        weights = None
-        lengths = None
-        for i, measure in enumerate(structural_measures):
-            data = load_measure(measure)
-            if data is not None:
-                if i == 0:
-                    weights = data
-                elif i == 1:
-                    lengths = data
-
-        if weights is None:
-            raise ValueError(f"Could not load structural weights from {bids_dir}. Looked for measures: {structural_measures}")
-
-        n_nodes = weights.shape[0]
-
-        # Load observational measures
-        observations = {}
-        for measure in observational_measures:
-            data = load_measure(measure)
-            if data is not None:
-                observations[measure] = data
-
-        # Build labels if not from nodeindices
-        if labels is None:
-            labels = [f"node_{i}" for i in range(n_nodes)]
-
-        # Create nodes
-        nodes = [_dm().Node(id=i, label=labels[i]) for i in range(n_nodes)]
-
-        # Build network. Declare the observational measures we actually loaded so the `observations` property (which gates on ``observational_measures``) can resolve them.
-        length_measure = structural_measures[1] if len(structural_measures) > 1 else None
-        declared_length_unit = _declared_length_unit(measure_units, length_measure)
+        read = _read_bids(bids_dir, atlas, structural_measures, observational_measures, kwargs.get("primary_weight"))
+        if read.weights is None:
+            raise ValueError(f"Could not load structural weights from {bids_dir}. Looked for measures: {read.structural}")
+        n_nodes = read.weights.shape[0]
+        labels = read.labels or [f"node_{i}" for i in range(n_nodes)]
+        length_measure = read.structural[1] if len(read.structural) > 1 else None
+        declared_length_unit = _declared_length_unit(read.measure_units, length_measure)
         if declared_length_unit:
             kwargs.setdefault("distance_unit", declared_length_unit)
         instance = cls(
-            nodes=nodes,
+            nodes=[_dm().Node(id=i, label=labels[i]) for i in range(n_nodes)],
             edges=[],
             number_of_nodes=n_nodes,
             number_of_regions=n_nodes,
-            label=atlas or bids_dir.name,
-            observational_measures=list(observations) or None,
+            label=read.atlas or bids_dir.name,
+            observational_measures=list(read.observations) or None,
             **kwargs,
         )
-
-        instance.set_array("edges/weight", weights)
-        if lengths is not None:
-            instance.set_array("edges/length", lengths)
-        for measure, data in observations.items():
+        instance.set_array("edges/weight", read.weights)
+        if read.lengths is not None:
+            instance.set_array("edges/length", read.lengths)
+        for measure, data in read.observations.items():
             instance.set_array(f"edges/{measure}", data)
         object.__setattr__(instance, "_bids_dir", str(bids_dir))
-        object.__setattr__(instance, "_bids_measure_units", measure_units)
-
-        # Record the parcellation atlas so get_atlas()/get_centers() can resolve region centres from the named atlas's entities by label.
-        if atlas and getattr(instance, "parcellation", None) is None:
-            parc = _dm().Parcellation(
-                label=atlas,
-                atlas=_dm().BrainAtlas(name=atlas),
-            )
-            try:
-                instance.parcellation = parc
-            except Exception:  # noqa: BLE001
-                object.__setattr__(instance, "parcellation", parc)
-
+        object.__setattr__(instance, "_bids_measure_units", read.measure_units)
+        _name_atlas(instance, read.atlas)
         return instance
 
-    # NOTE: the canonical `observations` property is defined later in this class (source-agnostic: resolves BIDS-loaded and inline-store data, keyed by `observational_measures`). A duplicate definition here was dead code (shadowed by the later one) and has been removed.
+    # NOTE: the canonical `observations` property is defined later in this class (source-agnostic: resolves BIDS-loaded and inline-store data, keyed by `observational_measures`).
 
     def load_from_bids(
         self,
@@ -2370,7 +2356,7 @@ class NetworkBehaviour(YamlDocument, Pytree):
     ) -> "Network":
         """Load BEP017 data into existing network.
 
-        Allows loading structural connectivity and/or observational targets independently into an already-configured network (preserves coupling).
+        Allows loading structural connectivity and/or observational targets independently into an already-configured network (preserves coupling). An empty ``structural_measures`` list reads no structural measure; ``None`` discovers them.
 
         Parameters
         ----------
@@ -2400,105 +2386,47 @@ class NetworkBehaviour(YamlDocument, Pytree):
         ... )
         """
         bids_dir = Path(bids_dir)
-
-        if structural_measures is None:
-            structural_measures = _discover_bids_measures(bids_dir, self.primary_weight)
-
-        # Find relmat files
-        relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(bids_dir.glob("*_relmat.tsv"))
-
-        if not relmat_files:
-            raise ValueError(f"No BEP017 relmat files found in {bids_dir}")
-
-        # Parse atlas from filenames if not specified
-        if atlas is None:
-            for f in relmat_files:
-                if "atlas-" in f.name:
-                    atlas = f.name.split("atlas-")[1].split("_")[0]
-                    break
-
-        # Helper to load a measure
-        def load_measure(measure: str) -> np.ndarray | None:
-            """Load a single BEP017 measure matrix by name, or None if absent."""
-            pattern = f"*meas-{measure}_relmat*.tsv"
-            matches = list(bids_dir.glob(pattern))
-            if not matches:
-                return None
-            return np.loadtxt(matches[0], delimiter="\t")
-
-        # Load structural measures if requested
-        if structural_measures:
-            weights = None
-            lengths = None
-            for i, measure in enumerate(structural_measures):
-                data = load_measure(measure)
-                if data is not None:
-                    if i == 0:
-                        weights = data
-                    elif i == 1:
-                        lengths = data
-
-            if weights is not None:
-                n_nodes = weights.shape[0]
-                self.set_array("edges/weight", weights)
-                if lengths is not None:
-                    self.set_array("edges/length", lengths)
-                self.number_of_nodes = n_nodes
-                self.number_of_regions = n_nodes
-
-                # Load labels from nodeindices file
-                nodeindices_files = list(bids_dir.glob(f"*atlas-{atlas}*_nodeindices.tsv"))
-                if nodeindices_files:
-                    df = pd.read_csv(nodeindices_files[0], sep="\t")
-                    if "label" in df.columns:
-                        labels = df["label"].tolist()
-                        self.nodes = [_dm().Node(id=i, label=labels[i]) for i in range(n_nodes)]
-
-                # Record the parcellation atlas. BIDS connectomes carry no parcellation, so get_atlas() would default to "wholebrain"; naming the atlas lets get_centers() resolve region centres from the atlas's entities (matched to node labels).
-                if atlas and getattr(self, "parcellation", None) is None:
-                    parc = _dm().Parcellation(
-                        label=atlas,
-                        atlas=_dm().BrainAtlas(name=atlas),
-                    )
-                    try:
-                        self.parcellation = parc
-                    except Exception:  # noqa: BLE001
-                        object.__setattr__(self, "parcellation", parc)
-
-        # Load observational measures if requested
-        if observational_measures:
-            loaded = []
-            for measure in observational_measures:
-                data = load_measure(measure)
-                if data is not None:
-                    self.set_array(f"edges/{measure}", data)
-                    loaded.append(measure)
-            # Declare loaded measures so the `observations` property (which gates on ``observational_measures``) can resolve them.
+        read = _read_bids(bids_dir, atlas, structural_measures, observational_measures, self.primary_weight)
+        if read.weights is not None:
+            n_nodes = read.weights.shape[0]
+            self.set_array("edges/weight", read.weights)
+            if read.lengths is not None:
+                self.set_array("edges/length", read.lengths)
+            self.number_of_nodes = n_nodes
+            self.number_of_regions = n_nodes
+            if read.labels:
+                self.nodes = [_dm().Node(id=i, label=read.labels[i]) for i in range(n_nodes)]
+            _name_atlas(self, read.atlas)
+        if read.observations:
+            for measure, data in read.observations.items():
+                self.set_array(f"edges/{measure}", data)
             existing = list(self.observational_measures or [])
-            self.observational_measures = existing + [m for m in loaded if m not in existing]
-
+            self.observational_measures = existing + [m for m in read.observations if m not in existing]
         object.__setattr__(self, "_bids_dir", str(bids_dir))
         return self
 
     @staticmethod
     def _read_edge_matrix_file(edge_files) -> np.ndarray:
-        """The weight matrix an ``edge_matrix_files`` entry holds: a comma-separated square matrix, target-by-source like every matrix a Network takes (``W[i, j]`` is the weight of the edge j -> i).
+        """The weight matrix an ``edge_matrix_files`` entry holds, receiver-row like every matrix a Network takes (``W[i, j]`` is the weight of the edge j -> i).
 
-        The path resolves against the recipe being loaded. One file is the weight matrix; more than one, a non-square matrix, or a non-finite entry is refused by name rather than read partially.
+        The entry is a `File` (a bare path is spelled as one by the constructor); its path resolves against the recipe being loaded, its ``dims`` orient the matrix by name and its ``delimiter`` overrides the one the suffix means. One file is the weight matrix; more than one, a file without a path, a keyed file with no ``weight`` at its root, a non-square or non-finite matrix, or an asymmetric one with no dims declared is refused by name rather than read partially (`tvbo.data.array_formats.read_array`).
         """
-        files = [str(f) for f in (edge_files if isinstance(edge_files, (list, tuple)) else [edge_files])]
+        from tvbo.data.array_formats import read_array
+
+        files = list(edge_files if isinstance(edge_files, (list, tuple)) else [edge_files])
         if len(files) != 1:
             raise ValueError(f"`edge_matrix_files` holds the one weight matrix; got {len(files)} files: {files}.")
-        fpath = files[0]
+        entry = files[0]
+        if not entry.path:
+            raise ValueError(f"`edge_matrix_files` entry {entry!r} names no `path`.")
+        fpath = entry.path
         source_dir = current_source_dir()
         if source_dir and not os.path.isabs(fpath):
             fpath = os.path.join(source_dir, fpath)
-        weights = np.loadtxt(fpath, delimiter=",")
-        if weights.ndim != 2 or weights.shape[0] != weights.shape[1]:
-            raise ValueError(f"`edge_matrix_files` {files[0]!r} is not a square matrix: shape {weights.shape}.")
-        if not np.isfinite(weights).all():
-            raise ValueError(f"`edge_matrix_files` {files[0]!r} has non-finite entries.")
-        return weights
+        try:
+            return read_array(fpath, "weight", dims=entry.dims or None, delimiter=entry.delimiter).values
+        except KeyError as e:
+            raise ValueError(f"`edge_matrix_files` {fpath!r}: {e.args[0]}") from None
 
     def load_matrix(
         self,
@@ -2725,7 +2653,7 @@ class NetworkBehaviour(YamlDocument, Pytree):
         path : str or Path
             Output path for sidecar.
         binary_format : str
-            "h5" (default), "zarr", or "csv".
+            "h5" (default) or "zarr".
         sidecar_format : str
             "yaml" (default) or "json".
 
@@ -2735,7 +2663,6 @@ class NetworkBehaviour(YamlDocument, Pytree):
         >>> net.save("output/dk87.yaml")                           # YAML + HDF5
         >>> net.save("output/dk87.yaml", sidecar_format="json")     # JSON + HDF5
         >>> net.save("output/dk87.yaml", binary_format="zarr")      # YAML + Zarr
-        >>> net.save("output/dk87.yaml", binary_format="csv")       # YAML + CSV
         """
         from tvbo.data.network_io import save_network
 

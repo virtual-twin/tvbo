@@ -15,6 +15,7 @@ import os
 import numpy as np
 
 from tvbo.behaviour._runtime import Catalogued, _dm
+from tvbo.data.array_formats import read_array
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +137,7 @@ class BrainAtlasBehaviour(Catalogued):
         entities = list(self._entities.values())
         if any(getattr(e, "center", None) is not None for e in entities) or not os.path.exists(centers_file):
             return
-        centers = np.loadtxt(centers_file)
+        centers = read_array(centers_file, dims=("entity", "axis")).values
         if len(centers) != len(entities):
             return
         for entity, xyz in zip(entities, centers, strict=True):
