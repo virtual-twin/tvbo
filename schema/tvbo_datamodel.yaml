@@ -8,6 +8,7 @@ license: https://spdx.org/licenses/EUPL-1.2
 created_on: '2024-01-01T00:00:00Z'
 prefixes:
     tvbo: https://w3id.org/tvbo/
+    rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
     linkml: https://w3id.org/linkml/
     rdfs: http://www.w3.org/2000/01/rdf-schema#
     prov: http://www.w3.org/ns/prov#
@@ -91,6 +92,12 @@ slots:
         range: uriorcurie
         description: >-
             Optional stable IRI (or compact URI) for this entity in an external ontology or knowledge base. Used to load metadata from an external source; not required when the entity is fully self-contained (equations, parameters, etc. defined in the file itself).
+    instance_of:
+        slot_uri: rdf:type
+        range: uriorcurie
+        multivalued: true
+        description: >-
+            The ontology classes this record is an instance of (`tvbo:GlobalCouplingScaling`). A class membership, where `iri` is the record's own address and `grounding` names what it stands in for.
     grounding:
         slot_uri: tvbo:surrogate_of
         range: uriorcurie
@@ -2179,6 +2186,7 @@ classes:
             - equation
             - unit
             - grounding
+            - instance_of
             - producer
         attributes:
             comment:

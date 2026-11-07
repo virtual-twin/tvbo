@@ -3,6 +3,8 @@ parameters:
   a:
     name: a
     value: 0.00390625
+    instance_of:
+      - tvbo:GlobalCouplingScaling
     description: Linear scaling factor of the coupled (delayed) input.
 sparse: false
 pre_expression:

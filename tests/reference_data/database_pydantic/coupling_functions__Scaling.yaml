@@ -4,6 +4,8 @@ parameters:
     name: a
     value: 0.00390625
     description: Linear scaling factor of the coupled (delayed) input.
+    instance_of:
+    - tvbo:GlobalCouplingScaling
 sparse: false
 pre_expression:
   rhs: x_j

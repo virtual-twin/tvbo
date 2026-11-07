@@ -4,6 +4,8 @@ parameters:
     name: a
     value: 1.0
     description: Scaling of the coupling term
+    instance_of:
+    - tvbo:GlobalCouplingScaling
   midpoint:
     name: midpoint
     value: 6.0

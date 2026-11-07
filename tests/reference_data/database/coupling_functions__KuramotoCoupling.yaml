@@ -4,6 +4,8 @@ parameters:
     name: a
     value: 1.0
     description: Rescales the connection strength.
+    instance_of:
+    - tvbo:GlobalCouplingScaling
   N:
     name: N
     value: 1.0
