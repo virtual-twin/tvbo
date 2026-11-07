@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
+from tvbo import datamodel as tvbo_datamodel
 from tvbo.data.types import TimeSeries
-from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.plot.ontology import draw_custom_nodes
 
 logger = logging.getLogger(__name__)

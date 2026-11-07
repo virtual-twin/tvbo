@@ -14,7 +14,7 @@ import pytest
 
 jax.config.update("jax_enable_x64", True)
 
-from tvbo.datamodel.schema import Argument, FunctionCall, Integrator, Observation
+from tvbo.datamodel import Argument, FunctionCall, Integrator, Observation
 from tvbo.templates.tvboptim.utils import (
     observation_dims,
     reduction_dims,

@@ -809,7 +809,7 @@ def _load_mesh(network):
     attrs = network._store.attributes("mesh")
     if not attrs:
         return
-    from tvbo.datamodel import schema as tvbo_datamodel
+    from tvbo import datamodel as tvbo_datamodel
 
     et = attrs.get("element_type")
     nv, ne = attrs.get("number_of_vertices"), attrs.get("number_of_elements")

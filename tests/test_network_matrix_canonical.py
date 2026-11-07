@@ -145,7 +145,7 @@ def test_a_sidecar_may_spell_lengths_any_known_way():
 
 def test_a_single_node_network_is_unconnected_not_absent():
     """The degenerate case every consumer relies on; returning None here broke 158 tests."""
-    from tvbo.datamodel.schema import Node
+    from tvbo.datamodel import Node
 
     net = Network(number_of_nodes=1, nodes=[Node(id=0, label="n0")])
     assert np.array_equal(np.asarray(net.matrix("weight")), np.zeros((1, 1)))

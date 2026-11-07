@@ -788,12 +788,7 @@ def _strings_or_raise(name: str, key: str, arr):
 
 
 def _plain(value):
-    """A declared literal as plain Python, whatever container the loader built it in.
-
-    A nested mapping in an argument's ``value:`` arrives as a ``JsonObj``, which PyYAML refuses to represent — so an analysis whose argument is a mapping used to run to completion and then lose its whole run to a serialization error while writing the sidecar. Recursive because the nesting is: a mapping of mappings is one declaration, not two.
-    """
-    if hasattr(value, "_as_dict"):
-        value = value._as_dict
+    """A declared literal as plain Python, with every string key spelled as `str`. Recursive because the nesting is: a mapping of mappings is one declaration, not two."""
     if isinstance(value, dict):
         return {str(k): _plain(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):

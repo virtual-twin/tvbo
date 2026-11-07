@@ -304,7 +304,7 @@ def _freeze_spec_yaml(
     """
     from tvbo.classes.network import Network
     from tvbo.data.cohort import dataset_subjects, find_cohort, lists_from_file
-    from tvbo.datamodel.schema import Dataset
+    from tvbo.datamodel import Dataset
     from tvbo.utils import keyed_items
 
     net = getattr(experiment, "network", None)
@@ -346,7 +346,8 @@ def _freeze_spec_yaml(
                     cohort.members = []
             if bundled:
                 ids = {str(c.cohort_id) for c in bundled}
-                ds.cohorts = [c for _, c in keyed_items(original_cohorts, "cohorts") if str(c.cohort_id) not in ids] + bundled
+                kept = [c for _, c in keyed_items(original_cohorts, "cohorts") if str(c.cohort_id) not in ids]
+                ds.cohorts = {str(c.cohort_id): c for c in kept + bundled}
         if original_subjects_file:
             entries = [{"subject_id": sid, **_to_plain(entry)} for sid, entry in subjects.items()]
             ds.subjects = {}
@@ -439,7 +440,7 @@ def _write_listing(spec_dir: Path, kind: str, ident, entries: list, written: dic
 def _fan_out_subjects(listed, fan_out: list[str]) -> dict:
     """The dataset's own entries for the subjects in *fan_out*, keyed by subject id in fan-out order; a subject the dataset does not list (one found by discovery) gets a bare ``Subject``."""
     from tvbo.data.cohort import subject_entries
-    from tvbo.datamodel.schema import Subject
+    from tvbo.datamodel import Subject
 
     entries = subject_entries(listed)
     return {sid: entries.get(sid) or Subject(subject_id=sid) for sid in fan_out}

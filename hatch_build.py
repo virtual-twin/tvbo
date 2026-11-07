@@ -42,16 +42,16 @@ def generate_datamodel(root: str | Path) -> None:
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
     _copy_records(root)
-    shortcuts, aliases, keyed, defaults = _dialect_tables(schema)
+    shortcuts, aliases, keyed, lists, defaults, units = _dialect_tables(schema)
     mixins = _mixins(root, schema)
-    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed, defaults))
+    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed, lists, defaults, units))
     _write(
         out_dir / "schema.py",
         _with_strict_text(_with_behaviour(_python_generator(schema).serialize(), mixins)) + _INSTALL_DIALECT,
     )
     _write(
         out_dir / "pydantic.py",
-        _with_dialect_and_behaviour(PydanticGenerator(str(schema)).serialize(), mixins),
+        _with_dialect_and_behaviour(_with_empty_collections(PydanticGenerator(str(schema)).serialize()), mixins),
     )
 
     _write(
@@ -87,16 +87,18 @@ def _python_generator(schema: Path):
 _SEMANTIC_ALIASES = ("range", "boundaries")
 
 
-def _dialect_tables(schema: Path) -> tuple[dict, dict, dict, dict]:
-    """``(scalar shortcuts, slot aliases, keyed collections, slot defaults)`` — the dialect, read off the schema.
+def _dialect_tables(schema: Path) -> tuple[dict, dict, dict, dict, dict, dict]:
+    """``(scalar shortcuts, slot aliases, keyed collections, list slots, slot defaults, unit slots)`` — the dialect, read off the schema.
 
     LinkML treats ``aliases:`` as documentation — its loaders key on the canonical slot name, so a declared alias is inert and raises ``unexpected keyword argument``. Each class's ``__init__`` already receives exactly its own slots, which makes it the one place where an alias can be resolved without guessing whether a mapping is an instance or a keyed collection, and without a free-form key (a parameter named ``dt``) ever being mistaken for a slot. Every construction path — the LinkML loaders, ``cls(**data)``, nested and inlined members, subclasses — goes through it.
 
     It also applies LinkML's ``simple_dict_value`` annotation, which marks the slot a bare scalar stands for: ``omega: 0.0628`` means ``{value: 0.0628}`` and ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed collections (``inlined_as_simple_dict``) but ``linkml_runtime``'s dataclass loader does not implement it, so it is applied here — and extended to single-valued inlined slots, which the spec does not cover. Reference slots are skipped: their scalar is the target's *identifier*, not a value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``). Inlined-ness is asked of the schema (``is_inlined``) rather than read off ``slot.inlined``, because a class-ranged slot whose range has an identifier is a reference by default while leaving ``inlined`` unset — six such slots were being wrapped, and since the wrapper then had to fit a string-ranged slot it landed as the literal ``"JsonObj(value='x')"``.
 
-    It records each keyed collection's identifier slot, so a member written under its key can be given the name the key already states. The generated dataclasses do that themselves in ``__post_init__``; the generated Pydantic models do not, and a curated entry spelled the way this project requires — ``TR: {value: 720.0}``, no redundant inner ``name`` — was accepted by one form and rejected by the other.
+    It records each keyed collection's identifier slot, so a member written under its key can be given the name the key already states, and every other multivalued slot, whose one member may be written bare (``output: x``, or a ``nodes`` mapping that spells one node's own fields): LinkML's dataclasses wrap such a value in the list themselves, and the Pydantic models refuse it, so the dialect wraps it for both. The generated dataclasses do that themselves in ``__post_init__``; the generated Pydantic models do not, and a curated entry spelled the way this project requires — ``TR: {value: 720.0}``, no redundant inner ``name`` — was accepted by one form and rejected by the other.
 
     Last, it reads ``annotations.default``: the default of a slot whose range is a class. LinkML's ``ifabsent`` is processed only for type and enum ranges, so a slot that must accept an integer or a word (``n_parallel: 8`` or ``auto``) needs the class base range ``ScalarValue`` to validate natively, and can then state its default only this way. A slot declaring both is refused, so a default has one home.
+
+    Last of all, it records each class's slots ranged over ``UnitEnum``, alone or in an ``any_of`` beside ``string``: the slots whose text is a unit, which the dialect gives the canonical spelling of a curated unit (``mV/ms`` is ``mV_per_ms``) while recording an uncurated one as written. A string-ranged ``unit`` that is a key in another vocabulary (``ToolUnit.unit``) names no ``UnitEnum`` and stays out.
     """
     from linkml_runtime.utils.schemaview import SchemaView
 
@@ -137,6 +139,16 @@ def _dialect_tables(schema: Path) -> tuple[dict, dict, dict, dict]:
         if members:
             keyed[cls_name] = members
 
+    lists: dict[str, tuple[str, ...]] = {}
+    for cls_name in view.all_classes():
+        bare = tuple(
+            slot.name
+            for slot in view.class_induced_slots(cls_name)
+            if slot.multivalued and slot.name not in keyed.get(cls_name, {})
+        )
+        if bare:
+            lists[cls_name] = bare
+
     table: dict[str, dict[str, str]] = {}
     for cls_name in view.all_classes():
         amap = {
@@ -162,10 +174,20 @@ def _dialect_tables(schema: Path) -> tuple[dict, dict, dict, dict]:
             declared[slot.name] = slot.annotations["default"].value
         if declared:
             defaults[cls_name] = declared
-    return lifts, table, keyed, defaults
+
+    units: dict[str, tuple[str, ...]] = {}
+    for cls_name in view.all_classes():
+        ranged = tuple(
+            slot.name
+            for slot in view.class_induced_slots(cls_name)
+            if "UnitEnum" in {str(slot.range)} | {str(branch.range) for branch in slot.any_of or []}
+        )
+        if ranged:
+            units[cls_name] = ranged
+    return lifts, table, keyed, lists, defaults, units
 
 
-def _render_dialect_tables(shortcuts: dict, aliases: dict, keyed: dict, defaults: dict) -> str:
+def _render_dialect_tables(shortcuts: dict, aliases: dict, keyed: dict, lists: dict, defaults: dict, units: dict) -> str:
     """The dialect tables as their own module.
 
     Kept apart from ``schema.py`` so the Pydantic models can read them without importing the dataclasses: that import is the coupling the migration exists to remove, and it would be a cycle once ``schema.py`` installs the dialect from the same place.
@@ -175,7 +197,9 @@ def _render_dialect_tables(shortcuts: dict, aliases: dict, keyed: dict, defaults
 ``SCALAR_SHORTCUTS`` maps ``{{class: {{slot: (slot the bare scalar stands for, multivalued, keyed)}}}}``, from ``annotations.simple_dict_value`` on each range class.
 ``SLOT_ALIASES`` maps ``{{class: {{alias: canonical slot}}}}`` from the schema's ``aliases:``.
 ``KEYED_COLLECTIONS`` maps ``{{class: {{slot: the member slot its key states}}}}``.
+``LIST_SLOTS`` maps ``{{class: (every other multivalued slot, ...)}}``, whose one bare member the dialect wraps in the list.
 ``SLOT_DEFAULTS`` maps ``{{class: {{slot: default}}}}`` from ``annotations.default``, for slots whose class range ``ifabsent`` cannot serve.
+``UNIT_SLOTS`` maps ``{{class: (slots ranged over UnitEnum, ...)}}``, whose text the dialect spells canonically.
 """
 
 SCALAR_SHORTCUTS = {shortcuts!r}
@@ -184,7 +208,11 @@ SLOT_ALIASES = {aliases!r}
 
 KEYED_COLLECTIONS = {keyed!r}
 
+LIST_SLOTS = {lists!r}
+
 SLOT_DEFAULTS = {defaults!r}
+
+UNIT_SLOTS = {units!r}
 '''
 
 
@@ -264,6 +292,20 @@ def _inject_bases(code: str, additions: dict[str, list[str]]) -> str:
             lambda m, cls_name=cls_name, bases=bases: f"class {cls_name}({', '.join(bases)}, {m.group('bases')}):",
             code,
             count=1,
+        )
+    return code
+
+
+def _with_empty_collections(code: str) -> str:
+    """Default every multivalued slot of the generated models to an empty container, as the dataclasses do.
+
+    LinkML's Pydantic generator writes ``Optional[list[X]] = Field(default=None`` and ``Optional[dict[str, X]] = Field(default=None`` for a multivalued slot, so a record's collections are ``None`` until something is put in them and every reader has to ask first. The dataclasses default the same slots to ``empty_list()`` and ``empty_dict()``, and the behaviour written against them adds members in place. Both generated forms therefore take the empty container, which the dumpers leave out of the record exactly as they leave out ``None``. A generator output in which neither form occurs is refused, since a datamodel without the defaults would then ship unnoticed.
+    """
+    collection = re.compile(r"^(    \w+: Optional\[(dict|list)\[.*\]\] = Field\()default=None,", re.M)
+    code, n = collection.subn(lambda m: f"{m[1]}default_factory={m[2]},", code)
+    if not n:
+        raise RuntimeError(
+            "Found no multivalued slot spelled `Optional[list[...]] = Field(default=None` or `Optional[dict[str, ...]] = Field(default=None`; LinkML's Pydantic generator has changed its output, so update hatch_build._with_empty_collections."
         )
     return code
 

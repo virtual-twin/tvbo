@@ -42,7 +42,7 @@ from tvbo import Dynamics
 from IPython.display import Markdown, display
 
 # Create a Van der Pol oscillator model in TVBO
-vdp = Dynamics("Dynamics")
+vdp = Dynamics(name="Dynamics")
 vdp.name = "VanDerPol"
 vdp.description = "Van der Pol oscillator - a classical nonlinear oscillator"
 
@@ -339,7 +339,7 @@ T = 50.0
 dt = 0.001  # Smaller step size for better accuracy
 
 # Create TVBO model
-vdp_compare = Dynamics("Dynamics")
+vdp_compare = Dynamics(name="Dynamics")
 vdp_compare.name = "VdP"
 vdp_compare.add_parameter("mu", value=mu_value)
 vdp_compare.add_state_variable("x", equation="z", initial_value=0.5)

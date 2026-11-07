@@ -14,8 +14,8 @@ import pytest
 import xarray as xr
 
 import tvbo
+from tvbo import datamodel as dm
 from tvbo.adapters import bsplot
-from tvbo.datamodel import schema as dm
 from tvbo.plot import axis_rule, palette
 from tvbo.utils.study_layout import study_path
 

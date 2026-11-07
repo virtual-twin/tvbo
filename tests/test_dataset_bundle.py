@@ -225,7 +225,7 @@ def test_a_freeze_that_fails_leaves_the_experiments_dataset_as_it_was(cohort: Pa
 
 def test_the_frozen_dataset_lists_exactly_the_fan_out():
     """A shared tree may hold other experiments' subjects, so the frozen dataset names its own: the dataset's entries for them, or bare ones for subjects found by discovery."""
-    from tvbo.datamodel.schema import Subject
+    from tvbo.datamodel import Subject
 
     listed = {"01": Subject(subject_id="01", group="patient"), "02": Subject(subject_id="02"), "03": Subject(subject_id="03")}
     pinned = _wf._fan_out_subjects(listed, ["03", "01"])

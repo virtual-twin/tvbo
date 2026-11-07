@@ -340,13 +340,15 @@ def apply_overrides(experiment, overrides: Iterable[tuple[str, Any]]) -> list:
 
 def _record_for_slot(holder, leaf: str, value):
     """*value* as the datamodel record the slot *leaf* of *holder* holds, built as a recipe builds it, when *value* is a mapping and the slot's type names one record class (``node_selection``, ``graph_generator``); any other value unchanged, a keyed collection included."""
-    import dataclasses
     import typing
 
-    if not isinstance(value, dict) or isinstance(holder, dict):
+    from pydantic import BaseModel
+
+    field = getattr(type(holder), "model_fields", {}).get(leaf)
+    if not isinstance(value, dict) or field is None:
         return value
-    hint = typing.get_type_hints(type(holder)).get(leaf)
-    records = [t for t in typing.get_args(hint) if isinstance(t, type) and dataclasses.is_dataclass(t)]
+    hint = field.annotation
+    records = [t for t in typing.get_args(hint) or (hint,) if isinstance(t, type) and issubclass(t, BaseModel)]
     return records[0](**value) if len(records) == 1 else value
 
 

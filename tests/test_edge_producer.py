@@ -48,13 +48,13 @@ def producer_module(tmp_path, monkeypatch):
 
 
 def _network(producer, label="weight", n=4):
-    from tvbo.datamodel.schema import Edge
+    from tvbo.datamodel import Edge
 
     return Network(number_of_nodes=n, nodes=[], edges=[Edge(label=label, weighted=True, producer=producer)])
 
 
 def _call(name, **arguments):
-    from tvbo.datamodel.schema import Argument, FunctionCall
+    from tvbo.datamodel import Argument, FunctionCall
 
     return FunctionCall(
         callable={"name": name, "module": "edge_producers"},
@@ -92,7 +92,7 @@ def test_a_stored_matrix_wins_over_the_producer(producer_module):
 
 
 def test_output_picks_one_array_out_of_a_producer_returning_several(producer_module):
-    from tvbo.datamodel.schema import Edge
+    from tvbo.datamodel import Edge
 
     call = _call("pair")
     call.output = "length"
@@ -132,7 +132,7 @@ def test_an_edge_without_a_producer_costs_nothing(producer_module):
     """
     import edge_producers
 
-    from tvbo.datamodel.schema import Edge
+    from tvbo.datamodel import Edge
 
     net = Network(number_of_nodes=2, nodes=[], edges=[Edge(label="weight", weighted=True)])
     np.testing.assert_array_equal(np.asarray(net.matrix("weight")), np.zeros((2, 2)))
@@ -140,20 +140,10 @@ def test_an_edge_without_a_producer_costs_nothing(producer_module):
 
 
 def test_producer_and_a_literal_are_mutually_exclusive(producer_module):
-    """The three provenance claims disagree by construction; saying two is a spec error."""
-    from tvbo.datamodel.schema import Edge
+    """The three provenance claims disagree by construction; saying two is a spec error, named after the parameter."""
+    from tvbo.datamodel import Parameter
 
-    edge = Edge(label="weight", weighted=True, producer=_call("ring", n=4))
-    edge.value = np.zeros((4, 4))
-    with pytest.raises(ValueError, match="mutually exclusive"):
-        param_io.resolve(edge)
-
-
-def test_the_error_names_the_edge_by_its_label(producer_module):
-    """An Edge is identified by `label`, not `name`; '<unnamed>' would be useless."""
-    from tvbo.datamodel.schema import Edge
-
-    edge = Edge(label="local_connectivity", weighted=True, producer=_call("ring", n=4))
-    edge.value = np.zeros((4, 4))
-    with pytest.raises(ValueError, match="local_connectivity"):
-        param_io.resolve(edge)
+    parameter = Parameter(name="local_connectivity", producer=_call("ring", n=4), value=np.zeros((4, 4)))
+    with pytest.raises(ValueError, match="mutually exclusive.*|local_connectivity") as caught:
+        param_io.resolve(parameter)
+    assert "local_connectivity" in str(caught.value) and "mutually exclusive" in str(caught.value)

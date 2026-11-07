@@ -83,6 +83,20 @@ def _first_model(annotation: Any) -> type[BaseModel] | None:
     return None
 
 
+def _split_text_blobs(model_cls: type[BaseModel], data: dict) -> None:
+    """Split each scalar-list slot Odoo stored as a newline- or bullet-separated text blob into the list it states, before the dialect reads the blob as the list's one member."""
+    for fname, info in model_cls.model_fields.items():
+        key = fname if fname in data else (info.alias if info.alias and info.alias in data else None)
+        if key is None or not isinstance(data[key], str):
+            continue
+        for cand in _candidates(info.annotation):
+            args = get_args(cand)
+            if get_origin(cand) in (list, tuple, set) and not (args and _first_model(args[0])):
+                parts = [re.sub(r"^[-*]\s*", "", p.strip()) for p in re.split(r"[\r\n]+", data[key])]
+                data[key] = [p for p in parts if p]
+                break
+
+
 # Key -> identifier injection
 def _inject(model_cls: type[BaseModel], data: Any) -> Any:
     """Recursively inject keyed-dict keys into each member's identifier slot.
@@ -96,6 +110,7 @@ def _inject(model_cls: type[BaseModel], data: Any) -> Any:
     for envelope_key in _ENVELOPE_KEYS:
         data.pop(envelope_key, None)
 
+    _split_text_blobs(model_cls, data)
     dialect.normalize(model_cls.__name__, data)
 
     for fname, info in model_cls.model_fields.items():
@@ -132,22 +147,17 @@ def _inject(model_cls: type[BaseModel], data: Any) -> Any:
                         data[key] = coerced
                     break
 
-            # list[...] — recurse into model members, or split a newline/ bulleted Text blob (how Odoo stores list[scalar]) into a list.
-            elif origin in (list, tuple, set):
+            # list[...] — recurse into model members.
+            elif origin in (list, tuple, set) and isinstance(value, list):
                 args = get_args(cand)
                 member_cls = _first_model(args[0]) if args else None
-                if isinstance(value, list):
-                    if member_cls is not None:
-                        for member in value:
-                            _inject(member_cls, member)
-                    else:
-                        # Scalar list (e.g. list[str]); Odoo many2many can yield full objects -> collapse each to its identifier.
-                        data[key] = [(m.get("name") or m.get("id")) if isinstance(m, dict) else m for m in value]
-                    break
-                if isinstance(value, str) and member_cls is None:
-                    parts = [re.sub(r"^[-*]\s*", "", p.strip()) for p in re.split(r"[\r\n]+", value)]
-                    data[key] = [p for p in parts if p]
-                    break
+                if member_cls is not None:
+                    for member in value:
+                        _inject(member_cls, member)
+                else:
+                    # Scalar list (e.g. list[str]); Odoo many2many can yield full objects -> collapse each to its identifier.
+                    data[key] = [(m.get("name") or m.get("id")) if isinstance(m, dict) else m for m in value]
+                break
 
             # Nested single model.
             elif isinstance(cand, type) and issubclass(cand, BaseModel) and isinstance(value, dict):

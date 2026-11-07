@@ -31,7 +31,7 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
 
     study_markers = ("experiments", "simulation_experiments", "figures", "studies")
     if "panels" in data and not any(k in data for k in study_markers):
-        from tvbo.datamodel import schema as dm
+        from tvbo import datamodel as dm
 
         figure = yaml_loader.load(str(spec_path), dm.Figure)
         return [figure], "figure"

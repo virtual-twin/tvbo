@@ -107,7 +107,7 @@ def test_number_of_regions_is_accepted():
 
 def test_scalar_shortcut_lifts_an_array_literal():
     """``sel: {time: [0.006, 0.016]}`` is a coordinate LIST, and the slot it lifts into holds arrays as well as scalars. Lifting only scalars left the list to be built as an Argument positionally, where it landed in ``description`` and the selection silently vanished — a sourced argument then arrived unsliced."""
-    from tvbo.datamodel.schema import DataRef
+    from tvbo.datamodel import DataRef
 
     ref = DataRef(experiment="1", output="integration", sel={"variable": "phi", "time": [0.006, 0.016]})
     assert ref.sel["variable"].value == "phi"
@@ -126,8 +126,8 @@ def test_scalar_shortcut_leaves_a_collection_list_alone():
 
 def test_scalar_shortcut_keeps_keyed_list_scalars_as_identifiers():
     """``arguments: [v]`` is the list spelling of a NAME-KEYED collection, so ``v`` is the argument's name — not a value to wrap. Lifting it to ``{value: v}`` mislabelled ``v`` as ``value`` and stranded the real name in ``description``, generating ``def Sigm(value)`` with a body that still referenced ``v`` (``NameError: name 'v' is not defined``). A non-keyed list (``additional_equations``) still lifts each element."""
+    from tvbo.datamodel import Function
     from tvbo.datamodel.dialect import lift_scalar
-    from tvbo.datamodel.schema import Function
 
     fn = Function(name="Sigm", arguments=["v"])
     assert list(fn.arguments) == ["v"]
@@ -176,10 +176,10 @@ def test_boundaries_still_implies_clamp_and_domain_still_does_not():
 
 def test_pde_solver_is_a_solver_and_spells_its_step_the_same_way():
     """``PDESolver.dt`` used to be its own slot, so ``dt`` named two different things."""
-    from tvbo.datamodel.schema import PDESolver, Solver
+    from tvbo.datamodel import PDESolver, Solver
 
     assert issubclass(PDESolver, Solver)
-    fields = set(PDESolver.__dataclass_fields__)
+    fields = set(PDESolver.model_fields)
     assert {"step_size", "method", "abs_tol", "rel_tol"} <= fields
     assert not ({"dt", "time_integrator", "tolerances"} & fields)
     assert PDESolver(step_size=0.001).step_size == 0.001

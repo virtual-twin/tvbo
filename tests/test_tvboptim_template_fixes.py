@@ -238,7 +238,7 @@ def test_every_lyapunov_renderer_rejects_a_missing_segment_time():
 
 
 def _gated_observation(gate=None, period=5.0):
-    from tvbo.datamodel.schema import DerivedVariable, Dynamics, Equation, Observation, Parameter, Partition
+    from tvbo.datamodel import DerivedVariable, Dynamics, Equation, Observation, Parameter, Partition
 
     grp = [[0, 1, 2], [3, 4, 5]]
     dvs = {
@@ -265,7 +265,7 @@ def _gated_observation(gate=None, period=5.0):
 
 
 def _gate(**overrides):
-    from tvbo.datamodel.schema import PropagationGate
+    from tvbo.datamodel import PropagationGate
 
     return PropagationGate(**{"direction": ["d0", "d1"], "mask": "elements", "min_dispersion": 0.25, **overrides})
 

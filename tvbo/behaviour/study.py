@@ -15,8 +15,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from jsonasobj2 import as_dict
-
 from tvbo.behaviour._runtime import Catalogued
 
 
@@ -179,18 +177,6 @@ class SimulationStudyBehaviour(Catalogued):
         _wire_nested(study, raw)
         hand_down_theme(study)
         return study
-
-    @classmethod
-    def from_datamodel(cls, datamodel):
-        """Wrap a generated datamodel instance as a `SimulationStudy`.
-
-        Args:
-            datamodel: A datamodel-level study whose fields are copied into the user-facing class.
-
-        Returns:
-            A `SimulationStudy` with the same field values as `datamodel`.
-        """
-        return cls(**as_dict(datamodel))
 
     def cite(self):
         """Return the formatted citation for this study.
@@ -361,9 +347,9 @@ class SimulationStudyBehaviour(Catalogued):
                     if isinstance(raw, dict):
                         exp = experiment.SimulationExperiment.from_dict(raw)
                     else:
-                        from linkml_runtime.dumpers import yaml_dumper
+                        from tvbo.utils import to_yaml
 
-                        exp = experiment.SimulationExperiment.from_string(yaml_dumper.dumps(exp_dm))
+                        exp = experiment.SimulationExperiment.from_string(to_yaml(exp_dm))
                     if source_file:
                         exp._source_file = source_file
                     # Where a `cohort` reference of the experiment's network is declared.

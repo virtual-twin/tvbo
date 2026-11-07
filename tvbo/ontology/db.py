@@ -9,11 +9,9 @@ At import time this module scans the `db` data directory for YAML files, loads e
 import glob
 import os
 
-from linkml_runtime.loaders import yaml_loader
-
-from tvbo.datamodel.schema import SimulationStudy
+from tvbo.datamodel import SimulationStudy
 from tvbo.ontology import constants
-from tvbo.utils import Bunch
+from tvbo.utils import Bunch, yaml_loader
 
 DATA_DIR = os.path.join(constants.DATA_DIR, "db")
 

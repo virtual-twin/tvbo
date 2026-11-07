@@ -19,7 +19,7 @@ from tvbo.behaviour._runtime import Catalogued, Copyable
 if TYPE_CHECKING:
     import owlready2
 
-    from tvbo.datamodel.schema import Dynamics
+    from tvbo.datamodel import Dynamics
 
 
 class _Lazy:
@@ -58,13 +58,6 @@ class DynamicsRuntime(Catalogued, Copyable):
     """Construction, code generation, simulation, plotting and reporting for a model."""
 
     # Factory constructors
-    @classmethod
-    def from_datamodel(cls, model_meta: Dynamics):
-        """Create from a datamodel Dynamics instance by copying its already-normalized state (avoids ``_as_dict`` re-init crash on ``inlined_as_dict`` fields)."""
-        inst = cls.__new__(cls)
-        inst.__dict__.update(model_meta.__dict__)
-        return inst
-
     @classmethod
     def from_ontology(cls, ontoclass: owlready2.ThingClass | str, **kwargs):
         """Create a model populated from an ontology class.
@@ -381,19 +374,6 @@ class DynamicsRuntime(Catalogued, Copyable):
         if isinstance(expr, Eq):
             return self._peer.Equation(lhs=str(expr.lhs), rhs=str(expr.rhs))
         return self._peer.Equation(lhs=lhs, rhs=expr)
-
-    # Interop with Pydantic models
-    def to_pydantic(self):
-        """Return a tvbopydantic.Dynamics validated instance for this model."""
-        from tvbo.datamodel import pydantic as _pdm
-
-        return _pdm.Dynamics.model_validate(self._as_dict)
-
-    @classmethod
-    def from_pydantic(cls, pyd_obj):
-        """Create a Dynamics from a tvbopydantic.Dynamics (or dict-like)."""
-        data = pyd_obj.model_dump() if hasattr(pyd_obj, "model_dump") else dict(pyd_obj)
-        return cls(**data)
 
     # Parameters
     def add_parameter(
@@ -1790,9 +1770,9 @@ class DynamicsRuntime(Catalogued, Copyable):
         Args:
             filename: Destination path for the dumped YAML.
         """
-        from linkml_runtime.dumpers import yaml_dumper
+        from tvbo.utils import to_yaml
 
-        yaml_dumper.dump(self, filename)
+        to_yaml(self, filename)
 
     def save_python_class(self, directory="."):
         """Write the model as a standalone TVB Python class file.

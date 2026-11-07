@@ -58,7 +58,7 @@ def _require_fuzzy():
         )
 
 
-from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo import datamodel as tvbo_datamodel
 from tvbo.ontology import query as _query_mod
 
 # %%
@@ -1706,7 +1706,7 @@ def import_model(
 
     model_data = None
     if isinstance(model_metadata, str) and isfile(model_metadata):
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         experiment_metadata = yaml_loader.load(model_metadata, tvbo_datamodel.SimulationExperiment)
         model_data = experiment_metadata.model

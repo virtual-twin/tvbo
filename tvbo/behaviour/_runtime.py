@@ -50,6 +50,14 @@ class YamlDocument:
 
         return yaml_loader.loads(yaml_string, target_class=cls)
 
+    @classmethod
+    def from_datamodel(cls, record):
+        """A record of this class restating the slots *record* states.
+
+        The generated class is the class, so this is a copy through the constructor; a default *record* never stated is not restated.
+        """
+        return cls(**{slot: getattr(record, slot) for slot in record.model_fields_set})
+
     def to_yaml(self, filepath: str | None = None):
         """Serialise this record to YAML.
 

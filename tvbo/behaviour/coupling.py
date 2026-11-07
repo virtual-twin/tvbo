@@ -86,7 +86,6 @@ class CouplingBehaviour(Catalogued):
 
         from tvbo.classes.coupling import coupling_class2metadata
         from tvbo.data.registry import local_name
-        from tvbo.datamodel import schema as tvbo_datamodel
         from tvbo.ontology import query
 
         if isinstance(ontoclass, str):
@@ -100,18 +99,9 @@ class CouplingBehaviour(Catalogued):
             ontoclass = hits[0]
         if not isinstance(ontoclass, owlready2.entity.ThingClass):
             raise ValueError("ontoclass must be a string or an ontology Coupling class.")
-        metadata = tvbo_datamodel.Coupling(name=ontoclass.label.first())
-        coupling_class2metadata(ontoclass, metadata, overwrite=True)
-        return cls(**metadata._as_dict)
-
-    @classmethod
-    def from_datamodel(cls, datamodel_instance):
-        """Copy an existing datamodel `Coupling`'s fields into a new one."""
-        from tvbo.datamodel import schema as tvbo_datamodel
-
-        if not isinstance(datamodel_instance, tvbo_datamodel.Coupling):
-            raise ValueError("datamodel_instance must be a tvbo_datamodel.Coupling instance.")
-        return cls(**datamodel_instance._as_dict)
+        coupling = cls(name=ontoclass.label.first())
+        coupling_class2metadata(ontoclass, coupling, overwrite=True)
+        return coupling
 
     @property
     def metadata(self):

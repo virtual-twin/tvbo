@@ -25,13 +25,6 @@ class FunctionBehaviour(Catalogued):
     """Everything a declared function does, on both generated forms."""
 
     @classmethod
-    def from_datamodel(cls, func):
-        """Create a Function from a generated record of one."""
-        from jsonasobj2 import as_dict
-
-        return cls(**as_dict(func))
-
-    @classmethod
     def from_python(cls, function_instance, **kwargs):
         """Create Function from a Python callable."""
         from tvbo.classes.observation import functioninstance2metadata

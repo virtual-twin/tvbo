@@ -25,15 +25,24 @@ from __future__ import annotations
 import warnings
 from functools import cache
 
-from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, SLOT_ALIASES, SLOT_DEFAULTS
+from tvbo.datamodel.dialect_tables import (
+    KEYED_COLLECTIONS,
+    LIST_SLOTS,
+    SCALAR_SHORTCUTS,
+    SLOT_ALIASES,
+    SLOT_DEFAULTS,
+    UNIT_SLOTS,
+)
 
 __all__ = [
     "identifier_field",
     "KEYED_COLLECTIONS",
+    "LIST_SLOTS",
     "RETIRED_SLOTS",
     "SCALAR_SHORTCUTS",
     "SEMANTIC_FOLDS",
     "SLOT_ALIASES",
+    "UNIT_SLOTS",
     "curated_entry",
     "expand_iri",
     "fold_aliases",
@@ -250,14 +259,12 @@ def _has_slot(cls_name: str, slot: str) -> bool:
 
     Unknown classes answer True, so a name this module cannot resolve is left exactly as the recipe wrote it.
     """
-    import dataclasses
+    from tvbo.datamodel import pydantic
 
-    from tvbo.datamodel import schema
-
-    cls = getattr(schema, cls_name, None)
-    if cls is None or not dataclasses.is_dataclass(cls):
+    cls = getattr(pydantic, cls_name, None)
+    if cls is None or not hasattr(cls, "model_fields"):
         return True
-    return any(field.name == slot for field in dataclasses.fields(cls))
+    return slot in cls.model_fields
 
 
 @cache
@@ -287,12 +294,7 @@ def key_members(cls_name: str, data: dict) -> dict:
     the generated Pydantic models leave it missing and reject the member as incomplete, so
     a record that loaded on one form failed on the other.
 
-    The same collection may equally be written as a LIST — of bare identifiers
-    (``arguments: [v]``) or of whole members — which the dataclasses key and the Pydantic
-    models reject outright as not a mapping. Both spellings arrive as the mapping here, so
-    which one a record uses stops being a question of which form is loading it. A list
-    whose members state no identifier is left alone: there is nothing to key it by, and
-    that is a record to reject rather than to guess at.
+    The same collection may equally be written as a LIST — of bare identifiers (``arguments: [v]``), of whole members, or of records already built — which the dataclasses key and the Pydantic models reject outright as not a mapping. Both spellings arrive as the mapping here, so which one a record uses stops being a question of which form is loading it. A list whose members state no identifier is left alone: there is nothing to key it by, and that is a record to reject rather than to guess at.
 
     Members are rebuilt rather than mutated: the mapping may be a cached curated entry,
     shared by every object that names it.
@@ -318,6 +320,8 @@ def _as_mapping(members: list, identifier: str) -> list | dict:
             keyed[member] = {identifier: member}
         elif isinstance(member, dict) and isinstance(member.get(identifier), str):
             keyed[member[identifier]] = member
+        elif not isinstance(member, dict) and isinstance(getattr(member, identifier, None), str):
+            keyed[getattr(member, identifier)] = member
         else:
             return members
     return keyed
@@ -390,12 +394,9 @@ UNASSIGNED_NODE_ID = -1
 
 def _per_node_slots() -> list[str]:
     """The slots ``Node`` adds to ``NodeTemplate`` (``id``, ``label``, ``position``, ``region``), which the network's data gives each node."""
-    import dataclasses
+    from tvbo.datamodel import pydantic
 
-    from tvbo.datamodel import schema
-
-    shared = {field.name for field in dataclasses.fields(schema.NodeTemplate)}
-    return [field.name for field in dataclasses.fields(schema.Node) if field.name not in shared]
+    return [name for name in pydantic.Node.model_fields if name not in pydantic.NodeTemplate.model_fields]
 
 
 def _refuse_per_node_slots(data: dict) -> None:
@@ -415,11 +416,11 @@ def _fold_node_template(data: dict) -> None:
 
 
 def _fold_label_keyed_node(data: dict) -> None:
-    """Give a node declared by ``label`` alone the unassigned id, so it constructs.
+    """Give a node that states no ``id`` the unassigned id, so it constructs.
 
-    Such a node attaches values to the node of that label in a network whose data materialises its nodes, and only that data knows the index. :meth:`tvbo.classes.network.Network._apply_declared_nodes` replaces the sentinel with it, and raises when no node carries the label.
+    Such a node is one declared by ``label`` alone, which attaches values to the node of that label in a network whose data materialises its nodes, or a ``node_template``, which every node is built from; only the network knows the index. :meth:`tvbo.classes.network.Network._apply_declared_nodes` replaces the sentinel with it, and raises when no node carries the label.
     """
-    if data.get("id") is None and data.get("label"):
+    if data.get("id") is None:
         data["id"] = UNASSIGNED_NODE_ID
 
 
@@ -497,6 +498,34 @@ def refuse_retired(cls_name: str, data: dict) -> None:
             raise ValueError(f"{cls_name}.{slot} was retired in tvbo 0.9.0: {instead}.")
 
 
+def canonicalize_units(cls_name: str, data: dict) -> dict:
+    """Give each unit slot of *cls_name* in *data* the canonical spelling of a curated unit, in place.
+
+    ``mV/ms`` and ``mV_per_ms`` are one unit, and the published record spells it one way. An uncurated unit stays as written: the open slot records it, `normalize_unit` answers ``None`` for it, and a dimensional check involving it reports ``underdetermined`` rather than guessing.
+    """
+    from tvbo.utils.units import normalize_unit
+
+    for slot in UNIT_SLOTS.get(cls_name, ()):
+        unit = data.get(slot)
+        if isinstance(unit, str):
+            data[slot] = normalize_unit(unit) or unit
+    return data
+
+
+def wrap_lists(cls_name: str, data: dict) -> dict:
+    """Give each list-valued slot of *cls_name* whose one member is written bare the list spelling, in place.
+
+    ``output: x`` is ``output: [x]``, and a ``nodes`` mapping that spells one node's own fields is that one node. LinkML's dataclasses wrap such a value themselves; the Pydantic models refuse it. A value that is neither a scalar, a mapping nor a record is left as written, so an array stays an array and is refused as itself.
+    """
+    for slot in LIST_SLOTS.get(cls_name, ()):
+        value = data.get(slot)
+        if value is None or isinstance(value, (list, tuple)):
+            continue
+        if isinstance(value, (*_SCALARS, dict)) or hasattr(value, "model_fields"):
+            data[slot] = [value]
+    return data
+
+
 def normalize(cls_name: str, data: dict) -> dict:
     """Fold *cls_name*'s dialect into *data*, in place: aliases, ``iri``, defaults, shortcuts, keys.
 
@@ -504,7 +533,7 @@ def normalize(cls_name: str, data: dict) -> dict:
 
     Schema-declared defaults (``SLOT_DEFAULTS``, for slots whose class range ``ifabsent`` cannot serve) fill after the ``iri`` expansion, so a curated record's own value is never overridden by the default, and before construction, so both generated forms record the default the schema states.
 
-    The semantic folds come last, after keying, so a fold reads each collection under the names the class will — a record spelling one as a list is not a different case to it. The terse ``distribution`` lift follows the domain fold, since a clamp folded out of ``boundaries`` can leave one behind for it to complete.
+    The semantic folds come after keying, so a fold reads each collection under the names the class will — a record spelling one as a list is not a different case to it. The terse ``distribution`` lift follows the domain fold, since a clamp folded out of ``boundaries`` can leave one behind for it to complete. The bare member of a list slot is wrapped last, once a mapping of members has been read as the list it abbreviates, so what is left as a mapping is the one member it spells.
 
     The document envelope goes first. ``tvbo_class`` states which class a *file* holds, which is a fact about the file rather than the object: the schema declares it (the ``Document`` mixin) so plain LinkML can validate the file, and every constructor route drops it so no object carries it.
     """
@@ -515,6 +544,7 @@ def normalize(cls_name: str, data: dict) -> dict:
 
     refuse_retired(cls_name, data)
     fold_aliases(cls_name, data)
+    canonicalize_units(cls_name, data)
     lift_shortcuts(cls_name, data)
     expand_iri(cls_name, data)
     for slot, default in SLOT_DEFAULTS.get(cls_name, {}).items():
@@ -527,6 +557,7 @@ def normalize(cls_name: str, data: dict) -> dict:
     if semantic is not None:
         semantic(data)
     _lift_one_distribution(data)
+    wrap_lists(cls_name, data)
     return data
 
 
@@ -549,7 +580,7 @@ def install_on_dataclasses(namespace: dict) -> None:
 
         cls.__init__ = __init__
 
-    for name in set(SLOT_ALIASES) | set(SCALAR_SHORTCUTS) | set(SEMANTIC_FOLDS) | set(RETIRED_SLOTS):
+    for name in set(SLOT_ALIASES) | set(SCALAR_SHORTCUTS) | set(SEMANTIC_FOLDS) | set(RETIRED_SLOTS) | set(UNIT_SLOTS):
         cls = namespace.get(name)
         if cls is not None:
             wrap(cls)

@@ -18,7 +18,12 @@ def jsonable(value):
     from jsonasobj2 import as_dict
     from linkml_runtime.utils.enumerations import EnumDefinitionImpl
     from linkml_runtime.utils.yamlutils import YAMLRoot
+    from pydantic import BaseModel
 
+    from tvbo.utils import record_dict
+
+    if isinstance(value, BaseModel):
+        return record_dict(value)
     if isinstance(value, JaxArray):
         value = np.asarray(value)
     if isinstance(value, np.generic):
@@ -39,6 +44,9 @@ def jsonable(value):
 def static_spec(record, held_out=()) -> str:
     """A generated record's fields as canonical JSON, without *held_out* and without ``None``s: the static half of its pytree, which its constructor takes back. An `Equation`'s ``_code`` collapses to its text for the same reason."""
     from jsonasobj2 import as_dict
+    from pydantic import BaseModel
+
+    from tvbo.utils import record_dict
 
     def strip(obj):
         if isinstance(obj, dict):
@@ -49,7 +57,7 @@ def static_spec(record, held_out=()) -> str:
             return [strip(x) for x in obj]
         return obj
 
-    meta = as_dict(record)
+    meta = record_dict(record) if isinstance(record, BaseModel) else as_dict(record)
     if not isinstance(meta, dict):
         meta = dict(meta) if hasattr(meta, "__iter__") else {}
     held = set(held_out)

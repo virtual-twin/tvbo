@@ -191,20 +191,21 @@ def as_list(obj) -> list:
 
     TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by each member's identifier, but may also appear as plain lists. Returns the member values in either case (``None`` -> ``[]``).
 
-    A scalar becomes a one-element list. Strings especially: they are iterable, so ``list("/data")`` would silently yield one entry *per character* — which is how a single ``--set container_binds=/data/cephfs-1`` turned into a bind of ``/,d,a,t,a,…``. No caller ever wants a string split into characters. A bare ``JsonObj`` — the shape an assigned collection slot takes — is iterable over its *keys* for the same reason, and is read through :mod:`jsonasobj2` instead; the test is on the exact type, since every LinkML entity subclasses ``JsonObj`` and a lone one is a scalar here.
+    A scalar becomes a one-element list. Strings especially: they are iterable, so ``list("/data")`` would silently yield one entry *per character* — which is how a single ``--set container_binds=/data/cephfs-1`` turned into a bind of ``/,d,a,t,a,…``. No caller ever wants a string split into characters. A record is one member, not its field list, though a Pydantic model iterates its fields and a LinkML entity its keys; a bare ``JsonObj`` — the shape an assigned collection slot takes on the dataclass form — is iterable over its *keys* for the same reason, and is read through :mod:`jsonasobj2` instead; the test is on the exact type, since every LinkML entity subclasses ``JsonObj`` and a lone one is a scalar here.
     """
     from jsonasobj2 import JsonObj
     from jsonasobj2 import values as _json_values
+    from pydantic import BaseModel
 
     if obj is None:
         return []
-    if isinstance(obj, (str, bytes)):
+    if isinstance(obj, (str, bytes, BaseModel)):
         return [obj]
     if type(obj) is JsonObj:
         return list(_json_values(obj))
     if hasattr(obj, "values"):
         return list(obj.values())
-    if isinstance(obj, JsonObj):  # a LinkML entity: one member, not its field list
+    if isinstance(obj, JsonObj):
         return [obj]
     try:
         return list(obj)
@@ -886,7 +887,7 @@ def traverse_metadata(
 ):
     """Recursively traverses the attributes of a metadata object, calling a callback on each Parameter."""
     if target_instance is None:
-        from tvbo.datamodel import schema as tvbo_datamodel
+        from tvbo import datamodel as tvbo_datamodel
 
         target_instance = tvbo_datamodel.Parameter
     if callback is None:

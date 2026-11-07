@@ -23,7 +23,7 @@ from tvb.datatypes import connectivity, equations
 from tvb.simulator import coupling, integrators, models, monitors, simulator
 
 from tvbo.data.types import TimeSeries
-from tvbo.datamodel.schema import Observation
+from tvbo.datamodel import Observation
 
 
 def setup_tvb_simulator():

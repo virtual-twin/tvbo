@@ -21,6 +21,6 @@ Usage
 
 from __future__ import annotations
 
-from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo import datamodel as tvbo_datamodel
 
 SimulationTool = tvbo_datamodel.SimulationTool

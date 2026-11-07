@@ -12,7 +12,7 @@ import re
 from collections import Counter
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import jax
 import jax.numpy as jnp
@@ -29,21 +29,18 @@ try:
 except ImportError:
     validate_lems = None  # PyLEMS is optional (neuroml extra)
 
-from linkml_runtime.utils.enumerations import EnumDefinitionImpl
-from linkml_runtime.utils.yamlutils import YAMLRoot
-
+from tvbo import datamodel as tvbo_datamodel
 from tvbo import templates
 from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.behaviour._runtime import Copyable
 from tvbo.classes.coupling import Coupling
 from tvbo.classes.dynamics import Dynamics
-from tvbo.classes.network import Network, _backfill_name_from_iri, drawing_from
+from tvbo.classes.network import Network, _backfill_name_from_iri, _ensure_conduction_speed, drawing_from
 from tvbo.classes.noise import Integrator
 from tvbo.codegen import templater
 from tvbo.data import cohort as _cohort
 from tvbo.data.registry import record_name
 from tvbo.data.types import ExperimentResult, ExplorationResult, SimulationResult, SimulationState, TimeSeries
-from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.datamodel.dialect import expand_iri
 from tvbo.log import ensure_configured
 from tvbo.parse.symbols import assumptions_of, symbol_in
@@ -246,7 +243,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         - A dict of fields
         - Keyword args matching the datamodel fields
 
-        Several slots need normalising before the datamodel constructor sees them. A pydantic `Network` becomes a dict, since the parent's `__post_init__` cannot take the object. Non-schema fields on network sub-dicts — a coupling entry's `type`, which names a coupling function or CURIE — are popped, because the datamodel rejects unknown kwargs. A coupling given as a bare string gains an `iri` so ontology population triggers. A network dict is constructed eagerly into a `Network`, so its own `__init__` runs and loads normative connectivity from the atlas and tractogram; the parent accepts the instance as-is.
+        Several slots need normalising before the datamodel constructor sees them. Non-schema fields on network sub-dicts — a coupling entry's `type`, which names a coupling function or CURIE — are popped, because the datamodel rejects unknown kwargs. A coupling given as a bare string gains an `iri` so ontology population triggers. A network dict is constructed eagerly into a `Network`, so its own `__init__` runs and loads normative connectivity from the atlas and tractogram; the parent accepts the instance as-is.
 
         Afterwards, an observation referencing a curated model by `iri` has that model's pipeline, parameters and class reference merged in non-destructively, so a locally declared `source` or `period` still wins.
 
@@ -258,15 +255,6 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         if kwargs.get("id") is None:
             kwargs["id"] = sessionid
             sessionid += 1
-
-        if "network" in kwargs and kwargs["network"] is not None:
-            net = kwargs["network"]
-            # Check if it's a pydantic model (has model_dump) - convert to dict
-            if hasattr(net, "model_dump"):
-                kwargs["network"] = net.model_dump(exclude_none=True)
-            elif hasattr(net, "dict") and not isinstance(net, dict):
-                # Pydantic v1
-                kwargs["network"] = net.dict(exclude_none=True)
 
         # Apply the dict-level Dynamics conveniences before the parent __post_init__ constructs the base-class Dynamics.
         dyn_kw = kwargs.get("dynamics")
@@ -307,33 +295,6 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
         super().__init__(**kwargs)
 
-        # Normalize and coerce fields while preserving original conditions
-        def _coerce(cls, obj, **extra):
-            if isinstance(obj, cls):
-                return obj
-            if isinstance(obj, YAMLRoot):
-                # Copy dataclass fields directly — _as_dict over-serializes enums and nested objects causing lossy round-trips.
-                from dataclasses import fields as dc_fields
-
-                d = {}
-                for f in dc_fields(obj):
-                    if f.name.startswith(("_", "class_")):
-                        continue
-                    val = getattr(obj, f.name, f.default)
-                    # Convert enums/PermissibleValues to plain text so constructors can re-parse them via __post_init__.
-                    from linkml_runtime.linkml_model.meta import PermissibleValue
-
-                    if isinstance(val, PermissibleValue):
-                        val = val.text
-                    elif isinstance(val, EnumDefinitionImpl):
-                        val = str(val)
-                    if val is not None:
-                        d[f.name] = val
-                return cls(**d, **extra)
-            if isinstance(obj, dict):
-                return cls(**obj, **extra)
-            return obj
-
         _reject_unnamed_members(self)
 
         # Prefer `model` (name string) when `dynamics` is missing
@@ -342,18 +303,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
         self._propagate_event_names_to_dynamics()
 
-        if getattr(self, "dynamics", None) and not isinstance(self.dynamics, Dynamics):
-            self.dynamics = _coerce(Dynamics, self.dynamics)
-
         # Mirror dynamics name → model (schema field is a string, not an object)
         if getattr(self, "dynamics", None):
             self.model = self.dynamics.name
-
-        if getattr(self, "integration", None) and not isinstance(self.integration, Integrator):
-            self.integration = _coerce(Integrator, self.integration)
-
-        if getattr(self, "stimulation", None) and not isinstance(self.stimulation, tvbo_datamodel.Stimulus):
-            self.stimulation = _coerce(tvbo_datamodel.Stimulus, self.stimulation)
 
         obss = getattr(self, "observations", None)
         if obss:
@@ -365,11 +317,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                 if val is not None and getattr(val, "iri", None):
                     populate_observation_from_iri(val, functions_sink=_iri_funcs)
             if _iri_funcs:
-                # Keep experiment.functions a plain name->Function dict (the YAML-loaded form). Assigning through the LinkML setter re-wraps it into a JsonObj that mangles the Function values and breaks `dict(experiment.functions)` in codegen — so mutate the existing dict in place, and for an experiment with none, install a plain dict via object.__setattr__ (bypassing that setter). Add only functions the experiment lacks.
-                funcs = getattr(self, "functions", None)
-                if funcs is None:
-                    funcs = {}
-                    object.__setattr__(self, "functions", funcs)
+                if self.functions is None:
+                    self.functions = {}
+                funcs = self.functions
                 for k, v in _iri_funcs.items():
                     if k not in funcs:
                         funcs[k] = v
@@ -381,13 +331,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             self.network.__class__ = Network
             # Network.__init__ doesn't run when class is patched, so sync here
             _sync_network_node_count(self.network)
-            if not getattr(self.network, "conduction_speed", None):
-                self.network.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-                    name="conduction_speed",
-                    label="v",
-                    value=3.0,
-                    unit="mm_per_ms",
-                )
+            _ensure_conduction_speed(self.network)
 
         # Upgrade network.coupling entries to runtime Coupling + apply type fills
         _fill_network_couplings(self.network)
@@ -407,76 +351,13 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
     @classmethod
     def from_datamodel(cls, dm: tvbo_datamodel.SimulationExperiment) -> "SimulationExperiment":
-        """Create from a datamodel instance by copying its already-normalized state.
+        """A `SimulationExperiment` built from the slots *dm* states, through the one constructor every path shares.
 
-        This avoids the ``_as_dict`` → re-init round-trip which breaks on ``inlined_as_dict`` fields (the keyed dict is not valid ``**kwargs`` for the inner class constructor).  Instead we directly copy the ``__dict__`` from the fully-normalised LinkML object and then set the convenience aliases that ``__init__`` would normally provide.
-
-        Ontology population for the integrator and the coupling runs here rather than at construction, because the generated classes own their ``__init__``. Both calls are idempotent and only fill what is missing; the lookup is by ``method`` / ``name`` when ``iri`` is unset.
+        Only the slots *dm* was given are passed on, so a default the record never stated is not restated; the network observations are then checked and the events lowered, as `configure` does before a run.
         """
-        obj = cls.__new__(cls)
-        # Copy all already-normalized state from the datamodel instance
-        obj.__dict__.update(dm.__dict__)
-
-        _reject_unnamed_members(obj)  # `__new__` runs no `__init__`, so its checks repeat here
-
-        dyn = getattr(obj, "dynamics", None)
-        if isinstance(dyn, dict) and dyn:
-            for v in dyn.values():
-                if getattr(v, "iri", None):
-                    v.enrich()
-            first = next(iter(dyn.values()))
-            obj.__dict__["dynamics"] = first
-            obj.__dict__["model"] = first.name
-        elif isinstance(dyn, Dynamics):
-            if getattr(dyn, "iri", None):
-                dyn.enrich()
-            obj.__dict__["model"] = dyn.name
-        else:
-            obj.__dict__.setdefault("dynamics", None)
-
-        integ = getattr(obj, "integration", None) or Integrator()
-        integ.enrich()
-        obj.__dict__["integration"] = integ
-
-        stim = getattr(obj, "stimulation", None)
-        if isinstance(stim, dict):
-            obj.__dict__["stimulation"] = tvbo_datamodel.Stimulus(**stim)
-
-        # -- Upgrade Network via __class__ reassignment --
-        net = getattr(obj, "network", None)
-        if net is not None and not isinstance(net, Network):
-            net.__class__ = Network
-            _sync_network_node_count(net)
-            if not getattr(net, "conduction_speed", None):
-                net.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-                    name="conduction_speed",
-                    label="v",
-                    value=3.0,
-                    unit="mm_per_ms",
-                )
-        if not getattr(obj, "network", None):
-            obj.__dict__["network"] = Network()
-
-        # Upgrade network coupling entries (no type refs in from_datamodel path)
-        _fill_network_couplings(obj.network)
-        # Coupling resolution deferred to ``configure()`` (see __post_init__).
-
-        obj.__dict__["_source_file"] = current_source_file()
-
-        # Materialise the network from its declarative spec (data_file, bids_dir, parcellation, graph_generator). All branching logic lives in Network._resolve; this hook only supplies the YAML source directory for relative-path resolution.
-        net = obj.network
-        if net is not None and not getattr(net, "_resolved", False):
-            source_file = getattr(obj, "_source_file", None)
-            source_dir = Path(source_file).parent if source_file else None
-            with drawing_from(_stated_seed(getattr(obj, "execution", None))):
-                net._resolve(source_dir=source_dir)
-
-        # Validate declarative network-observation sources against the network's declared observational_measures (names only, no data load).
+        obj = cls(**{name: getattr(dm, name) for name in dm.model_fields_set})
         obj._validate_network_observations()
-
-        # Lower declarative stimulus/stimulation Event fields (target_variable, target_regions, weight_distribution) into the legacy fields the shared codegen consumes — resolved here in Python, no template changes.
         obj._resolve_events()
-
         return obj
 
     @classmethod
@@ -537,14 +418,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         Returns:
             SimulationExperiment instance
         """
-        if hasattr(pyd_obj, "model_dump"):
-            # Pydantic v2
-            return cls(**pyd_obj.model_dump(exclude_none=True))
-        elif hasattr(pyd_obj, "dict"):
-            # Pydantic v1
-            return cls(**pyd_obj.dict(exclude_none=True))
-        else:
-            raise TypeError(f"Expected a Pydantic model, got {type(pyd_obj)}")
+        return cls.from_datamodel(pyd_obj)
 
     @classmethod
     def from_tvb_simulator(cls, tvb_simulator):
@@ -639,7 +513,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
     # ── Platform retrieval ────────────────────────────────────────
 
-    TVBO_PLATFORM_URL = "https://tvbo.charite.de"
+    TVBO_PLATFORM_URL: ClassVar[str] = "https://tvbo.charite.de"
 
     @classmethod
     def from_platform(
@@ -923,23 +797,6 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         Use to_yaml(filepath=None) instead.
         """
         return self.to_yaml(filepath=None)
-
-    def setup_monitors(self, **kwargs):
-        """Populate monitors in metadata from simple inputs or runtime wrappers."""
-        from tvbo.classes import observation as monitoring
-
-        monitors_ = kwargs.get("monitors", [])
-        meta_list = []
-        if isinstance(monitors_, monitoring.Monitor):
-            meta_list = [monitors_]
-        else:
-            for m in monitors_:
-                if isinstance(m, monitoring.Monitor):
-                    meta_list.append(m)
-                elif isinstance(m, dict):
-                    meta_list.append(tvbo_datamodel.Observation(**m))
-        if meta_list:
-            self.monitors = meta_list
 
     def configure(self):
         """Resolve coupling declarations and normalize delay flags.
@@ -2824,7 +2681,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             dynamics["events"] = {str(n): {"name": str(n)} for n in names if n}
             return
         # A multivalued slot is coerced at construction only, so insert constructed Events into the container it already holds; assigning one would leave a bare JsonObj whose entries are never Events (writing-models: "Trust the slots").
-        from tvbo.datamodel.schema import Event
+        from tvbo.datamodel import Event
 
         for n in names:
             if n:

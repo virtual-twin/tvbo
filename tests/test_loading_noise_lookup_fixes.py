@@ -86,7 +86,7 @@ def test_from_dict_leaves_the_callers_mapping_untouched():
 
 
 def test_a_noise_derives_either_spelling_by_one_rule():
-    from tvbo.datamodel.schema import Noise
+    from tvbo.datamodel import Noise
 
     nsig_only = Noise(parameters={"nsig": {"value": 0.5}})
     assert nsig_only.sigma == pytest.approx(1.0)

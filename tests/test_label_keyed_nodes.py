@@ -13,7 +13,7 @@ import yaml
 
 from tvbo.classes.network import Network
 from tvbo.data.param_io import resolve_network_node
-from tvbo.datamodel.schema import Parameter
+from tvbo.datamodel import Parameter
 from tvbo.templates.tvboptim.utils import get_node_param_overrides
 
 LABELS = ["L.A1", "R.A1", "L.V1"]

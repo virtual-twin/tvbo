@@ -11,7 +11,7 @@ import os
 from collections import namedtuple
 from functools import lru_cache
 
-from linkml_runtime.loaders import yaml_loader
+from tvbo.utils import yaml_loader
 
 try:
     from pybtex.database import Person, parse_file

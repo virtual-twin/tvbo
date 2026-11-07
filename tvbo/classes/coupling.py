@@ -14,8 +14,8 @@ There is no wrapper class: the coupling's own methods live in :mod:`tvbo.behavio
 """
 
 from tvbo.classes import equation as equations
+from tvbo.datamodel import Coupling
 from tvbo.datamodel.dialect import peer_module
-from tvbo.datamodel.schema import Coupling
 from tvbo.ontology import owl as ontology
 
 __all__ = [

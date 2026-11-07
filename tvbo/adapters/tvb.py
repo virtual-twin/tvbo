@@ -22,8 +22,8 @@ from typing import Any
 
 import numpy as np
 
+from tvbo import datamodel as tvbo_datamodel
 from tvbo.adapters.base import dense_matrix, edge_needs, require_edge_attributes
-from tvbo.datamodel import schema as tvbo_datamodel
 
 
 def _to_scalar(val):
@@ -495,7 +495,7 @@ def to_tvb_monitor(observation):
 
     Parameters
     ----------
-    observation : tvbo.datamodel.schema.Observation
+    observation : tvbo.datamodel.Observation
         The tvbo observation to convert.
 
     Returns:

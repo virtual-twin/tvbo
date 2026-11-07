@@ -9,7 +9,7 @@ import warnings
 from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, ClassVar, Optional, Union
 
 import jax.numpy as jnp
 import jax.scipy as jsp
@@ -19,7 +19,6 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from jax import Array as JaxArray
-from jsonasobj2 import as_dict
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
@@ -31,6 +30,7 @@ from tvbo.utils.pytree import static_spec
 _cfg_jax()
 
 
+from tvbo import datamodel as tvbo_datamodel
 from tvbo.behaviour._runtime import RuntimeAttributes
 from tvbo.data.matrix_io import csv_link_slots, declared_arrays, is_csv, named_entries
 from tvbo.data.registry import (
@@ -47,7 +47,6 @@ from tvbo.data.registry import (
     stem_entities,
     told_apart,
 )
-from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.utils import edge_param, keyed_items, normalize_params, to_dict, transform_target
 from tvbo.utils.source import current_source_dir
 from tvbo.utils.yaml_loader import resolve_edge_var_aliases
@@ -73,14 +72,8 @@ def drawing_from(seed: int | None):
 
 def _random_seed() -> int:
     """The seed a network's random subset is drawn from: the one :func:`drawing_from` states, else the ``random_seed`` an experiment's ``execution`` defaults to."""
-    import dataclasses
-
     seed = _RANDOM_SEED.get()
-    if seed is None:
-        seed = next(
-            field.default for field in dataclasses.fields(tvbo_datamodel.ExecutionConfig) if field.name == "random_seed"
-        )
-    return seed
+    return tvbo_datamodel.ExecutionConfig.model_fields["random_seed"].default if seed is None else seed
 
 
 @contextmanager
@@ -161,19 +154,16 @@ def _fill_unstated(mine, theirs, stated=None) -> None:
 
     *stated* is the keys the entry's declaration wrote, so a slot written at its default still wins. Without it (an entry built as an object) the entry states each slot that is not at its default.
     """
-    import dataclasses
-
-    for field in dataclasses.fields(mine):
-        own, other = getattr(mine, field.name), getattr(theirs, field.name)
-        if field.name == "label":
+    for name, field in type(mine).model_fields.items():
+        own, other = getattr(mine, name), getattr(theirs, name)
+        if name == "label":
             continue
         if isinstance(own, dict) and isinstance(other, dict):
             for key, value in other.items():
                 own.setdefault(key, value)
             continue
-        default = field.default_factory() if field.default_factory is not dataclasses.MISSING else field.default
-        if (field.name not in stated) if stated is not None else (own == default):
-            setattr(mine, field.name, other)
+        if (name not in stated) if stated is not None else (own == field.get_default(call_default_factory=True)):
+            setattr(mine, name, other)
 
 
 _LENGTH_TARGETS = ("length", "lengths")
@@ -227,49 +217,6 @@ def _resident_form(data):
     from scipy import sparse
 
     return data if sparse.issparse(data) else np.asarray(data)
-
-
-def _prepare_for_datamodel(spec: dict, at: tuple = ()) -> tuple[dict, dict[tuple, dict]]:
-    """A copy of the network *spec* the datamodel can build, and the inline edge couplings taken out of it, keyed by the path of their edge.
-
-    The datamodel builds every ``node_template`` as a whole ``NodeTemplate``, and a node's ``subnetwork`` with that subnetwork's own template and edges, before the tvbo ``Network`` of any level sees them. So each inline coupling definition (a mapping on an edge's ``coupling``, which the datamodel holds only as a reference by name), at every depth, is taken off its edge and returned under a path such as ``("node_template", "subnetwork", "edges", 0)``, for :func:`_reattach_inline_couplings` to put back once the datamodel has built the network. *at* is the path of *spec* itself. Only the mappings on the way are copied, so the caller's spec is never changed.
-    """
-    spec, detached = dict(spec), {}
-
-    def without_coupling(edge, path):
-        if not isinstance(edge, dict) or not isinstance(edge.get("coupling"), dict):
-            return edge
-        detached[path] = edge["coupling"]
-        return {k: v for k, v in edge.items() if k != "coupling"}
-
-    def prepared_node(node, path):
-        if not isinstance(node, dict) or not isinstance(node.get("subnetwork"), dict):
-            return node
-        subnetwork, inner = _prepare_for_datamodel(node["subnetwork"], (*path, "subnetwork"))
-        detached.update(inner)
-        return {**node, "subnetwork": subnetwork}
-
-    if isinstance(spec.get("edges"), list):
-        spec["edges"] = [without_coupling(edge, (*at, "edges", i)) for i, edge in enumerate(spec["edges"])]
-    if isinstance(spec.get("edge_template"), dict):
-        spec["edge_template"] = without_coupling(spec["edge_template"], (*at, "edge_template"))
-    if isinstance(spec.get("node_template"), dict):
-        spec["node_template"] = prepared_node(spec["node_template"], (*at, "node_template"))
-    nodes = spec.get("nodes")
-    if isinstance(nodes, dict):
-        spec["nodes"] = {key: prepared_node(node, (*at, "nodes", i)) for i, (key, node) in enumerate(nodes.items())}
-    elif isinstance(nodes, list):
-        spec["nodes"] = [prepared_node(node, (*at, "nodes", i)) for i, node in enumerate(nodes)]
-    return spec, detached
-
-
-def _reattach_inline_couplings(network, detached: dict[tuple, dict]) -> None:
-    """Put each coupling :func:`_prepare_for_datamodel` took off back, as a ``Coupling``, on the edge its path names in the built *network*."""
-    for path, coupling in detached.items():
-        edge = network
-        for step in path:
-            edge = edge[step] if isinstance(step, int) else getattr(edge, step)
-        edge.coupling = tvbo_datamodel.Coupling(**coupling)
 
 
 def _reference_from(folder: Path, target: Path) -> str:
@@ -771,6 +718,14 @@ def _network_ref_string(net: "Network") -> str:
     )
 
 
+def _ensure_conduction_speed(network) -> None:
+    """Give *network* the default `conduction_speed` parameter where it declares none."""
+    if network.parameters is None:
+        network.parameters = {}
+    if "conduction_speed" not in network.parameters:
+        network.parameters["conduction_speed"] = _default_conduction_speed()
+
+
 def _backfill_name_from_iri(obj: Any, cls_name: str | None = None, nested_key: str | None = None) -> None:
     """If ``obj`` (or ``obj[nested_key]``) is a dict with ``iri`` but no ``name``, set ``name`` to the :func:`~tvbo.data.registry.record_name` of the curated *cls_name* record the IRI addresses. Mutates in place."""
     if obj is None:
@@ -861,10 +816,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
         # Normalise an inline string parcellation -> Parcellation dict so the parent constructor accepts it. Materialisation of normative data happens later in self._resolve().
         if isinstance(kwargs.get("parcellation"), str):
-            kwargs["parcellation"] = tvbo_datamodel.Parcellation(
-                label=kwargs["parcellation"],
-                atlas=tvbo_datamodel.BrainAtlas(name=kwargs["parcellation"]),
-            )._as_dict
+            kwargs["parcellation"] = {"label": kwargs["parcellation"], "atlas": {"name": kwargs["parcellation"]}}
 
         # Infer n_nodes from nodes if present (authoritative source)
         if "nodes" in kwargs and kwargs["nodes"]:
@@ -896,21 +848,21 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         # A loader that will attach connectivity itself sets this, then calls `_resolve` once the arrays are in place. Without it the constructor-time `_resolve` would run against a half-built object: `data_file` is an INDIRECT reference (see `_resolve_from_data_file`, which reads the companion's own sidecar and would recurse into the very load in progress), so loaders must strip it — and a sidecar that also declares `parcellation:` would then fall through to the normative-database branch and cache an atlas connectome that shadows the companion's real matrices. Deferring resolves that ordering rather than special-casing the branch.
         _defer_connectivity = bool(kwargs.pop("_defer_connectivity", False))
 
-        # The raw template specs are stashed for _expand_node_template, inline couplings included, a template record as the fields it holds a value in; the copy the datamodel builds comes from _prepare_for_datamodel.
+        # The raw template specs are stashed for _expand_node_template, inline couplings included, a template record as the fields it holds a value in.
         import copy as _copy
-        import dataclasses as _dataclasses
+
+        from tvbo.behaviour._enrich import _slots
 
         _nt = kwargs.get("node_template")
         _nt_spec = None
         if isinstance(_nt, dict):
             _nt_spec = _copy.deepcopy(_nt)
-        elif _dataclasses.is_dataclass(_nt):
+        elif _nt is not None:
             _nt_spec = {
-                f.name: _copy.deepcopy(value) for f in _dataclasses.fields(_nt) if not _is_unset(value := getattr(_nt, f.name))
+                name: _copy.deepcopy(value) for name in _slots(type(_nt)) if not _is_unset(value := getattr(_nt, name))
             }
         _et = kwargs.get("edge_template")
         _et_spec = _copy.deepcopy(_et) if isinstance(_et, dict) else None
-        kwargs, _inline_couplings = _prepare_for_datamodel(kwargs)
 
         # Apply the dict-level Dynamics conveniences to network dynamics so the LinkML loader can construct Dynamics objects correctly.
         _net_dynamics = kwargs.get("dynamics")
@@ -923,7 +875,6 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
         super().__init__(**kwargs)
 
-        _reattach_inline_couplings(self, _inline_couplings)
         object.__setattr__(self, "_source_iri", _source_iri)
         object.__setattr__(self, "_declares_its_nodes", _declares_its_nodes)
         object.__setattr__(self, "_stated_count", _stated_count)
@@ -952,8 +903,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         # Nodes made up from a count, which a graph generator may name.
         object.__setattr__(self, "_placeholder_nodes", _placeholder_nodes)
 
-        if "conduction_speed" not in (self.parameters or {}):
-            self.parameters["conduction_speed"] = _default_conduction_speed()
+        _ensure_conduction_speed(self)
 
         # Materialise connectivity from the declarative spec (parcellation, data_file, bids_dir, graph_generator), resolving relative paths against the recipe being loaded (`loading_from`) at whatever depth this Network is built. Idempotent; see Network._resolve.
         _source_dir = current_source_dir()
@@ -1159,7 +1109,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             return None
 
     # Cache the curated GraphGenerator YAML entry by type so `_is_materialized` / `_resolve` don't re-read+parse the same generator from disk on every network (a reservoir net resolves one per subnetwork). A missing entry is cached as None to avoid repeat lookups.
-    _GG_ENTRY_CACHE: dict[str, dict[str, Any] | None] = {}
+    _GG_ENTRY_CACHE: ClassVar[dict[str, dict[str, Any] | None]] = {}
 
     @classmethod
     def _db_generator_entry(cls, gg) -> dict[str, Any] | None:
@@ -1449,20 +1399,19 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _take_unstated(self, source: "Network") -> None:
         """Take each slot of *source*'s record that this network leaves unset or at its default, and each entry of a keyed slot (``parameters``, ``coupling``, ...) that it does not hold or holds as the default conduction speed, so a network read through a record keeps what the record states: its ``label``, ``bids``, ``parcellation``, ``tractogram``, a surface's ``mesh``, ``parent_network`` and ``node_mapping``. ``data_file`` stays this network's own reference."""
         import copy
-        import dataclasses
 
         defaults = {"conduction_speed": _default_conduction_speed()}
-        for field in dataclasses.fields(tvbo_datamodel.Network):
-            theirs = getattr(source, field.name, None)
-            if field.name == "data_file" or _is_unset(theirs):
+        for name, field in tvbo_datamodel.Network.model_fields.items():
+            theirs = getattr(source, name, None)
+            if name == "data_file" or _is_unset(theirs):
                 continue
-            mine = getattr(self, field.name, None)
+            mine = getattr(self, name, None)
             if isinstance(mine, dict):
                 for key, value in theirs.items():
                     if mine.get(key) in (None, defaults.get(key)):
                         mine[key] = copy.deepcopy(value)
-            elif _is_unset(mine) or mine == field.default:
-                setattr(self, field.name, copy.deepcopy(theirs))
+            elif _is_unset(mine) or mine == field.get_default(call_default_factory=True):
+                setattr(self, name, copy.deepcopy(theirs))
 
     def _stored_square_layers(self) -> list[tuple[str, int]]:
         """The name and the side of each square layer the companion's header reports, which reads no value; a route to another network is left out, since its matrix runs over that network's nodes as well, and so is a layer that is not square. Empty without a companion that reports shapes."""
@@ -2005,7 +1954,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             return None
         if not all(unassigned):
             raise ValueError("A network's `nodes` are keyed either all by `id` or all by `label`; this list mixes the two.")
-        specs = [copy.deepcopy(n) if isinstance(n, dict) else as_dict(n) for n in nodes]
+        specs = [copy.deepcopy(n) if isinstance(n, dict) else to_dict(n) for n in nodes]
         labels = [s.get("label") for s in specs]
         if not all(labels):
             raise ValueError(
@@ -2203,15 +2152,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         Examples:
         --------
         ```python
-        from tvbo.datamodel import schema as tvbo_datamodel
+        from tvbo import datamodel as tvbo_datamodel
         dm = tvbo_datamodel.Network(number_of_nodes=10)
         sc = Network.from_datamodel(dm)
         ```
         """
         import copy
-        import dataclasses
 
-        return cls(**{f.name: copy.deepcopy(getattr(datamodel, f.name)) for f in dataclasses.fields(datamodel)})
+        from tvbo.behaviour._enrich import _slots
+
+        return cls(**{name: copy.deepcopy(getattr(datamodel, name)) for name in _slots(type(datamodel))})
 
     @classmethod
     def from_matrix(
@@ -2927,7 +2877,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
     # ── Platform retrieval (§12.8) ────────────────────────────────
 
-    TVBO_PLATFORM_URL = "https://tvbo.charite.de"
+    TVBO_PLATFORM_URL: ClassVar[str] = "https://tvbo.charite.de"
 
     @classmethod
     def from_platform(
@@ -3205,11 +3155,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             from tvbo.utils import to_yaml as _to_yaml
 
             with self._naming_files_from(Path(filepath).parent if filepath else None):
-                clean = tvbo_datamodel.Network(**{k: v for k, v in self.__dict__.items() if not k.startswith("_")})
-                return _to_yaml(clean, filepath)
+                return _to_yaml(self, filepath)
 
     # ---- JAX pytree: flatten/unflatten ----
-    _STATIC_SPEC_HELD_OUT = ("weight", "length", "parcellation", "edges", "data_file", "bids_dir")
+    _STATIC_SPEC_HELD_OUT: ClassVar[tuple[str, ...]] = ("weight", "length", "parcellation", "edges", "data_file", "bids_dir")
     """Slots the static spec omits: the matrices travel as leaves, the edge declarations hold non-deterministic `Parameter` strings, and the loading slots would make `_pytree_build` re-resolve from disk."""
 
     def _pytree_leaves(self) -> dict:

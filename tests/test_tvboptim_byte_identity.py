@@ -425,7 +425,7 @@ def test_tbptt_differentiation(eager):
     from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
     from tvboptim.experimental.network_dynamics.solvers import Heun
 
-    from tvbo.datamodel.schema import Differentiation
+    from tvbo.datamodel import Differentiation
 
     T1, TRANSIENT, DT = 300.0, 600.0, 1.0
     WINDOW_MS = 100.0
@@ -607,7 +607,7 @@ def test_tbptt_optimization():
     from tvboptim.optim.optax import OptaxOptimizer
     from tvboptim.types import Parameter
 
-    from tvbo.datamodel.schema import Differentiation
+    from tvbo.datamodel import Differentiation
 
     T1, TRANSIENT, DT, SKIP = 7200.0, 300.0, 1.0, 2
     LR, MAX_STEPS, G0, W = 1.0, 4, 5.0, 100

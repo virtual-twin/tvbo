@@ -1097,6 +1097,8 @@ classes:
                 description: "Checksum function name, e.g. ``SHA-256``."
             value:
                 range: string
+                annotations:
+                    simple_dict_value: true
                 required: true
                 description: "The checksum as computed by ``algorithm``."
 
@@ -1239,7 +1241,9 @@ classes:
                 description: >-
                     Cognitive Atlas IRI of the cognitive construct measured (e.g. ``cogat:trm_521ef89ce5e84`` for fluid intelligence).
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 description: "Unit annotation (e.g. 'count', 'ms', 'z-score')."
             measure_type:
                 range: string
@@ -1265,7 +1269,9 @@ classes:
                 range: string
                 description: "Numpy dtype string, recording what the companion actually holds."
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 description: "Optional unit annotation (e.g. 'nA')."
             description:
                 range: string
@@ -1699,6 +1705,10 @@ classes:
         slots:
             - name
             - value
+        slot_usage:
+            value:
+                annotations:
+                    simple_dict_value: true
 
     Edge:
         class_uri: tvbo:Edge
@@ -1733,7 +1743,9 @@ classes:
                 range: float
                 description: "Edge length / tract distance (explicit edges, mm)"
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 description: "Unit for matrix values (template edges only)"
             format:
                 range: SparseFormat
@@ -1772,9 +1784,11 @@ classes:
                 description: "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics. The alias `target_variable` is accepted."
             coupling:
                 range: Coupling
-                required: false
-                description: "Coupling function for this edge, named by reference into 'network.coupling' or defined inline. If not provided, the edge takes the network's coupling."
-                inlined: false
+                inlined: true
+                any_of:
+                    - range: string
+                    - range: Coupling
+                description: "Coupling function for this edge: the key of one declared under 'network.coupling', or a Coupling defined inline. If not provided, the edge takes the network's coupling."
             directed:
                 range: boolean
                 ifabsent: "false"
@@ -2380,7 +2394,9 @@ classes:
                 description: >-
                     A labelled array sourced from another experiment's result, a dataset, or a curated entity — the cross-container form of a value (WHERE + WHICH + SLICE, PROV ``prov:used``). Mutually exclusive with ``value``; an in-study ``experiment`` reference also registers the workflow dependency so the source runs first. Resolved lazily, never inlined into generated code.
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
 
     Function:
         class_uri: tvbo:Function
@@ -3003,7 +3019,9 @@ classes:
                 description: >-
                     Callable that generates this axis's swept values, as an alternative to domain / explored_values. Use when the points cannot be written as a static list because each is an array or depends on other results — e.g. per-count control-gain vectors g whose entries are chosen from a runtime-computed solitary-node ordering. The callable returns the stacked sweep values (leading axis = sweep points); its `arguments` may reference other observations by name. The value-supplying analogue of graph_generator.builder, keeping computed sweeps declarative rather than requiring a Python driver.
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 description: "Optional axis unit (defaults to the referenced Parameter's unit)."
             reduce:
                 range: AxisReduction
@@ -3399,6 +3417,8 @@ classes:
         attributes:
             value:
                 range: string
+                annotations:
+                    simple_dict_value: true
                 required: true
                 description: "Option value."
 
@@ -4449,7 +4469,9 @@ classes:
                 ifabsent: "ms"
                 description: "Unit of the sampling period (e.g., 'ms', 's')."
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 slot_uri: qudt:unit
                 description: "Physical unit of the time series values."
             labels_ordering:
@@ -4513,7 +4535,9 @@ classes:
             dataLocation:
                 range: string
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
         slots:
             - label
             - description
@@ -4597,7 +4621,9 @@ classes:
                 description: "Scalar, vector, or tensor."
                 range: string
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
             mesh:
                 range: Mesh
             values:

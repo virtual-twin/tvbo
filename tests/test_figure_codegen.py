@@ -312,7 +312,7 @@ def test_build_context_default_letter_format():
 
 def test_build_context_dataclass_flavor_kind_mark_loc():
     """Production loads figures as the *dataclass* datamodel — both ``tvbo figure render`` (``schema.Figure``) and ``SimulationStudy`` (extends ``schema.SimulationStudy``) — whose enum-valued slots are NOT ``==`` a bare string. The rest of this module builds pydantic objects (where the enum is a ``str``), so the adapter must normalise ``kind``/``mark``/``loc`` for the dataclass flavour or custom/image/heatmap dispatch and corner placement break only in production."""
-    from tvbo.datamodel import schema as D
+    from tvbo import datamodel as D
 
     fig = D.Figure(
         name="dc",

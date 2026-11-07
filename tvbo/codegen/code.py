@@ -16,7 +16,7 @@ from sympy.printing import StrPrinter
 from sympy.printing.codeprinter import CodePrinter
 from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
 
-from tvbo.datamodel.schema import Equation
+from tvbo.datamodel import Equation
 from tvbo.parse.expression import parse_eq
 
 logger = logging.getLogger(__name__)

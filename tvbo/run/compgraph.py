@@ -151,7 +151,7 @@ def integration_step(integration):
     from sympy import Symbol, lambdify, sympify
 
     from tvbo.adapters.base import BaseAdapter
-    from tvbo.datamodel.schema import Integrator
+    from tvbo.datamodel import Integrator
 
     scheme = (
         integration if integration is not None else Integrator(method=BaseAdapter.declared_integration(None, "method"))

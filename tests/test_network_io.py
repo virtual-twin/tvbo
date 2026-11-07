@@ -125,7 +125,7 @@ class TestTemplateEdgeOnlyNetwork:
 
     def _network(self, n=4000):
         from tvbo import Network
-        from tvbo.datamodel.schema import Edge
+        from tvbo.datamodel import Edge
 
         return Network(number_of_nodes=n, edges=[Edge(label="weight", format="csr")])
 

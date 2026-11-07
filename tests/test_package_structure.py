@@ -136,14 +136,14 @@ class TestClassIdentity:
     def test_dynamics_inherits_from_datamodel(self):
         """Runtime Dynamics should subclass the datamodel Dynamics."""
         from tvbo.classes.dynamics import Dynamics
-        from tvbo.datamodel.schema import Dynamics as DmDynamics
+        from tvbo.datamodel import Dynamics as DmDynamics
 
         assert issubclass(Dynamics, DmDynamics)
 
     def test_network_inherits_from_datamodel(self):
         """Runtime Network should subclass the datamodel Network."""
         from tvbo.classes.network import Network
-        from tvbo.datamodel.schema import Network as DmNetwork
+        from tvbo.datamodel import Network as DmNetwork
 
         assert issubclass(Network, DmNetwork)
 
