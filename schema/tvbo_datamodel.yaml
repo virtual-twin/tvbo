@@ -28,6 +28,8 @@ prefixes:
     UBERON: http://purl.obolibrary.org/obo/UBERON_
     CHEBI: http://purl.obolibrary.org/obo/CHEBI_
     MESH: http://purl.bioontology.org/ontology/MESH/
+    loinc: http://loinc.org/rdf/
+    sct: http://snomed.info/id/
 imports:
     - linkml:types
     - common
@@ -1173,9 +1175,9 @@ classes:
     Phenotype:
         class_uri: tvbo:Phenotype
         description: >-
-            Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales, demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the measure list; the h5 carries ``measures/<name>`` 1-D float arrays of length ``len(subjects)``.
+            Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales, demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the measure list; the companion named by ``data_file`` carries one 1-D float array of length ``len(subjects)`` per measure.
 
-            Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html) and with NIDM's ``nidm:Phenotype`` concept. Per-measure metadata can optionally carry Cognitive Atlas (https://www.cognitiveatlas.org/) ``cogat:Task`` and ``cogat:Concept`` IRIs via ``measure_specs``.
+            Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html) and with NIDM's ``nidm:Phenotype`` concept. Each ``measure_specs`` entry names what its column measures by ``iri``, a LOINC, SNOMED CT or Cognitive Atlas term, which is the ``TermURL`` of the BIDS column sidecar and the ``code`` of a FHIR ``Observation``.
         mixins:
             - Document
         slot_usage:
@@ -1196,18 +1198,18 @@ classes:
                 range: string
                 required: true
                 description: >-
-                    Ordered list of subject IDs (e.g. HCP-YA 6-digit IDs). Each ``measures/<name>`` array in the h5 companion is indexed by this order.
+                    Ordered list of subject IDs (e.g. HCP-YA 6-digit IDs), without the ``sub-`` prefix. Each measure array in the companion is indexed by this order.
             measures:
                 multivalued: true
                 range: string
                 description: >-
-                    Names of the measures present in the h5 companion (one ``measures/<name>`` dataset per name). Example: ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR, CardSort_Unadj, ProcSpeed_Unadj]``.
+                    Names of the measures present in the companion (one ``measures/<name>`` dataset of the h5, or one column of the ``.tsv``, per name). Example: ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR, CardSort_Unadj, ProcSpeed_Unadj]``.
             measure_specs:
                 multivalued: true
                 range: MeasureSpec
                 inlined_as_list: true
                 description: >-
-                    Optional per-measure metadata (Cognitive Atlas IRIs, units, description). When present, each entry's ``name`` must match an entry in ``measures``.
+                    Optional per-measure metadata (``iri``, ``unit``, ``description``, instrument). When present, each entry's ``name`` must match an entry in ``measures``.
             category:
                 range: string
                 ifabsent: string(cognitive)
@@ -1216,7 +1218,8 @@ classes:
             data_file:
                 range: string
                 required: true
-                description: "Path to the h5 companion (relative to the yaml)."
+                description: >-
+                    Path to the companion, relative to the yaml; its extension selects the format. An ``.h5`` holds ``measures/<name>`` datasets. A ``.tsv`` is a BIDS phenotype table, ``participant_id`` then one column per measure, written together with its ``.json`` column sidecar, whose entries are the ``measure_specs``.
             cohort:
                 range: string
                 description: "Cohort label (e.g. 'HCPYA', 'PPMI')."
@@ -1224,23 +1227,24 @@ classes:
     MeasureSpec:
         class_uri: tvbo:MeasureSpec
         description: >-
-            Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``.
+            Metadata for one phenotype measure, the column entry of a BIDS phenotype sidecar: ``iri`` is its ``TermURL``, ``unit`` its ``Units`` and ``description`` its ``Description``. The same three fields are the ``code``, ``valueQuantity.code`` and display of a FHIR ``Observation``. Optional per-measure entry on ``Phenotype.measure_specs``.
+        slots:
+            - iri
+            - unit
+            - description
+        slot_usage:
+            iri:
+                description: >-
+                    The concept this measure quantifies, as a term of a terminology: a LOINC or SNOMED CT code for a clinical variable (``loinc:30525-0`` for age), a Cognitive Atlas concept for a cognitive construct (``https://www.cognitiveatlas.org/concept/id/trm_521ef89ce5e84`` for fluid intelligence).
         attributes:
             name:
                 range: string
                 required: true
                 description: "Must match the measure name in ``Phenotype.measures``."
             task_iri:
-                range: string
+                range: uriorcurie
                 description: >-
-                    Cognitive Atlas (``cogat:``) IRI of the assessment instrument / task that produced this measure (e.g. ``cogat:trm_4a3fd79d09cba`` for PMAT24).
-            concept_iri:
-                range: string
-                description: >-
-                    Cognitive Atlas IRI of the cognitive construct measured (e.g. ``cogat:trm_521ef89ce5e84`` for fluid intelligence).
-            unit:
-                range: string
-                description: "Unit annotation (e.g. 'count', 'ms', 'z-score')."
+                    IRI of the assessment instrument / task that produced this measure (e.g. the Cognitive Atlas task ``https://www.cognitiveatlas.org/task/id/trm_4a3fd79d09cba`` for PMAT24).
             measure_type:
                 range: string
                 description: >-
@@ -1833,6 +1837,7 @@ classes:
             - time_unit
             - record
             - unit
+            - grounding
             - references
         attributes:
             # Helper functions this observation's pipeline calls by name — an HRF kernel, a downsampler, a fused strided convolution — emitted as module-level defs and merged non-destructively into experiment.functions when the model is referenced by `iri`. Same shape as Dynamics.functions.
@@ -2003,6 +2008,7 @@ classes:
             Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: which backend renders it, at what precision, on which accelerator. That states a requirement, not a mechanism — the same analysis is renderable by more than one backend, and one that cannot render it says so rather than silently substituting another.
         slots:
             - parameters
+            - grounding
         attributes:
             execution:
                 range: ExecutionConfig

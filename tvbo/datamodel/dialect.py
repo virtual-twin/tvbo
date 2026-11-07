@@ -245,6 +245,31 @@ def _invoked_entry(cls_name: str, iri: str, addressed: str, key: str, entry: dic
     return {slot: value for slot, value in entry.items() if slot != "name" and _has_slot(cls_name, slot)}
 
 
+def expand_curie(iri: str) -> str:
+    """*iri* as a full URL: a URL is returned as given, a CURIE is expanded by the prefix the schema declares for it.
+
+    ``loinc:30525-0`` -> ``http://loinc.org/rdf/30525-0``. A CURIE whose prefix no schema module declares is refused, since no URL can be stated for it.
+    """
+    iri = str(iri).strip()
+    prefix, _, local = iri.partition(":")
+    if local.startswith("//"):
+        return iri
+    namespaces = _schema_namespaces()
+    if prefix not in namespaces:
+        raise ValueError(f"{iri!r}: the schema declares no prefix {prefix!r}, so it has no URL")
+    return str(namespaces[prefix][local])
+
+
+@cache
+def _schema_namespaces() -> dict:
+    """The prefixes the schema modules declare, each mapped to its generated ``CurieNamespace``."""
+    from linkml_runtime.utils.curienamespace import CurieNamespace
+
+    from tvbo.datamodel import schema
+
+    return {ns.prefix: ns for ns in vars(schema).values() if isinstance(ns, CurieNamespace)}
+
+
 def _has_slot(cls_name: str, slot: str) -> bool:
     """Whether the generated *cls_name* declares *slot* as a slot of its own.
 
