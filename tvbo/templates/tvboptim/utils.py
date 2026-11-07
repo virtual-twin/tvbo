@@ -1158,7 +1158,7 @@ def _callable_wants(ref, argument: str, source_dir=None) -> bool:
     import importlib
     import inspect
 
-    from tvbo.classes.network import _source_dir_on_path
+    from tvbo.behaviour.network import _source_dir_on_path
 
     try:
         with _source_dir_on_path(source_dir):

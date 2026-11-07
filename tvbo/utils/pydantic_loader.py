@@ -225,11 +225,14 @@ def validate(data: dict, target_class: str | type[BaseModel] | None = None, *, d
 
     Raises :class:`pydantic.ValidationError` if ``data`` does not conform. With ``drop_unknown=True``, keys not declared by the schema are discarded before validation instead of being rejected — used by the TVBO platform's database export to ignore Odoo-only fields (e.g. portal ``visibility``/``owner``) while hand-authored input still rejects unknown keys.
     """
+    from tvbo.utils.source import as_written
+
     target = _resolve_target(target_class)
     data = normalize(data, target)
     if drop_unknown:
         _strip_unknown(target, data)
-    return target.model_validate(data)
+    with as_written():
+        return target.model_validate(data)
 
 
 def loads(

@@ -376,8 +376,8 @@ def _invalidate_drawn_network(experiment, segs: list[str]):
 
 def rebuild_invalidated(objects, experiment=None) -> None:
     """Resolve again each object an override invalidated (:func:`apply_overrides`), from the directory of the recipe it was loaded from, so the run receives what the overridden declaration builds. A network that keeps a random subset of its source's nodes draws it from the ``execution.random_seed`` of *experiment*, as its build did."""
-    from tvbo.classes.experiment import _stated_seed
-    from tvbo.classes.network import drawing_from
+    from tvbo.behaviour.experiment import _stated_seed
+    from tvbo.behaviour.network import drawing_from
 
     with drawing_from(_stated_seed(getattr(experiment, "execution", None))):
         for obj in objects:

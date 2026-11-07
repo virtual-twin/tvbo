@@ -721,7 +721,9 @@ def load_declared_network(path):
     if study_layout.study_path("spec", root).resolve() not in path.parents:
         return load_network(path)
     with loading_from(root / path.name):
-        return tvbo_yaml_loader.construct(tvbo_yaml_loader.load_as_dict(path), Network)
+        net = tvbo_yaml_loader.construct(tvbo_yaml_loader.load_as_dict(path), Network)
+        net.settle()
+    return net
 
 
 def load_network(path):
@@ -771,8 +773,8 @@ def load_network(path):
         meta_dict["data_file"] = data_file  # beside an `iri` the constructor refuses it, naming both
 
     with loading_from(path):
-        # This loader attaches connectivity itself, so the constructor must not resolve it: `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `_resolve` runs below, once `_store` is in place.
-        net = tvbo_yaml_loader.construct({**meta_dict, "_defer_connectivity": True}, Network)
+        # Built unsettled, as a loader builds: `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `settle` runs below, once `_store` is in place.
+        net = tvbo_yaml_loader.construct(meta_dict, Network)
 
         # Attach non-schema metadata as attributes (used by bids_filename)
         if bids_meta:
@@ -797,7 +799,7 @@ def load_network(path):
             net.data_file = data_file or net.data_file  # an `iri` the constructor resolved names the curated sidecar
 
         # With a store attached the network is materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; without one, a `data_file` or `iri` naming another sidecar and a bare `parcellation:` resolve here.
-        net._resolve(source_dir=str(path.parent))
+        net.settle(source_dir=path.parent)
 
     return net
 
@@ -849,7 +851,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     sidecar_ext = ".json" if sidecar_format == "json" else ".yaml"
     sidecar_path = yaml_path.with_suffix(sidecar_ext)
 
-    from tvbo.classes.network import _read_held, _unheld_weight
+    from tvbo.behaviour.network import _read_held, _unheld_weight
 
     # Every edge matrix, resident or still in the source companion (the resident one wins), keyed by edge name for the writer. Read under one open handle, and read BEFORE the companion is opened for writing: a save onto the network's own companion truncates it, and everything still lazy would be gone. A layer declared with `used:` is never read from the companion, under any spelling of its name: once frozen the companion holds no matrix for it, and its value is the one its binding read, if any. A layer the companion holds is read, and an error reading it is raised (`_read_held`); a declared layer it does not hold is carried as in memory, declared and with no matrix, except a weight with nothing in memory either, which is refused below as `matrix()` refuses it.
     store = getattr(network, "_store", None)
@@ -872,7 +874,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     # Save the generic `weight`/`length` keys under the edges the network declares for them — see this function's docstring.
     primary = str(network.primary_weight or "weight")
     if arrays:
-        from tvbo.classes.network import _LENGTH_MEASURES
+        from tvbo.behaviour.network import _LENGTH_MEASURES
 
         names = [edge_name(te) for te in template_edges(meta.get("edges", []))]
         nameset = set(names)

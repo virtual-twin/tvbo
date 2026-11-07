@@ -52,11 +52,13 @@ class YamlDocument:
 
     @classmethod
     def from_datamodel(cls, record):
-        """A record of this class restating the slots *record* states.
+        """A record of this class restating the slots *record* states, each as its own copy.
 
-        The generated class is the class, so this is a copy through the constructor; a default *record* never stated is not restated.
+        The generated class is the class, so this is a copy through the constructor; a default *record* never stated is not restated, and a member is copied rather than shared, so the two records are edited apart.
         """
-        return cls(**{slot: getattr(record, slot) for slot in record.model_fields_set})
+        import copy
+
+        return cls(**{slot: copy.deepcopy(getattr(record, slot)) for slot in record.model_fields_set})
 
     def to_yaml(self, filepath: str | None = None):
         """Serialise this record to YAML.

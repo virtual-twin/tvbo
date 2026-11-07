@@ -639,7 +639,10 @@ def construct(data: Any, target_class: type, **kwargs: Any) -> Any:
 
     The file envelope (:data:`ENVELOPE_KEYS`) is dropped, since it belongs to no class, and the mapping goes straight to LinkML's constructor-class machinery, which dispatches on the target the way ``linkml_runtime.loaders.yaml_loader.load`` does. Nothing is parsed again, so every mapping reaches the class in the order its author declared it.
     """
-    return _linkml_yaml_loader.load(strip_envelope(data), target_class, **kwargs)
+    from tvbo.utils.source import as_written
+
+    with as_written():
+        return _linkml_yaml_loader.load(strip_envelope(data), target_class, **kwargs)
 
 
 def load(source: Any, target_class: type, **kwargs: Any) -> Any:

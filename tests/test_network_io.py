@@ -795,7 +795,6 @@ class TestMultiEdgeFreezeRoundtrip:
 
         n = next(iter(edges.values())).shape[0]
         net = Network(number_of_nodes=n)
-        net.__class__ = Network
         for name, mat in edges.items():
             net.set_matrix(name, mat)
         if primary is not None:

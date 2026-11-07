@@ -284,7 +284,7 @@ def resolve(cls_name: str, name: str, **entities: str) -> Path:
         )
 
     if cls_name == "Network":
-        from tvbo.classes.network import _find_network_sidecar
+        from tvbo.behaviour.network import _find_network_sidecar
 
         sidecar = _find_network_sidecar({"atlas": name, "rec": "dTOR", **entities})
         if sidecar is not None:

@@ -13,8 +13,9 @@ import pytest
 import yaml
 
 from tvbo import Network
-from tvbo.classes import network as network_module
-from tvbo.classes.network import NETWORK_DIR, _find_network_sidecar, get_normative_connectome_data
+from tvbo.behaviour import network as network_module
+from tvbo.behaviour.network import _find_network_sidecar
+from tvbo.classes.network import NETWORK_DIR, get_normative_connectome_data
 from tvbo.data.cohort import BIDS_ENTITY_SHORT_KEYS
 from tvbo.data.registry import resolve, retired_stems, stem_entities
 

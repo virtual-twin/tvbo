@@ -9,16 +9,10 @@ Usage:
 import sys
 
 from tvbo.datamodel import pydantic as _pydantic
-from tvbo.datamodel.pydantic import Network, UnitEnum
+from tvbo.datamodel.pydantic import UnitEnum
 from tvbo.utils.units import normalize_unit as _normalize_unit
 
 from .pydantic import *  # noqa: F401, F403
-
-# Defined here rather than in the generated file, so it survives `make gen-linkml`.
-Network.number_of_regions = property(
-    lambda self: self.number_of_nodes,
-    lambda self, v: setattr(self, "number_of_nodes", v),
-)
 
 
 def _unit_from_alias(cls, value):

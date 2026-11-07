@@ -302,7 +302,6 @@ def _freeze_spec_yaml(
 
     A list the study keeps out of its recipe stays out of the frozen one. Subjects read from ``dataset.subjects_file``, whether or not the kit bundles the dataset's files, and the members of a bundled cohort read from ``members_file`` or admitted by a ``rule`` are written to files beside the frozen spec (:func:`_write_listing`) and the frozen dataset names those files, so the kit carries each list as data and its specification states no identifier the study's does not.
     """
-    from tvbo.classes.network import Network
     from tvbo.data.cohort import dataset_subjects, find_cohort, lists_from_file
     from tvbo.datamodel import Dataset
     from tvbo.utils import keyed_items
@@ -361,8 +360,6 @@ def _freeze_spec_yaml(
             return experiment.render(format="yaml")
 
         spec_dir.mkdir(parents=True, exist_ok=True)
-        if not isinstance(net, Network):
-            net.__class__ = Network
         # Bake real node labels into the frozen connectome so the kit is self-contained and label reconciliation works on reload (the bids- block that would hydrate them is dropped from the frozen spec).
         if hasattr(experiment, "bake_real_node_labels"):
             experiment.bake_real_node_labels()

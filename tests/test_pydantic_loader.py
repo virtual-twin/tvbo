@@ -143,7 +143,7 @@ label: Envelope
 @pytest.mark.parametrize(
     "payload",
     [
-        {"label": "no id"},  # missing required id
+        {"id": "not an integer"},  # the identifier in the wrong type
         {"id": 1, "totally_bogus_key": 123},  # extra forbidden
         {"id": 1, "dynamics": ["not", "a", "model"]},  # wrong nested type
     ],

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -49,7 +50,7 @@ def _stub(dataset, observations, source_file=None):
         "_match_subject_files",
         "_sidecar_companions",
     ):
-        setattr(stub, name, _SE.__dict__[name].__get__(stub))
+        setattr(stub, name, inspect.getattr_static(_SE, name).__get__(stub))
     return stub
 
 

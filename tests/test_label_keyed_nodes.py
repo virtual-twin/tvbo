@@ -116,13 +116,15 @@ def test_the_datamodel_constructs_a_node_named_by_label_alone():
 
 
 def test_the_generated_datamodels_read_a_mapping_of_nodes_as_the_label_keyed_list():
-    """The dialect folds it for both generated forms, so a study's datamodel pass builds the same nodes from either spelling."""
+    """The dialect folds it for both generated forms, so a study's datamodel pass, which reads records as written, builds the same nodes from either spelling."""
     from tvbo.datamodel import pydantic as pyd
     from tvbo.datamodel import schema
     from tvbo.datamodel.dialect import UNASSIGNED_NODE_ID
+    from tvbo.utils.source import as_written
 
     for model in (schema, pyd):
-        nodes = model.Network(nodes={"L.A1": {"parameters": {"a": {"value": -0.1}}}, "R.A1": None}).nodes
+        with as_written():
+            nodes = model.Network(nodes={"L.A1": {"parameters": {"a": {"value": -0.1}}}, "R.A1": None}).nodes
         assert [(node.id, node.label) for node in nodes] == [(UNASSIGNED_NODE_ID, "L.A1"), (UNASSIGNED_NODE_ID, "R.A1")]
         assert nodes[0].parameters["a"].value == -0.1
 

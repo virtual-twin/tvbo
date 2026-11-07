@@ -167,8 +167,8 @@ class SimulationStudyBehaviour(Catalogued):
         from tvbo.utils import register_recipe_code_paths, yaml_loader
 
         raw = yaml_loader.load_as_dict(filepath) or {}
-        # a copy, so the record shares nothing with the raw dicts kept beside it
-        study = cls(**copy.deepcopy(yaml_loader.strip_envelope(raw)))
+        # a copy, so the record shares nothing with the raw dicts kept beside it; built as a document is, so its experiments stay records until one is materialised
+        study = yaml_loader.construct(copy.deepcopy(raw), cls)
         study._source_file = str(Path(filepath).resolve())
         register_recipe_code_paths(study._source_file, getattr(study, "code_source", None))
         raw_experiments = {e.get("id"): e for e in (raw.get("experiments") or []) if isinstance(e, dict)}
