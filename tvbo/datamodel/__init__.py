@@ -100,12 +100,7 @@ _UnitEnumMeta.__getattribute__ = _unit_meta_getattribute
 def _canonicalize_unit_slot(cls):
     """Give the open ``unit`` slot the canonical spelling of a curated unit.
 
-    That slot's range is open — ``UnitEnum`` or a bare string — so a unit nobody
-    has curated is recorded as the author wrote it. Being open also takes it off
-    LinkML's enum path, which is where a curated alias used to become its one
-    canonical spelling, so without this ``mV/ms`` and ``mV_per_ms`` would both
-    reach the published record as if they were different units. An uncurated unit
-    still passes through untouched: `normalize_unit` answers ``None`` for it.
+    That slot's range is open — ``UnitEnum`` or a bare string — so a unit nobody has curated is recorded as the author wrote it. Being open also takes it off LinkML's enum path, which is where a curated alias becomes its one canonical spelling, so without this ``mV/ms`` and ``mV_per_ms`` would both reach the published record as if they were different units. An uncurated unit still passes through untouched: `normalize_unit` answers ``None`` for it.
     """
     original = cls.__post_init__
 
