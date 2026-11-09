@@ -140,6 +140,7 @@ jobs:
   publish:
     name: Publish to PyPI
     needs: build
+    if: github.event_name == 'release'  # a dispatch builds and checks, never uploads
     runs-on: ubuntu-latest
     permissions:
       contents: read

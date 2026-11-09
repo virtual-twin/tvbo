@@ -142,7 +142,7 @@ jobs:
                           cd docs
                           # Cold build: drop every cache so all code cells re-execute.
                           rm -rf _freeze .quarto _site .jupyter_cache
-                          quarto render --cache-refresh
+                          PATH="${PATH}:/tmp/genenv/bin" quarto render --cache-refresh  # genenv last: cells keep the image python, the pre-render finds gen-doc
                           # Hand ownership back to the host runner user.
                           chown -R "${HOST_UID}:${HOST_GID}" _site _freeze .quarto 2>/dev/null || true
                           chown -R "${HOST_UID}:${HOST_GID}" /work/ontology /work/docs/ontology 2>/dev/null || true
