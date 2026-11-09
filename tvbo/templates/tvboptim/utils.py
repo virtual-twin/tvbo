@@ -28,6 +28,7 @@ from typing import Any
 from tvbo.export.registry import StartKind
 from tvbo.templates.base.utils import (  # noqa: F401  re-exported for the mako templates
     distribution_family,
+    referenced,
     resolve_distribution,
     samples_over_time,
 )
@@ -905,6 +906,10 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     pre_is_list = _pre_rhs0.startswith("[") and _pre_rhs0.endswith("]")
     pre_terms = parse_list_elements(_pre_rhs0) if pre_is_list else ([_pre_rhs0] if _pre_rhs0 else [])
     n_pre = len(pre_terms)
+    if n_pre > 1 and n_output == 1 and referenced(["gx"], getattr(post_expr, "rhs", None)):
+        raise ValueError(
+            f"coupling {getattr(coupling, 'name', coupling_key)!r} sums the {n_pre} terms of its list pre-expression into the model's one coupling input, so its post-expression must recombine them from {', '.join(f'gx_{k}' for k in range(n_pre))}; `{post_expr.rhs}` reads the whole stack `gx`."
+        )
 
     # Vectorized (matmul) vs per-edge reduction. The identity-sentinel pre() — no pre_expr, or the bare `local_states`/`incoming_states` keyword meaning "sources unchanged" — is a pure linear incoming sum (gx = W @ source): it takes the vectorized incoming-identity path however its states are declared — local-only (FastLinearCoupling), incoming-only, or both (e.g. c_glob: incoming+local same cvar). Source-only phase couplings with a real pre-expression stay per-edge (exact for any connectome) unless the coupling opts in with `vectorized: true`.
     vectorized = getattr(coupling, "vectorized", False)

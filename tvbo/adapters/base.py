@@ -440,9 +440,11 @@ class BaseAdapter:
     def resolve_couplings(self) -> OrderedDict:
         """The network's couplings, keyed by the role each plays in it.
 
-        The one place a backend asks what couplings an experiment has, so that a template never derives it: a template that reads the model itself is a second answer to a question this class already answers, and the two drift. A backend needing them keyed differently overrides this and calls up — see ``TvboptimAdapter``.
+        The one place a backend asks what couplings an experiment has, so that a template never derives it: a template that reads the model itself is a second answer to a question this class already answers, and the two drift. A backend needing them keyed differently overrides this and calls up — see ``TvboptimAdapter``. Each coupling carries its post-expression, the default one where it declares none (`Coupling.fill_post_expression`), also when it was put on the network after the experiment was built, and one with a parameter that neither its expressions nor the experiment's events read is refused (`Coupling.refuse_unread`).
         """
-        return OrderedDict(network_couplings(getattr(self.experiment, "network", None)))
+        from tvbo.behaviour.coupling import fill_network_couplings
+
+        return OrderedDict(fill_network_couplings(self.experiment))
 
     def get_default_coupling(self, all_couplings: OrderedDict | None = None):
         """The coupling a backend applies where an edge names none — the first declared."""

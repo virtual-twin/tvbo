@@ -88,6 +88,19 @@ def test_flatten_reservoir_assembles_global_matrix(patched_engine):
     assert "tanh(ReservoirInput)" in fr.dynamics["state_variables"]["x"]["equation"]["rhs"]
 
 
+def test_the_macro_gain_is_the_declared_global_coupling_scaling(patched_engine):
+    """A macro coupling that declares ``kappa`` its global coupling scaling and writes no post-expression scales the cross-region block by ``kappa``, not by ``b``, its first parameter."""
+    spec = _minimal_experiment()
+    spec["network"]["coupling"]["Long"] = {
+        "parameters": {
+            "b": {"value": 0.3},
+            "kappa": {"value": 0.5, "instance_of": ["tvbo:GlobalCouplingScaling"]},
+        }
+    }
+    reference = multiscale.flatten_reservoir(_minimal_experiment()).weights
+    np.testing.assert_array_equal(multiscale.flatten_reservoir(spec).weights, reference)
+
+
 def test_n_override_shrinks_reservoir(patched_engine):
     fr = multiscale.flatten_reservoir(_minimal_experiment(), n_override=2)
     assert fr.n_units == 2

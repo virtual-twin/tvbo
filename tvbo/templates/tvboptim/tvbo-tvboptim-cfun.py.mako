@@ -248,43 +248,30 @@ class ${class_name}(${base_class}):
     % endif
 
     def post(self, summed_inputs, local_states, params):
-<% _post_ref = str(post_expr.rhs) if post_expr else 'G * gx' %>\
+<% _post_ref = str(post_expr.rhs) %>\
         % for name in referenced(param_names, _post_ref):
         ${name} = params.${name}
         % endfor
-        % if 'G' not in param_names and referenced(['G'], _post_ref):
-        G = params.G if hasattr(params, 'G') else 1.0
-        % endif
         % if referenced(['gx'], _post_ref):
         gx = summed_inputs
         % endif
-## Recombination case: n_pre source reductions collapse into a SINGLE coupling
-## output (n_output == 1), e.g. the Kuramoto angle-addition identity. Expose the
-## named components gx_0, gx_1, … so post_expression can recombine them. When
-## n_output > 1 the list pre is a multi-output coupling (each reduction is its
-## own output, e.g. [S_e*wLRE, S_e*wFFI] → c_lre, c_ffi); there gx stays the full
-## [n_output, n_nodes] stack and post passes it through unchanged.
+## n_pre reductions recombined into one coupling output are exposed as gx_0, gx_1, …; with n_output > 1 each reduction is its own output and gx stays the [n_output, n_nodes] stack.
         % if n_pre > 1 and n_output == 1:
         % for k in range(n_pre):
         gx_${k} = summed_inputs[${k}]
         % endfor
         % endif
-## Target (post-synaptic) state aliases referenced in post_expression (e.g. θᵢ).
-## Bound whenever present — not only in the recombination case — so any
-## post_expression that uses a `{state}_i` alias resolves it.
+## Target-state aliases (`{state}_i`) the post-expression reads, bound in every case.
         % for alias_name, idx in _post_aliases_i:
         ${alias_name} = local_states[${idx}]
         % endfor
-        % if post_expr and post_is_list:
+        % if post_is_list:
         return jnp.stack([${', '.join(jaxcode(e) for e in parse_list_elements(str(post_expr.rhs).strip()))}], axis=0)
-        % elif post_expr and n_pre > 1 and n_output == 1:
-## Scalar recombination of the n_pre reductions → per-node [n_nodes];
-## add leading axis to return [n_output=1, n_nodes].
+        % elif n_pre > 1 and n_output == 1:
+## Scalar recombination of the n_pre reductions, returned as [n_output=1, n_nodes].
         return (${jaxcode(post_expr.rhs)})[jnp.newaxis, :]
-        % elif post_expr:
-        return ${jaxcode(post_expr.rhs)}
         % else:
-        return G * gx
+        return ${jaxcode(post_expr.rhs)}
         % endif
 
 % endfor

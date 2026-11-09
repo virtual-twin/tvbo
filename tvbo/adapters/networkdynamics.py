@@ -262,7 +262,7 @@ def coupling_split(coupling, model) -> dict:
 
     Every edge multiplies its pre-expression by the connection's weight, the connectome's entry the template sets on it, as every other backend multiplies ``pre(x_i, x_j)`` by ``W[i, j]``. The weight is an edge parameter of its own: ``w``, or ``weight`` where the coupling declares a ``w``, so a declared ``w`` keeps its declared value inside the pre-expression. A coupling declaring both is refused, and so is a pre-expression reading the weight's name without declaring it, which would weight the connection twice.
 
-    A parameter lives where its expression is evaluated. ``edge_parameters`` are the ``(name, default)`` pairs the edge model carries: those the pre-expression or an edge observable reads and those nothing reads, which a callback may address, then the weight. ``post_parameters`` are the ``(name, symbol, default)`` triples the vertex model carries for the post-expression, under ``<coupling>_<name>`` so they cannot collide with the node's own parameters; a parameter both expressions read is on both. ``post`` is the post-expression, or ``None`` where it is absent or the identity ``gx``, and ``post_function`` the Julia function the edge template defines for it.
+    A parameter lives where its expression is evaluated. ``edge_parameters`` are the ``(name, default)`` pairs the edge model carries: those the pre-expression or an edge observable reads and those only an edge event reads, which its callback addresses, then the weight. ``post_parameters`` are the ``(name, symbol, default)`` triples the vertex model carries for the post-expression, under ``<coupling>_<name>`` so they cannot collide with the node's own parameters; a parameter both expressions read is on both. ``post`` is the post-expression, or ``None`` where it is absent or the identity ``gx``, and ``post_function`` the Julia function the edge template defines for it.
 
     ``edge_body`` is the edge function's statements (`edge_expression`): the weighted pre-expression written into ``e_dst``, or a Julia body written for the edge, followed by the weighting. ``outdim`` is the number of values the edge sends, one per vertex output for an elementwise expression and one otherwise, and ``outsym`` their names. ``observed`` pairs each edge observable's name with its statements.
     """
@@ -571,15 +571,13 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         An undirected line is two directed edges, and a callback changes only the component it runs on, so where an edge event is declared ``line_partners`` maps each direction of every line to the other: the template copies an edge affect's parameter changes onto the partner, and the line trips as the one edge it was declared as. A callback on the partner as well would fire a second time at the same instant and save a second pair of points there.
         """
-        import re
+        from tvbo.utils import edge_index
 
-        labels = {str(edge.label): k for k, edge in enumerate(edges) if getattr(edge, "label", None)}
         targets, names = {}, []
         for event, _ in events:
             target = getattr(event, "target_component", None)
             kind = str(getattr(event.event_type, "text", event.event_type))
-            numbered = re.fullmatch(r"edge_(\d+)", str(target))
-            k = labels.get(str(target), int(numbered.group(1)) - 1 if numbered else None)
+            k = edge_index(target, edges)
             if kind not in ("continuous", "preset_time") or (target != "all_edges" and k is None):
                 raise NotImplementedError(
                     f"event {event.name} is a {kind} event targeting {target}, and the NetworkDynamics.jl templates lower continuous and preset_time events on edges only: "

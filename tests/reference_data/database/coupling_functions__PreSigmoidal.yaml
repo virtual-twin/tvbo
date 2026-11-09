@@ -16,6 +16,8 @@ parameters:
     name: H
     value: 0.5
     description: Global Factor
+    instance_of:
+    - tvbo:GlobalCouplingScaling
   G:
     name: G
     value: 60.0

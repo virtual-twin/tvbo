@@ -12,6 +12,52 @@ import numpy as np
 from tvbo.behaviour._runtime import Catalogued
 
 
+def event_parameters(experiment) -> set[str]:
+    """The parameter names the events on *experiment*'s edges read or set, each one's ``condition_parameters`` and ``affect_parameters``.
+
+    An event is on the edges when it is declared in a listed edge's own ``events``, or declared on the experiment or in a node's own ``events`` with a ``target_component`` of ``all_edges``, ``edge_<n>`` for ``n`` from 1 to the number of listed edges, or the label of a listed edge, the components whose parameters are the coupling's. One targeting anything else, ``edge_0`` and an ``edge_<n>`` past the last listed edge included, names parameters of the dynamics or of the event itself, so it reads no coupling parameter. The grammar names the component and not the coupling, so on a network with several couplings an edge event's names count for each.
+    """
+    from tvbo.utils import edge_index, keyed_items
+
+    network = getattr(experiment, "network", None)
+    edges = getattr(network, "edges", None) or []
+    nodes = getattr(network, "nodes", None) or []
+
+    def on_edges(event) -> bool:
+        target = event.target_component or ""
+        k = edge_index(target, edges)
+        return target == "all_edges" or (k is not None and 0 <= k < len(edges))
+
+    targeting = [
+        *keyed_items(getattr(experiment, "events", None), "events"),
+        *(item for node in nodes for item in keyed_items(node.events, "events")),
+    ]
+    declared = [event for _, event in targeting if on_edges(event)]
+    declared += [event for edge in edges for _, event in keyed_items(edge.events, "events")]
+    return {
+        str(name) for event in declared for name in [*(event.condition_parameters or []), *(event.affect_parameters or [])]
+    }
+
+
+def _texts(equation) -> list:
+    """The right-hand side of *equation* and each branch's condition and expression, none for no equation."""
+    if equation is None:
+        return []
+    branches = equation.conditionals or []
+    return [equation.rhs, *(part for branch in branches for part in (branch.condition, branch.expression))]
+
+
+def fill_network_couplings(experiment) -> dict:
+    """*experiment*'s network couplings keyed by the role each plays, each given its default post-expression where it declares none and refused when a parameter is read by none of its expressions and no event on the network's edges (`Coupling.fill_post_expression`, `Coupling.refuse_unread`)."""
+    from tvbo.utils import network_couplings
+
+    read_by_events = event_parameters(experiment)
+    couplings = network_couplings(getattr(experiment, "network", None))
+    for coupling in couplings.values():
+        coupling.fill_post_expression().refuse_unread(read_by_events)
+    return couplings
+
+
 class CouplingBehaviour(Catalogued):
     """Population, rendering and symbolic reading for a coupling function."""
 
@@ -78,10 +124,7 @@ class CouplingBehaviour(Catalogued):
         Dispatches to `to_yaml`, `report`, or `render_code` depending on `format`.
 
         Args:
-            format: Output format. `"yaml"` serializes to YAML; `"report"`,
-                `"markdown"`, `"md"`, or `"pdf"` produce a human-readable
-                report; any other value is forwarded to `render_code` to
-                generate backend code.
+            format: Output format. `"yaml"` serializes to YAML; `"report"`, `"markdown"`, `"md"`, or `"pdf"` produce a human-readable report; any other value is forwarded to `render_code` to generate backend code.
             **kwargs: Forwarded to the underlying renderer (e.g. `filepath`).
 
         Returns:
@@ -99,12 +142,9 @@ class CouplingBehaviour(Catalogued):
         """Generate backend-specific code for this coupling.
 
         Args:
-            format: Target backend (case-insensitive). One of `"tvb"`,
-                `"autodiff"`/`"jax"`, `"tvboptim"`/`"tvb-optim"`, or
-                `"python"`.
+            format: Target backend (case-insensitive). One of `"tvb"`, `"autodiff"`/`"jax"`, `"tvboptim"`/`"tvb-optim"`, or `"python"`.
             model: Model context passed to the JAX template when relevant.
-            alt_label: Alternative label accepted for signature
-                compatibility; not used directly by this method.
+            alt_label: Alternative label accepted for signature compatibility; not used directly by this method.
             **kwargs: Additional arguments forwarded to the selected template.
 
         Returns:
@@ -116,6 +156,7 @@ class CouplingBehaviour(Catalogued):
         from tvbo import templates
         from tvbo.codegen import templater
 
+        self.fill_post_expression()
         fmt = format.lower()
         if fmt == "tvb":
             rendered_code = templates.lookup.get_template("tvbo-tvb-coupling.py.mako").render(coupling=self)
@@ -146,14 +187,8 @@ class CouplingBehaviour(Catalogued):
         Args:
             format: ``markdown``/``md`` or ``pdf``.
             outputfile: Where to write the rendering, if anywhere.
-            parameters: Emit the parameter table. A host report that already
-                glossaries these symbols passes ``False`` — a study's Methods lists
-                them beside the model's, so the table here would repeat rows the
-                reader has just read, uncaptioned and unnumbered.
-            equations: A ``tvbo.utils.report.Equations`` to number and anchor the
-                coupling equation with. Without one it renders bare, and in a study
-                report that is the only unnumbered equation on the page — the reader
-                can cite every state equation and not the coupling that joins them.
+            parameters: Emit the parameter table. A host report that already glossaries these symbols passes ``False`` — a study's Methods lists them beside the model's, so the table here would repeat rows the reader has just read, uncaptioned and unnumbered.
+            equations: A ``tvbo.utils.report.Equations`` to number and anchor the coupling equation with. Without one it renders bare, and in a study report that is the only unnumbered equation on the page — the reader can cite every state equation and not the coupling that joins them.
         """
         from tvbo import templates
 
@@ -184,18 +219,12 @@ class CouplingBehaviour(Catalogued):
         Renders the coupling code via `render_code`, executes it, and returns the resulting runtime object.
 
         Args:
-            format: Target backend. `"tvb"` returns an instantiated TVB
-                coupling object; `"tvboptim"`/`"tvb-optim"` returns an
-                instantiated tvboptim coupling class; `"python"` returns a
-                `sympy.lambdify`-based callable for the coupling equation.
-            alt_label: Alternative name to instantiate the coupling under
-                (TVB backend only).
-            **kwargs: Constructor arguments forwarded to the instantiated
-                coupling object.
+            format: Target backend. `"tvb"` returns an instantiated TVB coupling object; `"tvboptim"`/`"tvb-optim"` returns an instantiated tvboptim coupling class; `"python"` returns a `sympy.lambdify`-based callable for the coupling equation.
+            alt_label: Alternative name to instantiate the coupling under (TVB backend only).
+            **kwargs: Constructor arguments forwarded to the instantiated coupling object.
 
         Returns:
-            The instantiated backend coupling object, or a callable for the
-            `"python"` format.
+            The instantiated backend coupling object, or a callable for the `"python"` format.
         """
         from tvbo.codegen import templater
 
@@ -238,10 +267,111 @@ class CouplingBehaviour(Catalogued):
 
     @property
     def post(self):
-        """The parsed post-summation expression of the coupling function."""
+        """The parsed post-summation expression of the coupling function, the default where none is declared."""
         from tvbo.codegen.code import parse_eq
 
-        return parse_eq(self.post_expression)
+        return parse_eq(self.fill_post_expression().post_expression)
+
+    def global_scaling(self) -> str | None:
+        """The name of the parameter this coupling declares its global coupling scaling, or ``None`` when it declares none.
+
+        A parameter is the global scaling when its ``instance_of`` names ``tvbo:GlobalCouplingScaling``, whatever the parameter is called; a ``G`` without that declaration is an ordinary parameter, a drive or a gain. The class is recognised by its IRI, so naming it never reads the ontology; any other ``tvbo:`` class is looked up there, and a class of another namespace (``neuroml:``, an OBO term) is a membership this rule leaves alone.
+
+        Raises:
+            ValueError: a parameter's ``instance_of`` names a ``tvbo:`` term that is not a class of the TVB-O ontology, or two parameters are declared the global scaling.
+        """
+        from tvbo.ontology.query import TVBO_NAMESPACE, class_at_iri, tvbo_iri
+        from tvbo.utils import keyed_items
+
+        scaling_class = TVBO_NAMESPACE + "GlobalCouplingScaling"
+        scalings = []
+        for name, parameter in keyed_items(self.parameters, "parameters"):
+            classes = {str(reference): tvbo_iri(reference) for reference in getattr(parameter, "instance_of", None) or []}
+            for reference, iri in classes.items():
+                if iri in (None, scaling_class):
+                    continue
+                if class_at_iri(iri) is None:
+                    raise ValueError(
+                        f"coupling {self.name!r} declares its parameter {str(name)!r} an instance of {reference!r}, which is not a class of the TVB-O ontology."
+                    )
+            if scaling_class in classes.values():
+                scalings.append(str(name))
+        if len(scalings) > 1:
+            raise ValueError(
+                f"coupling {self.name!r} declares {len(scalings)} parameters its global coupling scaling ({', '.join(scalings)}); a coupling has at most one."
+            )
+        return scalings[0] if scalings else None
+
+    def fill_post_expression(self):
+        """Give the coupling the default post-expression where it declares none, warn when its global scaling acts twice, and return it.
+
+        The default is the declared global scaling times the summed input, ``K * gx`` for a parameter ``K`` declared an instance of ``tvbo:GlobalCouplingScaling``, and ``gx`` where no parameter is. Every backend reads the coupling after this has run. The warning names the coupling and its scaling when the scaling appears in the pre-expression and in the post-expression, in a right-hand side or a branch, the default included, since it then scales the coupling twice.
+
+        Raises:
+            ValueError: :meth:`global_scaling` refuses the coupling's declarations.
+        """
+        import warnings
+
+        from tvbo.templates.base.utils import referenced
+
+        scaling = self.global_scaling()
+        if self.post_expression is None:
+            self.post_expression = self._default_post_expression(scaling)
+        post = str(self.post_expression.rhs)
+        if (
+            scaling
+            and referenced([scaling], *_texts(self.pre_expression))
+            and referenced([scaling], *_texts(self.post_expression))
+        ):
+            warnings.warn(
+                f"coupling {self.name!r} applies its global coupling scaling `{scaling}` twice, in its pre-expression and in its post-expression `{post}` (`{scaling} * gx` where a coupling declares none); keep `{scaling}` in one of the two.",
+                stacklevel=1,  # this line, so the default filter shows it once per coupling whichever caller fills it
+            )
+        return self
+
+    def _default_post_expression(self, scaling):
+        """The post-expression of a coupling that declares none, ``K * gx`` for its global scaling *scaling* (:meth:`global_scaling`) and ``gx`` for none."""
+        from tvbo.datamodel.dialect import peer_module
+
+        return peer_module(self).Equation(rhs=f"{scaling} * gx" if scaling else "gx")
+
+    def refuse_unread(self, read_by_events):
+        """Refuse the coupling when one of its parameters is read by nothing, and return it.
+
+        *read_by_events* names the parameters the experiment's edge events read or set (:func:`event_parameters`). A parameter is read by such an event, by the pre-expression, the post-expression, the coupling function, an observed variable or the equation of a parameter that is itself read, in a right-hand side or in a branch; one read by none of them is refused, since setting, sweeping or fitting it would change nothing. The reads close to a fixed point, so ``b`` in ``a = 2 * b`` is read once ``a`` is, and a parameter's own equation never counts toward itself. One error names every parameter left unread, the ones taken from the curated function its ``iri`` names included. The post-expression is the one the coupling declares, else the default :meth:`fill_post_expression` gives it, so the default's read of its global scaling counts whether or not the coupling was filled first.
+
+        Raises:
+            ValueError: a parameter of the coupling is read by none of its expressions and none of those events.
+        """
+        from tvbo.templates.base.utils import referenced
+        from tvbo.utils import keyed_items
+
+        parameters = keyed_items(self.parameters, "parameters")
+        names = [str(name) for name, _ in parameters]
+        starts = {str(name): _texts(getattr(parameter, "equation", None)) for name, parameter in parameters}
+        observed = [variable.equation for _, variable in keyed_items(getattr(self, "observed", None), "observed")]
+        post = getattr(self, "post_expression", None)
+        if post is None:
+            post = self._default_post_expression(self.global_scaling())
+        expressions = [
+            getattr(self, "pre_expression", None),
+            post,
+            getattr(self, "coupling_function", None),
+            *observed,
+        ]
+        read = set(read_by_events) | set(referenced(names, *(text for equation in expressions for text in _texts(equation))))
+        frontier = read
+        while frontier:
+            texts = [text for name in frontier for text in starts.get(name, [])]
+            frontier = set(referenced([name for name in names if name not in read], *texts))
+            read |= frontier
+        unread = [name for name in names if name not in read]
+        if unread:
+            source = f", built from `{self.iri}`," if getattr(self, "iri", None) else ""
+            raise ValueError(
+                f"coupling {self.name!r}{source} has the parameter{'s' if len(unread) > 1 else ''} {', '.join(map(repr, unread))}, which none of its expressions and no event on the network's edges reads, the post-expression `{post.rhs}` included; use a parameter in an expression or name it in an edge event's `condition_parameters` or `affect_parameters`, or declare it `instance_of: [tvbo:GlobalCouplingScaling]` and leave out the post-expression, so that the default post-expression scales the summed input by it."
+            )
+        return self
 
     @property
     def equation(self):
@@ -301,6 +431,8 @@ class CouplingBehaviour(Catalogued):
 
         from tvbo.parse.expression import parse_eq
 
+        self.fill_post_expression()
+
         i, j, N, w, _incoming, _local = self._edge_indexing(delays)
         gx = Symbol("gx")
 
@@ -354,8 +486,7 @@ class CouplingBehaviour(Catalogued):
 
         The k-th pre component is summed into ``gx_k`` and the post recombines them. When the post is linear in the ``gx_k`` — the usual case — this collapses to the canonical single sum ``c = Sum_j w[i,j] * sum_k a_k(x_i) * pre_k(x_j)`` and lets ``trigsimp`` fold the per-edge term; otherwise the explicit ``gx_k = Sum(w * pre_k)`` form is kept. Built outside the caller's ``evaluate(False)`` block so the sum, the coefficients and ``trigsimp`` evaluate.
 
-        A folded odd-trig term is shown in the physics convention ``f(incoming - local)``:
-        sympy canonicalises ``f(x_j - x_i)`` to ``-f(x_i - x_j)``, so it is rebuilt positive-first.
+        A folded odd-trig term is shown in the physics convention ``f(incoming - local)``: sympy canonicalises ``f(x_j - x_i)`` to ``-f(x_i - x_j)``, so it is rebuilt positive-first.
         """
         import sympy as sp
         from sympy import Sum, Symbol
@@ -409,20 +540,14 @@ class CouplingBehaviour(Catalogued):
         Lambdifies the assembled coupling `equation` and evaluates it while sweeping one node's state over `xs`, holding the other components fixed.
 
         Args:
-            weights: Connectivity weight matrix. If omitted, a random 3x3
-                matrix with a zeroed diagonal is used.
-            node_idx: Plotting gate only. When not `None` (the default is `0`)
-                the plot is drawn; the value is not otherwise used, as the swept
-                component is always index 0. Pass `None` to skip plotting.
-            xs: Values to sweep the selected state component over. Defaults
-                to 100 points on the interval `[-2, 2]`.
-            ax: Matplotlib axes to draw on. If omitted, a new figure is
-                created and returned.
+            weights: Connectivity weight matrix. If omitted, a random 3x3 matrix with a zeroed diagonal is used.
+            node_idx: Plotting gate only. When not `None` (the default is `0`) the plot is drawn; the value is not otherwise used, as the swept component is always index 0. Pass `None` to skip plotting.
+            xs: Values to sweep the selected state component over. Defaults to 100 points on the interval `[-2, 2]`.
+            ax: Matplotlib axes to draw on. If omitted, a new figure is created and returned.
             **kwargs: Accepted for signature flexibility; currently unused.
 
         Returns:
-            The created Matplotlib figure when `ax` is omitted and `node_idx`
-            is not `None`; otherwise `None`.
+            The created Matplotlib figure when `ax` is omitted and `node_idx` is not `None`; otherwise `None`.
         """
         import matplotlib.pyplot as plt
         import sympy as sp

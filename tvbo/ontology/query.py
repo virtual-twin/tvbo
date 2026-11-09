@@ -10,13 +10,14 @@ from typing import Any
 
 import owlready2
 
+from tvbo.data.registry import NAMESPACE as TVBO_NAMESPACE
 from tvbo.ontology import owl as ontology
 
 prefixes = {
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#": "rdf:",
     "http://www.w3.org/2000/01/rdf-schema#": "rdfs:",
     "http://www.w3.org/2002/07/owl#": "owl:",
-    "https://w3id.org/tvbo/": "tvbo:",
+    TVBO_NAMESPACE: "tvbo:",
 }
 
 
@@ -34,6 +35,22 @@ def iri2prefix(iri: str) -> str:
     for base, prefix in prefixes.items():
         iri = iri.replace(base, prefix)
     return iri
+
+
+def tvbo_iri(reference) -> str | None:
+    """The full IRI of *reference* when it names a term of the TVB-O namespace, written ``tvbo:X`` or in full, scoped (``tvbo:coupling_functions/Linear``) or not, else ``None``."""
+    reference = str(reference)
+    for written in ("tvbo:", TVBO_NAMESPACE):
+        local = reference[len(written) :] if reference.startswith(written) else None
+        if local:
+            return TVBO_NAMESPACE + local
+    return None
+
+
+def class_at_iri(iri: str) -> Any:
+    """The class of the TVB-O ontology at the full IRI *iri*, or ``None`` when it has none there."""
+    found = ontology.onto.world[str(iri)]
+    return found if isinstance(found, owlready2.ThingClass) else None
 
 
 def convert_greek_to_latin(text: str) -> str:

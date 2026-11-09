@@ -69,7 +69,7 @@ LABELLED = GRID.replace(
 
 COUPLED = GRID.replace("      ElemDecay.k:\n", "      Lin.k:\n").replace(
     "  number_of_nodes: 2\n",
-    "  number_of_nodes: 2\n  coupling:\n    Lin:\n      parameters:\n        k: {value: 0.01}\n      pre_expression: {rhs: x_j}\n",
+    "  number_of_nodes: 2\n  coupling:\n    Lin:\n      parameters:\n        k: {value: 0.01}\n      pre_expression: {rhs: k * x_j}\n",
 )
 
 

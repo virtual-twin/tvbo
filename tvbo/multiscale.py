@@ -233,7 +233,12 @@ def _folded_integration(exp: dict, subnet: dict) -> dict:
 
 
 def _gain_param_name(coupling_spec: dict) -> str:
-    """The scalar gain parameter referenced by the macro post_expression (e.g. kappa, G)."""
+    """The macro coupling's scalar gain: the parameter it declares its global coupling scaling (`Coupling.global_scaling`), else the one its post-expression reads (e.g. kappa, G), else its first."""
+    from tvbo.classes.coupling import Coupling
+
+    declared = Coupling(**coupling_spec).global_scaling()
+    if declared is not None:
+        return declared
     post = _pluck(coupling_spec, "post_expression", "rhs") or ""
     for name in coupling_spec.get("parameters") or {}:
         if name in post:

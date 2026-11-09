@@ -97,9 +97,9 @@ jobs:
           enable-cache: true
           activate-environment: true
 
-      # Exactly what the generators import; the extra that declares pybtex is `docs`, which would drag quarto and jupyter in for nothing. A floor rather than a pin, so the ontology tracks linkml the way the rest of the project does.
-      - name: Install generator toolchain
-        run: uv pip install "linkml>=1.12.1" "linkml-runtime>=1.12.1" pyyaml rdflib pybtex
+      # The package itself, whose registry the A-box generator reads, plus exactly what the generators import; the extra that declares pybtex is `docs`, which would drag quarto and jupyter in for nothing. A floor rather than a pin, so the ontology tracks linkml the way the rest of the project does.
+      - name: Install the package and the generator toolchain
+        run: uv pip install . "linkml>=1.12.1" "linkml-runtime>=1.12.1" pyyaml rdflib pybtex
 
       - uses: actions/setup-java@v4
         with:
@@ -107,11 +107,12 @@ jobs:
           java-version: "17"
 
       - name: Install ROBOT
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p $HOME/.local/bin
-          curl -L -o $HOME/.local/bin/robot.jar \
-            https://github.com/ontodev/robot/releases/download/v1.9.6/robot.jar
-          curl -L -o $HOME/.local/bin/robot \
+          gh release download v1.9.6 --repo ontodev/robot --pattern robot.jar --dir $HOME/.local/bin
+          curl -fsSL -o $HOME/.local/bin/robot \
             https://raw.githubusercontent.com/ontodev/robot/v1.9.6/bin/robot
           chmod +x $HOME/.local/bin/robot
           echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -139,6 +140,7 @@ jobs:
   publish:
     name: Publish to PyPI
     needs: build
+    if: github.event_name == 'release'  # a dispatch builds and checks, never uploads
     runs-on: ubuntu-latest
     permissions:
       contents: read

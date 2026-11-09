@@ -51,7 +51,7 @@ network:
       iri: tvbo:coupling_functions/Linear
       delayed: false
       parameters:
-        G: {value: 0.0, description: "No inter-node coupling (single node)"}
+        a: {value: 0.0, description: "No inter-node coupling (single node)"}
       incoming_states: [V]
 
 integration:

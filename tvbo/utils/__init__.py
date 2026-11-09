@@ -297,6 +297,18 @@ Both spellings resolve to a connectome matrix through ``Network.matrix()``.
 """
 
 
+def edge_index(target, edges) -> int | None:
+    """The position in *edges* that an event's ``target_component`` *target* names, counted from 0, else ``None``.
+
+    A target names an edge by its ``label`` or as ``edge_<n>``, the n-th listed edge counted from 1 in declaration order. The position is not checked against the list, so a caller tells a numbered edge that is not listed from a target that names no edge.
+    """
+    import re
+
+    labels = {str(edge.label): k for k, edge in enumerate(edges) if getattr(edge, "label", None)}
+    numbered = re.fullmatch(r"edge_(\d+)", str(target))
+    return labels.get(str(target), int(numbered.group(1)) - 1 if numbered else None)
+
+
 def edge_label(ref):
     """Canonical ``Network.matrix()`` label for a network reference, else ``None``.
 
