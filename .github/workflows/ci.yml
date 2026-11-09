@@ -258,11 +258,12 @@ jobs:
                   distribution: temurin
                   java-version: "17"
             - name: Install ROBOT
+              env:
+                  GH_TOKEN: ${{ github.token }}
               run: |
                   mkdir -p $HOME/.local/bin
-                  curl -L -o $HOME/.local/bin/robot.jar \
-                      https://github.com/ontodev/robot/releases/download/v1.9.6/robot.jar
-                  curl -L -o $HOME/.local/bin/robot \
+                  gh release download v1.9.6 --repo ontodev/robot --pattern robot.jar --dir $HOME/.local/bin
+                  curl -fsSL -o $HOME/.local/bin/robot \
                       https://raw.githubusercontent.com/ontodev/robot/v1.9.6/bin/robot
                   chmod +x $HOME/.local/bin/robot
                   echo "$HOME/.local/bin" >> $GITHUB_PATH
