@@ -12,6 +12,8 @@ parameters:
   G:
     name: G
     value: 0.1
+    instance_of:
+      - tvbo:GlobalCouplingScaling
     description: Global coupling strength scaling long-range connections
     domain:
       lo: 0.0

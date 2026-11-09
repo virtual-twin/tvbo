@@ -54,7 +54,7 @@ class CouplingTransforms(NamedTuple):
 
 
 def coupling_transforms(model, coupling) -> CouplingTransforms:
-    """*coupling*'s pre- and post-transform on *model*, each name bound as `coupling_bindings` binds it for the code-generating backends.
+    """*coupling*'s pre- and post-transform on *model*, each name bound as `coupling_bindings` binds it for the code-generating backends, the post-transform the default one where the coupling declares none (`Coupling.fill_post_expression`).
 
     ``pre(source, target)`` takes the two nodes' state vectors and reads the source's gathered states (the coupling's ``incoming_states``, else the model's coupling variables, in that order) as ``x_j``, the target's as ``x_i``, a gathered source state by its bare name or as ``<state>_j``, and the target's own value of a state as ``<state>_i``. ``post(gx, target)`` reads the weighted sum ``gx``, its rows ``gx_<k>`` where ``pre`` is a list, and ``<state>_i``. ``zero`` is an empty sum, shaped as ``pre``'s output, so a node without afferents receives the post-transform of zero, as on every array backend. ``inject(rows)`` places row ``k`` of the post-transform at the state the ``python-network`` derivative function reads the model's ``k``-th global coupling input from (`gathered_state_indices`).
 
@@ -67,7 +67,7 @@ def coupling_transforms(model, coupling) -> CouplingTransforms:
     from tvbo.templates.base.utils import coupling_bindings, gathered_state_indices, get_coupling_terms
     from tvbo.utils import initial_value
 
-    bindings = coupling_bindings(model, coupling)
+    bindings = coupling_bindings(model, coupling.fill_post_expression())
     parameters = {str(name): p.value for name, p in (coupling.parameters or {}).items()}
     gathered = [bindings["sv_index"][name] for name in bindings["cvar_names"]]
     bare = [bindings["cvar_index"][name] for name in bindings["bare"]]

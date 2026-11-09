@@ -10,6 +10,8 @@ parameters:
       hi: 10.0
       log_scale: false
     description: Global coupling strength scaling long-range connections
+    instance_of:
+    - tvbo:GlobalCouplingScaling
   b:
     name: b
     value: 0.0

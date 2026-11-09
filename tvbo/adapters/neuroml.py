@@ -2923,7 +2923,7 @@ def build_lems_context(experiment):
         experiment: The experiment to render.
 
     Returns:
-        The context dict, keyed `dyn`, `dyn_id`, `params`, `svs`, `dvs`, `events`, `coupling_inputs`, `coupling_meta`, `coupling_params`, `coupling_pre_rhs`, `coupling_post_rhs`, `coupling_global`, `sv_names_set`, `n_nodes`, the clock's `dt`, `length` (the settle and the measured window together) and `settle_constant` (`LemsClock`), and the callables `lems_expr`, `_parse_piecewise`, `lems_dim` and `safe_id`, whose expressions read ``t`` on the measurement clock.
+        The context dict, keyed `dyn`, `dyn_id`, `params`, `svs`, `dvs`, `events`, `coupling_inputs`, `coupling_meta`, `coupling_params`, `coupling_pre_rhs`, `coupling_post_rhs`, `sv_names_set`, `n_nodes`, the clock's `dt`, `length` (the settle and the measured window together) and `settle_constant` (`LemsClock`), and the callables `lems_expr`, `_parse_piecewise`, `lems_dim` and `safe_id`, whose expressions read ``t`` on the measurement clock.
     """
     from sympy import Eq as sympy_Eq
     from sympy import Piecewise
@@ -2964,27 +2964,26 @@ def build_lems_context(experiment):
         "c_pop0",
     )
 
-    # Coupling metadata
-    coupling_meta = getattr(experiment, "coupling", None)
+    # The coupling's post-expression applies its declared global scaling, the default included, so the LEMS sum `gx` carries no factor of its own.
+    coupling_meta = BaseAdapter(experiment).get_default_coupling()
     coupling_params = {}
     coupling_pre_rhs = None
-    coupling_post_rhs = None
-    coupling_global = 1.0
+    coupling_post_rhs = "gx"
     if coupling_meta is not None:
         coupling_params = dict(getattr(coupling_meta, "parameters", None) or {})
         pre_eq = getattr(getattr(coupling_meta, "pre_expression", None), "rhs", None)
-        post_eq = getattr(getattr(coupling_meta, "post_expression", None), "rhs", None)
         coupling_pre_rhs = str(pre_eq) if pre_eq else None
-        coupling_post_rhs = str(post_eq) if post_eq else None
-        g_param = coupling_params.get("global_coupling") or coupling_params.get("a")
-        coupling_global = getattr(g_param, "value", 1.0) if g_param else 1.0
+        post_rhs = coupling_meta.post_expression.rhs
+        if post_rhs is None:
+            raise NotImplementedError(
+                f"coupling {coupling_meta.name!r} declares its post-expression by branches alone, and the LEMS Coupling ComponentType takes one expression for `post`; write it as a right-hand side."
+            )
+        coupling_post_rhs = str(post_rhs)
 
     sv_names_set = set(str(k) for k in svs.keys())
     if coupling_pre_rhs is None:
         first_sv = next(iter(svs), None)
         coupling_pre_rhs = f"{first_sv}_j" if first_sv else "x_j"
-    if coupling_post_rhs is None:
-        coupling_post_rhs = "global_coupling * pre"
 
     network = getattr(experiment, "network", None)
     n_nodes = int(network.number_of_nodes) if network and hasattr(network, "number_of_nodes") else 1
@@ -3000,7 +2999,7 @@ def build_lems_context(experiment):
         + [str(k) for k in dvs.keys()]
         + [str(ci) for ci in coupling_inputs]
         + ["c_pop0", "c_pop1", "local_coupling"]
-        + ["pre", "gx", "post", "global_coupling"]  # coupling CT vars
+        + ["pre", "gx", "post"]  # coupling CT vars
         + [f"{sv}_j" for sv in svs.keys()]  # pre-synaptic symbols
         + [str(k) for k in coupling_params.keys()]  # coupling parameters
     )
@@ -3127,7 +3126,6 @@ def build_lems_context(experiment):
         coupling_params=coupling_params,
         coupling_pre_rhs=coupling_pre_rhs,
         coupling_post_rhs=coupling_post_rhs,
-        coupling_global=coupling_global,
         sv_names_set=sv_names_set,
         n_nodes=n_nodes,
         dt=clock.step,

@@ -3,6 +3,8 @@ parameters:
   a:
     name: a
     value: 0.1
+    instance_of:
+      - tvbo:GlobalCouplingScaling
 sparse: false
 pre_expression:
   rhs: -x_i + x_j

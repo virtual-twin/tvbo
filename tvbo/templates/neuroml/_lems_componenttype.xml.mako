@@ -220,22 +220,16 @@ All template variables are injected by the calling template's render context
 % if n_nodes > 1:
   <!-- ════════════════════════════════════════════════════════════════
        Coupling ComponentType
-       Provides pre/post expressions + global coupling parameter.
-       The DerivedVariable ${coupling_output_name} is the coupling input consumed
-       by the dynamics ComponentType's coupling_inputs.
+       Provides the pre/post expressions and the coupling's parameters. The DerivedVariable ${coupling_output_name} is the coupling input consumed by the dynamics ComponentType's coupling_inputs.
        ════════════════════════════════════════════════════════════════ -->
   <ComponentType name="Coupling">
-    <Parameter name="global_coupling" dimension="none"/>
 % for pname, p in coupling_params.items():
-<% pname_str = str(pname) %>\
-% if pname_str != "global_coupling":
-    <Parameter name="${pname_str}" dimension="${_dim(getattr(p, 'unit', None))}"/>
-% endif
+    <Parameter name="${str(pname)}" dimension="${_dim(getattr(p, 'unit', None))}"/>
 % endfor
     <Dynamics>
       <DerivedVariable name="pre"  dimension="none" value="${lems_expr(coupling_pre_rhs)}"/>
-      <DerivedVariable name="gx"   dimension="none" value="global_coupling * pre"/>
-      <DerivedVariable name="post" dimension="none" value="${lems_expr(coupling_post_rhs) if coupling_post_rhs != 'global_coupling * pre' else 'gx'}"/>
+      <DerivedVariable name="gx"   dimension="none" value="pre"/>
+      <DerivedVariable name="post" dimension="none" value="${lems_expr(coupling_post_rhs)}"/>
       <DerivedVariable name="${coupling_output_name}" dimension="none" value="post"/>
     </Dynamics>
   </ComponentType>
@@ -266,12 +260,9 @@ All template variables are injected by the calling template's render context
 />
 
 % if n_nodes > 1:
-  <Component id="coupling" type="Coupling" global_coupling="${coupling_global}"\
+  <Component id="coupling" type="Coupling"\
 % for pname, p in coupling_params.items():
-<% pname_str = str(pname) %>\
-% if pname_str != "global_coupling":
- ${pname_str}="${getattr(p, 'value', 0)}"\
-% endif
+ ${str(pname)}="${getattr(p, 'value', 0)}"\
 % endfor
 />
 % endif

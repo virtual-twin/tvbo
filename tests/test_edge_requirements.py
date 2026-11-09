@@ -63,7 +63,7 @@ _DELAYED = """  number_of_nodes: 3
   coupling:
     c_lin:
       iri: tvbo:Linear
-      parameters: {G: {value: 0.1}}
+      parameters: {a: {value: 0.1}}
       incoming_states: [V]
 """
 _UNDELAYED = _DELAYED.replace("      iri: tvbo:Linear\n", "      iri: tvbo:Linear\n      delayed: false\n")

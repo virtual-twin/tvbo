@@ -103,13 +103,14 @@ def _hoist_coupling_parameters(parameters) -> None:
 
 
 def _fill_network_couplings(network):
-    """Fill each of *network*'s couplings from the function it names.
+    """Fill each of *network*'s couplings from the function it names, then give it the default post-expression where it still declares none.
 
-    An entry is keyed by its role in the network ('excitatory', 'delayed'), so the function it instantiates is what its ``iri`` states — written ``iri:`` or under the older spelling ``type:``, which the schema declares as an alias of it. One that already carries its expressions names nothing to fill.
+    An entry is keyed by its role in the network ('excitatory', 'delayed'), so the function it instantiates is what its ``iri`` states — written ``iri:`` or under the older spelling ``type:``, which the schema declares as an alias of it. One that already carries its expressions names nothing to fill. The default comes after the fill, so a curated function's own post-expression is the one its coupling takes (`Coupling.fill_post_expression`). A parameter nothing reads is refused where a backend reads the couplings (`BaseAdapter.resolve_couplings`), not here, so an experiment or result saved with one still loads.
     """
     for coup in network_couplings(network).values():
         if not getattr(coup, "pre_expression", None):
             coup.enrich()
+        coup.fill_post_expression()
 
 
 def _resolve_coupling(experiment):
@@ -1858,7 +1859,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                 # normalize_weights=False: weight transforms are declared in the spec; the runner must not mutate the experiment's network in place.
                 bnm = _Network(net, normalize_weights=False)
                 bnm.add_local_model(self.dynamics)
-                bnm.add_coupling(self.coupling)
+                bnm.add_coupling(BaseAdapter(self).get_default_coupling())
                 ts = bnm.run(duration=total, dt=dt, integration=self.integration)
             recorded = ExperimentResult.from_timeseries(ts, source=self, name=self.label).integration
             data, n_settle = on_the_measurement_clock(recorded.data, settle, dt)

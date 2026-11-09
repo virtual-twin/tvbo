@@ -467,6 +467,19 @@ def test_render_code_is_valid_python():
     assert "def main():" in code
 
 
+def test_render_code_passes_the_prose_rules(tmp_path, monkeypatch):
+    """The emitted script passes ``scripts/check_prose.py``, docstrings included.
+
+    The checker reads a template's comments but cannot parse its docstrings, so a docstring wrapped in the template ships, wrapped, in every script it emits; the rendered script is where the rule can hold.
+    """
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))
+    from check_prose import check
+
+    script = tmp_path / "plot.py"
+    script.write_text(_emit(), encoding="utf-8")
+    assert check(script) == []
+
+
 def test_render_code_font_size_emitted():
     """The base type-size block is emitted iff a physical ``font_size`` is declared."""
     assert "_body = 9.0" in _emit(font_size=9)
