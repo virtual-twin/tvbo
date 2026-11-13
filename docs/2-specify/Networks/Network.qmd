@@ -251,6 +251,20 @@ node_template:
 
 The curated Schaefer2018 networks declare each parcel's functional network this way, and a network named by its atlas alone (`parcellation: {atlas: {name: DesikanKilliany}}`) also declares each region's `hemisphere` from the atlas's terminology. Saved, either network reads back with its categories when the atlas cannot be read.
 
+A vocabulary whose entries sit within those of a coarser one declares it with `parent`. It names the network parameter that holds one code per entry, a code into the vocabulary that parameter's `levels` names, or `-1` for an entry with no parent. Here the insula is placed in no lobe:
+
+```yaml
+parameters:
+  lobes: {value: [frontal, occipital]}
+  region_lobe: {value: [0, 0, 1, -1], levels: lobes}
+  regions: {value: [precentral, superiorfrontal, cuneus, insula], parent: region_lobe}
+node_template:
+  parameters:
+    region: {measure: nodes/region, levels: regions}
+```
+
+Any of the three can instead be an array its `measure` names. A `parent` naming no parameter, or one without `levels`, is refused when the network is resolved. So is a count of codes other than the vocabulary's, a code that is no entry of the coarser vocabulary, and a code that is no finite number, such as NaN or text, named with the entry it is given to. A hierarchy whose arrays are set after the network is built is checked when it is saved.
+
 
 ## 5. Built-in Connectomes
 
@@ -284,6 +298,10 @@ tpl-<space>[_cohort-<source>]_rec-<pipeline>_atlas-<atlas>[_seg-<variant>][_scal
 | `scale-` | Number of parcels | `1000` |
 | `desc-` | Descriptor | `SC` (structural connectivity) |
 | `_relmat` | BEP017 suffix | Relationship matrix |
+
+A network named by its atlas (`parcellation`) reads the curated network of that atlas and tractogram whose file name carries each entity its `bids` states, exactly: `scale: 100` is never `scale-1000`. When none carries them, the network is refused, naming its entities and what the database holds nearest: the curated networks of its atlas and tractogram, by their IRIs, else the tractograms its atlas has curated networks of, else the curated atlases closest to its name. An entity its `bids` leaves out matches any value or none, so when several curated networks carry the entities it states, the network is refused, naming each by its IRI and the entities that tell them apart with their values: Schaefer2018 states its `segmentation` and its `scale`, and `Lobar` its `desc`. An `iri` names a curated network whatever else the network declares, and one that names none is refused in the same way, naming the curated networks closest to it; one beside a `data_file`, `edge_matrix_files` or `bids_dir` is refused as well, naming both sources. A network that lists its own nodes looks nothing up for its `parcellation` and `bids`: they describe it and load nothing.
+
+A `number_of_nodes` is a size. Beside a curated network, or any other source, it is the number of the source's nodes the network keeps. At the source's own count the network is the source. Below it, the network keeps a random subset of that many nodes, drawn once, when it is built, from the `execution.random_seed` of the experiment building it (from 0 for a network built on its own), and kept as the `node_selection` that names the drawn nodes, so a save lists their labels and reloads with the same nodes. A `--set` of the count or of the experiment's `execution.random_seed` draws the subset again, as the recipe stating them draws it. Above it, the network is refused, naming both counts, and so is a count beside a `node_selection` that keeps another number. Whenever a count or a `node_selection` keeps some of a source's nodes, a warning names the network and both counts (`DesikanKilliany (dTOR): keeps 5 of its 87 nodes.`); reading back a save that already holds them gives none.
 
 Access the BIDS filename programmatically:
 
@@ -344,7 +362,7 @@ network:
 
 #### Nodes by label
 
-A `nodes` mapping keyed by region label attaches values to the nodes the source provides: above, one region gets its own `J` and the other regions are untouched. The same declaration can be written as a list whose entries carry a `label` and no `id`. A label the source does not carry is an error that lists the labels it does carry. A `nodes` list whose entries carry an `id` is something else: it lists the graph itself, as in section 1.
+A `nodes` mapping keyed by region label attaches values to the nodes the source provides: above, one region gets its own `J` and the other regions are untouched. The same declaration can be written as a list whose entries carry a `label` and no `id`. A label the source does not carry is an error that lists the labels it does carry. A `nodes` list whose entries carry an `id` is something else: it lists the graph itself, as in section 1, and the network is its own, so a `parcellation` beside it loads nothing. Beside a source that delivers nodes (an `iri`, a `data_file`, a `bids_dir`) such a list has to be the source's nodes, the same labels in the same order, or the ones its `node_selection` keeps, as a save writes them; any other list is refused, naming both.
 
 #### Edges by kind
 

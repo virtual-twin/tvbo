@@ -1343,7 +1343,8 @@ classes:
             # Network metadata
             number_of_nodes:
                 range: integer
-                description: "Number of nodes in the network (derived from nodes if not set)"
+                description: >-
+                    Number of nodes in the network, derived from `nodes` when it lists them. Beside a source (an `iri`, a `data_file`, a `bids_dir` or the curated network of a `parcellation`) it is the number of the source's nodes the network keeps: all of them at the source's own count, and below it a random subset drawn once at build from `execution.random_seed`, which `node_selection` then names. A count above the source's is refused.
                 aliases:
                     - number_of_nodes
                     - number_of_regions
@@ -1644,6 +1645,8 @@ classes:
             The nodes of a network to keep or to drop, by label; exactly one of ``keep`` and ``drop`` is stated. A label is matched as written or through the aliases a ``by_label`` reconciliation uses (a node's ``alternateName`` and the atlas terminology). A selection is a set: the kept nodes stay in the order the network carries them, whatever order ``keep`` lists them in, and are renumbered from 0.
 
             The selection is applied when the network is resolved, after its source has delivered nodes and arrays and before anything else reads them. Every stored layer, edge-parameter matrix and per-node array (``nodes/<name>``) is restricted to the kept nodes, an edge listed between two nodes goes with either of its nodes, and ``number_of_nodes`` is the kept count. Transforms, delays and couplings therefore see the selected network only: a normalisation by the largest weight is taken over the kept pairs. A layer or argument read through ``used:`` is read for the selected nodes: with ``reconcile: by_label`` it is aligned to them by name, without it the array has to come in the selected node count. A layer a ``producer:`` builds is not cut and has to come in the selected node count, and a per-node parameter read by ``source`` and ``measure`` from a network with more nodes is aligned to the kept nodes by label.
+
+            A warning names the network and both counts whenever a selection drops nodes from what the network carries; read back beside arrays that are already the selected ones, it drops none and gives none.
 
             Refused, naming what is wrong: a label the network does not carry, ``keep`` beside ``drop``, a label listed twice, a selection that leaves no node, a node declared by label that the selection drops, and a network that carries a mesh or a route to another network, whose arrays the selection cannot restrict.
         attributes:
@@ -2271,6 +2274,11 @@ classes:
                 required: false
                 description: >-
                     The network parameter holding the vocabulary this parameter's values are codes into: value ``k`` is that vocabulary's entry ``k``, which is its ``value`` or the array its ``measure`` names. Declares a categorical attribute, such as each node's functional network on a ``node_template`` parameter, whose array runs over the nodes, beside the network parameter listing the networks' names. A name no network parameter carries is refused when the network is resolved.
+            parent:
+                range: string
+                required: false
+                description: >-
+                    The network parameter giving each entry of this vocabulary its parent, an entry of a coarser vocabulary: it holds one code per entry of this one, each a code into the vocabulary its own ``levels`` names, or ``-1`` for an entry with no parent. Declares a hierarchy of vocabularies, such as the regions of an atlas within its lobes. A name no network parameter carries, one without ``levels``, a count of codes other than this vocabulary's entry count, and a code outside the parent vocabulary are refused when the network is resolved.
             explored_values:
                 multivalued: true
                 range: float

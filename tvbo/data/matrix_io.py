@@ -265,35 +265,39 @@ def declared_arrays(network) -> dict:
     return out
 
 
-def csv_links(meta: Mapping) -> dict:
-    """``{path: link}`` for each array the sidecar *meta* names a CSV for, keyed by the path the array has in an HDF5 companion.
+def csv_link_slots(network) -> list:
+    """``(path, record, slot, extra)`` for each CSV *network*, a sidecar mapping or a ``Network``, names on one of its records: a layer's on its template edge's ``data_file``, an edge parameter's on its ``source``, a declared array's (:func:`declared_arrays`) on its ``source``, and a mesh array's on the ``mesh`` field :data:`MESH_FIELDS` names. *path* is the array's path in an HDF5 companion, and *extra* what the file does not record: the ``dtype``, for a layer the sparse ``format``, and for a declared array the ``shape``."""
+    slots = []
+    for edge in template_edges(_slot(network, "edges")):
+        layer, fmt, dtype = edge_name(edge), _slot(edge, "format"), _slot(edge, "dtype")
+        slots.append((f"edges/{layer}", edge, "data_file", {"dtype": dtype, "format": fmt}))
+        slots.extend(
+            (
+                f"edges/{layer}/edge_parameters/{name}",
+                param,
+                "source",
+                {"dtype": _slot(param, "dtype") or dtype, "format": fmt},
+            )
+            for name, param in named_entries(_slot(edge, "parameters"))
+        )
+    slots.extend(
+        (path, param, "source", {"dtype": _slot(param, "dtype"), "shape": _slot(param, "shape")})
+        for path, (_, param) in declared_arrays(network).items()
+    )
+    mesh = _slot(network, "mesh")
+    if mesh is not None:
+        slots.extend((path, mesh, field, {"dtype": dtype}) for path, (field, dtype) in MESH_FIELDS.items())
+    return [entry for entry in slots if is_csv(_slot(entry[1], entry[2]))]
 
-    A layer's CSV is its template edge's ``data_file``, an edge parameter's its ``source``, a declared array's (:func:`declared_arrays`) its ``source``, and a mesh array's the ``mesh`` field of :data:`MESH_FIELDS`. A link holds the CSV's ``file``, relative to the sidecar, and what the file does not record: the ``dtype``, for a layer the sparse ``format``, and for a declared array the ``shape``. A layer whose ``data_file`` names any other file is refused.
-    """
-    links = {}
+
+def csv_links(meta: Mapping) -> dict:
+    """``{path: link}`` for each array the sidecar *meta* names a CSV for (:func:`csv_link_slots`), keyed by the path the array has in an HDF5 companion. A link holds the CSV's ``file``, relative to the sidecar, and what the file does not record. A layer whose ``data_file`` names any other file is refused."""
     for edge in template_edges(meta.get("edges")):
-        layer, fmt = edge_name(edge), edge.get("format")
         if edge.get("data_file") and not is_csv(edge["data_file"]):
             raise ValueError(
-                f"The layer {layer!r} names {edge['data_file']} as its `data_file`, which names the CSV holding that layer alone. An HDF5 or Zarr companion holds every layer under its path and is the network's own `data_file`."
+                f"The layer {edge_name(edge)!r} names {edge['data_file']} as its `data_file`, which names the CSV holding that layer alone. An HDF5 or Zarr companion holds every layer under its path and is the network's own `data_file`."
             )
-        if is_csv(edge.get("data_file")):
-            links[f"edges/{layer}"] = {"file": edge["data_file"], "dtype": edge.get("dtype"), "format": fmt}
-        for name, param in named_entries(edge.get("parameters")):
-            if isinstance(param, Mapping) and is_csv(param.get("source")):
-                links[f"edges/{layer}/edge_parameters/{name}"] = {
-                    "file": param["source"],
-                    "dtype": param.get("dtype") or edge.get("dtype"),
-                    "format": fmt,
-                }
-    for path, (_, param) in declared_arrays(meta).items():
-        if is_csv(param.get("source")):
-            links[path] = {"file": param["source"], "dtype": param.get("dtype"), "shape": param.get("shape")}
-    mesh = meta.get("mesh") or {}
-    for path, (field, dtype) in MESH_FIELDS.items():
-        if is_csv(mesh.get(field)):
-            links[path] = {"file": mesh[field], "dtype": dtype}
-    return links
+    return {path: {"file": _slot(record, slot), **extra} for path, record, slot, extra in csv_link_slots(meta)}
 
 
 def parse_shape(text):
@@ -346,7 +350,7 @@ def write_csv_array(path, values) -> None:
 def read_csv_array(path, shape=None, dtype=None, fmt=None):
     """The array :func:`write_csv_array` wrote to *path*, at *dtype*, float64 when ``None``.
 
-    Dense, it comes back at *shape*, or 2-D as the rows give it when that is ``None``, an empty file as an empty array; text at a bytes or ``object`` dtype comes back as bytes, as h5py reads it. With *fmt* csr or coo the file holds one line per stored entry and the matrix comes back in that format at *shape*, which a sparse matrix needs; an entry outside it raises ``ValueError``, naming the file.
+    Dense, it comes back at *shape*, or 2-D as the rows give it when that is ``None``, a file that holds no value (an empty one, or the blank lines of an array with no column) as an empty array of as many rows as it has lines; text at a bytes or ``object`` dtype comes back as bytes, as h5py reads it. With *fmt* csr or coo the file holds one line per stored entry and the matrix comes back in that format at *shape*, which a sparse matrix needs; an entry outside it raises ``ValueError``, naming the file.
     """
     dtype = np.dtype(dtype or "float64")
     if fmt in ("csr", "coo"):
@@ -364,11 +368,17 @@ def read_csv_array(path, shape=None, dtype=None, fmt=None):
         with open(path, newline="", encoding="utf-8") as f:
             rows = list(csv.reader(f, delimiter=" "))
         values = np.array(rows if dtype.kind == "U" else [[v.encode("utf-8") for v in row] for row in rows], dtype=dtype)
-    elif os.path.getsize(path):
+    elif _first_line(path).split():
         values = np.loadtxt(path, delimiter=" ", ndmin=2, dtype=dtype)
     else:
-        values = np.zeros((0, 0), dtype)
+        values = np.zeros((_lines_and_fields(path)[0], 0), dtype)
     return values.reshape(shape) if shape is not None else values
+
+
+def _first_line(path) -> bytes:
+    """The first line of the file at *path*, empty for an empty file."""
+    with open(path, "rb") as f:
+        return f.readline()
 
 
 def _lines_and_fields(path) -> tuple[int, int]:

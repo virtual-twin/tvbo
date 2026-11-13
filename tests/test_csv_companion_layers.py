@@ -484,12 +484,13 @@ def test_a_categorical_attribute_held_as_text_resolves_as_its_text(names):
 
 
 @pytest.mark.filterwarnings("error")
-def test_an_empty_array_reads_back_from_its_csv_without_a_warning(tmp_path):
-    """An empty per-node array's CSV is an empty file, which reads back as the empty array it holds and warns of nothing."""
+@pytest.mark.parametrize("shape", [(0,), (0, 2), (3, 0)], ids=str)
+def test_an_empty_array_reads_back_from_its_csv_without_a_warning(tmp_path, shape):
+    """An empty array's CSV is an empty file, or blank lines for an array of rows with no column, which reads back as the empty array it holds and warns of nothing."""
     net = _network(("weight",))
-    net.set_array("nodes/none", np.zeros(0))
+    net.set_array("nodes/none", np.zeros(shape))
     back = _saved_and_read_back(net, tmp_path / "csv", "csv")
-    assert back.array("nodes/none").shape == (0,)
+    assert back.array("nodes/none").shape == shape
 
 
 def test_a_selected_schaefer_network_saves_its_vocabulary_whole(tmp_path):

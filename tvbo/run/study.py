@@ -293,7 +293,7 @@ def apply_overrides(experiment, overrides: Iterable[tuple[str, Any]]) -> list:
 
     Traverses attributes and keyed collections (LinkML keyed dicts) so one recipe can stay the single source of truth while a run uses test settings. A mapping set on a slot that holds one record class is built as that record (:func:`_record_for_slot`), as the recipe would have built it. Mutates the loaded object only — the recipe file is untouched.
 
-    Anything on the path that has already MATERIALISED from its declaration is invalidated before the value is written, and the path is then walked again, so what the invalidation puts back (the nodes and the count a node selection replaced) cannot overwrite the value and the rebuild starts from it. Without this an override of, say, a graph generator's connectome is reported and then ignored — the network resolved at load time and keeps the matrix it built — and the run completes, looks right, and is not the run that was asked for. The invalidated objects are returned once each, in the order the overrides reached them, for :func:`rebuild_invalidated` to rebuild after every override has landed, since a declaration several overrides change together is consistent only at the end.
+    Anything on the path that has already MATERIALISED from its declaration is invalidated before the value is written, and the path is then walked again, so what the invalidation puts back (the nodes and the count a node selection replaced) cannot overwrite the value and the rebuild starts from it. Without this an override of, say, a graph generator's connectome is reported and then ignored — the network resolved at load time and keeps the matrix it built — and the run completes, looks right, and is not the run that was asked for. An override of the experiment's ``execution.random_seed`` invalidates its network when the network drew a random subset of its source's nodes from it (:func:`_invalidate_drawn_network`), so the rebuild draws again. The invalidated objects are returned once each, in the order the overrides reached them, for :func:`rebuild_invalidated` to rebuild after every override has landed, since a declaration several overrides change together is consistent only at the end.
     """
 
     def _step(cur, seg):
@@ -315,7 +315,7 @@ def apply_overrides(experiment, overrides: Iterable[tuple[str, Any]]) -> list:
     invalidated: dict[int, Any] = {}
     for path, value in overrides:
         segs = [p for p in path.split(".") if p]
-        target = _invalidate_on_path(_walk(segs[:-1]))
+        target = _invalidate_on_path(_walk(segs[:-1])) or _invalidate_drawn_network(experiment, segs)
         cur, leaf = _walk(segs[:-1])[-1], segs[-1]
         try:
             value = _record_for_slot(cur, leaf, value)
@@ -363,10 +363,23 @@ def _invalidate_on_path(chain: list):
     return None
 
 
-def rebuild_invalidated(objects) -> None:
-    """Resolve again each object an override invalidated (:func:`apply_overrides`), from the directory of the recipe it was loaded from, so the run receives what the overridden declaration builds."""
-    for obj in objects:
-        obj._resolve(source_dir=getattr(obj, "_source_dir", None))
+def _invalidate_drawn_network(experiment, segs: list[str]):
+    """Invalidate *experiment*'s network when the override path *segs* sets the ``execution.random_seed`` the network drew a random subset of its source's nodes from, so the rebuild draws again from the seed set. Returns the network invalidated, or ``None``."""
+    network = getattr(experiment, "network", None)
+    if segs not in (["execution"], ["execution", "random_seed"]) or network is None or not network._draws_a_subset():
+        return None
+    network.invalidate_resolution()
+    return network
+
+
+def rebuild_invalidated(objects, experiment=None) -> None:
+    """Resolve again each object an override invalidated (:func:`apply_overrides`), from the directory of the recipe it was loaded from, so the run receives what the overridden declaration builds. A network that keeps a random subset of its source's nodes draws it from the ``execution.random_seed`` of *experiment*, as its build did."""
+    from tvbo.classes.experiment import _stated_seed
+    from tvbo.classes.network import drawing_from
+
+    with drawing_from(_stated_seed(getattr(experiment, "execution", None))):
+        for obj in objects:
+            obj._resolve(source_dir=getattr(obj, "_source_dir", None))
 
 
 def apply_max_iterations(experiment, n: int | None) -> None:
@@ -553,7 +566,7 @@ def _set_axis_parameter(experiment, parameter: str, value) -> None:
         if dyn is not None and _set_in(getattr(dyn, "parameters", None), name):
             return
         # An experiment-scoped axis has an attribute path, so the override walk resolves it.
-        rebuild_invalidated(apply_overrides(experiment, [(parameter, value)]))
+        rebuild_invalidated(apply_overrides(experiment, [(parameter, value)]), experiment)
         return
     dyn = getattr(experiment, "dynamics", None)
     if dyn is not None and _set_in(getattr(dyn, "parameters", None), parameter):
@@ -611,7 +624,7 @@ def run_experiment(
         StudyRunError: An override or pin names nothing on the experiment, an element pin names no per-node parameter, or a shard or limit asks a backend to slice a sweep it does not vectorise.
     """
     options = options or RunOptions()
-    rebuild_invalidated(apply_overrides(experiment, options.overrides))
+    rebuild_invalidated(apply_overrides(experiment, options.overrides), experiment)
     apply_axis_pins(experiment, options.pins)
     apply_max_iterations(experiment, options.max_iterations)
     ctx = provenance_ctx(spec, experiment if owner is None else owner, out_dir, base=base)

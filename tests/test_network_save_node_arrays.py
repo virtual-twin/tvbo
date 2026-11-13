@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import re
+import socket
 import subprocess
 import sys
 
@@ -180,12 +181,13 @@ def _ended_process_id() -> int:
 
 
 def test_a_killed_save_leaves_a_folder_naming_it_that_the_next_save_of_its_sidecar_removes(tmp_path, monkeypatch):
-    """A save writes into ``.<sidecar>.unfinished-tvbo-save-<process id>-…``, so the folder a killed save leaves says what it is. The next save of that sidecar removes it, and no folder of a running save or of another sidecar."""
-    ended = _ended_process_id()
+    """A save writes into ``.<sidecar>.unfinished-tvbo-save-<host>@<process id>-…``, so the folder a killed save leaves says what it is. The next save of that sidecar on the same host removes it, and no folder of a running save, of another sidecar or of a save on another host, whose process id says nothing here."""
+    ended, host = _ended_process_id(), socket.gethostname()
     left = [
-        f".n.yaml.unfinished-tvbo-save-{ended}-killed",
-        f".n.yaml.unfinished-tvbo-save-{os.getpid()}-running",
-        f".m.yaml.unfinished-tvbo-save-{ended}-killed",
+        f".n.yaml.unfinished-tvbo-save-{host}@{ended}-killed",
+        f".n.yaml.unfinished-tvbo-save-{host}@{os.getpid()}-running",
+        f".n.yaml.unfinished-tvbo-save-{host}-node2@{ended}-elsewhere",
+        f".m.yaml.unfinished-tvbo-save-{host}@{ended}-killed",
     ]
     for name in left:
         (tmp_path / name).mkdir()
@@ -199,5 +201,5 @@ def test_a_killed_save_leaves_a_folder_naming_it_that_the_next_save_of_its_sidec
 
     monkeypatch.setattr(network_io, "_write_v07_sidecar", recording)
     _network().save(tmp_path / "n.yaml")
-    assert staging[0].startswith(f".n.yaml.unfinished-tvbo-save-{os.getpid()}-")
+    assert staging[0].startswith(f".n.yaml.unfinished-tvbo-save-{host}@{os.getpid()}-")
     assert sorted(p.name for p in tmp_path.iterdir()) == sorted(["n.h5", "n.yaml", *left[1:]])

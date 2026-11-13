@@ -10,6 +10,7 @@ import logging
 import os
 import re
 from collections import Counter
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +37,7 @@ from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.behaviour._runtime import Copyable
 from tvbo.classes.coupling import Coupling
 from tvbo.classes.dynamics import Dynamics
-from tvbo.classes.network import Network, _backfill_name_from_iri
+from tvbo.classes.network import Network, _backfill_name_from_iri, drawing_from
 from tvbo.classes.noise import Integrator
 from tvbo.codegen import templater
 from tvbo.data import cohort as _cohort
@@ -89,6 +90,11 @@ def _sync_network_node_count(net):
     elif (net.number_of_nodes or 0) > 1 and not net.nodes:
         # number_of_nodes set but no nodes list — create default nodes
         net.nodes = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(net.number_of_nodes)]
+
+
+def _stated_seed(execution) -> int | None:
+    """The ``random_seed`` an experiment's ``execution`` states, written as a mapping or built as a record; ``None`` when it states none."""
+    return execution.get("random_seed") if isinstance(execution, dict) else getattr(execution, "random_seed", None)
 
 
 def _hoist_coupling_parameters(parameters) -> None:
@@ -296,7 +302,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                     parc["atlas"] = {"name": record_name(parc["iri"], "BrainAtlas")}
                 _backfill_name_from_iri(parc.get("atlas"), "BrainAtlas")
             _backfill_name_from_iri(net_kw.get("tractogram"))
-            kwargs["network"] = Network(**net_kw)
+            with drawing_from(_stated_seed(kwargs.get("execution"))):
+                kwargs["network"] = Network(**net_kw)
 
         super().__init__(**kwargs)
 
@@ -391,7 +398,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         # Materialise the network from its declarative spec. All branching lives in Network._resolve; this hook only supplies the YAML source directory for relative-path resolution.
         if self.network is not None and not getattr(self.network, "_resolved", False):
             source_dir = Path(self._source_file).parent if self._source_file else None
-            self.network._resolve(source_dir=source_dir)
+            with drawing_from(_stated_seed(getattr(self, "execution", None))):
+                self.network._resolve(source_dir=source_dir)
 
         if not getattr(self, "integration", None):
             self.integration = Integrator()
@@ -460,7 +468,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         if net is not None and not getattr(net, "_resolved", False):
             source_file = getattr(obj, "_source_file", None)
             source_dir = Path(source_file).parent if source_file else None
-            net._resolve(source_dir=source_dir)
+            with drawing_from(_stated_seed(getattr(obj, "execution", None))):
+                net._resolve(source_dir=source_dir)
 
         # Validate declarative network-observation sources against the network's declared observational_measures (names only, no data load).
         obj._validate_network_observations()
@@ -899,7 +908,10 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
             from tvbo.utils import to_yaml as _to_yaml
 
-            text = _strip_private_yaml_keys(_to_yaml(self, None))
+            network = getattr(self, "network", None)
+            folder = _Path(filepath).parent if filepath else None
+            with network._naming_files_from(folder) if isinstance(network, Network) else nullcontext():
+                text = _strip_private_yaml_keys(_to_yaml(self, None))
             if filepath:
                 _Path(filepath).write_text(text, encoding="utf-8")
                 return filepath

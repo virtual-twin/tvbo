@@ -13,6 +13,7 @@ See §12.2 of the tvbo HDF5 format proposal v0.7.
 import json
 import os
 import shutil
+import socket
 import tempfile
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
@@ -31,9 +32,9 @@ from tvbo.data.matrix_io import (
     LazyArrayStore,
     _create_ds,
     auto_format,
+    csv_link_slots,
     declared_arrays,
     edge_name,
-    is_csv,
     named_entries,
     template_edges,
     write_matrix,
@@ -250,7 +251,7 @@ def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_fi
 
     Dumps the network via LinkML, post-processes to v0.7 form, and writes with controlled key ordering.
 
-    The sidecar names *data_file*, the companion this save wrote, and the network is left naming the files it was read from, so a record of it written after the save, such as an experiment's export, reads back as one written before. A ``data_file``-backed connectome is materialised — its arrays live in the companion file — so the directives that would rebuild them from a source are dropped and a reload uses the companion. ``parcellation`` is deliberately not one of them: it also states which atlas this network's node labels belong to, which is what a ``by_label`` crosswalk resolves against, so dropping it would leave a saved network unable to reconcile any label the atlas spells differently. Keeping it is safe because ``load_network`` defers connectivity until the companion store is attached, so it no longer re-expands to the atlas node set.
+    The sidecar names *data_file*, the companion this save wrote, and the network is left naming the files it was read from, so a record of it written after the save, such as an experiment's export, reads back as one written before. A ``data_file``-backed connectome is materialised — its arrays live in the companion file — so the directives that only rebuild them from a source, ``bids_dir`` and ``graph_generator``, are dropped and a reload uses the companion. ``parcellation`` and ``tractogram`` are kept: they state which atlas this network's node labels belong to, which is what a ``by_label`` crosswalk resolves against, and which tractography the connectome was reconstructed from. Keeping them is safe because ``load_network`` defers connectivity until the companion store is attached and ``data_file`` precedes both in ``Network._resolve``, so a reload never rebuilds from the atlas.
 
     *links* names the CSVs of a CSV save on the records of what they hold, and every save takes the CSV links a network read from CSVs carries off its records first (:func:`_place_links`).
     """
@@ -258,7 +259,7 @@ def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_fi
     meta = _purify(meta)
     if data_file:
         meta["data_file"] = data_file
-        for _directive in ("bids_dir", "graph_generator", "tractogram"):
+        for _directive in ("bids_dir", "graph_generator"):
             meta.pop(_directive, None)
     _place_links(meta, links, len(network.nodes or []))
     meta = _v07_postprocess(meta)
@@ -321,9 +322,9 @@ def _write_nodes(store, network, carried: dict):
         if len(parts) == 2:
             grp_path, ds_name = parts
             grp = store.require_group(grp_path)
-            _create_ds(grp, ds_name, data=data, dtype="int32")
+            _create_ds(grp, ds_name, data=np.asarray(data, dtype="int32"))
         else:
-            _create_ds(store, key, data=data, dtype="int32")
+            _create_ds(store, key, data=np.asarray(data, dtype="int32"))
 
     # Node coordinates: prefer explicit Node.position (only when EVERY node has one — a partial list would misalign with node order). Otherwise fall back to network.get_centers(), which resolves centres from the atlas or by region-label mapping (e.g. DesikanKilliany), so BIDS connectomes without inline positions still ship coordinates in the companion file.
     nodes = getattr(network, "nodes", None) or []
@@ -484,22 +485,13 @@ def _place_links(meta: dict, links: dict | None, n_nodes: int) -> None:
 
     *links* maps each array's path to its CSV's ``file``, ``dtype``, ``shape`` and sparse ``format`` (:func:`_write_csv_arrays`). A layer's CSV becomes its template edge's ``data_file``, with the layer's dtype unless float64 and its format unless dense; an edge parameter's the parameter's ``source``, with its dtype unless float64; a mesh array's the ``mesh`` field :data:`~tvbo.data.matrix_io.MESH_FIELDS` names; and any other array's the ``source`` of the parameter that declares it (:func:`~tvbo.data.matrix_io.declared_arrays`), with its ``shape`` and its dtype unless float64. An array no record declares is declared with the least the save knows: a template edge for a layer, and otherwise a parameter named by the last part of its path, whose ``measure`` is that path, on ``node_template`` when the array has a row for each of the *n_nodes* nodes and on the network when it has not. A name another parameter already has is refused, naming both.
     """
+    for _, record, slot, _ in csv_link_slots(meta):
+        record.pop(slot)
     edges = {edge_name(e): e for e in template_edges(meta.get("edges"))}
     for edge in edges.values():
         edge.pop("data_file", None)
-        for _, param in named_entries(edge.get("parameters")):
-            if is_csv(param.get("source")):
-                param.pop("source")
-    for _, param in declared_arrays(meta).values():
-        if is_csv(param.get("source")):
-            param.pop("source")
-    mesh = meta.get("mesh")
-    if isinstance(mesh, dict):
-        for field, _ in MESH_FIELDS.values():
-            if is_csv(mesh.get(field)):
-                mesh.pop(field)
-        if not mesh:
-            meta.pop("mesh")
+    if meta.get("mesh") == {}:
+        meta.pop("mesh")
     declared = declared_arrays(meta)
     for path, link in (links or {}).items():
         dtype = {} if link["dtype"] == "float64" else {"dtype": link["dtype"]}
@@ -597,12 +589,12 @@ def _as_stored(value, binary_format: str):
 
 
 def _staging_prefix(last: str) -> str:
-    """The start of the name of each directory a save of the file *last* writes into (:func:`_saving_into`), which says what a killed save left behind."""
-    return f".{last}.unfinished-tvbo-save-"
+    """The start of the name of each directory a save of the file *last* on this host writes into (:func:`_saving_into`), which says what a killed save left behind and on which host it ran."""
+    return f".{last}.unfinished-tvbo-save-{socket.gethostname()}@"
 
 
 def _remove_stale_staging(folder: Path, last: str) -> None:
-    """Remove each directory a save of *last* into *folder* left behind when it was killed, and no other: one named by :func:`_staging_prefix` for *last* whose process has ended."""
+    """Remove each directory a save of *last* into *folder* on this host left behind when it was killed, and no other: one named by :func:`_staging_prefix` for *last* whose process has ended. A process id says nothing on another host, so the directory of a save on another host sharing the filesystem is kept."""
     prefix = _staging_prefix(last)
     for leftover in folder.iterdir():
         pid = leftover.name[len(prefix) :].partition("-")[0]
@@ -625,7 +617,7 @@ def _process_runs(pid: int) -> bool:
 def _saving_into(folder: Path, last: str):
     """A fresh directory in *folder* for a save to write its files into, each moved onto its own name in *folder* once the block succeeds, *last* (the sidecar) after the others, replacing what was there. A block that raises leaves *folder* as it was, so a save that fails truncates no companion and leaves no sidecar naming files it did not write.
 
-    The directory is named ``.<last>.unfinished-tvbo-save-<process id>-<random>`` (:func:`_staging_prefix`), so a save that is killed outright, which runs no cleanup, leaves a directory that says what it is, and the next save of *last* into *folder* removes it (:func:`_remove_stale_staging`).
+    The directory is named ``.<last>.unfinished-tvbo-save-<host>@<process id>-<random>`` (:func:`_staging_prefix`), so a save that is killed outright, which runs no cleanup, leaves a directory that says what it is, and the next save of *last* into *folder* on the same host removes it (:func:`_remove_stale_staging`).
     """
     _remove_stale_staging(folder, last)
     staging = Path(tempfile.mkdtemp(prefix=f"{_staging_prefix(last)}{os.getpid()}-", dir=folder))
@@ -668,15 +660,11 @@ def read_embedded_metadata(path) -> dict | None:
 
             with h5py.File(path, "r") as f:
                 raw = f.attrs.get(EMBEDDED_METADATA_ATTR)
-        # Bare-suffix guard first: a sidecar path must not pay a stat() to learn it is not a zarr directory, and load_network probes every load.
-        elif ext == "" and path.is_dir() and (path / ".zgroup").exists():
+        # The suffix is tested first: a sidecar path must not pay a stat() to learn it is not a zarr directory, and load_network probes every load.
+        elif ext == ".zarr" or (ext == "" and path.is_dir() and (path / ".zgroup").exists()):
             import zarr
 
-            raw = zarr.open(str(path), "r").attrs.get(EMBEDDED_METADATA_ATTR)
-        elif ext == ".zarr":
-            import zarr
-
-            raw = zarr.open(str(path), "r").attrs.get(EMBEDDED_METADATA_ATTR)
+            raw = zarr.open(str(path), mode="r").attrs.get(EMBEDDED_METADATA_ATTR)
     except (ImportError, OSError, KeyError):
         # Missing backend, or a corrupt/foreign file: "not self-describing", not an error.
         return None
@@ -712,7 +700,7 @@ def write_embedded_metadata(companion_path, meta: dict) -> None:
     elif ext == ".zarr" or companion_path.is_dir():
         import zarr
 
-        zarr.open(str(companion_path), "a").attrs[EMBEDDED_METADATA_ATTR] = blob
+        zarr.open(str(companion_path), mode="a").attrs[EMBEDDED_METADATA_ATTR] = blob
     else:
         raise ValueError(f"cannot embed metadata in {companion_path.suffix!r} companion")
 
@@ -747,7 +735,7 @@ def load_network(path):
     - **sidecar + companion** — a ``.yaml``/``.json`` metadata file whose ``data_file`` names the binary beside it;
     - **single self-describing file** — a ``.h5``/``.zarr`` carrying its own sidecar in the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is its own array store, so one path is the whole Network.
 
-    A sidecar whose ``data_file`` names another network's sidecar (:data:`~tvbo.data.dataref.NETWORK_SIDECARS`), as the dump of a curated network does, is no companion: that network is read as a ``data_file`` network reads it (``Network._resolve_from_data_file``), so the two readers of the slot agree. A sidecar that names itself is refused.
+    A sidecar whose ``data_file`` names another network's sidecar (:data:`~tvbo.data.dataref.NETWORK_SIDECARS`), as the dump of a curated network does, is no companion: that network is read as a ``data_file`` network reads it (``Network._resolve_from_data_file``), so the two readers of the slot agree. A sidecar that names itself is refused. A sidecar whose ``iri`` names a curated network is read from that network, as a recipe's ``iri`` is, and one beside a ``data_file`` is refused naming both.
 
     Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.matrix("weight")).
 
@@ -780,6 +768,8 @@ def load_network(path):
     bids_meta = meta_dict.pop("bids", None)
     descriptor = meta_dict.pop("descriptor", None)
     meta_dict = tvbo_yaml_loader.strip_envelope(meta_dict)
+    if data_file and meta_dict.get("iri"):
+        meta_dict["data_file"] = data_file  # beside an `iri` the constructor refuses it, naming both
 
     with loading_from(path):
         # This loader attaches connectivity itself, so the constructor must not resolve it: `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `_resolve` runs below, once `_store` is in place.
@@ -800,13 +790,14 @@ def load_network(path):
             data_path = path.parent / data_file
             net._store = LazyArrayStore(data_path, meta_dict)
             net.data_file = data_file
+            net._read_files_from(path.parent)
 
             _load_mesh(net)
         else:
             net._store = None
-            net.data_file = data_file
+            net.data_file = data_file or net.data_file  # an `iri` the constructor resolved names the curated sidecar
 
-        # With a store attached the network is materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; without one, a `data_file` naming another sidecar and a bare `parcellation:` resolve here.
+        # With a store attached the network is materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; without one, a `data_file` or `iri` naming another sidecar and a bare `parcellation:` resolve here.
         net._resolve(source_dir=str(path.parent))
 
     return net
@@ -842,7 +833,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
 
     With ``binary_format="csv"`` every array an HDF5 companion would hold is written to a CSV of its own (:func:`_write_csv_arrays`), which the sidecar names on the record of what it holds (:func:`_place_links`); the network's ``data_file`` names the first of them.
 
-    Every array is read, and an array declared per node whose length is not the node count refused (``Network._check_per_node_lengths``), as is an array the format cannot hold (:func:`_refuse_unholdable`), before anything is written. A text array is stored as text in every format (:func:`_as_stored`). The files are written beside the sidecar and moved onto their names once all are written (:func:`_saving_into`), so a save that fails leaves the files it would have replaced as they were.
+    Every array is read, and an array declared per node whose length is not the node count refused (``Network._check_per_node_lengths``), as are a hierarchy of vocabularies that does not give each entry a parent (``Network._check_parents``) and an array the format cannot hold (:func:`_refuse_unholdable`), before anything is written. A text array is stored as text in every format (:func:`_as_stored`). The files are written beside the sidecar and moved onto their names once all are written (:func:`_saving_into`), so a save that fails leaves the files it would have replaced as they were.
 
     Parameters
     ----------
@@ -907,6 +898,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
 
     if hasattr(network, "_check_per_node_lengths"):
         network._check_per_node_lengths()
+        network._check_parents()
     _refuse_unholdable(network, sidecar_path, binary_format, arrays, edge_params, carried)
     arrays, edge_params, carried = (_as_stored(group, binary_format) for group in (arrays, edge_params, carried))
 
