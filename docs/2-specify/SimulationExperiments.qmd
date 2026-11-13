@@ -63,7 +63,7 @@ from tvbo import SimulationExperiment
 exp = SimulationExperiment(
     dynamics={"name": "ReducedWongWang", "iri": "tvbo:models/ReducedWongWangExcInh"},
     network={
-        "parcellation": {"iri": "tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg"},
+        "parcellation": {"iri": "tvbo:atlases/tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg"},
         "tractogram": {"iri": "tvbo:dTOR"},
         "coupling": {"Linear": {"iri": "tvbo:coupling_functions/Linear"}},
     },

@@ -69,9 +69,9 @@ path = [
 SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
 SPDX-License-Identifier = "EUPL-1.2"
 
-# Copies of the LinkML schema the package ships
+# Copies of the LinkML schema the package ships, and its table of renamed record stems
 [[annotations]]
-path = ["tvbo/rules/study_layout.yaml", "tvbo/datamodel/tvbo_datamodel.schema.json"]
+path = ["tvbo/rules/study_layout.yaml", "tvbo/datamodel/tvbo_datamodel.schema.json", "tvbo/data/renamed_stems.yaml"]
 SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
 SPDX-License-Identifier = "CC-BY-4.0"
 
@@ -94,7 +94,7 @@ SPDX-License-Identifier = "CC-BY-4.0 AND CC-BY-NC-SA-4.0 AND MIT"
 
 # Records with HCP-MMP1 parcel labels and centres
 [[annotations]]
-path = ["tvbo/database/**/*_atlas-HCPMMP1_*.yaml", "tvbo/database/**/*_atlas-hcpmmp1_*.yaml"]
+path = "tvbo/database/**/*_atlas-HCPMMP1_*.yaml"
 SPDX-FileCopyrightText = [
     "Charité Universitätsmedizin Berlin",
     "2016 Matthew F. Glasser et al., HCP-MMP1.0 (BALSA study RVVG)",
@@ -148,7 +148,7 @@ SPDX-License-Identifier = "CC-BY-4.0 AND GPL-3.0-or-later"
 
 # Sensor records with MNE standard_1005 positions projected onto FreeSurfer's fsaverage
 [[annotations]]
-path = ["tvbo/database/networks/**/*_acq-EEGstandard1005_*_sensors.yaml", "tvbo/database/networks/**/sensors_eeg_standard1005_*.yaml"]
+path = "tvbo/database/networks/**/*_acq-EEGstandard1005_*_sensors.yaml"
 SPDX-FileCopyrightText = [
     "Charité Universitätsmedizin Berlin",
     "Copyright 2011-2025 MNE-Python authors",

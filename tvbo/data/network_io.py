@@ -44,13 +44,12 @@ from tvbo.data.matrix_io import (
 
 RELMAT_PATTERNS = [
     # Normative (template-level) connectome — tpl- replaces sub-
-    "tpl-{template}[_cohort-{cohort}][_rec-{reconstruction}]"
-    "_atlas-{atlas}[_seg-{segmentation}][_scale-{scale}]"
+    "tpl-{template}[_cohort-{cohort}][_rec-{reconstruction}][_hemi-{hemi}]"
+    "_atlas-{atlas}[_seg-{segmentation}][_scale-{scale}][_den-{density}]"
     "[_desc-{description}]_relmat{extension|.h5}",
     # Subject-specific connectome — sub- with space-
-    "sub-{subject}[_ses-{session}]_space-{space}"
-    "[_rec-{reconstruction}]_atlas-{atlas}"
-    "[_seg-{segmentation}][_scale-{scale}]"
+    "sub-{subject}[_ses-{session}][_rec-{reconstruction}][_hemi-{hemi}]_space-{space}"
+    "_atlas-{atlas}[_seg-{segmentation}][_scale-{scale}][_den-{density}]"
     "[_desc-{description}]_relmat{extension|.h5}",
 ]
 

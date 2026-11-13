@@ -10,6 +10,9 @@ bids:
   template: MNI152NLin2009cAsym
   cohort: HCPYA
   reconstruction: dTOR
+  atlas: HCPex
+  desc: SC
+  suffix: relmat
 parameters:
   conduction_speed:
     label: v

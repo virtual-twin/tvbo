@@ -33,7 +33,7 @@ Dynamics.db_overview()  # pandas DataFrame: name, type, description
 from tvbo.data.registry import list_entries
 
 list_entries("Network")  # curated connectomes (dTOR, Schaefer, HCP, …)
-list_entries("BrainAtlas")  # DesikanKilliany, Schaefer2018, Yeo17, hcpmmp1, …
+list_entries("BrainAtlas")  # DesikanKilliany, Schaefer2018, Yeo17, HCPMMP1, …
 list_entries("Coupling")  # Linear, Sigmoidal, Difference, Kuramoto, …
 list_entries("SimulationExperiment")  # ready-to-run experiments
 list_entries("SimulationStudy")  # published studies (parameter sweeps, fits)
@@ -88,7 +88,7 @@ result.plot()  # built-in plotting
 result.data  # xarray DataArray, dims (time, state_variable, node)
 ```
 
-For a real connectome, point `network` at a curated relmat, e.g. `{"iri": "network:tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"}`.
+For a real connectome, point `network` at a curated relmat, e.g. `{"iri": "tvbo:networks/tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"}`.
 
 ### The single-node quick path
 

@@ -1,0 +1,78 @@
+# The stems the BIDS rename (register I11i) retired, per database folder: `renamed` maps each to the stem its record has now, which tvbo.data.registry.resolve reads for one release, `archived` each of a removed record to the record that replaced it, which the refusal of a lookup of the removed stem names (register AR1), and `differs` says how that record's data differ from the removed one's.
+renamed:
+  atlases:
+    space-MNI152_atlas-Yeo17_res-1_dseg: tpl-MNI152NLin6Asym_atlas-Yeo17_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-1000_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-1000_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-100_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-100_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-200_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-200_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-300_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-300_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-400_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-400_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-500_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-500_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-600_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-600_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-700_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-700_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-800_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-800_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-900_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-17Networks_scale-900_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-1000_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-1000_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-100_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-100_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-200_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-200_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-300_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-300_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-400_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-400_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-500_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-500_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-600_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-600_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-700_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-700_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-800_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-800_res-1_dseg
+    tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-900_res-1_desc-ordered_dseg: tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-7Networks_scale-900_res-1_dseg
+    tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg: tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg
+    tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_dseg: tpl-MNI152NLin2009cAsym_atlas-Destrieux_desc-ranked_dseg
+    tpl-fsLR_atlas-hcpmmp1_desc-ordered_dseg: tpl-fsLR_atlas-HCPMMP1_dseg
+  networks:
+    tpl-FSLMNI152_cohort-HCPYA_rec-Hansen2022_atlas-Schaefer2018_seg-7Networks_scale-100_desc-SCFC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-Hansen2022_atlas-Schaefer2018_seg-7Networks_scale-100_desc-SCFC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-200_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-200_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-300_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-300_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-400_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-400_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-500_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-500_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-600_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-600_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-700_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-700_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-800_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-800_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-900_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-900_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-1000_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-1000_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-100_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-100_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-200_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-200_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-300_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-300_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-400_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-400_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-500_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-500_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-600_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-600_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-700_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-700_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-800_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-800_desc-SC_relmat
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-900_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-7Networks_scale-900_desc-SC_relmat
+    tpl-FSLMNI152_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat
+    tpl-FSLMNI152_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat
+    tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-avgMatrix_atlas-HCPMMP1_desc-SCFC_relmat: tpl-fsLR_cohort-HCPYA_rec-avgMatrix_atlas-HCPMMP1_den-32k_desc-SCFC_relmat
+    tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_desc-surf_relmat: tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_atlas-Lobar8_den-164k_desc-surf_relmat
+    tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_hemi-L_desc-surf_relmat: tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_hemi-L_atlas-Lobar8_den-164k_desc-surf_relmat
+    tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_hemi-R_desc-surf_relmat: tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_hemi-R_atlas-Lobar8_den-164k_desc-surf_relmat
+    tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-surf_relmat: tpl-fsLR_cohort-HCPYA_rec-dTOR_atlas-Lobar_den-32k_desc-surf_relmat
+    tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Yeo17_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Yeo17_desc-SC_relmat
+    tpl-MNI152NLin2009cAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Yeo17_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Yeo17_desc-SC_relmat
+    tpl-MNI152NLin2009cAsym_cohort-PPMI85_rec-PPMI85_atlas-Yeo17_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-PPMI85_rec-PPMI85_atlas-Yeo17_desc-SC_relmat
+    tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat
+    tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat: tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat
+    tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-MEGAlpha_dscalar: tpl-fsaverage_atlas-DesikanKilliany_desc-MEGAlpha_dscalar
+  coordinate_spaces:
+    FSLMNI152: MNI152NLin6Asym
+    MNI152NLin2009b: MNI152NLin2009bSym
+    MNI152NLin2009c: MNI152NLin2009cSym
+archived:
+  networks:
+    sensors_eeg_standard1005_fsaverage_aparc_projection: tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_scale-1000_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat
+    tpl-FSLMNI152_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Schaefer2018_scale-1000_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat
+    tpl-FSLMNI152_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_scale-1000_desc-SC_relmat: tpl-MNI152NLin6Asym_cohort-PPMI85_rec-PPMI85_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat
+    tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_seg-ordered_desc-SC_relmat: tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat
+    tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_seg-ordered_desc-SC_relmat: tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_desc-SC_relmat
+    tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_seg-ordered_desc-SC_relmat: tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_desc-SC_relmat
+differs:
+  networks:
+    tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_scale-1000_desc-SC_relmat: another build, counted on the 1 mm parcellation where the archived network was counted on the 2 mm one, so its weights and lengths differ (Pearson r 0.991 and 0.857 over the node pairs)

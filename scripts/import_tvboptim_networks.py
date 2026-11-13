@@ -2,10 +2,9 @@
 """Import tvboptim dk_average SC/FC data into the tvbo database.
 
 Creates BIDS-named network files in tvbo/database/networks/:
-  dk_average SC+FC → tpl-MNI152NLin2009cAsym_rec-avgMatrix
-                      _atlas-DesikanKilliany_desc-SCFC_relmat
+  dk_average SC+FC → tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat
 
-tvboptim dk_average contains average structural and functional connectivity matrices across subjects, using the 84-node Desikan-Killiany parcellation (FreeSurfer aparc, excluding brain-stem and ventral-DC bilaterally).
+tvboptim dk_average contains average structural and functional connectivity matrices across the subjects of the HCP Young Adult S900 release, using the 84-node Desikan-Killiany parcellation (FreeSurfer aparc, excluding brain-stem and ventral-DC bilaterally).
 
 Coordinates are sourced from the existing 87-node dTOR DK network via abbreviation → FreeSurfer label mapping.
 """
@@ -194,6 +193,7 @@ def import_dk_average():
     # BIDS metadata
     net.bids = tvbo_datamodel.BidsEntities(
         template="MNI152NLin2009cAsym",
+        cohort="HCPYA",
         reconstruction="avgMatrix",
     )
     net.parcellation = tvbo_datamodel.Parcellation(
@@ -213,7 +213,7 @@ def import_dk_average():
             if attr in edef:
                 setattr(e, attr, edef[attr])
 
-    fname = "tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat"
+    fname = "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat"
     out_path = NETWORK_DIR / f"{fname}.yaml"
     net.save(out_path)
     print(f"Saved: {out_path.name}")

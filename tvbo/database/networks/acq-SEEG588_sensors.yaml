@@ -9,6 +9,7 @@ distance_unit: mm
 time_unit: ms
 bids:
   acquisition: SEEG588
+  suffix: sensors
 parameters:
   conduction_speed:
     label: v

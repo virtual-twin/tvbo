@@ -3827,4 +3827,6 @@ bids:
   cohort: PPMI85
   reconstruction: PPMI85
   atlas: vDBS1
+  desc: SC
+  suffix: relmat
 distance_unit: mm

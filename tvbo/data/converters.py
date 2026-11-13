@@ -45,7 +45,18 @@ def relmat_entities(network) -> dict:
         if not isinstance(bids, dict):
             bids = {
                 k: getattr(bids, k, None)
-                for k in ("template", "subject", "session", "cohort", "reconstruction", "space", "segmentation", "scale")
+                for k in (
+                    "template",
+                    "subject",
+                    "session",
+                    "cohort",
+                    "reconstruction",
+                    "hemi",
+                    "space",
+                    "segmentation",
+                    "scale",
+                    "density",
+                )
             }
         parc = getattr(network, "parcellation", None)
         atlas = ""
@@ -61,10 +72,12 @@ def relmat_entities(network) -> dict:
         "session": bids.get("session"),
         "cohort": bids.get("cohort"),
         "reconstruction": bids.get("reconstruction"),
+        "hemi": bids.get("hemi"),
         "space": bids.get("space"),
         "atlas": atlas or None,
         "segmentation": bids.get("segmentation"),
         "scale": bids.get("scale"),
+        "density": bids.get("density"),
         "description": descriptor,
     }
 
@@ -91,10 +104,23 @@ def sensor_entities(network) -> dict:
     }
 
 
+def _bep017_stem(network) -> str:
+    """The name a BEP017 export gives its files before ``meas-`` and the suffix: the network's own relmat name without its suffix (:data:`~tvbo.data.network_io.RELMAT_PATTERNS`), else ``atlas-<atlas>`` for a network that names no template and no subject, else nothing."""
+    from bids.layout.writing import build_path
+
+    from tvbo.data.network_io import RELMAT_PATTERNS
+
+    entities = relmat_entities(network)
+    named = build_path(entities, RELMAT_PATTERNS)
+    if named:
+        return named.removesuffix("_relmat.h5")
+    return f"atlas-{entities['atlas']}" if entities["atlas"] else ""
+
+
 def to_bep017(network, output_dir):
     """Export a tvbo Network to BEP017-compatible per-measure files.
 
-    Each template edge becomes one ``meas-<name>_relmat.dense.tsv`` + JSON sidecar. Filenames use pybids ``build_path`` (§6.5). Reads data directly from the Network object — no YAML round-trip needed.
+    Each template edge becomes one ``<stem>_meas-<name>_relmat.dense.tsv`` + JSON sidecar, and the nodes one ``<stem>_nodeindices.tsv``, where ``<stem>`` is the network's own BIDS name in the entity order of :data:`~tvbo.data.network_io.RELMAT_PATTERNS` (:func:`_bep017_stem`, through pybids ``build_path``, §6.5), so a subject's or a template's connectome keeps its ``sub-`` or ``tpl-``. Reads data directly from the Network object — no YAML round-trip needed.
 
     Parameters
     ----------
@@ -110,8 +136,8 @@ def to_bep017(network, output_dir):
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    base_entities = relmat_entities(network)
-    atlas = base_entities.get("atlas", "unknown")
+    stem = _bep017_stem(network)
+    atlas = relmat_entities(network)["atlas"]
 
     edges = network.edges or []
     for e in template_edges(edges):
@@ -120,7 +146,7 @@ def to_bep017(network, output_dir):
             continue
 
         # BEP017 uses meas-<name> per file (one matrix per file)
-        tsv_name = f"atlas-{atlas}_meas-{name}_relmat.dense.tsv"
+        tsv_name = "_".join(filter(None, [stem, f"meas-{name}_relmat.dense.tsv"]))
         np.savetxt(out / tsv_name, arrays[name], delimiter="\t", fmt="%.8g")
 
         # JSON sidecar (tvbo fields → BEP017 field names)
@@ -148,7 +174,7 @@ def to_bep017(network, output_dir):
         for node in nodes:
             nid = _get(node, "id")
             lines.append(f"{nid}\tatlas-{atlas}\t{nid}\t{_get(node, 'label', '')}")
-        (out / f"atlas-{atlas}_nodeindices.tsv").write_text("\n".join(lines))
+        (out / "_".join(filter(None, [stem, "nodeindices.tsv"]))).write_text("\n".join(lines))
 
 
 # Backward-compatible re-exports; the converters now live in tvbo.adapters.tvb.

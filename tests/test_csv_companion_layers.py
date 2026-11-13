@@ -409,7 +409,7 @@ def test_a_sparse_layer_is_written_as_its_entries_and_never_dense(tmp_path, monk
 @pytest.mark.slow
 def test_a_sparse_layer_of_a_surface_network_saves_as_csv_without_densifying(tmp_path):
     """The 327,684-vertex surface network with a sparse local-connectivity layer saves with CSV companions and reads the layer back sparse and equal, under any memory guard a dense layer could not pass."""
-    net = Network(iri="tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_desc-surf_relmat")
+    net = Network(iri="tvbo:networks/tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_atlas-Lobar8_den-164k_desc-surf_relmat")
     rng = np.random.default_rng(0)
     rows, cols = rng.integers(0, net.number_of_nodes, (2, 100_000))
     layer = sparse.coo_matrix((rng.random(100_000).astype("float32"), (rows, cols)), shape=(net.number_of_nodes,) * 2).tocsr()
@@ -445,7 +445,7 @@ def test_an_hdf5_save_of_a_network_read_from_csvs_names_no_csv(tmp_path):
     assert direct is not None
 
 
-SCHAEFER = "tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"
+SCHAEFER = "tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"
 
 
 def test_a_curated_schaefer_network_declares_each_parcel_s_functional_network():

@@ -13,6 +13,7 @@ from pathlib import Path
 
 from tvbo.data.analysis_io import _slot
 from tvbo.data.dataref import SUBJECT_DIM, sel_dict
+from tvbo.data.registry import stem_entities
 from tvbo.utils import as_list, keyed_items
 
 BIDS_ENTITY_SHORT_KEYS = {
@@ -21,6 +22,7 @@ BIDS_ENTITY_SHORT_KEYS = {
     "reconstruction": "rec",
     "segmentation": "seg",
     "scale": "scale",
+    "density": "den",
     "atlas": "atlas",
     "acquisition": "acq",
     "hemi": "hemi",
@@ -44,10 +46,8 @@ def query_entities(query) -> tuple[dict, str | None]:
 
 def match_subject_files(files: Iterable[Path], ents: dict, suffix: str | None):
     """Yield ``(subject, path)`` for the files whose parsed entities match *ents* and *suffix*."""
-    from tvbo.classes.network import _parse_bids_entities
-
     for f in files:
-        file_ents = _parse_bids_entities(f.stem)
+        file_ents = stem_entities(f.stem)
         if not file_ents.get("sub"):
             continue
         if suffix is not None and not f.stem.endswith(f"_{suffix}"):
@@ -62,11 +62,11 @@ def subject_sidecars(root: Path, subject: str = "*") -> list[Path]:
 
 
 def subject_file(root: Path, subject: str, ents: dict, suffix: str | None) -> Path:
-    """The one sidecar of *subject* under *root* matching *ents* and *suffix*; none or several raises."""
+    """The one sidecar of *subject* under *root* matching *ents* and *suffix*; none raises ``FileNotFoundError``, several ``ValueError``."""
     sub = str(subject).removeprefix("sub-")
     matches = [f for s, f in match_subject_files(subject_sidecars(root, sub), ents, suffix) if s == sub]
     if not matches:
-        raise ValueError(f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}.")
+        raise FileNotFoundError(f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}.")
     if len(matches) > 1:
         raise ValueError(
             f"Query {ents} suffix={suffix!r} is ambiguous for sub-{sub}: {[m.name for m in matches]}. Add entities to disambiguate."

@@ -10,29 +10,28 @@ import numpy as np
 import yaml
 
 from tvbo import database_path
+from tvbo.data.registry import stem_entities
 
-ATLAS_DIR = os.path.join(os.path.dirname(__file__), "..", "tvbo", "data", "tvbo_data", "atlas")
+ATLAS_DIR = str(database_path / "atlases")
 NETWORKS_DIR = str(database_path / "networks")
 
 # Map network atlas names to dseg.yaml files
 ATLAS_DSEG_MAP = {
-    "DesikanKilliany": "tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg.yaml",
-    "DesikanKillianyranked": "tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg.yaml",
-    "Destrieux": "tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_dseg.yaml",
-    "Destrieuxranked": "tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_dseg.yaml",
-    "hcpmmp1": "tpl-fsLR_atlas-hcpmmp1_desc-ordered_dseg.yaml",
-    "hcpmmp1ordered": "tpl-fsLR_atlas-hcpmmp1_desc-ordered_dseg.yaml",
-    "Yeo17": "space-MNI152_atlas-Yeo17_res-1_dseg.yaml",
+    "DesikanKilliany": "tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg.yaml",
+    "DesikanKillianyranked": "tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg.yaml",
+    "Destrieux": "tpl-MNI152NLin2009cAsym_atlas-Destrieux_desc-ranked_dseg.yaml",
+    "Destrieuxranked": "tpl-MNI152NLin2009cAsym_atlas-Destrieux_desc-ranked_dseg.yaml",
+    "hcpmmp1": "tpl-fsLR_atlas-HCPMMP1_dseg.yaml",
+    "hcpmmp1ordered": "tpl-fsLR_atlas-HCPMMP1_dseg.yaml",
+    "Yeo17": "tpl-MNI152NLin6Asym_atlas-Yeo17_res-1_dseg.yaml",
 }
 
 # Map atlas names to centers.txt files (for atlases where dseg.yaml lacks inline centers)
 ATLAS_CENTERS_MAP = {
-    "DesikanKilliany": "tpl-MNI152Nlin2009c_atlas-DesikanKilliany_desc-ranked_centers.txt",
-    "DesikanKillianyranked": "tpl-MNI152Nlin2009c_atlas-DesikanKilliany_desc-ranked_centers.txt",
-    "Destrieux": "tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_centers.txt",
-    "Destrieuxranked": "tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_centers.txt",
-    "hcpmmp1": "tpl-fsLR_atlas-hcpmmp1_desc-ordered_centers.txt",
-    "hcpmmp1ordered": "tpl-fsLR_atlas-hcpmmp1_desc-ordered_centers.txt",
+    "DesikanKilliany": "tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_centers.txt",
+    "DesikanKillianyranked": "tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_centers.txt",
+    "Destrieux": "tpl-MNI152NLin2009cAsym_atlas-Destrieux_desc-ranked_centers.txt",
+    "Destrieuxranked": "tpl-MNI152NLin2009cAsym_atlas-Destrieux_desc-ranked_centers.txt",
 }
 
 
@@ -203,12 +202,10 @@ def enrich_yaml_sidecars():
 
         data["nodes"] = nodes
 
-        # Add coordinate space to atlas if identifiable from filename
-        if isinstance(data.get("parcellation", {}).get("atlas"), dict):
-            if "MNI152NLin2009" in name or "MNI152Nlin2009" in name:
-                data["parcellation"]["atlas"]["coordinateSpace"] = "MNI152NLin2009c"
-            elif "MNI152" in name or "FSLMNI152" in name:
-                data["parcellation"]["atlas"]["coordinateSpace"] = "MNI152"
+        # The atlas's coordinate space is the template its file name spells.
+        template = stem_entities(name.removesuffix(".yaml")).get("tpl")
+        if isinstance(data.get("parcellation", {}).get("atlas"), dict) and template:
+            data["parcellation"]["atlas"]["coordinateSpace"] = template
 
         with open(f, "w") as fh:
             yaml.dump(data, fh, default_flow_style=False, sort_keys=False, allow_unicode=True)

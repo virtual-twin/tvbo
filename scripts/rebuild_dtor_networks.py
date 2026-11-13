@@ -41,8 +41,8 @@ LOBAR = "lobar"
 VOLUMES = {
     **{f"{stem}_desc-SC": volume for stem, volume in LEADDBS_VOLUMES.items()},
     **{
-        f"tpl-FSLMNI152_{{c}}_atlas-Schaefer2018_seg-{seg}Networks_scale-{scale}_desc-SC": ATLASES
-        / f"space-FSLMNI152_atlas-Schaefer2018_seg-{seg}Networks_scale-{scale}_res-1_desc-original_dseg.nii.gz"
+        f"tpl-MNI152NLin6Asym_{{c}}_atlas-Schaefer2018_seg-{seg}Networks_scale-{scale}_desc-SC": ATLASES
+        / f"tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-{seg}Networks_scale-{scale}_res-1_dseg.nii.gz"
         for seg in (7, 17)
         for scale in range(100, 1001, 100)
     },

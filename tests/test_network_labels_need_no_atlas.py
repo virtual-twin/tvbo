@@ -5,13 +5,14 @@ from __future__ import annotations
 import pytest
 
 from tvbo import Network
+from tvbo.classes.atlas import Atlas
 
 NUMBERED_BY_LOOKUP_LABEL = {
     "DesikanKilliany": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat",
     "Destrieux": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Destrieux_desc-SC_relmat",
-    "Yeo17": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Yeo17_desc-SC_relmat",
+    "Yeo17": "tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Yeo17_desc-SC_relmat",
 }
-SCHAEFER = "tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"
+SCHAEFER = "tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"
 
 
 @pytest.mark.parametrize("atlas", sorted(NUMBERED_BY_LOOKUP_LABEL))
@@ -19,6 +20,15 @@ def test_a_network_numbered_by_its_atlas_s_lookup_labels_gives_them(atlas):
     net = Network(iri=f"tvbo:networks/{NUMBERED_BY_LOOKUP_LABEL[atlas]}")
     entities = net.get_atlas().terminology.entities.values()
     assert net.labels == {entity.name: entity.lookupLabel for entity in entities}
+
+
+@pytest.mark.parametrize("atlas", sorted(NUMBERED_BY_LOOKUP_LABEL))
+def test_hidden_atlases_hides_every_atlas_and_curated_network(request, atlas):
+    """Under the ``hidden_atlases`` fixture the atlas has no metadata file to read and its curated network is not found, so the tests that use the fixture run with neither."""
+    request.getfixturevalue("hidden_atlases")
+    assert Atlas.of(atlas).metadata_file is None
+    with pytest.raises(FileNotFoundError):
+        Network(iri=f"tvbo:networks/{NUMBERED_BY_LOOKUP_LABEL[atlas]}")
 
 
 @pytest.mark.parametrize("binary_format", ["h5", "csv"])

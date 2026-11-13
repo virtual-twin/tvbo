@@ -16,7 +16,7 @@ from tvbo.classes.network import NETWORK_DIR
 from tvbo.datamodel import pydantic as pm
 from tvbo.datamodel import schema as dm
 
-SCHAEFER = "tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"
+SCHAEFER = "tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"
 SAVED_BEFORE = Path(__file__).parent / "reference_data" / "saved_networks" / "network_saved_with_a_node_template_id.yaml"
 PER_NODE = {"id": 0, "label": "x", "position": {"x": 0.0, "y": 0.0, "z": 0.0}, "region": "r"}
 NODE_FIELDS = [

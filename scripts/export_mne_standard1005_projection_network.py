@@ -26,7 +26,9 @@ from bsplot.graph import create_network, plot_network_on_surface
 from tvbo import Network, Observation, database_path
 from tvbo.datamodel import tvbo_datamodel
 
-DEFAULT_OUTPUT = database_path / "networks" / "sensors_eeg_standard1005_fsaverage_aparc_projection.yaml"
+DEFAULT_OUTPUT = (
+    database_path / "networks" / "tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.yaml"
+)
 
 
 def _resolve_output_paths(
@@ -193,7 +195,7 @@ def _build_tvbo_sensor_network(
     net.description = (
         "MNE standard_1005 EEG sensors (MNI, mm) with fsaverage aparc projection gain matrix (sensors x regions)."
     )
-    net.descriptor = "sensors"
+    net.descriptor = "projection"
     net.distance_unit = "mm"
     net.time_unit = "ms"
     net.parameters["conduction_speed"] = tvbo_datamodel.Parameter(

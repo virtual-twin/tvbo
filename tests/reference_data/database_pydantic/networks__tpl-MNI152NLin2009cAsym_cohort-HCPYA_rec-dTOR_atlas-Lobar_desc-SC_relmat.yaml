@@ -205,5 +205,7 @@ bids:
   cohort: HCPYA
   reconstruction: dTOR
   atlas: Lobar
+  desc: SC
+  suffix: relmat
 node_mapping: /nodes/parent_index
 distance_unit: mm

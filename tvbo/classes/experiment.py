@@ -2414,7 +2414,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def _bids_query_dict(query) -> tuple[dict, str | None]:
         """Split a ``BidsEntities`` query into (key-value entities, suffix).
 
-        Maps the schema's attribute names to the short entity keys that :func:`tvbo.classes.network._parse_bids_entities` emits. ``suffix`` is returned separately because it is the trailing filename component, not a ``key-value`` entity.
+        Maps the schema's attribute names to the short entity keys that :func:`tvbo.data.registry.stem_entities` emits. ``suffix`` is returned separately because it is the trailing filename component, not a ``key-value`` entity.
         """
         return _cohort.query_entities(query)
 
@@ -2597,25 +2597,24 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def dataset_reconcile_indices(self) -> dict:
         """Model-side gather index for each ``by_label`` dataset target (keyed).
 
-        For every observation sourced from ``dataset.subject.<measure>`` with ``reconcile: by_label``, returns the positions of the shared node labels within the model network's node order — derived from the labels, never from position. The shared label set is identical across the cohort, so it is resolved once from the first cohort subject (reading only its node labels, not its matrix). Codegen uses this to gather the simulated observable onto the same shared labels as the reconciled empirical target before comparing them. Returns ``{}`` (no gather) when nothing is dataset-sourced or the data cannot be resolved.
+        For every observation sourced from ``dataset.subject.<measure>`` with ``reconcile: by_label``, returns the positions of the shared node labels within the model network's node order — derived from the labels, never from position. The shared label set is identical across the cohort, so it is resolved once from the first cohort subject (reading only its node labels, not its matrix). Codegen uses this to gather the simulated observable onto the same shared labels as the reconciled empirical target before comparing them. Returns ``{}`` (no gather) when nothing is dataset-sourced or the first subject's file is not there; every other error, a model network whose atlas the registry refuses among them, raises.
         """
         targets = self.dataset_observation_targets
         subjects = self.dataset_subject_ids() if targets else []
         if not subjects:
             return {}
-        try:
-            root = self._dataset_bids_root()
-            model_labels = self._resolve_model_node_labels()
-            out: dict = {}
-            for name in targets:
-                obs = self.observations[name]
-                if self._reconcile_mode(obs) != "by_label":
-                    continue
-                path = self._find_subject_file(root, subjects[0], getattr(obs, "query", None))
-                shared = self._shared_labels(model_labels, Network.load(str(path)))
-                out[name] = self.dataset_reconcile_index(shared, model_labels).tolist()
-        except Exception:
-            return {}
+        root = self._dataset_bids_root()
+        model_labels = self._resolve_model_node_labels()
+        out: dict = {}
+        for name in targets:
+            obs = self.observations[name]
+            if self._reconcile_mode(obs) != "by_label":
+                continue
+            try:
+                target = Network.load(str(self._find_subject_file(root, subjects[0], getattr(obs, "query", None))))
+            except FileNotFoundError:
+                return {}
+            out[name] = self.dataset_reconcile_index(self._shared_labels(model_labels, target), model_labels).tolist()
         return out
 
     def dataset_subject_ids(self) -> list:

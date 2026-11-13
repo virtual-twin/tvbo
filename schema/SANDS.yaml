@@ -218,6 +218,4 @@ slots:
   coordinateSpace:
     range: CommonCoordinateSpace
     description: >-
-      Common coordinate space (e.g. FSLMNI152, MNI152NLin2009cAsym).
-      Reference by name; the CommonCoordinateSpace must be defined in
-      tvbo/database/coordinate_spaces/ (or future equivalent location).
+      Common coordinate space (e.g. MNI152NLin6Asym, MNI152NLin2009cAsym). Reference by name; the CommonCoordinateSpace must be defined in tvbo/database/coordinate_spaces/ (or future equivalent location).

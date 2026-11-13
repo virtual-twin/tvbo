@@ -1,11 +1,12 @@
 """The curated network a declaration names by its BIDS entities is the one whose file name carries exactly those entities: ``scale-100`` is never ``scale-1000``, nor ``atlas-Lobar`` ``atlas-Lobar8``.
 
-An entity a declaration leaves out matches any value or none, so a declaration several curated networks carry is refused, naming them and the entities that tell them apart, and an atlas spelled as older records spell it names the network it named when the files were renamed. ``get_normative_connectome_data`` names a network as a declaration does, by its other entities as well, or by its IRI. A surface network holds a mesh and no connectome, so asking it for one is refused saying so, naming the network whose nodes are its regions. A network that lists its nodes is its own, and its ``parcellation`` and ``bids`` are metadata that look nothing up; a node count is a size, so a network that states one names the curated network its parcellation names. A network that names a curated network, by its parcellation's entities or by an ``iri``, which names one whatever else the network declares, is refused when the name matches none, naming what was asked and the curated names nearest to it, and an ``iri`` beside a file source is refused, naming both.
+An entity a declaration leaves out matches any value or none, so a declaration several curated networks carry is refused, naming them and the entities that tell them apart, and an atlas spelled as older records spell it names the network it named when the files were renamed, or is refused, naming the network that replaced it, where the BIDS rename archived that network. ``get_normative_connectome_data`` names a network as a declaration does, by its other entities as well, or by its IRI. A surface network holds a mesh and no connectome, so asking it for one is refused saying so, naming the network whose nodes are its regions. A network that lists its nodes is its own, and its ``parcellation`` and ``bids`` are metadata that look nothing up; a node count is a size, so a network that states one names the curated network its parcellation names. A network that names a curated network, by its parcellation's entities or by an ``iri``, which names one whatever else the network declares, is refused when the name matches none, naming what was asked and the curated names nearest to it, and an ``iri`` beside a file source is refused, naming both.
 """
 
 from __future__ import annotations
 
 import re
+import warnings
 
 import numpy as np
 import pytest
@@ -13,17 +14,18 @@ import yaml
 
 from tvbo import Network
 from tvbo.classes import network as network_module
-from tvbo.classes.network import NETWORK_DIR, _find_network_sidecar, _parse_bids_entities, get_normative_connectome_data
+from tvbo.classes.network import NETWORK_DIR, _find_network_sidecar, get_normative_connectome_data
 from tvbo.data.cohort import BIDS_ENTITY_SHORT_KEYS
+from tvbo.data.registry import resolve, retired_stems, stem_entities
 
-NAMEABLE = [f for f in sorted(NETWORK_DIR.glob("*.yaml")) if {"atlas", "rec"} <= _parse_bids_entities(f.stem).keys()]
+NAMEABLE = [f for f in sorted(NETWORK_DIR.glob("*.yaml")) if {"atlas", "rec"} <= stem_entities(f.stem).keys()]
 WEIGHTED = [f for f in NAMEABLE if any(e.get("label") == "weight" for e in yaml.safe_load(f.read_text()).get("edges") or [])]
 BIDS_SLOTS = {short: slot for slot, short in BIDS_ENTITY_SHORT_KEYS.items()}
 
 
 def _carrying(entities):
     """The curated networks whose file names carry each of *entities*, whatever else they carry."""
-    return [f for f in NAMEABLE if _parse_bids_entities(f.stem).items() >= entities.items()]
+    return [f for f in NAMEABLE if stem_entities(f.stem).items() >= entities.items()]
 
 
 def _one_line(entities):
@@ -40,7 +42,7 @@ def _named_among(stem):
     return rf"{re.escape(stem)}[,;]"
 
 
-ALONE = [f for f in NAMEABLE if _carrying(_parse_bids_entities(f.stem)) == [f]]
+ALONE = [f for f in NAMEABLE if _carrying(stem_entities(f.stem)) == [f]]
 SCALES = "100, 200, 300, 400, 500, 600, 700, 800, 900, 1000"
 
 
@@ -56,7 +58,7 @@ def test_a_schaefer_network_is_the_one_at_the_scale_it_names(segmentation, scale
     """Declared in one line, Schaefer2018 at scale 100 is its own 100-node network, never the scale-1000 one whose name contains ``scale-100``."""
     weights, _ = get_normative_connectome_data("Schaefer2018", "dTOR", segmentation=segmentation, scale=str(scale))
     own = Network(
-        iri=f"tvbo:networks/tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-{segmentation}_scale-{scale}_desc-SC_relmat"
+        iri=f"tvbo:networks/tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-{segmentation}_scale-{scale}_desc-SC_relmat"
     )
     net = Network(
         parcellation={"atlas": {"name": "Schaefer2018"}},
@@ -80,17 +82,17 @@ def test_an_atlas_is_never_another_whose_name_begins_with_it():
 @pytest.mark.parametrize("desc", ["SC", "surf"])
 def test_a_further_entity_tells_apart_two_networks_of_one_atlas_and_tractogram(desc):
     found = _find_network_sidecar({"atlas": "Lobar", "rec": "dTOR", "desc": desc})
-    assert _parse_bids_entities(found.stem)["desc"] == desc
+    assert stem_entities(found.stem)["desc"] == desc
 
 
 @pytest.mark.parametrize(
     ("atlas", "bids", "apart"),
     [
-        ("Schaefer2018", {}, f"scale- ({SCALES}) and seg- (7Networks, 17Networks, none)"),
+        ("Schaefer2018", {}, f"seg- (7Networks, 17Networks) and scale- ({SCALES})"),
         ("Schaefer2018", {"segmentation": "7Networks"}, f"scale- ({SCALES})"),
         ("Schaefer2018", {"scale": "100"}, "seg- (7Networks, 17Networks)"),
-        ("Schaefer2018", {"scale": "1000"}, "seg- (7Networks, 17Networks, none)"),
-        ("Lobar", {}, "desc- (SC, surf)"),
+        ("Schaefer2018", {"scale": "1000"}, "seg- (7Networks, 17Networks)"),
+        ("Lobar", {}, "tpl- (fsLR, MNI152NLin2009cAsym) and desc- (SC, surf) and den- (32k, none)"),
     ],
     ids=[
         "atlas-alone",
@@ -121,7 +123,10 @@ OLDER = {
     "DesikanKillianyranked": "tpl-MNI152NLin2009cAsym_cohort-{cohort}_rec-{rec}_atlas-DesikanKilliany_desc-SC_relmat",
     "Destrieuxranked": "tpl-MNI152NLin2009cAsym_cohort-{cohort}_rec-{rec}_atlas-Destrieux_desc-SC_relmat",
 }
+"""Each older spelling of an atlas, to the network it named before the BIDS rename."""
 COHORTS = {"dTOR": "HCPYA", "MghUscHcp32": "MghUscHcp32", "PPMI85": "PPMI85"}
+ARCHIVED = {"Schaefer1000", "hcpmmp1ordered"}
+"""The spellings whose network the BIDS rename archived, for every tractogram."""
 
 
 def test_every_older_spelling_of_an_atlas_is_checked():
@@ -129,42 +134,83 @@ def test_every_older_spelling_of_an_atlas_is_checked():
 
 
 @pytest.mark.parametrize("rec", sorted(COHORTS))
-@pytest.mark.parametrize("older", sorted(OLDER))
+@pytest.mark.parametrize("older", sorted(set(OLDER) - ARCHIVED))
 def test_an_older_spelling_of_an_atlas_reaches_the_network_it_named(older, rec):
-    """Each spelling older records use names the network it named when the files were renamed (``scripts/rename_networks.py``): ``hcpmmp1ordered`` the ``seg-ordered`` network and ``hcpmmp1`` and ``Schaefer1000`` the ones without ``seg-``, never a refusal for the networks beside them, and the ``ranked`` spellings the only Desikan-Killiany and Destrieux networks, which the removed ``seg-ranked`` ones duplicated."""
-    assert _find_network_sidecar({"atlas": older, "rec": rec}).stem == OLDER[older].format(cohort=COHORTS[rec], rec=rec)
+    """Each spelling older records use whose network the BIDS rename kept names the network it named when the files were renamed (``scripts/rename_networks.py``), under the name the BIDS rename gave it, with no warning and never a refusal for the networks beside it; the ``ranked`` spellings name the only Desikan-Killiany and Destrieux networks, which the removed ``seg-ranked`` ones duplicated."""
+    named = OLDER[older].format(cohort=COHORTS[rec], rec=rec)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        found = _find_network_sidecar({"atlas": older, "rec": rec})
+    assert found.stem == retired_stems("networks").get(named, named)
+    assert not [w for w in caught if w.category is FutureWarning]
+
+
+@pytest.mark.parametrize("rec", sorted(COHORTS))
+@pytest.mark.parametrize("older", sorted(ARCHIVED))
+def test_an_older_spelling_of_an_archived_network_is_refused_as_its_stem_is(older, rec):
+    """A spelling that named a network the BIDS rename archived (``Schaefer1000`` the Schaefer2018 scale-1000 network without ``seg-``, ``hcpmmp1ordered`` the ``seg-ordered`` HCPMMP1 network) is refused, since tvbo hands out no archived data (register AR1): by the registry, by a lookup of its entities, by ``Network.from_db`` of them and by a network's ``parcellation``, with the refusal a lookup of the archived network's stem gets, which names the network that replaced it."""
+    named = OLDER[older].format(cohort=COHORTS[rec], rec=rec)
+    with pytest.raises(ValueError) as by_stem:
+        resolve("Network", named)
+    assert str(by_stem.value).startswith(f"Network {named!r} was archived")
+    for lookup in (
+        lambda: resolve("Network", older, rec=rec),
+        lambda: _find_network_sidecar({"atlas": older, "rec": rec}),
+        lambda: Network.from_db(atlas=older, rec=rec),
+        lambda: Network(parcellation={"atlas": {"name": older}}, tractogram={"name": rec}),
+    ):
+        with pytest.raises(ValueError) as by_spelling:
+            lookup()
+        assert str(by_spelling.value) == str(by_stem.value)
+
+
+@pytest.mark.parametrize("older", sorted(ARCHIVED))
+def test_an_older_spelling_several_archived_networks_carry_is_refused_naming_each(older):
+    """With no tractogram, ``Schaefer1000`` and ``hcpmmp1ordered`` name the archived network of every cohort, so a lookup of the spelling's entities, and ``Network.from_db`` of them, is refused with the refusals a lookup of each of those stems gets, one after another, each saying that its network was archived and naming the one that replaced it."""
+    refusals = []
+    for named in sorted(OLDER[older].format(cohort=cohort, rec=rec) for rec, cohort in COHORTS.items()):
+        with pytest.raises(ValueError) as by_stem:
+            resolve("Network", named)
+        refusals.append(str(by_stem.value))
+    for lookup in (lambda: _find_network_sidecar({"atlas": older}), lambda: Network.from_db(atlas=older)):
+        with pytest.raises(ValueError) as by_spelling:
+            lookup()
+        assert str(by_spelling.value) == " ".join(refusals)
 
 
 def test_a_network_declared_by_an_older_spelling_reads_the_network_it_named():
-    net = Network(parcellation={"atlas": {"name": "hcpmmp1ordered"}})
-    own = Network(iri=f"tvbo:networks/{OLDER['hcpmmp1ordered'].format(cohort='HCPYA', rec='dTOR')}")
+    net = Network(parcellation={"atlas": {"name": "hcpmmp1"}})
+    own = Network(iri=f"tvbo:networks/{OLDER['hcpmmp1'].format(cohort='HCPYA', rec='dTOR')}")
     assert net.node_labels == own.node_labels
     np.testing.assert_array_equal(_dense(net.matrix("weight")), _dense(own.matrix("weight")))
 
 
 def test_an_older_spelling_beside_an_entity_it_names_otherwise_names_no_network():
-    """``Schaefer1000`` names the network without ``seg-``, so a ``seg`` stated beside it is refused, not read as another network."""
+    """``Schaefer1000`` names the Schaefer2018 scale-1000 network without ``seg-``, so a ``seg`` stated beside it is refused, not read as another network."""
     with pytest.raises(
         FileNotFoundError, match=r"^No curated network has the BIDS entities seg-7Networks, atlas-Schaefer1000, rec-dTOR;"
     ):
         Network(parcellation={"atlas": {"name": "Schaefer1000"}}, bids={"segmentation": "7Networks"})
 
 
-LOBAR = "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-{desc}_relmat"
-SURFACE_REFUSAL = rf"^{LOBAR.format(desc='surf')}\.h5 holds a surface mesh of 64984 vertices and no connectome; its regions are the nodes of tvbo:networks/{LOBAR.format(desc='SC')}\.$"
+LOBAR = {
+    "SC": "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-SC_relmat",
+    "surf": "tpl-fsLR_cohort-HCPYA_rec-dTOR_atlas-Lobar_den-32k_desc-surf_relmat",
+}
+SURFACE_REFUSAL = rf"^{LOBAR['surf']}\.h5 holds a surface mesh of 64984 vertices and no connectome; its regions are the nodes of tvbo:networks/{LOBAR['SC']}\.$"
 
 
 def _lobar(route, desc):
     """The arguments that name the Lobar network of *desc* to :func:`get_normative_connectome_data`, by its entities or by its IRI."""
     if route == "entities":
         return {"atlas": "Lobar", "tractogram": "dTOR", "desc": desc}
-    return {"iri": f"tvbo:networks/{LOBAR.format(desc=desc)}"}
+    return {"iri": f"tvbo:networks/{LOBAR[desc]}"}
 
 
 def test_the_normative_connectome_of_entities_several_networks_carry_is_refused_naming_how_to_choose():
     with pytest.raises(
         ValueError,
-        match=rf"told apart by desc- \(SC, surf\): tvbo:networks/{LOBAR.format(desc='SC')}, tvbo:networks/{LOBAR.format(desc='surf')}; state a further entity of the one meant, or name it by its `iri`\.$",
+        match=rf"told apart by tpl- \(fsLR, MNI152NLin2009cAsym\) and desc- \(SC, surf\) and den- \(32k, none\): tvbo:networks/{LOBAR['SC']}, tvbo:networks/{LOBAR['surf']}; state a further entity of the one meant, or name it by its `iri`\.$",
     ):
         get_normative_connectome_data("Lobar", "dTOR")
 
@@ -173,7 +219,7 @@ def test_the_normative_connectome_of_entities_several_networks_carry_is_refused_
 def test_the_normative_connectome_function_picks_each_lobar_network(route):
     """A ``desc`` or the IRI picks each of the two Lobar networks: the connectome gives its weights, and the surface network, a mesh with none, is refused as one, naming the network whose nodes are its regions."""
     weights, _ = get_normative_connectome_data(**_lobar(route, "SC"))
-    stored = Network(iri=f"tvbo:networks/{LOBAR.format(desc='SC')}").matrix("weight", apply_transforms=False)
+    stored = Network(iri=f"tvbo:networks/{LOBAR['SC']}").matrix("weight", apply_transforms=False)
     np.testing.assert_array_equal(_dense(weights), _dense(stored))
     with pytest.raises(ValueError, match=SURFACE_REFUSAL):
         get_normative_connectome_data(**_lobar(route, "surf"))
@@ -189,7 +235,7 @@ def test_a_network_whose_parcellation_names_a_surface_network_is_refused_as_a_me
     [
         ({}, TypeError, r"names a curated network by its `atlas` or by its `iri`"),
         (
-            {"atlas": "Lobar", "iri": f"tvbo:networks/{LOBAR.format(desc='SC')}"},
+            {"atlas": "Lobar", "iri": f"tvbo:networks/{LOBAR['SC']}"},
             ValueError,
             r"names the curated network on its own; drop the BIDS entities beside it: atlas-Lobar\.",
         ),
@@ -206,7 +252,7 @@ def test_the_normative_connectome_function_refuses_arguments_that_name_no_one_ne
 @pytest.mark.parametrize("sidecar", NAMEABLE, ids=lambda f: f.stem)
 def test_every_curated_network_is_found_by_its_own_entities(sidecar, form):
     """Named by every entity of its file name, or by its atlas, rec, seg and scale alone, it is itself when no other curated network carries those, and is refused, named among those that do, when another does."""
-    entities = _parse_bids_entities(sidecar.stem)
+    entities = stem_entities(sidecar.stem)
     if form == "one-line":
         entities = {key: value for key, value in entities.items() if key in ("atlas", "rec", "seg", "scale")}
     if _carrying(entities) == [sidecar]:
@@ -241,15 +287,8 @@ def test_a_network_whose_entities_no_curated_network_of_its_atlas_carries_is_ref
 @pytest.mark.parametrize("sidecar", [f for f in WEIGHTED if f in ALONE], ids=lambda f: f.stem)
 def test_every_curated_network_resolves_through_its_one_line_form(sidecar):
     """Its atlas, its tractogram and every other entity of its file name, declared in one line, read the network its iri names."""
-    net = Network(**_one_line(_parse_bids_entities(sidecar.stem)))
+    net = Network(**_one_line(stem_entities(sidecar.stem)))
     assert net.node_labels == Network(iri=f"tvbo:networks/{sidecar.stem}").node_labels
-
-
-@pytest.mark.parametrize("sidecar", [f for f in NAMEABLE if f not in ALONE], ids=lambda f: f.stem)
-def test_a_curated_network_whose_entities_another_carries_as_well_is_refused_by_them_naming_it(sidecar):
-    """Every entity of its file name, declared in one line, is carried by another curated network as well, such as a ``seg-`` network beside one without, so the declaration names no one network and is refused, naming it among them."""
-    with pytest.raises(ValueError, match=_named_among(sidecar.stem)):
-        Network(**_one_line(_parse_bids_entities(sidecar.stem)))
 
 
 @pytest.mark.parametrize(
@@ -296,7 +335,7 @@ def _built(how, tmp_path, **declared):
     ("iri", "nearest"),
     [
         (f"tvbo:networks/{MISSPELT}", rf"; the closest are: .*tvbo:networks/{DESIKAN}"),
-        ("tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg", ""),
+        ("tvbo:atlases/tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg", ""),
         ("tvbo:networks/no-such-network", ""),
     ],
     ids=["misspelt", "another-folder", "unknown"],

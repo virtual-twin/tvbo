@@ -245,7 +245,9 @@ def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
     """
     import h5py
 
-    dk_yaml = dk_network_dir / ("tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.yaml")
+    dk_yaml = dk_network_dir / (
+        "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.yaml"
+    )
     dk_h5 = dk_yaml.with_suffix(".h5")
 
     # Load DK labels
@@ -585,6 +587,7 @@ def build_lobar8_network(
     }
     net8.bids = {
         "template": "MNI152NLin2009cAsym",
+        "cohort": "HCPYA",
         "reconstruction": "avgMatrix",
         "atlas": "Lobar8",
     }
@@ -923,7 +926,9 @@ def main() -> None:
 
         # Step 2b: Aggregate DK avgMatrix SC+FC to lobar level
         dk_network_dir = args.output_dir
-        dk_h5 = dk_network_dir / ("tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5")
+        dk_h5 = dk_network_dir / (
+            "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5"
+        )
         lobar_avgmatrix = None
         if dk_h5.exists():
             lobar_avgmatrix = compute_lobar_avgmatrix(dk_network_dir)
@@ -963,8 +968,7 @@ def main() -> None:
             print(f"[ok  ] {surf_sidecar.name}")
             print(f"[ok  ] {surf_sidecar.with_suffix('.h5').name}")
 
-        # Step 6: Build Lobar8 (16-node SC+FC from avgMatrix, no BrainStem)
-        net8 = None
+        # Step 6: Build Lobar8 (16-node SC+FC from avgMatrix, no BrainStem); its surfaces are create_lobar8_surface.py's
         if lobar_avgmatrix is not None:
             net8 = build_lobar8_network(lobar_avgmatrix, centroids)
             net8_name = net8.bids_filename
@@ -976,41 +980,6 @@ def main() -> None:
                 net8.save(net8_sidecar)
                 print(f"[ok  ] {net8_sidecar.name}")
                 print(f"[ok  ] {net8_sidecar.with_suffix('.h5').name}")
-
-        # Step 7: Build Lobar8 surface network (16-node, no BrainStem)
-        if net8 is not None:
-            # Remap: 0-15 stay, 16 (BrainStem) → -1
-            rm8 = region_mapping.copy()
-            rm8[rm8 == LOBE_ORDER.index("BrainStem")] = -1
-
-            surf8 = build_surface_network(
-                atlas_nii,
-                net8,
-                _precomputed=(vertices, triangles, hemi_index, rm8),
-            )
-            # Override BIDS to match Lobar8
-            surf8.parcellation = {
-                "atlas": {
-                    "name": "Lobar8",
-                    "coordinateSpace": "MNI152NLin2009cAsym",
-                }
-            }
-            surf8.bids = {
-                "template": "MNI152NLin2009cAsym",
-                "cohort": "HCPYA",
-                "atlas": "Lobar8",
-            }
-            surf8.label = f"Lobar8 surface (fsLR 32k, {len(vertices)} vertices)"
-
-            surf8_name = net8.bids_filename.replace(f"_desc-{net8.descriptor}_", "_desc-surf_")
-            surf8_sidecar = (args.output_dir / surf8_name).with_suffix(".yaml")
-
-            if surf8_sidecar.exists() and not args.overwrite:
-                print(f"[skip] {surf8_sidecar.name} already exists (use --overwrite)")
-            else:
-                surf8.save(surf8_sidecar)
-                print(f"[ok  ] {surf8_sidecar.name}")
-                print(f"[ok  ] {surf8_sidecar.with_suffix('.h5').name}")
 
     print(f"[done] {n_lobes}-node lobar network from dTOR tractogram")
 

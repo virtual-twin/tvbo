@@ -95,7 +95,8 @@ def test_a_curated_network_is_named_by_its_exact_id_and_by_nothing_looser():
     curated = Network.from_db(CURATED.split(":", 1)[1])
     np.testing.assert_array_equal(da.values, curated.matrix("weight", format="dense"))
     assert list(da["node_i"].values) == [str(lbl) for lbl in curated.node_labels]
-    assert dataref.network_file("tvbo:Lobar") is None, "an atlas shorthand matches several networks, so it names none"
+    with pytest.raises(ValueError, match=r"^Several curated networks have the BIDS entities atlas-Lobar, rec-dTOR"):
+        dataref.network_file("tvbo:Lobar")
 
 
 @pytest.mark.parametrize("iri", ["tvbo:exp/Study/exp-3", "tvbo:ana/Study/toy_mean", "exp-3", "3"])

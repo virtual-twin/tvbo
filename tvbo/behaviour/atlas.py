@@ -31,27 +31,28 @@ class BrainAtlasBehaviour(Catalogued, RuntimeAttributes):
     """
 
     @classmethod
-    def of(cls, atlas=None):
+    def of(cls, atlas=None, **entities):
         """The atlas *atlas* names, with its metadata loaded.
 
-        Accepts a record of one, its name, or nothing — which means ``wholebrain``, as does a record that names none and anything this cannot read slots off at all. A record's other stated slots come along, and one whose metadata is already loaded is not read again. This is the constructor the runtime uses when it wants the atlas itself rather than a reference to one.
+        Accepts a record of one, its name, or nothing — which means ``wholebrain``, as does a record that names none and anything this cannot read slots off at all. A record's other stated slots come along, and one whose metadata is already loaded is not read again. A name is matched in any case, and one several atlases share, ``Schaefer2018``, is refused naming them and the entities that tell them apart unless the BIDS *entities* (``seg="7Networks", scale="100"``) narrow it to one (:func:`tvbo.data.registry.resolve`). This is the constructor the runtime uses when it wants the atlas itself rather than a reference to one.
         """
         from tvbo.behaviour._enrich import _slots, _unset
 
         if atlas is None:
-            return cls(name=WHOLEBRAIN)._loaded()
+            return cls(name=WHOLEBRAIN)._loaded(entities)
         if isinstance(atlas, str):
-            return cls(name=atlas)._loaded()
+            return cls(name=atlas)._loaded(entities)
         stated = {
             slot: value for slot in _slots(type(atlas)) if slot != "name" and not _unset(value := getattr(atlas, slot, None))
         }
         built = cls(name=str(getattr(atlas, "name", None) or WHOLEBRAIN).replace("-", ""), **stated)
         if getattr(atlas, "_metadata_loaded", False):
             object.__setattr__(built, "_metadata_loaded", True)
-        return built._loaded()
+        return built._loaded(entities)
 
-    def _loaded(self):
-        """This atlas, its metadata read."""
+    def _loaded(self, entities: dict):
+        """This atlas, the record its name and the BIDS *entities* find (:attr:`_record`) its own, and its metadata read."""
+        object.__setattr__(self, "_entities_query", entities)
         self._load_metadata()
         return self
 
@@ -72,25 +73,20 @@ class BrainAtlasBehaviour(Catalogued, RuntimeAttributes):
         """The SANDS entities the terminology holds, empty when it holds none."""
         return getattr(getattr(self, "terminology", None), "entities", None) or {}
 
-    def _files(self, **query) -> list[str]:
-        """This atlas's ``dseg`` files matching *query* in the packaged atlas layout, none for ``wholebrain``, so the layout is never built for the atlas that has no files."""
-        if self.name == WHOLEBRAIN:
-            return []
-        from tvbo.classes.atlas import atlas_data
-
-        return atlas_data.get(atlas=self.name, suffix="dseg", return_type="file", **query)
-
-    def _find_volume_path(self):
+    @property
+    def _record(self):
+        """The curated record of this atlas, by its name and the BIDS entities :meth:`of` was given (:func:`tvbo.data.registry.resolve`), ``None`` for ``wholebrain``; its image and centres table share its stem."""
         if self.name == WHOLEBRAIN:
             return None
-        from tvbo.classes.atlas import available_atlases
+        from tvbo.data.registry import resolve
 
-        if self.name not in available_atlases:
-            raise ValueError(f"Atlas {self.name} is not available in the dataset: {available_atlases}")
-        imgs = self._files(extension=".nii.gz")
-        if len(imgs) > 1:
-            imgs = self._files(extension=".nii.gz", desc="ranked")
-        return imgs[0] if len(imgs) == 1 else None
+        return resolve("BrainAtlas", str(self.name), **getattr(self, "_entities_query", {}))
+
+    def _find_volume_path(self):
+        """The parcellation image beside this atlas's record, or ``None`` when it ships none; raises ``FileNotFoundError`` for an atlas the database does not hold."""
+        record = self._record
+        image = record.with_name(f"{record.stem}.nii.gz") if record is not None else None
+        return str(image) if image is not None and image.exists() else None
 
     @property
     def volume(self):
@@ -117,9 +113,12 @@ class BrainAtlasBehaviour(Catalogued, RuntimeAttributes):
 
     @property
     def metadata_file(self):
-        """Filesystem path to the atlas `_dseg.yaml` metadata file, or `None` if not uniquely found."""
-        files = self._files(extension=".yaml")
-        return files[0] if len(files) == 1 else None
+        """Filesystem path to the atlas `_dseg.yaml` metadata file, or `None` for an atlas the database does not hold."""
+        try:
+            record = self._record
+        except FileNotFoundError:
+            return None
+        return str(record) if record is not None else None
 
     def _load_metadata(self):
         """Fill ``coordinateSpace`` and ``terminology`` from the atlas's own ``_dseg.yaml``, once; members are built in this record's generated form."""

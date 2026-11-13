@@ -10,6 +10,8 @@ bids:
   cohort: MghUscHcp32
   reconstruction: MghUscHcp32
   atlas: vDBS1
+  desc: SC
+  suffix: relmat
 parameters:
   conduction_speed:
     label: v

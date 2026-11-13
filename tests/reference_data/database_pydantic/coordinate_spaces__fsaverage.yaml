@@ -1,0 +1,12 @@
+name: fsaverage
+abbreviation: fsaverage
+alternateName:
+- tpl-fsaverage
+description: 'FreeSurfer''s fsaverage template (Fischl, Sereno, Tootell and Dale,
+  1999, https://doi.org/10.1002/(SICI)1097-0193(1999)8:4<272::AID-HBM10>3.0.CO;2-4),
+  chiefly a surface template: TemplateFlow ships it as surface meshes per hemisphere
+  at densities 3k, 10k, 41k and 164k (`tpl-fsaverage_hemi-L_den-164k_midthickness.surf.gii`
+  and others), with a 1 mm T1w volume and a brain mask (`tpl-fsaverage_res-01_T1w.nii.gz`,
+  `tpl-fsaverage_res-01_desc-brain_mask.nii.gz`). TemplateFlow id: `tpl-fsaverage`.
+  Its name and reference are TemplateFlow''s `template_description.json` (https://github.com/templateflow/tpl-fsaverage/blob/master/template_description.json),
+  which lists no authors.'

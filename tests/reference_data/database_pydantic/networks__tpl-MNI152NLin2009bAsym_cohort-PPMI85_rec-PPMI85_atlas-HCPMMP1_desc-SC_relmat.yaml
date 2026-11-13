@@ -3833,7 +3833,7 @@ number_of_nodes: 379
 parcellation:
   atlas:
     name: HCPMMP1
-    coordinateSpace: MNI152NLin2009cAsym
+    coordinateSpace: MNI152NLin2009bAsym
 tractogram:
   name: PPMI85
 data_file: tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_desc-SC_relmat.h5
@@ -3842,4 +3842,7 @@ bids:
   template: MNI152NLin2009bAsym
   cohort: PPMI85
   reconstruction: PPMI85
+  atlas: HCPMMP1
+  desc: SC
+  suffix: relmat
 distance_unit: mm

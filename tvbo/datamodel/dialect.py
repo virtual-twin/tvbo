@@ -133,25 +133,22 @@ def fold_aliases(cls_name: str, data: dict) -> dict:
 def curated_entry(cls_name: str, name: str) -> dict | None:
     """The curated *cls_name* record called *name*, alias-folded, shortcut-lifted and ready to merge.
 
-    ``None`` when the database holds no such record — including when *cls_name* is not a
-    category it keeps at all.
+    ``None`` when the database holds no such record — including when *cls_name* is not a category it keeps at all. A name several records answer to raises, naming them (:func:`tvbo.data.registry.resolve`), and so does a missing database.
 
-    Cached because a recipe naming the same entity twice — every node of a homogeneous
-    network — would otherwise re-read and re-parse the same file per object. Callers must
-    not mutate the result: :func:`expand_iri` only feeds it to
-    :func:`tvbo.utils.deep_merge`, which mutates neither side, and
-    :meth:`IriEnrichable._from_database` only reads it into a constructor.
+    Cached because a recipe naming the same entity twice — every node of a homogeneous network — would otherwise re-read and re-parse the same file per object. Callers must not mutate the result: :func:`expand_iri` only feeds it to :func:`tvbo.utils.deep_merge`, which mutates neither side, and :meth:`IriEnrichable._from_database` only reads it into a constructor.
 
     The entry's own ``iri`` is dropped: keeping it would make the expanded record ask to be expanded again on every later construction, and a self-referential entry would not terminate. So is its envelope: :func:`normalize` strips the recipe's own ``tvbo_class`` before expanding, and a curated record that carries one would put it back. Every network sidecar in the database opens with ``tvbo_class: tvbo:Network``, so a recipe naming a curated network by ``iri`` would otherwise carry the curated file's envelope into the object built from the recipe.
     """
     import yaml
 
-    from tvbo.data.registry import resolve
+    from tvbo.data.registry import _CATEGORIES, resolve
     from tvbo.utils.yaml_loader import ENVELOPE_KEYS
 
+    if cls_name not in _CATEGORIES:
+        return None
     try:
         path = resolve(cls_name, name)
-    except (FileNotFoundError, RuntimeError, ValueError):
+    except FileNotFoundError:
         return None
     entry = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(entry, dict):

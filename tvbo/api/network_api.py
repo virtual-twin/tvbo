@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, Response
 from linkml_runtime.dumpers import json_dumper, yaml_dumper
 
-from tvbo.data.registry import database_dir
+from tvbo.data.registry import carries, database_dir
 
 router = APIRouter(prefix="/api/v1/networks", tags=["networks"])
 
@@ -54,9 +54,12 @@ def list_networks(
     atlas: str | None = Query(None),
     tractogram: str | None = Query(None),
 ):
-    """List available normative connectivity networks."""
+    """List the normative connectivity networks whose ids, their file stems, spell ``atlas-<atlas>`` and ``rec-<tractogram>`` exactly, for each filter given (:func:`~tvbo.data.registry.carries`, as :func:`tvbo.classes.network._find_network_sidecar` matches), so a network whose stem spells no atlas answers no atlas filter and ``Lobar`` never matches ``Lobar8``."""
+    asked = {key: value for key, value in (("atlas", atlas), ("rec", tractogram)) if value}
     result = []
     for net_id, net in _get_networks().items():
+        if not carries(net_id, asked):
+            continue
         # Extract atlas name
         parc = getattr(net, "parcellation", None)
         atlas_obj = getattr(parc, "atlas", None) if parc else None
@@ -65,11 +68,6 @@ def list_networks(
         # Extract tractogram name
         tract = getattr(net, "tractogram", None)
         tract_name = getattr(tract, "name", None) if tract else str(tract) if tract else None
-
-        if atlas and atlas_name and atlas.lower() not in atlas_name.lower():
-            continue
-        if tractogram and tract_name and tractogram.lower() not in tract_name.lower():
-            continue
 
         result.append(
             {

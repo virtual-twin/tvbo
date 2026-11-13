@@ -305,7 +305,7 @@ class TestRelmatEntities:
         meta = {
             "parcellation": {"atlas": {"name": "DesikanKilliany"}},
             "tractogram": "dTOR",
-            "space": "MNI152NLin2009c",
+            "space": "MNI152NLin2009cAsym",
             "descriptor": "SC",
         }
         entities = relmat_entities(meta)
@@ -620,6 +620,43 @@ class TestBEP017Export:
             sidecar = json.loads(json_files[0].read_text())
             assert "RelationshipMeasure" in sidecar
             assert sidecar["Weighted"] is True
+
+    @pytest.mark.parametrize(
+        ("spec", "stem"),
+        [
+            (
+                {"iri": "tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat"},
+                "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC",
+            ),
+            (
+                {"bids": {"subject": "01", "session": "1", "space": "MNI152NLin2009cAsym"}},
+                "sub-01_ses-1_space-MNI152NLin2009cAsym_atlas-Toy_desc-SC",
+            ),
+        ],
+        ids=["template", "subject"],
+    )
+    def test_to_bep017_names_each_file_by_the_networks_bids_name(self, tmp_path, spec, stem):
+        """A template's or a subject's connectome keeps its ``tpl-`` or ``sub-`` and every entity in the order of ``RELMAT_PATTERNS``, ``meas-`` standing before the suffix."""
+        from tvbo import Network
+        from tvbo.data.converters import to_bep017
+
+        if "iri" in spec:
+            net = Network(**spec)
+        else:
+            w = np.ones((2, 2)) - np.eye(2)
+            net = Network.from_matrix(w, w, labels=["A", "B"])
+            net.bids = spec["bids"]
+            net.parcellation = {"atlas": {"name": "Toy"}}
+            net.descriptor = "SC"
+        to_bep017(net, tmp_path)
+
+        assert sorted(p.name for p in tmp_path.iterdir()) == [
+            f"{stem}_meas-length_relmat.dense.tsv",
+            f"{stem}_meas-length_relmat.json",
+            f"{stem}_meas-weight_relmat.dense.tsv",
+            f"{stem}_meas-weight_relmat.json",
+            f"{stem}_nodeindices.tsv",
+        ]
 
     def test_to_bep017_node_indices(self):
         """BEP017 export writes nodeindices TSV."""

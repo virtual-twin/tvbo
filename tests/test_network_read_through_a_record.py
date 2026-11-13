@@ -13,7 +13,7 @@ from tvbo import Network
 from tvbo.classes.network import NETWORK_DIR
 
 VOLUME = "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat"
-SURFACE = "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-surf_relmat"
+SURFACE = "tpl-fsLR_cohort-HCPYA_rec-dTOR_atlas-Lobar_den-32k_desc-surf_relmat"
 W = np.array([[0.0, 0.5, 0.25], [0.5, 0.0, 0.75], [0.25, 0.75, 0.0]])
 
 

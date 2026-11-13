@@ -1722,4 +1722,7 @@ bids:
   template: MNI152NLin2009cAsym
   cohort: PPMI85
   reconstruction: PPMI85
+  atlas: Destrieux
+  desc: SC
+  suffix: relmat
 distance_unit: mm

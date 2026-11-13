@@ -33,7 +33,20 @@ _cfg_jax()
 
 from tvbo.behaviour._runtime import RuntimeAttributes
 from tvbo.data.matrix_io import csv_link_slots, declared_arrays, is_csv, named_entries
-from tvbo.data.registry import curated_key, database_dir, iri_for, list_entries, local_name, record_iri, record_name
+from tvbo.data.registry import (
+    carries,
+    curated_key,
+    database_dir,
+    iri_for,
+    list_entries,
+    local_name,
+    record_iri,
+    record_name,
+    refuse_archived,
+    renamed_stems,
+    stem_entities,
+    told_apart,
+)
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.utils import edge_param, keyed_items, normalize_params, to_dict, transform_target
 from tvbo.utils.source import current_source_dir
@@ -399,20 +412,94 @@ _LEGACY_ATLAS_NAMES = {
     "DesikanKillianyranked": {"atlas": "DesikanKilliany"},
     "Destrieuxranked": {"atlas": "Destrieux"},
 }
-"""Atlas spellings older records use, to the BIDS entities of the curated networks each named when the files were renamed to BEP017 (``scripts/rename_networks.py``); ``None`` is an entity those file names do not carry. The ``ranked`` spellings named the ``seg-ranked`` networks, which duplicated the networks without ``seg-`` and were removed."""
+"""Atlas spellings older records use, to the BIDS entities of the curated networks each named when the files were renamed to BEP017 (``scripts/rename_networks.py``); ``None`` is an entity those file names do not carry. The ``ranked`` spellings named the ``seg-ranked`` networks, which duplicated the networks without ``seg-`` and were removed. ``Schaefer1000`` and ``hcpmmp1ordered`` name networks the BIDS rename archived, so a lookup by either, ``Network.from_db``, ``Network.from_platform`` and ``Network.list_platform_networks`` included, is refused as a lookup of each archived network's stem is, naming the network that replaced it (:func:`_retired_network`)."""
+
+
+def _older_spelling(entities: dict[str, str]) -> dict[str, str | None] | None:
+    """*entities* with an atlas spelled as older records spell it read as the entities that spelling names (:data:`_LEGACY_ATLAS_NAMES`), or ``None`` when the atlas is no such spelling or *entities* state one of those entities otherwise."""
+    named = _LEGACY_ATLAS_NAMES.get(entities.get("atlas"))
+    if named is None or any(entities.get(key, value) != value for key, value in named.items() if key != "atlas"):
+        return None
+    return {**entities, **named}
 
 
 def _find_network_sidecar(entities: dict[str, str]) -> Path | None:
-    """The curated sidecar in tvbo/database/networks/ whose BIDS entities include each of *entities* exactly (:func:`_filter_networks_by_entities`), so ``atlas-Lobar`` never matches ``atlas-Lobar8`` nor ``scale-100`` ``scale-1000``, and an entity *entities* leave out matches any value or none. *entities* maps short keys (:data:`~tvbo.data.cohort.BIDS_ENTITY_SHORT_KEYS`) to values. When none matches, an atlas spelled as older records spell it is looked up by the entities that spelling names (:data:`_LEGACY_ATLAS_NAMES`), unless *entities* state one of them otherwise, and ``None`` is returned when that matches none either; when several match, raises ``ValueError`` naming them (:func:`_several_curated_networks_with`)."""
+    """The curated sidecar in tvbo/database/networks/ whose BIDS entities include each of *entities* exactly (:func:`_filter_networks_by_entities`), so ``atlas-Lobar`` never matches ``atlas-Lobar8`` nor ``scale-100`` ``scale-1000``, and an entity *entities* leave out matches any value or none. *entities* maps short keys (:data:`~tvbo.data.cohort.BIDS_ENTITY_SHORT_KEYS`) to values. When none matches, an atlas spelled as older records spell it is looked up by the entities that spelling names (:func:`_older_spelling`), and refused when those name networks the BIDS rename archived (:func:`_retired_network`); ``None`` is returned when they name none either. When several match, raises ``ValueError`` naming them (:func:`_several_curated_networks_with`)."""
     found = _filter_networks_by_entities(entities)
     if len(found) > 1:
         raise ValueError(_several_curated_networks_with(entities, found))
     if found:
         return found[0]
-    named = _LEGACY_ATLAS_NAMES.get(entities.get("atlas"))
-    if named is None or any(entities.get(key, value) != value for key, value in named.items() if key != "atlas"):
+    spelled = _older_spelling(entities)
+    if spelled is None:
         return None
-    return _find_network_sidecar({**entities, **named})
+    return _find_network_sidecar(spelled) or _retired_network(spelled)
+
+
+def _retired_network(entities: dict[str, str | None]) -> None:
+    """Refuses a lookup of *entities* that networks the BIDS rename archived carry, since tvbo hands out no archived data (register AR1), with the refusal a lookup of their stems gets, which says of each that it was archived and names the network that replaced it (:func:`~tvbo.data.registry.refuse_archived`). Returns ``None`` when no archived network carries *entities*."""
+    refuse_archived("Network", NETWORK_DIR.name, lambda old: carries(old, entities))
+
+
+_PLATFORM_ENTITIES = {"atlas": "atlas", "tractogram": "rec"}
+"""The platform API's query parameters, to the BIDS entities they name."""
+
+
+def _platform_listing(api: str, query: dict[str, str]) -> list[dict]:
+    """The networks the platform API *api* lists for *query*, as it lists them."""
+    import requests
+
+    resp = requests.get(api, params=query)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _listed_stems(entry: dict) -> set[str]:
+    """The names a platform's listing gives the network *entry*: its id and the stem of its ``bids_filename``."""
+    file_name = entry.get("bids_filename")
+    return {str(entry["id"]), *([Path(file_name).stem] if file_name else [])}
+
+
+def _archived_listed(entry: dict) -> set[str]:
+    """The names, in lower case, under which a platform lists the network *entry* that are stems of networks the BIDS rename archived."""
+    archived = {old.lower() for old in renamed_stems()["archived"].get(NETWORK_DIR.name, {})}
+    return {name.lower() for name in _listed_stems(entry)} & archived
+
+
+def _platform_networks(api: str, query: dict[str, str | None]) -> list[dict]:
+    """The networks the platform API *api* lists for *query*, those the BIDS rename archived left out, whether the platform lists them by their stems or by their ``bids_filename`` (register AR1-a); ``[]`` when it lists none.
+
+    *query*'s atlas is read as :meth:`Network.from_db` reads one: an older spelling that names archived networks is refused before the platform is asked (:func:`_older_spelling`, :func:`_retired_network`), and any other spelling is matched as written. A query the platform answers with archived networks alone is refused as a lookup of their stems is (:func:`~tvbo.data.registry.refuse_archived`).
+    """
+    asked = {key: value for key, value in query.items() if value}
+    entities = {_PLATFORM_ENTITIES.get(key, key): value for key, value in asked.items()}
+    if (spelled := _older_spelling(entities)) is not None:
+        _retired_network(spelled)
+    listed = _platform_listing(api, asked)
+    kept = [entry for entry in listed if not _archived_listed(entry)]
+    if asked and not kept:
+        archived = set().union(*map(_archived_listed, listed))
+        refuse_archived("Network", NETWORK_DIR.name, lambda old: old.lower() in archived)
+    return kept
+
+
+def _no_platform_network(api: str, query: dict[str, str | None]) -> str:
+    """The refusal of a *query* the platform API *api* lists no network for, naming each atlas or tractogram the platform's names spell that matches the one asked for in any case."""
+    asked = {key: value for key, value in query.items() if value}
+    meant = sorted(
+        {
+            f"{key}={held}"
+            for entry in _platform_listing(api, {})
+            for stem in _listed_stems(entry)
+            for key, value in asked.items()
+            if (held := stem_entities(stem).get(_PLATFORM_ENTITIES.get(key, key)))
+            and held != value
+            and held.lower() == value.lower()
+        }
+    )
+    return f"No network found for {', '.join(f'{key}={value}' for key, value in asked.items())}" + (
+        f"; did you mean {', '.join(meant)}?" if meant else "."
+    )
 
 
 def _networks_of(entities: dict[str, str]) -> list[Path]:
@@ -431,10 +518,10 @@ def _no_curated_network_with(entities: dict[str, str]) -> str:
     if offered := _networks_of(entities):
         held = f"the curated networks of the atlas {atlas!r} and the tractogram {rec!r} are: {_iris(offered)}"
     elif of_atlas := _networks_of({"atlas": atlas}):
-        tractograms = sorted({_parse_bids_entities(f.stem).get("rec", "") for f in of_atlas} - {""})
+        tractograms = sorted({stem_entities(f.stem).get("rec", "") for f in of_atlas} - {""})
         held = f"the atlas {atlas!r} has curated networks of the tractograms {', '.join(tractograms)} only"
     else:
-        atlases = sorted({_parse_bids_entities(f.stem).get("atlas", "") for f in NETWORK_DIR.glob("*.yaml")} - {""})
+        atlases = sorted({stem_entities(f.stem).get("atlas", "") for f in NETWORK_DIR.glob("*.yaml")} - {""})
         close = difflib.get_close_matches(atlas, atlases, n=3)
         held = f"no curated network is of the atlas {atlas!r}" + (
             f"; the closest curated atlases are: {', '.join(close)}" if close else ""
@@ -444,18 +531,8 @@ def _no_curated_network_with(entities: dict[str, str]) -> str:
 
 def _several_curated_networks_with(entities: dict[str, str], found: list[Path]) -> str:
     """The refusal of a lookup of BIDS *entities* that the curated networks *found* all carry, naming each by its IRI and the entities that tell them apart with the values they take, ``none`` for a network whose file name carries no such entity."""
-    carried = [_parse_bids_entities(f.stem) for f in found]
-    apart = {}
-    for key in dict.fromkeys(key for held in carried for key in held):
-        values = {held.get(key) for held in carried}
-        if len(values) > 1:
-            apart[key] = [
-                *sorted(values - {None}, key=lambda value: (len(value), value)),
-                *(["none"] if None in values else []),
-            ]
-    told = " and ".join(f"{key}- ({', '.join(values)})" for key, values in apart.items())
     return (
-        f"Several curated networks have the BIDS entities {_spelled(entities)}, told apart by {told}: "
+        f"Several curated networks have the BIDS entities {_spelled(entities)}, told apart by {told_apart(found)}: "
         f"{_iris(found)}; state a further entity of the one meant, or name it by its `iri`."
     )
 
@@ -483,24 +560,9 @@ def _no_curated_network_at(iri: str) -> str:
     return f"No curated network has the IRI {iri!r}" + (f"; the closest are: {', '.join(close)}." if close else ".")
 
 
-def _parse_bids_entities(stem: str) -> dict[str, str]:
-    """Extract BIDS key-value entities from a filename stem.
-
-    E.g. ``"tpl-MNI_atlas-DK_rec-dTOR_scale-100_desc-SC_relmat"`` → ``{"tpl": "MNI", "atlas": "DK", "rec": "dTOR", "scale": "100", "desc": "SC"}``
-    """
-    import re
-
-    return dict(re.findall(r"(?:^|_)([a-zA-Z]+)-([^_]+)", stem))
-
-
 def _filter_networks_by_entities(entities: dict[str, str | None]) -> list:
-    """Return network YAML paths whose BIDS entities match all given filters; an entity given as ``None`` is one the file name does not carry."""
-    matches = []
-    for f in sorted(NETWORK_DIR.glob("*.yaml")):
-        file_ents = _parse_bids_entities(f.stem)
-        if all(file_ents.get(k) == (None if v is None else str(v)) for k, v in entities.items()):
-            matches.append(f)
-    return matches
+    """Return network YAML paths whose BIDS entities match all given filters (:func:`~tvbo.data.registry.carries`)."""
+    return [f for f in sorted(NETWORK_DIR.glob("*.yaml")) if carries(f.stem, entities)]
 
 
 # Known BEP017 weight-like and length-like measure names for auto-classification
@@ -1111,17 +1173,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _resolve_network_iri(iri: str) -> str | None:
         """Resolve a curated-network IRI to its YAML sidecar path.
 
-        Resolves the network the IRI addresses (:func:`tvbo.data.registry.curated_key`: an unscoped name or a ``networks/`` one, while a scope of another folder addresses none) against the network registry. Returns the absolute sidecar path, or ``None`` when the IRI addresses no curated network; a network named by such an IRI is refused (:func:`_no_curated_network_at`).
+        Resolves the network the IRI addresses (:func:`tvbo.data.registry.curated_key`: an unscoped name or a ``networks/`` one, while a scope of another folder addresses none) against the network registry. Returns the absolute sidecar path, or ``None`` when the IRI addresses no curated network; a network named by such an IRI is refused (:func:`_no_curated_network_at`). Only the registry's ``FileNotFoundError`` means no curated network: an IRI that several networks answer to raises, and so does a missing database.
         """
         local = curated_key(iri, "Network")
         if local is None:
             return None
-        try:
-            from tvbo.data.registry import resolve as registry_resolve
+        from tvbo.data.registry import resolve as registry_resolve
 
+        try:
             return str(registry_resolve("Network", local))
-        except (FileNotFoundError, ValueError, RuntimeError):
-            # FileNotFoundError/ValueError: unknown name. RuntimeError: the database root could not be located (e.g. a packaging issue). In all cases fall back to treating the IRI as a plain reference.
+        except FileNotFoundError:
             return None
 
     # Cache the curated GraphGenerator YAML entry by type so `_is_materialized` / `_resolve` don't re-read+parse the same generator from disk on every network (a reservoir net resolves one per subnetwork). A missing entry is cached as None to avoid repeat lookups.
@@ -1131,8 +1192,12 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _db_generator_entry(cls, gg) -> dict[str, Any] | None:
         """Load and memoise the curated GraphGenerator YAML entry for `gg`.
 
-        Returns the raw entry dict (carrying ``procedure``, ``parameters``, ``bindings``, …), or None when the type matches no curated entry — so codegen-only / unknown generators don't trigger resolver errors at load.
+        Returns the raw entry dict (carrying ``procedure``, ``parameters``, ``bindings``, …), or None when the type matches no curated entry — so codegen-only / unknown generators don't trigger resolver errors at load. A type several entries answer to raises and caches nothing.
         """
+        import yaml
+
+        from tvbo.data.registry import resolve as registry_resolve
+
         gtype = getattr(gg, "type", None)
         if not gtype:
             return None
@@ -1140,12 +1205,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if key in cls._GG_ENTRY_CACHE:
             return cls._GG_ENTRY_CACHE[key]
         try:
-            import yaml
-
-            from tvbo.data.registry import resolve as registry_resolve
-
             entry_path = registry_resolve("GraphGenerator", key)
-        except (FileNotFoundError, ValueError, RuntimeError):
+        except FileNotFoundError:
             cls._GG_ENTRY_CACHE[key] = None
             return None
         with open(entry_path) as f:
@@ -2909,12 +2970,12 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     ) -> "Network":
         """Download a normative connectivity network from the tvbo platform.
 
-        Fetches the sidecar (YAML) and companion (HDF5) from the tvbo API and caches locally for subsequent loads.
+        Fetches the sidecar (YAML) and companion (HDF5) from the tvbo API and caches locally for subsequent loads. It hands out the one network the platform lists for *atlas* and *tractogram*, and refuses several, naming them. tvbo hands out no archived data (register AR1), so it reads the platform's listing with the networks the BIDS rename archived left out (:func:`_platform_networks`), and refuses an archived network the platform lists alone, by the id or the ``bids_filename`` the listing gives it, or once the name its sidecar's BIDS entities spell (:func:`~tvbo.data.converters.relmat_entities`) is an archived network's, with the refusal a lookup of its stem gets (:func:`~tvbo.data.registry.refuse_archived`): before anything is written to the cache, and again when the cache holds it from an earlier download. *atlas* is read as :meth:`from_db` reads one, so an older spelling of archived networks (``Schaefer1000``) is refused before the platform is asked, and an atlas the platform lists no network of raises naming the spellings it lists that match in any case (:func:`_no_platform_network`).
 
         Parameters
         ----------
         atlas : str
-            Atlas name (e.g., "DesikanKilliany", "Schaefer1000").
+            Atlas name (e.g., "DesikanKilliany", "Schaefer2018").
         tractogram : str
             Tractogram name (default: "dTOR").
         base_url : str
@@ -2926,54 +2987,62 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         -------
         Network
             Network loaded from platform (cached locally).
+
+        Raises:
+        -------
+        ValueError
+            When no network or several answer to *atlas* and *tractogram*, or only networks the BIDS rename archived do, or the one that answers is such a network.
         """
         import requests
+        import yaml as yaml_module
+        from bids.layout.writing import build_path
 
-        from tvbo.data.network_io import load_network
+        from tvbo.data.converters import relmat_entities
+        from tvbo.data.network_io import RELMAT_PATTERNS, load_network
 
         if cache_dir is None:
             cache_dir = Path.home() / ".tvbo" / "networks"
         cache_dir = Path(cache_dir).expanduser()
-        cache_dir.mkdir(parents=True, exist_ok=True)
 
         api = f"{base_url.rstrip('/')}/api/v1/networks"
 
-        # Find network by atlas + tractogram
-        resp = requests.get(api, params={"atlas": atlas, "tractogram": tractogram})
-        resp.raise_for_status()
-        matches = resp.json()
+        query = {"atlas": atlas, "tractogram": tractogram}
+        matches = _platform_networks(api, query)
         if not matches:
-            raise ValueError(f"No network found for atlas={atlas}, tractogram={tractogram}")
-        net_id = matches[0]["id"]
+            raise ValueError(_no_platform_network(api, query))
+        if len(matches) > 1:
+            raise ValueError(
+                f"Several networks found for atlas={atlas}, tractogram={tractogram}: "
+                f"{', '.join(str(match['id']) for match in matches)}; `from_platform` tells networks apart by atlas and tractogram alone, "
+                'so load the one meant by its IRI, `Network(iri="tvbo:networks/<id>")`, from a tvbo installation that holds its data file.'
+            )
+        net_id = str(matches[0]["id"])
 
-        # Check cache
         cached_yaml = cache_dir / f"{net_id}.yaml"
         cached_h5 = cache_dir / f"{net_id}.h5"
-        if cached_yaml.exists() and cached_h5.exists():
-            return load_network(cached_yaml)
+        cached = cached_yaml.exists() and cached_h5.exists()
+        if cached:
+            sidecar = yaml_module.safe_load(cached_yaml.read_text())
+        else:
+            r = requests.get(f"{api}/{net_id}/sidecar")
+            r.raise_for_status()
+            sidecar = yaml_module.safe_load(r.text)
+        if spelled := build_path(relmat_entities(sidecar), RELMAT_PATTERNS):
+            refuse_archived("Network", NETWORK_DIR.name, lambda old: old.lower() == Path(spelled).stem.lower())
 
-        # Download sidecar
-        r = requests.get(f"{api}/{net_id}/sidecar")
-        r.raise_for_status()
-        cached_yaml.write_text(r.text)
-
-        # Download binary companion
-        r = requests.get(f"{api}/{net_id}/data")
-        r.raise_for_status()
-        cached_h5.write_bytes(r.content)
-
-        # Patch data_file reference to point to local companion
-        import yaml as yaml_module
-
-        sidecar = yaml_module.safe_load(cached_yaml.read_text())
-        sidecar["data_file"] = cached_h5.name
-        cached_yaml.write_text(yaml_module.dump(sidecar, sort_keys=False))
-
+        if not cached:
+            r = requests.get(f"{api}/{net_id}/data")
+            r.raise_for_status()
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            cached_h5.write_bytes(r.content)
+            cached_yaml.write_text(yaml_module.dump({**sidecar, "data_file": cached_h5.name}, sort_keys=False))
         return load_network(cached_yaml)
 
     @classmethod
     def list_platform_networks(cls, base_url: str = TVBO_PLATFORM_URL, **filters) -> list[dict]:
-        """List available normative networks on the tvbo platform.
+        """List the normative networks the tvbo platform holds, those the BIDS rename archived left out (register AR1-a, :func:`_platform_networks`).
+
+        An atlas filter is read as :meth:`from_db` reads one, so an older spelling of archived networks is refused before the platform is asked, and filters the platform answers with archived networks alone are refused as a lookup of their stems is. Filters it answers with none give an empty list, as :meth:`list_db` gives one for entities no network carries.
 
         Parameters
         ----------
@@ -2985,14 +3054,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         Returns:
         -------
         list[dict]
-            List of network summaries.
-        """
-        import requests
+            List of network summaries, empty when the platform lists none for *filters*.
 
-        api = f"{base_url.rstrip('/')}/api/v1/networks"
-        resp = requests.get(api, params=filters)
-        resp.raise_for_status()
-        return resp.json()
+        Raises:
+        -------
+        ValueError
+            When *filters* name an older spelling of archived networks, or the platform answers them with archived networks alone.
+        """
+        return _platform_networks(f"{base_url.rstrip('/')}/api/v1/networks", filters)
 
     @classmethod
     def load(cls, source: str | Path | None = None, **entities) -> Union["Network", list["Network"]]:
@@ -3060,11 +3129,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         1. **By name** (existing): ``Network.from_db("DesikanKilliany")``
         2. **By BIDS key-values**: ``Network.from_db(atlas="DesikanKilliany", rec="dTOR")``
 
-        BIDS entity keys match the ``key-value`` pairs in filenames, e.g.
-        ``atlas``, ``rec``, ``scale``, ``seg``, ``desc``, ``cohort``.
+        BIDS entity keys match the ``key-value`` pairs in filenames, e.g. ``atlas``, ``rec``, ``scale``, ``seg``, ``desc``, ``cohort``.
 
-        When entities match a single file, returns a Network.
-        When multiple match, returns a list of Networks.
+        When entities match a single file, returns a Network. When multiple match, returns a list of Networks. When none matches, an atlas spelled as older records spell it that names networks the BIDS rename archived (``atlas="Schaefer1000"``) is refused as a lookup of their stems is, since tvbo hands out no archived data (register AR1, :func:`_retired_network`); any other query raises ``FileNotFoundError``.
 
         Parameters
         ----------
@@ -3090,6 +3157,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
         matches = _filter_networks_by_entities(entities)
         if len(matches) == 0:
+            if (spelled := _older_spelling(entities)) is not None:
+                _retired_network(spelled)
             available = [f.stem for f in NETWORK_DIR.glob("*.yaml")]
             raise FileNotFoundError(f"No network matching {entities}. Available: {sorted(available)}")
         if len(matches) == 1:
@@ -3365,42 +3434,24 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _atlas_terminology_entities(self) -> dict:
         """Parcellation-terminology entities for this network's atlas, or ``{}``.
 
-        Resolves ``parcellation.atlas.name`` (case-insensitively — networks may declare ``HCPMMP1`` while the packaged atlas is keyed ``hcpmmp1``) and reads its SANDS ``terminology.entities``. Returns ``{}`` when the network declares no atlas or the atlas has no terminology. A network that DOES declare an atlas this installation cannot resolve still returns ``{}`` (a custom parcellation is entitled to have no crosswalk) but warns, because the visible symptom is otherwise a reconciliation that silently matches only the labels that happen to agree verbatim.
+        Reads the SANDS ``terminology.entities`` of the atlas :meth:`get_atlas` finds, by the name ``parcellation.atlas.name`` gives in any case and the ``seg`` and ``scale`` of the network's ``bids:`` block. Returns ``{}`` when the network declares no atlas or the atlas has no terminology. A network that DOES declare an atlas the database does not hold still returns ``{}`` (a custom parcellation is entitled to have no crosswalk) but warns, because the visible symptom is otherwise a reconciliation that silently matches only the labels that happen to agree verbatim; an atlas name several atlases answer to, with nothing stated to narrow it, raises.
         """
         parc = getattr(self, "parcellation", None)
         atlas = getattr(parc, "atlas", None) if parc is not None else None
         name = getattr(atlas, "name", None) if atlas is not None else None
         if not name:
             return {}
-        try:
-            from tvbo.classes.atlas import Atlas, available_atlases
-
-            resolved = (
-                name
-                if name in available_atlases
-                else next((a for a in available_atlases if a.lower() == str(name).lower()), None)
-            )
-            if not resolved:
-                import logging
-
-                logging.getLogger(__name__).warning(
-                    "Network declares atlas %r, which is not among the available atlases %s — region aliases unavailable, "
-                    "so a by_label reconciliation will match only labels that agree verbatim.",
-                    name,
-                    sorted(available_atlases),
-                )
-                return {}
-            term = getattr(Atlas.of(resolved), "terminology", None)
-            return getattr(term, "entities", None) or {}
-        except Exception as exc:  # noqa: BLE001 — aliases are optional; degrade but surface
+        found = self.get_atlas()
+        if found.metadata_file is None:
             import logging
 
             logging.getLogger(__name__).warning(
-                "Could not load atlas terminology for %r (region aliases unavailable): %s",
+                "Network declares atlas %r, which the database does not hold — region aliases unavailable, "
+                "so a by_label reconciliation will match only labels that agree verbatim.",
                 name,
-                exc,
             )
             return {}
+        return getattr(getattr(found, "terminology", None), "entities", None) or {}
 
     def region_alias_map(self) -> dict[str, str]:
         """Map each node's canonical label AND every known alias -> canonical label.
@@ -3759,7 +3810,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         return self.get_atlas()
 
     def get_atlas(self) -> Any:
-        """Retrieve the Atlas object for this connectome.
+        """Retrieve the Atlas object for this connectome: the atlas its ``parcellation`` names, narrowed by the ``seg`` and ``scale`` its ``bids:`` block states, so a Schaefer2018 connectome has its own parcellation among the twenty (:meth:`~tvbo.behaviour.atlas.BrainAtlasBehaviour.of`).
 
         Returns:
         -------
@@ -3774,10 +3825,12 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         ```
         """
         from tvbo.classes.atlas import Atlas
+        from tvbo.data.cohort import short_entities
 
         parc = getattr(self, "parcellation", None)
         atlas_data = parc.atlas if parc and hasattr(parc, "atlas") else None  # type: ignore[attr-defined]
-        return Atlas.of(atlas_data)
+        narrow = {key: value for key, value in short_entities(getattr(self, "bids", None)).items() if key in ("seg", "scale")}
+        return Atlas.of(atlas_data, **narrow)
 
     def compute_delays(self, output_unit: str | None = None) -> np.ndarray | JaxArray:
         """Deprecated: use :meth:`calculate_delays` instead.

@@ -1,0 +1,9 @@
+name: fsLR
+abbreviation: fsLR
+alternateName:
+- tpl-fsLR
+description: 'HCP Pipelines'' fsLR template (Coalson, Glasser, Harms and Van Essen;
+  Van Essen et al., https://doi.org/10.1093/cercor/bhr291), a surface template: TemplateFlow
+  ships it as surface meshes per hemisphere at densities 32k, 59k and 164k (`tpl-fsLR_den-32k_hemi-L_midthickness.surf.gii`
+  and others). TemplateFlow id: `tpl-fsLR`. Its name, authors and reference are TemplateFlow''s
+  `template_description.json`.'

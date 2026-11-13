@@ -175,20 +175,18 @@ def unwrapped():
     return lambda code: "".join(code.split())
 
 
-class _NoAtlasFiles:
-    """An atlas layout that holds no file."""
-
-    def get(self, **_):
-        return []
-
-
 @pytest.fixture
 def hidden_atlases(tmp_path, monkeypatch):
-    """No atlas file and no curated network can be found: the atlas layout holds no file and the network database is an empty directory."""
-    from tvbo.classes import atlas as atlas_module
+    """No atlas file and no curated network can be found: the registry reads a database whose ``atlases`` and ``networks`` folders are empty and whose other folders are the packaged ones."""
     from tvbo.classes import network as network_module
+    from tvbo.data import registry
 
-    (tmp_path / "no-networks").mkdir()
-    monkeypatch.setattr(network_module, "NETWORK_DIR", tmp_path / "no-networks")
-    monkeypatch.setattr(atlas_module, "atlas_data", _NoAtlasFiles())
-    monkeypatch.setattr(atlas_module, "available_atlases", [])
+    database = tmp_path / "database"
+    database.mkdir()
+    for folder in registry.DATABASE_ROOT.iterdir():
+        if folder.name in ("atlases", "networks"):
+            (database / folder.name).mkdir()
+        else:
+            (database / folder.name).symlink_to(folder)
+    monkeypatch.setattr(registry, "DATABASE_ROOT", database)
+    monkeypatch.setattr(network_module, "NETWORK_DIR", database / "networks")

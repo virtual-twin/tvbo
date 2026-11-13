@@ -1277,7 +1277,7 @@ classes:
         attributes:
             template:
                 range: string
-                description: "BIDS tpl- entity (e.g., FSLMNI152, MNI152NLin2009cAsym)"
+                description: "BIDS tpl- entity, a TemplateFlow identifier (e.g., MNI152NLin6Asym, MNI152NLin2009cAsym, fsLR)"
             cohort:
                 range: string
                 description: "BIDS cohort- entity (e.g., HCPYA, PPMI85)"
@@ -1286,10 +1286,13 @@ classes:
                 description: "BIDS rec- entity (e.g., dTOR)"
             segmentation:
                 range: string
-                description: "BIDS seg- entity (e.g., ordered, ranked, 17Networks)"
+                description: "BIDS seg- entity (e.g., 7Networks, 17Networks)"
             scale:
                 range: string
                 description: "BIDS scale- entity (BEP017, e.g., 1000)"
+            density:
+                range: string
+                description: "BIDS den- entity, the density of a surface mesh (e.g., 32k, 164k)"
             atlas:
                 range: string
                 description: "BIDS atlas- entity (e.g., Schaefer2018, HCPMMP1)"
@@ -1392,7 +1395,7 @@ classes:
             coordinate_space:
                 range: CommonCoordinateSpace
                 inlined: true
-                description: "Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous."
+                description: "Coordinate space for node positions (e.g., MNI152NLin2009cAsym). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous."
             parcellation:
                 range: Parcellation
                 description: "Brain parcellation/atlas reference"

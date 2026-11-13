@@ -10,6 +10,9 @@ bids:
   template: MNI152NLin2009cAsym
   cohort: PPMI85
   reconstruction: PPMI85
+  atlas: DesikanKilliany
+  desc: SC
+  suffix: relmat
 parameters:
   conduction_speed:
     label: v

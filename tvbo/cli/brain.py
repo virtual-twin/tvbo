@@ -84,6 +84,6 @@ def _spec_text(spec: str | None) -> str:
     for cls in dict.fromkeys(classes):
         try:
             return Path(registry.resolve(cls, name)).read_text(encoding="utf-8")
-        except Exception:
+        except FileNotFoundError:
             continue
     raise typer.BadParameter(f"No spec text found for {spec!r} (pass a path, a CURIE, or a database name)")

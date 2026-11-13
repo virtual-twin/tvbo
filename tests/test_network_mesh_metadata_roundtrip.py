@@ -12,7 +12,7 @@ import yaml
 from tvbo import Network
 
 MESH = {"element_type": "triangle", "number_of_vertices": 4, "number_of_elements": 2}
-CURATED = "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-surf_relmat"
+CURATED = "tpl-fsLR_cohort-HCPYA_rec-dTOR_atlas-Lobar_den-32k_desc-surf_relmat"
 
 
 def _record(net) -> dict:

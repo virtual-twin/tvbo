@@ -1705,4 +1705,7 @@ bids:
   template: MNI152NLin2009cAsym
   cohort: HCPYA
   reconstruction: dTOR
+  atlas: Destrieux
+  desc: SC
+  suffix: relmat
 distance_unit: mm
