@@ -1,10 +1,10 @@
 ---
 id: https://w3id.org/tvbo
 name: tvb-datamodel
-version: 0.4.0
+version: "0.9.0rc1"
 description: Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
-title: The Virtual Brain Data Model
-license: https://spdx.org/licenses/EUPL-1.2
+title: The Virtual Brain Ontology
+license: https://creativecommons.org/licenses/by/4.0/
 created_on: '2024-01-01T00:00:00Z'
 prefixes:
     tvbo: https://w3id.org/tvbo/

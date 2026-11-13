@@ -3,7 +3,7 @@
 #
 # Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
+# Licensed under the EUPL-1.2
 #
 """What a ``BrainAtlas`` record does: find its own volume and metadata files, and answer for its regions."""
 

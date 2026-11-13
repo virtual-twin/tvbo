@@ -8,6 +8,7 @@ description: >-
   Domain-specific schemas (e.g., tvb_dbs) extend these with specialized
   attributes.
 
+license: https://creativecommons.org/licenses/by/4.0/
 prefixes:
   linkml: https://w3id.org/linkml/
   tvbo_study: https://w3id.org/tvbo/study/

@@ -3,6 +3,7 @@ name: SANDS
 title: OpenMINDS SANDS
 description: Schema for modeling a Brain Atlas, extending the researchProduct schema.
 
+license: https://creativecommons.org/licenses/by/4.0/
 prefixes:
   linkml: https://w3id.org/linkml/
   atom: http://uri.interlex.org/tgbugs/uris/readable/

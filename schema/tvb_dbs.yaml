@@ -3,6 +3,7 @@ name: tvb_dbs
 title: The Virtual Brain DBS Schema
 description: Extension of the TVB data model for Deep Brain Stimulation (DBS) studies, including subject metadata, electrode configurations, and stimulation parameters.
 
+license: https://creativecommons.org/licenses/by/4.0/
 prefixes:
   linkml: https://w3id.org/linkml/
   tvbo_dbs: https://w3id.org/tvbo/dbs/

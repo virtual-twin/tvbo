@@ -11,6 +11,23 @@ parameters:
       for each network in each hemisphere, as the parcel labels spell them (LH_VisCent
       in 17Networks_LH_VisCent_ExStr_1).
     measure: nodes/functional_network_labels
+provenance:
+  references:
+  - https://doi.org/10.1016/j.pneurobio.2011.09.005
+  - https://doi.org/10.1016/j.neuroimage.2017.05.015
+  how_to_acknowledge:
+  - Data used in the preparation of this article were obtained from the Parkinson's
+    Progression Markers Initiative (PPMI) database (www.ppmi-info.org/data). For up-to-date
+    information on the study, visit www.ppmi-info.org.
+  - PPMI – a public-private partnership – is funded by The Michael J. Fox Foundation
+    for Parkinson's Research and funding partners, including AbbVie, Alamar Biosciences,
+    Aligning Science Across Parkinson's (ASAP), Arrowhead Pharma, Arvinas, AskBio,
+    BIAL, BioArctic, Biohaven, BlueRock Therapeutics, Bristol Myers Squibb, Calico
+    Labs, Capsida Biotherapeutics, Critical Path Institute, DaCapo Brainscience, Denali,
+    Edmond J. Safra Foundation, Eli Lilly, Gain Therapeutics, GE Healthcare, Genentech,
+    GSK, Insitro, Johnson & Johnson Innovative Medicine, Lundbeck, Merck, Neumora,
+    Neuron23, Novartis, Olink, Regeneron, Roche, Sanofi, Tenvie, UCB, Vanqua Bio,
+    Voyager Therapeutics, The Weston Family Foundation.
 time_unit: ms
 nodes:
 - id: 0

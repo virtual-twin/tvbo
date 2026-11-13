@@ -3,7 +3,7 @@
 #
 # Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
+# Licensed under the EUPL-1.2
 #
 """What a ``Function`` record does: resolve itself to a callable, render itself as code, and answer for its own symbols.
 

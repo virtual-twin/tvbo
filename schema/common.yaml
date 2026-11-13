@@ -5,6 +5,7 @@ description: >-
     Shared slots reused across all TVBO sub-schemas. Ensures a single
     canonical definition for cross-cutting attributes such as `name`.
 
+license: https://creativecommons.org/licenses/by/4.0/
 prefixes:
     linkml: https://w3id.org/linkml/
     tvbo: https://w3id.org/tvbo/

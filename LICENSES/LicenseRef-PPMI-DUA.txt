@@ -1,0 +1,83 @@
+PPMI Data Use Agreement, version 5.0, April 2026
+
+Source: https://www.ppmi-info.org/sites/default/files/docs/ppmi-data-use-agreement.pdf, retrieved 2026-10-26.
+
+I request access to data collected by the Parkinson’s Precision Medicine Initiative (PPMI) for the purpose of scientific investigation, teaching, or the planning of clinical research studies and agree to the following terms:
+
+1. I will receive de-identified data and will not attempt to establish the identity of or attempt to contact any of the PPMI subjects.
+
+2. I will not further disclose these data beyond the uses outlined in this agreement and my data use application.
+
+3. I will not utilize AI tools, especially (but not exclusively) those with public-facing interfaces that do not offer guarantees regarding the containment of data inputs for PPMI data, recognizing that the use of AI tools, including generative and analytical models, poses a potential risk of inadvertent data sharing due to the nature of how these tools process information and may lead to data being sent, saved, viewed, or used in unforeseen ways by parties not covered by this agreement, which is a direct violation of this agreement. See Appendix A for additional AI tool concerns, restrictions, and guidance.
+
+4. I will require anyone on my team who utilizes these data or anyone with whom I share these data to comply with this agreement by registering with the PPMI database and agreeing to these terms.
+
+5. I will accurately provide the requested information for persons who will use these data and the analyses that are planned using these data.
+
+6. I will respond promptly and accurately to annual requests to update this information.
+
+7. I will comply with any rules and regulations imposed by my institution and its institutional review board in requesting these data.
+
+8. I will comply with the PPMI Intellectual Property (IP) Policy that states:
+
+a. Rights to any non-PPMI IP (“Background IP”) that a researcher uses in analyzing or manipulating PPMI data, information, biospecimens, materials, or results (“Study Materials”) remains with the researcher or institution;
+
+b. No researcher or institution may claim any IP rights to any Study Materials or inventions arising out of the Study Materials; and,
+
+c. Researchers who publish or present analyses of Study Materials will make these freely available without charge to the research community through the PPMI website, when not prohibited by journal copyright terms and conditions.
+
+In certain extraordinary situations, PPMI may grant a PPMI database user an exception to the PPMI IP Policy. All requests for exceptions to the PPMI IP Policy are reviewed by the PPMI IP Policy Exception Review Committee. This committee will meet every other month to review all applications received in time for the meeting. All applications submitted to this committee will be treated confidentially. Click here to read the Conflict of Interest statement. To read more about which situations may be eligible to receive an exception to the PPMI IP Policy or to submit a request for an exception to the PPMI IP Policy Exception Review Committee, click here.
+
+Please note that interested applicants must have an active PPMI database account to be able to submit a request for an exception to the PPMI IP Policy. If you do not have an active PPMI database account, you may apply for one by completing the online application form here: https://ida.loni.usc.edu/collaboration/access/appLicense.jsp.
+
+9. If I seek to publish manuscripts using data from PPMI, I agree to follow the guidelines established and written out in the PPMI Publications Policy, including sending manuscripts to the PPMI Data and Publications Committee (DPC) for administrative review.
+
+10. In manuscripts utilizing PPMI data, I will acknowledge the work by PPMI personnel that went into accumulating the data, as well as funding of the study in accordance with the guidelines outlined within the PPMI Publications Policy. Specific citation language is provided in the PPMI Publications Policy.
+
+11. To promote further scholarly productivity, I acknowledge that PPMI study leadership may request that I submit data generated from analyses of PPMI data upon completion of my analyses. I understand that PPMI study leadership may choose to incorporate raw or derived data into the PPMI database. I agree to comply with any such request.
+
+12. In an effort to support and promote work utilizing PPMI data, I will endeavor to upload abstracts, posters, and other non-manuscript scholarly outputs using PPMI data to the PPMI DPC in accordance with the PPMI Publication Policy, and also on a publicly accessible platform (e.g., Zenodo).
+
+13. I will use appropriate administrative, physical, and technical safeguards to prevent use or disclosure of the data other than as provided for by this agreement, require any persons receiving PPMI data through me to also register with PPMI, and promptly report any use or disclosure of data that does not comply with the guidelines established by this agreement.
+
+IMPORTANT NOTE: It is the policy of PPMI to make data available to investigators as quickly as possible. These data are not locked and therefore may change. Furthermore, existing data elements within PPMI may change over the lifetime of the PPMI study with individuals’ disease progression or as new methods of analysis are implemented. I am aware of the limitations of these data prior to using them for scientific purposes and that future results may change as additional data become available.
+
+Because "preliminary data" will be posted on the database, in the event that I download data from the PPMI database for the purposes of analysis and future publication in the form of abstracts and/or publications, I will note the version of the data I download within the publication as directed by the PPMI Publications Policy.
+
+I understand that failure to abide by these guidelines may result in action which may include, but is not limited to, termination of my privileges to access PPMI data.
+
+I understand that the Laboratory of Neuro Imaging – which serves as the PPMI Data Management Core and hosts the PPMI data - can share my user information and system activity with The Michael J. Fox Foundation for Parkinson’s Research (MJFF) and PPMI study leadership for purposes including governance over the use of PPMI data. MJFF and PPMI leadership may contact me regarding the use of my data or for gathering feedback for improvements to the system and/or data. For more information on how your personal information is processed under this agreement, you can visit MJFF’s Privacy Notice.
+
+MJFF maintains the right to modify terms of this agreement and may do so by posting notice of such modifications on this page. Any modification made is effective immediately upon posting the modification (unless otherwise stated). You should visit this page periodically to review the current use agreement terms.
+
+[Investigators will be asked to sign this agreement electronically at https://ida.loni.usc.edu/collaboration/access/appLicense.jsp ]
+
+APPENDIX A
+
+PPMI DUA: Use of AI tools for Analysis of PPMI Data
+
+Prohibited use of AI Tools: The PPMI Data Use Agreement (“DUA”) explicitly prohibits any individual who has obtained PPMI data from sharing raw data, specifically participant-specific data, with any other individual or entity, in any forum, in any medium, except as disclosed in your data use application and only upon registration by those persons in the PPMI database. This Appendix expands on paragraph 3 of the DUA, which specifically prohibits use of AI tools that do not offer guarantees regarding the containment of data.
+
+The use of AI tools, including generative and analytical models, pose a genuine risk of inadvertent data sharing due to the nature of how AI tools process, store, and regenerate information. AI tools, including but not limited to those with public-facing interfaces, such as OpenAI’s ChatGPT, usually do not offer guarantees regarding the containment of data inputs. Any data input into a prompt or output generated from a prompt could result in the unauthorized disclosure of proprietary data. As a result, use of PPMI data with AI tools unable to guarantee that user data will not be shared is in direct violation of the DUA.
+
+However, an important exception to the above stated prohibition would be AI tools, including generative and analytical models, which explicitly prevent sharing data with others. Such AI tools may be developed and internally trained by individual research groups or academic institutions for use only by the individual research group or academic institution. If such tools prevent sharing data beyond or via the tool, then PPMI data may be analyzed using such AI tools.
+
+As of the date of this Appendix, the term “Artificial Intelligence” or “AI” means a broad range of technologies and tools that can generate and regenerate content in various mediums including text, images, videos, and audio, based on input. AI tools that do not prevent sharing of inputted data pose a significant challenge in maintaining the privacy of participants in the PPMI study, and of participants in human subjects’ research in general. Therefore, uploading PPMI data to a third-party platform that is not explicitly in compliance with the prohibition on sharing PPMI data is a clear violation of the DUA.
+
+PPMI requires investigators to adhere to the following terms when deciding whether a project utilizing any AI tool complies with the DUA:
+
+• Computational resources
+
+o The application of any statistical or other analytic methods to PPMI data - whether branded as “AI” or not - must not use computational or AI resources owned by third parties who engage in the long-term retention of user content that is either shared or used in the training of public-facing models, as such activity could include the contents of the PPMI data set. This includes the use of third-party platforms for inference (e.g. the inclusion of PPMI data as part of an input or “prompt” for a generative language model), training (including both the training of foundation models and the fine-tuning of pre-trained models via transfer learning or some other process), prediction, or any other task that could result in PPMI data being retained, shared, regenerated, or otherwise made accessible to entities or persons that are not in compliance with the DUA.
+
+o Some commercial entities may offer an “opt-out” clause in the terms of use for their models, allowing users to decline the right of the entity to retain the data for training and other purposes. An opt-out clause does not constitute sufficient protection, and under no circumstances can this be viewed as an acceptable safeguard for sharing PPMI data with these third parties.
+
+o Investigators making use of computational resources such as Microsoft Azure, Google Cloud, Amazon Web Services, Runpod, or other computational services for the purposes of training AI models must take care to review the terms of use for the service to ensure that their workflow is secure.
+
+• Public release of models trained using PPMI data
+
+o The use of PPMI data in training models is both permitted and encouraged, provided that the process is carried out in compliance with the DUA and as outlined above. However, investigators who intend on making the weights of a trained model publicly available should consider whether the model could be used to easily reconstruct parts of the PPMI data set. PPMI prohibits sharing of participant-level data, even if it is processed or altered and lacks PPMI subject codes. All participant-level data generated by PPMI can only be distributed via PPMI-approved repository, e.g., LONI. As such, any model that has been trained using participant-level data may only be shared through MJFF-approved methods. Individual investigators who have derived participant level data based on PPMI data can request for their data to be archived and shared with the research community by contacting MJFF Data Resources at resources@michaeljfox.org
+
+o This precaution is particularly important in the case of large language models and other overparameterized generative models. Numerous studies have demonstrated that it is possible to extract training examples from these models, and investigators should keep this fact in mind.
+
+I understand that failure to abide by these guidelines will result in the termination of my PPMI data access. Furthermore, PPMI reserves the right to pursue damages for actions which violate PPMI guidelines.

@@ -3,7 +3,7 @@
 #
 # Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
+# Licensed under the EUPL-1.2
 #
 """The bases a behaviour builds on without attaching to anything by name: the runtime bookkeeping it keeps out of the record it writes, the YAML constructors every document class shares, the curated-database lookups of the classes the registry files entries of, and copy hooks that hold on either generated form."""
 
