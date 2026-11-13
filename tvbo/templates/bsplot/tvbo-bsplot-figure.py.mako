@@ -16,13 +16,13 @@ from matplotlib.animation import FuncAnimation as _FuncAnimation
 import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
-                                  expand_bare_axes as _expand_bare_axes,
-                                  fan_colors as _fan_colors,
+                                  at_frame as _at, expand_bare_axes as _expand_bare_axes,
+                                  fan_entries as _fan_entries,
                                   load_scalar as _load_scalar, registered as _registered,
                                   significance_marks as _significance_marks,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient)
-from tvbo.data.dataref import match_output as _match_output, resolve_sel_keys as _sel_keys
-from tvbo.plot import axis_rule as _axis_rule, palette as _palette
+from tvbo.data.dataref import match_output as _match_output, select as _select
+from tvbo.plot import axis_rule as _axis_rule, field as _field, palette as _palette
 
 _RULE = ${repr(rule)}   # the axis rule this figure's theme declares; empty moves no tick, limit or spine
 _COLORBAR_OUTLINE = ${repr(colorbar_outline)}   # whether the theme frames a colour bar; None leaves it as drawn
@@ -209,20 +209,13 @@ def _movie_writer(fmt, fps):
         return PillowWriter(fps=fps)
     if not FFMpegWriter.isAvailable():
         raise RuntimeError("figure animation: format mp4 needs ffmpeg on this machine; install it, or declare `format: gif`.")
-    return FFMpegWriter(fps=fps)
+    bt709 = ["-vf", "scale=out_color_matrix=bt709:out_range=tv", "-pix_fmt", "yuv420p", "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"]  # 4:2:0 in limited range, converted and tagged as browsers decode it
+    return FFMpegWriter(fps=fps, extra_args=bt709)
 
 
 def _reset_render_state():
     """Empty the per-composition registers, which an animation refills once per frame."""
     _PLACEHOLDER_AXES.clear(); _INSET_POST.clear(); _COLORBAR_POST.clear(); _SCALE_AXES.clear()
-
-
-def _at(da, dim, pos):
-    """A layer at one frame of the animation.
-
-    A layer that does not carry the animated dimension is returned whole, which is what makes the common case need no annotation: the moving quantity moves and the backdrop behind it does not.
-    """
-    return da.isel({dim: pos}) if pos is not None and dim in da.dims else da
 
 
 def _frame_coord(ds, da, dim, pos):
@@ -236,25 +229,34 @@ def _frame_ctx(ctx, dim, pos):
     return dict(ctx, layers=[dict(layer, frame_dim=dim, frame_pos=pos) for layer in (ctx.get("layers") or [])])
 
 
-def _frame_positions(sources, dim, frames):
+def _frame_positions(sources, dim, frames, window=None):
     """The index along *dim* that each frame draws, shared by every panel in the figure.
 
-    Read off the data rather than declared, because the length of a run is not known when this script is generated. Every animated layer is measured and the shortest wins: drawing past the end of one container to satisfy another would repeat its last sample as if it were data.
+    Read off the data rather than declared, because the length of a run is not known when this script is generated. Every animated layer is measured and the shortest wins: drawing past the end of one container to satisfy another would repeat its last sample as if it were data. A *window* ``[start, end]`` keeps the indices whose coordinate along *dim* lies inside it, read from the first source that carries one.
     """
-    lengths = set()
+    lengths, coord = set(), None
     for container, output in sources:
         ds = _open(container)
         da = _var(ds, output)
         if dim in da.dims:
             lengths.add(int(da.sizes[dim]))
+            if coord is None and (dim in da.coords or dim in ds.coords):
+                coord = np.asarray((da.coords[dim] if dim in da.coords else ds.coords[dim]).values, dtype=float)
     if not lengths:
         raise ValueError("figure animation: no layer carries the dimension {!r}, so there is nothing to advance. Name the dimension the frames move along as it appears in the container.".format(dim))
-    n = min(lengths)
+    index = np.arange(min(lengths))
+    if window is not None:
+        if coord is None:
+            raise ValueError("figure animation: a window needs a coordinate along {!r}, and no animated layer carries one.".format(dim))
+        index = index[(coord[: index.size] >= window[0]) & (coord[: index.size] <= window[1])]
+        if not index.size:
+            raise ValueError("figure animation: no sample of {!r} lies inside the window {}.".format(dim, window))
+    n = index.size
     if frames is None or frames >= n:
-        return list(range(n))
+        return index.tolist()
     if frames < 2:
-        return [0]
-    return [int(round(i * (n - 1) / (frames - 1))) for i in range(frames)]
+        return [int(index[0])]
+    return [int(index[int(round(i * (n - 1) / (frames - 1)))]) for i in range(frames)]
 
 
 def _bare(ax):
@@ -335,31 +337,9 @@ def _triangle(C, which, gap=0):
     return out
 
 
-def _color_dim(ds, da, name):
-    """The dimension a colour encoding iterates, the labels for its entries, and the quantity to shade them by.
-
-    ``color`` may name a dimension (labels are its coordinate values, or indices when it has none), a NON-dimension coordinate defined along one — which is how a panel draws one line per region and still labels them by name rather than by atlas number — or a per-entry QUANTITY stored beside the plotted array. Only the last carries a value per line, so only it returns one; the other two shade by position along the map, which orders the lines but says nothing about them.
-    """
-    if name in da.dims:
-        vals = da.coords[name].values if name in da.coords else np.arange(da.sizes[name])
-        return name, [str(v) for v in vals], None
-    if name in da.coords:
-        coord = da.coords[name]
-        return str(coord.dims[0]), [str(v) for v in np.asarray(coord.values)], None
-    try:                                  # a sibling variable measured once per entry
-        sib = _var(ds, name)
-    except KeyError:
-        raise KeyError(f"colour encoding {name!r} is neither a dim, a coord, nor a variable of this container (dims {tuple(da.dims)}, coords {tuple(da.coords)}).") from None
-    dims = [str(d) for d in sib.dims if d in [str(x) for x in da.dims]]
-    # A length-1 axis holds one value and so cannot be the axis the lines fan along; dropping it is what lets a per-node quantity carrying a singleton `variable` axis still shade one line per node.
-    if len(dims) > 1:
-        dims = [d for d in dims if sib.sizes[d] > 1] or dims
-    if len(dims) != 1:
-        raise KeyError(f"colour encoding {name!r} must be measured along exactly one axis of the plotted array to give each line a value; it has dims {tuple(sib.dims)}.")
-    dim = dims[0]
-    labels = ([str(v) for v in np.asarray(da.coords[dim].values)] if dim in da.coords
-              else [str(i) for i in range(da.sizes[dim])])
-    return dim, labels, np.asarray(sib.values, dtype=float).squeeze()
+def _fans(da, name):
+    """Whether a colour encoding names an axis of the array (a dimension, or a coordinate along one) rather than a quantity measured per point."""
+    return name in da.dims or (name in da.coords and da.coords[name].ndim == 1 and da.coords[name].dims[0] in da.dims)
 
 
 def _coord(da, name, axis):
@@ -390,7 +370,7 @@ def _bounds(da, x, output):
 
 
 def _apply_tick_format(ax, o):
-    """Tick notation: 'sci' factors a shared exponent out to the axis corner, 'plain' writes it in full.
+    """Tick notation: 'sci' factors a shared exponent out to the axis corner, 'plain' writes every tick in full, with no exponent and no offset, as the theme's `plain` does.
 
     A row of small panels whose values span 1e-5 cannot print its ticks in full without the neighbours running together, which is why the published figure carries the magnitude once at the corner. A theme states the same choice for every axis at once (``tick_format``); this is the one panel that differs.
     """
@@ -399,7 +379,7 @@ def _apply_tick_format(ax, o):
         _mode = o.get(_key)
         if _mode is None:
             continue
-        _fmt = ScalarFormatter(useMathText=_EXPONENT_AS_POWER)
+        _fmt = ScalarFormatter(useOffset=str(_mode) == "sci", useMathText=_EXPONENT_AS_POWER)
         _fmt.set_scientific(str(_mode) == "sci")
         if str(_mode) == "sci":
             _fmt.set_powerlimits((-2, 3))
@@ -474,6 +454,27 @@ def _apply_regions(ax, o):
         ax.add_patch(Rectangle((_x0, _y0), _x1 - _x0, _y1 - _y0, **_st))
 
 
+def _fit_y_to_view(ax):
+    """Fit the data extent of an autoscaled y axis of *ax* to the lines inside its x limits.
+
+    A declared x window shows part of each line; inferred from the whole line, the y range would be set by data the window hides (an onset transient, a later excursion) and squash what it shows. Only lines drawn in data coordinates count, so a reference line spanning the axes does not widen the range; the axis stays autoscaled, so the theme's axis rule still places its ends. An axes that also holds a band, a cloud or bars keeps its range, since those are not lines and fitting to the lines alone would clip them.
+    """
+    if not ax.get_autoscaley_on() or ax.get_yscale() != "linear" or ax.collections or ax.containers:
+        return
+    lo, hi = sorted(ax.get_xlim())
+    shown = []
+    for line in ax.lines:
+        if line.get_transform() != ax.transData:
+            continue
+        x, y = np.asarray(line.get_xydata(), dtype=float).reshape(-1, 2).T   # unit-converted, so a categorical or date axis compares as numbers
+        shown.append(y[(x >= lo) & (x <= hi) & np.isfinite(y)])
+    values = np.concatenate(shown) if shown else np.empty(0)
+    if values.size == 0 or not values.max() > values.min():
+        return
+    ax.dataLim.intervaly = (float(values.min()), float(values.max()))
+    ax.autoscale_view(scalex=False)
+
+
 def _apply_axopts(ax, o):
     """Apply a grammar panel's resolved axis directives (labels, limits, ticks, legend)."""
     _apply_rules(ax, o)
@@ -500,6 +501,8 @@ def _apply_axopts(ax, o):
         ax.set_yscale(o["yscale"])
     if o.get("xlim"):
         ax.set_xlim(*o["xlim"])
+        if not o.get("ylim"):
+            _fit_y_to_view(ax)
     if o.get("ylim"):
         ax.set_ylim(*o["ylim"])
     if o.get("frame") in ("off", False):
@@ -528,6 +531,9 @@ def _apply_axopts(ax, o):
         ax.set_xticklabels([])
     if o.get("hide_yticklabels"):
         ax.set_yticklabels([])
+    if o.get("hide_yaxis"):
+        ax.spines[["left", "right"]].set_visible(False)   # the x axis stays; the axis rule then leaves y unplaced
+        ax.tick_params(axis="y", which="both", left=False, right=False, labelleft=False, labelright=False)
     _ticks = {_k: float(o[_v]) for _k, _v in (("labelsize", "tick_size"), ("length", "tick_length")) if o.get(_v)}
     if _ticks:
         ax.tick_params(**_ticks)          # a dense grid's cells cannot carry the figure's own tick geometry
@@ -553,19 +559,37 @@ def _channel(ds, da, name, axis=0):
 
     A coord of the plotted array wins over a same-named sibling variable: it is aligned to the points by construction, where a sibling is only aligned if its shape happens to agree. Both the coord and the index fallback are read through :func:`_coord`, so a name resolves to a coordinate in exactly one place."""
     coords = getattr(da, "coords", {})
-    if name and name not in coords:
-        for c in coords:
-            vals = np.asarray(da.coords[c].values)
-            if vals.dtype.kind in "US" and name in set(vals.tolist()):
-                dim = da.coords[c].dims[0] if da.coords[c].dims else c
-                return np.asarray(da.sel({dim: name}).values).squeeze()
-        try:                              # a sibling variable, under whatever prefix it is stored
-            return np.asarray(_var(ds, name).values).squeeze()
-        except KeyError:
-            pass
-        if str(name) not in [str(d) for d in getattr(da, "dims", ())]:
-            raise KeyError(f"encoding {name!r} names neither a coordinate, a dimension, a component of a coordinate, nor a variable of this container. Falling back to a positional index here would draw a plausible line against the wrong abscissa: available variables are {sorted(getattr(ds, 'data_vars', {}))}, dims {list(getattr(da, 'dims', ()))}.")
+    if not name or name in coords:
+        return _coord(da, name, axis)
+    dim = _component_dim(da, name)
+    if dim is not None:
+        return np.asarray(da.sel({dim: name}).values).squeeze()
+    try:                              # a sibling variable, under whatever prefix it is stored
+        return np.asarray(_var(ds, name).values).squeeze()
+    except KeyError:
+        pass
+    for sibling in ds.data_vars.values():   # a component of a sibling's coord: the x of a phase plane whose y was selected out of the same array
+        dim = _component_dim(sibling, name)
+        if dim is None:
+            continue
+        component = sibling.sel({dim: name})
+        for k, v in coords.items():   # the plotted line's own position on every other axis (its node, its trial, the stretch of time an animation shows), so the component is the one it was recorded with
+            if k in component.dims and v.dims in ((), (k,)):
+                component = component.sel({k: v.values})
+        if component.shape == da.shape:   # a sibling of another shape (a sweep's results beside the run) was not recorded with this line
+            return np.asarray(component.values).squeeze()
+    if str(name) not in [str(d) for d in getattr(da, "dims", ())]:
+        raise KeyError(f"encoding {name!r} names neither a coordinate, a dimension, a component of a coordinate, nor a variable of this container. Falling back to a positional index here would draw a plausible line against the wrong abscissa: available variables are {sorted(getattr(ds, 'data_vars', {}))}, dims {list(getattr(da, 'dims', ()))}.")
     return _coord(da, name, axis)
+
+
+def _component_dim(arr, name):
+    """The axis of *arr* along which a string coordinate holds *name* as one of its labels (the ``var`` axis holding ``E`` in ``var=[E, x, u]``), or ``None``."""
+    for c, coord in getattr(arr, "coords", {}).items():
+        vals = np.asarray(coord.values)
+        if vals.dtype.kind in "US" and name in set(vals.tolist()):
+            return coord.dims[0] if coord.dims else c
+    return None
 
 
 def _apply_axopts3d(ax, o):
@@ -696,6 +720,22 @@ ${ind}    fig.set_layout_engine("tight")
     _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}, ${repr(p['colorbar_ticks'])}))   # ticked once every panel is drawn, by the theme's rule
 % endif
 </%def>\
+<%def name="load_layer(L)">\
+    _ds = _open(${repr(L['container'])})
+    _da = _var(_ds, ${repr(L['output'])})
+% if L['transform']:
+    _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
+% endif
+% if L['sel'] is not None:
+    _da = _select(_da, ${repr(L['sel'])}, ${repr(L['sel_method'])})
+% endif
+% if L['ref_transform']:
+    _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)
+% endif
+% if animation and L['frame'] not in ('static', 'cursor'):
+    _da = _at(_da, ${repr(animation['over'])}, _pos, ${repr(L['frame'] == 'trail')})
+% endif
+</%def>\
 <%def name="ctx_expr(p)">\
 % if animation:
 _frame_ctx(${repr(p['ctx'])}, ${repr(animation['over'])}, _pos)\
@@ -718,7 +758,7 @@ ${repr(p['ctx'])}\
     _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${ctx_expr(p)})
     if hasattr(_drawn, "xaxis"):
         _SCALE_AXES[${repr(p['key'])}] = _drawn   # the bar, not the slot: a declared frame belongs on it, the panel letter on the slot behind it
-% elif p['kind'] in ('custom', 'surface', 'volume', 'network'):
+% elif p['kind'] in ('custom', 'surface', 'volume', 'network', 'spring'):
     _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${ctx_expr(p)})
     if hasattr(_drawn, "get_subplotspec"):
         ax = _drawn        # the drawer replaced its axes (e.g. swapped the 2-D cell for a 3-D projection); everything downstream styles the replacement
@@ -726,20 +766,7 @@ ${repr(p['ctx'])}\
     _spec = ax.get_subplotspec(); ax.remove()           # swap the 2-D cell for a 3-D axis
     ax = fig.add_subplot(_spec, projection="3d")
 % for L in p['layers']:
-    _ds = _open(${repr(L['container'])})
-    _da = _var(_ds, ${repr(L['output'])})
-% if L['transform']:
-    _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
-% endif
-% if L['sel'] is not None:
-    _da = _da.sel(_sel_keys(_da, ${repr(L['sel'])}), method=${repr(L['sel_method'])})
-% endif
-% if L['ref_transform']:
-    _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)
-% endif
-% if animation and L['frame'] not in ('static', 'cursor'):
-    _da = _at(_da, ${repr(animation['over'])}, _pos)
-% endif
+${load_layer(L)}\
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     _y = _channel(_ds, _da, ${repr(L['y'])}, 1)
     _z = _channel(_ds, _da, ${repr(L['z'])}, 2)
@@ -757,20 +784,10 @@ ${colorbar(p)}\
     _apply_axopts3d(ax, ${repr(p['axopts'])})
 % else:
 % for L in p['layers']:
-    _ds = _open(${repr(L['container'])})
-    _da = _var(_ds, ${repr(L['output'])})
-% if L['transform']:
-    _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
-% endif
-% if L['sel'] is not None:
-    _da = _da.sel(_sel_keys(_da, ${repr(L['sel'])}), method=${repr(L['sel_method'])})
-% endif
-% if L['ref_transform']:
-    _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)
-% endif
-% if animation and L['frame'] not in ('static', 'cursor'):
-    _da = _at(_da, ${repr(animation['over'])}, _pos)
-% endif
+% if L['mark'] == 'stream':
+    _field.stream(ax, ${repr(L['container'])}, ${repr(L['output'])}, ${repr(L['x'])}, ${repr(L['y'])}, xlim=${repr(p['axopts'].get('xlim'))}, ylim=${repr(p['axopts'].get('ylim'))}, cell=${repr(L['sel'])}, cmap=${repr(L['cmap'])}, **${repr(L['style'])})   # the model's own field, from the run's sidecar
+% else:
+${load_layer(L)}\
 % if animation and L['frame'] == 'cursor':
     # The frame's own coordinate, drawn as a rule: what marks *now* on a panel showing the whole course.
     (ax.axvline if ${repr(bool(L['x']))} else ax.axhline)(
@@ -785,19 +802,30 @@ ${colorbar(p)}\
     _x = _y = np.arange(_C.shape[0])                # the gap widens the frame
 % endif
     _im = ax.pcolormesh(_x, _y, _C, shading="auto", **_mesh_style(${repr(L['style'])}, _C))
+    if len(_x) == len(_y) and np.array_equal(np.asarray(_x), np.asarray(_y)):
+        ax.set_box_aspect(1)   # a matrix over one index set (SC, FC, delays) is drawn square; a declared aspect is applied after and wins
 % elif L['mark'] == 'scatter':
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
 % if L['color']:
-    # Colour is a THIRD QUANTITY per point, not a fan of artists: one cloud shaded by the variable it is not plotted against.
-    _im = ax.scatter(_x, np.asarray(_da.values).squeeze(),
-                     c=_channel(_ds, _da, ${repr(L['color'])}),
-                     cmap=${repr(L['cmap'])}, **${repr(L['style'])})
+    if ${repr(not p['colorbar'])} and _fans(_da, ${repr(L['color'])}):   # an axis of the array with no colour bar to read it off: one cloud per entry, coloured as the line fan over it, so a moving dot matches its trace
+        _dim, _labels, _colours = _fan_entries(_ds, _da, ${repr(L['color'])}, ${repr(L['cmap'])}, ${repr(bool(L.get('cmap_declared')))})
+        for _i in range(len(_labels)):
+            _pts = _da.isel({_dim: _i})
+            ax.scatter(_channel(_ds, _pts, ${repr(L['x'])}, 0), np.asarray(_pts.values).squeeze(), color=_colours[_i], **${repr(L['style'])})
+    else:   # a THIRD QUANTITY per point, not a fan of artists: one cloud shaded by the variable it is not plotted against
+        _im = ax.scatter(_x, np.asarray(_da.values).squeeze(),
+                         c=_channel(_ds, _da, ${repr(L['color'])}),
+                         cmap=${repr(L['cmap'])}, **${repr(L['style'])})
 % else:
     ax.scatter(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
 % endif
 % elif L['mark'] == 'bar':
+% if L['y'] and not L['x']:
+    ax.barh(_channel(_ds, _da, ${repr(L['y'])}, 0), np.asarray(_da.values).squeeze(), **${repr(L['style'])})   # categories named on y: one horizontal bar each
+% else:
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     ax.bar(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+% endif
 % elif L['mark'] == 'area':
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     ax.fill_between(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
@@ -817,19 +845,15 @@ ${colorbar(p)}\
     for _i, _v in enumerate(np.atleast_1d(np.asarray(_da.values, dtype=float)).ravel()):
         _line(_v, label=(_rule_label if _i == 0 else None), **_rule_style)
 % elif L['color']:
-    _dim, _labels, _cvals = _color_dim(_ds, _da, ${repr(L['color'])})   # one line per entry
-    _cmap = plt.get_cmap(${repr(L['cmap'])})
-    _cnorm = None if _cvals is None else matplotlib.colors.Normalize(vmin=float(np.nanmin(_cvals)), vmax=float(np.nanmax(_cvals)))
-    # A categorical fan takes the palette's hues unless the layer declared its own scale; a NUMERIC fan is ordered, which is exactly what the ramp is for.
-    _fan = None if (_cnorm is not None or ${repr(bool(L.get('cmap_declared')))}) else _fan_colors(len(_labels))
+    _dim, _labels, _colours = _fan_entries(_ds, _da, ${repr(L['color'])}, ${repr(L['cmap'])}, ${repr(bool(L.get('cmap_declared')))})   # one line per entry
     for _i, _lab in enumerate(_labels):
         _line = _da.isel({_dim: _i})
-        _colour = _cmap(_cnorm(_cvals[_i])) if _cnorm is not None else (_fan[_i] if _fan is not None else _cmap(_i / max(len(_labels) - 1, 1)))
         ax.plot(_channel(_ds, _line, ${repr(L['x'])}, 0), np.asarray(_line.values).squeeze(),
-                color=_colour, label=_lab, **${repr(L['style'])})
+                color=_colours[_i], label=_lab, **${repr(L['style'])})
 % else:
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     ax.plot(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+% endif
 % endif
 % endfor
 ${colorbar(p)}\
@@ -905,11 +929,8 @@ ${draw(d)}\
 % for p in panels:
 ${emit(p, '_panel_' + str(p['key']), 'Panel')}\
 % endfor
-def _compose(fig, axd, _pos=None):
-    """Draw every panel into *axd* and run the figure-wide passes over them.
-
-    One composition of the whole mosaic, so a still and one frame of a movie are the same drawing at different positions along the animated dimension rather than two plotting paths that can disagree. ``_pos`` is that position, and ``None`` is the still.
-    """
+def _draw_panels(fig, axd, _pos=None):
+    """Draw every panel into *axd* at position ``_pos`` along the animated dimension, without the figure-wide passes."""
 % for p in panels:
 % if p['placeholder'] and not p['placeholder_only']:
     try:                                            # data declared but may be absent: fall back to the label
@@ -921,6 +942,56 @@ def _compose(fig, axd, _pos=None):
     axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}], _pos)
 % endif
 % endfor
+
+
+def _extents(axd):
+    """What each autoscaled axes of *axd* draws: ``{panel: {axis: (lo, hi)}}``, the data extent of a 2-D axis and the view of a 3-D one."""
+    out = {}
+    for _k, _ax in axd.items():
+        _names = ("x", "y", "z") if hasattr(_ax, "get_zlim") else ("x", "y")
+        for _n in _names:
+            if _ax.images or not getattr(_ax, "get_autoscale{}_on".format(_n))():
+                continue
+            _lo, _hi = getattr(_ax, "get_{}lim".format(_n))() if len(_names) == 3 else getattr(_ax.dataLim, "interval{}".format(_n))
+            if np.isfinite(_lo) and np.isfinite(_hi) and _hi > _lo:
+                out.setdefault(_k, {})[_n] = (float(min(_lo, _hi)), float(max(_lo, _hi)))
+    return out
+
+
+def _union_extents(frames):
+    """The union over *frames* of :func:`_extents`, panel by panel and axis by axis."""
+    out = {}
+    for _frame in frames:
+        for _k, _axes in _frame.items():
+            for _n, (_lo, _hi) in _axes.items():
+                _was = out.setdefault(_k, {}).get(_n, (_lo, _hi))
+                out[_k][_n] = (min(_was[0], _lo), max(_was[1], _hi))
+    return out
+
+
+def _pin_extents(axd, pinned):
+    """Give every autoscaled axes of *axd* the extent *pinned* holds for it, so the axis rule places the same limits and ticks on every frame of a movie."""
+    for _k, _axes in pinned.items():
+        _ax = axd.get(_k)
+        if _ax is None:
+            continue
+        for _n, _lim in _axes.items():
+            if hasattr(_ax, "get_zlim"):
+                getattr(_ax, "set_{}lim".format(_n))(*_lim)
+            elif getattr(_ax, "get_autoscale{}_on".format(_n))():
+                setattr(_ax.dataLim, "interval{}".format(_n), _lim)
+        if not hasattr(_ax, "get_zlim"):
+            _ax.autoscale_view()
+
+
+def _compose(fig, axd, _pos=None, _pinned=None):
+    """Draw every panel into *axd* and run the figure-wide passes over them.
+
+    One composition of the whole mosaic, so a still and one frame of a movie are the same drawing at different positions along the animated dimension rather than two plotting paths that can disagree. ``_pos`` is that position, and ``None`` is the still. ``_pinned`` holds the extents every frame of a movie shares (:func:`_pin_extents`), so no axis moves while the data does.
+    """
+    _draw_panels(fig, axd, _pos)
+    if _pinned:
+        _pin_extents(axd, _pinned)
 
     _bars = {id(_cb.ax) for _cb, _, _ in _COLORBAR_POST} | {id(_a) for _a in _SCALE_AXES.values()}
     _exempt = _bars | {id(_a) for _a in _PLACEHOLDER_AXES}    # a bar has its own rule and a placeholder slot has no scale
@@ -994,28 +1065,39 @@ def main():
     fig, axd = bsplot.figure.subplots(**${repr(subplots_kwargs)})
 ${layout_engine_call('    ')}\
 % if animation:
-    _POS = _frame_positions(${repr(animated_sources)}, ${repr(animation['over'])}, ${repr(animation['frames'])})
+    _POS = _frame_positions(${repr(animated_sources)}, ${repr(animation['over'])}, ${repr(animation['frames'])}, ${repr(animation.get('window'))})
 
-    def _frame(_i):
-        """Rebuild the whole mosaic at frame *_i*, which is what lets every panel kind animate — including the ones that swap their own axes."""
+    def _mosaic():
+        """An empty mosaic in a cleared figure, laid out as the still is."""
         fig.clear()
         _reset_render_state()
 ${layout_engine_call('        ')}\
-        _compose(fig, fig.subplot_mosaic(**${repr(mosaic_kwargs)}), _POS[_i])
+        return fig.subplot_mosaic(**${repr(mosaic_kwargs)})
+
+    def _measure(_p):
+        _m = _mosaic()
+        _draw_panels(fig, _m, _p)
+        return _extents(_m)
+
+    _PINNED = _union_extents(_measure(_POS[_k]) for _k in np.unique(np.linspace(0, len(_POS) - 1, 60).round().astype(int)))   # every frame shares one set of axes, measured on at most 60 frames from the first to the last
+
+    def _frame(_i):
+        """Rebuild the whole mosaic at frame *_i*, which is what lets every panel kind animate — including the ones that swap their own axes."""
+        _compose(fig, _mosaic(), _POS[_i], _PINNED)
         return []
 
-    _writer = _movie_writer(${repr(animation['format'])}, ${animation['fps']})
-    _FuncAnimation(fig, _frame, frames=len(_POS), interval=max(1, 1000 // ${animation['fps']}), blit=False).save(
-        ${repr(outfile)}, writer=_writer, dpi=${dpi})
-    print("wrote", ${repr(outfile)}, "({} frames)".format(len(_POS)))
 % if still_outfile:
-    _frame(min(${animation['still']}, len(_POS) - 1))       # the declared frame, also saved as a still
+    _frame(min(${animation['still']}, len(_POS) - 1))       # saved before the movie: a finished FuncAnimation redraws frame 0 on the next draw
     fig.savefig(${repr(still_outfile)}, **${repr(savefig_kwargs)})
 % if not transparent:
     _flatten_alpha(${repr(still_outfile)})
 % endif
     print("wrote", ${repr(still_outfile)})
 % endif
+    _writer = _movie_writer(${repr(animation['format'])}, ${animation['fps']})
+    _FuncAnimation(fig, _frame, frames=len(_POS), interval=max(1, 1000 // ${animation['fps']}), blit=False).save(
+        ${repr(outfile)}, writer=_writer, dpi=${dpi})
+    print("wrote", ${repr(outfile)}, "({} frames)".format(len(_POS)))
 % else:
     _compose(fig, axd)
     fig.savefig(${repr(outfile)}, **${repr(savefig_kwargs)})

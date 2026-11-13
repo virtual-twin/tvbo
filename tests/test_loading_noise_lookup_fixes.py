@@ -275,3 +275,32 @@ def test_a_catalogued_class_keeps_its_lookup(form):
     cls = importlib.import_module(f"tvbo.datamodel.{form}").Dynamics
 
     assert "JansenRit" in cls.list_db()
+
+
+def test_a_figure_reads_a_container_named_by_its_file(tmp_path, monkeypatch):
+    """A layer whose `iri` is a container file reads that file, from the working directory or the study root, as `tvbo.data.dataref` already does; a run of another study tree is then drawn where it lies."""
+    from tvbo.adapters.bsplot import _container_path
+
+    other = tmp_path / "other" / "derivatives" / "tvbo"
+    _containers(other, "exp-6_desc-VEP_result.h5")
+    study = tmp_path / "study"
+    study.mkdir()
+    target = str((other / "exp-6_desc-VEP_result.h5").resolve())
+
+    assert _container_path(str(other / "exp-6_desc-VEP_result.h5"), study) == target
+    assert _container_path("../other/derivatives/tvbo/exp-6_desc-VEP_result.h5", study) == target
+    monkeypatch.chdir(tmp_path)
+    assert _container_path("other/derivatives/tvbo/exp-6_desc-VEP_result.h5", study) == target
+
+
+def test_an_unlabelled_axis_is_selected_by_its_position():
+    """A container written without coordinates on a swept `point` or a `node` axis is still selectable by name: an unlabelled axis's labels are its positions. A labelled axis keeps its labels."""
+    import numpy as np
+    import xarray as xr
+
+    from tvbo.data.dataref import index_bare_axes, select_labeled
+
+    da = xr.DataArray(np.arange(12.0).reshape(2, 3, 2), dims=["point", "time", "node"], coords={"time": [0.0, 0.5, 1.0]})
+    picked = select_labeled(da, {"point": 1, "node": 0, "time": 0.4})
+    assert float(picked) == da.values[1, 1, 0]
+    assert "time" in index_bare_axes(da, {"time": 0.5}).coords and index_bare_axes(da, {"time": 0.5}).coords["time"].values[1] == 0.5

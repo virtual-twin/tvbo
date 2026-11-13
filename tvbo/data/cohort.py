@@ -203,10 +203,18 @@ def read_member(root: Path, subject: str, query, output: str):
     return network_array(Network.load(str(path)), output, path.name)
 
 
+def _column_labels(net, spellings: set) -> list[str] | None:
+    """The labels an edge layer states for its columns, for a layer that routes to another network (a gain matrix, sensors by regions); None for a layer between the network's own nodes."""
+    for edge in net.edges or []:
+        if str(getattr(edge, "label", "")).lower() in spellings and getattr(edge, "dimension_labels", None):
+            return [str(lbl) for lbl in edge.dimension_labels]
+    return None
+
+
 def network_array(net, output: str, name: str):
     """*output* of the network *net* as a labelled ``DataArray``, as the network delivers it; *name* is how an error names the network.
 
-    An edge layer comes back on ``(node_i, node_j)`` with the transforms the network declares on it applied, and a per-node quantity on ``node``. Both carry the network's own node labels, so whatever consumes the array aligns by name.
+    An edge layer comes back on ``(node_i, node_j)`` with the transforms the network declares on it applied, and a per-node quantity on ``node``. Both carry the network's own node labels, so whatever consumes the array aligns by name; a layer that routes to another network carries that network's labels on ``node_j``, as the layer's ``dimension_labels`` state them.
     """
     import numpy as np
     import xarray as xr
@@ -230,7 +238,7 @@ def network_array(net, output: str, name: str):
     )
     matrix = net.matrix(output, format="dense") if held else None
     if matrix is not None:
-        return xr.DataArray(np.asarray(matrix), dims=("node_i", "node_j"), coords={"node_i": labels, "node_j": labels})
+        return xr.DataArray(np.asarray(matrix), dims=("node_i", "node_j"), coords={"node_i": labels, "node_j": _column_labels(net, spellings) or labels})
     vector = resolve_network_node(net, output)
     if vector is None:
         raise KeyError(

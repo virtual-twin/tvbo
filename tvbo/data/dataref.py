@@ -229,6 +229,12 @@ def sidecar_path(container) -> Path:
     return Path(container).with_suffix(".yaml")
 
 
+def network_companion_path(container) -> Path:
+    """The frozen connectome a run writes beside its result container: the result's stem with ``_network`` in place of its last suffix (``exp-1_model-M_result.h5`` gives ``exp-1_model-M_network.yaml``), the rule `SimulationExperiment.get_network_stem` names it by."""
+    path = Path(container)
+    return path.with_name(f"{path.stem.rsplit('_', 1)[0]}_network.yaml")
+
+
 def source_producers(container) -> list[str]:
     """The algorithms a result container's run declared, last-declared first, read from its sidecar.
 
@@ -505,6 +511,25 @@ def resolve_sel_keys(da, sel: Mapping[str, object] | None) -> dict:
     return {resolve_dim(da, str(k)): v for k, v in (sel or {}).items()}
 
 
+def index_bare_axes(da, sel: Mapping[str, object] | None):
+    """*da* with a ``0 .. n-1`` coordinate on every axis *sel* selects that carries none.
+
+    A container written without labels on an axis (a sweep's ``point``, a node axis of a network that named no regions) still has to be selectable by name, and an unlabelled axis's only labels are its positions, which is what xarray itself numbers it by. An axis that has a coordinate keeps it, so a labelled selection is never read positionally.
+    """
+    import numpy as np
+
+    bare = {d: np.arange(da.sizes[d]) for d in (resolve_dim(da, str(k)) for k in (sel or {})) if d in da.dims and d not in da.coords}
+    return da.assign_coords(bare) if bare else da
+
+
+def select(da, sel: Mapping[str, object] | None, method=None):
+    """*da* at the labels *sel* names, each key resolved to the axis it names (`resolve_sel_keys`) and an unlabelled axis selectable by position (`index_bare_axes`); *method* is passed to ``.sel``. *da* itself for an empty *sel*."""
+    if not sel:
+        return da
+    da = index_bare_axes(da, sel)
+    return da.sel(resolve_sel_keys(da, sel), method=method)
+
+
 def select_labeled(da, sel: Mapping[str, object] | None):
     """Apply a label-keyed ``.sel`` to ``da``, never positional.
 
@@ -515,6 +540,7 @@ def select_labeled(da, sel: Mapping[str, object] | None):
         return da
     import numpy as np
 
+    da = index_bare_axes(da, sel)
     for dim, value in sel.items():
         dim = resolve_dim(da, dim)
         if dim in da.dims:

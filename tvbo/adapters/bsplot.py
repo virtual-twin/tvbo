@@ -109,8 +109,8 @@ def expand_bare_axes(fig, axes, pad: float = 0.004) -> list:
         others = [box for other, box in boxes.items() if other is not ax]
         beside = [b for b in others if b.y1 > here.y0 and b.y0 < here.y1]
         stacked = [b for b in others if b.x1 > here.x0 and b.x0 < here.x1]
-        # With nothing in the way the panel stops at the figure's own ink, not at its edge: growing past everything else would enlarge the figure rather than fill it, and the panel would hang below its neighbours' axis labels.
-        edge = Bbox.union(others)
+        # With nothing in the way the panel stops at the figure's own ink, not at its edge: growing past everything else would enlarge the figure rather than fill it, and the panel would hang below its neighbours' axis labels; a lone panel has no other ink, so its frame is the figure's.
+        edge = Bbox.union(others) if others else Bbox.unit()
         # A neighbour is a limit as soon as its ink reaches past this panel's edge, even where it already overlaps the cell: a panel whose labels hang into this one's slot must stop it here rather than be stepped over.
         left = max([b.x1 for b in beside if b.x0 < here.x0], default=edge.x0) + pad
         right = min([b.x0 for b in beside if b.x1 > here.x1], default=edge.x1) - pad
@@ -538,10 +538,10 @@ def _limits_source(layers, values):
 def _region_labels(da):
     """The region name of each value in a per-region layer, or ``None`` when it carries none.
 
-    A per-node array is written with its node labels as a coordinate, so the name of each region travels with its value. Reading them off the container is what keeps a brain map a by-label placement; a container that lost them is a defect at the writer, not something to guess around here.
+    A per-node array is written with its node labels as a coordinate, so the name of each region travels with its value; one row or column of a per-edge matrix keeps that matrix's `node_i` or `node_j` labels and is placed the same way. Reading them off the container is what keeps a brain map a by-label placement; a container that lost them is a defect at the writer, not something to guess around here.
     """
-    for dim in ("node", "region", "label", "nodes", "regions"):
-        if dim in da.coords:
+    for dim in ("node", "region", "label", "nodes", "regions", "node_i", "node_j"):
+        if dim in da.coords and da.coords[dim].ndim == 1:
             values = da.coords[dim].values
             if values.dtype.kind in "US" or values.dtype == object:
                 return [str(v) for v in values]
@@ -620,8 +620,8 @@ def volume_panel(fig, ax, ctx):
 
 # --------------------------------------------------------------------------- network
 
-# Which two of a region centre's three coordinates a projection draws. Named for the radiological plane, so a spec says which view it wants rather than which array columns to keep.
-_PROJECTIONS = {"axial": (0, 1), "coronal": (0, 2), "sagittal": (1, 2)}
+# The plot_surf camera each anatomical projection is seen through, named for the radiological plane so a spec says which view it wants.
+_PROJECTIONS = {"axial": "dorsal", "coronal": "anterior", "sagittal": "lateral"}
 
 
 @functools.cache
@@ -651,37 +651,55 @@ def _network_geometry(ref: str, base_dir: Path):
     return coords, weights, labels
 
 
+def _frozen_network(layers) -> str | None:
+    """The network a layer's experiment ran on: the frozen copy a run writes beside its result container (`tvbo.data.dataref.network_companion_path`), or ``None`` when no layer's container has one."""
+    from tvbo.data.dataref import network_companion_path
+
+    for layer in layers:
+        if layer.get("container"):
+            candidate = network_companion_path(layer["container"])
+            if candidate.exists():
+                return str(candidate)
+    return None
+
+
 @register_panel("network")
 def network_panel(fig, ax, ctx):
-    """The connectome as a node-link graph, its nodes coloured by a layer — the built-in ``kind: network``.
+    """The connectome on the cortical surface, nodes as spheres and edges as tubes, coloured by a layer — the built-in ``kind: network``.
 
-    The panel a whole-brain paper draws beside its time courses: the network the model actually ran on, with the state living on it. Registered here rather than shipped per study, so ``kind: network`` needs no ``code_modules``; the graph itself is built by bsplot's own ``create_network``, which is where the edge threshold and the node/edge attributes are defined.
+    The panel a whole-brain paper draws beside its time courses: the network the model actually ran on, with the state living on it. Registered here rather than shipped per study, so ``kind: network`` needs no ``code_modules``. It is drawn the way bsplot draws a brain network: the graph is bsplot's ``create_network``, and ``plot_network_on_surface`` renders the region spheres and connection tubes depth-sorted with a translucent ``plot_surf`` cortex (fsaverage, both hemispheres), so the network panels and the surface panels of a figure share one camera and one shading.
 
-    A spec declares all of this as ``network:`` — the `Graph` class names and documents every attribute, ``connectome`` being the only required one. What is only true here: ``symmetric`` defaults to FALSE, because a state variable is not a signed deviation from zero the way a brain map of differences is; ``projection`` defaults to axial, ``edge_percentile`` to 92, and ``labels`` to off, since 87 region names on one panel is a block of text rather than a figure. Edge widths scale with the weight on top of ``edge_width``, so a strong connection reads as strong. With no layer the panel draws the bare graph in ``color``.
+    A spec declares all of this as ``network:`` — the `Graph` class names and documents every attribute. What is only true here: the connectome is the one ``network:`` names, or else the network the layer's experiment ran on, read from the copy the run froze beside its result; ``symmetric`` defaults to FALSE, because a state variable is not a signed deviation from zero the way a brain map of differences is; ``projection`` picks the camera (axial from above, coronal from the front, sagittal from the left) and defaults to axial, ``edge_percentile`` to 92, and ``labels`` to off, since 87 region names on one panel is a block of text rather than a figure. A layer with one value per region colours the spheres; one with a value per pair of regions colours the tubes kept by ``edge_percentile`` on the panel's colour scale, and the spheres take ``color``. Tube radii grow with the weight from ``edge_width``, so a strong connection reads as strong. Sizes are in millimetres of the brain. With no layer the panel draws the bare graph in ``color`` and ``edge_color``.
     """
     import numpy as _np
-    from bsplot.graph import create_network
-    from matplotlib.collections import LineCollection
+    from bsplot.graph import create_network, plot_network_on_surface
+    from bsplot.surface import view_coords
 
     from tvbo.adapters.colormaps import resolve as _resolve_cmap
 
     opts, base = ctx.get("opts", {}), Path(ctx.get("base_dir") or ".")
-    ref = opts.get("network")
+    layers = ctx.get("layers") or []
+    ref = opts.get("network") or _frozen_network(layers)
     if not ref:
         raise ValueError(
             "network panel: declare `network:` — the connectome whose nodes and edges the panel draws, "
-            "as a curated IRI (tvbo:DesikanKilliany) or a path to a network beside the study."
+            "as a curated IRI (tvbo:DesikanKilliany) or a path to a network beside the study — or bind a layer to an experiment, whose run writes its network beside the result."
         )
     coords, weights, labels = _network_geometry(str(ref), base)
     plane = str(opts.get("projection", "axial"))
     if plane not in _PROJECTIONS:
         raise ValueError(f"network panel: projection {plane!r} is not one of {sorted(_PROJECTIONS)}.")
-    ix, iy = _PROJECTIONS[plane]
+    view = _PROJECTIONS[plane]
 
-    values = None
-    layers = ctx.get("layers") or []
+    node_values = edge_values = None
     if layers:
-        values = _node_values(load_layer(layers[0]), labels, str(ref))
+        da = load_layer(layers[0])
+        edge_values = _edge_values(da, labels, str(ref))
+        if edge_values is None:
+            node_values = _node_values(da, labels, str(ref))
+    cmap = _resolve_cmap(resolve_colormap(opts.get("cmap")))
+    shown = node_values if edge_values is None else edge_values
+    vmin, vmax = _colour_limits(_limits_source(layers, shown), opts, False) if shown is not None else (None, None)
 
     graph = create_network(
         {nm: tuple(coords[i]) for i, nm in enumerate(labels)},
@@ -690,59 +708,146 @@ def network_panel(fig, ax, ctx):
         threshold_percentile=float(opts.get("edge_percentile", 92.0)),
     )
     index = {nm: i for i, nm in enumerate(labels)}
-    segments = [
-        [(coords[index[u], ix], coords[index[u], iy]), (coords[index[v], ix], coords[index[v], iy])] for u, v in graph.edges()
-    ]
-    if segments:
-        strength = _np.asarray([float(d.get("weight", 1.0)) for _, _, d in graph.edges(data=True)])
-        span = float(strength.max()) or 1.0
-        ax.add_collection(
-            LineCollection(
-                segments,
-                colors=str(opts.get("edge_color", "#9aa7ab")),
-                # Width carries the weight, so the backbone reads as the backbone; the floor keeps a weak kept edge visible.
-                linewidths=float(opts.get("edge_linewidth", 0.7)) * (0.3 + 0.7 * strength / span),
-                alpha=float(opts.get("edge_alpha", 0.5)),
-                zorder=1,
-            )
-        )
+    if node_values is not None:
+        for nm in labels:
+            graph.nodes[nm]["value"] = float(node_values[index[nm]])
+    if edge_values is not None:
+        for u, v, data in graph.edges(data=True):
+            data["value"] = float(_np.fmax(edge_values[index[u], index[v]], edge_values[index[v], index[u]]))
 
-    marker = {
-        "s": float(opts.get("node_size", 26.0)),
-        "linewidths": float(opts.get("node_linewidth", 0.3)),
-        "edgecolors": str(opts.get("node_edgecolor", "#2f3437")),
-        "zorder": 2,
-    }
-    if values is None:
-        ax.scatter(coords[:, ix], coords[:, iy], c=str(opts.get("color", "#2a9d8f")), **marker)
-    else:
-        vmin, vmax = _colour_limits(_limits_source(layers, values), opts, False)
-        ax.scatter(
-            coords[:, ix],
-            coords[:, iy],
-            c=values,
-            cmap=_resolve_cmap(resolve_colormap(opts.get("cmap"))),
-            vmin=vmin,
-            vmax=vmax,
-            **marker,
-        )
+    shaded = {"color": "auto", "cmap": cmap, "data_key": "value", "vmin": vmin, "vmax": vmax}
+    node_kw = shaded if node_values is not None else {"color": resolve_color(opts.get("color", "palette.0"))}
+    edge_kw = shaded if edge_values is not None else {"color": resolve_color(opts.get("edge_color", "base"))}
+    plot_network_on_surface(
+        graph,
+        ax=ax,
+        template="fsaverage",
+        density="41k",
+        view=view,
+        color=resolve_color(opts.get("surface_color", "base")),
+        surface_alpha=float(opts.get("surface_alpha", 0.12)),
+        nodes=labels,
+        node_radius=float(opts.get("node_size", 2.5)),
+        show_edges=graph.number_of_edges() > 0,
+        edge_radius=float(opts.get("edge_linewidth", 0.35)),
+        edge_scale={"weight": 3.0},
+        edge_alpha=float(opts.get("edge_alpha", 1.0)),
+        **{f"node_{k}": v for k, v in node_kw.items()},
+        **{f"edge_{k}": v for k, v in edge_kw.items()},
+    )
     if opts.get("labels"):
-        for i, nm in enumerate(labels):
-            ax.annotate(
-                nm,
-                (coords[i, ix], coords[i, iy]),
-                fontsize=4,
-                ha="center",
-                va="bottom",
-                xytext=(0, 4),
-                textcoords="offset points",
-            )
-
-    ax.set_aspect("equal")  # a connectome's frame is anatomy, not a coordinate system
-    ax.margins(0.06)
+        size = float(opts.get("label_size", 4.0))
+        for (x, y), nm in zip(view_coords(coords, view=view, hemi="lh"), labels, strict=True):
+            ax.annotate(nm, (x, y), fontsize=size, ha="center", va="bottom", xytext=(0, size), textcoords="offset points", zorder=20)
     ax.axis("off")
     if opts.get("title"):
         ax.set_title(str(opts["title"]))
+
+
+def _edge_values(da, labels: list[str], ref: str):
+    """A per-edge layer as a matrix in the network's own node order, placed BY LABEL along both axes, or ``None`` when the layer has one value per node.
+
+    A matrix whose two axes carry region labels (`node_i`, `node_j`) is reconciled with the network by name, as a per-node layer is; one without them is accepted only at the network's own square size.
+    """
+    import numpy as _np
+
+    squeezed = da.squeeze()
+    if squeezed.ndim != 2:
+        return None
+    values = _np.asarray(squeezed.values, dtype=float)
+    names = [_region_labels(squeezed[dim]) for dim in squeezed.dims]
+    if None in names:
+        if values.shape != (len(labels), len(labels)):
+            raise ValueError(
+                f"network panel: the layer supplies a {values.shape} matrix for a network of {len(labels)} nodes "
+                "and carries no node-label coordinates to place it by."
+            )
+        return values
+    index = {nm: i for i, nm in enumerate(labels)}
+    for axis_names in names:
+        _check_placeable(axis_names, index, "network", ref)
+    rows, cols = ([index[nm] for nm in axis_names] for axis_names in names)
+    placed = _np.full((len(labels), len(labels)), _np.nan)
+    placed[_np.ix_(rows, cols)] = values
+    return placed
+
+
+@register_panel("spring")
+def spring_panel(fig, ax, ctx):
+    """Masses on coil springs at the displacement the layers hold now — the built-in ``kind: spring``.
+
+    One mass per entry along a layer's ``color`` dim (a node, a swept parameter, a seed), or one per layer without it; several layers add their masses side by side, so a spring and its damped sibling from two experiments hang in one panel. Colours follow the line fan over the same dim, a layer's ``style.color`` otherwise, so a mass and its trace beside it agree. The drawing is bsplot's :mod:`bsplot.mechanics`; the scale and the frame are fixed from the whole run, so a movie holds still while the masses move. A still draws the first sample.
+
+    A spec declares the mounting as ``spring:`` (the `Springs` class). Unset, ``equilibrium`` is the experiment's own rest state (:func:`tvbo.plot.field.experiment_rest`) at each entry's swept parameters, for the variable the layer selected, so a loaded spring's shifted rest is computed, not typed; a model with no rest state draws none.
+    """
+    import numpy as _np
+    from bsplot import mechanics
+
+    opts = ctx.get("opts", {})
+    arrangement = str(opts.get("arrangement") or "hanging")
+    if arrangement not in ("hanging", "lying", "chain", "ring"):
+        raise ValueError(f"spring panel: arrangement {arrangement!r} is not one of hanging, lying, chain, ring.")
+    layers = ctx.get("layers") or []
+    if not layers:
+        raise ValueError("spring panel: bind a layer holding the displacement of each mass.")
+    hues = iter(fan_colors(len(layers)))
+    now, extent, colors, labels, masses, rests = [], [], [], [], [], []
+    for layer in layers:
+        whole = load_layer({**layer, "frame_pos": None})
+        frame = _load_frame(whole, layer)
+        fan = layer.get("color")
+        if fan:
+            axis, fan_labels, shades = fan_entries(_open_ds(layer["container"]), whole, fan, layer.get("cmap"), bool(layer.get("cmap_declared")))
+        else:
+            axis, fan_labels, shades = None, [layer["style"].get("label", "")], [resolve_color(layer["style"].get("color")) or next(hues)]
+        values = _np.asarray(whole.values, dtype=float)
+        extent.extend([float(_np.nanmin(values)), float(_np.nanmax(values))])
+        for i, shade in enumerate(shades):
+            series, at = (whole.isel({axis: i}), frame.isel({axis: i})) if axis else (whole, frame)
+            cell = {str(k): v.item() for k, v in series.coords.items() if v.ndim == 0}
+            now.append(float(_np.asarray(at.values, dtype=float).ravel()[0]))
+            colors.append(shade)
+            if opts.get("labels"):
+                value = series.coords[fan].item() if fan in series.coords else fan_labels[i]
+                labels.append(str(opts.get("label_format") or "{}").format(value))
+            if opts.get("mass"):
+                masses.append(float(series.coords[opts["mass"]].item()))
+            rests.append(opts["equilibrium"] if opts.get("equilibrium") is not None else _spring_rest(layer["container"], cell))
+    common = {
+        "extent": extent,
+        "masses": masses if opts.get("mass") else None,
+        "colors": colors,
+        "labels": labels if opts.get("labels") else None,
+        "rule_color": resolve_color("base"),  # a rest mark is read against the motion, so it takes the secondary ink rather than the gridline's
+    }
+    if opts.get("stretch") is not None:
+        common["stretch"] = float(opts["stretch"])
+    if arrangement in ("hanging", "lying"):
+        mechanics.springs(ax, now, orientation="vertical" if arrangement == "hanging" else "horizontal", equilibrium=rests, **common)
+    elif arrangement == "chain":
+        mechanics.chain(ax, now, walls=opts.get("walls", True) is not False, coupling_color=opts.get("coupling_color"), **common)
+    else:
+        mechanics.ring(ax, now, motion="radial" if opts.get("radial") else "tangential", coupling_color=opts.get("coupling_color"), **common)
+
+
+def _spring_rest(container: str, cell: dict):
+    """Where the displacement of a spring panel's mass rests: the experiment's rest state for the variable *cell* selected (else `_spring_variable`), or ``None`` when the model has none or the container has no model or no readable sidecar."""
+    from tvbo.plot import field
+
+    try:
+        variable = cell.get("variable") or _spring_variable(str(container))
+        return field.experiment_rest(str(container), field.cell_key(cell))[str(variable)]
+    except (ValueError, RuntimeError, KeyError, OSError):
+        return None
+
+
+@functools.lru_cache(maxsize=64)
+def _spring_variable(container: str) -> str:
+    """The state variable a spring's displacement is read as when its layer selects none: the first variable of interest of the model *container* was run with, else its first state variable. Cached, because a movie asks once per mass and frame."""
+    from tvbo.plot import field
+
+    model = field.dynamics_of(container)
+    return next((n for n, sv in model.state_variables.items() if sv.variable_of_interest), next(iter(model.state_variables)))
 
 
 def _node_values(da, labels: list[str], ref: str):
@@ -963,6 +1068,7 @@ COLOR_OPTS = frozenset(
         "edgecolor",
         "node_edgecolor",
         "facecolor",
+        "coupling_color",
     }
 )
 """Every option whose value is a colour, and so the only ones a palette role is resolved in.
@@ -1013,6 +1119,54 @@ def fan_colors(n: int) -> list:
 
     cmap = plt.get_cmap(resolve_colormap(None))
     return [cmap(i / max(n - 1, 1)) for i in range(n)]
+
+
+def color_dim(ds, da, name):
+    """The dimension a colour encoding iterates, the labels for its entries, and the quantity to shade them by — public API, imported by the emitted plot script.
+
+    ``color`` may name a dimension (labels are its coordinate values, or indices when it has none), a NON-dimension coordinate defined along one — which is how a panel draws one line per region and still labels them by name rather than by atlas number — or a per-entry QUANTITY stored beside the plotted array. Only the last carries a value per line, so only it returns one; the other two shade by position along the map, which orders the lines but says nothing about them.
+    """
+    import numpy as _np
+
+    from tvbo.data.dataref import match_output
+
+    if name in da.dims:
+        vals = da.coords[name].values if name in da.coords else _np.arange(da.sizes[name])
+        return name, [str(v) for v in vals], None
+    if name in da.coords:
+        coord = da.coords[name]
+        return str(coord.dims[0]), [str(v) for v in _np.asarray(coord.values)], None
+    try:  # a sibling variable measured once per entry
+        sib = ds[match_output(ds.data_vars, name)]
+    except KeyError:
+        raise KeyError(f"colour encoding {name!r} is neither a dim, a coord, nor a variable of this container (dims {tuple(da.dims)}, coords {tuple(da.coords)}).") from None
+    dims = [str(d) for d in sib.dims if d in [str(x) for x in da.dims]]
+    if len(dims) > 1:  # a length-1 axis cannot be the one the lines fan along, so a per-node quantity with a singleton `variable` axis still shades one line per node
+        dims = [d for d in dims if sib.sizes[d] > 1] or dims
+    if len(dims) != 1:
+        raise KeyError(f"colour encoding {name!r} must be measured along exactly one axis of the plotted array to give each line a value; it has dims {tuple(sib.dims)}.")
+    dim = dims[0]
+    labels = [str(v) for v in _np.asarray(da.coords[dim].values)] if dim in da.coords else [str(i) for i in range(da.sizes[dim])]
+    return dim, labels, _np.asarray(sib.values, dtype=float).squeeze()
+
+
+def fan_entries(ds, da, name, cmap, declared):
+    """The axis a colour fan iterates, a label per entry and a colour per entry (see `color_dim`) — public API, imported by the emitted plot script.
+
+    A categorical fan takes the palette's hues (`fan_colors`) unless the layer declared its own scale; a NUMERIC fan (a quantity stored per entry) is ordered, which is exactly what the ramp is for. One rule, so a line fan, the dots that ride on it and the masses of a spring panel cannot be coloured apart.
+    """
+    import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
+    import numpy as _np
+
+    dim, labels, values = color_dim(ds, da, name)
+    ramp = plt.get_cmap(cmap)
+    if values is not None:
+        norm = mcolors.Normalize(vmin=float(_np.nanmin(values)), vmax=float(_np.nanmax(values)))
+        return dim, labels, [ramp(norm(v)) for v in _np.atleast_1d(values)]
+    if declared:
+        return dim, labels, [ramp(i / max(len(labels) - 1, 1)) for i in range(len(labels))]
+    return dim, labels, list(fan_colors(len(labels)))
 
 
 def _resolve_colors(kw: dict) -> dict:
@@ -1193,6 +1347,7 @@ THEME_CONSUMERS = frozenset(
         *_FIGURE_LOOK,
         *_SCRIPT_LOOK,
         "font_family",
+        "mono_font",
         "opts",
     }
 )
@@ -1228,6 +1383,9 @@ def theme_rcparams(theme: dict) -> dict:
         else:
             out["font.family"] = "sans-serif"
             out["font.sans-serif"] = faces
+    mono = [str(f) for f in (theme.get("mono_font") or [])]
+    if mono:
+        out["font.monospace"] = mono
     out.update(theme.get("opts") or {})  # the raw backend settings a theme states beat every slot it also states
     return out
 
@@ -1367,6 +1525,7 @@ _AXIS_SLOTS = (
     "invert_y",
     "invert_z",
     "frame",
+    "hide_yaxis",
 )
 """What a panel's axes say, how far they run and what shape they are drawn in — declared outright, beside the tick family. Each is named as the renderer's own directive, so the slot and the thing it sets are one word."""
 
@@ -1457,7 +1616,7 @@ _POST_FORMAT_OPTS = {
 }
 
 
-_KIND_SLOTS = ("surface", "volume", "network", "grid", "colorbar")
+_KIND_SLOTS = ("surface", "volume", "network", "grid", "colorbar", "spring")
 """The panel slots that carry a whole kind's options as one object. Ordered, so what a panel resolves to does not depend on the order its slots happen to be declared in."""
 
 _SCALE_ATTRS = ("colormap", "vmin", "vmax", "symmetric", "percentile")
@@ -1488,15 +1647,17 @@ _KIND_ATTRS = {
         "connectome",
         "projection",
         "labels",
+        "label_size",
+        "surface_color",
+        "surface_alpha",
         "color",
         "node_size",
-        "node_edge_color",
-        "node_edge_width",
         "edge_color",
         "edge_alpha",
         "edge_width",
         "edge_percentile",
     ),
+    "spring": ("arrangement", "equilibrium", "mass", "labels", "label_format", "walls", "radial", "stretch", "coupling_color"),
     "grid": (
         "ncols",
         "nrows",
@@ -1552,10 +1713,9 @@ _KIND_RENAMES = {
         "connectome": "network",
         "colormap": "cmap",
         "edge_width": "edge_linewidth",
-        "node_edge_color": "node_edgecolor",
-        "node_edge_width": "node_linewidth",
     },
     "grid": {},
+    "spring": {},
     "colorbar": {
         "show": "colorbar",
         **{
@@ -1888,7 +2048,7 @@ def _annotations(panel, base_dir=Path(".")) -> list:
         if tail_used is not None and getattr(a, "tail_x", None) is not None:
             tail = {"x": float(a.tail_x), "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir)}
         text_kwargs = _resolve_colors(
-            {k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None}
+            {k: _enum_value(getattr(a, k)) if k == "weight" else getattr(a, k) for k in ("rotation", "ha", "va", "size", "weight", "color") if getattr(a, k, None) is not None}
         )
         text_kwargs.setdefault("ha", "center")
         text_kwargs.setdefault("va", "center")
@@ -2051,6 +2211,9 @@ def _container_path(iri, base_dir: Path, results_dir: Path | None = None) -> str
     from tvbo.data.dataref import iri_scope, locate_analysis_container, locate_exp_container
     from tvbo.utils.study_layout import sibling_study_root, study_path
 
+    for direct in (Path(base_dir) / str(iri), Path(str(iri))):  # a container named by its file, the study root before the working directory: another tree's run, read where it lies
+        if direct.suffix == ".h5" and direct.is_file():
+            return str(direct.resolve())
     # An IRI naming a study names a container in THAT study's results, not in the referring study's: `tvbo:exp/Jansen1995/exp-1` read from the manuscript root must not find the root's own exp-1.
     _kind, owner, _name = iri_scope(iri)
     if owner:
@@ -2088,13 +2251,29 @@ def load_layer(layer: dict):
     if fn:
         da = fn(da)
     if layer.get("sel"):
-        da = da.sel(layer["sel"], method=layer.get("sel_method"))
+        from tvbo.data.dataref import select
+
+        da = select(da, layer["sel"], layer.get("sel_method"))
     if ref_fn:
         da = ref_fn(da)
-    dim, pos = layer.get("frame_dim"), layer.get("frame_pos")
-    if dim is not None and pos is not None and layer.get("frame") != "static" and dim in da.dims:
-        da = da.isel({dim: pos})
-    return da
+    return _load_frame(da, layer)
+
+
+def _load_frame(da, layer: dict):
+    """``da`` at the frame bound onto ``layer`` (`at_frame`), or whole for a ``static`` layer."""
+    if layer.get("frame") == "static":
+        return da
+    return at_frame(da, layer.get("frame_dim"), layer.get("frame_pos"), layer.get("frame") == "trail")
+
+
+def at_frame(da, dim, pos, trail: bool = False):
+    """A layer at one frame of an animation, or with *trail* its history up to that frame — public API, imported by the emitted plot script.
+
+    A layer that does not carry the animated dimension *dim*, or a still (*pos* ``None``), is returned whole, which is what makes the common case need no annotation: the moving quantity moves and the backdrop behind it does not.
+    """
+    if pos is None or dim not in da.dims:
+        return da
+    return da.isel({dim: slice(0, pos + 1) if trail else pos})
 
 
 def _items(coll):
@@ -2184,19 +2363,21 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None):
 def _frame_role(layer, animation) -> str | None:
     """This layer's declared frame role, or ``None`` for a figure that does not animate.
 
-    The role is resolved here rather than in the template so the emitted script carries a decision, not a rule to re-derive. An undeclared role stays ``None`` and the script reads it off the opened data — the dimension a layer carries is only knowable once the container is open, which is after codegen.
+    The role is resolved here rather than in the template so the emitted script carries a decision, not a rule to re-derive. An undeclared role stays ``None`` and the script reads it off the opened data — the dimension a layer carries is only knowable once the container is open, which is after codegen. A `stream` layer is `static` unless declared: it draws the model's field, which no frame changes.
     """
     if animation is None:
         return None
     declared = getattr(layer, "frame", None)
+    if not declared and str(getattr(layer, "mark", None) or "") == "stream":
+        return "static"
     return str(declared) if declared else None
 
 
 # Interior drawn by a callable or sub-axes rather than by the grammar.
-_DRAWER_KINDS = {"custom", "surface", "volume", "network", "grid", "line3d"}
+_DRAWER_KINDS = {"custom", "surface", "volume", "network", "grid", "line3d", "spring"}
 
 # Kinds whose interior is a built-in callable, needing no `render:` and no code_modules.
-_BUILTIN_PANELS = {"surface", "volume", "network", "colorbar", "legend"}
+_BUILTIN_PANELS = {"surface", "volume", "network", "colorbar", "legend", "spring"}
 
 
 class _GridCell:
@@ -2466,12 +2647,12 @@ def output_format(figure) -> str:
 def _animated_sources(drawables) -> list:
     """``(container, output)`` of every layer whose data the frames advance through.
 
-    Collected across panels, their insets and their grid cells, because the frame count is a property of the FIGURE: two panels reading different runs must not end up at different instants. A `static` layer is left out — it is the backdrop, and its length says nothing about how long the movie is.
+    Collected across panels, their insets and their grid cells, because the frame count is a property of the FIGURE: two panels reading different runs must not end up at different instants. A `static` layer is left out — it is the backdrop, and its length says nothing about how long the movie is. A `cursor` layer is measured: it marks the frame at its own coordinate, so its data bounds the frames like a moving layer's, and in a figure where the cursor is the only thing that moves it is what the frames advance through.
     """
     sources: list = []
     for drawable in drawables:
         for layer in drawable.get("layers") or []:
-            if layer.get("frame") in ("static", "cursor"):
+            if layer.get("frame") == "static":
                 continue
             pair = [layer["container"], layer["output"]]
             if pair not in sources:
@@ -2496,7 +2677,18 @@ def _animation(figure) -> dict | None:
         "fps": int(getattr(spec, "fps", None) or 20),
         "format": fmt,
         "still": int(still) if still is not None else None,
+        "window": _animation_window(getattr(spec, "window", None)),
     }
+
+
+def _animation_window(window) -> list[float] | None:
+    """``Animation.window`` as ``[start, end]`` floats, refusing anything that is not one ascending pair."""
+    if not window:
+        return None
+    bounds = [float(v) for v in window]
+    if len(bounds) != 2 or bounds[0] >= bounds[1]:
+        raise ValueError(f"figure animation: window {bounds} must be one ascending pair [start, end].")
+    return bounds
 
 
 def build_context(figure, base_dir, outfile: str) -> dict:

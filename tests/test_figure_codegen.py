@@ -595,10 +595,11 @@ def test_render_code_annotation_text_kwargs():
     A label running up the side of a reference line is 90-degree rotated text; without these the drawer has no way to say so and the label overlaps the line.
     """
     fig = _cartesian_figure()
-    fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0, ha="right", va="top", size=6.5)]
+    fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0, ha="right", va="top", size=6.5, weight="bold")]
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     assert "'rotation': 90.0" in code and "'ha': 'right'" in code
     assert "'va': 'top'" in code and "'size': 6.5" in code
+    assert "'weight': 'bold'" in code
 
 
 def test_an_annotation_colour_names_a_palette_hue():
@@ -1027,6 +1028,27 @@ def test_declared_ticks_stand_over_the_axis_rule():
     assert bsplot.build_context(_placeholder_figure(), TAHER_BASE, "o.png")["panels"][0]["post_axopts"] == {}
 
 
+def test_a_plain_panel_axis_writes_its_ticks_in_full():
+    """`xtick_format: plain` on a panel writes 1000.0 and 1000.1 as they are, with no `+1e3` offset at the corner, as the theme's `plain` does for every axis."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ns: dict = {}
+    exec(compile(bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png"), "<figure>", "exec"), ns)
+    fig, ax = plt.subplots()
+    ax.plot([999.95, 1000.15], [0.0, 1.0])
+    ax.set_xlim(999.95, 1000.15)
+    ax.set_xticks([1000.0, 1000.1])
+    ns["_apply_tick_format"](ax, {"xtick_format": "plain"})
+    fig.canvas.draw()
+    offset = ax.xaxis.get_offset_text().get_text()
+    labels = [t.get_text().replace("$\\mathdefault{", "").rstrip("}$") for t in ax.get_xticklabels()]
+    plt.close(fig)
+    assert offset == "" and labels == ["1000.0", "1000.1"]
+
+
 def test_a_drawn_tick_label_states_its_tick():
     """A label that rounds its tick by a visible share of the spacing, or repeats its neighbour, is widened; a true label, and a label on another scale, is left alone."""
     import matplotlib
@@ -1059,7 +1081,7 @@ def test_a_drawn_tick_label_states_its_tick():
 
 
 def test_a_spine_ends_on_the_ticks_a_panel_declares():
-    """Under a rule that trims spines, the spine ends on the ticks standing when the figure is finished, the declared ones included; with no such rule a declared tick moves no spine."""
+    """Under a rule that trims spines, the spine ends on the ticks standing when the figure is finished, the declared ones included, and runs on to the data where the data passes the outer tick; with no such rule a declared tick moves no spine."""
     import matplotlib
 
     matplotlib.use("Agg")
@@ -1078,7 +1100,7 @@ def test_a_spine_ends_on_the_ticks_a_panel_declares():
     bounds = ax.spines["left"].get_bounds()
     plt.close(fig)
     assert untrimmed is None
-    assert bounds == (0.25, 0.75)
+    assert bounds == (0.2, 0.75), "the data starts at 0.2, below the first tick, so the spine starts there"
 
 
 def test_custom_panel_legend_is_applied_after_its_drawer():
@@ -1264,8 +1286,7 @@ def test_color_encoding_draws_one_line_per_entry():
 
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "_color_dim(_ds, _da, 'parcel_name')" in code
-    assert "plt.get_cmap('turbo')" in code
+    assert "_fan_entries(_ds, _da, 'parcel_name', 'turbo', True)" in code, "the fan reads the declared scale"
 
     ns: dict = {}
     exec(compile(code, "<figure>", "exec"), ns)
@@ -1278,10 +1299,10 @@ def test_color_encoding_draws_one_line_per_entry():
         coords={"parcel": [181, 186], "parcel_name": ("parcel", ["L_V1_ROI", "L_V4_ROI"])},
     )
     # A coord or a dim only orders the lines along the map; a sibling variable measured once per entry carries the value that shades them.
-    assert ns["_color_dim"](None, da, "parcel_name") == ("parcel", ["L_V1_ROI", "L_V4_ROI"], None)
-    assert ns["_color_dim"](None, da, "parcel") == ("parcel", ["181", "186"], None)
+    assert bsplot.color_dim(None, da, "parcel_name") == ("parcel", ["L_V1_ROI", "L_V4_ROI"], None)
+    assert bsplot.color_dim(None, da, "parcel") == ("parcel", ["181", "186"], None)
     ds = xr.Dataset({"amplitude": xr.DataArray(np.array([2.0, 5.0]), dims=["parcel"])})
-    dim, labels, values = ns["_color_dim"](ds, da, "amplitude")
+    dim, labels, values = bsplot.color_dim(ds, da, "amplitude")
     assert (dim, labels) == ("parcel", ["181", "186"])  # labels come from the fanned dim, not an unrelated coord
     assert list(values) == [2.0, 5.0]
 
@@ -1613,8 +1634,8 @@ def test_a_layer_transform_runs_before_the_selection_and_a_ref_transform_after_i
     layer.used.sel = {"row": P.Argument(name="row", value=0)}
     code = bsplot.render_code(fig, base_dir=TAHER_BASE)
 
-    body = code[code.index("def _panel_a") :]  # `.sel(` also appears in the shared preamble
-    before, sel, after = (body.index(x) for x in ("'_before'", "_da.sel(", "'_after'"))
+    body = code[code.index("def _panel_a") :]
+    before, sel, after = (body.index(x) for x in ("'_before'", "_select(_da, ", "'_after'"))
     assert before < sel < after
 
 
@@ -1673,11 +1694,54 @@ def test_output_format_is_the_movie_when_a_figure_animates():
 
 
 def test_animation_reaches_the_context_with_its_sources():
-    """The frame count is a property of the FIGURE, so every advancing layer is collected; a static or cursor layer says nothing about how long the movie is."""
+    """The frame count is a property of the FIGURE, so every layer the frames move is collected once; a static layer says nothing about how long the movie is."""
     ctx = bsplot.build_context(_animated_figure(), TAHER_BASE, "out.gif")
-    assert ctx["animation"] == {"over": "time", "frames": 5, "fps": 10, "format": "gif", "still": None}
+    assert ctx["animation"] == {"over": "time", "frames": 5, "fps": 10, "format": "gif", "still": None, "window": None}
     assert ctx["mosaic_kwargs"]["mosaic"] == "a\nb"
-    assert len(ctx["animated_sources"]) == 1, "the static and cursor layers must not be measured"
+    assert len(ctx["animated_sources"]) == 1, "the moving map and the cursor read one output, so it is measured once"
+
+
+def test_a_cursor_alone_drives_the_frames():
+    """A figure whose traces are all static still animates: the cursor sweeping across them is what the frames advance through."""
+    fig = _animated_figure()
+    del fig.panels["a"]
+    fig.layout = "b"
+    fig.panels["b"].layers[1].used = P.DataRef(iri=EXP3_IRI, output="omega_profile")
+    ctx = bsplot.build_context(fig, TAHER_BASE, "out.gif")
+    assert [pair[1] for pair in ctx["animated_sources"]] == ["omega_profile"]
+
+
+def _frame_positions_fn(code: str):
+    """The emitted ``_frame_positions`` bound to an in-memory container, so its arithmetic is tested without a run."""
+    import numpy as np
+    import xarray as xr
+
+    source = code[code.index("def _frame_positions(") :]
+    source = source[: source.index("\ndef ")]
+    da = xr.DataArray(np.zeros((21, 2)), dims=("time", "node"), coords={"time": np.arange(21) * 0.5})
+    namespace = {"np": np, "_open": lambda container: None, "_var": lambda ds, output: da}
+    exec(source, namespace)
+    return namespace["_frame_positions"]
+
+
+def test_an_animation_window_keeps_the_frames_inside_it():
+    """`window` is read in the dimension's own coordinate: frames over [2, 6] of a half-second axis stay on samples 4 to 12, evenly spaced."""
+    fig = _animated_figure(window=[2.0, 6.0])
+    ctx = bsplot.build_context(fig, TAHER_BASE, "out.gif")
+    assert ctx["animation"]["window"] == [2.0, 6.0]
+    code = bsplot.render_code(fig, TAHER_BASE, "out.gif")
+    assert ", [2.0, 6.0])" in code, "the window reaches the emitted frame positions"
+    positions = _frame_positions_fn(code)
+    assert positions([["c", "x"]], "time", 5, [2.0, 6.0]) == [4, 6, 8, 10, 12]
+    assert positions([["c", "x"]], "time", None, [9.5, 30.0]) == [19, 20]
+    assert positions([["c", "x"]], "time", 3) == [0, 10, 20], "without a window the whole axis is covered"
+
+
+def test_an_animation_window_is_one_ascending_pair():
+    """A window that is not `[start, end]` with start before end is refused rather than animating nothing."""
+    for window in ([6.0, 2.0], [1.0, 2.0, 3.0]):
+        with pytest.raises(ValueError, match="ascending pair"):
+            bsplot.build_context(_animated_figure(window=window), TAHER_BASE, "out.gif")
 
 
 def test_a_still_figure_carries_no_animation_machinery():
@@ -1692,9 +1756,16 @@ def test_render_code_emits_one_composition_shared_by_the_still_and_every_frame()
     """A frame is a full re-composition of the same mosaic, which is what keeps a still and a movie from disagreeing."""
     code = bsplot.render_code(_animated_figure(), TAHER_BASE, "out.gif")
     ast.parse(code)
-    assert "def _compose(fig, axd, _pos=None):" in code
+    assert "def _compose(fig, axd, _pos=None, _pinned=None):" in code
     assert "fig.subplot_mosaic(**{'mosaic': 'a\\nb'})" in code
     assert "_movie_writer('gif', 10)" in code
+
+
+def test_the_still_is_saved_before_the_movie():
+    """The still shows the frame it declares: saved after the movie, matplotlib's finished animation redraws frame 0 into it on the savefig draw."""
+    code = bsplot.render_code(_animated_figure(still=3), TAHER_BASE, "out.gif")
+    ast.parse(code)
+    assert code.index("_frame(min(3, len(_POS) - 1))") < code.index("_FuncAnimation(fig, _frame")
 
 
 def test_frame_roles_are_emitted_per_layer():
@@ -1706,6 +1777,24 @@ def test_frame_roles_are_emitted_per_layer():
     assert "_frame_ctx(" in panel_a, "a drawer-kind panel must be handed the frame it draws"
     assert "_frame_coord(_ds, _da, 'time'" in panel_b, "the cursor reads the frame's coordinate"
     assert panel_b.count("_at(_da, 'time', _pos)") == 0, "neither a static layer nor a cursor is sliced"
+
+
+def test_a_trail_layer_draws_its_history_up_to_the_frame():
+    """`trail` keeps everything from the start of the animated dimension to now, so an orbit grows as it is traced instead of shrinking to one dot."""
+    fig = _animated_figure()
+    fig.panels["b"].layers = [P.Layer(used=P.DataRef(iri=EXP3_IRI, output="delta_omega"), mark="line", frame="trail", encoding=P.Encoding(x="time"))]
+    code = bsplot.render_code(fig, TAHER_BASE, "out.gif")
+    ast.parse(code)
+    panel_b = code[code.index("def _panel_b") :]
+    assert "_at(_da, 'time', _pos, True)" in panel_b
+
+    import numpy as np
+    import xarray as xr
+
+    da = xr.DataArray(np.arange(10.0), dims=["time"])
+    trail = {"frame_dim": "time", "frame_pos": 3, "frame": "trail"}
+    assert bsplot._load_frame(da, trail).values.tolist() == [0.0, 1.0, 2.0, 3.0]
+    assert bsplot._load_frame(da, {**trail, "frame": "slice"}).values.tolist() == 3.0
 
 
 def test_a_declared_still_is_saved_beside_the_movie():
@@ -1732,9 +1821,76 @@ def test_network_is_a_builtin_panel_needing_no_code_modules():
 
 
 def test_network_panel_without_a_connectome_says_so():
-    """The panel draws the network, not the result, so the connectome is named rather than guessed at."""
+    """The panel draws the network, not the result, so with no connectome named and no experiment bound it says so rather than guessing."""
     with pytest.raises(ValueError, match="declare `network:`"):
         bsplot.network_panel(None, None, {"opts": {}, "layers": []})
+
+
+def _three_node_network(path):
+    """A three-region network with positions, written as a run freezes one beside its result."""
+    path.write_text(
+        "label: three\n"
+        "nodes:\n"
+        "  - {id: 0, label: A, position: {x: 0.0, y: 0.0, z: 0.0}}\n"
+        "  - {id: 1, label: B, position: {x: 10.0, y: 0.0, z: 0.0}}\n"
+        "  - {id: 2, label: C, position: {x: 0.0, y: 10.0, z: 0.0}}\n"
+        "edges:\n"
+        "  - {source: 0, target: 1, parameters: {weight: {value: 1.0}}}\n"
+        "  - {source: 1, target: 2, parameters: {weight: {value: 0.5}}}\n"
+    )
+    return path
+
+
+def test_network_panel_draws_the_network_its_experiment_ran_on(tmp_path):
+    """Unnamed, the connectome is the copy a run freezes beside its result, so a figure of a run draws the graph the run used."""
+    net = _three_node_network(tmp_path / "exp-1_model-M_network.yaml")
+    container = tmp_path / "exp-1_model-M_result.h5"
+    assert bsplot._frozen_network([{"container": str(container)}]) == str(net)
+    assert bsplot._frozen_network([{"container": str(tmp_path / "ana-x_result.h5")}]) is None
+
+
+def test_a_per_edge_layer_colours_the_edges_placed_by_label(tmp_path):
+    """A matrix over `node_i`/`node_j` is reconciled with the network by name along both axes, so a connectome's weights land on the edges they belong to whatever order the analysis wrote them in."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import xarray as xr
+
+    order = ["C", "A", "B"]
+    m = xr.DataArray(np.arange(9.0).reshape(3, 3), dims=["node_i", "node_j"], coords={"node_i": order, "node_j": order})
+    placed = bsplot._edge_values(m, ["A", "B", "C"], "net")
+    assert placed[0, 1] == m.sel(node_i="A", node_j="B").item()
+    assert placed[2, 0] == m.sel(node_i="C", node_j="A").item()
+    assert bsplot._edge_values(m.isel(node_j=0), ["A", "B", "C"], "net") is None, "a per-node layer is not an edge layer"
+
+    container = tmp_path / "ana-w_result.h5"
+    xr.Dataset({"w": m}).to_netcdf(container, engine="h5netcdf")
+    net = _three_node_network(tmp_path / "net.yaml")
+    ctx = {"opts": {"network": str(net), "edge_percentile": 0.0}, "layers": [{"container": str(container), "output": "w"}], "base_dir": str(tmp_path)}
+
+    import bsplot.graph as surface_graph
+
+    drawn = {}
+    real = surface_graph.plot_network_on_surface
+    surface_graph.plot_network_on_surface = lambda G, **kw: drawn.update(G=G, **kw)
+    fig, ax = plt.subplots()
+    try:
+        bsplot.network_panel(fig, ax, ctx)
+    finally:
+        surface_graph.plot_network_on_surface = real
+        plt.close(fig)
+    assert drawn["G"]["A"]["B"]["value"] == max(placed[0, 1], placed[1, 0]), "the tube between A and B takes the layer's value for that pair"
+    assert drawn["edge_color"] == "auto" and drawn["edge_data_key"] == "value", "the tubes are coloured by the layer"
+    assert drawn.get("node_data_key") is None, "the spheres take the flat colour when the edges carry the layer"
+    assert drawn["nodes"] == ["A", "B", "C"], "every region is drawn, connected or not"
+
+    fig, ax = plt.subplots()
+    bsplot.network_panel(fig, ax, {**ctx, "opts": {**ctx["opts"], "labels": True}})
+    assert ax.collections, "the cortex, the spheres and the tubes are drawn as one depth-sorted mesh"
+    assert {t.get_text() for t in ax.texts} == {"A", "B", "C"}
+    plt.close(fig)
 
 
 def test_network_panel_rejects_an_unknown_projection():
@@ -2142,3 +2298,134 @@ def test_an_inherited_scale_word_is_not_retired_everywhere():
         )
     )
     assert kept == {"vmin": -1.0, "vmax": 1.0}
+
+
+def test_a_declared_x_window_fits_the_y_range_to_what_it_shows():
+    """With `xlim` declared and no `ylim`, the y range is inferred from the lines inside the window, not from an excursion the window hides; a reference line across the axes and a declared `ylim` are left alone."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    ns: dict = {}
+    exec(compile(bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png"), "<figure>", "exec"), ns)
+    t = np.linspace(0.0, 30.0, 301)
+    y = np.sin(t)
+    y[t < 3.0] = 40.0  # an onset transient outside the window
+    fig, (windowed, declared) = plt.subplots(1, 2)
+    for ax in (windowed, declared):
+        ax.plot(t, y)
+        ax.axhline(100.0)
+    ns["_apply_axopts"](windowed, {"xlim": [10.0, 30.0]})
+    ns["_apply_axopts"](declared, {"xlim": [10.0, 30.0], "ylim": [-50.0, 50.0]})
+    lo, hi = windowed.get_ylim()
+    assert -1.2 < lo < -0.9 and 0.9 < hi < 1.2
+    assert windowed.get_autoscaley_on()
+    assert declared.get_ylim() == (-50.0, 50.0)
+    plt.close(fig)
+
+
+def test_a_panel_can_draw_no_y_axis():
+    """`hide_yaxis` removes the y spine, ticks and numbers and keeps the x axis, so a row of a recording stack shows only the time axis it shares."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig = _cartesian_figure()
+    fig.panels["a"].hide_yaxis = True
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "'hide_yaxis': True" in code
+    ns: dict = {}
+    exec(compile(code, "<figure>", "exec"), ns)
+    figure, ax = plt.subplots()
+    ax.plot([0.0, 1.0], [0.0, 1.0])
+    ns["_apply_axopts"](ax, {"hide_yaxis": True})
+    figure.canvas.draw()
+    assert not ax.spines["left"].get_visible() and ax.spines["bottom"].get_visible()
+    assert not any(t.get_visible() and t.get_text() for t in ax.get_yticklabels())
+    assert ax.yaxis.get_tick_params(which="major")["left"] is False
+    plt.close(figure)
+
+
+def _pinning_fns(code: str):
+    """The emitted extent helpers, bound to numpy, so the pinning arithmetic is tested on real axes without a run."""
+    import numpy as np
+
+    source = code[code.index("def _extents(") : code.index("def _compose(")]
+    namespace = {"np": np}
+    exec(source, namespace)
+    return namespace["_extents"], namespace["_union_extents"], namespace["_pin_extents"]
+
+
+def test_every_frame_of_a_movie_shares_one_set_of_axes():
+    """A trail grows and a slice moves, so each frame alone would autoscale to a different range; the movie pins every autoscaled axis to the union over its frames, and a declared limit stays as declared."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    code = bsplot.render_code(_animated_figure(), TAHER_BASE, "out.gif")
+    ast.parse(code)
+    assert "_compose(fig, _mosaic(), _POS[_i], _PINNED)" in code, "every frame is composed on the pinned extents"
+    extents, union, pin = _pinning_fns(code)
+
+    def frame(n):
+        fig, ax = plt.subplots()
+        ax.plot(range(n), [v * v for v in range(n)])
+        return fig, {"a": ax}
+
+    measured = []
+    for n in (3, 6, 11):
+        fig, axd = frame(n)
+        measured.append(extents(axd))
+        plt.close(fig)
+    pinned = union(measured)
+    assert pinned == {"a": {"x": (0.0, 10.0), "y": (0.0, 100.0)}}
+
+    fig, axd = frame(3)
+    axd["a"].set_xlim(0, 4)
+    pin(axd, pinned)
+    assert tuple(axd["a"].get_xlim()) == (0.0, 4.0), "a declared limit is not the movie's to move"
+    assert tuple(axd["a"].dataLim.intervaly) == (0.0, 100.0)
+    assert axd["a"].get_autoscaley_on(), "the axis stays autoscaled, so the theme's axis rule still places its ends"
+    plt.close(fig)
+
+
+def test_an_mp4_figure_is_limited_range_bt709_yuv420p(tmp_path):
+    """The movie writer of the emitted script writes 4:2:0 video in limited range, tagged BT.709.
+
+    Chromium draws a full-range (`yuvj420p`) h264 frame as a black box, and an untagged stream converted with ffmpeg's default BT.601 matrix comes back two levels off the page colour, so the written file is probed rather than the arguments read.
+    """
+    import shutil
+    import subprocess
+
+    import matplotlib.pyplot as plt
+
+    if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
+        pytest.skip("needs ffmpeg and ffprobe")
+    scope: dict = {}
+    exec(compile(_emit(), "<figure>", "exec"), scope)
+    fig = plt.figure(figsize=(2, 2), dpi=50, facecolor="#0b1314")
+    out = tmp_path / "movie.mp4"
+    writer = scope["_movie_writer"]("mp4", 5)
+    with writer.saving(fig, str(out), dpi=50):
+        for _ in range(3):
+            writer.grab_frame()
+    plt.close(fig)
+    probe = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=pix_fmt,color_range,color_space", "-of", "default=noprint_wrappers=1", str(out)], capture_output=True, text=True, check=True).stdout
+    assert "pix_fmt=yuv420p" in probe
+    assert "color_range=tv" in probe
+    assert "color_space=bt709" in probe
+
+
+def test_render_code_bar_mark_with_categories_on_y_is_horizontal():
+    """``mark: bar`` with its categories named on ``y`` and no ``x`` emits ``ax.barh``, so long category names read level."""
+    fig = _cartesian_figure()
+    layer = fig.panels["a"].layers[0]
+    layer.mark = "bar"
+    layer.encoding.x, layer.encoding.y = None, "node"
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "ax.barh(" in code
+    assert "ax.bar(_x," not in code

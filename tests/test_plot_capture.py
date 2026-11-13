@@ -38,6 +38,14 @@ def test_a_local_source_resolves_against_the_spec_directory(tmp_path):
     assert _url("https://example.org/a", base_dir=tmp_path) == ("https://example.org/a", None)
 
 
+def test_a_local_source_keeps_its_query_on_the_url_and_off_the_file(tmp_path):
+    """One page captured in two states: the query reaches the page, and staleness still follows the one file."""
+    (tmp_path / "page.html").write_text("<p>hi</p>")
+    url, local = _url("page.html?join=0", base_dir=tmp_path)
+    assert url.startswith("file://") and url.endswith("/page.html?join=0")
+    assert local == tmp_path / "page.html"
+
+
 def test_staleness_follows_the_source(tmp_path):
     """Staleness compares modification times, so the test states them rather than racing the filesystem clock, whose tick can give a capture and a page edited right after it the same mtime."""
     source, out = tmp_path / "page.html", tmp_path / "shot.png"

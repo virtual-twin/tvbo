@@ -32,11 +32,12 @@ def _recipe(spec) -> dict:
 
 
 def _url(source: str, base_dir=None) -> tuple[str, Path | None]:
-    """``(url, local_path)`` for a capture source — a local file resolved against the spec's directory, or a URL passed through."""
+    """``(url, local_path)`` for a capture source — a local file resolved against the spec's directory, its ``?query`` kept on the URL so one page can be captured in several states, or a URL passed through."""
     if source.startswith(_REMOTE):
         return source, None
-    local = Path(source) if os.path.isabs(source) else Path(base_dir or ".") / source
-    return local.resolve().as_uri(), local
+    path, mark, query = source.partition("?")
+    local = Path(path) if os.path.isabs(path) else Path(base_dir or ".") / path
+    return local.resolve().as_uri() + mark + query, local
 
 
 def recipe_sidecar(path) -> Path:

@@ -40,6 +40,16 @@ def test_a_bare_panel_stops_at_its_neighbours_ink():
     plt.close(fig)
 
 
+def test_a_lone_panel_fills_its_figure():
+    """With no neighbour to stop it, a figure's only panel grows to the figure's frame instead of failing on an empty union."""
+    fig, axd = plt.subplot_mosaic("a", figsize=(4, 2), layout="constrained")
+    axd["a"].axis("off")
+    fig.canvas.draw()
+    expand_bare_axes(fig, [axd["a"]])
+    assert axd["a"].get_position().width > 0.98
+    plt.close(fig)
+
+
 def test_a_neighbour_reaching_into_the_cell_is_not_stepped_over():
     """A neighbour whose own ink already hangs into this cell bounds the growth at the cell edge."""
     fig, axd = plt.subplot_mosaic("ab", figsize=(4, 2), layout="constrained")
