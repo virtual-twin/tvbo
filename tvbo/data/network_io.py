@@ -29,6 +29,7 @@ SCHEMA_VERSION = "tvb-datamodel/0.7.0"
 from tvbo.data.matrix_io import (
     MESH_FIELDS,
     LazyArrayStore,
+    _create_ds,
     auto_format,
     declared_arrays,
     edge_name,
@@ -274,18 +275,6 @@ def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_fi
             _yaml.dump(meta, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
 
-def _create_ds(grp, name, *, data, **kwargs):
-    """Create a dataset compatible with both h5py and zarr v3."""
-    try:
-        import zarr
-
-        if isinstance(grp, zarr.Group):
-            return grp.create_array(name, data=data, **kwargs)
-    except ImportError:
-        pass
-    return grp.create_dataset(name, data=data, **kwargs)
-
-
 def _carry_through(network) -> dict:
     """The mesh, per-node and declared datasets a re-save copies across, read while the source companion is still readable.
 
@@ -367,12 +356,17 @@ def _write_nodes(store, network, carried: dict):
         _create_ds(store.require_group(group) if group else store, name, data=carried[key])
 
 
-def _write_mesh(store, network, carried: dict):
-    """Write mesh data (vertices, elements, normals) to ``/mesh/`` group.
+def _write_companion(store, network, meta: dict, arrays: dict, edge_params: dict, carried: dict):
+    """Write the layers (:func:`_write_edges`), the node arrays (:func:`_write_nodes`) and the mesh (:func:`_write_mesh`) to *store*, an HDF5 file or a Zarr group."""
+    _write_edges(store, meta, arrays, edge_params)
+    _write_nodes(store, network, carried)
+    _write_mesh(store, meta.get("mesh"), carried)
+
+
+def _write_mesh(store, record: dict | None, carried: dict):
+    """Write mesh data (vertices, elements, normals) to ``/mesh/`` group, with the element type and counts of the sidecar's ``mesh`` *record*, as dumped, as the group's attributes.
 
     Each array comes from :func:`_carry_through` — resident if an adapter such as ``from_tvb_surface`` set it, read off the source companion before this store was opened otherwise — so a re-save of a surface network it never touched is lossless, including a re-save onto that same companion.
-
-    Called after ``_write_nodes`` during ``save_network``.
     """
     import numpy as _np
 
@@ -382,18 +376,11 @@ def _write_mesh(store, network, carried: dict):
 
     mesh_grp = store.require_group("mesh")
 
-    mesh_obj = getattr(network, "mesh", None)
-    if mesh_obj:
+    if record:
         mesh_grp.attrs["tvbo_class"] = "tvbo:Mesh"
-        et = getattr(mesh_obj, "element_type", None)
-        if et:
-            mesh_grp.attrs["element_type"] = str(getattr(et, "text", et)).encode("utf-8")
-        nv = getattr(mesh_obj, "number_of_vertices", None)
-        if nv is not None:
-            mesh_grp.attrs["number_of_vertices"] = int(nv)
-        ne = getattr(mesh_obj, "number_of_elements", None)
-        if ne is not None:
-            mesh_grp.attrs["number_of_elements"] = int(ne)
+        for key in ("element_type", "number_of_vertices", "number_of_elements"):
+            if record.get(key) is not None:
+                mesh_grp.attrs[key] = json.loads(json.dumps(record[key]))  # h5py refuses a str subclass
 
     v = _np.asarray(vertices, dtype="float32")
     _create_ds(mesh_grp, "vertices", data=v, chunks=(min(v.shape[0], 4096), 3), compression="gzip")
@@ -438,9 +425,7 @@ def _write_csv_arrays(
 
     held = {}
     with h5py.File(io.BytesIO(), "w") as f:
-        _write_edges(f, meta, arrays, edge_params)
-        _write_nodes(f, network, carried)
-        _write_mesh(f, network, carried)
+        _write_companion(f, network, meta, arrays, edge_params, carried)
 
         def collect(path, node):
             if isinstance(node, h5py.Group) and "format" in node.attrs:
@@ -950,17 +935,13 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
             import h5py
 
             with h5py.File(companion, "w") as f:
-                _write_edges(f, meta, arrays, edge_params)
-                _write_nodes(f, network, carried)
-                _write_mesh(f, network, carried)
+                _write_companion(f, network, meta, arrays, edge_params, carried)
 
         elif binary_format == "zarr":
             import zarr
 
             z = zarr.open(str(companion), mode="w")
-            _write_edges(z, meta, arrays, edge_params)
-            _write_nodes(z, network, carried)
-            _write_mesh(z, network, carried)
+            _write_companion(z, network, meta, arrays, edge_params, carried)
 
         elif binary_format == "csv":
             links = _write_csv_arrays(network, sidecar_path, staging, meta, arrays, edge_params, carried)

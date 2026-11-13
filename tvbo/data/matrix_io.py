@@ -36,11 +36,13 @@ def resolve_staged_path(path) -> Path:
 
 
 def _create_ds(grp, name, *, data, **kwargs):
-    """Create a dataset compatible with both h5py and zarr v3."""
+    """Create a dataset in an HDF5 or a Zarr v3 group, with h5py's keywords: ``compression="gzip"`` becomes Zarr's :class:`~zarr.codecs.GzipCodec`, and any other compression raises ``KeyError`` naming it."""
     try:
         import zarr
 
         if isinstance(grp, zarr.Group):
+            if "compression" in kwargs:
+                kwargs["compressors"] = {"gzip": zarr.codecs.GzipCodec()}[kwargs.pop("compression")]
             return grp.create_array(name, data=data, **kwargs)
     except ImportError:
         pass
