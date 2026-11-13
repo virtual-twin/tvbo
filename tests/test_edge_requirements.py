@@ -72,7 +72,7 @@ _UNDELAYED = _DELAYED.replace("      iri: tvbo:Linear\n", "      iri: tvbo:Linea
 class TestCarries:
     def test_from_the_matrices_in_hand(self):
         net = Network.from_matrix(W)
-        assert net.carries("weight") and net.carries("weights")
+        assert net.carries("weight") and not net.carries("weights")
         assert not net.carries("length") and not net.carries("tract_lengths") and not net.carries("gain")
         assert Network.from_matrix(W, L).carries("length")
         net.set_matrix("gain", np.ones((2, 3)))

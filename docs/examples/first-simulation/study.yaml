@@ -59,7 +59,7 @@ figures:
                         sel: { variable: V }
 
               surface:
-                  atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg
+                  atlas: tvbo:atlases/tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg
                   template: fsaverage
                   hemi: both
                   view: dorsal

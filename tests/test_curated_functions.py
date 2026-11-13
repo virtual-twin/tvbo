@@ -29,15 +29,23 @@ def rng():
     return np.random.default_rng(0)
 
 
+SOFTWARE_BASED = ["FalseDiscoveryControl", "GroupedCorrelation", "Histogram"]
+"""The curated functions that record a callable rather than an equation; ``tests/test_curated_statistics.py`` checks what they compute."""
+
+
 def test_every_curated_function_resolves_by_iri():
-    """Each file in the folder is addressable as ``tvbo:functions/<name>`` and carries an equation."""
+    """Each file in the folder is addressable as ``tvbo:functions/<name>`` and carries an equation, or a callable that resolves."""
     from tvbo.data.registry import database_dir
 
     names = sorted(path.stem for path in database_dir("Function").glob("*.yaml"))
-    assert names == ["FCCorrelation", "SetCosine", "SetMean", "SoftPeakFrequency", "WelchPSD"]
+    assert names == sorted(["FCCorrelation", "SetCosine", "SetMean", "SoftPeakFrequency", "WelchPSD", *SOFTWARE_BASED])
     for name in names:
         function = Function.from_string(f"iri: tvbo:functions/{name}")
-        assert function.name == name and function.equation.rhs
+        assert function.name == name
+        if name in SOFTWARE_BASED:
+            assert function.equation is None and callable(function.resolved_callable)
+        else:
+            assert function.equation.rhs and function.resolved_callable is None
 
 
 @pytest.mark.parametrize("fmt", FORMATS)

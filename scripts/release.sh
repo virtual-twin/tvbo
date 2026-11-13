@@ -4,6 +4,7 @@
 set -eu
 
 INIT="tvbo/__init__.py"
+SCHEMA="schema/tvbo_datamodel.yaml"
 VERSION="${VERSION:-}"
 BUMP="${BUMP:-}"
 CONFIRM="${CONFIRM:-}"
@@ -27,10 +28,17 @@ version_of_tag() { printf '%s' "$1" | sed -E 's/^v//; s/-(a|b|rc)\.([0-9]+)$/\1\
 
 read_current() { make -s print-version; }
 
+# Write `version: "$2"` as the top-level version of the YAML file $1, and die unless the file then says so.
+write_yaml_version() {
+	sed -i.bak -E "s/^version:.*/version: \"$2\"/" "$1" && rm -f "$1.bak"
+	grep -qxF "version: \"$2\"" "$1" || die "failed to write version $2 to $1"
+}
+
 set_version() {
 	# Portable in-place edit (BSD + GNU sed).
 	sed -i.bak "s/^__version__ = .*/__version__ = \"$1\"/" "$INIT" && rm -f "$INIT.bak"
 	[ "$(read_current)" = "$1" ] || die "failed to write version $1 to $INIT"
+	write_yaml_version "$SCHEMA" "$1"
 }
 
 CITATION="CITATION.cff"
@@ -40,7 +48,7 @@ cit_field() { grep -E "^$1:" "$CITATION" | head -1 | sed -E "s/^$1:[[:space:]]*/
 set_citation() {
 	# $1 = version, $2 = date-released (YYYY-MM-DD), so the citation names the release it ships with.
 	[ -f "$CITATION" ] || return 0
-	sed -i.bak -E "s/^version:.*/version: \"$1\"/" "$CITATION" && rm -f "$CITATION.bak"
+	write_yaml_version "$CITATION" "$1"
 	[ -n "${2:-}" ] && sed -i.bak -E "s/^date-released:.*/date-released: $2/" "$CITATION" && rm -f "$CITATION.bak"
 	return 0
 }
@@ -49,7 +57,7 @@ set_citation() {
 apply_bump() {
 	if [ "$NEW" != "$CURRENT" ]; then
 		set_version "$NEW"
-		info "✓ Set version $CURRENT → $NEW in $INIT"
+		info "✓ Set version $CURRENT → $NEW in $INIT and $SCHEMA"
 	fi
 	if [ -f "$CITATION" ]; then
 		set_citation "$NEW" "$TODAY"
@@ -182,9 +190,9 @@ if [ "$ALLOW_DIRTY" = "1" ]; then
 	git status --short 2>/dev/null | sed 's/^/  /' || true
 else
 	if [ -f "$CITATION" ]; then
-		info "Release commit will contain only the version bump ($INIT + $CITATION)."
+		info "Release commit will contain only the version bump ($INIT + $SCHEMA + $CITATION)."
 	else
-		info "Release commit will contain only the version bump ($INIT)."
+		info "Release commit will contain only the version bump ($INIT + $SCHEMA)."
 	fi
 	if [ -n "$DIRTY" ]; then
 		info "Uncommitted tracked changes that BLOCK the release (commit or stash first):"
@@ -233,7 +241,7 @@ info "Creating GitHub ${PRERELEASE:+pre-}release $TAG …"
 if [ "$ALLOW_DIRTY" = "1" ]; then
 	git add -A
 else
-	git add "$INIT"
+	git add "$INIT" "$SCHEMA"
 	[ -f "$CITATION" ] && git add "$CITATION"
 fi
 git commit -m "Release $TAG" || true

@@ -10,6 +10,8 @@ bids:
   cohort: HCPYA
   reconstruction: dTOR
   atlas: vDBS1
+  desc: SC
+  suffix: relmat
 parameters:
   conduction_speed:
     label: v

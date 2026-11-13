@@ -291,7 +291,8 @@ edges:
             save_network(net, out, binary_format="csv")
 
             assert out.exists(), "YAML sidecar not written"
-            assert out.with_suffix(".csv").exists(), "CSV companion not written"
+            for name in ("weight", "length"):
+                assert (out.parent / f"test_net_meas-{name}.csv").exists(), f"CSV companion of {name} not written"
 
 
 # ── converters tests ──────────────────────────────────────────────────
@@ -304,7 +305,7 @@ class TestRelmatEntities:
         meta = {
             "parcellation": {"atlas": {"name": "DesikanKilliany"}},
             "tractogram": "dTOR",
-            "space": "MNI152NLin2009c",
+            "space": "MNI152NLin2009cAsym",
             "descriptor": "SC",
         }
         entities = relmat_entities(meta)
@@ -620,6 +621,43 @@ class TestBEP017Export:
             assert "RelationshipMeasure" in sidecar
             assert sidecar["Weighted"] is True
 
+    @pytest.mark.parametrize(
+        ("spec", "stem"),
+        [
+            (
+                {"iri": "tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat"},
+                "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC",
+            ),
+            (
+                {"bids": {"subject": "01", "session": "1", "space": "MNI152NLin2009cAsym"}},
+                "sub-01_ses-1_space-MNI152NLin2009cAsym_atlas-Toy_desc-SC",
+            ),
+        ],
+        ids=["template", "subject"],
+    )
+    def test_to_bep017_names_each_file_by_the_networks_bids_name(self, tmp_path, spec, stem):
+        """A template's or a subject's connectome keeps its ``tpl-`` or ``sub-`` and every entity in the order of ``RELMAT_PATTERNS``, ``meas-`` standing before the suffix."""
+        from tvbo import Network
+        from tvbo.data.converters import to_bep017
+
+        if "iri" in spec:
+            net = Network(**spec)
+        else:
+            w = np.ones((2, 2)) - np.eye(2)
+            net = Network.from_matrix(w, w, labels=["A", "B"])
+            net.bids = spec["bids"]
+            net.parcellation = {"atlas": {"name": "Toy"}}
+            net.descriptor = "SC"
+        to_bep017(net, tmp_path)
+
+        assert sorted(p.name for p in tmp_path.iterdir()) == [
+            f"{stem}_meas-length_relmat.dense.tsv",
+            f"{stem}_meas-length_relmat.json",
+            f"{stem}_meas-weight_relmat.dense.tsv",
+            f"{stem}_meas-weight_relmat.json",
+            f"{stem}_nodeindices.tsv",
+        ]
+
     def test_to_bep017_node_indices(self):
         """BEP017 export writes nodeindices TSV."""
         from tvbo import Network
@@ -639,6 +677,50 @@ class TestBEP017Export:
             assert len(node_files) == 1
             content = node_files[0].read_text()
             assert "region_0" in content
+
+    @pytest.mark.parametrize("held", [np.asarray, sparse.csr_matrix], ids=["dense", "sparse"])
+    def test_to_bep017_writes_every_layer_under_a_bids_label_that_reads_back(self, tmp_path, held):
+        """Each file names its edge as a BIDS label, the name's letters and digits in their own case, so every file name parses as BIDS and a camelCase name such as ``streamlineCount`` is its own label, and reading each label back gives the layer its sidecar's ``RelationshipMeasure`` names, value for value, whether the network holds its layers dense or sparse."""
+        import json
+        import re
+
+        from tvbo import Network
+        from tvbo.cli.validate import _entity_problems
+
+        m = np.array([[0.0, 2.0, 0.5], [3.0, 0.0, 1.0], [0.25, 4.0, 0.0]])
+        net = Network(number_of_nodes=3)
+        for name, matrix in (("weight", m), ("sc_binary", (m > 0) * 1.0), ("streamlineCount", 10 * m), ("fc", m / 3)):
+            net.set_matrix(name, held(matrix))
+        net.to_bep017(tmp_path)
+
+        files = sorted(p.name for p in tmp_path.glob("*_relmat.dense.tsv"))
+        assert files == [f"meas-{label}_relmat.dense.tsv" for label in ("fc", "scbinary", "streamlineCount", "weight")]
+        assert [problem for name in files for problem in _entity_problems(name)] == []
+        written = {
+            re.search(r"meas-([^_]+)_", name).group(1): json.loads(
+                (tmp_path / name.replace(".dense.tsv", ".json")).read_text()
+            )["RelationshipMeasure"]
+            for name in files
+        }
+        assert written == {"fc": "fc", "scbinary": "sc_binary", "streamlineCount": "streamlineCount", "weight": "weight"}
+        back = Network.from_bids(tmp_path, observational_measures=[label for label in written if label != "weight"])
+        for label, name in written.items():
+            np.testing.assert_array_equal(np.asarray(back.matrix(label)), net.matrix(name, format="dense"))
+
+    @pytest.mark.parametrize(
+        ("first", "second", "label"),
+        [("sc_binary", "scbinary", "scbinary"), ("Weight", "weight", "weight")],
+        ids=["dropped-character", "case"],
+    )
+    def test_to_bep017_refuses_two_edges_written_under_one_label(self, tmp_path, first, second, label):
+        """Two edge names whose BIDS labels are the same without regard to case would share one file, a label dropping what is not a letter or digit and a case-insensitive file system, macOS's and Windows' default, folding case, so the export refuses them by name."""
+        from tvbo import Network
+
+        net = Network(number_of_nodes=3)
+        net.set_matrix(first, np.eye(3))
+        net.set_matrix(second, 2 * np.eye(3))
+        with pytest.raises(ValueError, match=rf"'{first}' and '{second}' are both written as meas-{label}"):
+            net.to_bep017(tmp_path)
 
 
 # ── TVB ZIP full roundtrip test ───────────────────────────────────────

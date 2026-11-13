@@ -95,7 +95,8 @@ def test_a_curated_network_is_named_by_its_exact_id_and_by_nothing_looser():
     curated = Network.from_db(CURATED.split(":", 1)[1])
     np.testing.assert_array_equal(da.values, curated.matrix("weight", format="dense"))
     assert list(da["node_i"].values) == [str(lbl) for lbl in curated.node_labels]
-    assert dataref.network_file("tvbo:Lobar") is None, "an atlas shorthand matches several networks, so it names none"
+    with pytest.raises(ValueError, match=r"^Several curated networks have the BIDS entities atlas-Lobar, rec-dTOR"):
+        dataref.network_file("tvbo:Lobar")
 
 
 @pytest.mark.parametrize("iri", ["tvbo:exp/Study/exp-3", "tvbo:ana/Study/toy_mean", "exp-3", "3"])
@@ -206,9 +207,9 @@ def test_a_spec_fragment_is_read_as_the_study_that_includes_it_reads_it(root, tm
     np.testing.assert_array_equal(network_io.load_declared_network(fragment).matrix("weight", format="dense"), _raw("01")[0])
     np.testing.assert_array_equal(dataref.resolve_dataref(DataRef(iri=str(fragment), output="weight")).values, _raw("01")[0])
     with pytest.raises(
-        KeyError, match="spec/sourcedata/group.yaml"
-    ):  # read where it stands, the path means a file beside the fragment
-        network_io.load_network(fragment).matrix("weight", format="dense")
+        FileNotFoundError, match="spec/sourcedata/group.yaml"
+    ):  # read where it stands, the path means a sidecar beside the fragment, and none is there
+        network_io.load_network(fragment)
 
 
 def test_the_cohort_scale_of_a_ruled_connectome_is_one_number_from_one_expression(root, results, ruled, tmp_path):
@@ -234,7 +235,8 @@ def test_the_cohort_scale_of_a_ruled_connectome_is_one_number_from_one_expressio
     scaled["transforms"].insert(
         1,
         {
-            "name": "weights",
+            "name": "cohortScale",
+            "output": "weight",
             "equation": {"rhs": "weight * scale"},
             "arguments": {"scale": {"used": {"analysis": "toy_scale", "output": "toy_scale"}}},
         },
@@ -253,7 +255,8 @@ def test_a_kit_refuses_an_experiment_that_reads_a_network_file_through_a_referen
     plain = SimulationStudy.from_file(str(_study_file(root, tmp_path))).get_experiment(1)
     kit._refuse_network_references(plain)
     through = {
-        "name": "weights",
+        "name": "scaledByOther",
+        "output": "weight",
         "equation": {"rhs": "weight * mean(other)"},
         "arguments": {"other": {"used": {"iri": str(ruled), "output": "weight"}}},
     }
@@ -272,7 +275,8 @@ def test_a_kit_accepts_an_experiment_that_reads_a_curated_network_through_a_refe
 
     curated = "tvbo:tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat"
     through = {
-        "name": "weights",
+        "name": "scaledByOther",
+        "output": "weight",
         "equation": {"rhs": "weight * mean(other)"},
         "arguments": {"other": {"used": {"iri": curated, "output": "weight"}}},
     }

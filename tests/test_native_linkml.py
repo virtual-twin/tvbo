@@ -30,6 +30,8 @@ PROBES = {
     "n_parallel-auto": ({"name": "sweep", "n_parallel": "auto"}, "Exploration"),
     "envelope-own-class": ({"tvbo_class": "tvbo:Network", "schema_version": "tvb-datamodel/0.7.0", "label": "n"}, "Network"),
     "envelope-other-class": ({"tvbo_class": "tvbo:Theme", "label": "n"}, "Network"),
+    "node-template-shared": ({"node_template": {"parameters": {"g": {"value": 0.5}}, "size": 4}}, "Network"),
+    "node-template-per-node": ({"node_template": {"id": -1, "parameters": {"g": {"value": 0.5}}}}, "Network"),
 }
 
 
@@ -89,3 +91,11 @@ def test_the_envelope_is_declared(native):
 
 def test_an_envelope_naming_another_class_is_refused(native):
     assert native["probe:envelope-other-class"]
+
+
+def test_a_node_template_sets_the_slots_every_node_shares(native):
+    assert not native["probe:node-template-shared"]
+
+
+def test_a_node_template_that_sets_a_per_node_slot_is_refused(native):
+    assert native["probe:node-template-per-node"]

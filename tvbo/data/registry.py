@@ -4,13 +4,21 @@ Works both from pip-installed packages and editable/dev installs.
 Searches recursively within each category directory so that models in subfolders (e.g. database/models/julia/) are automatically discovered.
 """
 
+import functools
 import os
 import re
 import warnings
+from collections.abc import Callable
 from importlib.resources import files
 from pathlib import Path
 
+import yaml
+
 _NAME_RE = re.compile(r"^name:\s*(\S.*)")
+_ENTITY_RE = re.compile(r"(?:^|_)([a-zA-Z]+)-([^_]+)")
+
+RENAMED_STEMS = Path(__file__).with_name("renamed_stems.yaml")
+"""The stems the curated atlases and networks were filed under before the BIDS rename (register I11i), per folder: a renamed record's to the stem it has now, which :func:`resolve` reads for one release, so ``tvbo migrate-iris`` can rewrite a spec's IRIs, and an archived record's to the record that replaced it, with how that record's data differ where they do, which the refusal of a lookup of the archived stem names (:func:`refuse_archived`)."""
 
 # --- Path resolution ---
 _pkg_db = Path(files("tvbo")) / "database"
@@ -146,7 +154,7 @@ def curated_key(iri: str, cls_name: str) -> str | None:
 def record_name(iri: str, cls_name: str | None = None) -> str:
     """The ``name:`` of the curated *cls_name* record *iri* addresses, else the name *iri* ends in.
 
-    A record's IRI ends in its file stem, which is not always its name: ``tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg`` is the atlas ``DesikanKilliany``. An IRI that addresses no curated *cls_name* record, or a *cls_name* with no database folder, is named by its :func:`local_name`.
+    A record's IRI ends in its file stem, which is not always its name: ``tvbo:atlases/tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg`` is the atlas ``DesikanKilliany``. An IRI that addresses no curated *cls_name* record, or a *cls_name* with no database folder, is named by its :func:`local_name`.
     """
     key = curated_key(iri, cls_name) if cls_name in _CATEGORIES else None
     if key is None:
@@ -171,11 +179,68 @@ def resolve_iri(iri: str) -> Path:
     return resolve(*target)
 
 
-def resolve(cls_name: str, name: str) -> Path:
+def stem_entities(stem: str) -> dict[str, str]:
+    """The BIDS entities a file stem spells: ``tpl-fsLR_atlas-HCPMMP1_dseg`` -> ``{"tpl": "fsLR", "atlas": "HCPMMP1"}``."""
+    return dict(_ENTITY_RE.findall(stem))
+
+
+def carries(stem: str, entities: dict[str, str | None]) -> bool:
+    """Whether the file name *stem* spells each of *entities*, an entity given as ``None`` being one it does not carry."""
+    spelled = stem_entities(stem)
+    return all(spelled.get(key) == (None if value is None else str(value)) for key, value in entities.items())
+
+
+def told_apart(paths: list[Path]) -> str:
+    """The entities that tell the record files *paths* apart, each with the values it takes and ``none`` for a stem that spells no such entity: ``seg- (7Networks, 17Networks) and scale- (100, 200)``."""
+    carried = [stem_entities(p.stem) for p in paths]
+    apart = []
+    for key in dict.fromkeys(key for held in carried for key in held):
+        values = {held.get(key) for held in carried}
+        if len(values) > 1:
+            told = [*sorted(values - {None}, key=lambda value: (len(value), value)), *(["none"] if None in values else [])]
+            apart.append(f"{key}- ({', '.join(told)})")
+    return " and ".join(apart)
+
+
+@functools.cache
+def renamed_stems() -> dict[str, dict[str, dict[str, str]]]:
+    """:data:`RENAMED_STEMS`, per section and database folder: under ``renamed`` each stem the BIDS rename retired to the stem its record has now, under ``archived`` each stem of a record it removed to the record that replaced it, and under ``differs`` how that record's data differ from the removed one's."""
+    return yaml.safe_load(RENAMED_STEMS.read_text(encoding="utf-8"))
+
+
+def retired_stems(category: str) -> dict[str, str]:
+    """Each stem the BIDS rename retired from the folder *category*, renamed or archived, to the stem of the record that has its name now or replaced it (:func:`renamed_stems`)."""
+    table = renamed_stems()
+    return {**table["renamed"].get(category, {}), **table["archived"].get(category, {})}
+
+
+def refuse_archived(cls_name: str, category: str, matches: Callable[[str], bool]) -> None:
+    """Refuses a lookup that the stems of records the BIDS rename archived from the folder *category* answer, each stem *matches* accepts: tvbo hands out no archived data (register AR1), so the ``ValueError`` says of each, in a sentence of its own, that it was archived, and names the record that replaced it, and how that record's data differ where they do, for a spec to name instead (:func:`renamed_stems`). Returns ``None`` when *matches* accepts none."""
+    table = renamed_stems()
+    archived = [old for old in table["archived"].get(category, {}) if matches(old)]
+    if not archived:
+        return
+    differs = table["differs"].get(category, {})
+    raise ValueError(
+        " ".join(
+            f"{cls_name} {old!r} was archived, and tvbo does not hand out archived data; "
+            f"the record that replaced it is `tvbo:{category}/{table['archived'][category][old]}`"
+            + (f", {differs[old]}" if old in differs else "")
+            + "."
+            for old in archived
+        )
+    )
+
+
+def resolve(cls_name: str, name: str, **entities: str) -> Path:
     """Resolve a short name to a database YAML file path.
 
-    Tries exact top-level stem match first (fast path), then searches recursively by canonical `name:` field and file stem (case-insensitive).
-    For Network, also matches BIDS filenames containing the atlas name, taking the first in sorted order when several do: for ``DesikanKilliany`` that is the HCPYA structural connectome, not the MEG or EEG projection networks filed under the same atlas.
+    A top-level file of exactly this stem is taken first; otherwise every record whose ``name:`` or file stem is *name* in any case, kept to those whose stem spells each of the BIDS *entities* (``seg="7Networks", scale="100"``). A Network no record answers to is read as an atlas: the curated networks of that atlas and *entities*, of the ``rec-dTOR`` tractogram unless *entities* name another (:func:`tvbo.classes.network._find_network_sidecar`, imported in the call because that module imports this one). The old stem of a record the BIDS rename renamed, in any case, resolves to that record with a ``FutureWarning`` naming its IRI, and the stem of a record it archived is refused (:data:`RENAMED_STEMS`).
+
+    Raises:
+        FileNotFoundError: when no record answers to *name*, the one error that means "no such record".
+        ValueError: when several do, naming each by its IRI and the entities that tell them apart, or when *name* is the stem of an archived record, naming the record that replaced it (:func:`refuse_archived`).
+        RuntimeError: when the database is missing.
     """
     if DATABASE_ROOT is None:
         raise RuntimeError(
@@ -192,24 +257,47 @@ def resolve(cls_name: str, name: str) -> Path:
 
     # Fast path: a top-level file of exactly this stem, read off the listing because a case-insensitive filesystem also finds `BOLD_TVB.yaml` as `bold_tvb.yaml`.
     exact = db_dir / f"{name}.yaml"
-    if exact.exists() and exact.name in os.listdir(db_dir):
+    if not entities and exact.exists() and exact.name in os.listdir(db_dir):
         return exact
 
-    # Build recursive name index and search
     name_lower = name.lower()
-    for canonical, p in _build_name_index(db_dir).items():
-        if canonical == name or canonical.lower() == name_lower:
-            return p
-        if p.stem == name or p.stem.lower() == name_lower:
-            return p
+    named = sorted(
+        p
+        for canonical, paths in _build_name_index(db_dir).items()
+        for p in paths
+        if name_lower in (canonical.lower(), p.stem.lower())
+    )
+    found = [p for p in named if carries(p.stem, entities)]
+    if len(found) == 1:
+        return found[0]
+    asked = repr(name) + "".join(f", {key}-{value}" for key, value in entities.items())
+    if found:
+        apart = told_apart(found)
+        raise ValueError(
+            f"Several curated {cls_name} records answer to {asked}{', told apart by ' + apart if apart else ''}: "
+            f"{', '.join(record_iri(category, p) for p in found)}; state a further entity of the one meant, or name it by its IRI."
+        )
+    if named:
+        raise FileNotFoundError(
+            f"No curated {cls_name} record answers to {asked}; those that answer to {name!r} are: "
+            f"{', '.join(record_iri(category, p) for p in named)}."
+        )
 
-    # Sorted: an atlas several networks share must resolve to the same file whatever order the filesystem lists them in.
     if cls_name == "Network":
-        for p in sorted(db_dir.rglob("*.yaml")):
-            if f"atlas-{name}" in p.stem:
-                return p
+        from tvbo.classes.network import _find_network_sidecar
 
-    available = sorted(_build_name_index(db_dir).keys())
+        sidecar = _find_network_sidecar({"atlas": name, "rec": "dTOR", **entities})
+        if sidecar is not None:
+            return sidecar
+
+    refuse_archived(cls_name, category, lambda old: old.lower() == name_lower)
+    renamed = renamed_stems()["renamed"].get(category, {})
+    old = next((stem for stem in renamed if stem.lower() == name_lower), None)
+    if old is not None:
+        warnings.warn(f"{cls_name} {old!r} was renamed; write `tvbo:{category}/{renamed[old]}`.", FutureWarning, stacklevel=2)
+        return resolve(cls_name, renamed[old], **entities)
+
+    available = sorted(_build_name_index(db_dir))
     raise FileNotFoundError(f"No database entry '{name}' for {cls_name}. Available: {available}")
 
 
@@ -232,14 +320,13 @@ def _extract_name(path: Path) -> str:
     return path.stem  # fallback: use filename stem
 
 
-def _build_name_index(db_dir: Path) -> dict[str, Path]:
-    """Map canonical model name -> YAML path for all files under db_dir (recursive)."""
-    index: dict[str, Path] = {}
+def _build_name_index(db_dir: Path) -> dict[str, list[Path]]:
+    """Map each canonical ``name:`` under *db_dir* (recursive) to every YAML record that carries it, in sorted path order."""
+    index: dict[str, list[Path]] = {}
     for p in sorted(db_dir.rglob("*.yaml")):
         if p.stem.startswith("_"):
             continue
-        name = _extract_name(p)
-        index[name] = p
+        index.setdefault(_extract_name(p), []).append(p)
     return index
 
 
@@ -253,7 +340,7 @@ def list_entries(cls_name: str) -> list[str]:
     db_dir = DATABASE_ROOT / category
     if not db_dir.exists():
         return []
-    return sorted(_build_name_index(db_dir).keys())
+    return sorted(_build_name_index(db_dir))
 
 
 def list_entries_with_metadata(cls_name: str) -> list[dict]:

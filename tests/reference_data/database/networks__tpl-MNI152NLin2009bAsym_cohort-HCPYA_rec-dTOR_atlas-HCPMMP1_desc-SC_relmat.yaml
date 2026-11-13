@@ -3816,7 +3816,7 @@ number_of_nodes: 379
 parcellation:
   atlas:
     name: HCPMMP1
-    coordinateSpace: MNI152NLin2009cAsym
+    coordinateSpace: MNI152NLin2009bAsym
 tractogram:
   name: dTOR
 data_file: tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat.h5
@@ -3825,4 +3825,7 @@ bids:
   template: MNI152NLin2009bAsym
   cohort: HCPYA
   reconstruction: dTOR
+  atlas: HCPMMP1
+  desc: SC
+  suffix: relmat
 distance_unit: mm

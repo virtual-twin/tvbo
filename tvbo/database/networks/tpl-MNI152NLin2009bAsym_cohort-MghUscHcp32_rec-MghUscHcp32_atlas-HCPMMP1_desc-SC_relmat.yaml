@@ -10,6 +10,9 @@ bids:
   template: MNI152NLin2009bAsym
   cohort: MghUscHcp32
   reconstruction: MghUscHcp32
+  atlas: HCPMMP1
+  desc: SC
+  suffix: relmat
 parameters:
   conduction_speed:
     label: v
@@ -18,7 +21,7 @@ parameters:
 parcellation:
   atlas:
     name: HCPMMP1
-    coordinateSpace: MNI152NLin2009cAsym
+    coordinateSpace: MNI152NLin2009bAsym
 tractogram:
   name: MghUscHcp32
 nodes:

@@ -493,7 +493,7 @@ def _load_bindings(gtype: str) -> dict:
 
     try:
         path = resolve("GraphGenerator", gtype)
-    except (FileNotFoundError, ValueError) as e:
+    except FileNotFoundError as e:
         raise ValueError(
             f"Unknown graph generator type {gtype!r}. Add a YAML file under tvbo/database/graph_generators/ to register it."
         ) from e

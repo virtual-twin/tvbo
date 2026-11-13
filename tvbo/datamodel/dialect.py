@@ -30,6 +30,7 @@ from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, S
 __all__ = [
     "identifier_field",
     "KEYED_COLLECTIONS",
+    "RETIRED_SLOTS",
     "SCALAR_SHORTCUTS",
     "SEMANTIC_FOLDS",
     "SLOT_ALIASES",
@@ -43,6 +44,8 @@ __all__ = [
     "lift_shortcuts",
     "normalize",
     "install_on_dataclasses",
+    "refuse_dotted_parent",
+    "refuse_retired",
     "peer_module",
 ]
 
@@ -130,25 +133,22 @@ def fold_aliases(cls_name: str, data: dict) -> dict:
 def curated_entry(cls_name: str, name: str) -> dict | None:
     """The curated *cls_name* record called *name*, alias-folded, shortcut-lifted and ready to merge.
 
-    ``None`` when the database holds no such record — including when *cls_name* is not a
-    category it keeps at all.
+    ``None`` when the database holds no such record — including when *cls_name* is not a category it keeps at all. A name several records answer to raises, naming them (:func:`tvbo.data.registry.resolve`), and so does a missing database.
 
-    Cached because a recipe naming the same entity twice — every node of a homogeneous
-    network — would otherwise re-read and re-parse the same file per object. Callers must
-    not mutate the result: :func:`expand_iri` only feeds it to
-    :func:`tvbo.utils.deep_merge`, which mutates neither side, and
-    :meth:`IriEnrichable._from_database` only reads it into a constructor.
+    Cached because a recipe naming the same entity twice — every node of a homogeneous network — would otherwise re-read and re-parse the same file per object. Callers must not mutate the result: :func:`expand_iri` only feeds it to :func:`tvbo.utils.deep_merge`, which mutates neither side, and :meth:`IriEnrichable._from_database` only reads it into a constructor.
 
     The entry's own ``iri`` is dropped: keeping it would make the expanded record ask to be expanded again on every later construction, and a self-referential entry would not terminate. So is its envelope: :func:`normalize` strips the recipe's own ``tvbo_class`` before expanding, and a curated record that carries one would put it back. Every network sidecar in the database opens with ``tvbo_class: tvbo:Network``, so a recipe naming a curated network by ``iri`` would otherwise carry the curated file's envelope into the object built from the recipe.
     """
     import yaml
 
-    from tvbo.data.registry import resolve
+    from tvbo.data.registry import _CATEGORIES, resolve
     from tvbo.utils.yaml_loader import ENVELOPE_KEYS
 
+    if cls_name not in _CATEGORIES:
+        return None
     try:
         path = resolve(cls_name, name)
-    except (FileNotFoundError, RuntimeError, ValueError):
+    except FileNotFoundError:
         return None
     entry = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(entry, dict):
@@ -170,16 +170,23 @@ def expand_iri(cls_name: str, data: dict) -> dict:
 
     The record the ``iri`` addresses is :func:`tvbo.data.registry.curated_key`'s answer: a scoped ``tvbo:observation_models/bold_tvb`` names ``bold_tvb`` among observations, an unscoped ``tvbo:BOLD_TVB`` its local name. An ``iri`` naming no curated record merges nothing: it may point at an entity that exists only in the ontology, and this pass cannot tell that from a typo. The record then takes that name as its ``name`` when it states none, and ``tvbo validate`` is where a name that resolves nowhere is reported. A scope of another class, or a ``result/`` reference, is left exactly as written.
 
+    An invocation names what it invokes the same way (:func:`_invoked_class`): a ``FunctionCall``, and every class that is one, written with ``iri: tvbo:functions/<name>`` takes every slot of that curated function it declares itself except the name, its equation or callable and its arguments among them, and states only its own arguments beside it. Its ``iri`` is read as a ``Function`` reads its own, so every other spelling :func:`~tvbo.data.registry.curated_key` accepts for a function names it too, the unscoped ``tvbo:<name>`` among them. A scoped ``iri`` naming no curated function is an error, since the scope says a function was meant and the invocation would have nothing to invoke. An unscoped one naming none merges nothing, as everywhere else, and is an error only where the invocation states no ``equation``, ``callable``, ``class_call``, ``function`` or ``type`` of its own either, since it would then run nothing; ``type`` is how an ``Analysis`` of the solve names what it runs. An invocation runs one thing, so one that names a curated function and also states an ``equation``, ``callable``, ``class_call`` or ``function`` of a kind that function does not record is refused rather than left with two.
+
     Once an ``iri`` has expanded, it survives only for a class that keeps one as a slot, where it is grounding worth recording. ``Network`` does not: its curated record is reached through ``iri`` but its own connectivity is the ``data_file`` the expansion just merged in, so keeping the key would hand ``Network.__init__`` a keyword it has no slot for.
     """
     from tvbo.data.registry import curated_key
     from tvbo.utils import deep_merge
 
     iri = data.get("iri")
-    key = curated_key(iri, cls_name) if isinstance(iri, str) else None
+    if not isinstance(iri, str):
+        return data
+    addressed = _invoked_class(cls_name)
+    key = curated_key(iri, addressed)
     if key is None:
         return data
-    entry = curated_entry(cls_name, key)
+    entry = curated_entry(addressed, key)
+    if addressed != cls_name:
+        entry = _invoked_entry(cls_name, iri, addressed, key, entry, data)
     if entry is None:
         if data.get("name") is None and _has_slot(cls_name, "name"):
             data["name"] = key
@@ -190,6 +197,52 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     data.clear()
     data.update(merged)
     return data
+
+
+INVOCATION_FORMS = ("equation", "callable", "class_call", "function")
+"""The slots through which an invocation says what it runs; a record states one of them."""
+
+
+def _listed(slots, joiner: str = "and", article: bool = True) -> str:
+    """Slot names as backticked text in a sentence, the last joined by *joiner* and each with its article unless *article* is off."""
+    names = [f"{('an ' if slot[0] in 'aeiou' else 'a ') if article else ''}`{slot}`" for slot in slots]
+    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} {joiner} {names[-1]}"
+
+
+def _invoked_class(cls_name: str) -> str:
+    """The class of the curated records an ``iri`` on a *cls_name* record addresses: ``Function`` for an invocation, and *cls_name* itself for every other class.
+
+    An invocation is not filed in the database itself, so its ``iri`` cannot address a record of its own class; it addresses the function it invokes. A ``FunctionCall`` is an invocation, and so is every class that is one, a study-level ``Analysis`` among them.
+    """
+    from tvbo.datamodel import schema
+
+    cls, call = getattr(schema, cls_name, None), getattr(schema, "FunctionCall", None)
+    return "Function" if isinstance(cls, type) and isinstance(call, type) and issubclass(cls, call) else cls_name
+
+
+def _invoked_entry(cls_name: str, iri: str, addressed: str, key: str, entry: dict | None, data: dict) -> dict | None:
+    """The slots of the curated *addressed* record *entry* that the *cls_name* invocation *data* takes, or ``None`` when its *iri* matched no record and it states something of its own to run.
+
+    Raises:
+        ValueError: when a scoped *iri* names no curated record, when an unscoped one names none and *data* states no form and no ``type`` of its own either, or when *data* states a form of a kind *entry* does not record.
+    """
+    from tvbo.data.registry import iri_target
+
+    if entry is None:
+        if iri_target(iri) is not None:
+            raise ValueError(f"{cls_name} names {iri!r}, and the curated database holds no {addressed} called {key!r}.")
+        if data.get("type") is None and all(data.get(form) is None for form in INVOCATION_FORMS):
+            raise ValueError(
+                f"{cls_name} names {iri!r}, which matched no curated function, and states no {_listed(INVOCATION_FORMS, 'or', article=False)} of its own, so it has nothing to run."
+            )
+        return None
+    recorded = [form for form in INVOCATION_FORMS if entry.get(form) is not None]
+    own = [form for form in INVOCATION_FORMS if data.get(form) is not None and form not in recorded]
+    if own and recorded:
+        raise ValueError(
+            f"{cls_name} names {iri!r}, which records {_listed(recorded)}, and states {_listed(own)} of its own; an invocation runs one of them. State only arguments beside the `iri`, or drop the `iri`."
+        )
+    return {slot: value for slot, value in entry.items() if slot != "name" and _has_slot(cls_name, slot)}
 
 
 def _has_slot(cls_name: str, slot: str) -> bool:
@@ -332,7 +385,33 @@ def _fold_dynamics(data: dict) -> None:
 
 
 UNASSIGNED_NODE_ID = -1
-"""The ``id`` a node carries until a network assigns it one: a ``node_template``, or a node declared by ``label`` alone."""
+"""The ``id`` a node declared by ``label`` alone carries until the network that materialises it assigns one."""
+
+
+def _per_node_slots() -> list[str]:
+    """The slots ``Node`` adds to ``NodeTemplate`` (``id``, ``label``, ``position``, ``region``), which the network's data gives each node."""
+    import dataclasses
+
+    from tvbo.datamodel import schema
+
+    shared = {field.name for field in dataclasses.fields(schema.NodeTemplate)}
+    return [field.name for field in dataclasses.fields(schema.Node) if field.name not in shared]
+
+
+def _refuse_per_node_slots(data: dict) -> None:
+    """Refuse a ``node_template`` that sets a per-node slot (:func:`_per_node_slots`): the network's data gives each node its own, so the template's value would be ignored."""
+    own = [name for name in _per_node_slots() if data.get(name) is not None]
+    if own:
+        raise ValueError(
+            f"`node_template` sets {', '.join(f'`{name}`' for name in own)}; the network's data gives each node its own, and a template sets only what every node shares, so declare a node's own value on that node."
+        )
+
+
+def _fold_node_template(data: dict) -> None:
+    """Read a ``node_template`` mapping: drop the ``id: -1`` (:data:`UNASSIGNED_NODE_ID`) on the template of a network an older tvbo saved, and only that value, so such a network still reads, then refuse a per-node slot (:func:`_refuse_per_node_slots`)."""
+    if data.get("id") == UNASSIGNED_NODE_ID:
+        del data["id"]
+    _refuse_per_node_slots(data)
 
 
 def _fold_label_keyed_node(data: dict) -> None:
@@ -342,6 +421,14 @@ def _fold_label_keyed_node(data: dict) -> None:
     """
     if data.get("id") is None and data.get("label"):
         data["id"] = UNASSIGNED_NODE_ID
+
+
+def _fold_network(data: dict) -> None:
+    """Refuse a ``node_template`` given as a built ``Node`` by the per-node slots it sets, where pydantic names only the wrong class, then read a ``nodes`` mapping by :func:`fold_node_mapping`."""
+    template = data.get("node_template")
+    if template is not None and not isinstance(template, dict):
+        _refuse_per_node_slots({name: getattr(template, name, None) for name in _per_node_slots()})
+    fold_node_mapping(data)
 
 
 def fold_node_mapping(data: dict) -> None:
@@ -363,17 +450,51 @@ def fold_node_mapping(data: dict) -> None:
     data["nodes"] = folded
 
 
+def refuse_dotted_parent(data: dict) -> None:
+    """An edge reaches the network its network is a subnetwork of as ``parent``, and that network's parent as ``parent/parent``; a path spelled with ``..`` segments is refused, naming the edge and the spelling."""
+    for slot in ("source_network", "target_network"):
+        steps = str(data.get(slot) or "").split("/")
+        if set(steps) == {".."}:
+            raise ValueError(
+                f"Edge {data.get('label')!r}: `{slot}: {data[slot]}` is spelled `{slot}: {'/'.join('parent' for _ in steps)}`."
+            )
+
+
 SEMANTIC_FOLDS = {
     "StateVariable": _fold_state_variable_domain,
     "Dynamics": _fold_dynamics,
     "Node": _fold_label_keyed_node,
-    "Network": fold_node_mapping,
+    "NodeTemplate": _fold_node_template,
+    "Network": _fold_network,
+    "Edge": refuse_dotted_parent,
 }
 """Per-class dialect a table of renames cannot express, keyed like the other tables.
 
 Applied after the members are keyed, so a fold sees each collection under the names its
 own class will, whichever spelling the record was written in.
 """
+
+
+_ACTED_ON = "name the parameter where it is acted on: a fit's `free_parameters`, an update rule's `target_parameter`, a continuation's `free_parameters` or `held_parameters`, or an exploration's `space`"
+
+RETIRED_SLOTS: dict[str, dict[str, str]] = {
+    "Coupling": {
+        "inner_coupling": "write the coupling on the subnetwork",
+        "region_mapping": "write `node_mapping` on the network",
+        "regional_connectivity": "the parent network's connectivity is the regional coupling's graph",
+        "aggregation": "write the aggregation as an up edge's coupling",
+        "distribution": "write the distribution as a down edge's coupling",
+    },
+    **dict.fromkeys(("Parameter", "DerivedParameter"), {"free": _ACTED_ON}),
+}
+"""Slots a class no longer has, each with where its meaning is written now. None has a counterpart on its own class to fold into, so a record that still carries one is refused at load rather than renamed or dropped."""
+
+
+def refuse_retired(cls_name: str, data: dict) -> None:
+    """Raise when *data* carries a slot *cls_name* no longer has, naming the slot and where its meaning is written now."""
+    for slot, instead in RETIRED_SLOTS.get(cls_name, {}).items():
+        if slot in data:
+            raise ValueError(f"{cls_name}.{slot} was retired in tvbo 0.9.0: {instead}.")
 
 
 def normalize(cls_name: str, data: dict) -> dict:
@@ -392,6 +513,7 @@ def normalize(cls_name: str, data: dict) -> dict:
     for envelope_key in ENVELOPE_KEYS:
         data.pop(envelope_key, None)
 
+    refuse_retired(cls_name, data)
     fold_aliases(cls_name, data)
     lift_shortcuts(cls_name, data)
     expand_iri(cls_name, data)
@@ -427,7 +549,7 @@ def install_on_dataclasses(namespace: dict) -> None:
 
         cls.__init__ = __init__
 
-    for name in set(SLOT_ALIASES) | set(SCALAR_SHORTCUTS) | set(SEMANTIC_FOLDS):
+    for name in set(SLOT_ALIASES) | set(SCALAR_SHORTCUTS) | set(SEMANTIC_FOLDS) | set(RETIRED_SLOTS):
         cls = namespace.get(name)
         if cls is not None:
             wrap(cls)

@@ -3,9 +3,11 @@
 Defines [`Network`](#tvbo.classes.network.Network) and its matrix-style subclass [`Connectome`](#tvbo.classes.network.Connectome), which carry the structural connectivity (weights and tract lengths), parcellation, nodes/edges and declarative transforms of a virtual brain. Includes constructors that load networks from HDF5/YAML database files and from BIDS derivatives, JAX pytree registration so a network can flow through differentiable simulations, and graph-Laplacian coupling primitives.
 """
 
+import numbers
 import os
 import warnings
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -30,7 +32,21 @@ _cfg_jax()
 
 
 from tvbo.behaviour._runtime import RuntimeAttributes
-from tvbo.data.registry import curated_key, database_dir, local_name, record_name
+from tvbo.data.matrix_io import csv_link_slots, declared_arrays, is_csv, named_entries
+from tvbo.data.registry import (
+    carries,
+    curated_key,
+    database_dir,
+    iri_for,
+    list_entries,
+    local_name,
+    record_iri,
+    record_name,
+    refuse_archived,
+    renamed_stems,
+    stem_entities,
+    told_apart,
+)
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.utils import edge_param, keyed_items, normalize_params, to_dict, transform_target
 from tvbo.utils.source import current_source_dir
@@ -38,6 +54,33 @@ from tvbo.utils.yaml_loader import resolve_edge_var_aliases
 
 # HDF5+YAML network files — resolved via registry (works for pip & editable installs)
 NETWORK_DIR = database_dir("Network")
+
+_RANDOM_SEED: ContextVar[int | None] = ContextVar("tvbo_network_random_seed", default=None)
+
+
+@contextmanager
+def drawing_from(seed: int | None):
+    """Within the block, a network that keeps a random subset of its source's nodes draws it from *seed*, the ``execution.random_seed`` of the experiment building it. ``None`` states nothing, so the block sees whatever an enclosing one stated."""
+    if seed is None:
+        yield
+        return
+    token = _RANDOM_SEED.set(int(seed))
+    try:
+        yield
+    finally:
+        _RANDOM_SEED.reset(token)
+
+
+def _random_seed() -> int:
+    """The seed a network's random subset is drawn from: the one :func:`drawing_from` states, else the ``random_seed`` an experiment's ``execution`` defaults to."""
+    import dataclasses
+
+    seed = _RANDOM_SEED.get()
+    if seed is None:
+        seed = next(
+            field.default for field in dataclasses.fields(tvbo_datamodel.ExecutionConfig) if field.name == "random_seed"
+        )
+    return seed
 
 
 @contextmanager
@@ -108,11 +151,9 @@ def _read_or_listed(source: str, listed: list) -> str:
     )
 
 
-def _answers_to(mine, theirs) -> bool:
-    """Whether the layer entry *mine* a network wrote and the entry *theirs* its source loaded are one layer: both template edges, both routes or neither, and one name under any spelling."""
-    if not (_is_template_edge(mine) and _is_template_edge(theirs)) or _is_route(mine) != _is_route(theirs):
-        return False
-    return bool(mine.label) and str(getattr(theirs, "label", "") or "").lower() in _alias_group(mine.label)
+def _two_sources(first: str, second: str) -> str:
+    """The refusal of a network that names both *first* and *second* as the source of its connectivity."""
+    return f"This network names {first} and {second} as the source of its connectivity. A network is read from one source: drop one of the two."
 
 
 def _fill_unstated(mine, theirs, stated=None) -> None:
@@ -135,14 +176,35 @@ def _fill_unstated(mine, theirs, stated=None) -> None:
             setattr(mine, field.name, other)
 
 
-_WEIGHT_TARGETS = ("weight", "weights", "sc")
 _LENGTH_TARGETS = ("length", "lengths")
+_FORMER_WEIGHT_NAMES = ("weights", "sc", "streamlinecount", "streamlinedensity")
+"""Names a weight is often given that tvbo does not read as the weights (register WT1): a network that holds an edge of one of them and neither a ``weight`` edge nor a ``primary_weight`` is refused naming it, and so is a transform aimed at one no layer of the network has, since either would otherwise read as an unconnected network."""
 
 
 def _is_weight_name(name) -> bool:
-    """Whether *name* spells the connection-weight property."""
-    low = str(name).lower()
-    return low in _WEIGHT_TARGETS or low in _WEIGHT_MEASURES
+    """Whether *name* is ``weight``, the edge a network's weights are read from unless its ``primary_weight`` names another (:meth:`Network._matrix_names`)."""
+    return str(name).lower() == "weight"
+
+
+def _companion_name(store) -> str:
+    """The file name of the companion *store* reads, for an error to name."""
+    return getattr(getattr(store, "_path", None), "name", "its companion")
+
+
+def _unheld_weight(name, store) -> KeyError:
+    """The error for a weight the sidecar declares as *name* and the companion *store* does not hold, which `matrix` raises rather than serve zeros and `save` rather than write a network without it."""
+    return KeyError(f"The sidecar declares the layer {name!r}, and {_companion_name(store)} does not hold it.")
+
+
+def _read_held(store, name):
+    """The layer *name* from the companion *store*, which holds it.
+
+    A layer the companion holds and cannot read, such as a group without its ``data``, raises ``OSError`` naming the layer and the companion, chained to the reader's error. h5py raises a ``KeyError`` for it, which a caller that takes a ``KeyError`` for an absent layer would read as one.
+    """
+    try:
+        return store[name]
+    except KeyError as exc:
+        raise OSError(f"{_companion_name(store)} holds the layer {name!r}, and it cannot be read: {exc}") from exc
 
 
 class LazyMaterializationWarning(UserWarning):
@@ -170,7 +232,7 @@ def _resident_form(data):
 def _prepare_for_datamodel(spec: dict, at: tuple = ()) -> tuple[dict, dict[tuple, dict]]:
     """A copy of the network *spec* the datamodel can build, and the inline edge couplings taken out of it, keyed by the path of their edge.
 
-    The datamodel builds every ``node_template`` as a whole ``Node``, and a node's ``subnetwork`` with that subnetwork's own template and edges, before the tvbo ``Network`` of any level sees them. So each template, at every depth, gets the placeholder ``id`` -1 (each level stashes its template without it), and each inline coupling definition (a mapping on an edge's ``coupling``, which the datamodel holds only as a reference by name) is taken off its edge and returned under a path such as ``("node_template", "subnetwork", "edges", 0)``, for :func:`_reattach_inline_couplings` to put back once the datamodel has built the network. *at* is the path of *spec* itself. Only the mappings on the way are copied, so the caller's spec is never changed.
+    The datamodel builds every ``node_template`` as a whole ``NodeTemplate``, and a node's ``subnetwork`` with that subnetwork's own template and edges, before the tvbo ``Network`` of any level sees them. So each inline coupling definition (a mapping on an edge's ``coupling``, which the datamodel holds only as a reference by name), at every depth, is taken off its edge and returned under a path such as ``("node_template", "subnetwork", "edges", 0)``, for :func:`_reattach_inline_couplings` to put back once the datamodel has built the network. *at* is the path of *spec* itself. Only the mappings on the way are copied, so the caller's spec is never changed.
     """
     spec, detached = dict(spec), {}
 
@@ -191,10 +253,8 @@ def _prepare_for_datamodel(spec: dict, at: tuple = ()) -> tuple[dict, dict[tuple
         spec["edges"] = [without_coupling(edge, (*at, "edges", i)) for i, edge in enumerate(spec["edges"])]
     if isinstance(spec.get("edge_template"), dict):
         spec["edge_template"] = without_coupling(spec["edge_template"], (*at, "edge_template"))
-    template = spec.get("node_template")
-    if isinstance(template, dict):
-        template = prepared_node(template, (*at, "node_template"))
-        spec["node_template"] = {**template, "id": -1} if template.get("id") is None else template
+    if isinstance(spec.get("node_template"), dict):
+        spec["node_template"] = prepared_node(spec["node_template"], (*at, "node_template"))
     nodes = spec.get("nodes")
     if isinstance(nodes, dict):
         spec["nodes"] = {key: prepared_node(node, (*at, "nodes", i)) for i, (key, node) in enumerate(nodes.items())}
@@ -212,6 +272,29 @@ def _reattach_inline_couplings(network, detached: dict[tuple, dict]) -> None:
         edge.coupling = tvbo_datamodel.Coupling(**coupling)
 
 
+def _reference_from(folder: Path, target: Path) -> str:
+    """*target* as a record in *folder* names it: relative to *folder*, or absolute when the two share no directory below the filesystem root, as on another volume or drive."""
+    try:
+        shared = os.path.commonpath([target, folder])
+    except ValueError:
+        return str(target)
+    return str(target) if shared == target.anchor else os.path.relpath(target, folder)
+
+
+def _vocabularies_from(name: str | None, parameters: dict) -> list[str]:
+    """*name* and each parameter of *parameters* it reaches up a hierarchy of vocabularies: a vocabulary's ``parent``, the codes giving its entries their parents, then those codes' ``levels``, the vocabulary above, and so on, each once."""
+    reached = []
+    while name in parameters and name not in reached:
+        reached.append(name)
+        name = getattr(parameters[name], "parent", None) or getattr(parameters[name], "levels", None)
+    return reached
+
+
+def _default_conduction_speed():
+    """The conduction speed a network holds when it states none."""
+    return tvbo_datamodel.Parameter(name="conduction_speed", label="v", value=3.0, unit="mm_per_ms")
+
+
 def _is_unset(value) -> bool:
     """True for None or an empty container, the only values a node holds when nothing set the field; checked by type, since an array field cannot be compared with ``[]``."""
     return value is None or (isinstance(value, (list, tuple, dict)) and len(value) == 0)
@@ -220,11 +303,12 @@ def _is_unset(value) -> bool:
 def _merge_partial_node(node, spec: dict, *, override: bool) -> None:
     """Merge the partial node *spec* into the materialised *node*.
 
-    The spec is constructed as a ``Node`` first, so every value is the typed object the datamodel builds, never its raw mapping, and each call builds its own, so no two nodes share one. A ``subnetwork`` is the exception: it stays a copy of its mapping, which :meth:`Network._resolve_subnetworks` builds into a tvbo ``Network``. Keyed collections (``parameters``, ``state``, ``events``) merge key by key and other fields as a whole. Where the node already holds a value, *override* decides: a node declared by label replaces it, a template yields to it.
+    The spec is constructed first, so every value is the typed object the datamodel builds, never its raw mapping, and each call builds its own, so no two nodes share one. A ``subnetwork`` is the exception: it stays a copy of its mapping, which :meth:`Network._resolve_subnetworks` builds into a tvbo ``Network``. Keyed collections (``parameters``, ``state``, ``events``) merge key by key and other fields as a whole. *override* says which spec it is: a node declared by label is constructed as a ``Node`` and replaces a value the node holds, and a template is constructed as a ``NodeTemplate``, which refuses a per-node slot, and yields to it.
     """
     import copy
 
-    partial = tvbo_datamodel.Node(**{k: v for k, v in spec.items() if k not in ("id", "subnetwork")}, id=node.id)
+    fields = {k: v for k, v in spec.items() if k != "subnetwork"}
+    partial = tvbo_datamodel.Node(**{**fields, "id": node.id}) if override else tvbo_datamodel.NodeTemplate(**fields)
     for field in (k for k in spec if k not in ("id", "label")):
         current = getattr(node, field, None)
         value = spec[field] if field == "subnetwork" else getattr(partial, field)
@@ -249,24 +333,14 @@ def _is_length_name(name) -> bool:
 
 
 def _alias_group(name) -> tuple:
-    """Every spelling of the edge property *name* names, canonical spellings first.
+    """Every spelling of the edge property *name* names, canonical spellings first: the tract length has several, and every other name, ``weight`` among them, is its own.
 
-    The ONE place spellings are grouped. `Network.matrix` resolves a matrix through it and `Network.transforms_for` selects transforms through it, so a lookup and its transform cannot disagree about whether two names mean the same property — the failure that let `matrix("sc")` return the weight array with its declared transforms silently skipped.
+    The ONE place spellings are grouped. `Network.matrix` resolves a matrix through it and `Network.transforms_for` selects transforms through it, so a lookup and its transform cannot disagree about whether two names mean the same property. Which edge a network's weights are is the network's own declaration (:meth:`Network._matrix_names`).
     Names are lowercase; callers match source keys case-insensitively.
     """
-    if _is_weight_name(name):
-        return _WEIGHT_TARGETS + tuple(sorted(_WEIGHT_MEASURES.difference(_WEIGHT_TARGETS)))
     if _is_length_name(name):
         return _LENGTH_TARGETS + tuple(sorted(_LENGTH_MEASURES.difference(_LENGTH_TARGETS)))
     return (str(name).lower(),)
-
-
-def _declares_layer(edges, name) -> bool:
-    """Whether one of *edges* states where the layer *name* comes from (``used:`` / ``producer:``) under any spelling of it, so a source's own layer of that name yields to it."""
-    if not name:
-        return False
-    names = _alias_group(name)
-    return any(_declares_its_matrix(e) and str(getattr(e, "label", "") or "").lower() in names for e in edges or [])
 
 
 def _warn_superseded_accessor(old: str, new: str) -> None:
@@ -313,66 +387,168 @@ except ImportError:
     available_connectomes = []
 
 
-def _find_network_sidecar(
-    atlas: str,
-    tractogram: str,
-    segmentation: str | None = None,
-    scale: str | None = None,
-) -> Path | None:
-    """Find the YAML sidecar for a given atlas + tractogram combination.
+_LEGACY_ATLAS_NAMES = {
+    "Schaefer1000": {"atlas": "Schaefer2018", "seg": None, "scale": "1000"},
+    "Schaefer100017Networks": {"atlas": "Schaefer2018", "seg": "17Networks", "scale": "1000"},
+    "hcpmmp1": {"atlas": "HCPMMP1", "seg": None},
+    "hcpmmp1ordered": {"atlas": "HCPMMP1", "seg": "ordered"},
+    "DesikanKillianyranked": {"atlas": "DesikanKilliany"},
+    "Destrieuxranked": {"atlas": "Destrieux"},
+}
+"""Atlas spellings older records use, to the BIDS entities of the curated networks each named when the files were renamed to BEP017 (``scripts/rename_networks.py``); ``None`` is an entity those file names do not carry. The ``ranked`` spellings named the ``seg-ranked`` networks, which duplicated the networks without ``seg-`` and were removed. ``Schaefer1000`` and ``hcpmmp1ordered`` name networks the BIDS rename archived, so a lookup by either, ``Network.from_db``, ``Network.from_platform`` and ``Network.list_platform_networks`` included, is refused as a lookup of each archived network's stem is, naming the network that replaced it (:func:`_retired_network`)."""
 
-    Searches tvbo/database/networks/ for files matching the atlas and rec- entities.
-    When ``segmentation`` / ``scale`` are given, also requires ``seg-<segmentation>`` and ``scale-<scale>``. Falls back to partial matching if exact match fails.
+
+def _older_spelling(entities: dict[str, str]) -> dict[str, str | None] | None:
+    """*entities* with an atlas spelled as older records spell it read as the entities that spelling names (:data:`_LEGACY_ATLAS_NAMES`), or ``None`` when the atlas is no such spelling or *entities* state one of those entities otherwise."""
+    named = _LEGACY_ATLAS_NAMES.get(entities.get("atlas"))
+    if named is None or any(entities.get(key, value) != value for key, value in named.items() if key != "atlas"):
+        return None
+    return {**entities, **named}
+
+
+def _find_network_sidecar(entities: dict[str, str]) -> Path | None:
+    """The curated sidecar in tvbo/database/networks/ whose BIDS entities include each of *entities* exactly (:func:`_filter_networks_by_entities`), so ``atlas-Lobar`` never matches ``atlas-Lobar8`` nor ``scale-100`` ``scale-1000``, and an entity *entities* leave out matches any value or none. *entities* maps short keys (:data:`~tvbo.data.cohort.BIDS_ENTITY_SHORT_KEYS`) to values. When none matches, an atlas spelled as older records spell it is looked up by the entities that spelling names (:func:`_older_spelling`), and refused when those name networks the BIDS rename archived (:func:`_retired_network`); ``None`` is returned when they name none either. When several match, raises ``ValueError`` naming them (:func:`_several_curated_networks_with`)."""
+    found = _filter_networks_by_entities(entities)
+    if len(found) > 1:
+        raise ValueError(_several_curated_networks_with(entities, found))
+    if found:
+        return found[0]
+    spelled = _older_spelling(entities)
+    if spelled is None:
+        return None
+    return _find_network_sidecar(spelled) or _retired_network(spelled)
+
+
+def _retired_network(entities: dict[str, str | None]) -> None:
+    """Refuses a lookup of *entities* that networks the BIDS rename archived carry, since tvbo hands out no archived data (register AR1), with the refusal a lookup of their stems gets, which says of each that it was archived and names the network that replaced it (:func:`~tvbo.data.registry.refuse_archived`). Returns ``None`` when no archived network carries *entities*."""
+    refuse_archived("Network", NETWORK_DIR.name, lambda old: carries(old, entities))
+
+
+_PLATFORM_ENTITIES = {"atlas": "atlas", "tractogram": "rec"}
+"""The platform API's query parameters, to the BIDS entities they name."""
+
+
+def _platform_listing(api: str, query: dict[str, str]) -> list[dict]:
+    """The networks the platform API *api* lists for *query*, as it lists them."""
+    import requests
+
+    resp = requests.get(api, params=query)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _listed_stems(entry: dict) -> set[str]:
+    """The names a platform's listing gives the network *entry*: its id and the stem of its ``bids_filename``."""
+    file_name = entry.get("bids_filename")
+    return {str(entry["id"]), *([Path(file_name).stem] if file_name else [])}
+
+
+def _archived_listed(entry: dict) -> set[str]:
+    """The names, in lower case, under which a platform lists the network *entry* that are stems of networks the BIDS rename archived."""
+    archived = {old.lower() for old in renamed_stems()["archived"].get(NETWORK_DIR.name, {})}
+    return {name.lower() for name in _listed_stems(entry)} & archived
+
+
+def _platform_networks(api: str, query: dict[str, str | None]) -> list[dict]:
+    """The networks the platform API *api* lists for *query*, those the BIDS rename archived left out, whether the platform lists them by their stems or by their ``bids_filename`` (register AR1-a); ``[]`` when it lists none.
+
+    *query*'s atlas is read as :meth:`Network.from_db` reads one: an older spelling that names archived networks is refused before the platform is asked (:func:`_older_spelling`, :func:`_retired_network`), and any other spelling is matched as written. A query the platform answers with archived networks alone is refused as a lookup of their stems is (:func:`~tvbo.data.registry.refuse_archived`).
     """
-    for f in sorted(NETWORK_DIR.glob("*.yaml")):
-        stem = f.stem
-        if f"atlas-{atlas}" not in stem or f"rec-{tractogram}" not in stem:
-            continue
-        if segmentation is not None and f"seg-{segmentation}" not in stem:
-            continue
-        if scale is not None and f"scale-{scale}" not in stem:
-            continue
-        # Only skip seg- variants when the caller did NOT request one.
-        if segmentation is None and "seg-" in stem:
-            continue
-        return f
-    # Fallback: try with normalized atlas names
-    atlas_map = {
-        "Schaefer1000": "Schaefer2018",
-        "Schaefer100017Networks": "Schaefer2018",
-        "hcpmmp1": "HCPMMP1",
-        "hcpmmp1ordered": "HCPMMP1",
-        "DesikanKillianyranked": "DesikanKilliany",
-        "Destrieuxranked": "Destrieux",
-    }
-    mapped = atlas_map.get(atlas, atlas)
-    if mapped != atlas:
-        return _find_network_sidecar(mapped, tractogram, segmentation, scale)
-    return None
+    asked = {key: value for key, value in query.items() if value}
+    entities = {_PLATFORM_ENTITIES.get(key, key): value for key, value in asked.items()}
+    if (spelled := _older_spelling(entities)) is not None:
+        _retired_network(spelled)
+    listed = _platform_listing(api, asked)
+    kept = [entry for entry in listed if not _archived_listed(entry)]
+    if asked and not kept:
+        archived = set().union(*map(_archived_listed, listed))
+        refuse_archived("Network", NETWORK_DIR.name, lambda old: old.lower() in archived)
+    return kept
 
 
-def _parse_bids_entities(stem: str) -> dict[str, str]:
-    """Extract BIDS key-value entities from a filename stem.
+def _no_platform_network(api: str, query: dict[str, str | None]) -> str:
+    """The refusal of a *query* the platform API *api* lists no network for, naming each atlas or tractogram the platform's names spell that matches the one asked for in any case."""
+    asked = {key: value for key, value in query.items() if value}
+    meant = sorted(
+        {
+            f"{key}={held}"
+            for entry in _platform_listing(api, {})
+            for stem in _listed_stems(entry)
+            for key, value in asked.items()
+            if (held := stem_entities(stem).get(_PLATFORM_ENTITIES.get(key, key)))
+            and held != value
+            and held.lower() == value.lower()
+        }
+    )
+    return f"No network found for {', '.join(f'{key}={value}' for key, value in asked.items())}" + (
+        f"; did you mean {', '.join(meant)}?" if meant else "."
+    )
 
-    E.g. ``"tpl-MNI_atlas-DK_rec-dTOR_scale-100_desc-SC_relmat"`` → ``{"tpl": "MNI", "atlas": "DK", "rec": "dTOR", "scale": "100", "desc": "SC"}``
-    """
-    import re
 
-    return dict(re.findall(r"(?:^|_)([a-zA-Z]+)-([^_]+)", stem))
-
-
-def _filter_networks_by_entities(entities: dict[str, str]) -> list:
-    """Return network YAML paths whose BIDS entities match all given filters."""
-    matches = []
-    for f in sorted(NETWORK_DIR.glob("*.yaml")):
-        file_ents = _parse_bids_entities(f.stem)
-        if all(file_ents.get(k) == str(v) for k, v in entities.items()):
-            matches.append(f)
-    return matches
+def _networks_of(entities: dict[str, str]) -> list[Path]:
+    """The curated sidecars of the atlas *entities* name, and of its tractogram (``rec``) when they name one, whatever their other entities, those of the current name of a legacy spelling of the atlas (:data:`_LEGACY_ATLAS_NAMES`) included."""
+    atlas = entities["atlas"]
+    names = dict.fromkeys([atlas, _LEGACY_ATLAS_NAMES.get(atlas, {}).get("atlas", atlas)])
+    tractogram = {"rec": entities["rec"]} if "rec" in entities else {}
+    return [f for name in names for f in _filter_networks_by_entities({"atlas": name, **tractogram})]
 
 
-# Known BEP017 weight-like and length-like measure names for auto-classification
-_WEIGHT_MEASURES = {"streamlinecount", "streamlinedensity", "weight", "weights"}
+def _no_curated_network_with(entities: dict[str, str]) -> str:
+    """The refusal of a lookup of BIDS *entities* that no curated network carries, naming them and what the database holds nearest: the curated networks of the atlas and the tractogram, by their IRIs, else the tractograms the atlas has curated networks with, else the curated atlases closest to its name."""
+    import difflib
+
+    atlas, rec = entities["atlas"], entities["rec"]
+    if offered := _networks_of(entities):
+        held = f"the curated networks of the atlas {atlas!r} and the tractogram {rec!r} are: {_iris(offered)}"
+    elif of_atlas := _networks_of({"atlas": atlas}):
+        tractograms = sorted({stem_entities(f.stem).get("rec", "") for f in of_atlas} - {""})
+        held = f"the atlas {atlas!r} has curated networks of the tractograms {', '.join(tractograms)} only"
+    else:
+        atlases = sorted({stem_entities(f.stem).get("atlas", "") for f in NETWORK_DIR.glob("*.yaml")} - {""})
+        close = difflib.get_close_matches(atlas, atlases, n=3)
+        held = f"no curated network is of the atlas {atlas!r}" + (
+            f"; the closest curated atlases are: {', '.join(close)}" if close else ""
+        )
+    return f"No curated network has the BIDS entities {_spelled(entities)}; {held}."
+
+
+def _several_curated_networks_with(entities: dict[str, str], found: list[Path]) -> str:
+    """The refusal of a lookup of BIDS *entities* that the curated networks *found* all carry, naming each by its IRI and the entities that tell them apart with the values they take, ``none`` for a network whose file name carries no such entity."""
+    return (
+        f"Several curated networks have the BIDS entities {_spelled(entities)}, told apart by {told_apart(found)}: "
+        f"{_iris(found)}; state a further entity of the one meant, or name it by its `iri`."
+    )
+
+
+def _iris(sidecars: list[Path]) -> str:
+    """The IRIs of the curated networks *sidecars* describe, as a refusal lists them."""
+    return ", ".join(record_iri(NETWORK_DIR.name, f) for f in sidecars)
+
+
+def _label_or_id(label, node_id) -> str:
+    """The label a node goes by: its own, else ``node_<id>``."""
+    return str(label) if label is not None else f"node_{node_id}"
+
+
+def _spelled(entities: dict[str, str]) -> str:
+    """BIDS *entities* as a file name spells them, ``atlas-Lobar, rec-dTOR``, and an entity given as ``None`` as ``no seg-``."""
+    return ", ".join(f"no {key}-" if value is None else f"{key}-{value}" for key, value in entities.items())
+
+
+def _no_curated_network_at(iri: str) -> str:
+    """The refusal of a network ``iri`` that addresses no curated network, naming the curated networks whose names are closest to the name it ends in."""
+    import difflib
+
+    close = [iri_for("Network", name) for name in difflib.get_close_matches(local_name(iri), list_entries("Network"), n=3)]
+    return f"No curated network has the IRI {iri!r}" + (f"; the closest are: {', '.join(close)}." if close else ".")
+
+
+def _filter_networks_by_entities(entities: dict[str, str | None]) -> list:
+    """Return network YAML paths whose BIDS entities match all given filters (:func:`~tvbo.data.registry.carries`)."""
+    return [f for f in sorted(NETWORK_DIR.glob("*.yaml")) if carries(f.stem, entities)]
+
+
+# BEP017 measure names of a tract length, for auto-classification
 _LENGTH_MEASURES = {
     "tractlength",
     "tractlengths",
@@ -383,10 +559,10 @@ _LENGTH_MEASURES = {
 }
 
 
-def _discover_bids_measures(bids_dir) -> list[str]:
-    """Auto-discover structural measures from BEP017 relmat files.
+def _discover_bids_measures(bids_dir, primary_weight: str | None = None) -> list[str]:
+    """The structural measures of a BEP017 folder that states none, from the ``meas-<name>`` of its relmat files: the weights, then a tract length (:data:`_LENGTH_MEASURES`) when the folder holds one.
 
-    Parses ``meas-<name>`` from filenames and classifies into [weight_measure, length_measure] order by matching against known naming conventions.  Falls back to file order if names are unknown.
+    The weights are the measure *primary_weight* names, else ``meas-weight``, matched without regard to case and taken in the folder's spelling, so a folder with measures and none of them the weights is refused, naming its measures and the declarations that name the weights.
     """
     import re
 
@@ -404,20 +580,20 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     if not measures:
         return ["weight", "tract_length"]  # default canonical names
 
-    # Classify: put weight-like first, length-like second
-    weight_names = [m for m in measures if m.lower() in _WEIGHT_MEASURES]
+    wanted = primary_weight or "weight"
+    weights = next((m for m in measures if m.lower() == wanted.lower()), None)
+    if weights is None:
+        declared = (
+            "the measure its `primary_weight` names"
+            if primary_weight
+            else "and the network states neither `primary_weight` nor `structural_measures`"
+        )
+        raise ValueError(
+            f"{bids_dir} holds the measures {', '.join(sorted(measures))} and no {wanted!r}, {declared}: "
+            "tvbo reads a network's weights from 'weight' unless `primary_weight` names the measure that holds them, or `structural_measures` names them, weights first and the tract length second."
+        )
     length_names = [m for m in measures if m.lower() in _LENGTH_MEASURES]
-    other = [m for m in measures if m.lower() not in _WEIGHT_MEASURES and m.lower() not in _LENGTH_MEASURES]
-
-    result = []
-    if weight_names:
-        result.append(weight_names[0])
-    if length_names:
-        result.append(length_names[0])
-    # Append any remaining (unknown measures in file order)
-    result.extend(other)
-    # If no known names matched, return all in file order
-    return result or measures
+    return [weights, *length_names[:1]]
 
 
 def _bids_measure_units(bids_dir, measures) -> dict:
@@ -460,22 +636,31 @@ def _declared_length_unit(measure_units: dict, length_measure) -> str | None:
 
 
 def get_normative_connectome_data(
-    atlas: str,
-    tractogram: str = "dTOR",
+    atlas: str | None = None,
+    tractogram: str | None = None,
     segmentation: str | None = None,
     scale: str | None = None,
     with_nodes: bool = False,
+    *,
+    iri: str | None = None,
+    **bids: str,
 ):
     """Load normative connectivity matrices from tvbo/database/networks/ HDF5 files.
 
+    The curated network is named by its BIDS entities, as a network names it (:func:`_find_network_sidecar`), or by its *iri*. Entities that several curated networks carry are refused, naming each network by its IRI and the entities that tell them apart, so a further entity (*segmentation*, *scale*, or one of *bids*) or the IRI names the one meant; entities none carries are refused, naming the nearest.
+
     Parameters
     ----------
-    atlas : str
-        Name of the brain parcellation atlas (e.g., "DesikanKilliany", "Destrieux")
-    tractogram : str
-        Tractogram/reconstruction pipeline (e.g., "dTOR", "MghUscHcp32", "PPMI85")
+    atlas : str, optional
+        Name of the brain parcellation atlas (e.g., "DesikanKilliany", "Destrieux"); required unless *iri* names the network.
+    tractogram : str, optional
+        Tractogram/reconstruction pipeline (e.g., "dTOR", "MghUscHcp32", "PPMI85"); ``dTOR`` when not stated.
     segmentation, scale : str, optional
         BIDS ``seg-`` and ``scale-`` entity values used to disambiguate sub-resolutions of the same atlas (e.g. Schaefer2018 7Networks/1000).
+    iri : str, optional
+        The curated network's IRI (``tvbo:networks/<file stem>``), which names it however many networks share its entities, such as a network without ``seg-`` beside networks with one. No entity is stated beside it.
+    **bids
+        The network's other BIDS entities, by the names a network's ``bids`` block gives them: ``template``, ``cohort``, ``acquisition``, ``hemi`` and ``desc`` (``desc="SC"`` tells the Lobar connectome from its surface network).
 
     Returns:
     -------
@@ -495,30 +680,64 @@ def get_normative_connectome_data(
     )
     ```
     """
-    sidecar = _find_network_sidecar(atlas, tractogram, segmentation, scale)
-    if sidecar is None:
-        raise FileNotFoundError(
-            f"No network found for atlas={atlas}, tractogram={tractogram}, seg={segmentation}, scale={scale} in {NETWORK_DIR}"
-        )
+    from tvbo.data.cohort import BIDS_ENTITY_SHORT_KEYS, short_entities
 
-    from tvbo.data.network_io import load_network
-
-    net = load_network(sidecar)
-    store = getattr(net, "_store", None)
-    if store is None:
-        raise FileNotFoundError(f"No companion data file for {sidecar.name}")
-    arrays = store.arrays
-    weights = arrays.get("weight")
-    if weights is None:
-        weights = arrays.get("weights")
-    lengths = arrays.get("length")
-    if lengths is None:
-        lengths = arrays.get("lengths")
-    if weights is None:
-        raise ValueError(f"No 'weight' edge found in {sidecar.name}")
+    others = set(BIDS_ENTITY_SHORT_KEYS) - {"atlas", "reconstruction", "segmentation", "scale"}
+    if unknown := sorted(set(bids) - others):
+        raise TypeError(f"get_normative_connectome_data() takes the BIDS entities {sorted(others)} by name, not {unknown}.")
+    stated = {"atlas": atlas, "rec": tractogram, "seg": segmentation, "scale": scale}
+    entities = {**{key: str(value) for key, value in stated.items() if value is not None}, **short_entities(bids)}
+    if iri is None and atlas is None:
+        raise TypeError("get_normative_connectome_data() names a curated network by its `atlas` or by its `iri`.")
+    if iri is not None:
+        if entities:
+            raise ValueError(
+                f"`iri={iri!r}` names the curated network on its own; drop the BIDS entities beside it: {_spelled(entities)}."
+            )
+        sidecar = Network._resolve_network_iri(iri)
+        if sidecar is None:
+            raise FileNotFoundError(_no_curated_network_at(iri))
+        net = _curated_network(Path(sidecar))
+    else:
+        net = _normative_network({**entities, "rec": entities.get("rec", "dTOR")})
+    weights, lengths = _normative_layers(net)
     if with_nodes:
         return weights, lengths, (getattr(net, "nodes", None) or None)
     return weights, lengths
+
+
+def _normative_network(entities: dict[str, str]):
+    """The curated network tvbo/database/networks/ holds with the BIDS *entities* (:func:`_find_network_sidecar`), loaded with its companion attached; raises ``FileNotFoundError`` when it holds none, naming what it holds nearest (:func:`_no_curated_network_with`), or one with no companion, and ``ValueError`` when it holds several, naming them (:func:`_several_curated_networks_with`)."""
+    sidecar = _find_network_sidecar(entities)
+    if sidecar is None:
+        raise FileNotFoundError(_no_curated_network_with(entities))
+    return _curated_network(sidecar)
+
+
+def _curated_network(sidecar: Path):
+    """The curated network *sidecar* describes, loaded with its companion attached; raises ``FileNotFoundError`` for one with no companion."""
+    from tvbo.data.network_io import load_network
+
+    net = load_network(sidecar)
+    if getattr(net, "_store", None) is None:
+        raise FileNotFoundError(f"No companion data file for {sidecar.name}")
+    return net
+
+
+def _normative_layers(net) -> tuple:
+    """The weights and the lengths, ``None`` without them, of a curated network :func:`_normative_network` loaded, in their stored format and without its transforms, read as :meth:`Network.matrix` reads them, so the weights are the edge its ``primary_weight`` names, else ``weight``; raises ``ValueError`` when it holds no weights, naming a surface mesh as one and the network whose nodes are its regions."""
+    if not net.has_connectome:
+        data_file = Path(net._store._path).name
+        if net.mesh is None:
+            raise ValueError(f"No 'weight' edge found in {data_file}")
+        regions = (
+            f"; its regions are the nodes of {record_iri(NETWORK_DIR.name, Path(net.parent_network))}"
+            if net.parent_network
+            else ""
+        )
+        raise ValueError(f"{data_file} holds a surface mesh of {net.number_of_nodes} vertices and no connectome{regions}.")
+    lengths = net.matrix("length", apply_transforms=False) if net.carries("length") else None
+    return net.matrix("weight", apply_transforms=False), lengths
 
 
 def _network_ref_string(net: "Network") -> str:
@@ -605,19 +824,27 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         _declared_nodes = self._detach_label_keyed_nodes(kwargs)  # applied in _resolve, once the data has named its nodes
         _placeholder_nodes = False
 
-        # A top-level `iri` names a curated network in the database (e.g. a `*_relmat` structural-connectivity file) as this network's source. The parent LinkML Network has no `iri` slot, so it becomes the `data_file` reference `_resolve_from_data_file` loads, beside whatever else the network declares. A file source the network names itself (`data_file`, `bids_dir`, `edge_matrix_files`) precedes it.
+        # A top-level `iri` names a curated network in the database (e.g. a `*_relmat` structural-connectivity file) as this network's source. The parent LinkML Network has no `iri` slot, so it becomes the `data_file` reference `_resolve_from_data_file` loads. An `iri` that addresses no curated network is refused, and so is one beside a file source the network names itself (`data_file`, `edge_matrix_files`, `bids_dir`).
         _iri = kwargs.pop("iri", None)
         _source_iri = None
-        if _iri and not any(kwargs.get(k) for k in ("data_file", "edge_matrix_files", "bids_dir")):
+        if _iri:
             _resolved_path = self._resolve_network_iri(_iri)
-            if _resolved_path is not None:
-                kwargs["data_file"] = _resolved_path
-                _source_iri = _iri
+            if _resolved_path is None:
+                raise FileNotFoundError(_no_curated_network_at(_iri))
+            beside = next((slot for slot in ("data_file", "edge_matrix_files", "bids_dir") if kwargs.get(slot)), None)
+            if beside:
+                raise ValueError(_two_sources(f"`iri: {_iri}`", f"`{beside}: {kwargs[beside]}`"))
+            kwargs["data_file"] = _resolved_path
+            _source_iri = _iri
 
         # Resolve deprecated number_of_regions -> number_of_nodes
         if "number_of_regions" in kwargs:
             kwargs.setdefault("number_of_nodes", kwargs.pop("number_of_regions"))
             kwargs.pop("number_of_regions", None)
+        _declares_its_nodes = bool(kwargs.get("nodes"))
+        _stated_count = (
+            None if _declares_its_nodes else kwargs.get("number_of_nodes") or None
+        )  # beside a source, the number of its nodes kept
 
         # Derive name from iri where missing (so the dataclass post-init doesn't raise MissingRequiredField on iri-only construction).
         _backfill_name_from_iri(kwargs.get("parcellation"), "BrainAtlas", nested_key="atlas")
@@ -677,12 +904,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         _nt_spec = None
         if isinstance(_nt, dict):
             _nt_spec = _copy.deepcopy(_nt)
-            _nt_spec.pop("id", None)
         elif _dataclasses.is_dataclass(_nt):
             _nt_spec = {
-                f.name: _copy.deepcopy(value)
-                for f in _dataclasses.fields(_nt)
-                if f.name != "id" and not _is_unset(value := getattr(_nt, f.name))
+                f.name: _copy.deepcopy(value) for f in _dataclasses.fields(_nt) if not _is_unset(value := getattr(_nt, f.name))
             }
         _et = kwargs.get("edge_template")
         _et_spec = _copy.deepcopy(_et) if isinstance(_et, dict) else None
@@ -701,16 +925,15 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
         _reattach_inline_couplings(self, _inline_couplings)
         object.__setattr__(self, "_source_iri", _source_iri)
+        object.__setattr__(self, "_declares_its_nodes", _declares_its_nodes)
+        object.__setattr__(self, "_stated_count", _stated_count)
         _authored = list(self.edges or []) if len(_stated) == len(self.edges or []) else []
         object.__setattr__(
             self, "_stated_edge_slots", list(zip(_authored, _stated, strict=False))
         )  # each edge beside the slots its declaration wrote
 
-        if _edge_file_weights is not None and not _declares_layer(self.edges, "weight"):
-            _weight = tvbo_datamodel.Edge(label="weight")
-            self.set_matrix(
-                next((str(e.label) for e in self.edges or [] if _answers_to(e, _weight)), "weight"), _edge_file_weights
-            )
+        if _edge_file_weights is not None and not self._declares_layer(self.edges, "weight"):
+            self.set_matrix("weight", _edge_file_weights)
 
         # Stash raw template specs (plain dicts) for expansion in _resolve.
         object.__setattr__(self, "_node_template_spec", _nt_spec)
@@ -729,11 +952,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         # Nodes made up from a count, which a graph generator may name.
         object.__setattr__(self, "_placeholder_nodes", _placeholder_nodes)
 
-        # Ensure conduction_speed exists in parameters
         if "conduction_speed" not in (self.parameters or {}):
-            self.parameters["conduction_speed"] = tvbo_datamodel.Parameter(
-                name="conduction_speed", label="v", value=3.0, unit="mm_per_ms"
-            )
+            self.parameters["conduction_speed"] = _default_conduction_speed()
 
         # Materialise connectivity from the declarative spec (parcellation, data_file, bids_dir, graph_generator), resolving relative paths against the recipe being loaded (`loading_from`) at whatever depth this Network is built. Idempotent; see Network._resolve.
         _source_dir = current_source_dir()
@@ -747,6 +967,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if not self.nodes and not self.number_of_nodes:
             self.number_of_nodes = 1
             self.nodes = [tvbo_datamodel.Node(id=0, label="node_0")]
+            object.__setattr__(self, "_placeholder_nodes", True)
+            object.__setattr__(self, "_count_set", 1)
 
     # Canonical resolver                                                   #
     def _is_materialized(self) -> bool:
@@ -786,10 +1008,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         2. ``data_file`` companion (.h5 / .zarr + .yaml sidecar): load lazily via ``tvbo.data.network_io.attach_lazy_store``.
         3. ``bids_dir`` BEP017 directory: route through ``from_bids`` and copy matrices onto self.
         4. ``graph_generator.builder`` Callable: invoke (added in A2).
-        5. ``parcellation`` (+ optional ``tractogram``, ``bids.segmentation``,
-           ``bids.scale``): normative DB load via
-           ``get_normative_connectome_data``.
+        5. ``parcellation``, with its ``tractogram`` and the network's ``bids`` entities, on a network that lists no node of its own: the curated network they name (:meth:`_resolve_from_parcellation`), refused when none matches. On a network that lists its nodes, a ``parcellation`` and a ``bids`` block are metadata and load nothing.
         6. None of the above: no-op (Network must have been constructed via explicit ``nodes``/``edges`` or ``Network.from_matrix``).
+
+        Once the source has delivered, a node list whose length is not the side of the layers stored for it is refused (:meth:`_check_stored_node_count`), a ``number_of_nodes`` the network states is the number of the source's nodes it keeps (:meth:`_keep_stated_count`), and a declared ``node_selection`` restricts the network to the nodes it keeps (:meth:`_apply_node_selection`) before anything below reads a node or an array. A node list the network wrote beside the source has to be the nodes it then holds (:meth:`_check_listed_nodes`).
 
         Whichever source loads, what the network lists beside it is read by its kind (:meth:`_keep_authored_edges`). A layer entry that states where its matrix comes from (``used:`` / ``producer:``) replaces the source's layer of that name under any spelling, and the source fills the nodes and every other layer. A layer entry that only names its layer keeps the slots it states on the source's matrix. A route to another network is kept. An edge between two of the network's own nodes is a listed graph, and beside a source it is refused, naming both.
 
@@ -800,32 +1022,50 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         """
         if getattr(self, "_resolved", False):
             return
+        self._take_written_count()
         # 1. Macro connectivity: skip when already materialised.
         listed = [e for e in self.edges or [] if _is_listed_edge(e)]
         if listed and not self._holds_arrays() and self._named_source():
             raise ValueError(_read_or_listed(self._named_source(), listed))
-        if not self._is_materialized():
+        recorded, listed = self._labels_beside_applied_selection(), self._listed_labels()
+        generated = sourced = False
+        if not self._is_materialized() or self._companion_holds_dropped_nodes():
             authored = list(self.edges or [])
             if getattr(self, "data_file", None):
                 self._resolve_from_data_file(source_dir)
+                sourced = True
             elif getattr(self, "bids_dir", None):
                 self._resolve_from_bids_dir(source_dir)
+                sourced = True
             elif self._has_graph_generator():
+                generated = True
                 self._resolve_from_graph_generator(source_dir)
-            elif getattr(self, "parcellation", None):
+            elif getattr(self, "parcellation", None) and not getattr(self, "_declares_its_nodes", False):
                 self._resolve_from_parcellation()
+                sourced = True
             self._keep_authored_edges(authored)
+        self._check_stored_node_count()
+        if sourced:
+            self._keep_stated_count()
+        self._apply_node_selection(generated=generated, recorded=recorded)
+        if sourced:
+            self._check_kept_count()
+        if sourced and recorded is None:
+            self._check_listed_nodes(listed)
         # 2. Multi-scale resolution (idempotent no-ops when unused). Runs whether or not macro connectivity was already materialised so a DB-loaded network still gets its node_template / subnetworks / sourced parameters expanded.
         self._apply_declared_nodes()
         self._expand_node_template()
         self._resolve_subnetworks(source_dir)
         self._resolve_parameter_sources(source_dir)
+        self._check_levels()
+        self._check_per_node_lengths()
         self._resolved = True
+        object.__setattr__(self, "_count_set", self.number_of_nodes)
 
     def _keep_authored_edges(self, authored: list) -> None:
         """Put the edges this network *wrote* back over what its source loaded.
 
-        A source that replaces the edge list (a companion, a generator returning a network) would otherwise erase every entry beside it. Each entry is read by its kind. A layer entry that states where its matrix comes from (``used:`` / ``producer:``) is the network's layer of that name under every spelling (:func:`_declares_layer`), so the source's entry of it is dropped, and so is the array the source made resident for it, which every lookup would otherwise serve first. A layer entry that only names its layer takes the place of the source's entry of that layer (:func:`_answers_to`), keeping the slots it states and taking the others from it (:func:`_fill_unstated`); the matrix is the source's. A route is kept as written. The source keeps every other layer. An entry the source has no counterpart for keeps its place in ``edges``, or follows the source's edges where the source replaced the list.
+        A source that replaces the edge list (a companion, a generator returning a network) would otherwise erase every entry beside it. Each entry is read by its kind. A layer entry that states where its matrix comes from (``used:`` / ``producer:``) is the network's layer of that name under every spelling (:meth:`_declares_layer`), so the source's entry of it is dropped, and so is the array the source made resident for it, which every lookup would otherwise serve first. A layer entry that only names its layer takes the place of the source's entry of that layer (:meth:`_answers_to`), keeping the slots it states and taking the others from it (:func:`_fill_unstated`); the matrix is the source's. A route is kept as written. The source keeps every other layer. An entry the source has no counterpart for keeps its place in ``edges``, or follows the source's edges where the source replaced the list.
         """
         if not authored:
             return
@@ -836,9 +1076,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         for edge in self.edges or []:
             if id(edge) in mine:
                 edges.append(edge)
-            elif _is_template_edge(edge) and _declares_layer(declared, edge.label):
+            elif _is_template_edge(edge) and self._declares_layer(declared, edge.label):
                 continue
-            elif (owner := next((own for own in named if _answers_to(own, edge)), None)) is None:
+            elif (owner := next((own for own in named if self._answers_to(own, edge)), None)) is None:
                 edges.append(edge)
             elif id(owner) not in placed:
                 _fill_unstated(
@@ -849,19 +1089,39 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         held = {id(edge) for edge in edges}
         self.edges = edges + [edge for edge in authored if id(edge) not in held]
         resident = self._resident()
-        for key in [k for k in resident if _declares_layer(declared, _edge_name(k))]:
+        for key in [k for k in resident if self._declares_layer(declared, _edge_name(k))]:
             del resident[key]
 
     def invalidate_resolution(self) -> None:
         """Drop everything ``_resolve`` materialised, so the next access rebuilds it.
 
-        Resolution is idempotent and latches, which is what stops a network being rebuilt on every access — and what makes a spec edited AFTER load silently inert. A caller that changes the declaration (a ``--set`` on a graph_generator parameter, a swapped parcellation) has to say so, or the run reports the new value and integrates the old matrix.
+        Resolution is idempotent and latches, which is what stops a network being rebuilt on every access — and what makes a spec edited AFTER load silently inert. A caller that changes the declaration (a ``--set`` on a graph_generator parameter, a swapped parcellation) has to say so, or the run reports the new value and integrates the old matrix. A node selection this object applied is taken back (:meth:`_undo_node_selection`), so the rebuild selects again from what the source delivers; a random subset it drew leaves the count the network states, from which the rebuild draws again (:meth:`_keep_stated_count`). What the ``used:`` references read is dropped with the rest, so they are read again for the nodes the rebuild keeps. A ``number_of_nodes`` written on the network since it was resolved, before or after this call, is the count the rebuild keeps (:meth:`_take_written_count`).
         """
+        self._take_written_count()
+        drawn = self._draws_a_subset()
+        self._undo_node_selection()
+        if drawn:
+            self.number_of_nodes = self._stated_count  # the count it states, from which the rebuild draws again
         for attr in ("_resolved", "_producers_resolved"):
             object.__setattr__(self, attr, False)
         object.__setattr__(self, "_store", None)
         object.__setattr__(self, "_arrays", {})
         object.__setattr__(self, "_sourced_array_keys", set())
+        object.__setattr__(self, "_reference_cache", {})
+        object.__setattr__(self, "_count_set", self.number_of_nodes)
+
+    def _take_written_count(self) -> None:
+        """Take a ``number_of_nodes`` written on this network since its resolution or its invalidation last set it, such as a ``--set`` of it, as the count it states beside its source (:meth:`_keep_stated_count`). A network that lists its nodes counts them, so a count written on it states nothing."""
+        if not getattr(self, "_declares_its_nodes", False) and self.number_of_nodes != getattr(
+            self, "_count_set", self.number_of_nodes
+        ):
+            object.__setattr__(self, "_stated_count", self.number_of_nodes or None)
+
+    def _draws_a_subset(self) -> bool:
+        """Whether this network's ``node_selection`` is the random subset of its source's nodes it drew for the count it states (:meth:`_keep_stated_count`), unchanged since, so a rebuild draws it again from the seed it is then given."""
+        drawn = getattr(self, "_drawn", None)
+        selection = getattr(self, "node_selection", None)
+        return drawn is not None and selection is drawn[0] and list(selection.keep or []) == drawn[1] and not selection.drop
 
     def _has_graph_generator(self) -> bool:
         """True if this Network has a resolvable GraphGenerator.
@@ -886,17 +1146,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _resolve_network_iri(iri: str) -> str | None:
         """Resolve a curated-network IRI to its YAML sidecar path.
 
-        Resolves the network the IRI addresses (:func:`tvbo.data.registry.curated_key`: an unscoped name or a ``networks/`` one, while a scope of another folder addresses none) against the network registry. Returns the absolute sidecar path, or ``None`` when the IRI does not match a curated network (so the caller can fall back to treating it as a plain reference string).
+        Resolves the network the IRI addresses (:func:`tvbo.data.registry.curated_key`: an unscoped name or a ``networks/`` one, while a scope of another folder addresses none) against the network registry. Returns the absolute sidecar path, or ``None`` when the IRI addresses no curated network; a network named by such an IRI is refused (:func:`_no_curated_network_at`). Only the registry's ``FileNotFoundError`` means no curated network: an IRI that several networks answer to raises, and so does a missing database.
         """
         local = curated_key(iri, "Network")
         if local is None:
             return None
-        try:
-            from tvbo.data.registry import resolve as registry_resolve
+        from tvbo.data.registry import resolve as registry_resolve
 
+        try:
             return str(registry_resolve("Network", local))
-        except (FileNotFoundError, ValueError, RuntimeError):
-            # FileNotFoundError/ValueError: unknown name. RuntimeError: the database root could not be located (e.g. a packaging issue). In all cases fall back to treating the IRI as a plain reference.
+        except FileNotFoundError:
             return None
 
     # Cache the curated GraphGenerator YAML entry by type so `_is_materialized` / `_resolve` don't re-read+parse the same generator from disk on every network (a reservoir net resolves one per subnetwork). A missing entry is cached as None to avoid repeat lookups.
@@ -906,8 +1165,12 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _db_generator_entry(cls, gg) -> dict[str, Any] | None:
         """Load and memoise the curated GraphGenerator YAML entry for `gg`.
 
-        Returns the raw entry dict (carrying ``procedure``, ``parameters``, ``bindings``, …), or None when the type matches no curated entry — so codegen-only / unknown generators don't trigger resolver errors at load.
+        Returns the raw entry dict (carrying ``procedure``, ``parameters``, ``bindings``, …), or None when the type matches no curated entry — so codegen-only / unknown generators don't trigger resolver errors at load. A type several entries answer to raises and caches nothing.
         """
+        import yaml
+
+        from tvbo.data.registry import resolve as registry_resolve
+
         gtype = getattr(gg, "type", None)
         if not gtype:
             return None
@@ -915,12 +1178,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if key in cls._GG_ENTRY_CACHE:
             return cls._GG_ENTRY_CACHE[key]
         try:
-            import yaml
-
-            from tvbo.data.registry import resolve as registry_resolve
-
             entry_path = registry_resolve("GraphGenerator", key)
-        except (FileNotFoundError, ValueError, RuntimeError):
+        except FileNotFoundError:
             cls._GG_ENTRY_CACHE[key] = None
             return None
         with open(entry_path) as f:
@@ -1137,8 +1396,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _resolve_from_data_file(self, source_dir: str | Path | None) -> None:
         """Populate self from a companion .h5/.zarr sidecar referenced by ``self.data_file``."""
         data_file = Path(self.data_file)
+        base = Path(source_dir) if source_dir else Path.cwd()
         if not data_file.is_absolute():
-            base = Path(source_dir) if source_dir else Path.cwd()
             data_file = (base / data_file).resolve()
         from tvbo.data.network_io import load_network, read_embedded_metadata
 
@@ -1159,10 +1418,319 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         store = getattr(loaded, "_store", None)
         if store is not None:
             self._store = store
-        loaded_mesh = getattr(loaded, "mesh", None)
-        if loaded_mesh is not None and getattr(self, "mesh", None) is None:
-            self.mesh = loaded_mesh
+        self._take_unstated(loaded)
         self._resident().update(loaded._resident())
+        self._take_declarations(loaded, with_arrays=False)
+        for _, record, slot, _ in csv_link_slots(self):
+            setattr(record, slot, None)  # the record data_file names holds its CSV links, and the store reads them
+        self._read_files_from(base)
+
+    def _read_files_from(self, folder: Path) -> None:
+        """Note that ``data_file``, as it names it now, and each CSV this network's records name were read relative to *folder*, which a record of this network written into another folder then names (:meth:`_naming_files_from`)."""
+        object.__setattr__(self, "_files_read", (str(self.data_file), Path(folder).resolve()))
+
+    @contextmanager
+    def _naming_files_from(self, folder: Path | None):
+        """Within the block, ``data_file`` and each CSV this network's records name (:func:`~tvbo.data.matrix_io.csv_link_slots`) name the file they were read at as a record written into *folder* names it (:func:`_reference_from`). Nothing changes for *folder* ``None``, for a network read from no file or whose ``data_file`` was assigned since, and for a name that is absolute."""
+        read = getattr(self, "_files_read", None)
+        named = []
+        if folder is not None and read is not None and read[0] == str(self.data_file):
+            named = [(self, "data_file"), *((record, slot) for _, record, slot, _ in csv_link_slots(self))]
+        written = [getattr(record, slot) for record, slot in named]
+        for (record, slot), name in zip(named, written, strict=True):
+            if not Path(str(name)).is_absolute():
+                setattr(record, slot, _reference_from(Path(folder).resolve(), (read[1] / str(name)).resolve()))
+        try:
+            yield
+        finally:
+            for (record, slot), name in zip(named, written, strict=True):
+                setattr(record, slot, name)
+
+    def _take_unstated(self, source: "Network") -> None:
+        """Take each slot of *source*'s record that this network leaves unset or at its default, and each entry of a keyed slot (``parameters``, ``coupling``, ...) that it does not hold or holds as the default conduction speed, so a network read through a record keeps what the record states: its ``label``, ``bids``, ``parcellation``, ``tractogram``, a surface's ``mesh``, ``parent_network`` and ``node_mapping``. ``data_file`` stays this network's own reference."""
+        import copy
+        import dataclasses
+
+        defaults = {"conduction_speed": _default_conduction_speed()}
+        for field in dataclasses.fields(tvbo_datamodel.Network):
+            theirs = getattr(source, field.name, None)
+            if field.name == "data_file" or _is_unset(theirs):
+                continue
+            mine = getattr(self, field.name, None)
+            if isinstance(mine, dict):
+                for key, value in theirs.items():
+                    if mine.get(key) in (None, defaults.get(key)):
+                        mine[key] = copy.deepcopy(value)
+            elif _is_unset(mine) or mine == field.default:
+                setattr(self, field.name, copy.deepcopy(theirs))
+
+    def _stored_square_layers(self) -> list[tuple[str, int]]:
+        """The name and the side of each square layer the companion's header reports, which reads no value; a route to another network is left out, since its matrix runs over that network's nodes as well, and so is a layer that is not square. Empty without a companion that reports shapes."""
+        store = getattr(self, "_store", None)
+        if store is None or not hasattr(store, "info"):
+            return []
+        routes = {str(_edge_slot(edge, "label")).lower() for edge in self.edges or [] if _is_route(edge)}
+        try:
+            names = [name for name in store.names if str(name).lower() not in routes]
+        except (AttributeError, OSError, KeyError):
+            return []
+        layers = []
+        with store if hasattr(store, "__enter__") and names else nullcontext():
+            for name in names:
+                try:
+                    shape = tuple(store.info(name).shape)
+                except (KeyError, OSError):
+                    continue
+                if len(shape) == 2 and shape[0] == shape[1]:
+                    layers.append((name, shape[0]))
+        return layers
+
+    def _check_stored_node_count(self) -> None:
+        """Refuse a node list whose length is not the side of a layer the companion stores for these nodes (:meth:`_stored_square_layers`).
+
+        A sidecar that lists fewer nodes than its matrices have rows would otherwise load, and a run on it would integrate every stored node under the shorter list. A network that lists no node is not checked, and one whose nodes are placeholders (made up from a count or the one-node default) is told that it lists none.
+        """
+        n = len(self.nodes or [])
+        if not n:
+            return
+        for name, side in self._stored_square_layers():
+            if side != n:
+                listed = (
+                    f"lists no node of its own ({n} placeholder node(s))"
+                    if getattr(self, "_placeholder_nodes", False)
+                    else f"lists {n} node(s)"
+                )
+                held = (
+                    " Its `node_selection` is marked applied, so the stored layers have to be the selected ones already: `save` writes them."
+                    if getattr(getattr(self, "node_selection", None), "applied", None)
+                    else ""
+                )
+                raise ValueError(
+                    f"This network {listed} and its companion {Path(self._store._path).name} stores the layer {name!r} as {side} x {side}. A node list and the layers it indexes have one length; to take some of a stored network's nodes, declare `node_selection`.{held}"
+                )
+
+    def _listed_labels(self) -> list[tuple] | None:
+        """The ``(label, id)`` of each node this network lists itself, each with an ``id``, before a source delivers its own, the label ``None`` where the node states none; ``None`` when it lists none (placeholders made up from a count, or no node at all)."""
+        if not getattr(self, "_declares_its_nodes", False) or getattr(self, "_placeholder_nodes", False) or not self.nodes:
+            return None
+        return [(node.label, node.id) for node in self.nodes]
+
+    def _source_spelling(self) -> str:
+        """The source of this network's nodes as a message names it: the slot it names, as the recipe spells it, else the curated network of its parcellation."""
+        return self._named_source() or "the curated network of its `parcellation`"
+
+    def _display_name(self) -> str:
+        """The name a message gives this network: its ``label``, else its atlas's name, else the source it names."""
+        atlas = getattr(getattr(self, "parcellation", None), "atlas", None)
+        return str(getattr(self, "label", None) or getattr(atlas, "name", None) or self._named_source() or "This network")
+
+    def _keep_stated_count(self) -> None:
+        """Take the ``number_of_nodes`` this network states beside its source as the number of the source's nodes it keeps.
+
+        All of them when the count is the source's, or states none. A random subset of that many when it is smaller, drawn here from the ``execution.random_seed`` of the experiment building the network (:func:`drawing_from`), and kept as the ``node_selection`` that names the drawn nodes, so a save lists their labels and its reload keeps the same nodes. A rebuild draws again (:meth:`_draws_a_subset`), from the count and the seed it is given then, so a ``--set`` of either draws the subset it names. A larger count is refused, naming both. Beside a ``node_selection`` the network declares, or a drawn one changed since, nothing is drawn: the selection names the nodes itself.
+        """
+        selection, count = getattr(self, "node_selection", None), getattr(self, "_stated_count", None)
+        if (selection is None and count is None) or (selection is not None and not self._draws_a_subset()):
+            return
+        carried = [str(label) for label in self.node_labels]
+        count = count or len(carried)
+        if count > len(carried):
+            raise ValueError(
+                f"This network states `number_of_nodes: {count}`, and {self._source_spelling()} has {len(carried)} nodes. Beside a source a count is the number of its nodes the network keeps, so it can be at most {len(carried)}."
+            )
+        keep = None
+        if count < len(carried):
+            drawn = np.sort(np.random.default_rng(_random_seed()).choice(len(carried), size=count, replace=False))
+            keep = [carried[i] for i in drawn]
+        self.node_selection = tvbo_datamodel.NodeSelection(keep=keep) if keep else None
+        object.__setattr__(self, "_drawn", (self.node_selection, keep) if keep else None)
+
+    def _check_kept_count(self) -> None:
+        """Refuse a ``number_of_nodes`` this network states beside its source when its ``node_selection`` keeps another number of the source's nodes, naming both: beside a source each is the number of the source's nodes the network keeps."""
+        count = getattr(self, "_stated_count", None)
+        if count is None or count == self.number_of_nodes:
+            return
+        held = getattr(self, "_selected_from", None)
+        of = f" of the {held[1]} nodes" if held else ""
+        raise ValueError(
+            f"This network states `number_of_nodes: {count}`, and its `node_selection` keeps {self.number_of_nodes}{of} of {self._source_spelling()}. Beside a source both are the number of its nodes the network keeps, so they agree: state {self.number_of_nodes}, or leave the count out."
+        )
+
+    def _check_listed_nodes(self, listed: list[tuple] | None) -> None:
+        """Refuse a node list, each node with an ``id``, that this network wrote beside the source it read (:meth:`_listed_labels`), unless it is the nodes the network holds now: the source's, or the ones its ``node_selection`` keeps. Named with both counts and the first node that differs, by its label, or by its id where it states no label. A list keyed by label sets values on the source's nodes instead and is not checked here."""
+        kept = [str(label) for label in self.node_labels]
+        if listed is None or [_label_or_id(*node) for node in listed] == kept:
+            return
+        at = next(
+            (i for i, (node, theirs) in enumerate(zip(listed, kept, strict=False)) if _label_or_id(*node) != theirs), None
+        )
+        differs = ""
+        if at is not None:
+            label, node_id = listed[at]
+            mine = f"{str(label)!r}" if label is not None else f"the node with id {node_id} and no label"
+            differs = f"; node {at} is {mine} in the list and {kept[at]!r} in the source"
+        raise ValueError(
+            f"This network lists {len(listed)} node(s) beside {self._source_spelling()}, which gives {len(kept)}{differs}. A node list beside a source has to be the source's nodes, or the ones its `node_selection` keeps; to set values on some of the source's nodes, key them by label."
+        )
+
+    def _labels_beside_applied_selection(self) -> list[str] | None:
+        """The labels of the nodes this record lists beside a ``node_selection`` it marks applied, which are the nodes the resolution that wrote it kept; ``None`` without such a selection or beside placeholder nodes."""
+        selection = getattr(self, "node_selection", None)
+        if selection is None or not selection.applied or not self.nodes or getattr(self, "_placeholder_nodes", False):
+            return None
+        return [str(label) for label in self.node_labels]
+
+    def _companion_holds_dropped_nodes(self) -> bool:
+        """Whether this record marks its ``node_selection`` applied beside a ``data_file`` companion that stores layers over more nodes than it lists: a dumped record naming the companion it was selected from, whose own nodes are then read again (:meth:`_resolve_from_data_file`) and selected from."""
+        selection = getattr(self, "node_selection", None)
+        if selection is None or not selection.applied or not getattr(self, "data_file", None):
+            return False
+        n = len(self.nodes or [])
+        return any(side > n for _, side in self._stored_square_layers())
+
+    def _carried_names(self, labels, carried: list[str]) -> list:
+        """Each of *labels* as the label of the node it names among *carried*: itself when a node carries it, else the node it names through :meth:`region_alias_map`, as a ``by_label`` reconciliation matches it, else ``None``."""
+        known = set(carried)
+        aliases = self.region_alias_map() if any(label not in known for label in labels) else {}
+        return [label if label in known else aliases.get(label) for label in labels]
+
+    def _selected_positions(self, selection, carried: list[str]) -> list[int]:
+        """The positions among *carried*, this network's node labels in order, of the nodes *selection* keeps.
+
+        A label is matched as :meth:`_carried_names` matches it. Raises for a selection that states both or neither of ``keep`` and ``drop``, a label that names no node (with the labels the network carries, or the nearest ones on a large network), a label listed twice or naming several nodes, and a selection that leaves no node.
+        """
+        from collections import Counter
+
+        from tvbo.utils import labels_offered
+
+        keep, drop = [str(k) for k in selection.keep or []], [str(k) for k in selection.drop or []]
+        if bool(keep) == bool(drop):
+            stated = "both `keep` and `drop`" if keep else "neither `keep` nor `drop`"
+            raise ValueError(f"`node_selection` states {stated}; a selection names the nodes to keep or the nodes to drop.")
+        slot, listed = ("keep", keep) if keep else ("drop", drop)
+        named = self._carried_names(listed, carried)
+        unknown = [label for label, node in zip(listed, named, strict=True) if node is None]
+        if unknown:
+            raise ValueError(
+                f"`node_selection.{slot}` names {unknown}, which this network does not carry. It carries {len(carried)} node(s): {labels_offered(unknown, carried)}."
+            )
+        times_named, times_carried = Counter(named), Counter(carried)
+        repeated = sorted({label for label, node in zip(listed, named, strict=True) if times_named[node] > 1})
+        if repeated:
+            raise ValueError(f"`node_selection.{slot}` lists {repeated} more than once.")
+        shared = sorted(node for node in named if times_carried[node] > 1)
+        if shared:
+            raise ValueError(
+                f"`node_selection.{slot}` names {shared}, a label several nodes of this network carry, so it selects no one node."
+            )
+        chosen = set(named)
+        positions = [i for i, label in enumerate(carried) if (label in chosen) == bool(keep)]
+        if not positions:
+            raise ValueError(f"`node_selection` leaves no node of the {len(carried)} this network carries.")
+        return positions
+
+    def _apply_node_selection(self, generated: bool = False, recorded: list[str] | None = None) -> None:
+        """Restrict this network to the nodes its ``node_selection`` keeps, once (``NodeSelection``).
+
+        Runs after the source has delivered nodes and arrays and before a declared node, a template, a transform or a reference reads them, so everything downstream sees the selected network only; nothing has been read through ``used:`` or computed by a ``producer:`` yet, since both are read on first access. The kept nodes stay in their order and are renumbered from 0 on copies, so node and edge objects a caller passed in keep their own numbering; an edge listed between two nodes is renumbered with them and goes when either of its nodes goes; every resident edge matrix, edge-parameter matrix and ``nodes/<name>`` array is cut to the kept nodes, but an array the network declares as a network parameter (a vocabulary, :func:`~tvbo.data.matrix_io.declared_arrays`), and the companion store is read through :class:`~tvbo.data.matrix_io.NodeSelectedStore` from here on.
+
+        The selection is then marked ``applied`` and stays on the record, so a save, a kit or a dump states how the network was derived. One that arrives marked ``applied`` beside nodes that are already the selected ones (a save, a kit) selects nothing again; beside a source that delivers the nodes it drops (a dumped record naming the unselected companion, a curated network, an atlas) it is applied again by label, and the nodes it then keeps have to be *recorded*, the ones the record lists: a record that lists a node the selection leaves out is refused as marked ``applied`` by hand, and any other difference as written from a source that has changed since. On a graph *generated* by this resolution it is refused: a generator builds as many nodes as ``number_of_nodes`` states, which after a selection is the kept count, so the graph that was selected from cannot be built again. Refused, beside what :meth:`_selected_positions` refuses: a network carrying a mesh or a route to another network, whose arrays run over more than these nodes, and a node declared by label that the selection drops.
+        """
+        selection = getattr(self, "node_selection", None)
+        if selection is None:
+            return
+        carried = [str(label) for label in self.node_labels]
+        if selection.applied and generated:
+            raise ValueError(
+                f"`node_selection` is marked applied on a generated graph. The graph is generated again on load with `number_of_nodes` ({self.number_of_nodes}), the count the selection kept, so the graph it selected from cannot be built again. `Network.save` writes the selected network with its arrays; a dumped record of a selected generated graph does not load back."
+            )
+        if selection.applied:
+            listed = [str(label) for label in [*(selection.keep or []), *(selection.drop or [])]]
+            named = self._carried_names(listed, carried)
+            present = {node for node in named if node is not None}
+            if (None not in named and present == set(carried)) if selection.keep else not present:
+                self._check_recorded_nodes(recorded)
+                return
+        if not carried:
+            raise ValueError("`node_selection` is declared on a network that carries no node to select from.")
+        positions = self._selected_positions(selection, carried)
+        resident, store = self._resident(), getattr(self, "_store", None)
+        routed = [str(_edge_slot(edge, "label")) for edge in self.edges or [] if _is_route(edge)]
+        if routed:
+            raise ValueError(
+                f"`node_selection` cannot restrict a network with a route to another network ({routed[0]!r}): its matrix runs over that network's nodes as well."
+            )
+        if getattr(self, "mesh", None) is not None or any(key.startswith("mesh/") for key in [*resident, *self._lazy_paths()]):
+            raise ValueError(
+                "`node_selection` cannot restrict a network that carries a mesh: its vertices and faces are not per-node arrays."
+            )
+        dropped = {carried[i] for i in set(range(len(carried))) - set(positions)}
+        declared = [
+            spec["label"] for spec in getattr(self, "_declared_node_specs", None) or [] if str(spec["label"]) in dropped
+        ]
+        if declared:
+            raise ValueError(
+                f"Nodes {declared} are declared by label and dropped by `node_selection`; a node that is left out takes no declaration."
+            )
+        import copy
+
+        from tvbo.data.matrix_io import NodeSelectedStore, select_edge_nodes, select_node_entries
+
+        nodes, edges, n = list(self.nodes), list(self.edges or []), len(carried)
+        undo = {"nodes": nodes, "edges": edges, "number_of_nodes": self.number_of_nodes}
+        was_at, now_at = self.node_index_map(), {old: new for new, old in enumerate(positions)}
+        kept_edges = []
+        for edge in edges:
+            if _is_listed_edge(edge) and edge.source is not None and edge.target is not None:
+                ends = [now_at.get(was_at.get(end, end)) for end in (edge.source, edge.target)]
+                if None in ends:
+                    continue
+                edge = copy.copy(edge)
+                edge.source, edge.target = ends
+            kept_edges.append(edge)
+        kept_nodes = [copy.copy(nodes[old]) for old in positions]
+        for new, node in enumerate(kept_nodes):
+            node.id = new
+        self.nodes, self.edges, self.number_of_nodes = kept_nodes, kept_edges, len(positions)
+        whole = {path for path, (scope, _) in declared_arrays(self).items() if scope == "network"}
+        for key in list(resident):
+            if key.startswith("edges/"):
+                resident[key] = select_edge_nodes(resident[key], positions, n, f"the array `{key}`")
+            elif key not in whole:
+                resident[key] = select_node_entries(resident[key], positions, n, f"the array `{key}`")
+        if store is not None:
+            self._store = NodeSelectedStore(store, positions, n)
+        selection.applied = True
+        warnings.warn(f"{self._display_name()}: keeps {len(positions)} of its {n} nodes.", stacklevel=2)
+        object.__setattr__(self, "_node_selection_undo", undo)
+        object.__setattr__(self, "_selected_from", (positions, n))
+        self._check_recorded_nodes(recorded, dropped)
+
+    def _check_recorded_nodes(self, recorded: list[str] | None, left_out=frozenset()) -> None:
+        """Refuse a selection marked applied whose kept nodes are not the *recorded* ones the record lists; nothing to check when it lists none. A record that lists a node the selection leaves out (*left_out*) holds no node to apply it to: ``applied`` set by hand, or a selection changed on a network read from a saved selection. Any other difference means the source has changed since the record was written. Either is named."""
+        kept = [str(label) for label in self.node_labels]
+        if recorded is None or kept == recorded:
+            return
+        listed_left_out = [label for label in recorded if label in left_out]
+        if listed_left_out:
+            raise ValueError(
+                f"`node_selection` is marked applied, and this record lists {listed_left_out[:6]}, which the selection leaves out. The nodes listed beside `applied: true` are the selected ones, so the selection cannot be changed on them: a recipe leaves `applied` unset, and a saved selected network is selected again from its source network."
+            )
+        lost, gained = [k for k in recorded if k not in kept], [k for k in kept if k not in recorded]
+        raise ValueError(
+            f"`node_selection` is marked applied beside the {len(recorded)} node(s) this record lists, and applied to what its source delivers now it keeps {len(kept)}: {len(lost)} listed and no longer given {lost[:6]}, {len(gained)} given and not listed {gained[:6]}. The record was written from a source that has changed since."
+        )
+
+    def _undo_node_selection(self) -> None:
+        """Put back the node and edge lists a selection applied on this object replaced, and mark it unapplied. A network that was loaded with its selection already applied holds nothing to put back and is left as it is."""
+        undo = getattr(self, "_node_selection_undo", None)
+        if undo is None:
+            return
+        self.nodes, self.edges, self.number_of_nodes = undo["nodes"], undo["edges"], undo["number_of_nodes"]
+        if getattr(self, "node_selection", None) is not None:
+            self.node_selection.applied = None
+        object.__setattr__(self, "_node_selection_undo", None)
+        object.__setattr__(self, "_selected_from", None)
 
     def _resolve_from_bids_dir(self, source_dir: str | Path | None) -> None:
         """Populate self from a BEP017 BIDS directory at ``self.bids_dir``: its nodes and its matrices. The directory declares no edges, so the ones this network authored stay."""
@@ -1181,6 +1749,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             atlas=atlas,
             structural_measures=list(self.structural_measures) if self.structural_measures else None,
             observational_measures=list(self.observational_measures) if self.observational_measures else None,
+            primary_weight=self.primary_weight,
         )
         for attr in ("nodes", "number_of_nodes"):
             val = getattr(loaded, attr, None)
@@ -1228,7 +1797,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                             pass
 
     def _resolve_from_parcellation(self) -> None:
-        """Populate self from a parcellation + tractogram normative DB lookup."""
+        """Populate self from a parcellation + tractogram normative DB lookup.
+
+        The curated network the database holds for them and the network's other BIDS entities (:func:`_normative_network`) gives the weights, the lengths and the labelled, positioned nodes, and each array it declares as its own, with its declaration (:meth:`_take_declarations`), such as each Schaefer2018 parcel's functional network. Each node's hemisphere then comes from its atlas's terminology (:meth:`_declare_hemispheres`). So the network describes itself as the atlas does, and a save of it reads back without the atlas. A lookup that matches no curated network is refused, naming the entities and what the database holds nearest (:func:`_no_curated_network_with`), and so is one that matches several, naming them and the entities that tell them apart (:func:`_several_curated_networks_with`), and a parcellation that names no atlas. It runs only on a network that lists no nodes of its own (:meth:`_resolve`), so the nodes it finds are at most the placeholders of a count, which the curated network's replace.
+        """
         parc = self.parcellation
         atlas = parc.get("atlas") if isinstance(parc, dict) else getattr(parc, "atlas", None)
         atlas_name = None
@@ -1239,7 +1811,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 if iri:
                     atlas_name = record_name(iri, "BrainAtlas")
         if not atlas_name:
-            return  # No atlas → nothing to resolve.
+            raise ValueError(
+                "This network names a parcellation with no atlas, so it names no curated network, and lists no nodes of its own: name the atlas (`parcellation: {atlas: {name: ...}}`), or list the nodes (`nodes`)."
+            )
 
         tractogram = self.tractogram
         trk_name = None
@@ -1251,24 +1825,18 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                     trk_name = local_name(iri)
         trk_name = trk_name or "dTOR"
 
-        # Optional BIDS disambiguation (seg-, scale-) when the same atlas is published at multiple resolutions or segmentations.
-        bids_meta = getattr(self, "bids", None)
-        seg = scale = None
-        if isinstance(bids_meta, dict):
-            seg = bids_meta.get("segmentation")
-            scale = bids_meta.get("scale")
-        elif bids_meta is not None:
-            seg = getattr(bids_meta, "segmentation", None)
-            scale = getattr(bids_meta, "scale", None)
-        if scale is not None:
-            scale = str(scale)
+        from tvbo.data.cohort import short_entities
 
-        try:
-            w_arr, l_arr, sc_nodes = get_normative_connectome_data(
-                atlas_name, trk_name, segmentation=seg, scale=scale, with_nodes=True
-            )
-        except FileNotFoundError:
-            return
+        # The network's other BIDS entities (seg-, scale-, desc-, ...) tell apart the curated networks of one atlas and tractogram.
+        bids_meta = getattr(self, "bids", None)
+        entities = {
+            **(short_entities(bids_meta) if bids_meta is not None else {}),
+            "atlas": str(atlas_name),
+            "rec": str(trk_name),
+        }
+        normative = _normative_network(entities)
+        w_arr, l_arr = _normative_layers(normative)
+        sc_nodes = normative.nodes or None
 
         n_nodes = w_arr.shape[0]
         if l_arr is not None and l_arr.shape[0] != n_nodes:
@@ -1284,18 +1852,135 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             w_arr = w_arr[:n_nodes, :n_nodes]
             l_arr = l_arr[:n_nodes, :n_nodes]
 
-        if not self.nodes or len(self.nodes) != n_nodes:
-            if sc_nodes and len(sc_nodes) >= n_nodes:
-                # Preserve the sidecar's region labels + MNI positions so the network is keyed by region (alignment by label, never by position) for downstream by_label / crosswalk consumers. Slice in case a weight/length size mismatch truncated n_nodes above.
-                self.nodes = sc_nodes[:n_nodes]
-            else:
-                self.nodes = [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(n_nodes)]
+        if sc_nodes and len(sc_nodes) >= n_nodes:
+            # Preserve the sidecar's region labels + MNI positions so the network is keyed by region (alignment by label, never by position) for downstream by_label / crosswalk consumers. Slice in case a weight/length size mismatch truncated n_nodes above.
+            self.nodes = sc_nodes[:n_nodes]
+        else:
+            self.nodes = [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(n_nodes)]
         if not self.edges:
             self.edges = []
         self.number_of_nodes = n_nodes
         self.set_array("edges/weight", w_arr)
         if l_arr is not None:
             self.set_array("edges/length", l_arr)
+        self._take_declarations(normative, with_arrays=True)
+        self._declare_hemispheres()
+
+    def _take_declarations(self, source: "Network", *, with_arrays: bool) -> None:
+        """Declare here each array *source* declares as its own (:func:`~tvbo.data.matrix_io.declared_arrays`), and the vocabulary each one's ``levels`` names with the vocabularies above it (:func:`_vocabularies_from`), wherever this network declares no parameter of that name; with *with_arrays*, also hold each such array, read from *source*, for a network that keeps none of *source*'s store."""
+        import copy
+
+        vocabularies = source.parameters or {}
+        for path, (scope, param) in declared_arrays(source).items():
+            owner = self._template_parameters() if scope == "node" else self.parameters
+            owner.setdefault(param.name, copy.deepcopy(param))
+            for name in _vocabularies_from(getattr(param, "levels", None), vocabularies):
+                self.parameters.setdefault(name, copy.deepcopy(vocabularies[name]))
+            if with_arrays and (value := source.array(path)) is not None:
+                self.set_array(path, value)
+
+    def _template_parameters(self) -> dict:
+        """The parameters of this network's ``node_template``, which is made when the network has none."""
+        if self.node_template is None:
+            self.node_template = tvbo_datamodel.NodeTemplate()
+        if self.node_template.parameters is None:
+            self.node_template.parameters = {}
+        return self.node_template.parameters
+
+    def _declare_hemispheres(self) -> None:
+        """Declare each node's hemisphere, from the entity of its atlas's terminology its label names, among that entity's ``alternateName`` entries as well: the categorical ``hemisphere`` on ``node_template``, whose codes ``nodes/hemisphere`` holds, into the vocabulary ``hemispheres``, the hemispheres a terminology entity can have (``left``, ``right``, ``both``). Nothing is declared when a node names no entity with a hemisphere, or when the network has a parameter ``hemisphere`` or ``hemispheres`` already."""
+        from tvbo.datamodel.pydantic import Hemisphere
+
+        template = self.node_template.parameters if self.node_template is not None else None
+        if "hemispheres" in self.parameters or "hemisphere" in (template or {}):
+            return
+        named = {}
+        for key, entity in self._atlas_terminology_entities().items():
+            for name in [getattr(entity, "name", None) or key, *(getattr(entity, "alternateName", None) or [])]:
+                named.setdefault(str(name), getattr(entity, "hemisphere", None))
+        sides = [named.get(str(label)) for label in self.node_labels]
+        if not sides or None in sides:
+            return
+        vocabulary = [side.value for side in Hemisphere]
+        self.set_array("nodes/hemisphere", np.array([vocabulary.index(str(side)) for side in sides], dtype="int32"))
+        self.parameters["hemispheres"] = tvbo_datamodel.Parameter(
+            name="hemispheres", value=vocabulary, description="The hemispheres a region of the atlas lies in."
+        )
+        self._template_parameters()["hemisphere"] = tvbo_datamodel.Parameter(
+            name="hemisphere",
+            measure="nodes/hemisphere",
+            levels="hemispheres",
+            description="The hemisphere the region lies in, as its atlas's terminology gives it.",
+        )
+
+    def _check_levels(self) -> None:
+        """Refuse a parameter whose ``levels`` names no network parameter, naming both, since its values are codes into nothing, and then each ``parent`` that gives the entries of its vocabulary no parents (:meth:`_check_parents`)."""
+        for param in self._categorical_parameters():
+            levels = getattr(param, "levels", None)
+            if levels and levels not in (self.parameters or {}):
+                raise ValueError(
+                    f"The parameter {param.name!r} gives its values as codes into the vocabulary {levels!r} (`levels`), and the network has no parameter {levels!r}. A vocabulary is a network parameter whose `value` or `measure` lists its entries."
+                )
+        self._check_parents()
+
+    def _check_parents(self) -> None:
+        """Refuse a vocabulary's ``parent`` that names no network parameter with ``levels``, or whose codes are not one per entry of the vocabulary, each ``-1`` or an entry of the vocabulary their ``levels`` names, naming the parameters, the counts and the codes outside, and a code that is no finite number with the entry it is given to. Entries listed by an array the network does not hold are left to whatever reads them; a network is checked when it is resolved and when it is saved."""
+        params = self.parameters or {}
+        for vocabulary in self._categorical_parameters():
+            if not getattr(vocabulary, "parent", None):
+                continue
+            codes = params.get(vocabulary.parent)
+            if codes is None or not getattr(codes, "levels", None):
+                raise ValueError(
+                    f"The vocabulary {vocabulary.name!r} names {vocabulary.parent!r} as the parameter giving its entries their parents (`parent`), and the network has no parameter {vocabulary.parent!r} with `levels`, the vocabulary those parents are entries of."
+                )
+            entries, given, parents = (self._entries(param) for param in (vocabulary, codes, params[codes.levels]))
+            if entries is None or given is None or parents is None:
+                continue
+            if len(given) != len(entries):
+                raise ValueError(
+                    f"The parameter {codes.name!r} gives {len(given)} parents to the {len(entries)} entries of the vocabulary {vocabulary.name!r} (`parent`); it holds one code per entry, -1 for an entry with no parent."
+                )
+            for i, code in enumerate(given):
+                if not isinstance(code, numbers.Real) or not np.isfinite(code):
+                    entry = entries[i].decode() if isinstance(entries[i], bytes) else str(entries[i])
+                    value = code.item() if isinstance(code, np.generic) else code
+                    raise ValueError(
+                        f"The parameter {codes.name!r} gives the entry {entry!r} ({i}) of the vocabulary {vocabulary.name!r} the parent {value!r}, which is no code; a parent is a code from 0 to {len(parents) - 1}, or -1 for none."
+                    )
+            outside = sorted({float(code) for code in given if code != int(code) or not -1 <= code < len(parents)})
+            if outside:
+                raise ValueError(
+                    f"The parameter {codes.name!r} holds the codes {outside}, which name no entry of the {len(parents)} of its vocabulary {codes.levels!r}; a parent is a code from 0 to {len(parents) - 1}, or -1 for none."
+                )
+
+    def _categorical_parameters(self) -> list:
+        """The network's parameters and its ``node_template``'s, where ``levels`` and ``parent`` are declared."""
+        template = self.node_template.parameters if self.node_template is not None else None
+        return [param for _, param in [*named_entries(self.parameters), *named_entries(template)]]
+
+    def _entries(self, param) -> list | None:
+        """The entries of the network parameter *param*: its ``value`` when that is a list, else the array its ``measure`` names, ``None`` when the network holds no such array."""
+        value = getattr(param, "value", None)
+        if isinstance(value, (list, tuple, np.ndarray)):
+            return list(value)
+        held = self.array(param.measure) if getattr(param, "measure", None) else None
+        return None if held is None else list(np.asarray(held))
+
+    def _check_per_node_lengths(self) -> None:
+        """Refuse an array declared on ``node_template`` (:func:`~tvbo.data.matrix_io.declared_arrays`) whose length, from the array in hand or the companion's header, is not the node count, naming the array, its length and the count. Node ``i`` takes its entry ``i``, so an array of another length gives some node another's value or none. An array the network declares on itself, such as a vocabulary, runs over no nodes and has no length rule, and a declared array the network does not hold is left to whatever reads it."""
+        n = len(self.nodes or [])
+        for path, (scope, param) in declared_arrays(self).items():
+            if scope != "node":
+                continue
+            try:
+                shape = self.matrix_info(path).shape
+            except (KeyError, OSError):
+                continue
+            if not shape or shape[0] != n:
+                raise ValueError(
+                    f"The array {path}, which `node_template` declares as `{param.name}`, holds {shape[0] if shape else 0} values, and the network has {n} nodes. An array on `node_template` gives node i its entry i, so it has one entry per node; declare it as a network parameter if it does not run over the nodes."
+                )
 
     # Multi-scale resolution                                               #
     @staticmethod
@@ -1354,11 +2039,18 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _expand_node_template(self) -> None:
         """Apply ``node_template`` to every materialized node.
 
-        The template is a partial ``Node``, merged into each node by :func:`_merge_partial_node` with the node's own values winning: a keyed collection (``parameters``, ``state``, ``events``) receives each template key the node does not declare, and any other field (``subnetwork``, ``dynamics`` …) is filled only where the node leaves it unset, so heterogeneous variants can override individual regions. A no-op when no template was authored.
+        The template is a ``NodeTemplate``, merged into each node by :func:`_merge_partial_node` with the node's own values winning: a keyed collection (``parameters``, ``state``, ``events``) receives each template key the node does not declare, and any other field (``subnetwork``, ``dynamics`` …) is filled only where the node leaves it unset, so heterogeneous variants can override individual regions. A parameter that names its array by ``measure`` is not merged: its array runs over the nodes, node ``i`` taking entry ``i``, and is read as ``network.nodes.<name>``, not copied onto each node. A no-op when no template was authored.
         """
         spec = getattr(self, "_node_template_spec", None)
         if not spec or not self.nodes:
             return
+        if spec.get("parameters"):
+            kept = [
+                (name, p)
+                for name, p in named_entries(spec["parameters"])
+                if not (p.get("measure") if isinstance(p, dict) else getattr(p, "measure", None))
+            ]
+            spec = {**spec, "parameters": dict(kept) if isinstance(spec["parameters"], dict) else [p for _, p in kept]}
         for node in self.nodes:
             _merge_partial_node(node, spec, override=False)
 
@@ -1383,21 +2075,23 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _resolve_parameter_sources(self, source_dir: str | Path | None) -> None:
         """Populate network ``parameters`` declared via ``source`` + ``measure``.
 
-        A parameter such as ``cortical_gradient`` may point at a curated Network (``source``: an IRI / path) and name a per-node ``measure`` carried by that network's nodes (``measure``: e.g. ``megalpha``). This loads the referenced network and gathers the per-node measure values into a 1-D array stored on ``parameter.value``. A no-op for ordinary scalar parameters.
+        A parameter such as ``cortical_gradient`` may point at a curated Network (``source``: an IRI / path) and name a per-node ``measure`` carried by that network's nodes (``measure``: e.g. ``megalpha``). This loads the referenced network and gathers the per-node measure values into a 1-D array on this network's nodes (:meth:`_measure_on_own_nodes`), stored on ``parameter.value``. A no-op for ordinary scalar parameters, and for a parameter whose ``source`` is the CSV a CSV save wrote for its array, which is this network's own and is read through its companion.
         """
         params = getattr(self, "parameters", None)
         if not params:
             return
-        for param in params.values():
+        for name, param in params.items():
             source = getattr(param, "source", None)
             measure = getattr(param, "measure", None)
-            if not source or not measure:
+            if not source or not measure or is_csv(str(source)):
                 continue
             if isinstance(getattr(param, "value", None), (list, np.ndarray)):
                 continue  # already materialised
-            values = self._load_measure_from_source(source, measure, source_dir)
-            if values is not None:
-                param.value = values
+            found = self._load_measure_from_source(source, measure, source_dir)
+            if found is not None:
+                param.value = self._measure_on_own_nodes(
+                    *found, what=f"network parameter {name!r} (`source: {source}`)", measure=measure
+                )
 
     @classmethod
     def _load_measure_from_source(
@@ -1405,11 +2099,11 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         source: str,
         measure: str,
         source_dir: str | Path | None = None,
-    ) -> np.ndarray | None:
+    ) -> tuple[list, np.ndarray] | None:
         """Load a per-node ``measure`` array from a referenced network ``source``.
 
         ``source`` is resolved as (1) a curated-network IRI via the registry, (2) a path relative to ``source_dir``, or (3) an absolute path. The named measure is read from each node's ``parameters[measure]`` value.
-        Returns a 1-D ``ndarray`` (node order preserved), or ``None`` when the source cannot be resolved.
+        Returns the referenced network's node labels and the 1-D ``ndarray`` of their values, in its node order, or ``None`` when the source cannot be resolved.
         """
         path = cls._resolve_network_iri(source)
         if path is None:
@@ -1432,7 +2126,27 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             if not isinstance(val, (int, float)) or isinstance(val, bool):
                 return None
             vals.append(float(val))
-        return np.asarray(vals) if vals else None
+        return (net.node_labels, np.asarray(vals)) if vals else None
+
+    def _measure_on_own_nodes(self, labels, values, *, what: str, measure: str) -> np.ndarray:
+        """*values*, one per node of the referenced network labelled *labels*, on this network's nodes.
+
+        By label, as written, when the referenced network carries every label of this one once, whatever the two counts: a network that carries some of its source's nodes (``node_selection``) or the same nodes in another order reads each node's own value. The values are taken in the referenced network's order only from a network with as many nodes that shares no label with this one (another nomenclature for the same nodes). Any other source is refused: one that lacks a label of this network, with both counts and the labels it lacks, also when it shares the others, and one that carries a label more than once.
+        """
+        own = [str(label) for label in self.node_labels]
+        at = {str(label): i for i, label in enumerate(labels)}
+        lacking = [label for label in own if label not in at]
+        if not lacking and len(at) == len(labels):
+            return np.asarray([values[at[label]] for label in own])
+        if len(values) == len(own) and not at.keys() & set(own):
+            return values
+        if lacking:
+            raise ValueError(
+                f"{what} reads {len(values)} values of {measure!r} for a network of {len(own)} nodes, and the referenced network has no node labelled {lacking[:6]}{', ...' if len(lacking) > 6 else ''}. A measure is read in the source's order only from a network with as many nodes that shares no label with this one; otherwise it is aligned by label."
+            )
+        raise ValueError(
+            f"{what} reads {len(values)} values of {measure!r} for a network of {len(own)} nodes, and the referenced network carries a label more than once, so the values cannot be aligned by label."
+        )
 
     # -- Backward-compat properties: conduction_speed, global_coupling_strength --
     @property
@@ -1638,7 +2352,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         structural_measures : list of str, optional
             Measures to use for structural network.
             First is used as weights, second (if present) as lengths.
-            If None, auto-discovered from available ``meas-*`` relmat files.
+            If None, the weights (the measure ``primary_weight`` names, else ``weight``) and a tract length from the folder's ``meas-*`` relmat files (:func:`_discover_bids_measures`), which refuses a folder whose measures do not include the weights.
         observational_measures : list of str, optional
             Measures to load as observational targets for optimization (e.g., ["correlation"] for FC). Stored in network._observations.
         **kwargs : Any
@@ -1655,10 +2369,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         ```python
         from tvbo import Network
 
-        # Auto-discover measures from directory
-        network = Network.from_bids("tvbo/database/networks/bids/dk_average")
-
-        # Or specify measures explicitly
+        # dk_average's weights are its streamline counts, so it names them
         network = Network.from_bids(
             "tvbo/database/networks/bids/dk_average",
             structural_measures=["streamlineCount", "tractLength"],
@@ -1674,7 +2385,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         bids_dir = Path(bids_dir)
 
         if structural_measures is None:
-            structural_measures = _discover_bids_measures(bids_dir)
+            structural_measures = _discover_bids_measures(bids_dir, kwargs.get("primary_weight"))
         if observational_measures is None:
             observational_measures = []
 
@@ -1795,8 +2506,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         bids_dir : str or Path
             Path to BEP017-compliant BIDS directory.
         structural_measures : list of str, optional
-            Measures for structural connectivity.
-            If None, auto-discovered from available ``meas-*`` relmat files.
+            Measures for structural connectivity, weights first and the tract length second.
+            If None, the weights (the measure ``primary_weight`` names, else ``weight``) and a tract length from the folder's ``meas-*`` relmat files (:func:`_discover_bids_measures`), which refuses a folder whose measures do not include the weights.
         observational_measures : list of str, optional
             Measures for observational targets (e.g., ["BoldCorrelation"]).
             If None, does not load observational data.
@@ -1813,16 +2524,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         >>> network = Network()
         >>> network.load_from_bids(
         ...     "tvbo/database/networks/bids/dk_average",
-        ... )
-        >>> network.load_from_bids(
-        ...     "tvbo/database/networks/bids/dk_average",
+        ...     structural_measures=["streamlineCount", "tractLength"],
         ...     observational_measures=["BoldCorrelation"],
         ... )
         """
         bids_dir = Path(bids_dir)
 
         if structural_measures is None:
-            structural_measures = _discover_bids_measures(bids_dir)
+            structural_measures = _discover_bids_measures(bids_dir, self.primary_weight)
 
         # Find relmat files
         relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(bids_dir.glob("*_relmat.tsv"))
@@ -2230,12 +2939,12 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     ) -> "Network":
         """Download a normative connectivity network from the tvbo platform.
 
-        Fetches the sidecar (YAML) and companion (HDF5) from the tvbo API and caches locally for subsequent loads.
+        Fetches the sidecar (YAML) and companion (HDF5) from the tvbo API and caches locally for subsequent loads. It hands out the one network the platform lists for *atlas* and *tractogram*, and refuses several, naming them. tvbo hands out no archived data (register AR1), so it reads the platform's listing with the networks the BIDS rename archived left out (:func:`_platform_networks`), and refuses an archived network the platform lists alone, by the id or the ``bids_filename`` the listing gives it, or once the name its sidecar's BIDS entities spell (:func:`~tvbo.data.converters.relmat_entities`) is an archived network's, with the refusal a lookup of its stem gets (:func:`~tvbo.data.registry.refuse_archived`): before anything is written to the cache, and again when the cache holds it from an earlier download. *atlas* is read as :meth:`from_db` reads one, so an older spelling of archived networks (``Schaefer1000``) is refused before the platform is asked, and an atlas the platform lists no network of raises naming the spellings it lists that match in any case (:func:`_no_platform_network`).
 
         Parameters
         ----------
         atlas : str
-            Atlas name (e.g., "DesikanKilliany", "Schaefer1000").
+            Atlas name (e.g., "DesikanKilliany", "Schaefer2018").
         tractogram : str
             Tractogram name (default: "dTOR").
         base_url : str
@@ -2247,54 +2956,62 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         -------
         Network
             Network loaded from platform (cached locally).
+
+        Raises:
+        -------
+        ValueError
+            When no network or several answer to *atlas* and *tractogram*, or only networks the BIDS rename archived do, or the one that answers is such a network.
         """
         import requests
+        import yaml as yaml_module
+        from bids.layout.writing import build_path
 
-        from tvbo.data.network_io import load_network
+        from tvbo.data.converters import relmat_entities
+        from tvbo.data.network_io import RELMAT_PATTERNS, load_network
 
         if cache_dir is None:
             cache_dir = Path.home() / ".tvbo" / "networks"
         cache_dir = Path(cache_dir).expanduser()
-        cache_dir.mkdir(parents=True, exist_ok=True)
 
         api = f"{base_url.rstrip('/')}/api/v1/networks"
 
-        # Find network by atlas + tractogram
-        resp = requests.get(api, params={"atlas": atlas, "tractogram": tractogram})
-        resp.raise_for_status()
-        matches = resp.json()
+        query = {"atlas": atlas, "tractogram": tractogram}
+        matches = _platform_networks(api, query)
         if not matches:
-            raise ValueError(f"No network found for atlas={atlas}, tractogram={tractogram}")
-        net_id = matches[0]["id"]
+            raise ValueError(_no_platform_network(api, query))
+        if len(matches) > 1:
+            raise ValueError(
+                f"Several networks found for atlas={atlas}, tractogram={tractogram}: "
+                f"{', '.join(str(match['id']) for match in matches)}; `from_platform` tells networks apart by atlas and tractogram alone, "
+                'so load the one meant by its IRI, `Network(iri="tvbo:networks/<id>")`, from a tvbo installation that holds its data file.'
+            )
+        net_id = str(matches[0]["id"])
 
-        # Check cache
         cached_yaml = cache_dir / f"{net_id}.yaml"
         cached_h5 = cache_dir / f"{net_id}.h5"
-        if cached_yaml.exists() and cached_h5.exists():
-            return load_network(cached_yaml)
+        cached = cached_yaml.exists() and cached_h5.exists()
+        if cached:
+            sidecar = yaml_module.safe_load(cached_yaml.read_text())
+        else:
+            r = requests.get(f"{api}/{net_id}/sidecar")
+            r.raise_for_status()
+            sidecar = yaml_module.safe_load(r.text)
+        if spelled := build_path(relmat_entities(sidecar), RELMAT_PATTERNS):
+            refuse_archived("Network", NETWORK_DIR.name, lambda old: old.lower() == Path(spelled).stem.lower())
 
-        # Download sidecar
-        r = requests.get(f"{api}/{net_id}/sidecar")
-        r.raise_for_status()
-        cached_yaml.write_text(r.text)
-
-        # Download binary companion
-        r = requests.get(f"{api}/{net_id}/data")
-        r.raise_for_status()
-        cached_h5.write_bytes(r.content)
-
-        # Patch data_file reference to point to local companion
-        import yaml as yaml_module
-
-        sidecar = yaml_module.safe_load(cached_yaml.read_text())
-        sidecar["data_file"] = cached_h5.name
-        cached_yaml.write_text(yaml_module.dump(sidecar, sort_keys=False))
-
+        if not cached:
+            r = requests.get(f"{api}/{net_id}/data")
+            r.raise_for_status()
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            cached_h5.write_bytes(r.content)
+            cached_yaml.write_text(yaml_module.dump({**sidecar, "data_file": cached_h5.name}, sort_keys=False))
         return load_network(cached_yaml)
 
     @classmethod
     def list_platform_networks(cls, base_url: str = TVBO_PLATFORM_URL, **filters) -> list[dict]:
-        """List available normative networks on the tvbo platform.
+        """List the normative networks the tvbo platform holds, those the BIDS rename archived left out (register AR1-a, :func:`_platform_networks`).
+
+        An atlas filter is read as :meth:`from_db` reads one, so an older spelling of archived networks is refused before the platform is asked, and filters the platform answers with archived networks alone are refused as a lookup of their stems is. Filters it answers with none give an empty list, as :meth:`list_db` gives one for entities no network carries.
 
         Parameters
         ----------
@@ -2306,14 +3023,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         Returns:
         -------
         list[dict]
-            List of network summaries.
-        """
-        import requests
+            List of network summaries, empty when the platform lists none for *filters*.
 
-        api = f"{base_url.rstrip('/')}/api/v1/networks"
-        resp = requests.get(api, params=filters)
-        resp.raise_for_status()
-        return resp.json()
+        Raises:
+        -------
+        ValueError
+            When *filters* name an older spelling of archived networks, or the platform answers them with archived networks alone.
+        """
+        return _platform_networks(f"{base_url.rstrip('/')}/api/v1/networks", filters)
 
     @classmethod
     def load(cls, source: str | Path | None = None, **entities) -> Union["Network", list["Network"]]:
@@ -2381,11 +3098,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         1. **By name** (existing): ``Network.from_db("DesikanKilliany")``
         2. **By BIDS key-values**: ``Network.from_db(atlas="DesikanKilliany", rec="dTOR")``
 
-        BIDS entity keys match the ``key-value`` pairs in filenames, e.g.
-        ``atlas``, ``rec``, ``scale``, ``seg``, ``desc``, ``cohort``.
+        BIDS entity keys match the ``key-value`` pairs in filenames, e.g. ``atlas``, ``rec``, ``scale``, ``seg``, ``desc``, ``cohort``.
 
-        When entities match a single file, returns a Network.
-        When multiple match, returns a list of Networks.
+        When entities match a single file, returns a Network. When multiple match, returns a list of Networks. When none matches, an atlas spelled as older records spell it that names networks the BIDS rename archived (``atlas="Schaefer1000"``) is refused as a lookup of their stems is, since tvbo hands out no archived data (register AR1, :func:`_retired_network`); any other query raises ``FileNotFoundError``.
 
         Parameters
         ----------
@@ -2411,6 +3126,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
         matches = _filter_networks_by_entities(entities)
         if len(matches) == 0:
+            if (spelled := _older_spelling(entities)) is not None:
+                _retired_network(spelled)
             available = [f.stem for f in NETWORK_DIR.glob("*.yaml")]
             raise FileNotFoundError(f"No network matching {entities}. Available: {sorted(available)}")
         if len(matches) == 1:
@@ -2487,9 +3204,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         else:
             from tvbo.utils import to_yaml as _to_yaml
 
-            kwargs = {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
-            clean = tvbo_datamodel.Network(**kwargs)
-            return _to_yaml(clean, filepath)
+            with self._naming_files_from(Path(filepath).parent if filepath else None):
+                clean = tvbo_datamodel.Network(**{k: v for k, v in self.__dict__.items() if not k.startswith("_")})
+                return _to_yaml(clean, filepath)
 
     # ---- JAX pytree: flatten/unflatten ----
     _STATIC_SPEC_HELD_OUT = ("weight", "length", "parcellation", "edges", "data_file", "bids_dir")
@@ -2681,47 +3398,29 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         """
         if not self.nodes:
             return []
-        return [n.label if n.label is not None else f"node_{n.id}" for n in self.nodes]  # type: ignore[union-attr]
+        return [_label_or_id(n.label, n.id) for n in self.nodes]  # type: ignore[union-attr]
 
     def _atlas_terminology_entities(self) -> dict:
         """Parcellation-terminology entities for this network's atlas, or ``{}``.
 
-        Resolves ``parcellation.atlas.name`` (case-insensitively — networks may declare ``HCPMMP1`` while the packaged atlas is keyed ``hcpmmp1``) and reads its SANDS ``terminology.entities``. Returns ``{}`` when the network declares no atlas or the atlas has no terminology. A network that DOES declare an atlas this installation cannot resolve still returns ``{}`` (a custom parcellation is entitled to have no crosswalk) but warns, because the visible symptom is otherwise a reconciliation that silently matches only the labels that happen to agree verbatim.
+        Reads the SANDS ``terminology.entities`` of the atlas :meth:`get_atlas` finds, by the name ``parcellation.atlas.name`` gives in any case and the ``seg`` and ``scale`` of the network's ``bids:`` block. Returns ``{}`` when the network declares no atlas or the atlas has no terminology. A network that DOES declare an atlas the database does not hold still returns ``{}`` (a custom parcellation is entitled to have no crosswalk) but warns, because the visible symptom is otherwise a reconciliation that silently matches only the labels that happen to agree verbatim; an atlas name several atlases answer to, with nothing stated to narrow it, raises.
         """
         parc = getattr(self, "parcellation", None)
         atlas = getattr(parc, "atlas", None) if parc is not None else None
         name = getattr(atlas, "name", None) if atlas is not None else None
         if not name:
             return {}
-        try:
-            from tvbo.classes.atlas import Atlas, available_atlases
-
-            resolved = (
-                name
-                if name in available_atlases
-                else next((a for a in available_atlases if a.lower() == str(name).lower()), None)
-            )
-            if not resolved:
-                import logging
-
-                logging.getLogger(__name__).warning(
-                    "Network declares atlas %r, which is not among the available atlases %s — region aliases unavailable, "
-                    "so a by_label reconciliation will match only labels that agree verbatim.",
-                    name,
-                    sorted(available_atlases),
-                )
-                return {}
-            term = getattr(Atlas.of(resolved), "terminology", None)
-            return getattr(term, "entities", None) or {}
-        except Exception as exc:  # noqa: BLE001 — aliases are optional; degrade but surface
+        found = self.get_atlas()
+        if found.metadata_file is None:
             import logging
 
             logging.getLogger(__name__).warning(
-                "Could not load atlas terminology for %r (region aliases unavailable): %s",
+                "Network declares atlas %r, which the database does not hold — region aliases unavailable, "
+                "so a by_label reconciliation will match only labels that agree verbatim.",
                 name,
-                exc,
             )
             return {}
+        return getattr(getattr(found, "terminology", None), "entities", None) or {}
 
     def region_alias_map(self) -> dict[str, str]:
         """Map each node's canonical label AND every known alias -> canonical label.
@@ -2897,13 +3596,15 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         return out
 
     @property
-    def labels(self) -> dict[str, str]:
-        """Brain region labels from atlas.
+    def labels(self) -> dict[str, int]:
+        """Each node's label (:attr:`node_labels`) with its id, read from the network's own record, so no atlas file is needed.
+
+        A network whose record numbers its nodes by its atlas's lookup labels, as the curated Desikan-Killiany, Destrieux and Yeo17 networks do, gives each region's lookup label.
 
         Returns:
         -------
-        dict of str to str
-            Mapping from region names to lookup labels
+        dict of str to int
+            Mapping from node labels to node ids
 
         Examples:
         --------
@@ -2913,10 +3614,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         print(f"Number of labeled regions: {len(labels)}")
         ```
         """
-        atlas = self.get_atlas()
-        if atlas.terminology:
-            return {e.name: e.lookupLabel for k, e in atlas.terminology.entities.items()}
-        return {}
+        return {label: node.id for label, node in zip(self.node_labels, self.nodes or [], strict=True)}
 
     @property
     def graph(self) -> nx.MultiDiGraph:
@@ -2994,15 +3692,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             # No explicit edges - generate from stored matrices. Build edges from the union of all stored matrices, attaching each matrix's values as named edge attributes.
             from scipy import sparse as _sp
 
-            # Collect matrix names from in-memory arrays, template-edge metadata, and common aliases accessible via the generic matrix(...) accessor.
-            matrix_names = set(self.edge_arrays())
+            # Each layer once, from in-memory arrays and template-edge metadata, under `weight` or `length` when it is the weights or the length and else the first name it is held by (_layer_names).
+            held = set(self.edge_arrays()) | {"weight", "length"}
             for e in self.edges or []:
                 lbl = getattr(e, "label", None) or getattr(e, "name", None)
                 if lbl:
-                    matrix_names.add(lbl)
-            for name in ("weight", "weights", "length", "lengths", "sc", "fc"):
-                if self.matrix(name) is not None:
-                    matrix_names.add(name)
+                    held.add(lbl)
+            layers = {}
+            for name in sorted(held, key=lambda n: (n not in ("weight", "length"), n)):
+                layers.setdefault(self._layer_names(name), name)
+            matrix_names = layers.values()
 
             # Materialize all available matrices as dense arrays.
             dense = {}
@@ -3081,7 +3780,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         return self.get_atlas()
 
     def get_atlas(self) -> Any:
-        """Retrieve the Atlas object for this connectome.
+        """Retrieve the Atlas object for this connectome: the atlas its ``parcellation`` names, narrowed by the ``seg`` and ``scale`` its ``bids:`` block states, so a Schaefer2018 connectome has its own parcellation among the twenty (:meth:`~tvbo.behaviour.atlas.BrainAtlasBehaviour.of`).
 
         Returns:
         -------
@@ -3096,10 +3795,12 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         ```
         """
         from tvbo.classes.atlas import Atlas
+        from tvbo.data.cohort import short_entities
 
         parc = getattr(self, "parcellation", None)
         atlas_data = parc.atlas if parc and hasattr(parc, "atlas") else None  # type: ignore[attr-defined]
-        return Atlas.of(atlas_data)
+        narrow = {key: value for key, value in short_entities(getattr(self, "bids", None)).items() if key in ("seg", "scale")}
+        return Atlas.of(atlas_data, **narrow)
 
     def compute_delays(self, output_unit: str | None = None) -> np.ndarray | JaxArray:
         """Deprecated: use :meth:`calculate_delays` instead.
@@ -3619,11 +4320,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if N_regions is None or W is None:
             return G
 
-        labels = self.labels if hasattr(self, "labels") and self.labels else None
-        label_list = list(labels.values()) if isinstance(labels, dict) else labels
+        label_list = self.node_labels
 
         for i in range(N_regions):
-            lab = label_list[i] if label_list and i < len(label_list) else f"node_{i}"
+            lab = label_list[i] if i < len(label_list) else f"node_{i}"
             G.add_node(i, label=lab)
 
         # Receiver-row W: emit j -> i so edges point in signal direction (see docstring).
@@ -4286,7 +4986,18 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                     "producer must return the (n, n) array or sparse matrix itself, or a "
                     "dict from which `output:` names one."
                 )
+            self._check_produced_side(label, produced)
             arrays[_array_key(label)] = produced
+
+    def _check_produced_side(self, label: str, produced) -> None:
+        """Refuse a square layer a ``producer:`` built for another number of nodes than this network carries, with both counts; a layer that is not square, a projection onto other nodes, is not compared."""
+        shape, n = tuple(getattr(produced, "shape", ())), len(self.nodes or [])
+        if n and len(shape) == 2 and shape[0] == shape[1] != n:
+            selected = getattr(self, "_selected_from", None)
+            kept = f" (the {n} its `node_selection` keeps of {selected[1]})" if selected is not None else ""
+            raise ValueError(
+                f"network edge {label!r}: its `producer:` built a {shape[0]} x {shape[1]} layer for a network of {n} nodes{kept}. A produced layer has a row and a column for each node the network carries."
+            )
 
     def _read_sourced_layers(self, names) -> None:
         """Make resident each layer among *names* that an edge declares with ``used:``, on the first read of that layer.
@@ -4387,8 +5098,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         n = len(self.nodes or [])
         shape = tuple(da.shape)
         if n and any(size != n for size in shape):
+            selected = getattr(self, "_selected_from", None)
+            kept = f" (the {n} its `node_selection` keeps of {selected[1]})" if selected is not None else ""
             raise ValueError(
-                f"network {what}: the referenced array has shape {shape} for a network of {n} nodes. "
+                f"network {what}: the referenced array has shape {shape} for a network of {n} nodes{kept}. "
                 "Declare `reconcile: by_label` on the reference to align it to this network's nodes by name."
             )
         cache[id(ref)] = (ref, np.asarray(da.values))
@@ -4405,7 +5118,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
     def sources_layer(self, name: str) -> bool:
         """Whether the layer *name* is read through a ``used:`` reference, so it has no values until :meth:`bind_references` names the run."""
-        names = _alias_group(name)
+        names = self._layer_names(name)
         return any(
             str(getattr(edge, "label", "") or "").lower() in names and getattr(edge, "used", None) is not None
             for edge in self.edges or []
@@ -4526,7 +5239,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def array(self, path: str):
         """The array at ``path``, resident or read from the companion on first use; ``None`` when there is neither.
 
-        A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format. A companion matrix of a layer an edge declares with ``used:`` or ``producer:``, under any spelling of its name (:func:`_declares_layer`), is not this network's and is not read from the companion.
+        A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format. A companion matrix of a layer an edge declares with ``used:`` or ``producer:``, under any spelling of its name (:meth:`_declares_layer`), is not this network's and is not read from the companion. A layer the companion holds and cannot read raises (:func:`_read_held`), and so does a dataset it holds, such as one whose CSV is missing; a companion that cannot be opened holds nothing.
         """
         key = _array_key(path)
         if (name := _edge_name(key)) is not None:
@@ -4535,15 +5248,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if key in resident:
             return resident[key]
         store = getattr(self, "_store", None)
-        if store is None or _declares_layer(self.edges, name):
+        if store is None or self._declares_layer(self.edges, name):
             return None
         try:
-            if key.startswith("edges/") and key.count("/") == 1:
-                value = store[key[len("edges/") :]]
-            else:
-                value = store.read_dataset(key)
+            held = store.holds(key) if name is None else name in store
         except (KeyError, OSError, AttributeError):
             return None
+        if not held:
+            return None
+        # Outside the try, so what the companion holds and cannot read raises.
+        value = store.read_dataset(key) if name is None else _read_held(store, name)
         resident[key] = value
         return value
 
@@ -4613,7 +5327,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     ) -> None:
         """Set a named edge matrix.
 
-        Accepts dense NumPy arrays, scipy sparse matrices (CSR, COO, etc.), or any array-like that can be converted. The matrix is stored internally and a template edge is created/updated automatically so that ``save()`` writes it to the HDF5 companion.
+        Accepts dense NumPy arrays, scipy sparse matrices (CSR, COO, etc.), or any array-like that can be converted. The matrix is stored internally and a template edge is created/updated automatically so that ``save()`` writes it to the HDF5 companion. ``weight`` sets the edge ``primary_weight`` names when the network declares one, the edge `matrix("weight")` serves.
 
         Parameters
         ----------
@@ -4627,6 +5341,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         >>> net.set_matrix("weight", W_dense)
         >>> net.set_matrix("local_connectivity", LC_sparse_csr)
         """
+        if _is_weight_name(name) and self.primary_weight:
+            name = self.primary_weight
         self._get_arrays()
         self.set_array(name, data)
         self._ensure_template_edge(name)
@@ -4653,7 +5369,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if spellings & {str(n).lower() for n in self.matrix_names}:
             return True
         placed = self._placed_edges()
-        if _is_weight_name(name):
+        if "weight" in spellings:
             return bool(placed) or bool(self.nodes) or (self.number_of_nodes or 0) >= 1
         if not placed:
             return False
@@ -4703,14 +5419,45 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             raise KeyError(name)
         return store.info(name)
 
-    def _matrix_names(self, name: str) -> tuple:
-        """Spellings to try for a named edge matrix, most specific first.
+    def _layer_names(self, name) -> tuple:
+        """The names the layer *name* goes by on this network, most specific first.
 
-        A declared ``primary_weight`` wins for every weight spelling, so one sidecar can carry several connectivity variants (band-specific reweightings, shuffled controls) and still present one of them as the active weight. Beyond that the order is :func:`_alias_group`'s, which also drives transform selection.
+        The weights are the edge ``primary_weight`` names, then ``weight``, and that edge answers to ``weight`` as well, so one sidecar can carry several connectivity variants (band-specific reweightings, shuffled controls) and present one of them as the weights. Any other layer is spelled as :func:`_alias_group` spells it. Every lookup of a layer goes through this: a matrix and its transforms (:meth:`_matrix_names`), a layer an edge declares or sources (:meth:`_declares_layer`, :meth:`sources_layer`) and a source's entry of a layer (:meth:`_answers_to`).
         """
-        primary = getattr(self, "primary_weight", None) if _is_weight_name(name) else None
-        head = (str(primary).lower(),) if primary else ()
-        return tuple(dict.fromkeys(head + _alias_group(name)))
+        primary = str(self.primary_weight or "").lower()
+        if str(name).lower() not in {"weight", primary} - {""}:
+            return _alias_group(name)
+        return tuple(dict.fromkeys((primary or "weight", "weight")))
+
+    def _answers_to(self, mine, theirs) -> bool:
+        """Whether the layer entry *mine* this network wrote and the entry *theirs* its source loaded are one layer: both template edges, both routes or neither, and one layer under any name it goes by (:meth:`_layer_names`)."""
+        if not (_is_template_edge(mine) and _is_template_edge(theirs)) or _is_route(mine) != _is_route(theirs):
+            return False
+        return bool(mine.label) and str(getattr(theirs, "label", "") or "").lower() in self._layer_names(mine.label)
+
+    def _declares_layer(self, edges, name) -> bool:
+        """Whether one of *edges* states where the layer *name* comes from (``used:`` / ``producer:``) under any name the layer goes by (:meth:`_layer_names`), so a source's own layer of that name yields to it."""
+        if not name:
+            return False
+        names = self._layer_names(name)
+        return any(_declares_its_matrix(e) and str(getattr(e, "label", "") or "").lower() in names for e in edges or [])
+
+    def _matrix_names(self, name: str) -> tuple:
+        """Spellings to try for a named edge matrix, most specific first: the names its layer goes by (:meth:`_layer_names`). Without a ``primary_weight`` the weights are ``weight``, and a network that holds no ``weight`` and an edge of a name a weight is often given (:data:`_FORMER_WEIGHT_NAMES`) is refused naming it."""
+        if _is_weight_name(name) and not self.primary_weight:
+            self._refuse_undeclared_weights()
+        return self._layer_names(name)
+
+    def _refuse_undeclared_weights(self) -> None:
+        """Refuse a network that holds no ``weight`` edge, declares no ``primary_weight`` and holds an edge of a name a weight is often given (:data:`_FORMER_WEIGHT_NAMES`), which nothing would read as its weights."""
+        held = {str(n).lower(): str(n) for n in self.matrix_names}
+        spelled = next((held[n] for n in _FORMER_WEIGHT_NAMES if n in held), None)
+        if spelled is not None and "weight" not in held:
+            raise ValueError(
+                f"This network holds the edge {spelled!r} and no 'weight', and declares no `primary_weight`: tvbo reads a network's weights "
+                f"from its 'weight' edge, or from the edge `primary_weight` names. Declare `primary_weight: {spelled}` if {spelled!r} is its weights, "
+                "or name the edge 'weight'."
+            )
 
     def matrix(
         self,
@@ -4727,7 +5474,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         Parameters
         ----------
         name : str
-            Matrix name (e.g. ``"weight"``, ``"length"``). Alias spellings (``weights``/``sc``, ``lengths``) resolve to the same matrix.
+            Matrix name (e.g. ``"weight"``, ``"length"``). ``weight`` and the edge ``primary_weight`` names are the weights; the spellings of a length (``lengths``, ``tractLength``) resolve to the same matrix.
         format : str, optional
             Return format: ``"dense"``, ``"csr"``, ``"coo"``, ``"lil"``.
             If ``None``, returns the matrix in whatever format it is currently stored in.
@@ -4742,6 +5489,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         from scipy.sparse import coo_matrix, csr_matrix, lil_matrix
 
         candidates = self._matrix_names(name)
+        weights = "weight" in candidates
         self._read_sourced_layers(candidates)
         arrays = self._get_arrays()
         store = getattr(self, "_store", None)
@@ -4764,28 +5512,28 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             return None
 
         mat = None
+        unheld = False
         found = _spelled(self.edge_arrays())
         if found is not None:
             mat = arrays[_array_key(found)]
         elif store is not None:
             found = _spelled(getattr(store, "names", None) or getattr(store, "arrays", {}).keys())
             if found is not None:
-                # A sidecar may declare a template edge the companion does not carry, and a name the store lists is not a promise it can serve one.
-                try:
-                    mat = store[found]
-                except (KeyError, OSError):
-                    mat = None
-                else:
-                    arrays[_array_key(found)] = mat
+                # A declared layer the companion does not hold reads as it would in memory, and only a weight that would be served as zeros raises below; a layer it holds is read, and an error reading it is raised.
+                unheld = found not in store
+                if not unheld:
+                    mat = arrays[_array_key(found)] = _read_held(store, found)
         if mat is None:
-            if _is_weight_name(name):
+            if weights:
                 mat = self._weights_from_edges()
             elif _is_length_name(name):
                 mat = self._lengths_from_edges()
 
         # No edges is zero weights, not absent ones: a single-node model and an uncoupled ensemble are both legitimate, and every consumer builds an (n, n) array from this.
         _unconnected = False
-        if mat is None and _is_weight_name(name):
+        if mat is None and weights:
+            if unheld:
+                raise _unheld_weight(found, store)
             n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
             if n > 0:
                 mat, _unconnected = np.zeros((n, n), dtype=np.float64), True
@@ -4839,9 +5587,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         --------
         >>> net.add_edge(0, 1, weight=0.5, length=30.0)
         """
-        # Map common singular → plural names to match template edge conventions
+        # Other spellings of the length and delay matrices, as template edges name them
         _NORMALIZE = {
-            "weights": "weight",
             "lengths": "length",
             "delays": "delay",
             "distance": "length",
@@ -4931,7 +5678,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def transforms_for(self, target: str):
         """The declared `transforms:` that retarget *target*, in declaration order.
 
-        The one place the target name is matched, so the singular and plural spellings of an edge property stay equivalent everywhere and a new alias is added once. The aliases mirror the ones `matrix` already resolves when it looks the matrix itself up, so `matrix("weights")` and `matrix("weight")` cannot disagree about whether a transform applies. Both the runtime and the emitters that inline a transform into a generated script select through this.
+        The one place the target name is matched, through the names `matrix` resolves the matrix itself by (:meth:`_matrix_names`), so a transform on ``weight`` and one on the edge ``primary_weight`` names both apply to the weights, and `matrix("weight")` and `matrix` of that edge cannot disagree about whether a transform applies. A transform aimed at a name a weight is often given and no layer of this network has (:data:`_FORMER_WEIGHT_NAMES`) is refused naming it, since it would apply to nothing. Both the runtime and the emitters that inline a transform into a generated script select through this.
 
         Args:
             target: Edge property a transform retargets, e.g. `"weight"` or `"length"`.
@@ -4939,7 +5686,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         Returns:
             List of `Function` transforms declared against *target*.
         """
-        names = _alias_group(target)
+        unheld = set(_FORMER_WEIGHT_NAMES) - {str(n).lower() for n in self.matrix_names}
+        unheld -= {str(getattr(e, "label", "") or "").lower() for e in self.edges or []}
+        aimed = [str(transform_target(t)) for t in self.transforms or []]
+        stray = next((name for name in aimed if name.lower() in unheld), None)
+        if stray is not None:
+            raise ValueError(
+                f"A transform of this network is aimed at {stray!r}, which no layer of it is: the weights are the 'weight' edge, or the edge "
+                f"`primary_weight` names. Aim it at the weights with `name: weight`, or, for a transform after the first, a name of its own and `output: weight`."
+            )
+        names = self._matrix_names(target)
         return [t for t in (self.transforms or []) if str(transform_target(t)).lower() in names]
 
     def transform_expression(self, func):
@@ -4985,13 +5741,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         from tvbo.utils import edge_label
 
         target = edge_label(transform_target(func)) or transform_target(func)
+        own = set(self._matrix_names(target))
         sourced = self._sourced_arguments(func)
 
         def resolve(name):
             if str(name) in sourced:
                 return self._sourced(sourced[str(name)].used, f"transform {target!r}, argument {name!r}")
             label = edge_label(name) or name
-            if label == target:
+            if str(label).lower() in own:
                 return M
             stored = self.matrix(label, format="dense")
             if stored is not None:

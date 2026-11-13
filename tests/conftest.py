@@ -173,3 +173,20 @@ def unwrapped():
     Generated Python is black-formatted, so a long statement is split across lines at a column black chooses. Asserting on the statement's text rather than on its layout keeps a codegen test about what the emitter produces, not about how it was wrapped. A fixture rather than an importable helper because ``tests/`` is not a package.
     """
     return lambda code: "".join(code.split())
+
+
+@pytest.fixture
+def hidden_atlases(tmp_path, monkeypatch):
+    """No atlas file and no curated network can be found: the registry reads a database whose ``atlases`` and ``networks`` folders are empty and whose other folders are the packaged ones."""
+    from tvbo.classes import network as network_module
+    from tvbo.data import registry
+
+    database = tmp_path / "database"
+    database.mkdir()
+    for folder in registry.DATABASE_ROOT.iterdir():
+        if folder.name in ("atlases", "networks"):
+            (database / folder.name).mkdir()
+        else:
+            (database / folder.name).symlink_to(folder)
+    monkeypatch.setattr(registry, "DATABASE_ROOT", database)
+    monkeypatch.setattr(network_module, "NETWORK_DIR", database / "networks")

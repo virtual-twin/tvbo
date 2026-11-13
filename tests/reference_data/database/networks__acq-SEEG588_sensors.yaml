@@ -4718,4 +4718,5 @@ number_of_nodes: 588
 descriptor: sensors
 bids:
   acquisition: SEEG588
+  suffix: sensors
 distance_unit: mm

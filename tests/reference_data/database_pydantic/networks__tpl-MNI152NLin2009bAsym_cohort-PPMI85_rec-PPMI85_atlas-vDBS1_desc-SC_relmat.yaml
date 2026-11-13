@@ -67,8 +67,14 @@ provenance:
     Progression Markers Initiative (PPMI) database (www.ppmi-info.org/data). For up-to-date
     information on the study, visit www.ppmi-info.org.
   - PPMI – a public-private partnership – is funded by The Michael J. Fox Foundation
-    for Parkinson's Research and funding partners, including [list the full names
-    of all of the PPMI funding partners found at www.ppmi-info.org/fundingpartners].
+    for Parkinson's Research and funding partners, including AbbVie, Alamar Biosciences,
+    Aligning Science Across Parkinson's (ASAP), Arrowhead Pharma, Arvinas, AskBio,
+    BIAL, BioArctic, Biohaven, BlueRock Therapeutics, Bristol Myers Squibb, Calico
+    Labs, Capsida Biotherapeutics, Critical Path Institute, DaCapo Brainscience, Denali,
+    Edmond J. Safra Foundation, Eli Lilly, Gain Therapeutics, GE Healthcare, Genentech,
+    GSK, Insitro, Johnson & Johnson Innovative Medicine, Lundbeck, Merck, Neumora,
+    Neuron23, Novartis, Olink, Regeneron, Roche, Sanofi, Tenvie, UCB, Vanqua Bio,
+    Voyager Therapeutics, The Weston Family Foundation.
   generated_by: vdbs-atlas 1.0.0 via tvbo network build
   digest:
     sha256:
@@ -3821,4 +3827,6 @@ bids:
   cohort: PPMI85
   reconstruction: PPMI85
   atlas: vDBS1
+  desc: SC
+  suffix: relmat
 distance_unit: mm

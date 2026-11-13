@@ -12,9 +12,7 @@ Mako templates for generating tvboptim network dynamics code from TVBO models.
 - `tvbo-tvboptim-solver.py.mako`: Solver/integrator generation.
 - `tvbo-tvboptim-noise.py.mako`: Noise model generation.
 - `tvbo-tvboptim-observation.py.mako`: Observation/monitor generation (metadata-driven pipelines).
-- `tvbo-tvboptim-optim.py.mako`: Optimizer configuration generation.
 - `tvbo-tvboptim-exploration.py.mako`: Parameter exploration (grid search) generation.
-- `tvbo-tvboptim-sim.py.mako`: Full simulation workflow generation.
 - `tvbo-tvboptim-experiment.py.mako`: Complete experiment generation (fully metadata-driven).
 
 ## Usage
@@ -29,8 +27,8 @@ experiment = SimulationExperiment.from_file("my_experiment.yaml")
 # The adapter resolves what the templates render — coupling comes from `network.coupling`.
 context = BaseAdapter(experiment).prepare_context()
 
-# Generate full workflow
-template = lookup.get_template("tvboptim/tvbo-tvboptim-sim.py.mako")
+# Generate the complete experiment
+template = lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
 code = template.render(**context)
 
 # Generate individual components
@@ -40,14 +38,10 @@ dfun_code = dfun_template.render(model=experiment.dynamics)
 # Generate exploration workflow
 expl_template = lookup.get_template("tvboptim/tvbo-tvboptim-exploration.py.mako")
 expl_code = expl_template.render(experiment=experiment)
-
-# Generate optimization workflow
-optim_template = lookup.get_template("tvboptim/tvbo-tvboptim-optim.py.mako")
-optim_code = optim_template.render(**context)
 ```
 ## Template Context Variables:
 
-The workflow templates (sim, optim) accept:
+The experiment template accepts:
 - experiment: SimulationExperiment instance
 - coupling: the default Coupling, resolved from `network.coupling` by `BaseAdapter`
 
@@ -56,7 +50,7 @@ Individual component templates also accept:
 - coupling: a standalone Coupling (for cfun, when no experiment is given)
 - integration: Integration instance (for solver, noise)
 - monitors: List of Monitor instances (for observation)
-- fitting: ModelFitting instance (for target, loss, optim)
+- fitting: ModelFitting instance (for target, loss)
 
 ## Output Format:
 
@@ -78,9 +72,7 @@ TEMPLATES = {
     "solver": "tvboptim/tvbo-tvboptim-solver.py.mako",
     "noise": "tvboptim/tvbo-tvboptim-noise.py.mako",
     "observation": "tvboptim/tvbo-tvboptim-observation.py.mako",
-    "optim": "tvboptim/tvbo-tvboptim-optim.py.mako",
     "exploration": "tvboptim/tvbo-tvboptim-exploration.py.mako",
-    "sim": "tvboptim/tvbo-tvboptim-sim.py.mako",
     "experiment": "tvboptim/tvbo-tvboptim-experiment.py.mako",
 }
 

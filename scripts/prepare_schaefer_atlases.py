@@ -79,7 +79,7 @@ def parse_args() -> argparse.Namespace:
 def target_name(scale: int, networks: int, resolution: str) -> str:
     """Build BIDS-style dseg filename for atlas directory."""
     res_val = "1" if resolution == "1mm" else "2"
-    return f"space-FSLMNI152_atlas-Schaefer2018_seg-{networks}Networks_scale-{scale}_res-{res_val}_desc-original_dseg.nii.gz"
+    return f"tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-{networks}Networks_scale-{scale}_res-{res_val}_dseg.nii.gz"
 
 
 def main() -> None:

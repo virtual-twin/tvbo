@@ -102,3 +102,26 @@ def test_a_graph_generator_parameter_is_reachable_and_invalidates():
     apply_overrides(_Experiment(net), [("network.graph_generator.parameters.connectome.value", "b.mat")])
     assert net.graph_generator.parameters["connectome"].value == "b.mat"
     assert net._resolved is False
+
+
+def test_an_override_of_a_generated_size_runs_the_new_size(tmp_path, monkeypatch):
+    """The run receives the network rebuilt from the overridden declaration, not the one built at load."""
+    import yaml
+
+    from tvbo import SimulationExperiment
+    from tvbo.run import study as study_run
+
+    path = tmp_path / "ring.yaml"
+    network = {"graph_generator": {"name": "ring", "type": "Cycle"}, "number_of_nodes": 5}
+    path.write_text(yaml.safe_dump({"id": 1, "label": "ring", "network": network}, sort_keys=False))
+    experiment = SimulationExperiment.from_file(str(path))
+    seen = {}
+
+    def run(experiment, *args, **kwargs):
+        seen["nodes"] = len(experiment.network.nodes)
+        seen["side"] = np.asarray(experiment.network.matrix("weight", format="dense")).shape
+
+    monkeypatch.setattr(study_run, "_run_one", run)
+    options = study_run.RunOptions(overrides=[("network.number_of_nodes", 7)])
+    study_run.run_experiment(experiment, str(path), tmp_path / "results", options=options)
+    assert seen == {"nodes": 7, "side": (7, 7)}

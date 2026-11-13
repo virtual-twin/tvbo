@@ -13,6 +13,7 @@ from pathlib import Path
 
 from tvbo.data.analysis_io import _slot
 from tvbo.data.dataref import SUBJECT_DIM, sel_dict
+from tvbo.data.registry import stem_entities
 from tvbo.utils import as_list, keyed_items
 
 BIDS_ENTITY_SHORT_KEYS = {
@@ -21,6 +22,7 @@ BIDS_ENTITY_SHORT_KEYS = {
     "reconstruction": "rec",
     "segmentation": "seg",
     "scale": "scale",
+    "density": "den",
     "atlas": "atlas",
     "acquisition": "acq",
     "hemi": "hemi",
@@ -44,10 +46,8 @@ def query_entities(query) -> tuple[dict, str | None]:
 
 def match_subject_files(files: Iterable[Path], ents: dict, suffix: str | None):
     """Yield ``(subject, path)`` for the files whose parsed entities match *ents* and *suffix*."""
-    from tvbo.classes.network import _parse_bids_entities
-
     for f in files:
-        file_ents = _parse_bids_entities(f.stem)
+        file_ents = stem_entities(f.stem)
         if not file_ents.get("sub"):
             continue
         if suffix is not None and not f.stem.endswith(f"_{suffix}"):
@@ -62,11 +62,11 @@ def subject_sidecars(root: Path, subject: str = "*") -> list[Path]:
 
 
 def subject_file(root: Path, subject: str, ents: dict, suffix: str | None) -> Path:
-    """The one sidecar of *subject* under *root* matching *ents* and *suffix*; none or several raises."""
+    """The one sidecar of *subject* under *root* matching *ents* and *suffix*; none raises ``FileNotFoundError``, several ``ValueError``."""
     sub = str(subject).removeprefix("sub-")
     matches = [f for s, f in match_subject_files(subject_sidecars(root, sub), ents, suffix) if s == sub]
     if not matches:
-        raise ValueError(f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}.")
+        raise FileNotFoundError(f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}.")
     if len(matches) > 1:
         raise ValueError(
             f"Query {ents} suffix={suffix!r} is ambiguous for sub-{sub}: {[m.name for m in matches]}. Add entities to disambiguate."
@@ -123,22 +123,331 @@ def subject_entries(subjects) -> dict:
     }
 
 
-def cohort_members(dataset, cohort) -> list[str]:
-    """The cohort's members in declared order, checked against the dataset's own subject list when it has one."""
-    cid = _slot(cohort, "cohort_id")
-    members = [str(m).removeprefix("sub-") for m in as_list(_slot(cohort, "members"))]
-    if not members:
-        raise ValueError(f"cohort {cid!r} declares no `members`.")
-    repeated = sorted(m for m, n in Counter(members).items() if n > 1)
+TABLE_DELIMITERS = {".tsv": "\t", ".csv": ","}
+"""File suffixes read as a table with one row per subject under ``participant_id`` (the BIDS participants and phenotype layout), each with the delimiter its cells are split by."""
+
+TABLE_SUFFIXES = tuple(TABLE_DELIMITERS)
+
+RECORD_SUFFIXES = (".yaml", ".yml", ".json")
+"""File suffixes read with the recipe loader, so the file holds what the slot it stands in for would hold."""
+
+MISSING_CELLS = ("", "n/a", "na", "nan")
+"""What a table cell without a value reads as, compared case-insensitively; ``n/a`` is the BIDS spelling."""
+
+_FILE_READS: dict = {}
+
+
+def declared_file(path, source_dir=None, *, what: str) -> Path:
+    """The file a dataset record names by *path*, found as every such path is: ``members_file``, ``subjects_file`` and ``phenotype_file``.
+
+    An absolute path is taken as written. A relative one is read from *source_dir*, the directory of the experiment or network file the dataset is part of (also for a dataset that file brings in by ``!include`` from elsewhere), and when the file is not there from the root of the study that directory belongs to (:func:`tvbo.utils.study_layout.study_root`), so a study names the lists it keeps by their place in the study and a kit names its own copies by their place beside its frozen spec. With no *source_dir* a relative path is read from the working directory. *what* names the declaring slot in the error a missing file raises, which lists the places tried.
+    """
+    given = Path(str(path))
+    places = [given]
+    if source_dir is not None and not given.is_absolute():
+        from tvbo.utils.study_layout import study_root
+
+        places = [Path(source_dir) / given]
+        try:
+            places.append(Path(study_root(source_dir)) / given)
+        except (StopIteration, LookupError, OSError):
+            pass
+    places = list(dict.fromkeys(place.resolve() for place in places))
+    for place in places:
+        if place.is_file():
+            return place
+    raise FileNotFoundError(
+        f"{what} names the file {str(path)!r}, which is not at {' nor at '.join(str(place) for place in places)}."
+    )
+
+
+def _read_once(path: Path, reader, *key, also: tuple = ()):
+    """``reader(path, *key)``, read again only when the size or modification time of the file, or *also*, has changed: a list its producer extends is seen at the next use and an unchanged one is parsed once. On a file system whose timestamps are coarser than the interval between two writes, a rewrite that keeps the file's size within one tick is not seen until the file changes again."""
+    stat = path.stat()
+    held_under, stamp = (str(path), reader.__name__, *key), (stat.st_mtime_ns, stat.st_size, *also)
+    held = _FILE_READS.get(held_under)
+    if held is None or held[0] != stamp:
+        held = _FILE_READS[held_under] = (stamp, reader(path, *key))
+    return held[1]
+
+
+def _read_table(path: Path) -> tuple[list[str], list[tuple[int, str, list[str]]]]:
+    """The header of the table at *path* and its rows as ``(row number, participant, cells)``, the participant without its ``sub-`` prefix.
+
+    The delimiter follows the suffix (:data:`TABLE_DELIMITERS`), a leading byte-order mark is dropped, a row whose cells are all empty is skipped, and rows are numbered as the file numbers them, the header being row 1. The table has to carry a ``participant_id`` column, and a row with a value but no participant raises with its number.
+    """
+    import csv
+
+    with open(path, newline="", encoding="utf-8-sig") as handle:
+        numbered = [
+            (number, row)
+            for number, row in enumerate(csv.reader(handle, delimiter=TABLE_DELIMITERS[path.suffix.lower()]), start=1)
+            if any(cell.strip() for cell in row)
+        ]
+    header = [cell.strip() for cell in numbered[0][1]] if numbered else []
+    if "participant_id" not in header:
+        raise ValueError(
+            f"{path.name} is read as a participants table and has no `participant_id` column (columns: {header or 'none'})."
+        )
+    column, rows = header.index("participant_id"), []
+    for number, row in numbered[1:]:
+        participant = row[column].strip() if len(row) > column else ""
+        if not participant:
+            raise ValueError(f"{path.name}, row {number} names no participant.")
+        rows.append((number, participant.removeprefix("sub-"), row))
+    return header, rows
+
+
+def _read_listing(path: Path) -> dict:
+    """The subjects the list file at *path* names, as ``{subject id: Subject}`` in the file's order.
+
+    By suffix the file holds what a recipe would state in the slot (:data:`RECORD_SUFFIXES`, parsed by the recipe loader, so an ``!include`` of the same file gives the same entries), a table read by its ``participant_id`` column (:data:`TABLE_SUFFIXES`), or one identifier per line, blank lines and lines starting with ``#`` skipped. The entries are built the way a dataset builds its ``subjects``. An identifier listed twice raises with a count, and no error repeats an entry.
+    """
+    import copy
+
+    from tvbo.datamodel.schema import Dataset
+
+    suffix = path.suffix.lower()
+    if suffix in RECORD_SUFFIXES:
+        from tvbo.utils import yaml_loader
+
+        content = copy.deepcopy(yaml_loader.strip_envelope(yaml_loader.load_as_dict(path)))
+    elif suffix in TABLE_SUFFIXES:
+        content = [participant for _, participant, _ in _read_table(path)[1]]
+    else:
+        lines = (line.strip() for line in path.read_text(encoding="utf-8-sig").splitlines())
+        content = [line for line in lines if line and not line.startswith("#")]
+    if content is None:
+        return {}
+    if not isinstance(content, (list, dict)):
+        raise ValueError(f"{path.name} holds no list of subjects.")
+    if isinstance(content, list):
+        names = [
+            str(_slot(entry, "subject_id") if isinstance(entry, dict) else entry).removeprefix("sub-") for entry in content
+        ]
+        repeated = sum(1 for n in Counter(names).values() if n > 1)
+        if repeated:
+            raise ValueError(f"{path.name} lists {repeated} identifier(s) more than once.")
+        content = [entry if isinstance(entry, dict) else str(entry) for entry in content]
+    try:
+        return subject_entries(Dataset(dataset_id="listed", subjects=content).subjects)
+    except Exception as exc:
+        raise ValueError(f"{path.name} does not hold a list of subjects ({type(exc).__name__}).") from None
+
+
+def _listed(path, source_dir, what: str) -> dict:
+    """The subjects the list file a slot names holds (:func:`declared_file`, :func:`_read_listing`), with *what*, the declaring slot, leading any error."""
+    found = declared_file(path, source_dir, what=what)
+    try:
+        return dict(_read_once(found, _read_listing))
+    except ValueError as exc:
+        raise ValueError(f"{what}: {exc}") from None
+
+
+def dataset_subjects(dataset, source_dir=None) -> dict:
+    """The subjects *dataset* lists, as ``{subject id: entry}`` in declared order: its ``subjects``, or the content of its ``subjects_file`` (:func:`declared_file`, read against *source_dir*). Empty for a dataset that lists none; one that states both raises, and so does a file that lists nobody."""
+    typed = subject_entries(_slot(dataset, "subjects"))
+    path = _slot(dataset, "subjects_file")
+    if not path:
+        return typed
+    name = _slot(dataset, "dataset_id")
+    if typed:
+        raise ValueError(
+            f"dataset {name!r} states both `subjects` and `subjects_file`; a dataset lists its subjects in one of the two."
+        )
+    listed = _listed(path, source_dir, f"dataset {name!r}: `subjects_file`")
+    if not listed:
+        raise ValueError(f"dataset {name!r}: `subjects_file` {str(path)!r} lists no subject.")
+    return listed
+
+
+def _companion(path: Path) -> str | None:
+    """The companion file the ``Phenotype`` sidecar at *path* keeps its values in."""
+    from tvbo.classes.phenotype import Phenotype
+
+    return getattr(Phenotype.from_file(path), "_h5_path", None)
+
+
+def _read_measure(path: Path, measure: str) -> tuple[list[str], list[float]]:
+    """The subjects of the phenotype table at *path* and their values of *measure*, in the table's order: a table (:data:`TABLE_SUFFIXES`) by its ``participant_id`` and *measure* columns, a record (:data:`RECORD_SUFFIXES`) as a ``Phenotype`` sidecar with its companion. A cell without a value (:data:`MISSING_CELLS`) is NaN, and no error repeats a row."""
+    import math
+
+    if path.suffix.lower() in TABLE_SUFFIXES:
+        header, rows = _read_table(path)
+        if measure not in header:
+            raise ValueError(
+                f"{path.name} has no column {measure!r} (columns: {[c for c in header if c != 'participant_id']})."
+            )
+        where, subjects, values = header.index(measure), [], []
+        for number, participant, row in rows:
+            cell = row[where].strip() if len(row) > where else ""
+            try:
+                value = math.nan if cell.lower() in MISSING_CELLS else float(cell)
+            except ValueError:
+                raise ValueError(
+                    f"{path.name}, row {number}: column {measure!r} holds a value that is not a number."
+                ) from None
+            subjects.append(participant)
+            values.append(value)
+        return subjects, values
+    from tvbo.classes.phenotype import Phenotype
+
+    table = Phenotype.from_file(path)
+    if measure not in [str(m) for m in table.measures or []]:
+        raise ValueError(f"{path.name} declares no measure {measure!r} (measures: {[str(m) for m in table.measures or []]}).")
+    subjects = [str(s).removeprefix("sub-") for s in table.subjects or []]
+    values = [float(v) for v in table.get(measure)]
+    if len(values) != len(subjects):
+        raise ValueError(f"{path.name}: measure {measure!r} holds {len(values)} values for {len(subjects)} subjects.")
+    return subjects, values
+
+
+def phenotype_measure(path, measure: str) -> tuple[list[str], list[float]]:
+    """The subjects of the phenotype table at *path* and their values of *measure* (:func:`_read_measure`), read again only when the table or the companion that holds its values has changed. A file of neither kind is refused by its suffix, and a subject the table lists twice raises with a count."""
+    path, also = Path(path), ()
+    if path.suffix.lower() not in (*TABLE_SUFFIXES, *RECORD_SUFFIXES):
+        raise ValueError(
+            f"{path.name} is named as a phenotype table, and a {path.suffix or 'suffixless'} file is not read as one: a table is {', '.join(TABLE_SUFFIXES)} and a `Phenotype` sidecar {', '.join(RECORD_SUFFIXES)}."
+        )
+    if path.suffix.lower() not in TABLE_SUFFIXES:
+        companion = _read_once(path, _companion)
+        if companion and Path(companion).is_file():
+            also = (Path(companion).stat().st_mtime_ns, Path(companion).stat().st_size)
+    subjects, values = _read_once(path, _read_measure, str(measure), also=also)
+    repeated = sum(1 for n in Counter(subjects).values() if n > 1)
     if repeated:
-        raise ValueError(f"cohort {cid!r} lists {repeated} more than once.")
-    listed = subject_entries(_slot(dataset, "subjects"))
+        raise ValueError(f"{path.name} lists {repeated} subject(s) more than once, so a value cannot be assigned to each.")
+    return list(subjects), list(values)
+
+
+def _rule_members(dataset, cohort, source_dir, chain: tuple) -> list[str]:
+    """The members a cohort's ``rule`` admits (``CohortRule``): the candidates whose value of the rule's measure falls in the group it names.
+
+    The candidates are the members of the cohort ``of`` names, else the subjects the dataset lists, else the table's subjects, and the members come in their order. A candidate without a row or with a value that is not finite is counted and refused, or under ``missing: exclude`` left out before any group is formed. The groups are those of :func:`tvbo.analysis.statistics.group_index` over the remaining values, counted from 1 for the lowest: ``equal_width`` cuts the range from their smallest to their largest into bins closed below and open above, the last closed on both sides; ``equal_count`` cuts their ascending order, equal values in the candidates' order, into runs whose sizes differ by at most one, the longer runs first. *chain* holds the cohorts whose rules led here, so a rule that leads back to one of them raises. No message names a subject or a value.
+    """
+    import numpy as np
+
+    from tvbo.analysis.statistics import GROUPINGS, group_index
+
+    cid, rule, owner = str(_slot(cohort, "cohort_id")), _slot(cohort, "rule"), _slot(dataset, "dataset_id")
+    measure, grouping = str(_slot(rule, "measure")), str(_slot(rule, "grouping"))
+    n_groups, group = int(_slot(rule, "n_groups")), int(_slot(rule, "group"))
+    if grouping not in GROUPINGS:
+        raise ValueError(f"cohort {cid!r}: its rule's grouping must be one of {GROUPINGS}, got {grouping!r}.")
+    if n_groups < 1 or not 1 <= group <= n_groups:
+        raise ValueError(
+            f"cohort {cid!r}: its rule asks for group {group} of {n_groups}; groups are counted from 1 to `n_groups`."
+        )
+    table = _slot(rule, "phenotype_file") or _slot(dataset, "phenotype_file")
+    if not table:
+        raise ValueError(
+            f"cohort {cid!r} is admitted by a rule on {measure!r}, and neither the rule nor the dataset {owner!r} names a `phenotype_file` to read it from."
+        )
+    path = declared_file(table, source_dir, what=f"cohort {cid!r}: `phenotype_file`")
+    try:
+        subjects, values = phenotype_measure(path, measure)
+    except ValueError as exc:
+        raise ValueError(f"cohort {cid!r}: {exc}") from None
+    of = _slot(rule, "of")
+    if of is not None:
+        if str(of) in (*chain, cid):
+            raise ValueError(
+                f"cohort {cid!r}: its rule splits the cohort {str(of)!r}, whose own rule leads back to it ({' -> '.join((*chain, cid, str(of)))})."
+            )
+        declared = {str(_slot(c, "cohort_id", key)): c for key, c in keyed_items(_slot(dataset, "cohorts"), "cohorts")}
+        if str(of) not in declared:
+            raise LookupError(
+                f"cohort {cid!r}: its rule splits the cohort {str(of)!r}, which the dataset {owner!r} does not declare (declared: {sorted(declared)})."
+            )
+        candidates = _members(dataset, declared[str(of)], source_dir, (*chain, cid))
+    else:
+        candidates = list(dataset_subjects(dataset, source_dir)) or subjects
+    value_of = dict(zip(subjects, values, strict=True))
+    scores = np.array([value_of.get(candidate, np.nan) for candidate in candidates], dtype=float)
+    finite = np.isfinite(scores)
+    if not finite.all() and str(_slot(rule, "missing", "refuse")) != "exclude":
+        raise ValueError(
+            f"cohort {cid!r}: {int((~finite).sum())} of its {len(candidates)} candidates have no finite value of {measure!r} in {path.name}. `missing: exclude` on the rule leaves them out of every group."
+        )
+    held, scores = [c for c, ok in zip(candidates, finite, strict=True) if ok], scores[finite]
+    if not held:
+        raise ValueError(
+            f"cohort {cid!r}: none of its {len(candidates)} candidates has a finite value of {measure!r} in {path.name}."
+        )
+    if grouping == "equal_width" and n_groups > 1 and scores.min() == scores.max():
+        raise ValueError(
+            f"cohort {cid!r}: the {len(held)} values of {measure!r} are all equal, so their range has no width to cut into {n_groups} bins."
+        )
+    index = group_index(scores, n_groups, grouping)
+    members = [c for c, k in zip(held, index, strict=True) if k == group - 1]
+    if not members:
+        raise ValueError(
+            f"cohort {cid!r}: group {group} of the {n_groups} {grouping} groups of {measure!r} holds none of the {len(held)} candidates."
+        )
+    return members
+
+
+def _members(dataset, cohort, source_dir, chain: tuple) -> list[str]:
+    """:func:`cohort_members`, with the cohorts whose rules led to this one in *chain*."""
+    cid = _slot(cohort, "cohort_id")
+    typed = [str(m).removeprefix("sub-") for m in as_list(_slot(cohort, "members"))]
+    path, rule = _slot(cohort, "members_file"), _slot(cohort, "rule")
+    stated = [
+        slot for slot, given in (("members", bool(typed)), ("members_file", bool(path)), ("rule", rule is not None)) if given
+    ]
+    if len(stated) > 1:
+        raise ValueError(
+            f"cohort {cid!r} states its members through {' and '.join(f'`{slot}`' for slot in stated)}; a cohort names them in one way: typed, read from a file, or admitted by a rule."
+        )
+    if not stated:
+        raise ValueError(f"cohort {cid!r} declares no `members`, `members_file` or `rule`.")
+    if rule is not None:
+        return _rule_members(dataset, cohort, source_dir, chain)
+    if path:
+        members = list(_listed(path, source_dir, f"cohort {cid!r}: `members_file`"))
+        if not members:
+            raise ValueError(f"cohort {cid!r}: `members_file` {str(path)!r} lists no member.")
+    else:
+        members = typed
+        repeated = sorted(m for m, n in Counter(members).items() if n > 1)
+        if repeated:
+            raise ValueError(f"cohort {cid!r} lists {repeated} more than once.")
+    listed = dataset_subjects(dataset, source_dir)
     strangers = [m for m in members if m not in listed] if listed else []
     if strangers:
         raise ValueError(
-            f"cohort {cid!r} names {len(strangers)} member(s) the dataset {_slot(dataset, 'dataset_id')!r} does not list as subjects, e.g. {strangers[:5]}."
+            f"cohort {cid!r} names {len(strangers)} member(s) the dataset {_slot(dataset, 'dataset_id')!r} does not list as subjects{f', e.g. {strangers[:5]}' if typed else ''}."
         )
     return members
+
+
+def admission(dataset, cohort) -> str | None:
+    """How *cohort* of *dataset* admits its members, in words a frozen record keeps in place of the list: the file that lists them, or the rule and the table it reads, each by file name. ``None`` for a cohort that types its members."""
+    rule = _slot(cohort, "rule")
+    if rule is None:
+        path = _slot(cohort, "members_file")
+        return f"listed in {Path(str(path)).name}" if path else None
+    table = _slot(rule, "phenotype_file") or _slot(dataset, "phenotype_file")
+    of, missing = _slot(rule, "of"), str(_slot(rule, "missing", "refuse"))
+    return (
+        f"group {_slot(rule, 'group')} of the {_slot(rule, 'n_groups')} {_slot(rule, 'grouping')} groups of {str(_slot(rule, 'measure'))!r}"
+        f" in {Path(str(table)).name if table else 'the dataset table'}"
+        f"{f' among the members of cohort {str(of)!r}' if of is not None else ''}"
+        f"{', candidates without a value left out' if missing == 'exclude' else ''}"
+    )
+
+
+def lists_from_file(cohort) -> bool:
+    """Whether *cohort* keeps its members out of the recipe: read from ``members_file`` or admitted by ``rule``. Whatever freezes such a cohort writes its members to a file again and never into a specification."""
+    return bool(_slot(cohort, "members_file")) or _slot(cohort, "rule") is not None
+
+
+def cohort_members(dataset, cohort, source_dir=None) -> list[str]:
+    """The cohort's members, checked against the dataset's own subject list when it has one.
+
+    A cohort states them in one way: typed (``members``, in declared order), read from a file (``members_file``, in the file's order, found by :func:`declared_file` against *source_dir*) or admitted by a rule on a phenotype measure (``rule``, :func:`_rule_members`). A list that is read or computed is read or computed on each call, so it follows its file, and a message about it gives counts and never an identifier.
+    """
+    return _members(dataset, cohort, source_dir, ())
 
 
 def pinned_members(ref) -> tuple[list[str], bool] | None:
@@ -155,13 +464,13 @@ def follows_run(ref) -> bool:
     return _slot(ref, "cohort") is not None and pinned_members(ref) is None
 
 
-def members_read(ref, datasets, subject=None) -> tuple[list[str], bool]:
-    """The members of its cohort *ref* reads in a run of *subject*, and whether they come back stacked along ``subject``.
+def members_read(ref, datasets, subject=None, source_dir=None) -> tuple[list[str], bool]:
+    """The members of its cohort *ref* reads in a run of *subject*, and whether they come back stacked along ``subject``; *source_dir* is where a member list kept in a file is found (:func:`cohort_members`).
 
     The one rule the reader, the per-subject fan-out, a kit's bundle and the on-device refusal share. A ``sel`` on ``subject`` pins the reference to the member or members it names, whichever subject runs (:func:`pinned_members`). A reference that pins none follows the run: the run's own member, and in a run with no subject the whole cohort, stacked in declared order. A member the cohort does not declare raises rather than being read anyway.
     """
     cohort_id = _slot(ref, "cohort")
-    declared = cohort_members(*find_cohort(datasets, cohort_id))
+    declared = cohort_members(*find_cohort(datasets, cohort_id), source_dir)
     pinned = pinned_members(ref)
     if pinned is not None:
         members, stacked = pinned
@@ -218,13 +527,11 @@ def network_array(net, output: str, name: str):
     if repeated:
         raise ValueError(f"{name}: node labels {repeated[:5]} occur more than once, so its arrays cannot be aligned by label.")
     # `matrix` answers a weight name with zeros on a file that holds none, which would read as an unconnected subject.
-    from tvbo.classes.network import _declares_layer
-
     spellings = set(net._matrix_names(output))
     held = (
         any(str(n).lower() in spellings for n in net.matrix_names)
         or bool(net._placed_edges() and net.carries(output))
-        or _declares_layer(
+        or net._declares_layer(
             net.edges or [], output
         )  # a layer declared with `used:` or `producer:` is read on demand and listed nowhere before
     )
@@ -239,12 +546,14 @@ def network_array(net, output: str, name: str):
     return xr.DataArray(np.asarray(vector), dims=("node",), coords={"node": labels})
 
 
-def network_members(net, datasets) -> list[str]:
-    """The subjects a network that reads per subject can be bound to: the members of the cohorts it follows the run on, in declared order.
+def network_members(net, datasets, source_dir=None) -> list[str]:
+    """The subjects a network that reads per subject can be bound to: the members of the cohorts it follows the run on, in declared order (:func:`cohort_members`, with *source_dir*).
 
     Cohorts with different members raise, because no one list then names every subject the network holds a layer for.
     """
-    lists = {cohort_id: cohort_members(*find_cohort(datasets, cohort_id)) for cohort_id in net.per_subject_cohorts()}
+    lists = {
+        cohort_id: cohort_members(*find_cohort(datasets, cohort_id), source_dir) for cohort_id in net.per_subject_cohorts()
+    }
     first_id, first = next(iter(lists.items()))
     for cohort_id, members in lists.items():
         if sorted(members) != sorted(first):
@@ -293,7 +602,7 @@ def read_network(ref, path, *, subject=None, datasets=None, results_root=None, s
     elif subject is not None or not net.per_subject_cohorts():
         return bound(subject)
     else:
-        members, stacked = network_members(net, datasets), True
+        members, stacked = network_members(net, datasets, source_dir), True
     if not stacked:
         return bound(members[0])
     parts = []
@@ -333,7 +642,7 @@ def read_cohort(ref, datasets, *, subject=None, source_dir=None):
     if not output:
         raise ValueError(f"a reference to cohort {cohort_id!r} needs `output:`, the array to take from each member's file.")
     dataset, _ = find_cohort(datasets, cohort_id)
-    members, stacked = members_read(ref, datasets, subject)
+    members, stacked = members_read(ref, datasets, subject, source_dir)
     root = dataset_root(dataset, source_dir)
     query = _slot(ref, "query")
 

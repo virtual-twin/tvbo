@@ -12,6 +12,8 @@ bids:
   template: fsaverage
   acquisition: EEGstandard1005
   atlas: DesikanKilliany
+  desc: projection
+  suffix: sensors
 parameters:
   conduction_speed:
     label: v

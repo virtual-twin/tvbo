@@ -1,4 +1,8 @@
-"""Flatten a multi-scale reservoir SimulationExperiment to a flat one (Python).
+"""Multi-scale lowering: an experiment whose network places subnetworks on its nodes, written as one a backend runs.
+
+:func:`lower` is the one seam, called where a render and a run check what the backend integrates. A network that places no subnetwork passes through unchanged. A layered network is routed by :func:`strategy_for` to one strategy: ``subnetwork_to_vector``, which writes every subnetwork as a region dynamics with vector states, when all units run one dynamics, and ``heterogeneous`` when they differ. tvbo builds neither, so :func:`lower` refuses a layered network, naming each node, the subnetwork it carries and the strategy it needs, where a backend used to read the parent nodes and leave the subnetworks out without a word.
+
+:func:`flatten_reservoir` flattens a multi-scale reservoir SimulationExperiment to a flat one (Python).
 
 Lowering strategy for Experiment A (per-region reservoirs): a network of ``R`` macro regions, each hosting an ``n``-unit reservoir (``Node.subnetwork`` with a ``RandomReservoir`` generator) coupled long-range through the empirical SC, is compiled into a single **flat** ``R·n``-node scalar network plus a global weight matrix that the existing tvboptim backend runs unchanged. No vector-state machinery in the templates — the multi-scale structure is resolved entirely in Python (the chosen "flatten in Python" approach).
 
@@ -10,10 +14,8 @@ Inner unit dynamics (leaky-integrator + activation of recurrence + drive)::
 
 with the cross-layer edges forming a **linear** down/up coupling:
 
-* downward (``source_network: ".."``): ``sc_drive = W_in ⊙ (kappa · SC @ x_bar)``
-  — the parent's long-range signal, scaled by a per-unit projection ``W_in``;
-* upward mean-pool (``target_network: ".."``, ``rhs: mean(x)``): ``x_bar`` feeds
-  the macro coupling;
+* downward (``source_network: parent``): ``sc_drive = W_in ⊙ (kappa · SC @ x_bar)`` — the parent's long-range signal, scaled by a per-unit projection ``W_in``;
+* upward mean-pool (``target_network: parent``, ``rhs: mean(x)``): ``x_bar`` feeds the macro coupling;
 * (optional) upward trained readout ``W_out @ x`` — ignored for free-running.
 
 Because both the recurrence (``W_int @ x``) and the cross-region drive are linear in the units' states and enter the *same* activation, they fold into one global matrix via Kronecker structure::
@@ -27,8 +29,58 @@ The flat model is a scalar leaky-integrator whose coupling enters *inside* the a
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
+
+from tvbo.utils import as_list
+
+SUBNETWORK_TO_VECTOR = "subnetwork_to_vector"
+HETEROGENEOUS = "heterogeneous"
+
+
+def placed_subnetworks(network: Any) -> dict[str, Any]:
+    """Each subnetwork *network* places on a node, keyed by that node's label, or its id where it has none."""
+    return {
+        str(getattr(node, "label", None) or node.id): node.subnetwork
+        for node in as_list(getattr(network, "nodes", None))
+        if getattr(node, "subnetwork", None) is not None
+    }
+
+
+def strategy_for(network: Any) -> str | None:
+    """The one strategy that lowers *network*'s subnetworks, or None when it places none.
+
+    ``subnetwork_to_vector`` when every unit of every subnetwork runs one dynamics, ``heterogeneous`` when two units run different ones, within one subnetwork or across two; a layered network takes one strategy as a whole.
+    """
+    placed = placed_subnetworks(network)
+    if not placed:
+        return None
+    dynamics = {
+        str(getattr(unit.dynamics, "name", unit.dynamics))
+        for subnetwork in placed.values()
+        for unit in as_list(getattr(subnetwork, "nodes", None))
+    }
+    return SUBNETWORK_TO_VECTOR if len(dynamics) <= 1 else HETEROGENEOUS
+
+
+def lower(experiment: Any) -> Any:
+    """*experiment* as a backend runs it: the same object when its network places no subnetwork.
+
+    Raises:
+        ValueError: If the network places a subnetwork, naming each node and the subnetwork it carries and the strategy :func:`strategy_for` routes the network to, which tvbo does not build.
+    """
+    network = getattr(experiment, "network", None)
+    strategy = strategy_for(network)
+    if strategy is None:
+        return experiment
+    pairs = ", ".join(
+        f"{getattr(subnetwork, 'label', None) or 'a subnetwork'!r} on node {node!r}"
+        for node, subnetwork in placed_subnetworks(network).items()
+    )
+    raise ValueError(
+        f"network {getattr(network, 'label', None)!r} places {pairs}; its subnetworks are lowered by the {strategy!r} strategy, which tvbo does not build, and no backend runs a subnetwork as written"
+    )
 
 
 @dataclass
@@ -247,11 +299,13 @@ def _gain_param_name(coupling_spec: dict) -> str:
 
 
 def _project_weights(subnet: dict, n: int) -> np.ndarray:
-    """Materialise the per-unit downward projection W_in from the sc_drive edge."""
+    """Materialise the per-unit downward projection W_in from the sc_drive edge; an edge that spells its parent with ``..`` is refused, as the dialect refuses it at load (:func:`tvbo.datamodel.dialect.refuse_dotted_parent`)."""
+    from tvbo.datamodel.dialect import refuse_dotted_parent
     from tvbo.graph_generators import procedural
 
     for edge in subnet.get("edges") or []:
-        if edge.get("source_network") in ("..", "parent"):
+        refuse_dotted_parent(edge)
+        if edge.get("source_network") == "parent":
             wparams = _pluck(edge, "coupling", "parameters") or {}
             for pspec in wparams.values():
                 dist = pspec.get("distribution") if isinstance(pspec, dict) else None

@@ -10,6 +10,7 @@ time_unit: ms
 data_file: acq-EEGBrainstorm65_sensors.h5
 bids:
   acquisition: EEGBrainstorm65
+  suffix: sensors
 parameters:
   conduction_speed:
     label: v

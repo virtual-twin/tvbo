@@ -140,11 +140,15 @@ def refuse_unlowered_parameter_starts(experiment, key: str) -> None:
 
 
 def render(experiment, fmt_key: str, **kwargs) -> str:
-    """Resolve *fmt_key*, invoke its renderer, prune its dead imports, and format it.
+    """Resolve *fmt_key*, lower *experiment* (:func:`tvbo.multiscale.lower`) for a format that integrates, invoke its renderer, prune its dead imports, and format it.
 
     All three happen here rather than in each renderer so that every backend — including the ones that render through an adapter and never touch the template helpers — is held to the same house style. Pruning precedes formatting because it edits statements and black only edits layout. See :mod:`tvbo.codegen.prune` and :mod:`tvbo.codegen.style`.
     """
     fmt = resolve(fmt_key)
+    if fmt.parameter_starts is not None:
+        from tvbo.multiscale import lower
+
+        experiment = lower(experiment)
     refuse_unlowered_parameter_starts(experiment, fmt.key)
     rendered = fmt.renderer(experiment, **kwargs)
     if not fmt.language:

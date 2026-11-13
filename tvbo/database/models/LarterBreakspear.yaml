@@ -245,6 +245,7 @@ parameters:
     description: Variance of inhibitory threshold
     grounding:
     - GO:0060080
+    - tvbo:InhibitoryThresholdVariance
   g_Ca:
     definition: Conductance of population of calcium (Ca++) channels. Describes the maximal conductance if all channels are open.
     value: 1.1

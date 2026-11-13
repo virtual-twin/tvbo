@@ -26,8 +26,8 @@ dynamics:
   label: Kuramoto
   parameters:
     omega: {name: omega, value: 0.0628, unit: rad_per_ms}
-    J_i:   {name: J_i, value: 0.0, free: true, heterogeneous: true, shape: "(n_nodes,)", measure: J_i}
-    g:     {name: g,   value: 0.0, free: true, heterogeneous: true, shape: "(n_nodes,)", measure: control_mask}
+    J_i:   {name: J_i, value: 0.0, heterogeneous: true, shape: "(n_nodes,)", measure: J_i}
+    g:     {name: g,   value: 0.0, heterogeneous: true, shape: "(n_nodes,)", measure: control_mask}
   coupling_inputs:
     c: {name: c, description: "coupling"}
   state_variables:
@@ -53,7 +53,7 @@ network:
       parameters:
         a: {value: 0.01}
         N: {value: 1.0}
-        wLRE: {value: 1.0, free: true, heterogeneous: true, shape: "(n_nodes, n_nodes)", measure: wLRE}
+        wLRE: {value: 1.0, heterogeneous: true, shape: "(n_nodes, n_nodes)", measure: wLRE}
       pre_expression: {rhs: "wLRE * sin(theta_j - theta_i)"}
       post_expression: {rhs: "a * gx / N"}
       incoming_states: [theta]

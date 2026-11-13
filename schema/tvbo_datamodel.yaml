@@ -1,10 +1,10 @@
 ---
 id: https://w3id.org/tvbo
 name: tvb-datamodel
-version: 0.4.0
+version: "0.9.0rc1"
 description: Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
-title: The Virtual Brain Data Model
-license: https://spdx.org/licenses/EUPL-1.2
+title: The Virtual Brain Ontology
+license: https://creativecommons.org/licenses/by/4.0/
 created_on: '2024-01-01T00:00:00Z'
 prefixes:
     tvbo: https://w3id.org/tvbo/
@@ -157,6 +157,47 @@ slots:
         range: boolean
         description: >-
             Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). On an observation it forces (true) or suppresses (false) persistence in the result; left unset, a terminal observation (one not consumed by another observation or a loss) is recorded and an intermediate one is not. Set false to suppress recording.
+    size:
+        range: integer
+        ifabsent: integer(1)
+        description: >-
+            Number of identical cells this node represents as a population. The default (1) is a single unit; size>1 makes the node a population of N cells sharing this node's dynamics, addressed by index 0..N-1 when a connectivity rule on an incident Edge is expanded. Maps to a NeuroML <population size="N">. Backend-independent: it states the population's cardinality, not a storage layout.
+    dynamics:
+        range: Dynamics
+        required: false
+        description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics."
+        inlined: false
+    position:
+        range: Coordinate
+        description: "Spatial coordinates (x, y, z) of the node"
+        inlined: true
+    region:
+        range: string
+        description: "Brain region or anatomical label"
+    hemisphere:
+        range: Hemisphere
+        description: >-
+            The hemisphere this node lies in, the SANDS `Hemisphere` value `left` or `right`. Absent for a midline node or one whose side is not curated. A consumer that needs sides fails on an absent value rather than inferring one from the label.
+    homologue:
+        range: string
+        description: >-
+            Label of this node's counterpart in the other hemisphere, so that a mirrored drive or readout is a declared permutation rather than a positional guess. Absent when the node has no homologue.
+    state:
+        multivalued: true
+        range: StateValue
+        inlined: true
+        description: "Per-node initial state variable values, keyed by state variable name."
+    events:
+        multivalued: true
+        range: Event
+        inlined: true
+        description: "Events attached to this node (e.g., threshold-based state changes)."
+    subnetwork:
+        range: Network
+        required: false
+        inlined: true
+        description: >-
+            Optional finer-scale Network that "lives inside" this Node (network-of-networks / multi-scale primitive). The subnetwork's nodes map (one-to-many) to this single parent Node. Cross-scale signal flow is declared as ordinary Edges in the subnetwork's `edges` list, using `source_network` / `target_network` with the `parent` sentinel to traverse up the hierarchy. The subnetwork may carry its own `graph_generator` (discrete sub-network — reservoir, spiking population, jaxley compartments) and/or `mesh` (continuous surface field) — one unified slot for reservoirs-per-region, spiking-populations-per-region, cells-per-region, and surface-mesh-patches-per-region. Recursive: a subnetwork's Nodes can themselves carry subnetworks.
 
 enums:
     AlgorithmCompositionMode:
@@ -1236,7 +1277,7 @@ classes:
         attributes:
             template:
                 range: string
-                description: "BIDS tpl- entity (e.g., FSLMNI152, MNI152NLin2009cAsym)"
+                description: "BIDS tpl- entity, a TemplateFlow identifier (e.g., MNI152NLin6Asym, MNI152NLin2009cAsym, fsLR)"
             cohort:
                 range: string
                 description: "BIDS cohort- entity (e.g., HCPYA, PPMI85)"
@@ -1245,10 +1286,13 @@ classes:
                 description: "BIDS rec- entity (e.g., dTOR)"
             segmentation:
                 range: string
-                description: "BIDS seg- entity (e.g., ordered, ranked, 17Networks)"
+                description: "BIDS seg- entity (e.g., 7Networks, 17Networks)"
             scale:
                 range: string
                 description: "BIDS scale- entity (BEP017, e.g., 1000)"
+            density:
+                range: string
+                description: "BIDS den- entity, the density of a surface mesh (e.g., 32k, 164k)"
             atlas:
                 range: string
                 description: "BIDS atlas- entity (e.g., Schaefer2018, HCPMMP1)"
@@ -1304,7 +1348,7 @@ classes:
             primary_weight:
                 range: string
                 description: >-
-                    Name of the edge group that should serve as the canonical weights matrix when ``weights_matrix`` is queried. Lets a single Network sidecar bundle several connectivity variants (e.g. band-specific NMF reweightings, distance-modulated SC, shuffled controls) under different edge names while still presenting one of them as the active weight to consumers (simulators, observation pipelines). Defaults to ``weight`` / ``weights`` / ``sc`` lookup when not set.
+                    Name of the edge whose matrix is the network's weights: ``matrix("weight")`` reads it, and a save writes the weights under it. Lets a single Network sidecar bundle several connectivity variants (e.g. band-specific NMF reweightings, distance-modulated SC, shuffled controls) under different edge names while presenting one of them as the weights to consumers (simulators, observation pipelines). Without it the weights are the ``weight`` edge; a network that holds its weights under another name (``sc``, ``weights``) declares that name here, and is refused naming the edge until it does.
             coupling:
                 multivalued: true
                 range: Coupling
@@ -1322,11 +1366,11 @@ classes:
                 inlined: true
                 description: "Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics."
             node_template:
-                range: Node
+                range: NodeTemplate
                 required: false
                 inlined: true
                 description: >-
-                    Default Node attributes applied to every Node in this Network. Explicit entries in `nodes:` override the template field-by-field (shallow replace, same semantics as `dict.update`). Reserved per-Node slots (id, label, position, region) come from the data backbone (Network.iri-loaded parcellation or procedural generator) and are ignored if set on the template. Lets a homogeneous Network declare its per-Node configuration once without enumerating regions.
+                    Default Node attributes applied to every Node in this Network. Explicit entries in `nodes:` override the template field-by-field (shallow replace, same semantics as `dict.update`). The per-Node slots (id, label, position, region) come from the data backbone (Network.iri-loaded parcellation or procedural generator) and are no template slots, so a template that sets one is refused, naming it. Lets a homogeneous Network declare its per-Node configuration once without enumerating regions.
             edge_template:
                 range: Edge
                 required: false
@@ -1334,17 +1378,24 @@ classes:
                 description: >-
                     Default Edge attributes applied to every Edge in this Network. Explicit entries in `edges:` override the template field-by-field. Reserved per-Edge slots (source, target, weight, delay, distance) come from the data backbone (loaded matrix or procedural generator) and are ignored if set on the template.
 
+            node_selection:
+                range: NodeSelection
+                inlined: true
+                description: >-
+                    Makes this network a subset by node of what it declares (``NodeSelection``): the nodes to keep or to drop, named by label. Everything else is as declared, so a network that includes another and adds a selection is that network without some of its nodes.
+
             # Network metadata
             number_of_nodes:
                 range: integer
-                description: "Number of nodes in the network (derived from nodes if not set)"
+                description: >-
+                    Number of nodes in the network, derived from `nodes` when it lists them. Beside a source (an `iri`, a `data_file`, a `bids_dir` or the curated network of a `parcellation`) it is the number of the source's nodes the network keeps: all of them at the source's own count, and below it a random subset drawn once at build from `execution.random_seed`, which `node_selection` then names. A count above the source's is refused.
                 aliases:
                     - number_of_nodes
                     - number_of_regions
             coordinate_space:
                 range: CommonCoordinateSpace
                 inlined: true
-                description: "Coordinate space for node positions (e.g., MNI152NLin2009c). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous."
+                description: "Coordinate space for node positions (e.g., MNI152NLin2009cAsym). Mirrors BrainAtlas.coordinateSpace so network node positions are unambiguous."
             parcellation:
                 range: Parcellation
                 description: "Brain parcellation/atlas reference"
@@ -1363,13 +1414,13 @@ classes:
                 multivalued: true
                 inlined_as_list: true
                 description: >-
-                    Ordered list of transforms applied to edge property matrices. Each entry's `name:` is the edge property it rewrites (e.g. 'weight', 'length'), and that property is also the value under transform inside the entry's own equation, which is written over the network's edge attributes. Supports equation-based (symbolic) or callable-based (software) transforms. Multiple transforms on the same target are applied sequentially, each seeing the previous one's output.
+                    Ordered list of transforms applied to edge property matrices. Each entry rewrites the edge property its `output:` names, else the one its `name:` is (e.g. 'weight', 'length'), and that property is also the value under transform inside the entry's own equation, which is written over the network's edge attributes. Supports equation-based (symbolic) or callable-based (software) transforms. Multiple transforms on the same target are applied sequentially, each seeing the previous one's output; since `name:` identifies an entry, each after the first states the target as its `output:`.
 
             # BIDS integration (BEP017)
             data_file:
                 range: string
                 description: >-
-                    Path to companion data file. Supported extensions: .h5 (HDF5), .zarr/ (Zarr), .csv (legacy single-matrix). Null if no companion data needed.
+                    Path to companion data file: .h5 (HDF5) or .zarr/ (Zarr), which hold every array under its path, or .csv. A network saved with CSV companions has one CSV per array, each named on the record of what it holds (``Edge.data_file``, the ``source`` of a parameter, the fields of ``mesh``), and names the first of them here. A .csv here that no record names is a companion written when a CSV held one matrix: it holds the first template edge's matrix, or the weights when none is declared, and every other declared layer reads as missing. Null if no companion data needed.
             descriptor:
                 range: string
                 description: >-
@@ -1572,6 +1623,26 @@ classes:
                 description: >-
                     Optional dotted-path subkey into the referenced entity (e.g. ``weight_alpha`` for a Network's named edge matrix, ``mesh.faces`` for the face array, or ``nodes.ef_alpha`` for a per-node scalar field). Resolved by attribute walk at load time.
 
+    NodeTemplate:
+        class_uri: tvbo:NodeTemplate
+        description: >-
+            The node slots a network's `node_template` sets on every node it does not set them on itself: what a node is and how it runs, and nothing that says which node it is. It shares these slots with `Node` and lacks the per-node slots `id`, `label`, `position` and `region`, which the network's data gives each node; a template that sets one is refused, naming it.
+        slots:
+            - alternateName
+            - description
+            - parameters
+            - record
+            - size
+            - dynamics
+            - hemisphere
+            - homologue
+            - state
+            - events
+            - subnetwork
+        slot_usage:
+            record:
+                ifabsent: "true"
+
     Node:
         class_uri: tvbo:Node
         description: "A node in a network with its own dynamics and properties"
@@ -1581,56 +1652,46 @@ classes:
             - description
             - parameters
             - record
+            - id
+            - size
+            - dynamics
+            - position
+            - region
+            - hemisphere
+            - homologue
+            - state
+            - events
+            - subnetwork
         slot_usage:
             record:
                 ifabsent: "true"
-        attributes:
             id:
-                range: integer
                 required: true
-                slot_uri: dcterms:identifier
                 description: "Unique node identifier"
-            size:
-                range: integer
-                ifabsent: integer(1)
-                description: >-
-                    Number of identical cells this node represents as a population. The default (1) is a single unit; size>1 makes the node a population of N cells sharing this node's dynamics, addressed by index 0..N-1 when a connectivity rule on an incident Edge is expanded. Maps to a NeuroML <population size="N">. Backend-independent: it states the population's cardinality, not a storage layout.
-            dynamics:
-                range: Dynamics
-                required: false
-                description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics."
-                inlined: false
-            position:
-                range: Coordinate
-                description: "Spatial coordinates (x, y, z) of the node"
-                inlined: true
-            region:
-                range: string
-                description: "Brain region or anatomical label"
-            hemisphere:
-                range: Hemisphere
-                description: >-
-                    The hemisphere this node lies in, the SANDS `Hemisphere` value `left` or `right`. Absent for a midline node or one whose side is not curated. A consumer that needs sides fails on an absent value rather than inferring one from the label.
-            homologue:
-                range: string
-                description: >-
-                    Label of this node's counterpart in the other hemisphere, so that a mirrored drive or readout is a declared permutation rather than a positional guess. Absent when the node has no homologue.
-            state:
+
+    NodeSelection:
+        class_uri: tvbo:NodeSelection
+        description: >-
+            The nodes of a network to keep or to drop, by label; exactly one of ``keep`` and ``drop`` is stated. A label is matched as written or through the aliases a ``by_label`` reconciliation uses (a node's ``alternateName`` and the atlas terminology). A selection is a set: the kept nodes stay in the order the network carries them, whatever order ``keep`` lists them in, and are renumbered from 0.
+
+            The selection is applied when the network is resolved, after its source has delivered nodes and arrays and before anything else reads them. Every stored layer, edge-parameter matrix and per-node array (``nodes/<name>``) is restricted to the kept nodes, an edge listed between two nodes goes with either of its nodes, and ``number_of_nodes`` is the kept count. Transforms, delays and couplings therefore see the selected network only: a normalisation by the largest weight is taken over the kept pairs. A layer or argument read through ``used:`` is read for the selected nodes: with ``reconcile: by_label`` it is aligned to them by name, without it the array has to come in the selected node count. A layer a ``producer:`` builds is not cut and has to come in the selected node count, and a per-node parameter read by ``source`` and ``measure`` from a network with more nodes is aligned to the kept nodes by label.
+
+            A warning names the network and both counts whenever a selection drops nodes from what the network carries; read back beside arrays that are already the selected ones, it drops none and gives none.
+
+            Refused, naming what is wrong: a label the network does not carry, ``keep`` beside ``drop``, a label listed twice, a selection that leaves no node, a node declared by label that the selection drops, and a network that carries a mesh or a route to another network, whose arrays the selection cannot restrict.
+        attributes:
+            keep:
                 multivalued: true
-                range: StateValue
-                inlined: true
-                description: "Per-node initial state variable values, keyed by state variable name."
-            events:
+                range: string
+                description: "Labels of the nodes that stay; every other node is dropped."
+            drop:
                 multivalued: true
-                range: Event
-                inlined: true
-                description: "Events attached to this node (e.g., threshold-based state changes)."
-            subnetwork:
-                range: Network
-                required: false
-                inlined: true
+                range: string
+                description: "Labels of the nodes that are dropped; every other node stays."
+            applied:
+                range: boolean
                 description: >-
-                    Optional finer-scale Network that "lives inside" this Node (network-of-networks / multi-scale primitive). The subnetwork's nodes map (one-to-many) to this single parent Node. Cross-scale signal flow is declared as ordinary Edges in the subnetwork's `edges` list, using `source_network` / `target_network` with the `parent` sentinel to traverse up the hierarchy. The subnetwork may carry its own `graph_generator` (discrete sub-network — reservoir, spiking population, jaxley compartments) and/or `mesh` (continuous surface field) — one unified slot for reservoirs-per-region, spiking-populations-per-region, cells-per-region, and surface-mesh-patches-per-region. Recursive: a subnetwork's Nodes can themselves carry subnetworks.
+                    Whether the nodes listed beside this record are the selected ones. Set by tvbo when it applies the selection, so a resolved network that is saved, frozen into a kit or dumped keeps the selection as the record of how it was derived. Read back beside arrays that are already the selected ones (a save, a kit) it selects nothing again; beside a source that still delivers the dropped nodes (a dumped record naming the unselected companion, a curated network or an atlas) it is applied again by label, and the nodes it keeps have to be the ones the record lists, or the record is refused as written from a source that has changed since. A generated graph is generated at the record's count, which is the kept one, so a dumped selection of one is refused; ``save`` writes its arrays. A recipe leaves it unset; one that sets it beside a node list the selection would still cut is refused.
 
     StateValue:
         class_uri: tvbo:StateValue
@@ -1682,6 +1743,11 @@ classes:
                 required: false
                 description: >-
                     Data type the matrix is stored as in the companion file (template edges only), e.g. 'float32'. Absent — the default — stores it as computed, so a read returns what was written. Set it only to narrow deliberately: halving a measured connectome's file is a fair trade against its own measurement error, silently halving a computed operator is not.
+            data_file:
+                range: string
+                required: false
+                description: >-
+                    The file holding this layer's matrix alone, relative to the sidecar (template edges only): the CSV ``save(binary_format="csv")`` writes for it, read at the edge's ``dtype`` and in its sparse ``format``, a sparse matrix as one ``row column value`` line per stored entry. Unset beside an HDF5 or Zarr companion, which holds every layer under ``edges/<label>``, and an HDF5 or Zarr file here is refused.
             weighted:
                 range: boolean
                 ifabsent: boolean(true)
@@ -2194,6 +2260,8 @@ classes:
                 slot_uri: rdfs:comment
             heterogeneous:
                 range: boolean
+                description: >-
+                    One value per node of the network the parameter's owner runs on, rather than one shared value. Inside a templated subnetwork, every copy of the template gets its own value at the parameter's declared shape; without it, every copy holds the template's value.
             distribution:
                 range: Distribution
                 inlined: true
@@ -2203,12 +2271,12 @@ classes:
                 range: uriorcurie
                 required: false
                 description: >-
-                    WHERE this parameter's value comes from — a curated entity's IRI, or a path (resolved against the declaring spec's directory when relative, as `Network.bids_dir` / `Network.data_file` are). The referent is typically a Network with per-node parameters (dscalar pattern) or a binary store (HDF5, Zarr, TSV). Combine with `measure:` to pick one array out of a source that holds several. A sourced value is never inlined into generated code: it is resolved lazily and the backend reads it from storage, so an array of any size costs nothing in the spec or the emitted module. Mutually exclusive with `value:` (a YAML literal, which IS materialised) and with `producer:` (bytes that are computed rather than read). Distinct from the global `iri:` slot, which is reserved for ontology grounding.
+                    WHERE this parameter's value comes from — a curated entity's IRI, or a path (resolved against the declaring spec's directory when relative, as `Network.bids_dir` / `Network.data_file` are). The referent is typically a Network with per-node parameters (dscalar pattern), a binary store (HDF5, Zarr, TSV), or the CSV holding the array alone that a CSV save writes for a parameter whose ``measure`` names its path in the companion. Combine with `measure:` to pick one array out of a source that holds several. A sourced value is never inlined into generated code: it is resolved lazily and the backend reads it from storage, so an array of any size costs nothing in the spec or the emitted module. Mutually exclusive with `value:` (a YAML literal, which IS materialised) and with `producer:` (bytes that are computed rather than read). Distinct from the global `iri:` slot, which is reserved for ontology grounding.
             measure:
                 range: string
                 required: false
                 description: >-
-                    WHICH array to select out of `source`. The address space is the source's own: a per-node measure name for a Network (aligning with Network.structural_measures / observational_measures), a dataset key for an HDF5/Zarr store, a recorded measure for an experiment result. Omit when the source resolves to a single array.
+                    WHICH array to select out of `source`. The address space is the source's own: a per-node measure name for a Network (aligning with Network.structural_measures / observational_measures), a dataset key for an HDF5/Zarr store, a recorded measure for an experiment result. Omit when the source resolves to a single array. Without a `source`, or beside the CSV a CSV save writes for it, it is the array's path in the network's own companion (``nodes/parent_index``), and on a ``node_template`` parameter that array runs over the nodes: node ``i`` takes its entry ``i``, so it has one entry per node, and one of another length is refused when the network is read or saved.
             source_arguments:
                 multivalued: true
                 range: Argument
@@ -2222,10 +2290,25 @@ classes:
                 slot_uri: prov:used
                 description: >-
                     WHERE + WHICH + SLICE in one edge — this parameter's array sourced from another experiment's result (an operating point, a tuned ``estimate__<name>`` a fit persisted), a dataset, or a curated entity, PROV ``prov:used``. The full cross-container form of which `source:`+`measure:` is the no-``sel``/no-``experiment`` shorthand; adds label ``reconcile`` and a swept-point ``sel``. Like `source:` the array is resolved lazily and never inlined. An in-study ``experiment`` reference also registers the workflow dependency. Mutually exclusive with `value:`/`source:`/`producer:`.
-            free:
-                range: boolean
             shape:
                 range: string
+                description: >-
+                    The shape of the parameter's array, as ``(n_nodes,)`` or ``(100, 3)``. A CSV save writes it for each array it links, since a file of rows does not say whether one column is a 1-D array.
+            dtype:
+                range: string
+                required: false
+                description: >-
+                    The NumPy dtype the parameter's array is held at (``float32``, ``int32``, ``|S15``) where it is read from a file, through ``source`` and ``measure``. A CSV does not record it, so a CSV save writes it for each array it links, and the array reads back at it; absent means float64. Distinct from ``datatype``, a schema range name.
+            levels:
+                range: string
+                required: false
+                description: >-
+                    The network parameter holding the vocabulary this parameter's values are codes into: value ``k`` is that vocabulary's entry ``k``, which is its ``value`` or the array its ``measure`` names. Declares a categorical attribute, such as each node's functional network on a ``node_template`` parameter, whose array runs over the nodes, beside the network parameter listing the networks' names. A name no network parameter carries is refused when the network is resolved.
+            parent:
+                range: string
+                required: false
+                description: >-
+                    The network parameter giving each entry of this vocabulary its parent, an entry of a coarser vocabulary: it holds one code per entry of this one, each a code into the vocabulary its own ``levels`` names, or ``-1`` for an entry with no parent. Declares a hierarchy of vocabularies, such as the regions of an atlas within its lobes. A name no network parameter carries, one without ``levels``, a count of codes other than this vocabulary's entry count, and a code outside the parent vocabulary are refused when the network is resolved.
             explored_values:
                 multivalued: true
                 range: float
@@ -2944,13 +3027,12 @@ classes:
                     Dotted reference to the Parameter to optimize. Format: "<scope>.<param_name>" where <scope> is either a Dynamics class name or a coupling key.
             heterogeneous:
                 range: boolean
-                ifabsent: boolean(false)
                 description: >-
-                    If true, the parameter is optimized per-element (broadcast to `shape`). If false, a single scalar is optimized and broadcast at runtime.
+                    `true` fits one value per node where the parameter declares one scalar, and `false` one scalar where it declares one value per node. An entry fits its parameter at the parameter's own layout and writes `heterogeneous` or `shape` only to change it; an entry that writes the layout its parameter already declares is refused.
             shape:
                 range: string
                 description: >-
-                    Optimization shape as a Python-tuple-style string (e.g. "(n_nodes,)" or "(n_nodes, n_nodes)"). Required when heterogeneous is true.
+                    The shape the parameter is fitted at, as a Python-tuple-style string (e.g. "(n_nodes,)" or "(n_nodes, n_nodes)"), written only to change the parameter's own layout; "()" fits one scalar.
             initial_value:
                 range: ScalarValue
                 description: "Optional initial value for the optimizer (overrides the referenced Parameter's value)."
@@ -3457,6 +3539,21 @@ classes:
                 description: >-
                     Toolkit-specific string options for this branch (linear solver, etc.).
 
+    HeldParameter:
+        class_uri: tvbo:HeldParameter
+        description: >-
+            A parameter a continuation holds to a target: the parameter, and the algorithm whose objective (a TuningObjective with target_variable and target_value) states the target it is held to.
+        attributes:
+            parameter:
+                range: string
+                required: true
+                description: The parameter held, by name, a parameter of the continuation's dynamics.
+            algorithm:
+                range: Algorithm
+                inlined: false
+                required: true
+                description: The algorithm, by name, whose objective gives the target.
+
     Continuation:
         class_uri: tvbo:Continuation
         description: >-
@@ -3481,6 +3578,13 @@ classes:
                 inlined_as_list: true
                 description: >-
                     The parameters the continuation varies, each a parameter of its dynamics with a domain (lo, hi) bounding it and an optional value it starts from, the dynamics' own value where none is given. A bound the domain leaves out is the dynamics parameter's own; one neither declares is refused by name, since the range decides which part of the diagram is computed. A continuation an experiment declares frees one parameter, and is refused when it frees none. A two-parameter (codim-2) continuation is a branch of it: the branch's nested continuation frees the second parameter, listed alone or after the primary it inherits (for primary p and second C, [C] or [p, C]), and is continued from the special points the branch's source_point selects. Its result carries the primary in param and the second in param2 on every backend.
+            held_parameters:
+                multivalued: true
+                range: HeldParameter
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    The parameters the continuation holds to a target while it varies its free parameter, as feedback inhibition control holds J_i: each names the parameter and the algorithm whose objective states the target. The continued system gains each held parameter as an unknown whose equation is that objective's residual. Refused when the objective states no target_variable and target_value, when no update rule of the algorithm targets the parameter, and on a continuation backend that holds no parameters (bifurcationkit holds them).
 
             # --- Step size control ---
             ds:
@@ -3771,53 +3875,6 @@ classes:
                 description: >-
                     Observable functions computed from edge inputs and parameters after simulation. Maps to obsf/obssym in ND.jl EdgeModel. Example: absolute force magnitude computed from force components.
 
-            # Hierarchical/subspace coupling attributes (optional)
-            inner_coupling:
-                range: Coupling
-                description: "For hierarchical coupling: inner coupling applied at regional level"
-                inlined: true
-            region_mapping:
-                range: RegionMapping
-                description: "For hierarchical coupling: vertex-to-region mapping for aggregation"
-                inlined: true
-            regional_connectivity:
-                range: Network
-                description: "For hierarchical coupling: region-to-region connectivity with weights and delays"
-                inlined: true
-            aggregation:
-                range: ScalarValue
-                any_of:
-                    - range: string
-                    - range: Function
-                      inlined: true
-                description: "For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custom Function"
-            distribution:
-                range: ScalarValue
-                any_of:
-                    - range: string
-                    - range: Function
-                      inlined: true
-                description: "For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function"
-
-    RegionMapping:
-        class_uri: tvbo:RegionMapping
-        description: "Maps vertices to parent regions for hierarchical/aggregated coupling"
-        slots:
-            - label
-            - description
-            - dataLocation
-        attributes:
-            vertex_to_region:
-                description: "Array mapping each vertex index to its parent region index. Can use dataLocation instead for large arrays."
-                multivalued: true
-                range: integer
-            n_vertices:
-                range: integer
-                description: "Total number of vertices"
-            n_regions:
-                range: integer
-                description: "Total number of regions"
-
     Sample:
         class_uri: tvbo:Sample
         attributes:
@@ -4067,7 +4124,6 @@ classes:
 
     SimulationExperiment:
         tree_root: true
-        class_uri: tvbo:Simulation
         slots:
             - provenance
             - model
@@ -4491,7 +4547,7 @@ classes:
                 range: Coordinate
             elements:
                 description: >-
-                    Topology indices: either a file reference, or (when inlined on a Network) a dotted path inside the parent Network's h5 companion to the (M, 3) int triangle face array. Default convention: ``mesh/faces``.
+                    Topology indices: either a file reference, or (when inlined on a Network) a dotted path inside the parent Network's h5 companion to the (M, 3) int triangle face array. Default convention: ``mesh/faces``. A network saved with CSV companions names the CSV holding them here.
                 range: string
             coordinate_space:
                 range: CommonCoordinateSpace
@@ -4514,7 +4570,7 @@ classes:
                     Brain parcellation this mesh's parcel_map indexes into. Inlined to match Network.parcellation's existing pattern. When the mesh is inlined on a Network that already declares ``parcellation``, this slot is optional and defaults to the parent's value.
             normals:
                 description: >-
-                    Optional path inside the parent Network's h5 (or an external file) to per-vertex normals (N, 3) float. Default convention: ``mesh/normals``.
+                    Optional path inside the parent Network's h5 (or an external file) to per-vertex normals (N, 3) float. Default convention: ``mesh/normals``. A network saved with CSV companions names the CSV holding them here.
                 range: string
             curvature:
                 description: >-
@@ -4522,7 +4578,7 @@ classes:
                 range: string
             vertices_field:
                 description: >-
-                    When the mesh is inlined on a Network, the dotted path inside the parent's h5 to vertex coordinates. Default: ``nodes/coordinates``.
+                    When the mesh is inlined on a Network, the dotted path inside the parent's h5 to vertex coordinates, or a file holding them. Default: ``nodes/coordinates``. A network saved with CSV companions names the CSV holding them here.
                 range: string
             parcel_map_field:
                 description: >-

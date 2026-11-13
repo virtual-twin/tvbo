@@ -1,0 +1,5 @@
+LicenseRef-TVBO-Unresolved
+
+The terms under which this file may be used have not yet been established. Until they are, do not redistribute it beyond the tvbo distribution it came with.
+
+To ask about a file under these terms, open an issue at https://github.com/virtual-twin/tvbo/issues.

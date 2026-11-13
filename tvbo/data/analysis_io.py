@@ -169,12 +169,18 @@ def used_cohorts(analysis, datasets, source_dir=None) -> dict:
         if cohort_id is None or str(cohort_id) in out:
             continue
         dataset, cohort = find_cohort(datasets, cohort_id)
-        out[str(cohort_id)] = {"dataset": str(_slot(dataset, "dataset_id")), "members": cohort_members(dataset, cohort)}
+        out[str(cohort_id)] = {
+            "dataset": str(_slot(dataset, "dataset_id")),
+            "members": cohort_members(dataset, cohort, source_dir),
+        }
     for _, net in networks_read(analysis, source_dir).values():
         for cohort_id in net._referenced("cohort"):
             if cohort_id not in out:
                 dataset, cohort = find_cohort(datasets, cohort_id)
-                out[cohort_id] = {"dataset": str(_slot(dataset, "dataset_id")), "members": cohort_members(dataset, cohort)}
+                out[cohort_id] = {
+                    "dataset": str(_slot(dataset, "dataset_id")),
+                    "members": cohort_members(dataset, cohort, source_dir),
+                }
     return out
 
 

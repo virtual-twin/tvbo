@@ -129,6 +129,7 @@ class BifurcationKitAdapter(ContinuationAdapter):
     """
 
     TEMPLATE = "tvbo-julia-BifurcationKit.jl.mako"
+    HOLDS_PARAMETERS = True
 
     # ── Context preparation ──────────────────────────────────────────────
 
@@ -308,52 +309,45 @@ class BifurcationKitAdapter(ContinuationAdapter):
         """BifurcationKit Julia for *continuation* on *model*, continuing the coupled system where the experiment declares a multi-node network; *kwargs* is extra context for `_prepare_context`."""
         network = getattr(self.experiment, "network", None)
         return super().render_continuation(
-            model, continuation, network=network, constraints=self._derive_constraints(model), **kwargs
+            model, continuation, network=network, constraints=self._derive_constraints(continuation), **kwargs
         )
 
-    def _derive_constraints(self, model):
-        """Derive constraint-defined free parameters for the continuation.
+    def _derive_constraints(self, continuation):
+        """The parameters *continuation* holds to a target, each as ``{"parameter", "target_variable", "target_value"}``.
 
-        Reuses the *existing* declarations (no new schema): a parameter marked ``free: true`` on the model, together with an activity-target ``TuningObjective`` on one of the experiment's algorithms, defines a constraint ``target_variable = target_value``. Each such free parameter (e.g. the FIC ``J_i``) is promoted by the emitter to an unknown state block whose defining equation is that residual (see ``_build_network_context``).
+        A ``held_parameters`` entry names the parameter and the algorithm whose ``TuningObjective`` states the target, ``target_variable = target_value``; the emitter promotes the parameter (e.g. the FIC ``J_i``) to an unknown whose equation is that residual (see ``_build_network_context``). Empty for a continuation that holds nothing.
 
-        Returns a list of ``{"parameter", "target_variable", "target_value"}``; empty when no parameter is free (E-E / FFI variants ⇒ plain continuation).
+        Raises:
+            ValueError: If an entry's algorithm is not one of the experiment's, its objective states no target, or none of its update rules targets the parameter.
         """
-        from tvbo.utils import as_list
+        from tvbo.utils import as_list, keyed_items
 
-        free = [p.name for p in model.parameters.values() if getattr(p, "free", False)]
-        if not free:
-            return []
-        algos = as_list(getattr(self.experiment, "algorithms", None))
-
-        def _activity_objective(a):
-            """The algorithm's objective iff it is an activity target (has a target_variable + target_value); else None."""
-            o = getattr(a, "objective", None)
-            tv = getattr(o, "target_variable", None) if o is not None else None
-            return o if (tv is not None and getattr(o, "target_value", None) is not None) else None
-
-        def _tuned_params(a):
-            """Parameter names this algorithm's update rules tune (target_parameter)."""
-            names = set()
-            for r in as_list(getattr(a, "update_rules", None)):
-                tp = getattr(r, "target_parameter", None)
-                n = getattr(tp, "name", None) or (str(tp) if tp is not None else None)
-                if n:
-                    names.add(n)
-            return names
-
+        algorithms = dict(keyed_items(getattr(self.experiment, "algorithms", None), "algorithms"))
         constraints = []
-        for fp in free:
-            # Prefer the algorithm that explicitly tunes THIS parameter (so multiple free params each get their own target); fall back to a lone activity objective only when this is the sole free param.
-            obj = next(
-                (_activity_objective(a) for a in algos if fp in _tuned_params(a) and _activity_objective(a)),
-                None,
+        for held in as_list(getattr(continuation, "held_parameters", None)):
+            parameter, name = str(held.parameter), str(getattr(held.algorithm, "name", held.algorithm))
+            label = f"continuation {getattr(continuation, 'name', '?')!r} holds {parameter!r} by algorithm {name!r}"
+            algorithm = algorithms.get(name)
+            if algorithm is None:
+                raise ValueError(
+                    f"{label}, which the experiment does not declare; its algorithms are {', '.join(algorithms) or 'none'}"
+                )
+            objective = getattr(algorithm, "objective", None)
+            target, value = getattr(objective, "target_variable", None), getattr(objective, "target_value", None)
+            if target is None or value is None:
+                raise ValueError(f"{label}, whose objective states no target_variable and target_value to hold it to")
+            tuned = {
+                str(getattr(rule.target_parameter, "name", rule.target_parameter))
+                for rule in as_list(getattr(algorithm, "update_rules", None))
+                if rule.target_parameter is not None
+            }
+            if parameter not in tuned:
+                raise ValueError(
+                    f"{label}, none of whose update rules targets it; they target {', '.join(sorted(tuned)) or 'nothing'}"
+                )
+            constraints.append(
+                {"parameter": parameter, "target_variable": str(getattr(target, "name", target)), "target_value": float(value)}
             )
-            if obj is None and len(free) == 1:
-                obj = next((_activity_objective(a) for a in algos if _activity_objective(a)), None)
-            if obj is None:
-                continue
-            tv = getattr(obj.target_variable, "name", None) or str(obj.target_variable)
-            constraints.append({"parameter": str(fp), "target_variable": str(tv), "target_value": float(obj.target_value)})
         return constraints
 
     @staticmethod

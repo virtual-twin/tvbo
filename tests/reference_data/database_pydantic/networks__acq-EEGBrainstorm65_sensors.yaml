@@ -543,4 +543,5 @@ data_file: acq-EEGBrainstorm65_sensors.h5
 descriptor: sensors
 bids:
   acquisition: EEGBrainstorm65
+  suffix: sensors
 distance_unit: mm

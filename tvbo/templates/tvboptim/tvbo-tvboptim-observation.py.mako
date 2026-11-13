@@ -433,9 +433,11 @@ network_node_arrays = collect_network_node_arrays(experiment)
 
 # Get BIDS directory from experiment network (resolve to absolute path)
 bids_dir = None
+structural_measures = None
 if network_obs_keys:
     network = get_attr(experiment, 'network', None)
     if network:
+        structural_measures = list(get_attr(network, 'structural_measures', None) or []) or None
         _bids_dir_raw = get_attr(network, 'bids_dir', None)
         if _bids_dir_raw:
             from pathlib import Path
@@ -998,7 +1000,13 @@ def _warm_ring(settle, skip, s_var, ds, rows, n):
 % if network_obs_keys and bids_dir:
 from tvbo.classes.network import Network as _TvboNetwork
 
-_bids_network = _TvboNetwork.from_bids('${bids_dir}', observational_measures=${list(network_obs_keys)})
+_bids_network = _TvboNetwork.from_bids(
+    '${bids_dir}',
+% if structural_measures:
+    structural_measures=${structural_measures},
+% endif
+    observational_measures=${list(network_obs_keys)},
+)
 % endif
 
 % if network_edge_arrays:

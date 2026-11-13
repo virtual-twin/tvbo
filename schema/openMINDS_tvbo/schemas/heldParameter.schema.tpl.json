@@ -1,0 +1,17 @@
+{
+  "_type": "tvbo:HeldParameter",
+  "required": [
+    "parameter",
+    "algorithm"
+  ],
+  "properties": {
+    "parameter": {
+      "type": "string"
+    },
+    "algorithm": {
+      "_linkedTypes": [
+        "tvbo:Algorithm"
+      ]
+    }
+  }
+}

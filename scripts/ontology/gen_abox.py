@@ -35,7 +35,7 @@ DCTERMS = Namespace("http://purl.org/dc/terms/")
 OBOINOWL = Namespace("http://www.geneontology.org/formats/oboInOwl#")
 SCHEMA = Namespace("http://schema.org/")
 ATOM = Namespace("http://uri.interlex.org/tgbugs/uris/readable/")
-"""InterLex namespace under which the struct OWL exposes the SANDS class IRIs imported from openMINDS via `schema/SANDS.yaml` (its `default_prefix`). Atlas and coordinate-space individuals are typed directly against those existing T-box classes; no new `tvbo:*` class is minted for them."""
+"""InterLex namespace under which the struct OWL exposes the SANDS classes and slots imported from openMINDS via `schema/SANDS.yaml` (its `default_prefix`). Atlas and coordinate-space individuals are typed against those T-box classes and described by those slots; no `tvbo:*` term is minted for them."""
 
 PREFIX_MAP = {
     "GO": "http://purl.obolibrary.org/obo/GO_",
@@ -96,13 +96,14 @@ def _resolve_study(citekey: str) -> str | None:
 def _add_groundings(g: Graph, iri: URIRef, data: dict) -> None:
     """Link `iri` to every CURIE in `data["grounding"]` under two complementary vocabularies.
 
-    `tvbo:surrogate_of` is the semantic, reasoner-visible relation defined in `tvb-o-axioms.ttl`, meaning "X is a surrogate of Y". `oboInOwl:hasDbXref` is the OBO cross-reference convention, kept for interoperability with GO/OBO tooling.
+    `tvbo:surrogate_of` is the semantic, reasoner-visible relation defined in `tvb-o-axioms.ttl`, meaning "X is a surrogate of Y". `oboInOwl:hasDbXref` is the OBO cross-reference convention, kept for interoperability with GO/OBO tooling. A CURIE whose prefix is not in `PREFIX_MAP` raises `ValueError`, so a mistyped prefix cannot drop a grounding unseen.
     """
     for cur in data.get("grounding") or []:
         u = expand_curie(str(cur))
-        if u is not None:
-            g.add((iri, TVBO.surrogate_of, u))
-            g.add((iri, OBOINOWL.hasDbXref, u))
+        if u is None:
+            raise ValueError(f"{iri}: grounding {cur!r} has a prefix gen_abox does not know; known: {', '.join(PREFIX_MAP)}")
+        g.add((iri, TVBO.surrogate_of, u))
+        g.add((iri, OBOINOWL.hasDbXref, u))
 
 
 def _add_equation(g: Graph, iri: URIRef, data: dict) -> None:
@@ -275,8 +276,8 @@ def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Pa
         ("license", DCTERMS.license),
         ("abbreviation", SKOS.altLabel),
         ("nativeUnit", TVBO.unit),
-        ("anatomicalAxesOrientation", TVBO.anatomicalAxesOrientation),
-        ("axesOrigin", TVBO.axesOrigin),
+        ("anatomicalAxesOrientation", ATOM.anatomicalAxesOrientation),
+        ("axesOrigin", ATOM.axesOrigin),
         ("title", DCTERMS.title),
         ("year", DCTERMS.issued),
         ("journal", SCHEMA.isPartOf),
@@ -346,6 +347,9 @@ def build_graph() -> Graph:
     g.add((onto, DCTERMS.license, URIRef("https://creativecommons.org/licenses/by/4.0/")))
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/struct")))
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/axioms")))
+    # The links from a model to its parameters and variables, which the schema does not declare.
+    for prop in (TVBO.hasParameter, TVBO.hasStateVariable, TVBO.hasDerivedVariable):
+        g.add((prop, RDFS.label, Literal(prop[len(TVBO) :])))
 
     # Pre-scan studies/ so emitters can resolve `references:` strings to study individual IRIs before emission. Order-independent.
     _STUDY_CITEKEYS.clear()

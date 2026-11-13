@@ -230,7 +230,7 @@ from tvbo import Network
 net = Network.from_bids("sub-01/connectome")
 ```
 
-`Network.to_bep017` writes a connectome back out as BEP017 per-measure files, one `meas-<name>_relmat.dense.tsv` plus JSON sidecar per edge measure, so a connectome tvbo read or built round-trips into the form other tooling reads.
+`Network.to_bep017` writes a connectome back out as BEP017 per-measure files, one `<stem>_meas-<label>_relmat.dense.tsv` plus JSON sidecar per edge measure, `<stem>` being the network's own BIDS name (`tpl-…` or `sub-…`, as `Network.bids_filename` spells it) and `<label>` the letters and digits of the edge's name (`sc_binary` is `meas-scbinary`), which the sidecar's `RelationshipMeasure` keeps as it is. Each value is written to 17 significant digits, so a connectome built in tvbo or loaded from a curated record round-trips, value for value, into the form other tooling reads.
 
 There is one export layout. A run writes `derivatives/tvbo/` as described above, and that is what the rest of TVBO resolves against. An earlier exporter wrote a parallel tree of `net/`, `ts/`, `eq/`, `coord/` and `map/` directories taken from a draft no current BEP034 artifact defines; it has been removed rather than left to imply a second answer.
 
