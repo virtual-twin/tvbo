@@ -24,6 +24,7 @@ from tvbo import templates
 from tvbo.behaviour._runtime import Copyable, YamlDocument, _dm
 from tvbo.behaviour.network import drawing_from
 from tvbo.data import cohort as _cohort
+from tvbo.data.matrix_io import _slot
 from tvbo.log import ensure_configured
 from tvbo.utils import Bunch, as_list, initial_value, keyed_items, network_couplings, traverse_metadata
 from tvbo.utils.source import constructing_as_written, current_source_file
@@ -65,9 +66,9 @@ def _strip_private_yaml_keys(text: str) -> str:
     return "\n".join(kept) + "\n"
 
 
-def _stated_seed(execution) -> int | None:
-    """The ``random_seed`` an experiment's ``execution`` states, written as a mapping or built as a record; ``None`` when it states none."""
-    return execution.get("random_seed") if isinstance(execution, dict) else getattr(execution, "random_seed", None)
+def _stated_seed(experiment) -> int | None:
+    """The ``random_seed`` the ``execution`` of *experiment* states, each written as a mapping or built as a record; ``None`` when it states none."""
+    return _slot(_slot(experiment, "execution"), "random_seed")
 
 
 def _hoist_coupling_parameters(parameters) -> None:
@@ -226,24 +227,20 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
             record.__pydantic_fields_set__.discard("id")
         return record
 
-    @model_validator(mode="before")
+    @model_validator(mode="wrap")
     @classmethod
-    def _spellings(cls, data):
-        """What an experiment's own constructor reads before the dialect: the ``dynamics`` mapping takes the conveniences every load path applies to a model and the curated record its ``iri`` names."""
-        if not isinstance(data, dict):
-            return data
-        data = dict(data)
-        if isinstance(data.get("dynamics"), dict):
+    def _spellings(cls, data, handler):
+        """What an experiment's own constructor reads before the dialect: the ``dynamics`` mapping takes the conveniences every load path applies to a model and the curated record its ``iri`` names. The record is then validated within :func:`drawing_from` its ``execution.random_seed``, so a network built from a mapping, on construction or on assignment (where Pydantic hands this validator the record itself), draws its random subset from that seed."""
+        if isinstance(data, dict) and isinstance(data.get("dynamics"), dict):
             from tvbo.classes.dynamics import _resolve_dynamics_aliases
             from tvbo.datamodel.dialect import expand_iri
 
-            data["dynamics"] = dict(data["dynamics"])
-            _resolve_dynamics_aliases(data["dynamics"])
-            expand_iri("Dynamics", data["dynamics"])
-        if isinstance(data.get("network"), dict) and not constructing_as_written():
-            with drawing_from(_stated_seed(data.get("execution"))):
-                data["network"] = _dm().Network(**data["network"])
-        return data
+            dynamics = dict(data["dynamics"])
+            _resolve_dynamics_aliases(dynamics)
+            expand_iri("Dynamics", dynamics)
+            data = {**data, "dynamics": dynamics}
+        with drawing_from(_stated_seed(data)):
+            return handler(data)
 
     def model_post_init(self, context) -> None:
         """Settle an experiment built in Python. One a document loader builds is settled by the loader once the whole document is in hand, so until then the record reads as written."""
@@ -291,7 +288,7 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
         _fill_network_couplings(self.network)
 
         self._source_file = current_source_file()
-        with drawing_from(_stated_seed(getattr(self, "execution", None))):
+        with drawing_from(_stated_seed(self)):
             self.network.settle(source_dir=Path(self._source_file).parent if self._source_file else None)
 
         if not getattr(self, "integration", None):

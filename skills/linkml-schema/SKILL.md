@@ -16,8 +16,7 @@ The TVBO datamodel is defined in **LinkML** YAML in `schema/` and *generated* in
 ## What is canonical
 
 - `schema/common.yaml`, `schema/SANDS.yaml`, `schema/openMINDS_tvbo/**` — hand-written LinkML definitions.
-- `tvbo/datamodel/pydantic.py`, `tvbo/datamodel/dialect_tables.py`, `tvbo/datamodel/tvbo_datamodel.schema.json`
-  — **generated** at build time by `hatch_build.py` and **gitignored**. Do not edit.
+- `tvbo/datamodel/pydantic.py`, `tvbo/datamodel/dialect_tables.py`, `tvbo/datamodel/tvbo_datamodel.schema.json` — **generated** at build time by `hatch_build.py` and **gitignored**. Do not edit.
 
 `pyproject.toml` makes this explicit:
 
@@ -28,12 +27,9 @@ The TVBO datamodel is defined in **LinkML** YAML in `schema/` and *generated* in
 ## Editing the schema
 
 1. Edit the appropriate `schema/*.yaml`.
-2. Regenerate the Python types via the LinkML pipeline (see `Makefile` / CI). A build
-   regenerates them automatically through the hatch build hook.
+2. Regenerate the Python types via the LinkML pipeline (see `Makefile` / CI). A build regenerates them automatically through the hatch build hook.
 
-The generated types are untracked, so a schema change has nothing to stage alongside it —
-`schema/*.yaml` is the whole diff. Never patch a generated file directly: it is not in
-git, and the next build silently overwrites it.
+The generated types are untracked, so a schema change has nothing to stage alongside it — `schema/*.yaml` is the whole diff. Never patch a generated file directly: it is not in git, and the next build silently overwrites it.
 
 ## When in doubt
 

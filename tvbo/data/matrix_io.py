@@ -10,6 +10,7 @@ import csv
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from typing import Any
 
@@ -183,23 +184,6 @@ def read_matrix(grp):
         return coo_matrix((_read_values(grp["data"]), (_read_values(grp["row"]), _read_values(grp["col"]))), shape=shape)
     else:
         raise ValueError(f"Unknown matrix format: {fmt}")
-
-
-def read_edge(store, name: str) -> tuple:
-    """One template edge's matrix and its edge-parameter matrices, from an open store.
-
-    Works identically for ``h5py.File`` and ``zarr.Group`` — both support ``"path" in store`` and ``store["path"]``. Raises ``KeyError`` when the store holds no such edge, so a miss is a miss and not an empty result a caller has to test for.
-    """
-    edge_path = f"edges/{name}"
-    if edge_path not in store:
-        raise KeyError(name)
-    matrix = read_matrix(store[edge_path])
-    params = {}
-    ep_path = f"{edge_path}/edge_parameters"
-    if ep_path in store:
-        for pname in store[ep_path]:
-            params[pname] = read_matrix(store[f"{ep_path}/{pname}"])
-    return matrix, params
 
 
 def template_edges(edges) -> list:
@@ -445,33 +429,26 @@ class LazyArrayStore:
         self._meta = meta_dict
         root = Path(current_source_dir() or self._path.parent)  # what a CSV's link is relative to
         self._files = {path: {**link, "path": root / link["file"]} for path, link in csv_links(meta_dict).items()}
-        if self._files and self._path.suffix.lower() != ".csv":
+        if self._files and not is_csv(str(self._path)):
             raise ValueError(
                 f"The sidecar of {self._path.name} names CSVs for {sorted(self._files)}, and {self._path.name} holds every array under its path. A network keeps its arrays in one companion format: save it again with the format it is to have."
             )
-        self._store = None
         self._cache: dict[str, Any] = {}
         self._params_cache: dict[str, dict[str, Any]] = {}
         self._paths: dict[str, str] = {}
         self._names: list[str] | None = None
 
-    @property
+    @cached_property
     def _reader(self):
-        """The format store on the companion, a CSV companion's its links (`tvbo.data.array_formats.CsvCompanionStore`), opened on first use so that a ``data_file`` naming another sidecar, which `Network` resolves itself, costs nothing here; a path in no array format is a ``KeyError`` naming it."""
-        if self._store is None:
-            from tvbo.data.array_formats import CsvCompanionStore, open_store
+        """The format store on the companion, a CSV companion's its links (`tvbo.data.array_formats.CsvCompanionStore`), opened on first use. A path in no array format raises ``OSError``, as a file that cannot be opened does, so no reader takes it for a companion that lacks the array asked for."""
+        from tvbo.data.array_formats import CsvCompanionStore, open_store
 
-            if self._path.suffix.lower() == ".csv":
-                self._store = CsvCompanionStore(self._path, self._files, self._meta)
-            else:
-                try:
-                    self._store = open_store(self._path)
-                except ValueError as e:
-                    raise KeyError(str(e)) from None
-        return self._store
-
-    def _template_edges(self) -> list:
-        return template_edges(self._meta.get("edges", []) or [])
+        if is_csv(str(self._path)):
+            return CsvCompanionStore(self._path, self._files, self._meta)
+        try:
+            return open_store(self._path)
+        except ValueError as e:
+            raise OSError(f"{self._path} is not an array store: {e}") from None
 
     def __enter__(self):
         """Hold the file open for the block. Nesting is counted, so an inner block cannot close the handle the outer one is still reading through."""
@@ -488,25 +465,20 @@ class LazyArrayStore:
         From the sidecar's template edges when it declares any; otherwise from the file's ``edges/`` listing, which is a header read, a CSV companion's from its links. A single-array companion carries exactly one, ``weight``; a keyed file with no ``edges/`` group carries none.
         """
         if self._names is None:
-            names = [edge_name(e) for e in self._template_edges()]
+            names = [edge_name(e) for e in template_edges(self._meta.get("edges"))]
             if not names:
                 names = [key.removeprefix("edges/") for key in self._reader.keys("edges")]
             self._names = names or (["weight"] if self._reader.single else [])
         return list(self._names)
 
     def _path_of(self, key: str) -> str:
-        """The stored path of ``key``: ``edges/<key>`` when the companion keys its edges that way, else ``key`` itself, a single-array companion's one name; probed once under one handle and kept. ``KeyError`` when the file holds neither."""
+        """The stored path of ``key``: ``edges/<key>`` when the companion keys its edges that way, else ``key`` itself; probed once under one handle and kept. ``KeyError`` when the file holds neither."""
         if key not in self._paths:
-            if self._reader.single:
-                if key not in self.names:
-                    raise KeyError(f"{self._path} holds one matrix, {self.names[0]!r}, and no {key!r}")
-                self._paths[key] = key
-            else:
-                with self._reader:
-                    path = next((path for path in (f"edges/{key}", key) if self._reader.holds(path)), None)
-                if path is None:
-                    raise KeyError(f"{self._path} holds no {key!r}")
-                self._paths[key] = path
+            with self._reader:
+                path = next((path for path in (f"edges/{key}", key) if self.holds(path)), None)
+            if path is None:
+                raise KeyError(f"{self._path} holds no {key!r}")
+            self._paths[key] = path
         return self._paths[key]
 
     def info(self, key: str) -> ArrayInfo:
@@ -514,7 +486,8 @@ class LazyArrayStore:
 
         ``key`` is an edge name (``"weight"``) or any dataset path (``"nodes/coordinates"``, ``"mesh/vertices"``). Raises ``KeyError`` when the file holds neither. A CSV companion answers from its links and from its file's lines and first line's fields, which reads no value.
         """
-        return self._reader.info(self._path_of(key))
+        with self._reader:
+            return self._reader.info(self._path_of(key))
 
     def __contains__(self, key: str) -> bool:
         """Whether the companion holds the layer *key*, which a sidecar's declaration does not promise: ``edges/<key>`` or ``<key>`` in the file's header, or for a CSV companion in its links, read with no value."""

@@ -20,7 +20,7 @@ pytest.importorskip("jax")
 
 from tvbo import Network  # noqa: E402
 from tvbo.data import analysis_io, cohort, dataref  # noqa: E402
-from tvbo.data.matrix_io import read_edge  # noqa: E402
+from tvbo.data.matrix_io import read_matrix  # noqa: E402
 from tvbo.data.study_manifest import _analysis_fingerprint  # noqa: E402
 from tvbo.datamodel import Analysis, DataRef, Dataset  # noqa: E402
 
@@ -617,7 +617,7 @@ def test_a_bundled_kit_carries_the_cohort_each_members_connectome_and_the_aggreg
     rerun.freeze_yaml(str(tmp_path / "provenance"), network_stem="sub-01_network")
     with h5py.File(tmp_path / "provenance/sub-01_network.h5") as companion:
         for layer in ("weight", "length"):
-            stored, _ = read_edge(companion, layer)
+            stored = read_matrix(companion[f"edges/{layer}"])
             np.testing.assert_array_equal(
                 np.asarray(stored.todense() if hasattr(stored, "todense") else stored), rerun.network.array(layer)
             )

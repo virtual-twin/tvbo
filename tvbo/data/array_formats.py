@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import dataclasses
 from contextlib import contextmanager
+from functools import cached_property
 from pathlib import Path
 
 import numpy as np
@@ -120,6 +121,11 @@ class GroupStore(_Store):
             children = grp.items() if hasattr(grp, "items") else grp.members()
             names = [name for name, node in children if _is_array(node) or _is_matrix_group(node)]
         return [f"{prefix}/{n}" if prefix else n for n in names]
+
+    def holds(self, key: str) -> bool:
+        """Whether the file lists a node at ``key``, so a matrix group that lost its ``data`` is held and raises when read."""
+        with self.open() as handle:
+            return key in handle
 
     def attrs(self, key: str = "") -> dict:
         """The attributes of one node, the root's for ``""``; empty when the file holds no such node."""
@@ -309,7 +315,7 @@ class TextStore(_Store):
 
 
 class CsvCompanionStore(_Store):
-    """A network's CSV companion: one space-separated CSV per array (`matrix_io.write_csv_array`), each named on the sidecar's record of what it holds (`matrix_io.csv_links`), which also gives the dtype, format and shape the file does not record. What it holds comes from those links, and a header answer from them and the file's line and field counts, no value parsed.
+    """A network's CSV companion: one space-separated CSV per array (`matrix_io.write_csv_array`), each named on the sidecar's record of what it holds (`matrix_io.csv_links`), which also gives the dtype, format and shape the file does not record. What it holds comes from those links, and a header answer from them and, where they state no shape, the file's line and field counts, no value parsed.
 
     A CSV companion no record names was written when a CSV held one matrix: that of the sidecar's first template edge, or ``weight`` when none is declared. A linked companion also holds ``nodes/coordinates`` when every node the sidecar lists has a position, which those positions are.
 
@@ -321,18 +327,23 @@ class CsvCompanionStore(_Store):
 
     def __init__(self, path, files: dict, meta: dict):
         super().__init__(path)
+        self.files = files
         self.meta = meta
-        self.links = files or self._one_matrix()
-        self.positions = self._positions() if files and "nodes/coordinates" not in files else None
+        self.edges = {matrix_io.edge_name(e): e for e in matrix_io.template_edges(meta.get("edges"))}
 
-    def _one_matrix(self) -> dict:
-        """The link of the one matrix a CSV companion no record names holds."""
-        edges = matrix_io.template_edges(self.meta.get("edges", []) or [])
-        name, dtype = (matrix_io.edge_name(edges[0]), edges[0].get("dtype")) if edges else ("weight", None)
-        return {f"edges/{name}": {"path": self.path, "dtype": dtype}}
+    @cached_property
+    def links(self) -> dict:
+        """``{array path: link}``: the sidecar's links, or the link of the one matrix a CSV companion no record names holds."""
+        if self.files:
+            return self.files
+        name, edge = next(iter(self.edges.items()), ("weight", {}))
+        return {f"edges/{name}": {"path": self.path, "dtype": edge.get("dtype")}}
 
-    def _positions(self):
-        """The ``(n, 3)`` float32 positions of the sidecar's nodes, as every writer stores them, or ``None`` unless every node it lists has one."""
+    @cached_property
+    def positions(self):
+        """The ``(n, 3)`` float32 positions of the sidecar's nodes, as every writer stores them, which a linked companion with no CSV of its own for ``nodes/coordinates`` holds there; ``None`` unless every node it lists has one."""
+        if not self.files or "nodes/coordinates" in self.files:
+            return None
         places = [matrix_io._slot(node, "position") for node in self.meta.get("nodes") or []]
         if not places or any(place is None for place in places):
             return None
@@ -349,9 +360,7 @@ class CsvCompanionStore(_Store):
     def _sparse_shape(self, key: str) -> tuple:
         """The shape of the sparse layer, or of its edge parameter, at ``key``: a row for each node the sidecar lists, and a column for each of its edge's ``dimension_labels`` or, without them, for each node."""
         rows = int(self.meta.get("number_of_nodes") or len(self.meta.get("nodes") or []))
-        layer = key.split("/")[1]
-        edges = matrix_io.template_edges(self.meta.get("edges", []) or [])
-        edge = next((e for e in edges if matrix_io.edge_name(e) == layer), {})
+        edge = self.edges.get(key.split("/")[1], {})
         return rows, len(edge.get("dimension_labels") or []) or rows
 
     def holds(self, key: str) -> bool:
@@ -360,8 +369,8 @@ class CsvCompanionStore(_Store):
 
     def keys(self, prefix: str = "") -> list[str]:
         """The arrays this companion holds directly under ``prefix``."""
-        held = [*self.links, *(["nodes/coordinates"] if self.holds("nodes/coordinates") else [])]
-        return [key for key in dict.fromkeys(held) if key.rpartition("/")[0] == prefix]
+        held = [*self.links, *(["nodes/coordinates"] if self.positions is not None else [])]
+        return [key for key in held if key.rpartition("/")[0] == prefix]
 
     def info(self, key: str) -> ArrayInfo:
         """A sparse layer has the shape `_sparse_shape` gives and a stored entry for each line, a declared array the ``shape`` its link states, and any other array a row for each line and a column for each field."""
@@ -370,10 +379,10 @@ class CsvCompanionStore(_Store):
             return ArrayInfo(key, coordinates.shape, coordinates.dtype, "dataset", int(coordinates.nbytes))
         link = self._link(key)
         dtype, fmt = np.dtype(link.get("dtype") or "float64"), link.get("format") or "dense"
-        lines, fields = matrix_io._lines_and_fields(link["path"])
         if fmt in ("csr", "coo"):
+            lines, _ = matrix_io._lines_and_fields(link["path"])
             return ArrayInfo(key, self._sparse_shape(key), dtype, fmt, lines * dtype.itemsize)
-        shape = matrix_io.parse_shape(link.get("shape")) or (lines, fields)
+        shape = matrix_io.parse_shape(link.get("shape")) or matrix_io._lines_and_fields(link["path"])
         return ArrayInfo(
             key, tuple(shape), dtype, fmt if key.startswith("edges/") else "dataset", int(np.prod(shape)) * dtype.itemsize
         )

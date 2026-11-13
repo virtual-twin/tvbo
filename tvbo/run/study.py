@@ -379,7 +379,7 @@ def rebuild_invalidated(objects, experiment=None) -> None:
     from tvbo.behaviour.experiment import _stated_seed
     from tvbo.behaviour.network import drawing_from
 
-    with drawing_from(_stated_seed(getattr(experiment, "execution", None))):
+    with drawing_from(_stated_seed(experiment)):
         for obj in objects:
             obj._resolve(source_dir=getattr(obj, "_source_dir", None))
 

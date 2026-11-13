@@ -295,7 +295,7 @@ class _DialectBase(BaseModel):
 
     The validator runs before validation, once per constructed model, so Pydantic's own recursion reaches every nested member; it only ever handles its own level. Pydantic validates an assignment against the value assigned, not against the mapping the validator returns, so ``__setattr__`` folds that value first. On an assignment Pydantic hands the validator the whole record and keeps the mapping it returns as the record's other slots, unvalidated, so there the validator only checks the record and returns it as it was: folding it again would merge the curated entry its ``iri`` names back over slots already built, as raw mappings.
 
-    A number in a text slot is read as its text, as YAML reads a recipe's unquoted identifier ``7``; a mapping or a list there is refused.
+    A number in a text slot is read as its text, as YAML reads a recipe's unquoted identifier ``7``, and a path as its text (`tvbo.datamodel.dialect.paths_as_text`); a mapping or a list there is refused.
     """
 
     model_config = ConfigDict(coerce_numbers_to_str=True)

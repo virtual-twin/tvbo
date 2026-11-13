@@ -11,7 +11,6 @@ import warnings
 import numpy as np
 import pytest
 import yaml
-from pydantic import ValidationError
 
 from tvbo import Network
 from tvbo.behaviour import network as network_module
@@ -19,6 +18,8 @@ from tvbo.behaviour.network import _find_network_sidecar
 from tvbo.classes.network import NETWORK_DIR, get_normative_connectome_data
 from tvbo.data.cohort import BIDS_ENTITY_SHORT_KEYS
 from tvbo.data.registry import resolve, retired_stems, stem_entities
+
+from .refusals import said
 
 NAMEABLE = [f for f in sorted(NETWORK_DIR.glob("*.yaml")) if {"atlas", "rec"} <= stem_entities(f.stem).keys()]
 WEIGHTED = [f for f in NAMEABLE if any(e.get("label") == "weight" for e in yaml.safe_load(f.read_text()).get("edges") or [])]
@@ -51,13 +52,6 @@ SCALES = "100, 200, 300, 400, 500, 600, 700, 800, 900, 1000"
 def _dense(matrix):
     """*matrix* as a dense array, a sparse layer (scale 1000 is stored csr) included."""
     return matrix.toarray() if hasattr(matrix, "toarray") else np.asarray(matrix)
-
-
-def _said(error: BaseException) -> str:
-    """The message *error* carries: the one error a record's validation wraps, or *error*'s own."""
-    if isinstance(error, ValidationError) and error.error_count() == 1 and "error" in error.errors()[0].get("ctx", {}):
-        return str(error.errors()[0]["ctx"]["error"])
-    return str(error)
 
 
 @pytest.mark.parametrize("tractogram", [{}, {"tractogram": {"name": "dTOR"}}], ids=["no-tractogram", "dTOR"])
@@ -118,7 +112,7 @@ def test_a_declaration_several_curated_networks_carry_is_refused_naming_them(atl
     with pytest.raises(ValueError) as refusal:
         Network(parcellation={"atlas": {"name": atlas}}, **({"bids": bids} if bids else {}))
     assert len(found) > 1
-    assert _said(refusal.value) == (
+    assert said(refusal.value) == (
         f"Several curated networks have the BIDS entities {', '.join(f'{key}-{value}' for key, value in asked.items())}, told apart by {apart}: "
         f"{', '.join(f'tvbo:networks/{f.stem}' for f in found)}; state a further entity of the one meant, or name it by its `iri`."
     )
@@ -170,7 +164,7 @@ def test_an_older_spelling_of_an_archived_network_is_refused_as_its_stem_is(olde
     ):
         with pytest.raises(ValueError) as by_spelling:
             lookup()
-        assert _said(by_spelling.value) == str(by_stem.value)
+        assert said(by_spelling.value) == str(by_stem.value)
 
 
 @pytest.mark.parametrize("older", sorted(ARCHIVED))
@@ -237,7 +231,7 @@ def test_the_normative_connectome_function_picks_each_lobar_network(route):
 def test_a_network_whose_parcellation_names_a_surface_network_is_refused_as_a_mesh_naming_the_network_of_its_regions():
     with pytest.raises(ValueError) as refusal:
         Network(parcellation={"atlas": {"name": "Lobar"}}, tractogram={"name": "dTOR"}, bids={"desc": "surf"})
-    assert re.match(SURFACE_REFUSAL, _said(refusal.value))
+    assert re.match(SURFACE_REFUSAL, said(refusal.value))
 
 
 @pytest.mark.parametrize(

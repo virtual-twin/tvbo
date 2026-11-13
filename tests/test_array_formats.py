@@ -182,7 +182,7 @@ def test_a_data_file_in_no_array_format_fails_on_read_not_on_load(tmp_path):
     from tvbo.data.matrix_io import LazyArrayStore
 
     store = LazyArrayStore(tmp_path / "other.yaml", {})
-    with pytest.raises(KeyError, match="other.yaml"):
+    with pytest.raises(OSError, match=r"other\.yaml is not an array store"):
         store["weight"]
 
 

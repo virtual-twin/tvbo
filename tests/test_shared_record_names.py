@@ -17,6 +17,8 @@ from tvbo import Network
 from tvbo.classes.atlas import Atlas
 from tvbo.data import registry
 
+from .refusals import said
+
 pytestmark = pytest.mark.backend_core
 
 DK_SC = "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat"
@@ -113,7 +115,7 @@ def test_an_archived_stem_is_refused_naming_the_record_that_replaced_it(old: str
     ):
         with pytest.raises(ValueError) as refused:
             lookup()
-        assert str(refused.value) == refusal
+        assert said(refused.value) == refusal
 
 
 def test_the_stem_table_holds_each_retired_stem_once_in_any_case():

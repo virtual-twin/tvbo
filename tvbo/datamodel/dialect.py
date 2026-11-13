@@ -9,6 +9,7 @@ Every function here takes and returns plain data for ONE level of nesting. Recur
 
 from __future__ import annotations
 
+import os
 import warnings
 from functools import cache
 
@@ -40,6 +41,7 @@ __all__ = [
     "lift_scalar",
     "lift_shortcuts",
     "normalize",
+    "paths_as_text",
     "refuse_dotted_parent",
     "refuse_retired",
 ]
@@ -458,6 +460,21 @@ def canonicalize_units(cls_name: str, data: dict) -> dict:
     return data
 
 
+def paths_as_text(data: dict) -> dict:
+    """Give each path in *data*, a slot's value or a member of a list slot, as its text, in place: a record holds the text a recipe writes for a path, never a path object."""
+    for slot, value in data.items():
+        if _is_path(value):
+            data[slot] = os.fspath(value)
+        elif isinstance(value, (list, tuple)) and any(_is_path(v) for v in value):
+            data[slot] = [os.fspath(v) if _is_path(v) else v for v in value]
+    return data
+
+
+def _is_path(value) -> bool:
+    """Whether *value* is a path; a scalar is answered without the slower ``os.PathLike`` check, which a long numeric list would pay per member."""
+    return not isinstance(value, _SCALARS) and isinstance(value, os.PathLike)
+
+
 def wrap_lists(cls_name: str, data: dict) -> dict:
     """Give each list-valued slot of *cls_name* whose one member is written bare the list spelling, in place.
 
@@ -479,7 +496,7 @@ def fold_slot(cls_name: str, slot: str, value):
     """
     from tvbo.utils.yaml_loader import _lift_one_distribution
 
-    data = {slot: value}
+    data = paths_as_text({slot: value})
     canonicalize_units(cls_name, data)
     lift_shortcuts(cls_name, data)
     key_members(cls_name, data)
@@ -505,6 +522,7 @@ def normalize(cls_name: str, data: dict) -> dict:
         data.pop(envelope_key, None)
 
     refuse_retired(cls_name, data)
+    paths_as_text(data)
     fold_aliases(cls_name, data)
     canonicalize_units(cls_name, data)
     lift_shortcuts(cls_name, data)

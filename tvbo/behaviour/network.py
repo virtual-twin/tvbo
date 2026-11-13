@@ -148,12 +148,12 @@ def _two_sources(first: str, second: str) -> str:
     return f"This network names {first} and {second} as the source of its connectivity. A network is read from one source: drop one of the two."
 
 
-def _fill_unstated(mine, theirs, stated=None) -> None:
+def _fill_unstated(mine, theirs) -> None:
     """Give the layer entry *mine* every slot it does not state from *theirs*, the source's entry of the same layer; a keyed collection (``parameters``, ``events``) gains the keys it lacks.
 
-    *stated* is the slots the entry's declaration wrote (its ``model_fields_set``), so a slot written at its default still wins. Without it the entry states each slot that is not at its default.
+    The entry states the slots in its ``model_fields_set``, so a slot written at its default still wins. A slot filled here is left out of that set, as nobody wrote it, so the next source a rebuild loads fills it again.
     """
-    for name, field in type(mine).model_fields.items():
+    for name in type(mine).model_fields:
         own, other = getattr(mine, name), getattr(theirs, name)
         if name == "label":
             continue
@@ -161,8 +161,9 @@ def _fill_unstated(mine, theirs, stated=None) -> None:
             for key, value in other.items():
                 own.setdefault(key, value)
             continue
-        if (name not in stated) if stated is not None else (own == field.get_default(call_default_factory=True)):
+        if name not in mine.model_fields_set:
             setattr(mine, name, other)
+            mine.__pydantic_fields_set__.discard(name)
 
 
 _LENGTH_TARGETS = ("length", "lengths")
@@ -1083,7 +1084,7 @@ class NetworkBehaviour(YamlDocument, Pytree):
             elif (owner := next((own for own in named if self._answers_to(own, edge)), None)) is None:
                 edges.append(edge)
             elif id(owner) not in placed:
-                _fill_unstated(owner, edge, owner.model_fields_set)
+                _fill_unstated(owner, edge)
                 edges.append(owner)
                 placed.add(id(owner))
         held = {id(edge) for edge in edges}
@@ -2009,6 +2010,9 @@ class NetworkBehaviour(YamlDocument, Pytree):
         if self.node_template is None or not self.nodes:
             return
         spec = to_dict(self.node_template)
+        sub = self.node_template.subnetwork
+        if sub is not None and sub._holds_arrays() and sub._named_source() is None:
+            spec["subnetwork"] = sub  # built in Python: no record rebuilds the arrays it holds
         if spec.get("parameters"):
             kept = [
                 (name, p)
